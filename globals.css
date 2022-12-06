@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-accent-1: hsl(222, 60%, 55%);
+    --color-accent-2: hsl(222, 60%, 50%);
+    --color-accent-fg-1: hsl(0, 0%, 100%);
+    --color-alpha-1: hsla(0, 0%, 0%, 6%);
+    --color-alpha-2: hsla(0, 0%, 0%, 12%);
+    --color-alpha-3: hsla(0, 0%, 0%, 18%);
+    --color-bg-1: hsl(222, 4%, 94%);
+    --color-bg-2: hsl(222, 4%, 97%);
+    --color-bg-3: hsl(0, 0%, 100%);
+    --color-fg-1: hsl(222, 6%, 10%);
+    --color-fg-2: hsl(222, 6%, 40%);
+    --color-fg-3: hsl(222, 6%, 60%);
+    --color-ring: hsl(222, 6%, 10%);
+    --radius-default: 0.5rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-accent-1: hsl(222, 60%, 35%);
+      --color-accent-2: hsl(222, 60%, 40%);
+      --color-accent-fg-1: hsl(222, 6%, 90%);
+      --color-alpha-1: hsla(0, 0%, 100%, 5%);
+      --color-alpha-2: hsla(0, 0%, 100%, 10%);
+      --color-alpha-3: hsla(0, 0%, 100%, 15%);
+      --color-bg-1: hsl(222, 6%, 6%);
+      --color-bg-2: hsl(222, 6%, 9%);
+      --color-bg-3: hsl(222, 6%, 12%);
+      --color-fg-1: hsl(222, 6%, 90%);
+      --color-fg-2: hsl(222, 6%, 55%);
+      --color-fg-3: hsl(222, 6%, 40%);
+      --color-ring: hsl(222, 60%, 60%);
+    }
+  }
+}
+
+@layer base {
+  html {
+    @apply h-full text-[4.3vw] xs:text-[15px];
+  }
+
+  body {
+    @apply h-full bg-bg-1 leading-snug text-fg-1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-bold;
+  }
+
+  a {
+    @apply text-fg-2 underline;
+  }
+
+  [data-nextjs-scroll-focus-boundary] {
+    @apply contents;
+  }
+}
+
+@layer components {
+  .button {
+    @apply focus-ring flex w-full items-center justify-between rounded border border-alpha-2 px-4 py-3 hover:border-alpha-3 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .input {
+    @apply focus-ring w-full rounded border border-alpha-2 bg-bg-3 px-4 py-3 text-fg-1 placeholder:text-fg-3 hover:border-alpha-3 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply ring-ring focus:outline-none focus:ring-1;
+  }
+}
