@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
-  "github": { "deploymentEnabled": false, "silent": true },
+  "github": { "enabled": false },
   "regions": ["sfo1"]
 }
