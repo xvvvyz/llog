@@ -17,7 +17,7 @@ const SendResetPasswordLinkForm = () => {
       initialValues={{ email: globalStringCache.get('email') }}
       onSubmit={async ({ email }, { setSubmitting }) => {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${location.host}/forgot-password/reset`,
+          redirectTo: `${location.origin}/forgot-password/reset`,
         });
 
         if (error) alert(error.message);
