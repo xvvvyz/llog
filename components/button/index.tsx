@@ -14,7 +14,7 @@ const Button = ({
 }) => (
   <button
     className={clsx(
-      'button justify-center gap-4 bg-accent-1 text-accent-fg-1 transition-colors hover:enabled:bg-accent-2',
+      'button justify-center gap-4 bg-accent-1 font-bold text-bg-1 ring-offset-4 ring-offset-bg-2 transition-colors hover:enabled:bg-accent-2',
       className
     )}
     disabled={disabled || loading}
@@ -24,7 +24,7 @@ const Button = ({
       <>
         <div
           aria-label="loading"
-          className="h-4 w-4 animate-spin rounded-full border-2 border-accent-fg-1 border-l-transparent"
+          className="h-4 w-4 animate-spin rounded-full border-2 border-bg-1 border-l-transparent"
           role="status"
         />
         {loadingText}

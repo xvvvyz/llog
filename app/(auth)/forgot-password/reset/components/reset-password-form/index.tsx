@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { Form, Formik } from 'formik';
 import { useRouter } from 'next/navigation';
 import Button from '/components/button';
@@ -34,7 +33,6 @@ const ResetPasswordForm = () => {
           </Label>
           <Button className="mt-12" loading={isSubmitting} loadingText="Sending link…" type="submit">
             Update password
-            <ArrowRightIcon className="w-5" />
           </Button>
         </Form>
       )}

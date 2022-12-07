@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { Form, Formik } from 'formik';
 import { useState } from 'react';
 import Button from '/components/button';
@@ -35,14 +34,7 @@ const SendResetPasswordLinkForm = () => {
             loadingText="Sending link…"
             type="submit"
           >
-            {linkSent ? (
-              <>Link sent&mdash;check your email</>
-            ) : (
-              <>
-                Send link
-                <ArrowRightIcon className="w-5" />
-              </>
-            )}
+            {linkSent ? <>Link sent&mdash;check your email</> : <>Send link</>}
           </Button>
         </Form>
       )}

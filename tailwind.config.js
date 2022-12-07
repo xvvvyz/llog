@@ -1,3 +1,5 @@
+// reference: https://github.com/tailwindlabs/tailwindcss/blob/master/stubs/defaultConfig.stub.js
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./app/**/*.tsx', './components/**/*.tsx'],
@@ -10,7 +12,6 @@ module.exports = {
     colors: {
       'accent-1': 'var(--color-accent-1)',
       'accent-2': 'var(--color-accent-2)',
-      'accent-fg-1': 'var(--color-accent-fg-1)',
       'alpha-1': 'var(--color-alpha-1)',
       'alpha-2': 'var(--color-alpha-2)',
       'alpha-3': 'var(--color-alpha-3)',
@@ -20,7 +21,6 @@ module.exports = {
       'fg-1': 'var(--color-fg-1)',
       'fg-2': 'var(--color-fg-2)',
       'fg-3': 'var(--color-fg-3)',
-      ring: 'var(--color-ring)',
       transparent: 'transparent',
     },
     screens: {

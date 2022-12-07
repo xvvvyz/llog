@@ -6,7 +6,7 @@ const ForgotPasswordPage = () => (
   <>
     <Card>
       <h1 className="text-2xl">Reset your password</h1>
-      <p className="mt-3 pr-6 text-fg-2">
+      <p className="mt-3 pr-4 text-fg-2">
         Enter the email address associated with your account and we will send you a link to
         reset&nbsp;your&nbsp;password.
       </p>

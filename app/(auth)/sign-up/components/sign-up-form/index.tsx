@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { Form, Formik } from 'formik';
 import { useRouter } from 'next/navigation';
 import Button from '/components/button';
@@ -52,7 +51,6 @@ const SignUpForm = () => {
           </Label>
           <Button className="mt-12" loading={isSubmitting} loadingText="Creating account…" type="submit">
             Create account
-            <ArrowRightIcon className="w-5" />
           </Button>
         </Form>
       )}

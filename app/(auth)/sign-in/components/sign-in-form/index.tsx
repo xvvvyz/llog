@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -46,7 +45,6 @@ const SignInForm = () => {
           </Label>
           <Button className="mt-12" loading={isSubmitting} loadingText="Signing in…" type="submit">
             Sign in
-            <ArrowRightIcon className="w-5" />
           </Button>
         </Form>
       )}
