@@ -20,7 +20,7 @@ const SignInForm = () => {
       onSubmit={async ({ email, password }) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) alert(error.message);
-        else await router.push(decodeURI(searchParams.get('redirect') ?? '') ?? '/subjects');
+        else await router.push(decodeURI(searchParams.get('redirect') ?? '/subjects'));
       }}
     >
       {({ isSubmitting, values }) => (
