@@ -11,7 +11,7 @@ const AuthListener = ({ accessToken }: { accessToken?: string }) => {
     supabase.auth.onAuthStateChange((event, session) => {
       if (session?.access_token !== accessToken) router.refresh();
     });
-  }, [accessToken]);
+  }, [accessToken, router]);
 
   return null;
 };
