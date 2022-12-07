@@ -31,7 +31,7 @@ const ResetPasswordForm = () => {
             New password
             <Input name="password" type="password" />
           </Label>
-          <Button className="mt-12" loading={isSubmitting} loadingText="Sending link…" type="submit">
+          <Button className="mt-12" loading={isSubmitting} loadingText="Updating password…" type="submit">
             Update password
           </Button>
         </Form>
