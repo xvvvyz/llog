@@ -1,6 +1,5 @@
 .env
 .next/
-.vscode/
 next-env.d.ts
 node_modules/
 supabase/.branches/
