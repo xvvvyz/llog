@@ -7,6 +7,7 @@ import Button from '/components/button';
 import Input from '/components/input';
 import Label from '/components/label';
 import supabase from '/utilities/browser-supabase-client';
+import sleep from '/utilities/sleep';
 
 const SignUpForm = () => {
   const router = useRouter();
@@ -21,8 +22,12 @@ const SignUpForm = () => {
           password,
         });
 
-        if (error) alert(error.message);
-        else await router.push('/subjects');
+        if (error) {
+          alert(error.message);
+        } else {
+          await router.push('/subjects');
+          await sleep();
+        }
       }}
     >
       {({ isSubmitting }) => (

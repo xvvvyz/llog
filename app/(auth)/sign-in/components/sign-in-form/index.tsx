@@ -9,6 +9,7 @@ import Input from '/components/input';
 import Label from '/components/label';
 import supabase from '/utilities/browser-supabase-client';
 import globalStringCache from '/utilities/global-string-cache';
+import sleep from '/utilities/sleep';
 
 const SignInForm = () => {
   const searchParams = useSearchParams();
@@ -19,8 +20,13 @@ const SignInForm = () => {
       initialValues={{ email: globalStringCache.get('email'), password: '' }}
       onSubmit={async ({ email, password }) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else await router.push(decodeURI(searchParams.get('redirect') ?? '/subjects'));
+
+        if (error) {
+          alert(error.message);
+        } else {
+          await router.push(decodeURI(searchParams.get('redirect') ?? '/subjects'));
+          await sleep();
+        }
       }}
     >
       {({ isSubmitting, values }) => (

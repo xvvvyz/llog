@@ -24,7 +24,7 @@ const Button = ({
       <>
         <div
           aria-label="loading"
-          className="border-l-transparent h-4 w-4 animate-spin rounded-full border-2 border-accent-fg-1"
+          className="h-4 w-4 animate-spin rounded-full border-2 border-accent-fg-1 border-l-transparent"
           role="status"
         />
         {loadingText}
