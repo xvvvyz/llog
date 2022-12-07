@@ -8,7 +8,7 @@ import Label from '/components/label';
 import supabase from '/utilities/browser-supabase-client';
 import sleep from '/utilities/sleep';
 
-const ResetPasswordForm = () => {
+const ChangePasswordForm = () => {
   const router = useRouter();
 
   return (
@@ -31,8 +31,8 @@ const ResetPasswordForm = () => {
             New password
             <Input name="password" type="password" />
           </Label>
-          <Button className="mt-12" loading={isSubmitting} loadingText="Updating password…" type="submit">
-            Update password
+          <Button className="mt-12" loading={isSubmitting} loadingText="Changing password…" type="submit">
+            Change password
           </Button>
         </Form>
       )}
@@ -40,4 +40,4 @@ const ResetPasswordForm = () => {
   );
 };
 
-export default ResetPasswordForm;
+export default ChangePasswordForm;
