@@ -17,18 +17,10 @@ const SignInForm = () => {
   return (
     <Formik
       initialValues={{ email: globalStringCache.get('email'), password: '' }}
-      onSubmit={async ({ email, password }, { setSubmitting }) => {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          alert(error.message);
-          setSubmitting(false);
-        } else {
-          await router.push(decodeURI(searchParams.get('redirect') ?? '') ?? '/subjects');
-        }
+      onSubmit={async ({ email, password }) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else await router.push(decodeURI(searchParams.get('redirect') ?? '') ?? '/subjects');
       }}
     >
       {({ isSubmitting, values }) => (

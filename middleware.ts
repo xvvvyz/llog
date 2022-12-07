@@ -9,14 +9,11 @@ export const middleware = async (req: NextRequest) => {
   const res = NextResponse.next();
   const session = await createMiddlewareSupabaseClient({ req, res }).auth.getSession();
 
-  if (
-    ['/', '/forgot-password', '/forgot-password/reset', '/sign-in', '/sign-up'].includes(req.nextUrl.pathname) &&
-    session.data.session
-  ) {
+  if (['/', '/forgot-password', '/sign-in', '/sign-up'].includes(req.nextUrl.pathname) && session.data.session) {
     return NextResponse.redirect(new URL('/subjects', req.url));
   }
 
-  if (['/subjects'].includes(req.nextUrl.pathname) && !session.data.session) {
+  if (['/forgot-password/reset', '/subjects'].includes(req.nextUrl.pathname) && !session.data.session) {
     return NextResponse.redirect(new URL(`/sign-in?redirect=${encodeURI(req.nextUrl.pathname)}`, req.url));
   }
 

@@ -14,20 +14,15 @@ const ResetPasswordForm = () => {
   return (
     <Formik
       initialValues={{ password: '' }}
-      onSubmit={async ({ password }, { setSubmitting }) => {
+      onSubmit={async ({ password }) => {
         const { error } = await supabase.auth.updateUser({ password });
-
-        if (error) {
-          alert(error.message);
-          setSubmitting(false);
-        } else {
-          await router.push('/subjects');
-        }
+        if (error) alert(error.message);
+        else await router.push('/subjects');
       }}
     >
       {({ isSubmitting }) => (
         <Form>
-          <Label className="mt-6">
+          <Label className="mt-9">
             New password
             <Input name="password" type="password" />
           </Label>

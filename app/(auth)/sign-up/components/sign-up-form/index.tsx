@@ -14,19 +14,15 @@ const SignUpForm = () => {
   return (
     <Formik
       initialValues={{ email: '', firstName: '', lastName: '', password: '' }}
-      onSubmit={async ({ email, firstName, lastName, password }, { setSubmitting }) => {
+      onSubmit={async ({ email, firstName, lastName, password }) => {
         const { error } = await supabase.auth.signUp({
           email,
           options: { data: { first_name: firstName, last_name: lastName } },
           password,
         });
 
-        if (error) {
-          alert(error.message);
-          setSubmitting(false);
-        } else {
-          await router.push('/subjects');
-        }
+        if (error) alert(error.message);
+        else await router.push('/subjects');
       }}
     >
       {({ isSubmitting }) => (

@@ -15,14 +15,11 @@ const SendResetPasswordLinkForm = () => {
   return (
     <Formik
       initialValues={{ email: globalStringCache.get('email') }}
-      onSubmit={async ({ email }, { setSubmitting }) => {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${location.origin}/forgot-password/reset`,
-        });
-
+      onSubmit={async ({ email }) => {
+        const redirectTo = `${location.origin}/forgot-password/reset`;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) alert(error.message);
         else setLinkSent(true);
-        setSubmitting(false);
       }}
     >
       {({ isSubmitting }) => (
