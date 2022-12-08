@@ -21,7 +21,7 @@ const Page = async ({ params: { id } }: PageProps) => {
 
   return (
     <>
-      <Card as="main">
+      <Card as="main" breakpoint="xs">
         <SubjectForm {...data} />
       </Card>
       <div className="text-center">
