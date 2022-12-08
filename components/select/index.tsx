@@ -1,26 +1,38 @@
 import { Listbox, Transition } from '@headlessui/react';
 import { ChevronUpDownIcon } from '@heroicons/react/24/solid';
-import clsx from 'clsx';
 import { Fragment, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-type Option = { label: string; [key: string]: unknown };
+interface Option {
+  label: string;
+  [key: string]: unknown;
+}
+
+interface SelectProps {
+  className?: string;
+  defaultOption?: Option | null;
+  options: Option[];
+  placeholder?: string;
+}
 
 const Select = ({
   className,
   defaultOption = null,
   options,
   placeholder = 'Select an option',
-}: {
-  className?: string;
-  defaultOption?: Option | null;
-  options: Option[];
-  placeholder?: string;
-}) => {
+}: SelectProps) => {
   const [selectedOption, setSelectedOption] = useState(defaultOption);
 
   return (
-    <Listbox as="div" className="relative w-full" onChange={setSelectedOption} value={selectedOption}>
-      <Listbox.Button className={clsx('input button', !selectedOption && 'text-fg-3', className)}>
+    <Listbox
+      as="div"
+      className="relative w-full"
+      onChange={setSelectedOption}
+      value={selectedOption}
+    >
+      <Listbox.Button
+        className={twMerge(!selectedOption && 'text-fg-3', className)}
+      >
         {selectedOption?.label ?? placeholder}
         <ChevronUpDownIcon aria-hidden="true" className="w-5 fill-fg-2" />
       </Listbox.Button>

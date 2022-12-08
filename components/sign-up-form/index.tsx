@@ -49,7 +49,12 @@ const SignUpForm = () => {
             Password
             <Input name="password" type="password" />
           </Label>
-          <Button className="mt-12" loading={isSubmitting} loadingText="Creating account…" type="submit">
+          <Button
+            className="mt-12 w-full"
+            loading={isSubmitting}
+            loadingText="Creating account…"
+            type="submit"
+          >
             Create account
           </Button>
         </Form>

@@ -18,12 +18,18 @@ const SignInForm = () => {
     <Formik
       initialValues={{ email: globalStringCache.get('email'), password: '' }}
       onSubmit={async ({ email, password }) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
         if (error) {
           alert(error.message);
         } else {
-          await router.push(decodeURI(searchParams.get('redirect') ?? '/subjects'));
+          const redirect = decodeURI(
+            searchParams.get('redirect') ?? '/subjects'
+          );
+          await router.push(redirect);
           await sleep();
         }
       }}
@@ -36,14 +42,23 @@ const SignInForm = () => {
           </Label>
           <Label className="mt-6">
             <div className="flex justify-between">
-              <span>Password</span>
-              <Link href="/forgot-password" onClick={() => globalStringCache.set('email', values.email)}>
+              Password
+              <Link
+                className="text-fg-1"
+                href="/forgot-password"
+                onClick={() => globalStringCache.set('email', values.email)}
+              >
                 Forgot your password?
               </Link>
             </div>
             <Input name="password" type="password" />
           </Label>
-          <Button className="mt-12" loading={isSubmitting} loadingText="Signing in…" type="submit">
+          <Button
+            className="mt-12 w-full"
+            loading={isSubmitting}
+            loadingText="Signing in…"
+            type="submit"
+          >
             Sign in
           </Button>
         </Form>

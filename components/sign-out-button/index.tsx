@@ -2,23 +2,27 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Button, { ButtonProps } from '/components/button';
 import supabase from '/utilities/browser-supabase-client';
 
-const SignOutButton = () => {
+const SignOutButton = (props: ButtonProps) => {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   return (
-    <button
-      disabled={isSigningOut}
+    <Button
+      loading={isSigningOut}
+      loadingText="Signing out…"
       onClick={async () => {
         setIsSigningOut(true);
         await supabase.auth.signOut();
         await router.refresh();
       }}
+      variant="unstyled"
+      {...props}
     >
-      {isSigningOut ? <>Signing out&hellip;</> : <>Sign out</>}
-    </button>
+      Sign out
+    </Button>
   );
 };
 

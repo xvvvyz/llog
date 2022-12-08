@@ -1,17 +1,18 @@
 import Link from 'next/link';
-import SignInForm from './components/sign-in-form';
+import SignInForm from '../../../components/sign-in-form';
 import Card from '/components/card';
 
-const SignInPage = () => (
+const Page = () => (
   <>
-    <Card>
-      <h1 className="text-2xl">Sign in to your account</h1>
+    <Card breakpoint="xs">
+      <h1>Welcome back</h1>
       <SignInForm />
     </Card>
-    <p className="text-fg-2">
-      Don&rsquo;t have an account? <Link href="/sign-up">Sign up</Link>
+    <p>
+      <span className="text-fg-2">Don&rsquo;t have an account?</span>{' '}
+      <Link href="/sign-up">Sign up</Link>
     </p>
   </>
 );
 
-export default SignInPage;
+export default Page;

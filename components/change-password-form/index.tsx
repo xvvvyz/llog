@@ -31,7 +31,12 @@ const ChangePasswordForm = () => {
             New password
             <Input name="password" type="password" />
           </Label>
-          <Button className="mt-12" loading={isSubmitting} loadingText="Changing password…" type="submit">
+          <Button
+            className="mt-12 w-full"
+            loading={isSubmitting}
+            loadingText="Changing password…"
+            type="submit"
+          >
             Change password
           </Button>
         </Form>

@@ -8,15 +8,17 @@ import Label from '/components/label';
 import supabase from '/utilities/browser-supabase-client';
 import globalStringCache from '/utilities/global-string-cache';
 
-const SendChangePasswordLinkForm = () => {
+const ForgotPasswordForm = () => {
   const [linkSent, setLinkSent] = useState(false);
 
   return (
     <Formik
       initialValues={{ email: globalStringCache.get('email') }}
       onSubmit={async ({ email }) => {
-        const redirectTo = `${location.origin}/change-password`;
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${location.origin}/change-password`,
+        });
+
         if (error) alert(error.message);
         else setLinkSent(true);
       }}
@@ -25,10 +27,15 @@ const SendChangePasswordLinkForm = () => {
         <Form>
           <Label className="mt-9">
             Email address
-            <Input disabled={linkSent} name="email" placeholder="jane@example.com" type="email" />
+            <Input
+              disabled={linkSent}
+              name="email"
+              placeholder="jane@example.com"
+              type="email"
+            />
           </Label>
           <Button
-            className="mt-12"
+            className="mt-12 w-full"
             disabled={linkSent}
             loading={isSubmitting}
             loadingText="Sending link…"
@@ -42,4 +49,4 @@ const SendChangePasswordLinkForm = () => {
   );
 };
 
-export default SendChangePasswordLinkForm;
+export default ForgotPasswordForm;

@@ -1,11 +1,22 @@
+import Link from 'next/link';
 import { ReactNode } from 'react';
-import SignOutButton from '/app/(account)/components/sign-out-button';
+import SignOutButton from '/components/sign-out-button';
 
-const AccountLayout = ({ children }: { children: ReactNode }) => (
-  <main className="mx-auto flex min-h-full max-w-md flex-col items-center justify-center gap-6 py-12 px-6">
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => (
+  <div className="mx-auto flex max-w-lg flex-col justify-center gap-12 py-12 px-6">
+    <nav className="flex flex-wrap gap-6">
+      <Link href="/subjects">Subjects</Link>
+      {/*<Link href="#">Templates</Link>*/}
+      {/*<Link href="#">Observations</Link>*/}
+      {/*<Link href="#">Inputs</Link>*/}
+      <SignOutButton className="ml-auto" />
+    </nav>
     {children}
-    <SignOutButton />
-  </main>
+  </div>
 );
 
-export default AccountLayout;
+export default Layout;

@@ -21,6 +21,8 @@ module.exports = {
       'fg-1': 'var(--color-fg-1)',
       'fg-2': 'var(--color-fg-2)',
       'fg-3': 'var(--color-fg-3)',
+      'red-1': 'var(--color-red-1)',
+      'red-2': 'var(--color-red-2)',
       transparent: 'transparent',
     },
     screens: {

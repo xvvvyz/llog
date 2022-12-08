@@ -1,6 +1,7 @@
 ## Development Setup
 
-Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git), [Node](https://nodejs.org/en/download) and
+Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git),
+[Node](https://nodejs.org/en/download) and
 [Docker](https://docs.docker.com/engine/install), then:
 
 ```shell

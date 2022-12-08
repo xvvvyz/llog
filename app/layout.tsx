@@ -4,10 +4,14 @@ import '../globals.css';
 
 const figtree = Figtree({ subsets: ['latin'] });
 
-const AppLayout = ({ children }: { children: ReactNode }) => (
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => (
   <html className={figtree.className} lang="en">
     <body>{children}</body>
   </html>
 );
 
-export default AppLayout;
+export default Layout;

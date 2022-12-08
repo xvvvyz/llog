@@ -15,6 +15,8 @@
     --color-fg-1: hsl(0, 0%, 90%);
     --color-fg-2: hsl(0, 0%, 70%);
     --color-fg-3: hsl(0, 0%, 50%);
+    --color-red-1: hsl(0, 80%, 65%);
+    --color-red-2: hsl(0, 75%, 60%);
     --radius-default: 0.5rem;
   }
 }
@@ -34,22 +36,12 @@
     @apply font-bold;
   }
 
-  a {
-    @apply text-fg-2 underline;
+  h1 {
+    @apply text-2xl;
   }
 
   [data-nextjs-scroll-focus-boundary] {
     @apply contents;
-  }
-}
-
-@layer components {
-  .button {
-    @apply focus-ring flex w-full items-center justify-between rounded border border-alpha-2 px-4 py-3 hover:border-alpha-3 disabled:cursor-not-allowed disabled:opacity-60;
-  }
-
-  .input {
-    @apply focus-ring w-full rounded border border-alpha-2 bg-bg-3 px-4 py-3 text-fg-1 placeholder:text-fg-3 hover:border-alpha-3 disabled:cursor-not-allowed disabled:opacity-60;
   }
 }
 

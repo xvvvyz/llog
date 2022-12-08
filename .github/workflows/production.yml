@@ -19,7 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: npm i
-      - run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run:
+          npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - run: npx supabase link --project-ref "$SUPABASE_PROJECT_ID"
       - run: npm run db:start
       - run: npm run db:types
