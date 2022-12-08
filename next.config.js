@@ -1,4 +1,4 @@
 module.exports = {
-  experimental: { appDir: true, runtime: 'experimental-edge' },
+  experimental: { appDir: true },
   reactStrictMode: true,
 };
