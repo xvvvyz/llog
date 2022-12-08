@@ -15,7 +15,7 @@
     "start": "next dev"
   },
   "dependencies": {
-    "@headlessui/react": "^1.7.4",
+    "@headlessui/react": "^1.7.5",
     "@headlessui/tailwindcss": "^0.1.2",
     "@heroicons/react": "^2.0.13",
     "@next/font": "^13.0.6",
@@ -29,11 +29,11 @@
     "eslint-config-next": "^13.0.6",
     "eslint-config-prettier": "^8.5.0",
     "formik": "^2.2.9",
-    "next": "^13.0.6",
+    "next": "^13.0.7-canary.3",
     "postcss": "^8.4.19",
     "prettier": "^2.8.1",
     "prettier-plugin-organize-imports": "^3.2.1",
-    "prettier-plugin-tailwindcss": "^0.2.0",
+    "prettier-plugin-tailwindcss": "^0.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "supabase": "^1.21.0",
