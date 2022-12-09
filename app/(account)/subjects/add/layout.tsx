@@ -4,16 +4,13 @@ import Header from '/components/header';
 
 interface LayoutProps {
   children: ReactNode;
-  params: {
-    id: string;
-  };
 }
 
-const Layout = ({ children, params: { id } }: LayoutProps) => (
+const Layout = ({ children }: LayoutProps) => (
   <>
     <Header>
       <BackButton />
-      <h1 className="text-2xl font-bold">Edit subject</h1>
+      <h1 className="text-2xl font-bold">Add subject</h1>
     </Header>
     {children}
   </>

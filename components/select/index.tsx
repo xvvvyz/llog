@@ -45,7 +45,7 @@ const Select = ({
         leaveFrom="transform opacity-100 translate-y-0"
         leaveTo="transform opacity-0 -translate-y-1"
       >
-        <Listbox.Options className="focus-ring absolute z-10 mt-2 w-full divide-y divide-alpha-1 overflow-hidden rounded border border-alpha-2 bg-bg-3 shadow-lg">
+        <Listbox.Options className="absolute z-10 mt-2 w-full divide-y divide-alpha-1 overflow-hidden rounded border border-alpha-2 bg-bg-3 shadow-lg ring-accent-1 focus:outline-none focus:ring-1">
           <div className="p-1">
             {options.map((option) => (
               <Listbox.Option

@@ -1,20 +1,13 @@
-import Link from 'next/link';
 import { ReactNode } from 'react';
-import SignOutButton from '/components/sign-out-button';
+import Nav from '/components/nav';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => (
-  <div className="mx-auto flex max-w-lg flex-col justify-center gap-12 py-12 px-6">
-    <nav className="flex flex-wrap gap-6">
-      <Link href="/subjects">Subjects</Link>
-      {/*<Link href="#">Templates</Link>*/}
-      {/*<Link href="#">Observations</Link>*/}
-      {/*<Link href="#">Inputs</Link>*/}
-      <SignOutButton className="ml-auto" />
-    </nav>
+  <div className="mx-auto flex max-w-lg flex-col justify-center gap-12 px-6 pb-12 pt-6 xs:pt-12">
+    <Nav />
     {children}
   </div>
 );

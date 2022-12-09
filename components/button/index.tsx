@@ -1,4 +1,7 @@
+'use client';
+
 import Link, { LinkProps } from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ButtonHTMLAttributes } from 'react';
 import { twMerge } from 'tailwind-merge';
 import Spinner from '/components/spinner';
@@ -10,12 +13,13 @@ const sizes = {
 
 const variants = {
   primary:
-    'focus-ring inline-flex items-center justify-center gap-3 rounded border border-alpha-2 bg-accent-1 font-bold text-bg-1 no-underline ring-offset-4 ring-offset-bg-2 transition-colors hover:border-alpha-3 hover:enabled:bg-accent-2',
+    'ring-accent-1 focus:outline-none focus:ring-1 inline-flex items-center justify-center gap-3 rounded border border-alpha-2 bg-accent-1 font-bold text-bg-1 no-underline ring-offset-4 ring-offset-bg-2 transition-colors hover:border-alpha-3 hover:enabled:bg-accent-2/25',
   unstyled: '',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   href?: string;
+  isNavLink?: boolean;
   loading?: boolean;
   loadingText?: string;
   size?: keyof typeof sizes;
@@ -27,16 +31,20 @@ const Button = ({
   className,
   disabled = false,
   href,
+  isNavLink = false,
   loading = false,
   loadingText,
   size = 'md',
   variant = 'primary',
   ...rest
 }: ButtonProps) => {
+  const pathname = usePathname();
+
   const cn = twMerge(
     'disabled:cursor-not-allowed disabled:opacity-60',
     variant !== 'unstyled' && sizes[size],
     variants[variant],
+    href && isNavLink && pathname?.startsWith(href) && 'text-fg-2',
     className
   );
 

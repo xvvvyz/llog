@@ -26,10 +26,8 @@ const SignInForm = () => {
         if (error) {
           alert(error.message);
         } else {
-          const redirect = decodeURI(
-            searchParams.get('redirect') ?? '/subjects'
-          );
-          await router.push(redirect);
+          const redirect = searchParams.get('redirect') ?? '/subjects';
+          await router.push(decodeURI(redirect));
           await sleep();
         }
       }}

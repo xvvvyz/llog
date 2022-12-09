@@ -30,7 +30,7 @@ const DeleteSubjectButton = ({ id }: DeleteSubjectButtonProps) => {
 
   return (
     <span className="inline-flex gap-3">
-      <span className="text-fg-2">Are you sure?</span>
+      Are you sure?
       <Button
         className="text-red-1 hover:text-red-2"
         onClick={async () => {
@@ -43,7 +43,7 @@ const DeleteSubjectButton = ({ id }: DeleteSubjectButtonProps) => {
       >
         Yes
       </Button>
-      <span className="text-fg-2">/</span>
+      /
       <Button onClick={() => setIsConfirming(false)} variant="unstyled">
         No
       </Button>

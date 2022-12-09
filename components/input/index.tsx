@@ -12,7 +12,7 @@ const Input = ({
   return (
     <input
       className={twMerge(
-        'focus-ring w-full rounded border border-alpha-2 bg-bg-3 px-4 py-3 text-fg-1 placeholder:text-fg-3 hover:border-alpha-3 disabled:cursor-not-allowed disabled:opacity-60',
+        'w-full rounded border border-alpha-2 bg-bg-3 px-4 py-3 text-fg-1 ring-accent-1 placeholder:text-fg-3 hover:border-alpha-3 focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60',
         className
       )}
       {...field}

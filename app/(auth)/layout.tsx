@@ -5,7 +5,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => (
-  <main className="mx-auto flex min-h-full max-w-lg flex-col items-center justify-center gap-9 py-12 px-9">
+  <main className="mx-auto flex min-h-full max-w-lg flex-col items-center justify-center gap-12 py-12 px-6">
     {children}
   </main>
 );

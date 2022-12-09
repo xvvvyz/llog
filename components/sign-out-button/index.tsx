@@ -12,7 +12,7 @@ const SignOutButton = (props: ButtonProps) => {
   return (
     <Button
       loading={isSigningOut}
-      loadingText="Signing out…"
+      loadingText="Byeee…"
       onClick={async () => {
         setIsSigningOut(true);
         await supabase.auth.signOut();

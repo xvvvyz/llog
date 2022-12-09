@@ -10,7 +10,7 @@ interface PageProps {
 const Page = async ({ params: { id } }: PageProps) => {
   const { data } = await createServerSupabaseClient()
     .from('subjects')
-    .select('*')
+    .select('id, name')
     .eq('id', id)
     .single();
 
@@ -18,7 +18,7 @@ const Page = async ({ params: { id } }: PageProps) => {
 
   return (
     <main>
-      <h1>{data.name}</h1>
+      <h1 className="text-2xl font-bold">{data.name}</h1>
     </main>
   );
 };
