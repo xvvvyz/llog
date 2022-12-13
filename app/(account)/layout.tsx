@@ -6,7 +6,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => (
-  <div className="mx-auto flex max-w-lg flex-col justify-center gap-12 px-6 pb-12 pt-6 xs:pt-12">
+  <div className="mx-auto max-w-lg px-6 pb-12 pt-6 sm:pt-12">
     <Nav />
     {children}
   </div>

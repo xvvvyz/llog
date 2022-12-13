@@ -1,8 +1,7 @@
 'use client';
 
-import { Form, Formik } from 'formik';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import Button from '/components/button';
 import Input from '/components/input';
 import Label from '/components/label';
@@ -14,10 +13,13 @@ const SignInForm = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const form = useForm({
+    defaultValues: { email: globalStringCache.get('email'), password: '' },
+  });
+
   return (
-    <Formik
-      initialValues={{ email: globalStringCache.get('email'), password: '' }}
-      onSubmit={async ({ email, password }) => {
+    <form
+      onSubmit={form.handleSubmit(async ({ email, password }) => {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -30,38 +32,37 @@ const SignInForm = () => {
           await router.push(decodeURI(redirect));
           await sleep();
         }
-      }}
+      })}
     >
-      {({ isSubmitting, values }) => (
-        <Form>
-          <Label className="mt-9">
-            Email address
-            <Input name="email" placeholder="jane@example.com" type="email" />
-          </Label>
-          <Label className="mt-6">
-            <div className="flex justify-between">
-              Password
-              <Link
-                className="text-fg-1"
-                href="/forgot-password"
-                onClick={() => globalStringCache.set('email', values.email)}
-              >
-                Forgot your password?
-              </Link>
-            </div>
-            <Input name="password" type="password" />
-          </Label>
+      <Label className="mt-9">
+        Email address
+        <Input type="email" {...form.register('email')} />
+      </Label>
+      <Label className="mt-6">
+        <div className="flex justify-between">
+          Password
           <Button
-            className="mt-12 w-full"
-            loading={isSubmitting}
-            loadingText="Signing in…"
-            type="submit"
+            className="text-fg-1"
+            href="/forgot-password"
+            onClick={() =>
+              globalStringCache.set('email', form.getValues('email'))
+            }
+            variant="unstyled"
           >
-            Sign in
+            Forgot your password?
           </Button>
-        </Form>
-      )}
-    </Formik>
+        </div>
+        <Input type="password" {...form.register('password')} />
+      </Label>
+      <Button
+        className="mt-12 w-full"
+        loading={form.formState.isSubmitting}
+        loadingText="Signing in…"
+        type="submit"
+      >
+        Sign in
+      </Button>
+    </form>
   );
 };
 

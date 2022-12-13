@@ -2,24 +2,28 @@ import Button from '/components/button';
 import SignOutButton from '/components/sign-out-button';
 
 const Nav = () => (
-  <nav className="flex items-start justify-between gap-6 leading-none">
+  <nav className="flex items-start justify-between gap-3 leading-none">
     <div className="flex flex-wrap gap-6">
-      <Button href="/subjects" isNavLink variant="unstyled">
+      <Button activeClassName="text-fg-2" href="/subjects" variant="unstyled">
         Subjects
       </Button>
-      <Button href="/templates" isNavLink variant="unstyled">
+      <Button activeClassName="text-fg-2" href="/templates" variant="unstyled">
         Templates
       </Button>
       <div className="flex gap-6">
-        <Button href="/observations" isNavLink variant="unstyled">
+        <Button
+          activeClassName="text-fg-2"
+          href="/observations"
+          variant="unstyled"
+        >
           Observations
         </Button>
-        <Button href="/inputs" isNavLink variant="unstyled">
+        <Button activeClassName="text-fg-2" href="/inputs" variant="unstyled">
           Inputs
         </Button>
       </div>
     </div>
-    <SignOutButton className="shrink-0" />
+    <SignOutButton />
   </nav>
 );
 

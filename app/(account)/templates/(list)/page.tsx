@@ -1,5 +1,3 @@
-import Empty from '/components/empty';
-
-const Page = () => <Empty>Templates are coming soon!</Empty>;
+const Page = () => null;
 
 export default Page;

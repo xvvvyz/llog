@@ -10,7 +10,7 @@ interface PageProps {
 const Page = async ({ params: { id } }: PageProps) => {
   const { data } = await createServerSupabaseClient()
     .from('subjects')
-    .select('id, name')
+    .select('id, image_uri, name')
     .eq('id', id)
     .single();
 

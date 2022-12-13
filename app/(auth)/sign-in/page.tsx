@@ -1,16 +1,18 @@
-import Link from 'next/link';
 import SignInForm from '../../../components/sign-in-form';
+import Button from '/components/button';
 import Card from '/components/card';
 
 const Page = () => (
   <>
-    <Card breakpoint="xs">
+    <Card breakpoint="sm">
       <h1 className="text-2xl font-bold">Welcome back</h1>
       <SignInForm />
     </Card>
-    <p>
-      <span className="text-fg-2">Don&rsquo;t have an account?</span>{' '}
-      <Link href="/sign-up">Sign up</Link>
+    <p className="flex gap-6">
+      <span className="text-fg-2">Don&rsquo;t have an account?</span>
+      <Button href="/sign-up" variant="unstyled">
+        Sign up
+      </Button>
     </p>
   </>
 );

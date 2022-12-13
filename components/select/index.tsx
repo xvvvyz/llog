@@ -1,7 +1,6 @@
 import { Listbox, Transition } from '@headlessui/react';
 import { ChevronUpDownIcon } from '@heroicons/react/24/solid';
 import { Fragment, useState } from 'react';
-import { twMerge } from 'tailwind-merge';
 
 interface Option {
   label: string;
@@ -30,9 +29,7 @@ const Select = ({
       onChange={setSelectedOption}
       value={selectedOption}
     >
-      <Listbox.Button
-        className={twMerge(!selectedOption && 'text-fg-3', className)}
-      >
+      <Listbox.Button className={className}>
         {selectedOption?.label ?? placeholder}
         <ChevronUpDownIcon aria-hidden="true" className="w-5 fill-fg-2" />
       </Listbox.Button>

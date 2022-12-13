@@ -1,7 +1,7 @@
 'use client';
 
-import { Form, Formik } from 'formik';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import Button from '/components/button';
 import Input from '/components/input';
 import Label from '/components/label';
@@ -10,11 +10,11 @@ import sleep from '/utilities/sleep';
 
 const ChangePasswordForm = () => {
   const router = useRouter();
+  const form = useForm({ defaultValues: { password: '' } });
 
   return (
-    <Formik
-      initialValues={{ password: '' }}
-      onSubmit={async ({ password }) => {
+    <form
+      onSubmit={form.handleSubmit(async ({ password }) => {
         const { error } = await supabase.auth.updateUser({ password });
 
         if (error) {
@@ -23,25 +23,21 @@ const ChangePasswordForm = () => {
           await router.push('/subjects');
           await sleep();
         }
-      }}
+      })}
     >
-      {({ isSubmitting }) => (
-        <Form>
-          <Label className="mt-9">
-            New password
-            <Input name="password" type="password" />
-          </Label>
-          <Button
-            className="mt-12 w-full"
-            loading={isSubmitting}
-            loadingText="Changing password…"
-            type="submit"
-          >
-            Change password
-          </Button>
-        </Form>
-      )}
-    </Formik>
+      <Label className="mt-9">
+        New password
+        <Input type="password" {...form.register('password')} />
+      </Label>
+      <Button
+        className="mt-12 w-full"
+        loading={form.formState.isSubmitting}
+        loadingText="Changing password…"
+        type="submit"
+      >
+        Change password
+      </Button>
+    </form>
   );
 };
 

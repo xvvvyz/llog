@@ -1,9 +1,13 @@
-import Link from 'next/link';
+import Button from '/components/button';
 
 const Page = () => (
   <main className="mx-auto flex min-h-full max-w-sm items-center justify-center gap-6 py-12 px-6">
-    <Link href="/sign-in">Sign in</Link>
-    <Link href="/sign-up">Sign up</Link>
+    <Button href="/sign-in" variant="unstyled">
+      Sign in
+    </Button>
+    <Button href="/sign-up" variant="unstyled">
+      Sign up
+    </Button>
   </main>
 );
 

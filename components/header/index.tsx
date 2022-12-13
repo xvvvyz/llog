@@ -5,7 +5,9 @@ interface HeaderProps {
 }
 
 const Header = ({ children }: HeaderProps) => (
-  <header className="flex h-9 items-center justify-between">{children}</header>
+  <header className="mt-12 mb-9 flex h-9 items-center justify-between">
+    {children}
+  </header>
 );
 
 export default Header;

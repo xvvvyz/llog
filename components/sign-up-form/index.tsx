@@ -1,7 +1,7 @@
 'use client';
 
-import { Form, Formik } from 'formik';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import Button from '/components/button';
 import Input from '/components/input';
 import Label from '/components/label';
@@ -11,55 +11,56 @@ import sleep from '/utilities/sleep';
 const SignUpForm = () => {
   const router = useRouter();
 
-  return (
-    <Formik
-      initialValues={{ email: '', firstName: '', lastName: '', password: '' }}
-      onSubmit={async ({ email, firstName, lastName, password }) => {
-        const { error } = await supabase.auth.signUp({
-          email,
-          options: { data: { first_name: firstName, last_name: lastName } },
-          password,
-        });
+  const form = useForm({
+    defaultValues: { email: '', firstName: '', lastName: '', password: '' },
+  });
 
-        if (error) {
-          alert(error.message);
-        } else {
-          await router.push('/subjects');
-          await sleep();
+  return (
+    <form
+      onSubmit={form.handleSubmit(
+        async ({ email, firstName, lastName, password }) => {
+          const { error } = await supabase.auth.signUp({
+            email,
+            options: { data: { first_name: firstName, last_name: lastName } },
+            password,
+          });
+
+          if (error) {
+            alert(error.message);
+          } else {
+            await router.push('/subjects');
+            await sleep();
+          }
         }
-      }}
-    >
-      {({ isSubmitting }) => (
-        <Form>
-          <div className="mt-9 flex gap-6">
-            <Label>
-              First name
-              <Input name="firstName" placeholder="Jane" />
-            </Label>
-            <Label>
-              Last name
-              <Input name="lastName" placeholder="Doe" />
-            </Label>
-          </div>
-          <Label className="mt-6">
-            Email address
-            <Input name="email" placeholder="jane@example.com" type="email" />
-          </Label>
-          <Label className="mt-6">
-            Password
-            <Input name="password" type="password" />
-          </Label>
-          <Button
-            className="mt-12 w-full"
-            loading={isSubmitting}
-            loadingText="Creating account…"
-            type="submit"
-          >
-            Create account
-          </Button>
-        </Form>
       )}
-    </Formik>
+    >
+      <div className="mt-9 flex gap-6">
+        <Label>
+          First name
+          <Input {...form.register('firstName')} />
+        </Label>
+        <Label>
+          Last name
+          <Input {...form.register('lastName')} />
+        </Label>
+      </div>
+      <Label className="mt-6">
+        Email address
+        <Input type="email" {...form.register('email')} />
+      </Label>
+      <Label className="mt-6">
+        Password
+        <Input type="password" {...form.register('password')} />
+      </Label>
+      <Button
+        className="mt-12 w-full"
+        loading={form.formState.isSubmitting}
+        loadingText="Creating account…"
+        type="submit"
+      >
+        Create account
+      </Button>
+    </form>
   );
 };
 

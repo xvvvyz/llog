@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import SubjectForm from '../../../../../components/subject-form';
 import Card from '/components/card';
-import DeleteSubjectButton from '/components/delete-subject-button';
 import createServerSupabaseClient from '/utilities/create-server-supabase-client';
 
 interface PageProps {
@@ -13,21 +12,16 @@ interface PageProps {
 const Page = async ({ params: { id } }: PageProps) => {
   const { data } = await createServerSupabaseClient()
     .from('subjects')
-    .select('id, name')
+    .select('id, image_uri, name')
     .eq('id', id)
     .single();
 
   if (!data) return notFound();
 
   return (
-    <>
-      <Card as="main" breakpoint="xs">
-        <SubjectForm {...data} />
-      </Card>
-      <div className="text-center">
-        <DeleteSubjectButton id={id} />
-      </div>
-    </>
+    <Card as="main" breakpoint="sm">
+      <SubjectForm {...data} />
+    </Card>
   );
 };
 

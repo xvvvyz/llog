@@ -13,13 +13,13 @@ const sizes = {
 
 const variants = {
   primary:
-    'ring-accent-1 focus:outline-none focus:ring-1 inline-flex items-center justify-center gap-3 rounded border border-alpha-2 bg-accent-1 font-bold text-bg-1 no-underline ring-offset-4 ring-offset-bg-2 transition-colors hover:border-alpha-3 hover:enabled:bg-accent-2/25',
-  unstyled: '',
+    'ring-accent-1 focus:outline-none focus:ring-1 inline-flex items-center justify-center gap-6 rounded border border-alpha-2 bg-accent-1 font-bold text-bg-1 no-underline ring-offset-4 ring-offset-bg-2 transition-colors hover:border-alpha-3 hover:enabled:bg-accent-2/25',
+  unstyled: 'p-3 -m-3 inline-block',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  activeClassName?: string;
   href?: string;
-  isNavLink?: boolean;
   loading?: boolean;
   loadingText?: string;
   size?: keyof typeof sizes;
@@ -27,11 +27,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const Button = ({
+  activeClassName,
   children,
   className,
   disabled = false,
   href,
-  isNavLink = false,
   loading = false,
   loadingText,
   size = 'md',
@@ -44,7 +44,7 @@ const Button = ({
     'disabled:cursor-not-allowed disabled:opacity-60',
     variant !== 'unstyled' && sizes[size],
     variants[variant],
-    href && isNavLink && pathname?.startsWith(href) && 'text-fg-2',
+    href && pathname?.startsWith(href) && activeClassName,
     className
   );
 
