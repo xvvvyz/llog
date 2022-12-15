@@ -6,19 +6,26 @@ import { ButtonHTMLAttributes } from 'react';
 import { twMerge } from 'tailwind-merge';
 import Spinner from '/components/spinner';
 
+const colorSchemes = {
+  accent:
+    'ring-accent-2 focus:ring-1 bg-accent-1 text-bg-1 hover:bg-accent-2 ring-offset-bg-2 ring-offset-4',
+  alpha: 'bg-alpha-fg-1 text-fg-1 hover:bg-alpha-fg-2',
+};
+
 const sizes = {
   md: 'px-4 py-3 ',
-  sm: 'px-2 py-1',
+  sm: 'px-4 py-1',
 };
 
 const variants = {
   primary:
-    'ring-accent-1 focus:outline-none focus:ring-1 inline-flex items-center justify-center gap-6 rounded border border-alpha-2 bg-accent-1 font-bold text-bg-1 no-underline ring-offset-4 ring-offset-bg-2 transition-colors hover:border-alpha-3 hover:enabled:bg-accent-2/25',
+    'inline-flex items-center justify-center gap-6 rounded border border-alpha-fg-2 font-bold no-underline transition-colors hover:border-alpha-fg-3',
   unstyled: 'p-3 -m-3 inline-block',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   activeClassName?: string;
+  colorScheme?: keyof typeof colorSchemes;
   href?: string;
   loading?: boolean;
   loadingText?: string;
@@ -30,6 +37,7 @@ const Button = ({
   activeClassName,
   children,
   className,
+  colorScheme = 'accent',
   disabled = false,
   href,
   loading = false,
@@ -41,8 +49,9 @@ const Button = ({
   const pathname = usePathname();
 
   const cn = twMerge(
-    'disabled:cursor-not-allowed disabled:opacity-60',
+    'focus:outline-none disabled:cursor-not-allowed rounded disabled:opacity-60',
     variant !== 'unstyled' && sizes[size],
+    variant !== 'unstyled' && colorSchemes[colorScheme],
     variants[variant],
     href && pathname?.startsWith(href) && activeClassName,
     className

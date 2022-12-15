@@ -9,8 +9,8 @@ const sizes = {
 };
 
 const variants = {
-  'base:default': 'border border-alpha-1 bg-bg-2',
-  'sm:default': 'sm:border sm:border-alpha-1 sm:bg-bg-2',
+  'base:default': 'border border-alpha-fg-1 bg-bg-2',
+  'sm:default': 'sm:border sm:border-alpha-fg-1 sm:bg-bg-2',
 };
 
 interface CardProps extends BoxProps {

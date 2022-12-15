@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { twMerge } from 'tailwind-merge';
 
 interface AvatarProps {
   name: string;
@@ -6,13 +7,18 @@ interface AvatarProps {
 }
 
 const Avatar = ({ name, src }: AvatarProps) => (
-  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-alpha-1 uppercase text-alpha-3">
+  <div
+    className={twMerge(
+      'relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-alpha-fg-1 text-lg uppercase text-alpha-fg-3',
+      !src && 'border border-alpha-fg-2'
+    )}
+  >
     {src ? (
       <Image
         alt={`${name} avatar`}
         className="object-cover object-center"
         fill
-        sizes="33.75px"
+        sizes="72px"
         src={src}
       />
     ) : (

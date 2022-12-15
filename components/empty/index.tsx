@@ -6,7 +6,7 @@ interface EmptyProps {
 }
 
 const Empty = ({ children }: EmptyProps) => (
-  <Box as="p" className="mt-12 text-center text-fg-2">
+  <Box as="p" className="mt-16 text-center text-fg-2">
     {children}
   </Box>
 );

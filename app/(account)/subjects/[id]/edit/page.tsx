@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import SubjectForm from '../../../../../components/subject-form';
+import BackButton from '/components/back-button';
 import Card from '/components/card';
+import Header from '/components/header';
 import createServerSupabaseClient from '/utilities/create-server-supabase-client';
 
 interface PageProps {
@@ -19,9 +21,15 @@ const Page = async ({ params: { id } }: PageProps) => {
   if (!data) return notFound();
 
   return (
-    <Card as="main" breakpoint="sm">
-      <SubjectForm {...data} />
-    </Card>
+    <>
+      <Header>
+        <BackButton />
+        <h1 className="text-2xl font-bold">Edit subject</h1>
+      </Header>
+      <Card as="main" breakpoint="sm">
+        <SubjectForm {...data} />
+      </Card>
+    </>
   );
 };
 

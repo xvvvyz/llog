@@ -32,6 +32,8 @@ const SubjectForm = (
     noClick: true,
   });
 
+  const coverImage = dropzone.acceptedFiles[0] ?? subject.image_uri;
+
   return (
     <form
       onSubmit={form.handleSubmit(async ({ name }) => {
@@ -74,15 +76,10 @@ const SubjectForm = (
       <Label className="mt-6">
         Profile image
         <div
-          className="flex cursor-pointer flex-row items-center justify-center gap-6 rounded border-2 border-dashed border-alpha-3 px-4 py-6 ring-accent-1 ring-offset-4 ring-offset-bg-2 focus:outline-none focus:ring-1"
+          className="flex cursor-pointer flex-row items-center justify-center gap-6 rounded border-2 border-dashed border-alpha-fg-3 px-4 py-9 ring-accent-2 ring-offset-4 ring-offset-bg-2 focus:outline-none focus:ring-1"
           {...dropzone.getRootProps()}
         >
-          <Avatar
-            name={form.watch('name')}
-            src={formatObjectURL(
-              dropzone.acceptedFiles[0] ?? subject.image_uri
-            )}
-          />
+          <Avatar name={form.watch('name')} src={formatObjectURL(coverImage)} />
           <p>
             Drag image here or <span className="text-fg-1">browse</span>
           </p>

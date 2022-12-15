@@ -18,14 +18,14 @@ const Page = async () => {
 
   return (
     <main>
-      <ul className="divide-y divide-alpha-1 border-y border-alpha-1">
+      <ul className="divide-y divide-alpha-fg-1 border-y border-alpha-fg-1">
         {data?.map((subject) => (
           <li
-            className="flex items-center justify-between overflow-hidden py-3"
+            className="flex items-center justify-between py-3"
             key={subject.id}
           >
             <Button
-              className="flex w-2/3 items-center gap-6"
+              className="flex w-3/4 items-center gap-6"
               href={`/subjects/${subject.id}`}
               variant="unstyled"
             >
@@ -36,11 +36,12 @@ const Page = async () => {
               <h2 className="truncate">{subject.name}</h2>
             </Button>
             <div className="flex gap-6 text-fg-2">
-              <Button href={`/subjects/${subject.id}/edit`} variant="unstyled">
+              <Button
+                colorScheme="alpha"
+                href={`/subjects/${subject.id}/edit`}
+                size="sm"
+              >
                 Edit
-              </Button>
-              <Button href={`/subjects/${subject.id}`} variant="unstyled">
-                View
               </Button>
             </div>
           </li>
