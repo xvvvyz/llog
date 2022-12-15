@@ -27,7 +27,7 @@ const SubjectForm = (
 
   const dropzone = useDropzone({
     accept: { 'image/*': ['.png', '.gif', '.jpeg', '.jpg'] },
-    maxSize: 20000000,
+    maxSize: 10000000,
     multiple: false,
     noClick: true,
   });
