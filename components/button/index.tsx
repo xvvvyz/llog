@@ -9,7 +9,8 @@ import Spinner from '/components/spinner';
 const colorSchemes = {
   accent:
     'ring-accent-2 focus:ring-1 bg-accent-1 text-bg-1 hover:bg-accent-2 ring-offset-bg-2 ring-offset-4',
-  alpha: 'bg-alpha-fg-1 text-fg-1 hover:bg-alpha-fg-2',
+  'alpha-bg': 'bg-alpha-bg-1 text-fg-1 hover:bg-alpha-bg-2',
+  'alpha-fg': 'bg-alpha-fg-1 text-fg-1 hover:bg-alpha-fg-2',
 };
 
 const sizes = {

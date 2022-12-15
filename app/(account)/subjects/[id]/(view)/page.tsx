@@ -26,12 +26,12 @@ const Page = async ({ params: { id } }: PageProps) => {
     <header
       className={twMerge(
         'relative -mx-6 mt-10 overflow-hidden p-6 sm:rounded',
-        !coverImage && 'border border-alpha-fg-2 bg-bg-2'
+        !coverImage && 'border-y border-alpha-fg-2 bg-bg-2 sm:border-x'
       )}
     >
       {coverImage && (
         <>
-          <div className="absolute left-0 top-0 -z-10 -z-10 h-full w-full bg-gradient-to-b from-alpha-bg-3 via-alpha-bg-1 to-alpha-bg-3" />
+          <div className="absolute left-0 top-0 -z-10 -z-10 h-full w-full bg-gradient-to-t from-alpha-bg-3" />
           <Image
             alt=""
             className="relative -z-20 object-cover object-center"
@@ -44,7 +44,11 @@ const Page = async ({ params: { id } }: PageProps) => {
       <div className={coverImage ? '' : '-m-[1px]'}>
         <div className="mb-12 mt-0 flex items-center justify-between">
           <BackButton className="fill-text-fg-1" />
-          <Button colorScheme="alpha" href={`/subjects/${id}/edit`} size="sm">
+          <Button
+            colorScheme="alpha-bg"
+            href={`/subjects/${id}/edit`}
+            size="sm"
+          >
             Edit
           </Button>
         </div>

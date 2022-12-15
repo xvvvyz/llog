@@ -37,7 +37,7 @@ const Page = async () => {
             </Button>
             <div className="flex gap-6 text-fg-2">
               <Button
-                colorScheme="alpha"
+                colorScheme="alpha-fg"
                 href={`/subjects/${subject.id}/edit`}
                 size="sm"
               >
