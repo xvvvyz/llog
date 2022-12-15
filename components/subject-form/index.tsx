@@ -74,7 +74,7 @@ const SubjectForm = (
       <Label className="mt-6">
         Profile image
         <div
-          className="flex cursor-pointer flex-row items-center justify-center gap-6 rounded border-2 border-dashed border-alpha-3 px-4 py-6"
+          className="flex cursor-pointer flex-row items-center justify-center gap-6 rounded border-2 border-dashed border-alpha-3 px-4 py-6 ring-accent-1 ring-offset-4 ring-offset-bg-2 focus:outline-none focus:ring-1"
           {...dropzone.getRootProps()}
         >
           <Avatar
