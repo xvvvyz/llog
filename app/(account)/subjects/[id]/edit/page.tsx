@@ -23,8 +23,8 @@ const Page = async ({ params: { id } }: PageProps) => {
   return (
     <>
       <Header>
-        <BackButton />
-        <h1 className="text-2xl font-bold">Edit subject</h1>
+        <BackButton href="/subjects" />
+        <h1 className="text-2xl">Edit subject</h1>
       </Header>
       <Card as="main" breakpoint="sm">
         <SubjectForm {...data} />

@@ -8,20 +8,19 @@ import Spinner from '/components/spinner';
 
 const colorSchemes = {
   accent:
-    'ring-accent-2 focus:ring-1 bg-accent-1 text-bg-1 hover:bg-accent-2 ring-offset-bg-2 ring-offset-4',
-  'alpha-bg': 'bg-alpha-bg-1 text-fg-1 hover:bg-alpha-bg-2',
-  'alpha-fg': 'bg-alpha-fg-1 text-fg-1 hover:bg-alpha-fg-2',
+    'ring-accent-2 bg-accent-1 text-bg-1 font-bold hover:bg-accent-2 ring-offset-bg-2 ring-offset-4',
+  bg: 'ring-fg-1 border border-alpha-2 font-normal hover:border-alpha-3 bg-bg-1 text-fg-1 hover:bg-bg-2',
 };
 
 const sizes = {
-  md: 'px-4 py-3 ',
-  sm: 'px-4 py-1',
+  md: 'px-4 h-12',
+  sm: 'px-4 h-9',
 };
 
 const variants = {
   primary:
-    'inline-flex items-center justify-center gap-6 rounded border border-alpha-fg-2 font-bold no-underline transition-colors hover:border-alpha-fg-3',
-  unstyled: 'p-3 -m-3 inline-block',
+    'focus:ring-1 inline-flex items-center justify-center gap-6 rounded transition-colors',
+  unstyled: 'p-3 -m-3 inline-block text-left',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

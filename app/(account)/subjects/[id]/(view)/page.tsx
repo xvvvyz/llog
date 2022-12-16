@@ -1,10 +1,11 @@
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { twMerge } from 'tailwind-merge';
+import Avatar from '/components/avatar';
 import BackButton from '/components/back-button';
 import Button from '/components/button';
+import Card from '/components/card';
+import Header from '/components/header';
+import { List, ListItem } from '/components/list';
 import createServerSupabaseClient from '/utilities/create-server-supabase-client';
-import formatObjectURL from '/utilities/format-object-url';
 
 interface PageProps {
   params: {
@@ -13,48 +14,71 @@ interface PageProps {
 }
 
 const Page = async ({ params: { id } }: PageProps) => {
-  const { data } = await createServerSupabaseClient()
+  const { data: subject } = await createServerSupabaseClient()
     .from('subjects')
     .select('id, image_uri, name')
     .eq('id', id)
     .single();
 
-  if (!data) return notFound();
-  const coverImage = formatObjectURL(data.image_uri);
+  if (!subject) return notFound();
 
   return (
-    <header
-      className={twMerge(
-        'relative -mx-6 mt-10 overflow-hidden p-6 sm:rounded',
-        !coverImage && 'border-y border-alpha-fg-2 bg-bg-2 sm:border-x'
-      )}
-    >
-      {coverImage && (
-        <>
-          <div className="absolute left-0 top-0 -z-10 -z-10 h-full w-full bg-gradient-to-t from-alpha-bg-3" />
-          <Image
-            alt=""
-            className="relative -z-20 object-cover object-center"
-            fill
-            sizes="512px"
-            src={coverImage}
-          />
-        </>
-      )}
-      <div className={coverImage ? '' : '-m-[1px]'}>
-        <div className="mb-12 mt-0 flex items-center justify-between">
-          <BackButton className="fill-text-fg-1" />
-          <Button
-            colorScheme="alpha-bg"
-            href={`/subjects/${id}/edit`}
-            size="sm"
-          >
-            Edit
-          </Button>
-        </div>
-        <h1 className="text-2xl font-bold">{data.name}</h1>
-      </div>
-    </header>
+    <>
+      <Header>
+        <BackButton href="/subjects" />
+        <h1 className="w-1/2 truncate text-center text-2xl">{subject.name}</h1>
+        <Avatar file={subject.image_uri} name={subject.name} />
+      </Header>
+      <main>
+        <section>
+          <Header>
+            <h2 className="text-2xl">Missions</h2>
+            <Button size="sm">Add mission</Button>
+          </Header>
+          <List>
+            <ListItem>
+              <Button className="w-3/4 truncate" variant="unstyled">
+                Reduce separation anxiety
+              </Button>
+              <Button colorScheme="bg" size="sm">
+                Edit
+              </Button>
+            </ListItem>
+            <ListItem>
+              <Button className="w-3/4 truncate" variant="unstyled">
+                Learn to shake hands
+              </Button>
+              <Button colorScheme="bg" size="sm">
+                Edit
+              </Button>
+            </ListItem>
+          </List>
+        </section>
+        <section>
+          <Header>
+            <h2 className="text-2xl">Timeline</h2>
+            <Button size="sm">Add observation</Button>
+          </Header>
+          <ul className="-mt-6 flex flex-col gap-3">
+            <li className="flex flex-col gap-3">
+              <div className="ml-6 flex h-16 items-end justify-end border-l-2 border-dashed border-alpha-2 text-fg-2">
+                November 23, 2022
+              </div>
+              <Card size="sm">Item one</Card>
+              <Card size="sm">Item two</Card>
+            </li>
+            <li className="flex flex-col gap-3">
+              <div className="ml-6 flex h-16 items-end justify-end border-l-2 border-dashed border-alpha-2 text-fg-2">
+                November 22, 2022
+              </div>
+              <Card size="sm">Item one</Card>
+              <Card size="sm">Item two</Card>
+              <Card size="sm">Item three</Card>
+            </li>
+          </ul>
+        </section>
+      </main>
+    </>
   );
 };
 

@@ -42,11 +42,11 @@ const Select = ({
         leaveFrom="transform opacity-100 translate-y-0"
         leaveTo="transform opacity-0 -translate-y-1"
       >
-        <Listbox.Options className="absolute z-10 mt-2 w-full divide-y divide-alpha-fg-1 overflow-hidden rounded border border-alpha-fg-2 bg-alpha-fg-1 shadow-lg ring-accent-2 focus:outline-none focus:ring-1">
+        <Listbox.Options className="absolute z-10 mt-2 w-full divide-y divide-alpha-1 overflow-hidden rounded border border-alpha-2 bg-alpha-1 shadow-lg ring-accent-2 focus:outline-none focus:ring-1">
           <div className="p-1">
             {options.map((option) => (
               <Listbox.Option
-                className="flex w-full cursor-pointer rounded px-3 py-2 text-left text-fg-2 ui-active:bg-alpha-fg-1 ui-active:text-fg-1"
+                className="flex w-full cursor-pointer rounded px-3 py-2 text-left text-fg-2 ui-active:bg-alpha-1 ui-active:text-fg-1"
                 key={option.label}
                 value={option}
               >

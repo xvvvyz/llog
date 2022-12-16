@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 import Button, { ButtonProps } from '/components/button';
 
-const BackButton = ({ className }: ButtonProps) => {
+const BackButton = ({ className, href }: ButtonProps) => {
   const router = useRouter();
 
   return (
-    <Button onClick={() => router.back()} variant="unstyled">
+    <Button
+      href={href}
+      onClick={() => !href && router.back()}
+      variant="unstyled"
+    >
       <ArrowLeftIcon
         className={twMerge(
           'relative -left-1 w-9 fill-fg-2 transition-colors',

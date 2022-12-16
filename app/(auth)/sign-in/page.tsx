@@ -5,7 +5,7 @@ import Card from '/components/card';
 const Page = () => (
   <>
     <Card breakpoint="sm">
-      <h1 className="text-2xl font-bold">Welcome back</h1>
+      <h1 className="text-2xl">Welcome back</h1>
       <SignInForm />
     </Card>
     <p className="flex gap-6">

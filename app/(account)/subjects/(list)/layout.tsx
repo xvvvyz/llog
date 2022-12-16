@@ -9,7 +9,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => (
   <>
     <Header>
-      <h1 className="text-2xl font-bold">Subjects</h1>
+      <h1 className="text-2xl">Subjects</h1>
       <Button href="/subjects/add" size="sm">
         Add subject
       </Button>

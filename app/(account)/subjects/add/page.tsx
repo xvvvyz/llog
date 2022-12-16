@@ -7,7 +7,7 @@ const Page = () => (
   <>
     <Header>
       <BackButton />
-      <h1 className="text-2xl font-bold">Add subject</h1>
+      <h1 className="text-2xl">Add subject</h1>
     </Header>
     <Card as="main" breakpoint="sm">
       <SubjectForm />

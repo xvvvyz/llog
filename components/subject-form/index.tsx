@@ -9,7 +9,6 @@ import Input from '/components/input';
 import Label from '/components/label';
 import { Database } from '/supabase/types';
 import supabase from '/utilities/browser-supabase-client';
-import formatObjectURL from '/utilities/format-object-url';
 import sleep from '/utilities/sleep';
 
 interface SubjectFormValues {
@@ -74,12 +73,12 @@ const SubjectForm = (
         />
       </Label>
       <Label className="mt-6">
-        Profile image
+        Image
         <div
-          className="flex cursor-pointer flex-row items-center justify-center gap-6 rounded border-2 border-dashed border-alpha-fg-3 px-4 py-9 ring-accent-2 ring-offset-4 ring-offset-bg-2 focus:outline-none focus:ring-1"
+          className="flex cursor-pointer flex-row items-center justify-center gap-6 rounded border-2 border-dashed border-alpha-3 px-4 py-9 ring-accent-2 ring-offset-4 ring-offset-bg-2 focus:outline-none focus:ring-1"
           {...dropzone.getRootProps()}
         >
-          <Avatar name={form.watch('name')} src={formatObjectURL(coverImage)} />
+          <Avatar file={coverImage} name={form.watch('name')} />
           <p>
             Drag image here or <span className="text-fg-1">browse</span>
           </p>
