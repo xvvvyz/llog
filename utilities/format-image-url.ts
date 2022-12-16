@@ -4,7 +4,8 @@ const formatImageUrl = (file?: string | File | null) => {
   }
 
   if (typeof file === 'string') {
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/render/image/public/${file}`;
+    const pathPart = process.env.NEXT_PUBLIC_SUPABASE_PRO ? 'render/image' : 'object';
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/${pathPart}/public/${file}`;
   }
 
   if (file instanceof File) {

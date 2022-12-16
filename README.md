@@ -16,6 +16,9 @@ Add the following to your `.env` file:
 ```dotenv
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<SUPABASE_ANON_KEY>
 NEXT_PUBLIC_SUPABASE_URL=<SUPABSE_API_URL>
+
+# optimize images with supabase instead of next
+NEXT_PUBLIC_SUPABASE_PRO=1
 ```
 
 Generate types and start the dev server:
