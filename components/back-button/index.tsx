@@ -12,7 +12,7 @@ const BackButton = ({ className, href }: ButtonProps) => {
     <Button
       href={href}
       onClick={() => !href && router.back()}
-      variant="unstyled"
+      variant="link"
     >
       <ArrowLeftIcon
         className={twMerge(

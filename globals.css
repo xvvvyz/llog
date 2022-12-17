@@ -15,6 +15,6 @@
     --color-fg-2: hsl(0, 0%, 60%);
     --color-red-1: hsl(0, 80%, 65%);
     --color-red-2: hsl(0, 75%, 60%);
-    --radius-default: 0.3rem;
+    --radius-default: 0.4rem;
   }
 }

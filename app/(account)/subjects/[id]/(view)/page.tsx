@@ -37,7 +37,7 @@ const Page = async ({ params: { id } }: PageProps) => {
           </Header>
           <List>
             <ListItem>
-              <Button className="w-3/4 truncate" variant="unstyled">
+              <Button className="w-3/4 truncate" variant="link">
                 Reduce separation anxiety
               </Button>
               <Button colorScheme="bg" size="sm">
@@ -45,7 +45,7 @@ const Page = async ({ params: { id } }: PageProps) => {
               </Button>
             </ListItem>
             <ListItem>
-              <Button className="w-3/4 truncate" variant="unstyled">
+              <Button className="w-3/4 truncate" variant="link">
                 Learn to shake hands
               </Button>
               <Button colorScheme="bg" size="sm">

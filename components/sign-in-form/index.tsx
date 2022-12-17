@@ -42,12 +42,12 @@ const SignInForm = () => {
         <div className="flex justify-between">
           Password
           <Button
-            className="text-fg-1"
+            className="underline"
             href="/forgot-password"
             onClick={() =>
               globalStringCache.set('email', form.getValues('email'))
             }
-            variant="unstyled"
+            variant="link"
           >
             Forgot your password?
           </Button>

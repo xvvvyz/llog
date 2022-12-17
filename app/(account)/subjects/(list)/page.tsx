@@ -24,7 +24,7 @@ const Page = async () => {
             <Button
               className="flex w-3/4 items-center gap-6"
               href={`/subjects/${subject.id}`}
-              variant="unstyled"
+              variant="link"
             >
               <Avatar file={subject.image_uri} name={subject.name} />
               <span className="truncate">{subject.name}</span>

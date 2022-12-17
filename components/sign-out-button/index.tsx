@@ -19,7 +19,7 @@ const SignOutButton = () => {
         await supabase.auth.signOut();
         await router.refresh();
       }}
-      variant="unstyled"
+      variant="link"
     >
       Sign out
     </Button>

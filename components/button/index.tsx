@@ -9,7 +9,7 @@ import Spinner from '/components/spinner';
 const colorSchemes = {
   accent:
     'ring-accent-2 bg-accent-1 text-bg-1 font-bold hover:bg-accent-2 ring-offset-bg-2 ring-offset-4',
-  bg: 'ring-fg-1 border border-alpha-2 font-normal hover:border-alpha-3 bg-bg-1 text-fg-1 hover:bg-bg-2',
+  bg: 'ring-fg-1 border border-alpha-2 font-normal hover:border-alpha-3 bg-bg-1 text-fg-2 hover:text-fg-1 hover:bg-bg-2',
 };
 
 const sizes = {
@@ -18,9 +18,8 @@ const sizes = {
 };
 
 const variants = {
-  primary:
-    'focus:ring-1 inline-flex items-center justify-center gap-6 rounded transition-colors',
-  unstyled: 'p-3 -m-3 inline-block text-left',
+  link: 'p-3 -m-3 inline-block text-left text-fg-2 hover:text-fg-1',
+  primary: 'focus:ring-1 inline-flex items-center justify-center gap-6 rounded',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -49,9 +48,9 @@ const Button = ({
   const pathname = usePathname();
 
   const cn = twMerge(
-    'focus:outline-none disabled:cursor-not-allowed rounded disabled:opacity-60',
-    variant !== 'unstyled' && sizes[size],
-    variant !== 'unstyled' && colorSchemes[colorScheme],
+    'focus:outline-none disabled:cursor-not-allowed rounded transition-colors disabled:opacity-60',
+    variant !== 'link' && sizes[size],
+    variant !== 'link' && colorSchemes[colorScheme],
     variants[variant],
     href && pathname?.startsWith(href) && activeClassName,
     className
@@ -69,7 +68,7 @@ const Button = ({
     <button className={cn} disabled={disabled || loading} {...rest}>
       {loading ? (
         <>
-          {variant !== 'unstyled' && (
+          {variant !== 'link' && (
             <Spinner className="border-bg-1 border-l-transparent" />
           )}
           {loadingText}

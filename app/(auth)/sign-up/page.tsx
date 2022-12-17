@@ -10,7 +10,7 @@ const Page = () => (
     </Card>
     <p className="flex gap-6">
       <span className="text-fg-2">Have an account?</span>{' '}
-      <Button href="/sign-in" variant="unstyled">
+      <Button className="underline" href="/sign-in" variant="link">
         Sign in
       </Button>
     </p>

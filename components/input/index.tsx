@@ -7,7 +7,7 @@ const Input = forwardRef<
 >(({ className, ...rest }, ref) => (
   <input
     className={twMerge(
-      'h-12 w-full rounded border border-alpha-2 bg-alpha-1 px-4 text-fg-1 ring-accent-2 ring-offset-4 ring-offset-bg-2 hover:border-alpha-3 focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60',
+      'h-12 w-full rounded border border-alpha-2 bg-alpha-1 px-4 text-fg-1 ring-accent-2 hover:border-alpha-3 focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60',
       className
     )}
     ref={ref}

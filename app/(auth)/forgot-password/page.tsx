@@ -12,7 +12,7 @@ const Page = () => (
       </p>
       <ForgotPasswordForm />
     </Card>
-    <Button href="/sign-in" variant="unstyled">
+    <Button className="underline" href="/sign-in" variant="link">
       Return to sign in
     </Button>
   </>
