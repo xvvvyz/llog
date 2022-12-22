@@ -1,5 +1,5 @@
-import ChangePasswordForm from '../../../components/change-password-form';
-import Card from '/components/card';
+import ChangePasswordForm from '(auth)/change-password/components/change-password-form';
+import Card from 'components/card';
 
 const Page = () => (
   <Card breakpoint="sm">

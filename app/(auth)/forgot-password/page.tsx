@@ -1,6 +1,6 @@
-import ForgotPasswordForm from '../../../components/forgot-password-form';
-import Button from '/components/button';
-import Card from '/components/card';
+import ForgotPasswordForm from '(auth)/forgot-password/components/forgot-password-form';
+import Button from 'components/button';
+import Card from 'components/card';
 
 const Page = () => (
   <>

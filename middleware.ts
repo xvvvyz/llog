@@ -1,5 +1,7 @@
 import { createMiddlewareSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { NextRequest, NextResponse } from 'next/server';
+import PRIVATE_ROUTES from 'utilities/constant-private-routes';
+import PUBLIC_ROUTES from 'utilities/constant-public-routes';
 
 export const config = {
   matcher: ['/((?!api|_next/static|favicon.ico).*)'],
@@ -7,20 +9,18 @@ export const config = {
 
 export const middleware = async (req: NextRequest) => {
   const res = NextResponse.next();
+
   const session = await createMiddlewareSupabaseClient({
     req,
     res,
   }).auth.getSession();
 
-  if (
-    ['/', '/sign-in', '/sign-up'].includes(req.nextUrl.pathname) &&
-    session.data.session
-  ) {
+  if (PUBLIC_ROUTES.includes(req.nextUrl.pathname) && session.data.session) {
     return NextResponse.redirect(new URL('/subjects', req.url));
   }
 
   if (
-    ['/subjects'].some((p) => req.nextUrl.pathname.startsWith(p)) &&
+    PRIVATE_ROUTES.some((p) => req.nextUrl.pathname.startsWith(p)) &&
     !session.data.session
   ) {
     return NextResponse.redirect(

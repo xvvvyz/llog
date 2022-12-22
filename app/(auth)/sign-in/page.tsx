@@ -1,6 +1,6 @@
-import SignInForm from '../../../components/sign-in-form';
-import Button from '/components/button';
-import Card from '/components/card';
+import SignInForm from '(auth)/sign-in/components/sign-in-form';
+import Button from 'components/button';
+import Card from 'components/card';
 
 const Page = () => (
   <>

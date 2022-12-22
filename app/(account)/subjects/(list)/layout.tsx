@@ -1,6 +1,6 @@
+import Button from 'components/button';
+import Header from 'components/header';
 import { ReactNode } from 'react';
-import Button from '/components/button';
-import Header from '/components/header';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,7 +14,7 @@ const Layout = ({ children }: LayoutProps) => (
         Add subject
       </Button>
     </Header>
-    {children}
+    <main>{children}</main>
   </>
 );
 

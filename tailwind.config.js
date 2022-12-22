@@ -2,8 +2,7 @@
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./app/**/*.tsx', './components/**/*.tsx'],
-  plugins: [require('@headlessui/tailwindcss', '@tailwindcss/forms')],
+  content: ['./app/**/*.tsx'],
   theme: {
     borderRadius: {
       DEFAULT: 'var(--radius-default)',

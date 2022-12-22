@@ -1,4 +1,4 @@
-import Button from '/components/button';
+import Button from 'components/button';
 
 const Page = () => (
   <main className="mx-auto flex min-h-full max-w-sm items-center justify-center gap-6 py-12 px-6">

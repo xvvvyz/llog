@@ -1,4 +1,4 @@
-import MetaTags from '/components/meta-tags';
+import MetaTags from 'components/meta-tags';
 
 const Head = () => (
   <>

@@ -141,7 +141,7 @@ create or replace function public.handle_insert_user ()
     insert into public.profiles (id, first_name, last_name)
       values (new.id, new.raw_user_meta_data ->> 'first_name', new.raw_user_meta_data ->> 'last_name');
     return new;
-    end;
+  end;
   $$;
 
 create trigger on_insert_user
@@ -157,10 +157,10 @@ create or replace function public.handle_update_user ()
   as $$
   begin
     update public.profiles
-    set (first_name, last_name) = (new.raw_user_meta_data ->> 'first_name', new.raw_user_meta_data ->> 'last_name')
-    where id = new.id;
+      set (first_name, last_name) = (new.raw_user_meta_data ->> 'first_name', new.raw_user_meta_data ->> 'last_name')
+      where id = new.id;
     return new;
-    end;
+  end;
   $$;
 
 create trigger on_update_user
