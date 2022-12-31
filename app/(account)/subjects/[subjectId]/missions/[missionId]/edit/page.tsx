@@ -1,7 +1,5 @@
 import MissionForm from '(account)/subjects/[subjectId]/missions/components/mission-form';
-import BackButton from 'components/back-button';
 import Card from 'components/card';
-import Header from 'components/header';
 import { notFound } from 'next/navigation';
 import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 
@@ -22,15 +20,9 @@ const Page = async ({ params: { missionId, subjectId } }: PageProps) => {
   if (!mission) return notFound();
 
   return (
-    <>
-      <Header>
-        <BackButton href={`/subjects/${subjectId}`} />
-        <h1 className="text-2xl">Edit mission</h1>
-      </Header>
-      <Card as="main" breakpoint="sm">
-        <MissionForm mission={mission} subjectId={subjectId} />
-      </Card>
-    </>
+    <Card breakpoint="sm">
+      <MissionForm mission={mission} subjectId={subjectId} />
+    </Card>
   );
 };
 

@@ -15,7 +15,7 @@ const List = ({ className, ...rest }: BoxProps) => (
 const ListItem = ({ className, ...rest }: BoxProps) => (
   <Box
     as="li"
-    className={twMerge('flex items-center justify-between py-3', className)}
+    className={twMerge('flex h-16 items-center justify-between', className)}
     {...rest}
   />
 );

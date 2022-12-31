@@ -39,7 +39,7 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
           return;
         }
 
-        await router.back();
+        await router.push(`/subjects/${subjectId}`);
         await router.refresh();
         await sleep();
       })}

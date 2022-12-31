@@ -8,22 +8,22 @@ import Select from 'components/select';
 import { useRouter } from 'next/navigation';
 import { useDropzone } from 'react-dropzone';
 import { Controller, useForm } from 'react-hook-form';
+import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
 import sleep from 'utilities/sleep';
 
-interface Observation {
-  id: string;
-  name: string;
-}
+type Observation = Pick<
+  Database['public']['Tables']['observations']['Row'],
+  'id' | 'name'
+>;
+
+type Subject = Database['public']['Tables']['subjects']['Update'] & {
+  observations: Observation | Observation[] | null;
+};
 
 interface SubjectFormProps {
   availableObservations: Observation[] | null;
-  subject?: {
-    id: string;
-    image_uri: string | null;
-    name: string;
-    observations: Observation | Observation[] | null;
-  };
+  subject?: Subject;
 }
 
 interface SubjectFormValues {
@@ -33,16 +33,15 @@ interface SubjectFormValues {
 
 const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
   const router = useRouter();
-  let existingObservations = subject?.observations ?? [];
-
-  if (!Array.isArray(existingObservations)) {
-    existingObservations = [existingObservations];
-  }
 
   const form = useForm<SubjectFormValues>({
     defaultValues: {
       name: subject?.name ?? '',
-      observations: existingObservations,
+      observations: !subject?.observations
+        ? []
+        : Array.isArray(subject.observations)
+        ? subject.observations
+        : [subject.observations],
     },
   });
 
@@ -67,7 +66,7 @@ const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
         );
 
         if (subjectError) {
-          alert(subjectError?.message);
+          alert(subjectError.message);
           return;
         }
 
@@ -97,15 +96,15 @@ const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
         />
       </Label>
       <Label className="mt-6">
-        Enabled observations
+        Enabled observation types
         <Controller
           control={form.control}
           name="observations"
           render={({ field }) => (
             <Select
               isMulti
+              noOptionsMessage={() => <>No observation types available</>}
               options={availableObservations ?? []}
-              placeholder="No observations enabled"
               {...field}
             />
           )}

@@ -19,7 +19,7 @@ const Missions = async ({ subjectId }: MissionProps) => {
     <List>
       {missions.map((mission) => (
         <ListItem key={mission.id}>
-          <Button className="w-3/4 truncate" variant="link">
+          <Button className="h-full w-3/4 truncate" variant="link">
             {mission.name}
           </Button>
           <Button

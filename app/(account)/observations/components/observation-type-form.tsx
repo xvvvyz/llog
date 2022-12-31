@@ -9,19 +9,19 @@ import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
 import sleep from 'utilities/sleep';
 
-interface ObservationFormProps {
+interface ObservationTypeFormProps {
   observation?: Database['public']['Tables']['observations']['Update'];
 }
 
-interface ObservationFormValues {
+interface ObservationTypeFormValues {
   description: string;
   name: string;
 }
 
-const ObservationForm = ({ observation }: ObservationFormProps) => {
+const ObservationTypeForm = ({ observation }: ObservationTypeFormProps) => {
   const router = useRouter();
 
-  const form = useForm<ObservationFormValues>({
+  const form = useForm<ObservationTypeFormValues>({
     defaultValues: {
       description: observation?.description ?? '',
       name: observation?.name ?? '',
@@ -40,7 +40,7 @@ const ObservationForm = ({ observation }: ObservationFormProps) => {
           return;
         }
 
-        await router.back();
+        await router.push('/observations');
         await router.refresh();
         await sleep();
       })}
@@ -73,4 +73,4 @@ const ObservationForm = ({ observation }: ObservationFormProps) => {
   );
 };
 
-export default ObservationForm;
+export default ObservationTypeForm;

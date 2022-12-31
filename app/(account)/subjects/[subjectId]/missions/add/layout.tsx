@@ -1,9 +1,22 @@
 import { ReactNode } from 'react';
+import BackButton from '../../../../../components/back-button';
+import Header from '../../../../../components/header';
 
 interface LayoutProps {
   children: ReactNode;
+  params: {
+    subjectId: string;
+  };
 }
 
-const Layout = ({ children }: LayoutProps) => children;
+const Layout = ({ children, params: { subjectId } }: LayoutProps) => (
+  <>
+    <Header>
+      <BackButton href={`/subjects/${subjectId}`} />
+      <h1 className="text-2xl">Add mission</h1>
+    </Header>
+    <main>{children}</main>
+  </>
+);
 
 export default Layout;

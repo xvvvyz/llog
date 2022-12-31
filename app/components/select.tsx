@@ -28,7 +28,7 @@ const Control = <TOption extends IOption>({
   ...props
 }: ControlProps<TOption>) => (
   <components.Control
-    className="rounded border border-alpha-2 bg-alpha-1 p-1 text-fg-1 focus-within:ring-1 focus-within:ring-accent-2 hover:cursor-text hover:border-alpha-3"
+    className="rounded border border-alpha-2 bg-alpha-1 p-1 text-fg-1 focus-within:ring-1 focus-within:ring-accent-2 hover:cursor-pointer hover:border-alpha-3"
     {...props}
   >
     {children}
@@ -51,7 +51,7 @@ const Menu = <TOption extends IOption>({
   ...props
 }: MenuProps<TOption>) => (
   <components.Menu
-    className="mt-2 overflow-hidden rounded border border-alpha-2 bg-bg-2 py-2 text-fg-1 shadow-xl focus-within:ring-1 focus-within:ring-accent-2"
+    className="mt-2 overflow-hidden rounded border border-alpha-2 bg-bg-1 py-2 text-fg-1 shadow-xl focus-within:ring-1 focus-within:ring-accent-2"
     {...props}
   >
     {children}

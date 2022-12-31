@@ -12,11 +12,10 @@ interface LayoutProps {
 const Layout = ({ children, params: { subjectId } }: LayoutProps) => (
   <>
     <Header>
-      <BackButton href={`/subjects/${subjectId}`} />
-      <h1 className="text-2xl">Edit mission</h1>
+      <BackButton href={`/subjects/${subjectId}/observations/add`} />
+      <h1 className="text-2xl">Add observation</h1>
     </Header>
     <main>{children}</main>
   </>
 );
-
 export default Layout;

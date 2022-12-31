@@ -2,7 +2,7 @@ import MetaTags from 'components/meta-tags';
 
 const Head = () => (
   <>
-    <title>Edit observation type - llog</title>
+    <title>Add observation - llog</title>
     <MetaTags />
   </>
 );

@@ -12,16 +12,14 @@ const Page = async () => {
     .select('id, image_uri, name')
     .order('updated_at', { ascending: false });
 
-  if (!subjects?.length) {
-    return <Empty>No subjects</Empty>;
-  }
+  if (!subjects?.length) return <Empty>No subjects</Empty>;
 
   return (
     <List>
       {subjects?.map((subject) => (
         <ListItem key={subject.id}>
           <Button
-            className="flex w-3/4 items-center gap-6"
+            className="flex h-full w-3/4 items-center gap-6"
             href={`/subjects/${subject.id}`}
             variant="link"
           >
