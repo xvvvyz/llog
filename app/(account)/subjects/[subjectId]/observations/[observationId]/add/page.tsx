@@ -1,6 +1,5 @@
 import Card from 'components/card';
-import { notFound } from 'next/navigation';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
+// import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 import ObservationForm from '../components/observation-form';
 
 interface PageProps {
@@ -11,13 +10,10 @@ interface PageProps {
 }
 
 const Page = async ({ params: { observationId, subjectId } }: PageProps) => {
-  const { data: observation } = await createServerSupabaseClient()
-    .from('observations')
-    .select('inputs(label, options:input_options(label), type)')
-    .eq('id', observationId)
-    .single();
-
-  if (!observation) return notFound();
+  // const { data: inputs } = await createServerSupabaseClient()
+  //   .from('observation_inputs')
+  //   .select('input:inputs(label, options:input_options(label), type)')
+  //   .eq('observation_id', observationId);
 
   return (
     <Card breakpoint="sm">

@@ -1,42 +1,133 @@
 'use client';
 
+import { PlusIcon } from '@heroicons/react/24/solid';
 import Button from 'components/button';
 import Input from 'components/input';
 import Label from 'components/label';
 import { useRouter } from 'next/navigation';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
+import forceArray from 'utilities/force-array';
 import sleep from 'utilities/sleep';
+import SessionFormSection from './session-form-section';
+
+const DEFAULT_ROUTINE_VALUES = {
+  content: '<ol><li> </li><li> </li><li> </li></ol>',
+  name: '',
+};
+
+type Routine = Pick<
+  Database['public']['Tables']['routines']['Row'],
+  'content' | 'id' | 'name' | 'order' | 'session'
+>;
+
+type Mission = Pick<
+  Database['public']['Tables']['missions']['Row'],
+  'id' | 'name'
+> & {
+  routines: Routine | Routine[] | null;
+};
 
 interface MissionFormProps {
-  mission?: Database['public']['Tables']['missions']['Update'];
+  mission?: Mission;
   subjectId: string;
 }
 
 interface MissionFormValues {
   name: string;
+  routines: {
+    content: string;
+    id?: string;
+    name: string;
+  }[][];
 }
 
 const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
   const router = useRouter();
 
   const form = useForm<MissionFormValues>({
-    defaultValues: { name: mission?.name ?? '' },
+    defaultValues: {
+      name: mission?.name ?? '',
+      routines: forceArray(mission?.routines).reduce((acc, routine) => {
+        if (acc[routine.session]) acc[routine.session].push(routine);
+        else acc[routine.session] = [routine];
+        return acc;
+      }, []),
+    },
+  });
+
+  const routinesArray = useFieldArray({
+    control: form.control,
+    name: 'routines',
   });
 
   return (
     <form
-      onSubmit={form.handleSubmit(async ({ name }) => {
-        const { error: missionError } = await supabase
+      onSubmit={form.handleSubmit(async ({ name, routines }) => {
+        const { data: missionData, error: missionError } = await supabase
           .from('missions')
           .upsert({ id: mission?.id, name, subject_id: subjectId })
           .select('id')
           .single();
 
         if (missionError) {
-          alert(missionError?.message);
+          alert(missionError.message);
           return;
+        }
+
+        const { newRoutines, updatedRoutines } = routines.reduce(
+          (
+            { newRoutines, order, updatedRoutines },
+            sessionRoutines,
+            session
+          ) => {
+            sessionRoutines.forEach((routine) => {
+              const payload = {
+                content: routine.content,
+                id: routine.id,
+                mission_id: missionData.id,
+                name: routine.name,
+                order,
+                session,
+              };
+
+              if (routine.id) updatedRoutines.push(payload);
+              else newRoutines.push(payload);
+              order++;
+            });
+
+            return { newRoutines, order, updatedRoutines };
+          },
+          {
+            newRoutines:
+              [] as Database['public']['Tables']['routines']['Insert'][],
+            order: 0,
+            updatedRoutines:
+              [] as Database['public']['Tables']['routines']['Insert'][],
+          }
+        );
+
+        if (updatedRoutines.length) {
+          const { error: routinesError } = await supabase
+            .from('routines')
+            .upsert(updatedRoutines);
+
+          if (routinesError) {
+            alert(routinesError.message);
+            return;
+          }
+        }
+
+        if (newRoutines.length) {
+          const { error: routinesError } = await supabase
+            .from('routines')
+            .upsert(newRoutines);
+
+          if (routinesError) {
+            alert(routinesError.message);
+            return;
+          }
         }
 
         await router.push(`/subjects/${subjectId}`);
@@ -45,23 +136,45 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
       })}
     >
       <Label>
-        Name
+        Mission name
         <Controller
           control={form.control}
           name="name"
           render={({ field }) => <Input {...field} />}
         />
       </Label>
-      <Button
-        className="mt-12 w-full"
-        loading={form.formState.isSubmitting}
-        loadingText="Saving…"
-        type="submit"
-      >
-        Save
-      </Button>
+      <ul>
+        {routinesArray.fields.map((item, index) => (
+          <li key={item.id}>
+            <SessionFormSection form={form} index={index} />
+          </li>
+        ))}
+      </ul>
+      <div className="mt-6 flex justify-end">
+        <Button
+          colorScheme="bg"
+          onClick={() => routinesArray.append([[DEFAULT_ROUTINE_VALUES]])}
+          size="sm"
+          type="button"
+        >
+          <PlusIcon className="w-5" />
+          Add session
+        </Button>
+      </div>
+      <div className="mt-12">
+        <Button
+          className="w-full"
+          loading={form.formState.isSubmitting}
+          loadingText="Saving…"
+          type="submit"
+        >
+          Save
+        </Button>
+      </div>
     </form>
   );
 };
 
 export default MissionForm;
+export type { MissionFormValues };
+export { DEFAULT_ROUTINE_VALUES };

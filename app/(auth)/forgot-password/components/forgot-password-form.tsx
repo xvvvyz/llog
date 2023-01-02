@@ -6,13 +6,15 @@ import Label from 'components/label';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import supabase from 'utilities/browser-supabase-client';
-import globalStringCache from 'utilities/global-string-cache';
+import globalValueCache from 'utilities/global-value-cache';
 
 const ForgotPasswordForm = () => {
   const [linkSent, setLinkSent] = useState(false);
 
   const form = useForm({
-    defaultValues: { email: globalStringCache.get('email') },
+    defaultValues: {
+      email: globalValueCache.get('sign_in_form_values')?.email,
+    },
   });
 
   return (

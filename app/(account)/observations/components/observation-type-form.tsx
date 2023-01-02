@@ -3,14 +3,18 @@
 import Button from 'components/button';
 import Input from 'components/input';
 import Label from 'components/label';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
 import sleep from 'utilities/sleep';
+import Textarea from '../../../components/textarea';
 
 interface ObservationTypeFormProps {
-  observation?: Database['public']['Tables']['observations']['Update'];
+  observation?: Pick<
+    Database['public']['Tables']['observations']['Row'],
+    'description' | 'id' | 'name'
+  >;
 }
 
 interface ObservationTypeFormValues {
@@ -20,6 +24,7 @@ interface ObservationTypeFormValues {
 
 const ObservationTypeForm = ({ observation }: ObservationTypeFormProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const form = useForm<ObservationTypeFormValues>({
     defaultValues: {
@@ -40,13 +45,13 @@ const ObservationTypeForm = ({ observation }: ObservationTypeFormProps) => {
           return;
         }
 
-        await router.push('/observations');
+        await router.push(searchParams.get('back') ?? '/observations');
         await router.refresh();
         await sleep();
       })}
     >
       <Label>
-        Name
+        Observation name
         <Controller
           control={form.control}
           name="name"
@@ -58,7 +63,7 @@ const ObservationTypeForm = ({ observation }: ObservationTypeFormProps) => {
         <Controller
           control={form.control}
           name="description"
-          render={({ field }) => <Input {...field} />}
+          render={({ field }) => <Textarea {...field} />}
         />
       </Label>
       <Button

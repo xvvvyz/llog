@@ -19,7 +19,7 @@ const sizes = {
 
 const variants = {
   link: 'p-3 -m-3 inline-block text-left text-fg-2 hover:text-fg-1',
-  primary: 'focus:ring-1 inline-flex items-center justify-center gap-6 rounded',
+  primary: 'focus:ring-1 inline-flex items-center justify-center gap-3 rounded',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

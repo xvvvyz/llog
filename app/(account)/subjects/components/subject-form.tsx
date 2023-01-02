@@ -5,11 +5,13 @@ import Button from 'components/button';
 import Input from 'components/input';
 import Label from 'components/label';
 import Select from 'components/select';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useDropzone } from 'react-dropzone';
 import { Controller, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
+import forceArray from 'utilities/force-array';
+import globalValueCache from 'utilities/global-value-cache';
 import sleep from 'utilities/sleep';
 
 type Observation = Pick<
@@ -17,7 +19,10 @@ type Observation = Pick<
   'id' | 'name'
 >;
 
-type Subject = Database['public']['Tables']['subjects']['Update'] & {
+type Subject = Pick<
+  Database['public']['Tables']['subjects']['Row'],
+  'id' | 'image_uri' | 'name'
+> & {
   observations: Observation | Observation[] | null;
 };
 
@@ -32,17 +37,19 @@ interface SubjectFormValues {
 }
 
 const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
+  const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const form = useForm<SubjectFormValues>({
-    defaultValues: {
-      name: subject?.name ?? '',
-      observations: !subject?.observations
-        ? []
-        : Array.isArray(subject.observations)
-        ? subject.observations
-        : [subject.observations],
-    },
+    defaultValues:
+      searchParams.has('useCache') &&
+      globalValueCache.has('subject_form_values')
+        ? globalValueCache.get('subject_form_values')
+        : {
+            name: subject?.name ?? '',
+            observations: forceArray(subject?.observations),
+          },
   });
 
   const dropzone = useDropzone({
@@ -82,13 +89,13 @@ const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
             );
         }
 
-        await router.push('/subjects');
+        await router.push(searchParams.get('back') ?? '/subjects');
         await router.refresh();
         await sleep();
       })}
     >
       <Label>
-        Name
+        Subject name
         <Controller
           control={form.control}
           name="name"
@@ -96,17 +103,24 @@ const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
         />
       </Label>
       <Label className="mt-6">
-        Enabled observation types
+        <div className="flex justify-between">
+          Enabled observation types
+          <Button
+            className="underline"
+            href={`/observations/add?back=${pathname}?useCache=true`}
+            onClick={() =>
+              globalValueCache.set('subject_form_values', form.getValues())
+            }
+            variant="link"
+          >
+            Add type
+          </Button>
+        </div>
         <Controller
           control={form.control}
           name="observations"
           render={({ field }) => (
-            <Select
-              isMulti
-              noOptionsMessage={() => <>No observation types available</>}
-              options={availableObservations ?? []}
-              {...field}
-            />
+            <Select isMulti options={availableObservations ?? []} {...field} />
           )}
         />
       </Label>

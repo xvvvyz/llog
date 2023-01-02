@@ -5,7 +5,7 @@ const sizes = {
   'base:md': 'p-9',
   'base:sm': 'p-6',
   'sm:md': 'sm:p-9',
-  'sm:sm': 'p-6',
+  'sm:sm': 'sm:p-6',
 };
 
 const variants = {

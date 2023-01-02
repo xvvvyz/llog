@@ -27,10 +27,7 @@ const Control = <TOption extends IOption>({
   children,
   ...props
 }: ControlProps<TOption>) => (
-  <components.Control
-    className="rounded border border-alpha-2 bg-alpha-1 p-1 text-fg-1 focus-within:ring-1 focus-within:ring-accent-2 hover:cursor-pointer hover:border-alpha-3"
-    {...props}
-  >
+  <components.Control className="input p-1" {...props}>
     {children}
   </components.Control>
 );
@@ -51,7 +48,7 @@ const Menu = <TOption extends IOption>({
   ...props
 }: MenuProps<TOption>) => (
   <components.Menu
-    className="mt-2 overflow-hidden rounded border border-alpha-2 bg-bg-1 py-2 text-fg-1 shadow-xl focus-within:ring-1 focus-within:ring-accent-2"
+    className="mt-2 rounded border border-alpha-2 bg-bg-1 py-2 text-fg-1"
     {...props}
   >
     {children}
@@ -63,7 +60,7 @@ const MultiValueContainer = ({
   ...props
 }: MultiValueGenericProps) => (
   <components.MultiValueContainer {...props}>
-    <div className="m-1 inline-flex items-center gap-2 rounded-[0.15rem] bg-alpha-2 pl-2">
+    <div className="m-1 inline-flex items-center gap-2 rounded-[0.15rem] bg-alpha-2 pl-2 text-sm leading-6">
       {children}
     </div>
   </components.MultiValueContainer>
@@ -145,7 +142,8 @@ const Select = forwardRef(
       getOptionValue={(option) => option.id}
       instanceId={props.name}
       isClearable={false}
-      isSearchable={false}
+      noOptionsMessage={() => null}
+      placeholder={<>&nbsp;</>}
       ref={ref}
       unstyled
       {...props}

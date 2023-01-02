@@ -17,7 +17,20 @@ const Page = async ({ params: { subjectId } }: PageProps) => {
     .select('observation:observations(description, id, name)')
     .eq('subject_id', subjectId);
 
-  if (!observations?.length) return <Empty>No observation types enabled</Empty>;
+  if (!observations?.length) {
+    return (
+      <Empty>
+        No observation types enabled
+        <Button
+          className="underline"
+          href={`/subjects/${subjectId}/edit?back=/subjects/${subjectId}/observations/add`}
+          variant="link"
+        >
+          Edit subject
+        </Button>
+      </Empty>
+    );
+  }
 
   return (
     <List>
@@ -33,7 +46,7 @@ const Page = async ({ params: { subjectId } }: PageProps) => {
               variant="link"
             >
               <span className="w-3/4 truncate">{observation.name}</span>
-              <ArrowRightIcon className="relative -right-1 ml-auto w-6 shrink-0" />
+              <ArrowRightIcon className="relative -right-[0.1em] ml-auto w-6 shrink-0" />
             </Button>
           </ListItem>
         );

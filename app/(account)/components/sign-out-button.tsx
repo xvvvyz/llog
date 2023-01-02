@@ -13,7 +13,7 @@ const SignOutButton = () => {
     <Button
       className="w-28 shrink-0 text-right text-fg-2"
       loading={isSigningOut}
-      loadingText="See ya!"
+      loadingText="Goodbye"
       onClick={async () => {
         setIsSigningOut(true);
         await supabase.auth.signOut();

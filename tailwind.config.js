@@ -7,6 +7,7 @@ module.exports = {
     borderRadius: {
       DEFAULT: 'var(--radius-default)',
       full: '50%',
+      none: '0',
     },
     colors: {
       'accent-1': 'var(--color-accent-1)',

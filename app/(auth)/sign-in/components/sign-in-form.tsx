@@ -6,7 +6,7 @@ import Label from 'components/label';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import supabase from 'utilities/browser-supabase-client';
-import globalStringCache from 'utilities/global-string-cache';
+import globalValueCache from 'utilities/global-value-cache';
 import sleep from 'utilities/sleep';
 
 const SignInForm = () => {
@@ -14,7 +14,10 @@ const SignInForm = () => {
   const router = useRouter();
 
   const form = useForm({
-    defaultValues: { email: globalStringCache.get('email'), password: '' },
+    defaultValues: globalValueCache.get('sign_in_form_values') ?? {
+      email: '',
+      password: '',
+    },
   });
 
   return (
@@ -45,7 +48,7 @@ const SignInForm = () => {
             className="underline"
             href="/forgot-password"
             onClick={() =>
-              globalStringCache.set('email', form.getValues('email'))
+              globalValueCache.set('sign_in_form_values', form.getValues())
             }
             variant="link"
           >
