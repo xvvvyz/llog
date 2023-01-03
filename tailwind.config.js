@@ -3,6 +3,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./app/**/*.tsx'],
+  plugins: [require('@tailwindcss/typography')],
   theme: {
     borderRadius: {
       DEFAULT: 'var(--radius-default)',
@@ -26,6 +27,18 @@ module.exports = {
     screens: {
       sm: '32rem',
       xs: '25rem',
+    },
+    typography: {
+      DEFAULT: {
+        css: {
+          a: {
+            '&:hover': {
+              // hack because prose-a:hover:text-fg-1 is highlighting all links
+              color: 'var(--color-fg-1)',
+            },
+          },
+        },
+      },
     },
   },
 };

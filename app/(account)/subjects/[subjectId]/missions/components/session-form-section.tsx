@@ -21,8 +21,8 @@ const SessionFormSection = ({
 
   return (
     <>
-      <h2 className="mt-12 font-bold">Session {sessionIndex + 1}</h2>
-      <ul className="flex flex-col gap-6 pt-6">
+      <h2 className="mt-6 text-fg-2">Session {sessionIndex + 1}</h2>
+      <ul className="flex flex-col gap-3 pt-2">
         {routinesArray.fields.map((item, index) => (
           <li key={item.id}>
             <Controller
@@ -30,6 +30,7 @@ const SessionFormSection = ({
               name={`routines.${sessionIndex}.${index}.name`}
               render={({ field }) => (
                 <Input
+                  aria-label="Routine name"
                   className="rounded-b-none"
                   placeholder="Routine name…"
                   {...field}
@@ -49,17 +50,16 @@ const SessionFormSection = ({
           </li>
         ))}
       </ul>
-      <div className="mt-6 flex justify-end">
-        <Button
-          colorScheme="bg"
-          onClick={() => routinesArray.append(DEFAULT_ROUTINE_VALUES)}
-          size="sm"
-          type="button"
-        >
-          <PlusIcon className="w-5" />
-          Add routine
-        </Button>
-      </div>
+      <Button
+        className="mt-3 w-full"
+        colorScheme="transparent"
+        onClick={() => routinesArray.append(DEFAULT_ROUTINE_VALUES)}
+        size="sm"
+        type="button"
+      >
+        <PlusIcon className="w-5" />
+        Add routine
+      </Button>
     </>
   );
 };

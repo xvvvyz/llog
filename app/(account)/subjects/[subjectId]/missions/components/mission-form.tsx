@@ -4,16 +4,17 @@ import { PlusIcon } from '@heroicons/react/24/solid';
 import Button from 'components/button';
 import Input from 'components/input';
 import Label from 'components/label';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
 import forceArray from 'utilities/force-array';
+import sanitizeHtml from 'utilities/sanitize-html';
 import sleep from 'utilities/sleep';
 import SessionFormSection from './session-form-section';
 
 const DEFAULT_ROUTINE_VALUES = {
-  content: '<ol><li> </li><li> </li><li> </li></ol>',
+  content: '<ol><li></li><li></li><li></li></ol>',
   name: '',
 };
 
@@ -35,6 +36,7 @@ interface MissionFormProps {
 }
 
 interface MissionFormValues {
+  id: string;
   name: string;
   routines: {
     content: string;
@@ -45,9 +47,11 @@ interface MissionFormValues {
 
 const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const form = useForm<MissionFormValues>({
     defaultValues: {
+      id: mission?.id,
       name: mission?.name ?? '',
       routines: forceArray(mission?.routines).reduce((acc, routine) => {
         if (acc[routine.session]) acc[routine.session].push(routine);
@@ -64,10 +68,10 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
 
   return (
     <form
-      onSubmit={form.handleSubmit(async ({ name, routines }) => {
+      onSubmit={form.handleSubmit(async ({ id, name, routines }) => {
         const { data: missionData, error: missionError } = await supabase
           .from('missions')
-          .upsert({ id: mission?.id, name, subject_id: subjectId })
+          .upsert({ id, name, subject_id: subjectId })
           .select('id')
           .single();
 
@@ -75,6 +79,8 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
           alert(missionError.message);
           return;
         }
+
+        form.setValue('id', missionData.id);
 
         const { newRoutines, updatedRoutines } = routines.reduce(
           (
@@ -84,7 +90,7 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
           ) => {
             sessionRoutines.forEach((routine) => {
               const payload = {
-                content: routine.content,
+                content: sanitizeHtml(routine.content),
                 id: routine.id,
                 mission_id: missionData.id,
                 name: routine.name,
@@ -111,7 +117,7 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
         if (updatedRoutines.length) {
           const { error: routinesError } = await supabase
             .from('routines')
-            .upsert(updatedRoutines);
+            .upsert(updatedRoutines.sort((a, b) => b.order - a.order));
 
           if (routinesError) {
             alert(routinesError.message);
@@ -130,7 +136,7 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
           }
         }
 
-        await router.push(`/subjects/${subjectId}`);
+        await router.push(searchParams.get('back') ?? `/subjects/${subjectId}`);
         await router.refresh();
         await sleep();
       })}
@@ -150,17 +156,15 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
           </li>
         ))}
       </ul>
-      <div className="mt-6 flex justify-end">
-        <Button
-          colorScheme="bg"
-          onClick={() => routinesArray.append([[DEFAULT_ROUTINE_VALUES]])}
-          size="sm"
-          type="button"
-        >
-          <PlusIcon className="w-5" />
-          Add session
-        </Button>
-      </div>
+      <Button
+        className="mt-12 w-full"
+        colorScheme="transparent"
+        onClick={() => routinesArray.append([[DEFAULT_ROUTINE_VALUES]])}
+        type="button"
+      >
+        <PlusIcon className="w-5" />
+        Add session
+      </Button>
       <div className="mt-12">
         <Button
           className="w-full"

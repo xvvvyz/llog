@@ -1,8 +1,8 @@
 import SubjectForm from '(account)/subjects/components/subject-form';
+import BackButton from 'components/back-button';
 import Card from 'components/card';
-import BackButton from '../../../components/back-button';
-import Header from '../../../components/header';
-import createServerSupabaseClient from '../../../utilities/create-server-supabase-client';
+import Header from 'components/header';
+import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 
 const Page = async () => {
   const { data: availableObservations } = await createServerSupabaseClient()

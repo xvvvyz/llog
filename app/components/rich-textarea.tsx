@@ -3,6 +3,7 @@
 import Bold from '@tiptap/extension-bold';
 import BulletList from '@tiptap/extension-bullet-list';
 import Document from '@tiptap/extension-document';
+import History from '@tiptap/extension-history';
 import Italic from '@tiptap/extension-italic';
 import Link from '@tiptap/extension-link';
 import ListItem from '@tiptap/extension-list-item';
@@ -20,17 +21,20 @@ const RichTextarea = forwardRef<
   <EditorContent
     editor={useEditor({
       content: value as Content,
-      editorProps: { attributes: { class: twMerge('input', className) } },
+      editorProps: { attributes: { class: twMerge('prose input', className) } },
       extensions: [
         Bold,
-        BulletList.configure({ HTMLAttributes: { class: 'list-disc pl-4' } }),
+        BulletList,
         Document,
+        History,
         Italic,
-        Link,
-        ListItem,
-        OrderedList.configure({
-          HTMLAttributes: { class: 'list-decimal pl-4' },
+        Link.configure({
+          HTMLAttributes: {
+            target: '_blank',
+          },
         }),
+        ListItem,
+        OrderedList,
         Paragraph,
         Text,
       ],

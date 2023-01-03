@@ -1,5 +1,5 @@
 import MetaTags from 'components/meta-tags';
-import getSubject from './utilities/get-subject';
+import getSubject from '../utilities/get-subject';
 
 interface HeadProps {
   params: {
@@ -9,7 +9,8 @@ interface HeadProps {
 
 const Head = async ({ params: { subjectId } }: HeadProps) => {
   const { data: subject } = await getSubject(subjectId);
-  const title = `${subject?.name ?? 'Subject'} - llog`;
+  if (!subject) return null;
+  const title = `${subject.name} - llog`;
 
   return (
     <>

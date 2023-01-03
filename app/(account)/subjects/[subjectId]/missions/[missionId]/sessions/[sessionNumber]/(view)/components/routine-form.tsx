@@ -4,27 +4,29 @@ import Button from 'components/button';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import supabase from 'utilities/browser-supabase-client';
-import sleep from 'utilities/sleep';
+import sleep from '../../../../../../../../../utilities/sleep';
 
-interface ObservationFormProps {
-  observationId: string;
+interface RoutineFormProps {
+  eventId?: string;
+  routineId: string;
   subjectId: string;
 }
 
-const ObservationForm = ({
-  observationId,
-  subjectId,
-}: ObservationFormProps) => {
+const RoutineForm = ({ eventId, routineId, subjectId }: RoutineFormProps) => {
   const router = useRouter();
-  const form = useForm();
+  const form = useForm({});
 
   return (
     <form
       onSubmit={form.handleSubmit(async () => {
         const { error: eventError } = await supabase.rpc(
-          'upsert_observation_event',
+          'upsert_routine_event',
           {
-            event: { observation_id: observationId, subject_id: subjectId },
+            event: {
+              id: eventId,
+              routine_id: routineId,
+              subject_id: subjectId,
+            },
             event_input_option_ids: [],
           }
         );
@@ -34,21 +36,21 @@ const ObservationForm = ({
           return;
         }
 
-        await router.push(`/subjects/${subjectId}`);
         await router.refresh();
-        await sleep();
+        await sleep(1000);
       })}
     >
       <Button
-        className="w-full"
+        className="mt-12 w-full"
+        colorScheme={eventId ? 'transparent' : 'accent'}
         loading={form.formState.isSubmitting}
         loadingText="Saving…"
         type="submit"
       >
-        Save
+        {eventId ? 'Save' : 'Complete'}
       </Button>
     </form>
   );
 };
 
-export default ObservationForm;
+export default RoutineForm;

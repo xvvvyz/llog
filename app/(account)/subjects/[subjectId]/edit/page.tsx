@@ -10,7 +10,9 @@ interface PageProps {
 }
 
 const Page = async ({ params: { subjectId } }: PageProps) => {
-  const { data: subject } = await createServerSupabaseClient()
+  const client = createServerSupabaseClient();
+
+  const { data: subject } = await client
     .from('subjects')
     .select('id, image_uri, name, observations(id, name)')
     .eq('id', subjectId)
@@ -18,7 +20,7 @@ const Page = async ({ params: { subjectId } }: PageProps) => {
 
   if (!subject) return notFound();
 
-  const { data: availableObservations } = await createServerSupabaseClient()
+  const { data: availableObservations } = await client
     .from('observations')
     .select('id, name');
 

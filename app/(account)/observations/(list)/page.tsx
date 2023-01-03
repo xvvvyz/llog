@@ -23,7 +23,7 @@ const Page = async () => {
             <span className="truncate">{observation.name}</span>
           </Button>
           <Button
-            colorScheme="bg"
+            colorScheme="transparent"
             href={`/observations/${observation.id}/edit`}
             size="sm"
           >

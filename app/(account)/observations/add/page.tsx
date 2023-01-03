@@ -1,6 +1,6 @@
+import BackButton from 'components/back-button';
 import Card from 'components/card';
-import BackButton from '../../../components/back-button';
-import Header from '../../../components/header';
+import Header from 'components/header';
 import ObservationTypeForm from '../components/observation-type-form';
 
 const Page = () => (

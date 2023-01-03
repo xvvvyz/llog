@@ -1,9 +1,9 @@
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
+import Button from 'components/button';
+import Empty from 'components/empty';
 import { List, ListItem } from 'components/list';
 import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 import firstIfArray from 'utilities/first-if-array';
-import Button from '../../../../../components/button';
-import Empty from '../../../../../components/empty';
 
 interface PageProps {
   params: {

@@ -24,3 +24,9 @@
     @apply w-full rounded border border-alpha-2 bg-alpha-1 px-4 py-2 text-fg-1 placeholder:text-alpha-3 focus-within:outline-none focus-within:ring-1 focus-within:ring-accent-2 hover:border-alpha-3;
   }
 }
+
+@layer utilities {
+  .prose {
+    @apply leading-relaxed prose-a:-m-1 prose-a:p-1 prose-a:text-fg-2 prose-a:underline prose-a:transition-colors prose-a:hover:cursor-pointer prose-ol:list-decimal prose-ol:pl-4 prose-ul:list-disc prose-ul:pl-4 prose-li:marker:text-fg-2;
+  }
+}

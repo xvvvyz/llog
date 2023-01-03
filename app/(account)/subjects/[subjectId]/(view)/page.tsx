@@ -4,8 +4,8 @@ import BackButton from 'components/back-button';
 import Button from 'components/button';
 import Header from 'components/header';
 import { notFound } from 'next/navigation';
+import getSubject from '../utilities/get-subject';
 import Timeline from './components/timeline';
-import getSubject from './utilities/get-subject';
 
 interface PageProps {
   params: {

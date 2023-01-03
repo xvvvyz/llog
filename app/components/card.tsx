@@ -2,8 +2,10 @@ import Box, { BoxProps } from 'components/box';
 import { twMerge } from 'tailwind-merge';
 
 const sizes = {
+  'base:0': 'p-0',
   'base:md': 'p-9',
   'base:sm': 'p-6',
+  'sm:0': 'p-0',
   'sm:md': 'sm:p-9',
   'sm:sm': 'sm:p-6',
 };
@@ -15,7 +17,7 @@ const variants = {
 
 interface CardProps extends BoxProps {
   breakpoint?: 'base' | 'sm';
-  size?: 'md' | 'sm';
+  size?: 'md' | 'sm' | '0';
   variant?: 'default';
 }
 

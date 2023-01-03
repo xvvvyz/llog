@@ -1,7 +1,7 @@
+import Card from 'components/card';
 import Empty from 'components/empty';
 import createServerSupabaseClient from 'utilities/create-server-supabase-client';
-import Card from '../../../../../components/card';
-import firstIfArray from '../../../../../utilities/first-if-array';
+import firstIfArray from 'utilities/first-if-array';
 
 interface TimelineProps {
   subjectId: string;
@@ -37,19 +37,28 @@ const Timeline = async ({ subjectId }: TimelineProps) => {
           </div>
           {events.map((event) => {
             const observation = firstIfArray(event.observation);
+            const routine = firstIfArray(event.routine);
+
+            const time = new Date(event.created_at).toLocaleTimeString(
+              'en-US',
+              { timeStyle: 'short' }
+            );
 
             if (observation) {
               return (
                 <Card key={event.id} size="sm">
-                  {observation.name} -{' '}
-                  {new Date(event.created_at).toLocaleTimeString('en-US', {
-                    timeStyle: 'short',
-                  })}
+                  Observation - {observation.name} - {time}
                 </Card>
               );
             }
 
-            return null;
+            if (routine) {
+              return (
+                <Card key={event.id} size="sm">
+                  Routine - {routine.name} - {time}
+                </Card>
+              );
+            }
           })}
         </li>
       ))}

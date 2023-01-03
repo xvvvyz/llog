@@ -1,6 +1,6 @@
+import BackButton from 'components/back-button';
+import Header from 'components/header';
 import { ReactNode } from 'react';
-import BackButton from '../../../../../../components/back-button';
-import Header from '../../../../../../components/header';
 
 interface LayoutProps {
   children: ReactNode;

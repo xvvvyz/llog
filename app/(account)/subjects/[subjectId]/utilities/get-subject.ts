@@ -1,4 +1,4 @@
-import createServerSupabaseClient from '../../../../../utilities/create-server-supabase-client';
+import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 
 const getSubject = (subjectId: string) =>
   createServerSupabaseClient()

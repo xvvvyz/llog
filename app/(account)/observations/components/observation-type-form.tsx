@@ -3,12 +3,12 @@
 import Button from 'components/button';
 import Input from 'components/input';
 import Label from 'components/label';
+import Textarea from 'components/textarea';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
 import sleep from 'utilities/sleep';
-import Textarea from '../../../components/textarea';
 
 interface ObservationTypeFormProps {
   observation?: Pick<
