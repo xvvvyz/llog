@@ -24,7 +24,10 @@ export const middleware = async (req: NextRequest) => {
     !session.data.session
   ) {
     return NextResponse.redirect(
-      new URL(`/sign-in?redirect=${encodeURI(req.nextUrl.pathname)}`, req.url)
+      new URL(
+        `/sign-in?redirect=${encodeURIComponent(req.nextUrl.pathname)}`,
+        req.url
+      )
     );
   }
 

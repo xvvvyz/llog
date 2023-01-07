@@ -3,46 +3,73 @@
 import Button from 'components/button';
 import Input from 'components/input';
 import Label from 'components/label';
+import Select from 'components/select';
 import Textarea from 'components/textarea';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
+import firstIfArray from 'utilities/first-if-array';
+import forceArray from 'utilities/force-array';
+import { GetObservationData } from 'utilities/get-observation';
+import globalValueCache from 'utilities/global-value-cache';
+import { ListInputsData } from 'utilities/list-inputs';
 import sleep from 'utilities/sleep';
+import useBackLink from 'utilities/use-back-link';
 
 interface ObservationTypeFormProps {
-  observation?: Pick<
-    Database['public']['Tables']['observations']['Row'],
-    'description' | 'id' | 'name'
-  >;
+  availableInputs: ListInputsData;
+  observation?: GetObservationData;
 }
 
-interface ObservationTypeFormValues {
-  description: string;
-  name: string;
-}
+type ObservationTypeFormValues =
+  Database['public']['Tables']['observations']['Insert'] & {
+    inputs: Database['public']['Tables']['inputs']['Row'][];
+  };
 
-const ObservationTypeForm = ({ observation }: ObservationTypeFormProps) => {
+const ObservationTypeForm = ({
+  availableInputs,
+  observation,
+}: ObservationTypeFormProps) => {
+  const backLink = useBackLink({ useCache: 'true' });
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const form = useForm<ObservationTypeFormValues>({
-    defaultValues: {
-      description: observation?.description ?? '',
-      name: observation?.name ?? '',
-    },
+    defaultValues:
+      searchParams.has('useCache') &&
+      globalValueCache.has('observation_type_form_values')
+        ? globalValueCache.get('observation_type_form_values')
+        : {
+            description: observation?.description ?? '',
+            inputs: forceArray(observation?.inputs).map(({ input }) => input),
+            name: observation?.name ?? '',
+          },
   });
 
   return (
     <form
-      onSubmit={form.handleSubmit(async ({ description, name }) => {
-        const { error: observationError } = await supabase
-          .from('observations')
-          .upsert({ description, id: observation?.id, name });
+      onSubmit={form.handleSubmit(async ({ description, inputs, name }) => {
+        const { data: observationData, error: observationError } =
+          await supabase.rpc('upsert_observations_with_inputs', {
+            input_ids: inputs.map(({ id }) => id),
+            observation: { description, id: observation?.id, name },
+          });
 
         if (observationError) {
           alert(observationError?.message);
           return;
+        }
+
+        if (globalValueCache.has('subject_form_values')) {
+          const cache = globalValueCache.get('subject_form_values');
+
+          cache.observations.push({
+            id: firstIfArray(observationData).id,
+            name,
+          });
+
+          globalValueCache.set('subject_form_values', cache);
         }
 
         await router.push(searchParams.get('back') ?? '/observations');
@@ -51,7 +78,7 @@ const ObservationTypeForm = ({ observation }: ObservationTypeFormProps) => {
       })}
     >
       <Label>
-        Observation name
+        Name
         <Controller
           control={form.control}
           name="name"
@@ -64,6 +91,35 @@ const ObservationTypeForm = ({ observation }: ObservationTypeFormProps) => {
           control={form.control}
           name="description"
           render={({ field }) => <Textarea {...field} />}
+        />
+      </Label>
+      <Label className="mt-6">
+        Inputs
+        <Controller
+          control={form.control}
+          name="inputs"
+          render={({ field }) => (
+            <Select
+              isMulti
+              menuFooter={
+                <Button
+                  className="underline"
+                  href={`/inputs/add?back=${backLink}`}
+                  onClick={() =>
+                    globalValueCache.set(
+                      'observation_type_form_values',
+                      form.getValues()
+                    )
+                  }
+                  variant="link"
+                >
+                  Add input
+                </Button>
+              }
+              options={availableInputs ?? []}
+              {...field}
+            />
+          )}
         />
       </Label>
       <Button

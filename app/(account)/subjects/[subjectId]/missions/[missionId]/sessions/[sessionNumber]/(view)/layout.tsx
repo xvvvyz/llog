@@ -2,8 +2,8 @@ import BackButton from 'components/back-button';
 import Header from 'components/header';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
+import getMission from 'utilities/get-mission';
 import SessionPaginator from './components/session-paginator';
-import getMission from './utilities/get-mission';
 
 interface LayoutProps {
   children: ReactNode;

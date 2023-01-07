@@ -2,12 +2,10 @@ import SubjectForm from '(account)/subjects/components/subject-form';
 import BackButton from 'components/back-button';
 import Card from 'components/card';
 import Header from 'components/header';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
+import listObservations from 'utilities/list-observations';
 
 const Page = async () => {
-  const { data: availableObservations } = await createServerSupabaseClient()
-    .from('observations')
-    .select('id, name');
+  const { data: availableObservations } = await listObservations();
 
   return (
     <>

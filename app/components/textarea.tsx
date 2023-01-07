@@ -9,11 +9,11 @@ const Textarea = forwardRef<
   <TextareaAutosize
     autoFocus={autoFocus}
     className={twMerge('input', className)}
+    minRows={2}
     name={name}
     onChange={onChange}
     placeholder={placeholder}
     ref={ref}
-    rows={3}
     value={value}
   />
 ));

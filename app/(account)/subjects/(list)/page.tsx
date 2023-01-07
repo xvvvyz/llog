@@ -2,21 +2,15 @@ import Avatar from 'components/avatar';
 import Button from 'components/button';
 import Empty from 'components/empty';
 import { List, ListItem } from 'components/list';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
+import listSubjects from 'utilities/list-subjects';
 
 const Page = async () => {
-  const supabase = createServerSupabaseClient();
-
-  const { data: subjects } = await supabase
-    .from('subjects')
-    .select('id, image_uri, name')
-    .order('updated_at', { ascending: false });
-
+  const { data: subjects } = await listSubjects();
   if (!subjects?.length) return <Empty>No subjects</Empty>;
 
   return (
     <List>
-      {subjects?.map((subject) => (
+      {subjects.map((subject) => (
         <ListItem key={subject.id}>
           <Button
             className="flex h-full w-3/4 items-center gap-6"

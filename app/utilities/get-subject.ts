@@ -1,4 +1,4 @@
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
+import createServerSupabaseClient from './create-server-supabase-client';
 
 const getSubject = (subjectId: string) =>
   createServerSupabaseClient()
@@ -7,4 +7,5 @@ const getSubject = (subjectId: string) =>
     .eq('id', subjectId)
     .single();
 
+export type GetSubjectData = Awaited<ReturnType<typeof getSubject>>['data'];
 export default getSubject;

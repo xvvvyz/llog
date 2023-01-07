@@ -1,7 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import Button from 'components/button';
 import Card from 'components/card';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
+import getLastMissionRoutine from 'utilities/get-last-mission-routine';
 
 interface SessionPaginatorProps {
   missionId: string;
@@ -14,13 +14,7 @@ const SessionPaginator = async ({
   sessionNumber,
   subjectId,
 }: SessionPaginatorProps) => {
-  const { data: lastRoutine } = await createServerSupabaseClient()
-    .from('routines')
-    .select('session')
-    .eq('mission_id', missionId)
-    .order('order', { ascending: false })
-    .limit(1);
-
+  const { data: lastRoutine } = await getLastMissionRoutine(missionId);
   const lastSessionNumber = (lastRoutine?.[0]?.session ?? 0) + 1;
   const previousSessionNumber = Math.max(1, sessionNumber - 1);
   const nextSessionNumber = Math.min(lastSessionNumber, sessionNumber + 1);

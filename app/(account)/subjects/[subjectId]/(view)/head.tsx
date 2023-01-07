@@ -1,5 +1,5 @@
 import MetaTags from 'components/meta-tags';
-import getSubject from '../utilities/get-subject';
+import getSubject from 'utilities/get-subject';
 
 interface HeadProps {
   params: {

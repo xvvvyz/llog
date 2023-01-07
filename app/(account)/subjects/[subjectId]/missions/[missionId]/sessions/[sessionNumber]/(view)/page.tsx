@@ -1,10 +1,10 @@
-import Button from 'components/button';
 import Card from 'components/card';
 import Empty from 'components/empty';
 import firstIfArray from 'utilities/first-if-array';
+import getSessionRoutines from 'utilities/get-session-routines';
 import sanitizeHtml from 'utilities/sanitize-html';
+import EditMissionLink from './components/edit-mission-link';
 import RoutineForm from './components/routine-form';
-import getSessionRoutines from './utilities/get-session-routines';
 
 interface PageProps {
   params: {
@@ -23,13 +23,7 @@ const Page = async ({
     return (
       <Empty>
         No routines
-        <Button
-          className="underline"
-          href={`/subjects/${subjectId}/missions/${missionId}/edit?back=/subjects/${subjectId}/missions/${missionId}/sessions/${sessionNumber}`}
-          variant="link"
-        >
-          Edit mission
-        </Button>
+        <EditMissionLink missionId={missionId} subjectId={subjectId} />
       </Empty>
     );
   }

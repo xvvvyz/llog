@@ -2,8 +2,9 @@ import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import Button from 'components/button';
 import Empty from 'components/empty';
 import { List, ListItem } from 'components/list';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 import firstIfArray from 'utilities/first-if-array';
+import getSubjectObservations from 'utilities/get-subject-observations';
+import EditSubjectLink from './components/edit-subject-link';
 
 interface PageProps {
   params: {
@@ -12,22 +13,13 @@ interface PageProps {
 }
 
 const Page = async ({ params: { subjectId } }: PageProps) => {
-  const { data: observations } = await createServerSupabaseClient()
-    .from('subject_observations')
-    .select('observation:observations(description, id, name)')
-    .eq('subject_id', subjectId);
+  const { data: observations } = await getSubjectObservations(subjectId);
 
   if (!observations?.length) {
     return (
       <Empty>
-        No observation types enabled
-        <Button
-          className="underline"
-          href={`/subjects/${subjectId}/edit?back=/subjects/${subjectId}/observations/add`}
-          variant="link"
-        >
-          Edit subject
-        </Button>
+        No observations enabled
+        <EditSubjectLink subjectId={subjectId} />
       </Empty>
     );
   }

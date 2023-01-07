@@ -37,7 +37,7 @@
     "eslint-config-next": "^13.1.1",
     "eslint-config-prettier": "^8.6.0",
     "install": "^0.13.0",
-    "next": "^13.1.1",
+    "next": "^13.1.2-canary.2",
     "npm": "^9.2.0",
     "prettier": "^2.8.1",
     "prettier-plugin-organize-imports": "^3.2.1",
@@ -45,14 +45,14 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
-    "react-hook-form": "^7.41.3",
+    "react-hook-form": "^7.41.5",
     "react-select": "^5.7.0",
     "react-textarea-autosize": "^8.4.0",
-    "supabase": "^1.27.10",
+    "supabase": "^1.29.2",
     "tailwind-merge": "^1.8.1",
     "tailwindcss": "^3.2.4",
     "typescript": "^4.9.4",
-    "vercel": "^28.10.1",
+    "vercel": "^28.10.3",
     "xss": "^1.0.14"
   }
 }

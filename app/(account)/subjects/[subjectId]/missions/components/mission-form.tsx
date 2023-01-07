@@ -9,41 +9,29 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
 import forceArray from 'utilities/force-array';
+import { GetMissionWithRoutinesData } from 'utilities/get-mission-with-routines';
 import sanitizeHtml from 'utilities/sanitize-html';
 import sleep from 'utilities/sleep';
 import SessionFormSection from './session-form-section';
 
 const DEFAULT_ROUTINE_VALUES = {
   content: '<ol><li></li><li></li><li></li></ol>',
+  mission_id: '',
   name: '',
-};
-
-type Routine = Pick<
-  Database['public']['Tables']['routines']['Row'],
-  'content' | 'id' | 'name' | 'order' | 'session'
->;
-
-type Mission = Pick<
-  Database['public']['Tables']['missions']['Row'],
-  'id' | 'name'
-> & {
-  routines: Routine | Routine[] | null;
+  order: 0,
+  session: 0,
 };
 
 interface MissionFormProps {
-  mission?: Mission;
+  mission?: GetMissionWithRoutinesData;
   subjectId: string;
 }
 
-interface MissionFormValues {
-  id: string;
-  name: string;
-  routines: {
-    content: string;
-    id?: string;
-    name: string;
-  }[][];
-}
+type Routine = Database['public']['Tables']['routines']['Insert'];
+
+type MissionFormValues = Database['public']['Tables']['missions']['Insert'] & {
+  routines: Routine[][];
+};
 
 const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
   const router = useRouter();
@@ -83,34 +71,28 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
         form.setValue('id', missionData.id);
 
         const { newRoutines, updatedRoutines } = routines.reduce(
-          (
-            { newRoutines, order, updatedRoutines },
-            sessionRoutines,
-            session
-          ) => {
+          (acc, sessionRoutines, session) => {
             sessionRoutines.forEach((routine) => {
               const payload = {
                 content: sanitizeHtml(routine.content),
                 id: routine.id,
                 mission_id: missionData.id,
                 name: routine.name,
-                order,
+                order: acc.order,
                 session,
               };
 
-              if (routine.id) updatedRoutines.push(payload);
-              else newRoutines.push(payload);
-              order++;
+              if (routine.id) acc.updatedRoutines.push(payload);
+              else acc.newRoutines.push(payload);
+              acc.order++;
             });
 
-            return { newRoutines, order, updatedRoutines };
+            return acc;
           },
           {
-            newRoutines:
-              [] as Database['public']['Tables']['routines']['Insert'][],
+            newRoutines: [] as Routine[],
             order: 0,
-            updatedRoutines:
-              [] as Database['public']['Tables']['routines']['Insert'][],
+            updatedRoutines: [] as Routine[],
           }
         );
 
@@ -142,7 +124,7 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
       })}
     >
       <Label>
-        Mission name
+        Name
         <Controller
           control={form.control}
           name="name"
@@ -179,6 +161,6 @@ const MissionForm = ({ mission, subjectId }: MissionFormProps) => {
   );
 };
 
-export default MissionForm;
 export type { MissionFormValues };
 export { DEFAULT_ROUTINE_VALUES };
+export default MissionForm;

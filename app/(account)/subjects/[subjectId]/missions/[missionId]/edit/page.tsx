@@ -1,6 +1,6 @@
 import Card from 'components/card';
 import { notFound } from 'next/navigation';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
+import getMissionWithRoutines from 'utilities/get-mission-with-routines';
 import MissionForm from '../../components/mission-form';
 
 interface PageProps {
@@ -11,13 +11,7 @@ interface PageProps {
 }
 
 const Page = async ({ params: { missionId, subjectId } }: PageProps) => {
-  const { data: mission } = await createServerSupabaseClient()
-    .from('missions')
-    .select('id, name, routines(content, id, name, order, session)')
-    .eq('id', missionId)
-    .order('order', { ascending: true, foreignTable: 'routines' })
-    .single();
-
+  const { data: mission } = await getMissionWithRoutines(missionId);
   if (!mission) return notFound();
 
   return (

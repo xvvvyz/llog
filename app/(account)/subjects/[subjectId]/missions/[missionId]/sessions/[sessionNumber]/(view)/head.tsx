@@ -1,6 +1,6 @@
 import MetaTags from 'components/meta-tags';
-import getSubject from '../../../../../utilities/get-subject';
-import getMission from './utilities/get-mission';
+import getMission from 'utilities/get-mission';
+import getSubject from 'utilities/get-subject';
 
 interface HeadProps {
   params: {
@@ -16,7 +16,7 @@ const Head = async ({
   const { data: subject } = await getSubject(subjectId);
   const { data: mission } = await getMission(missionId);
   if (!subject || !mission) return null;
-  const title = `${subject.name} / ${mission.name} / Session ${sessionNumber} - llog`;
+  const title = `${subject.name} / ${mission.name} / ${sessionNumber} - llog`;
 
   return (
     <>

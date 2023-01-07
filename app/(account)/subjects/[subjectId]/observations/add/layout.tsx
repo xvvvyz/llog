@@ -18,4 +18,5 @@ const Layout = ({ children, params: { subjectId } }: LayoutProps) => (
     <main>{children}</main>
   </>
 );
+
 export default Layout;

@@ -11,4 +11,8 @@ const getSessionRoutines = (
     .eq('session', Number(sessionNumber) - 1)
     .order('order', { ascending: true });
 
+export type GetSessionRoutinesData = Awaited<
+  ReturnType<typeof getSessionRoutines>
+>['data'];
+
 export default getSessionRoutines;

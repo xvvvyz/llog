@@ -14,14 +14,19 @@ import ReactSelect, {
   SingleValueProps,
 } from 'react-select';
 
-import { forwardRef, Ref } from 'react';
+import { PlusIcon } from '@heroicons/react/20/solid';
+import { forwardRef, ReactNode, Ref } from 'react';
+import Creatable from 'react-select/creatable';
 import ReactSelectDeclaration from 'react-select/dist/declarations/src/Select';
 import { twMerge } from 'tailwind-merge';
 
-interface IOption {
-  id: string;
-  name: string;
-}
+type IOption =
+  | {
+      id: string;
+      label?: string;
+      name?: string;
+    }
+  | string;
 
 const Control = <TOption extends IOption>({
   children,
@@ -41,18 +46,6 @@ const Input = <TOption extends IOption>({
   <components.Input className="m-1 px-2" {...props}>
     {children}
   </components.Input>
-);
-
-const Menu = <TOption extends IOption>({
-  children,
-  ...props
-}: MenuProps<TOption>) => (
-  <components.Menu
-    className="mt-2 rounded border border-alpha-2 bg-bg-1 py-2 text-fg-1"
-    {...props}
-  >
-    {children}
-  </components.Menu>
 );
 
 const MultiValueContainer = ({
@@ -78,10 +71,7 @@ const NoOptionsMessage = <TOption extends IOption>({
   children,
   ...props
 }: NoticeProps<TOption>) => (
-  <components.NoOptionsMessage
-    className="px-4 py-2 text-center text-fg-2"
-    {...props}
-  >
+  <components.NoOptionsMessage {...props}>
     {children}
   </components.NoOptionsMessage>
 );
@@ -90,14 +80,23 @@ const Option = <TOption extends IOption>({
   children,
   ...props
 }: OptionProps<TOption>) => (
-  <components.Option
-    className={twMerge(
-      'flex items-center px-4 py-2 text-fg-2 transition-colors hover:cursor-pointer hover:bg-alpha-1 hover:text-fg-1',
-      props.isFocused && 'bg-alpha-1 text-fg-1'
-    )}
-    {...props}
-  >
-    {children}
+  <components.Option {...props}>
+    <div
+      className={twMerge(
+        'flex w-full items-center justify-between px-4 py-2 transition-colors hover:cursor-pointer',
+        props.isFocused && 'bg-bg-2'
+      )}
+    >
+      {children}
+      {props.isMulti && (
+        <PlusIcon
+          className={twMerge(
+            'w-5 text-fg-2 transition-colors',
+            props.isFocused && 'text-fg-1'
+          )}
+        />
+      )}
+    </div>
   </components.Option>
 );
 
@@ -121,34 +120,69 @@ const SingleValue = <TOption extends IOption>({
 
 const Select = forwardRef(
   <TOption extends IOption>(
-    props: ReactSelectProps<TOption>,
+    {
+      creatable,
+      menuFooter,
+      ...props
+    }: ReactSelectProps<TOption> & {
+      creatable?: boolean;
+      menuFooter?: ReactNode;
+    },
     ref: Ref<ReactSelectDeclaration<TOption>>
-  ) => (
-    <ReactSelect
-      closeMenuOnSelect={!props.isMulti}
-      components={{
+  ) => {
+    const commonProps = {
+      closeMenuOnSelect: !props.isMulti,
+      components: {
         Control,
         DropdownIndicator,
         Input,
-        Menu,
+        Menu: ({ children, ...props }: MenuProps<TOption>) => (
+          <components.Menu
+            className="mt-2 overflow-hidden rounded border border-alpha-2 bg-bg-1 text-fg-1 shadow-2xl"
+            {...props}
+          >
+            {children}
+            {menuFooter && (
+              <div className="-mt-[1px] flex flex-col items-center border-t border-alpha-1 px-4 py-3">
+                {menuFooter}
+              </div>
+            )}
+          </components.Menu>
+        ),
         MultiValueContainer,
         MultiValueRemove,
         NoOptionsMessage,
         Option,
         Placeholder,
         SingleValue,
-      }}
-      getOptionLabel={(option) => option.name}
-      getOptionValue={(option) => option.id}
-      instanceId={props.name}
-      isClearable={false}
-      noOptionsMessage={() => null}
-      placeholder={<>&nbsp;</>}
-      ref={ref}
-      unstyled
-      {...props}
-    />
-  )
+      },
+      instanceId: props.name,
+      isClearable: false,
+      noOptionsMessage: () => '',
+      placeholder: <>&nbsp;</>,
+      ref: () => ref,
+      unstyled: true,
+      ...props,
+    };
+
+    if (creatable) {
+      return <Creatable {...commonProps} />;
+    }
+
+    return (
+      <ReactSelect
+        getOptionLabel={(option) =>
+          typeof option === 'string'
+            ? option
+            : option.label ?? option.name ?? ''
+        }
+        getOptionValue={(option) =>
+          typeof option === 'string' ? option : option.id
+        }
+        {...commonProps}
+      />
+    );
+  }
 );
 
 Select.displayName = 'Select';

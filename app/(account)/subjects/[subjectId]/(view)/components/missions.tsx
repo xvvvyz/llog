@@ -1,20 +1,15 @@
 import Button from 'components/button';
 import Empty from 'components/empty';
 import { List, ListItem } from 'components/list';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 import forceArray from 'utilities/force-array';
+import listMissionsWithRoutinesAndEvents from 'utilities/list-missions-with-routines-and-events';
 
 interface MissionProps {
   subjectId: string;
 }
 
 const Missions = async ({ subjectId }: MissionProps) => {
-  const { data: missions } = await createServerSupabaseClient()
-    .from('missions')
-    .select('id, name, routines(events(id), session)')
-    .eq('subject_id', subjectId)
-    .order('order', { ascending: true, foreignTable: 'routines' });
-
+  const { data: missions } = await listMissionsWithRoutinesAndEvents(subjectId);
   if (!missions?.length) return <Empty>No missions</Empty>;
 
   return (
@@ -23,10 +18,9 @@ const Missions = async ({ subjectId }: MissionProps) => {
         const routines = forceArray(mission.routines);
 
         const activeSessionNumber =
-          (routines.length
-            ? routines.find((routine) => !routine.events.length)?.session ??
-              routines.pop().session
-            : 0) + 1;
+          (routines.find((routine) => !routine.events.length)?.session ??
+            routines.pop().session ??
+            0) + 1;
 
         return (
           <ListItem key={mission.id}>

@@ -32,7 +32,7 @@ const SignInForm = () => {
           alert(error.message);
         } else {
           const redirect = searchParams.get('redirect') ?? '/subjects';
-          await router.push(decodeURI(redirect));
+          await router.push(decodeURIComponent(redirect));
           await sleep();
         }
       })}

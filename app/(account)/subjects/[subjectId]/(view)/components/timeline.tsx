@@ -1,21 +1,14 @@
 import Card from 'components/card';
 import Empty from 'components/empty';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
 import firstIfArray from 'utilities/first-if-array';
+import listEvents from 'utilities/list-events';
 
 interface TimelineProps {
   subjectId: string;
 }
 
 const Timeline = async ({ subjectId }: TimelineProps) => {
-  const { data: events } = await createServerSupabaseClient()
-    .from('events')
-    .select(
-      'created_at, id, observation:observations(id, name), routine:routines(id, name)'
-    )
-    .order('created_at', { ascending: false })
-    .eq('subject_id', subjectId);
-
+  const { data: events } = await listEvents(subjectId);
   if (!events?.length) return <Empty>No events</Empty>;
 
   return (

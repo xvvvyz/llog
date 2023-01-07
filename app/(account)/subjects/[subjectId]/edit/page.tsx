@@ -1,7 +1,8 @@
 import SubjectForm from '(account)/subjects/components/subject-form';
 import Card from 'components/card';
 import { notFound } from 'next/navigation';
-import createServerSupabaseClient from 'utilities/create-server-supabase-client';
+import getSubjectWithObservations from 'utilities/get-subject-with-observations';
+import listObservations from 'utilities/list-observations';
 
 interface PageProps {
   params: {
@@ -10,19 +11,9 @@ interface PageProps {
 }
 
 const Page = async ({ params: { subjectId } }: PageProps) => {
-  const client = createServerSupabaseClient();
-
-  const { data: subject } = await client
-    .from('subjects')
-    .select('id, image_uri, name, observations(id, name)')
-    .eq('id', subjectId)
-    .single();
-
+  const { data: subject } = await getSubjectWithObservations(subjectId);
   if (!subject) return notFound();
-
-  const { data: availableObservations } = await client
-    .from('observations')
-    .select('id, name');
+  const { data: availableObservations } = await listObservations();
 
   return (
     <Card breakpoint="sm">

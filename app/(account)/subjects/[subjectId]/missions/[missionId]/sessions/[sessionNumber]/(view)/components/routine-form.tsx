@@ -4,7 +4,7 @@ import Button from 'components/button';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import supabase from 'utilities/browser-supabase-client';
-import sleep from '../../../../../../../../../utilities/sleep';
+import sleep from 'utilities/sleep';
 
 interface RoutineFormProps {
   eventId?: string;

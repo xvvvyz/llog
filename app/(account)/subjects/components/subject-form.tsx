@@ -5,41 +5,31 @@ import Button from 'components/button';
 import Input from 'components/input';
 import Label from 'components/label';
 import Select from 'components/select';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useDropzone } from 'react-dropzone';
 import { Controller, useForm } from 'react-hook-form';
 import { Database } from 'types/database';
 import supabase from 'utilities/browser-supabase-client';
 import forceArray from 'utilities/force-array';
+import { GetSubjectWithObservationsData } from 'utilities/get-subject-with-observations';
 import globalValueCache from 'utilities/global-value-cache';
+import { ListObservationsData } from 'utilities/list-observations';
 import sleep from 'utilities/sleep';
-
-type Observation = Pick<
-  Database['public']['Tables']['observations']['Row'],
-  'id' | 'name'
->;
-
-type Subject = Pick<
-  Database['public']['Tables']['subjects']['Row'],
-  'id' | 'image_uri' | 'name'
-> & {
-  observations: Observation | Observation[] | null;
-};
+import useBackLink from 'utilities/use-back-link';
 
 interface SubjectFormProps {
-  availableObservations: Observation[] | null;
-  subject?: Subject;
+  availableObservations: ListObservationsData;
+  subject?: GetSubjectWithObservationsData;
 }
 
-interface SubjectFormValues {
-  name: string;
-  observations: Observation[];
-}
+type SubjectFormValues = Database['public']['Tables']['subjects']['Insert'] & {
+  observations: Database['public']['Tables']['observations']['Row'][];
+};
 
 const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
-  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const backLink = useBackLink({ useCache: 'true' });
 
   const form = useForm<SubjectFormValues>({
     defaultValues:
@@ -95,7 +85,7 @@ const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
       })}
     >
       <Label>
-        Subject name
+        Name
         <Controller
           control={form.control}
           name="name"
@@ -103,24 +93,31 @@ const SubjectForm = ({ availableObservations, subject }: SubjectFormProps) => {
         />
       </Label>
       <Label className="mt-6">
-        <div className="flex justify-between">
-          Enabled observation types
-          <Button
-            className="underline"
-            href={`/observations/add?back=${pathname}?useCache=true`}
-            onClick={() =>
-              globalValueCache.set('subject_form_values', form.getValues())
-            }
-            variant="link"
-          >
-            Add type
-          </Button>
-        </div>
+        Enabled observations
         <Controller
           control={form.control}
           name="observations"
           render={({ field }) => (
-            <Select isMulti options={availableObservations ?? []} {...field} />
+            <Select
+              isMulti
+              menuFooter={
+                <Button
+                  className="underline"
+                  href={`/observations/add?back=${backLink}`}
+                  onClick={() =>
+                    globalValueCache.set(
+                      'subject_form_values',
+                      form.getValues()
+                    )
+                  }
+                  variant="link"
+                >
+                  Add type
+                </Button>
+              }
+              options={availableObservations ?? []}
+              {...field}
+            />
           )}
         />
       </Label>
