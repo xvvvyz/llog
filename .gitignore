@@ -1,0 +1,14 @@
+*.jks
+*.key
+*.mobileprovision
+*.orig.*
+*.p12
+*.p8
+.env
+.expo/
+.kotlin/
+.metro-health-check*
+dist/
+expo-env.d.ts
+node_modules/
+web-build/
