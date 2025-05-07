@@ -1,12 +1,13 @@
+import { Container } from '@/components/container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { Redirect, router } from 'expo-router';
 import * as React from 'react';
-import { View } from 'react-native';
 
-export default function SignIn() {
+export default function SignInView() {
   const auth = useAuth();
   const [email, setEmail] = React.useState('');
   const [code, setCode] = React.useState('');
@@ -14,15 +15,20 @@ export default function SignIn() {
   if (auth.user) return <Redirect href="/" />;
 
   return (
-    <View className="flex-1 items-center justify-center gap-4 bg-background p-6">
+    <Container className="justify-center gap-4">
       {step === 'email' ? (
         <>
+          <Label className="text-2xl" nativeID="email">
+            Enter your email
+          </Label>
           <Input
+            aria-labelledby="email"
             autoCapitalize="none"
+            autoComplete="email"
             className="w-full"
-            placeholder="Enter your email"
             keyboardType="email-address"
             onChangeText={setEmail}
+            placeholder="e.g. jane@acme.com"
             value={email}
           />
           <Button
@@ -38,11 +44,16 @@ export default function SignIn() {
         </>
       ) : (
         <>
+          <Label className="text-2xl" nativeID="code">
+            Enter the code we sent you
+          </Label>
           <Input
+            aria-labelledby="code"
+            autoComplete="off"
             className="w-full"
-            placeholder="Enter the code sent to your email"
             keyboardType="number-pad"
             onChangeText={setCode}
+            placeholder="e.g. 123456"
             value={code}
           />
           <Button
@@ -50,7 +61,7 @@ export default function SignIn() {
             disabled={auth.isLoading || !code}
             onPress={async () => {
               await auth.signInWithMagicCode(email, code);
-              router.replace('/');
+              router.replace('/onboarding');
             }}
           >
             <Text>Sign in</Text>
@@ -58,6 +69,6 @@ export default function SignIn() {
         </>
       )}
       {auth.error && <Text>{auth.error.message}</Text>}
-    </View>
+    </Container>
   );
 }

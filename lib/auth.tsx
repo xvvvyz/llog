@@ -1,5 +1,6 @@
 import { db } from '@/lib/utils';
 import { User } from '@instantdb/react';
+import { router } from 'expo-router';
 import * as React from 'react';
 
 interface AuthContextType {
@@ -19,11 +20,7 @@ export function useAuth() {
   return ctx;
 }
 
-export default function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [pending, setPending] = React.useState(false);
   const { isLoading, user, error } = db.useAuth();
 
@@ -47,7 +44,10 @@ export default function AuthProvider({
     }
   };
 
-  const signOut = () => db.auth.signOut();
+  const signOut = async () => {
+    await db.auth.signOut();
+    router.replace('/sign-in');
+  };
 
   return (
     <AuthContext.Provider
