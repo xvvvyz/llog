@@ -1,28 +1,21 @@
 import { Loading } from '@/components/loading';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
-import { useAuth } from '@/lib/auth';
-import { Redirect, Stack } from 'expo-router';
+import { useOnboarding } from '@/lib/useOnboarding';
+import { Redirect, Slot } from 'expo-router';
 
-export default function AppLayout() {
-  const auth = useAuth();
-  if (auth.isLoading) return <Loading />;
-  if (!auth.user) return <Redirect href="./sign-in" />;
+export default function Layout() {
+  const onboarding = useOnboarding();
 
-  return (
-    <Stack
-      screenOptions={{
-        headerTitle: 'llog',
-        headerRight: () => (
-          <Button
-            disabled={auth.isLoading}
-            onPress={auth.signOut}
-            variant="link"
-          >
-            <Text>Sign out</Text>
-          </Button>
-        ),
-      }}
-    />
-  );
+  if (onboarding.isLoading) {
+    return <Loading />;
+  }
+
+  if (onboarding.requiresAuth) {
+    return <Redirect href="./sign-in" />;
+  }
+
+  if (onboarding.requiresOnboarding) {
+    return <Redirect href="./onboarding" />;
+  }
+
+  return <Slot />;
 }

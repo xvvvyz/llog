@@ -1,97 +1,75 @@
-import { Container } from '@/components/container';
 import { Loading } from '@/components/loading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { useAuth } from '@/lib/auth';
-import { useOnboardingStep } from '@/lib/useOnboardingStep';
+import { useOnboarding } from '@/lib/useOnboarding';
 import { db } from '@/lib/utils';
 import { id } from '@instantdb/react-native';
 import { Redirect } from 'expo-router';
 import * as React from 'react';
+import { View } from 'react-native';
 
-export default function OnboardingView() {
+export default function Onboarding() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [profileName, setProfileName] = React.useState('');
-  const [teamName, setTeamName] = React.useState('');
-  const auth = useAuth();
-  const onboarding = useOnboardingStep({ userId: auth.user?.id });
-  React.useEffect(() => setIsSubmitting(false), [onboarding.step]);
-  if (auth.isLoading) return <Loading />;
-  if (!auth.user) return <Redirect href="./sign-in" />;
-  if (onboarding.isLoading) return <Loading />;
+  const [name, setName] = React.useState('');
+  const onboarding = useOnboarding();
 
-  return (
-    <Container className="justify-center gap-4">
-      {onboarding.step === 'create-profile' ? (
-        <>
-          <Label className="text-2xl" nativeID="name">
-            What is your name?
-          </Label>
-          <Input
-            aria-labelledby="name"
-            autoCapitalize="none"
-            autoComplete="name"
-            className="w-full"
-            onChangeText={setProfileName}
-            placeholder="e.g. Jane Doe"
-            value={profileName}
-          />
-          <Button
-            className="w-full"
-            disabled={!profileName || isSubmitting}
-            onPress={async () => {
-              setIsSubmitting(true);
+  if (onboarding.isLoading) {
+    return <Loading />;
+  }
 
-              await db.transact(
-                db.tx.profiles[auth.user!.id]
-                  .update({ name: profileName })
-                  .link({ user: auth.user!.id })
-              );
-            }}
-          >
-            <Text>Continue</Text>
-          </Button>
-        </>
-      ) : onboarding.step === 'create-team' ? (
-        <>
-          <Label className="text-2xl" nativeID="team">
-            Name your team
-          </Label>
-          <Input
-            aria-labelledby="team"
-            autoCapitalize="none"
-            className="w-full"
-            onChangeText={setTeamName}
-            placeholder="e.g. Acme Inc."
-            value={teamName}
-          />
-          <Button
-            className="w-full"
-            disabled={!teamName || isSubmitting}
-            onPress={async () => {
-              setIsSubmitting(true);
-              const teamId = id();
+  if (onboarding.requiresAuth) {
+    return <Redirect href="./sign-in" />;
+  }
 
-              await db.transact([
-                db.tx.teams[teamId].update({ name: teamName || 'Me' }),
-                db.tx.ui[auth.user!.id]
-                  .update({})
-                  .link({ user: auth.user!.id })
-                  .link({ team: teamId }),
-                db.tx.roles[id()]
-                  .update({ role: 'owner' })
-                  .link({ team: teamId, user: auth.user!.id }),
-              ]);
-            }}
-          >
-            <Text>Continue</Text>
-          </Button>
-        </>
-      ) : (
-        <Redirect href="/" />
-      )}
-    </Container>
-  );
+  if (onboarding.requiresOnboarding) {
+    return (
+      <View className="flex-1 justify-center gap-4 p-6">
+        <Label className="text-3xl" nativeID="name">
+          What is your name?
+        </Label>
+        <Input
+          aria-labelledby="name"
+          autoCapitalize="none"
+          autoComplete="name"
+          className="w-full"
+          onChangeText={setName}
+          placeholder="e.g. Jane Doe"
+          value={name}
+        />
+        <Button
+          className="w-full"
+          disabled={!name || isSubmitting}
+          onPress={async () => {
+            if (!onboarding.auth.user) return;
+            setIsSubmitting(true);
+            const roleId = id();
+            const subjectId = id();
+            const teamId = id();
+            const userId = onboarding.auth.user.id;
+
+            await db.transact([
+              db.tx.profiles[userId].update({ name }).link({ user: userId }),
+              db.tx.teams[teamId].update({ name }),
+              db.tx.roles[roleId]
+                .update({ role: 'owner' })
+                .link({ team: teamId, user: userId }),
+              db.tx.ui[userId]
+                .update({})
+                .link({ user: userId })
+                .link({ team: teamId }),
+              db.tx.subjects[subjectId]
+                .update({ name: 'Journal' })
+                .link({ team: teamId }),
+            ]);
+          }}
+        >
+          <Text>Continue</Text>
+        </Button>
+      </View>
+    );
+  }
+
+  return <Redirect href="/" />;
 }
