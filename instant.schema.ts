@@ -1,6 +1,6 @@
 import { i } from '@instantdb/react-native';
 
-// Docs: https://www.instantdb.com/docs/modeling-data
+// https://www.instantdb.com/docs/modeling-data
 const _schema = i.schema({
   entities: {
     $files: i.entity({
@@ -29,7 +29,7 @@ const _schema = i.schema({
     ui: i.entity({}),
   },
   links: {
-    logAuthors: {
+    logsAuthors: {
       forward: {
         on: 'logs',
         has: 'many',
@@ -42,13 +42,13 @@ const _schema = i.schema({
         label: 'logs',
       },
     },
-    subjectLogs: {
+    logsSubject: {
       forward: {
         on: 'logs',
         has: 'one',
         label: 'subject',
-        onDelete: 'cascade',
         required: true,
+        onDelete: 'cascade',
       },
       reverse: {
         on: 'subjects',
@@ -56,13 +56,27 @@ const _schema = i.schema({
         label: 'logs',
       },
     },
-    teamRoles: {
+    profilesUser: {
+      forward: {
+        on: 'profiles',
+        has: 'one',
+        label: 'user',
+        required: true,
+        onDelete: 'cascade',
+      },
+      reverse: {
+        on: '$users',
+        has: 'one',
+        label: 'profile',
+      },
+    },
+    rolesTeam: {
       forward: {
         on: 'roles',
         has: 'one',
         label: 'team',
-        onDelete: 'cascade',
         required: true,
+        onDelete: 'cascade',
       },
       reverse: {
         on: 'teams',
@@ -70,13 +84,27 @@ const _schema = i.schema({
         label: 'roles',
       },
     },
-    teamSubjects: {
+    rolesUser: {
+      forward: {
+        on: 'roles',
+        has: 'one',
+        label: 'user',
+        required: true,
+        onDelete: 'cascade',
+      },
+      reverse: {
+        on: '$users',
+        has: 'many',
+        label: 'roles',
+      },
+    },
+    subjectsTeam: {
       forward: {
         on: 'subjects',
         has: 'one',
         label: 'team',
-        onDelete: 'cascade',
         required: true,
+        onDelete: 'cascade',
       },
       reverse: {
         on: 'teams',
@@ -84,7 +112,7 @@ const _schema = i.schema({
         label: 'subjects',
       },
     },
-    uiTeam: {
+    teamsUi: {
       forward: {
         on: 'teams',
         has: 'many',
@@ -94,44 +122,15 @@ const _schema = i.schema({
         on: 'ui',
         has: 'one',
         label: 'team',
-        required: true,
       },
     },
-    userProfiles: {
-      forward: {
-        on: 'profiles',
-        has: 'one',
-        label: 'user',
-        onDelete: 'cascade',
-        required: true,
-      },
-      reverse: {
-        on: '$users',
-        has: 'one',
-        label: 'profile',
-      },
-    },
-    userRoles: {
-      forward: {
-        on: 'roles',
-        has: 'one',
-        label: 'user',
-        onDelete: 'cascade',
-        required: true,
-      },
-      reverse: {
-        on: '$users',
-        has: 'many',
-        label: 'roles',
-      },
-    },
-    userUi: {
+    uiUser: {
       forward: {
         on: 'ui',
         has: 'one',
         label: 'user',
-        onDelete: 'cascade',
         required: true,
+        onDelete: 'cascade',
       },
       reverse: {
         on: '$users',
@@ -140,6 +139,7 @@ const _schema = i.schema({
       },
     },
   },
+  rooms: {},
 });
 
 type AppSchema = typeof _schema;

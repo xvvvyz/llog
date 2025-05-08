@@ -3,19 +3,18 @@ import { Plus } from '@/components/icons/plus';
 import { Loading } from '@/components/loading';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { useAuthenticatedUser } from '@/lib/useAuthenticatedUser';
 import { db } from '@/lib/utils';
 import { Link, Stack } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Index() {
-  const user = useAuthenticatedUser();
+  const auth = db.useAuth();
 
   const { data, isLoading } = db.useQuery({
     teams: {
       subjects: {},
-      $: { where: { 'ui.user.id': user.id } },
+      $: { where: { 'ui.user.id': auth.user!.id } },
     },
   });
 

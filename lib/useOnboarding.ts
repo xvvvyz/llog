@@ -1,8 +1,7 @@
-import { useAuth } from '@/lib/auth';
 import { db } from '@/lib/utils';
 
 export function useOnboarding() {
-  const auth = useAuth();
+  const auth = db.useAuth();
 
   const { data, isLoading } = db.useQuery(
     auth.user

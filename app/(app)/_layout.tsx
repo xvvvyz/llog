@@ -1,6 +1,6 @@
 import { Loading } from '@/components/loading';
 import { useOnboarding } from '@/lib/useOnboarding';
-import { Redirect, Slot } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 
 export default function Layout() {
   const onboarding = useOnboarding();
@@ -17,5 +17,10 @@ export default function Layout() {
     return <Redirect href="./onboarding" />;
   }
 
-  return <Slot />;
+  return (
+    <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="(subjects)" options={{ title: 'Subjects' }} />
+      <Tabs.Screen name="(profile)/profile" options={{ title: 'Profile' }} />
+    </Tabs>
+  );
 }

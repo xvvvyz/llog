@@ -2,13 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { useAuth } from '@/lib/auth';
+import { db } from '@/lib/utils';
 import { Redirect, router } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
 
 export default function SignIn() {
-  const auth = useAuth();
+  const auth = db.useAuth();
   const [email, setEmail] = React.useState('');
   const [code, setCode] = React.useState('');
   const [step, setStep] = React.useState<'email' | 'code'>('email');
@@ -37,7 +37,7 @@ export default function SignIn() {
           className="w-full"
           disabled={auth.isLoading || !email}
           onPress={async () => {
-            await auth.sendMagicCode(email);
+            await db.auth.sendMagicCode({ email });
             setStep('code');
           }}
         >
@@ -65,7 +65,7 @@ export default function SignIn() {
         className="w-full"
         disabled={auth.isLoading || !code}
         onPress={async () => {
-          await auth.signInWithMagicCode(email, code);
+          await db.auth.signInWithMagicCode({ email, code });
           router.replace('/');
         }}
       >
