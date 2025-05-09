@@ -1,5 +1,5 @@
 import { Loading } from '@/components/loading';
-import { useOnboarding } from '@/lib/useOnboarding';
+import { useOnboarding } from '@/lib/use-onboarding';
 import { Redirect, Tabs } from 'expo-router';
 
 export default function Layout() {
@@ -10,16 +10,16 @@ export default function Layout() {
   }
 
   if (onboarding.requiresAuth) {
-    return <Redirect href="./sign-in" />;
+    return <Redirect href="/sign-in" />;
   }
 
   if (onboarding.requiresOnboarding) {
-    return <Redirect href="./onboarding" />;
+    return <Redirect href="/onboarding" />;
   }
 
   return (
     <Tabs screenOptions={{ headerShown: false }}>
-      <Tabs.Screen name="(subjects)" options={{ title: 'Subjects' }} />
+      <Tabs.Screen name="(logs)" options={{ title: 'Logs' }} />
       <Tabs.Screen name="(profile)/profile" options={{ title: 'Profile' }} />
     </Tabs>
   );

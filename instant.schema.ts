@@ -1,6 +1,7 @@
-import { i } from '@instantdb/react-native';
-
 // https://www.instantdb.com/docs/modeling-data
+
+import { i } from '@instantdb/react';
+
 const _schema = i.schema({
   entities: {
     $files: i.entity({
@@ -11,17 +12,17 @@ const _schema = i.schema({
       email: i.string().unique().indexed().optional(),
     }),
     logs: i.entity({
-      date: i.date(),
-      text: i.string(),
+      name: i.string(),
     }),
     profiles: i.entity({
       name: i.string(),
     }),
+    records: i.entity({
+      date: i.date().indexed(),
+      text: i.string(),
+    }),
     roles: i.entity({
       role: i.string(),
-    }),
-    subjects: i.entity({
-      name: i.string(),
     }),
     teams: i.entity({
       name: i.string(),
@@ -29,31 +30,18 @@ const _schema = i.schema({
     ui: i.entity({}),
   },
   links: {
-    logsAuthors: {
+    logsRecords: {
       forward: {
         on: 'logs',
         has: 'many',
-        label: 'authors',
-        required: true,
+        label: 'records',
       },
       reverse: {
-        on: '$users',
-        has: 'many',
-        label: 'logs',
-      },
-    },
-    logsSubject: {
-      forward: {
-        on: 'logs',
+        on: 'records',
         has: 'one',
-        label: 'subject',
+        label: 'log',
         required: true,
         onDelete: 'cascade',
-      },
-      reverse: {
-        on: 'subjects',
-        has: 'many',
-        label: 'logs',
       },
     },
     profilesUser: {
@@ -70,18 +58,17 @@ const _schema = i.schema({
         label: 'profile',
       },
     },
-    rolesTeam: {
+    recordsAuthors: {
       forward: {
-        on: 'roles',
+        on: 'records',
         has: 'one',
-        label: 'team',
+        label: 'authors',
         required: true,
-        onDelete: 'cascade',
       },
       reverse: {
-        on: 'teams',
+        on: '$users',
         has: 'many',
-        label: 'roles',
+        label: 'records',
       },
     },
     rolesUser: {
@@ -98,30 +85,44 @@ const _schema = i.schema({
         label: 'roles',
       },
     },
-    subjectsTeam: {
+    teamsLogs: {
       forward: {
-        on: 'subjects',
+        on: 'teams',
+        has: 'many',
+        label: 'logs',
+      },
+      reverse: {
+        on: 'logs',
         has: 'one',
         label: 'team',
         required: true,
         onDelete: 'cascade',
       },
-      reverse: {
-        on: 'teams',
-        has: 'many',
-        label: 'subjects',
-      },
     },
-    teamsUi: {
+    teamsRoles: {
       forward: {
         on: 'teams',
         has: 'many',
-        label: 'ui',
+        label: 'roles',
       },
       reverse: {
+        on: 'roles',
+        has: 'one',
+        label: 'team',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
+    uiTeam: {
+      forward: {
         on: 'ui',
         has: 'one',
         label: 'team',
+      },
+      reverse: {
+        on: 'teams',
+        has: 'many',
+        label: 'ui',
       },
     },
     uiUser: {

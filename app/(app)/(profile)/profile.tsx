@@ -11,7 +11,7 @@ export default function Profile() {
       <Button
         onPress={() => {
           db.auth.signOut();
-          router.replace('/sign-in');
+          router.dismissTo('/sign-in');
         }}
         variant="link"
       >

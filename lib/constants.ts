@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 
-export const NAV_THEME = {
+export const NAV_THEME = Object.freeze({
   dark: {
     ...DarkTheme,
     colors: {
@@ -25,4 +25,4 @@ export const NAV_THEME = {
       text: 'hsl(240 10% 3.9%)',
     },
   },
-};
+});
