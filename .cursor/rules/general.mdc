@@ -1,0 +1,10 @@
+---
+description: 
+globs: **/*.tsx
+alwaysApply: false
+---
+Always use @/ imports instead of relative imports
+When you need an icon, use @/components/icons/*
+If an icon doesn't exist, create it using lucide using the same format as the other icons
+If you need to create a component, check if you can install it or dependencies via bunx @react-native-reusables/cli@latest add
+Sort all object keys and component props alphabetically
