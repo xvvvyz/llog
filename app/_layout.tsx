@@ -1,16 +1,25 @@
 import '@/global.css';
 import { NAV_THEME } from '@/lib/constants';
 import { ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Slot } from 'expo-router';
 import * as React from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme, View } from 'react-native';
 
 export default function Layout() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() ?? 'dark';
+
+  React.useLayoutEffect(() => {
+    if (Platform.OS === 'web') {
+      // prevent white background on overscroll
+      document.documentElement.classList.add('bg-background');
+    }
+  }, []);
 
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme ?? 'dark']}>
-      <Stack screenOptions={{ headerShown: false }} />
+    <ThemeProvider value={NAV_THEME[colorScheme]}>
+      <View className="h-screen bg-background">
+        <Slot />
+      </View>
     </ThemeProvider>
   );
 }

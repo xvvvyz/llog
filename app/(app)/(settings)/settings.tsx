@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
 
-export default function Profile() {
+export default function Settings() {
   return (
     <View className="flex-1 items-center justify-center">
       <Button
@@ -15,7 +15,7 @@ export default function Profile() {
         }}
         variant="link"
       >
-        <Text>Log out</Text>
+        <Text className="font-normal">Log out</Text>
       </Button>
     </View>
   );

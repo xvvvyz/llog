@@ -1,3 +1,5 @@
+import { Bolt } from '@/components/icons/bolt';
+import { Scroll } from '@/components/icons/scroll';
 import { Loading } from '@/components/loading';
 import { useOnboarding } from '@/lib/use-onboarding';
 import { Redirect, Tabs } from 'expo-router';
@@ -18,9 +20,25 @@ export default function Layout() {
   }
 
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
-      <Tabs.Screen name="(logs)" options={{ title: 'Logs' }} />
-      <Tabs.Screen name="(profile)/profile" options={{ title: 'Profile' }} />
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { borderTopWidth: 0 },
+        tabBarShowLabel: false,
+      }}
+    >
+      <Tabs.Screen
+        name="(logs)"
+        options={{
+          tabBarIcon: ({ color }) => <Scroll color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(settings)/settings"
+        options={{
+          tabBarIcon: ({ color }) => <Bolt color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

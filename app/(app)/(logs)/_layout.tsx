@@ -1,15 +1,14 @@
-import { BackButton } from '@/components/back-button';
 import { Plus } from '@/components/icons/plus';
 import { Button } from '@/components/ui/button';
 import { Link, Stack } from 'expo-router';
 
 export default function Layout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShadowVisible: false }}>
       <Stack.Screen
         name="[id]"
         options={{
-          headerLeft: () => <BackButton />,
+          headerBackButtonDisplayMode: 'minimal',
           headerTitle: '',
         }}
       />
@@ -18,8 +17,8 @@ export default function Layout() {
         options={{
           headerRight: () => (
             <Link asChild href="/new-log">
-              <Button size="icon" variant="link">
-                <Plus className="color-foreground" size={24} />
+              <Button className="web:mr-2" size="icon" variant="link">
+                <Plus className="color-foreground" />
               </Button>
             </Link>
           ),
@@ -29,7 +28,7 @@ export default function Layout() {
       <Stack.Screen
         name="new-log"
         options={{
-          headerLeft: () => <BackButton />,
+          headerBackButtonDisplayMode: 'minimal',
           headerTitle: 'New log',
         }}
       />

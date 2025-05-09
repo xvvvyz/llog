@@ -4,6 +4,7 @@ import { db } from '@/lib/utils';
 import { Link } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
 export default function Index() {
   const auth = db.useAuth();
@@ -20,15 +21,21 @@ export default function Index() {
   );
 
   return (
-    <View className="flex-1 gap-4 p-6">
-      {data?.teams?.[0]?.logs?.map((log: { id: string; name: string }) => (
-        <Link href={`/${log.id}`} key={log.id}>
-          <View className="flex-row items-center justify-between gap-3">
-            <Text className="text-3xl">{log.name}</Text>
-            <ChevronRight className="color-foreground" size={24} />
+    <Animated.FlatList
+      className="p-4"
+      contentContainerClassName="gap-4"
+      data={data?.teams?.[0]?.logs}
+      itemLayoutAnimation={LinearTransition}
+      keyExtractor={(item) => item.id}
+      keyboardDismissMode="on-drag"
+      renderItem={({ item }) => (
+        <Link href={`/${item.id}`}>
+          <View className="flex-row items-center justify-between gap-2">
+            <Text className="text-3xl">{item.name}</Text>
+            <ChevronRight className="color-foreground" />
           </View>
         </Link>
-      ))}
-    </View>
+      )}
+    />
   );
 }

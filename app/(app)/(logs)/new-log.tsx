@@ -29,9 +29,9 @@ export default function NewLog() {
   };
 
   return (
-    <View className="flex-1 justify-center gap-4 p-6">
+    <View className="flex-1 justify-center gap-4 p-4">
       <Label className="text-3xl" nativeID="name">
-        Give your log a name
+        What shall we call it?
       </Label>
       <Input
         autoFocus
@@ -39,6 +39,7 @@ export default function NewLog() {
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
         placeholder="e.g. My journal, Fido the dog, etc."
+        returnKeyType="next"
         value={name}
       />
       <Button className="w-full" disabled={isDisabled} onPress={handleSubmit}>

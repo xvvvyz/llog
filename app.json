@@ -7,9 +7,13 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "icon": "./assets/images/icon.png",
-    "ios": { "supportsTablet": true },
+    "ios": {
+      "supportsTablet": true
+    },
     "name": "llog",
     "newArchEnabled": true,
     "orientation": "portrait",

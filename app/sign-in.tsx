@@ -30,7 +30,7 @@ export default function SignIn() {
     };
 
     return (
-      <View className="flex-1 justify-center gap-4 p-6">
+      <View className="flex-1 justify-center gap-4 p-4">
         <Label className="text-3xl" nativeID="email">
           What is your email?
         </Label>
@@ -38,11 +38,13 @@ export default function SignIn() {
           aria-labelledby="email"
           autoCapitalize="none"
           autoComplete="email"
+          autoFocus
           className="w-full"
           keyboardType="email-address"
           onChangeText={setEmail}
           onSubmitEditing={handleSubmit}
           placeholder="e.g. jane@acme.com"
+          returnKeyType="next"
           value={email}
         />
         <Button className="w-full" disabled={isDisabled} onPress={handleSubmit}>
@@ -62,13 +64,14 @@ export default function SignIn() {
   };
 
   return (
-    <View className="flex-1 justify-center gap-4 p-6">
+    <View className="flex-1 justify-center gap-4 p-4">
       <Label className="text-3xl" nativeID="code">
         Check your email for a verification code
       </Label>
       <Input
         aria-labelledby="code"
         autoComplete="off"
+        autoFocus
         className="w-full"
         keyboardType="number-pad"
         onChangeText={setCode}

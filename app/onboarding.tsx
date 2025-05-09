@@ -48,7 +48,7 @@ export default function Onboarding() {
   };
 
   return (
-    <View className="flex-1 justify-center gap-4 p-6">
+    <View className="flex-1 justify-center gap-4 p-4">
       <Label className="text-3xl" nativeID="name">
         What is your name?
       </Label>
@@ -56,10 +56,12 @@ export default function Onboarding() {
         aria-labelledby="name"
         autoCapitalize="none"
         autoComplete="name"
+        autoFocus
         className="w-full"
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
         placeholder="e.g. Jane Doe"
+        returnKeyType="next"
         value={name}
       />
       <Button className="w-full" disabled={isDisabled} onPress={handleSubmit}>
