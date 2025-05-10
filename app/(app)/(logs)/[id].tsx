@@ -7,6 +7,7 @@ import { Text } from '@/components/text';
 import { db } from '@/utilities/db';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as React from 'react';
+import { Platform } from 'react-native';
 
 export default function Log() {
   const navigation = useNavigation();
@@ -28,8 +29,17 @@ export default function Log() {
   }, [id]);
 
   React.useEffect(() => {
+    const title = data?.logs?.[0]?.name ?? '';
+
     navigation.setOptions({
-      headerTitle: data?.logs?.[0]?.name ?? '',
+      headerTitle:
+        Platform.OS === 'web'
+          ? () => (
+              <Text className="max-w-28 truncate 2xs:max-w-40 xs:max-w-52 sm:max-w-64 md:max-w-80">
+                {title}
+              </Text>
+            )
+          : title,
       headerRight: () => (
         <Menu.Root>
           <Menu.Trigger asChild>
@@ -57,8 +67,7 @@ export default function Log() {
         <AlertModal.Header>
           <AlertModal.Title>Are you sure?</AlertModal.Title>
           <AlertModal.Description>
-            Any existing log entries will be deleted.{'\n'}This action cannot be
-            undone.
+            Any existing log entries will be deleted.
           </AlertModal.Description>
         </AlertModal.Header>
         <AlertModal.Footer>

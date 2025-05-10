@@ -5,14 +5,16 @@ import { Platform } from 'react-native';
 
 export default function Layout() {
   return (
-    <Stack screenOptions={{ headerShadowVisible: false }}>
+    <Stack
+      screenOptions={{
+        headerShadowVisible: false,
+      }}
+    >
       <Stack.Screen
         name="[id]"
         options={{
-          headerBackButtonDisplayMode: Platform.select({
-            native: 'default',
-            web: 'minimal',
-          }),
+          headerBackButtonDisplayMode:
+            Platform.OS === 'web' ? 'minimal' : 'default',
           headerTitle: '',
         }}
       />
@@ -32,10 +34,8 @@ export default function Layout() {
       <Stack.Screen
         name="new-log"
         options={{
-          headerBackButtonDisplayMode: Platform.select({
-            native: 'default',
-            web: 'minimal',
-          }),
+          headerBackButtonDisplayMode:
+            Platform.OS === 'web' ? 'minimal' : 'default',
           headerTitle: 'New log',
         }}
       />

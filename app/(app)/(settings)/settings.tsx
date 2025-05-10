@@ -20,7 +20,7 @@ export default function Settings() {
         size="sm"
         variant="secondary"
       >
-        <Text className="font-normal">Log out</Text>
+        <Text className="font-normal">Sign out</Text>
       </Button>
     </View>
   );

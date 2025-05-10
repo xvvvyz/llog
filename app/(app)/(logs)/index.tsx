@@ -29,10 +29,10 @@ export default function Index() {
       keyExtractor={(item) => item.id}
       keyboardDismissMode="on-drag"
       renderItem={({ item }) => (
-        <Link href={`/${item.id}`}>
+        <Link className="pr-2" href={`/${item.id}`}>
           <View className="flex-row items-center justify-between gap-2">
-            <Text className="text-3xl">{item.name}</Text>
-            <ChevronRight className="color-foreground" />
+            <Text className="flex-shrink text-3xl">{item.name}</Text>
+            <ChevronRight className="shrink-0 color-foreground" />
           </View>
         </Link>
       )}

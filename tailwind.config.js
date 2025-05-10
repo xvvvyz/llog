@@ -7,6 +7,9 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      borderWidth: {
+        hairline: hairlineWidth(),
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -42,8 +45,20 @@ module.exports = {
           foreground: 'hsl(var(--card-foreground))',
         },
       },
-      borderWidth: {
-        hairline: hairlineWidth(),
+      screens: {
+        '3xs': '16rem',
+        '2xs': '18rem',
+        xs: '20rem',
+        sm: '24rem',
+        md: '28rem',
+        lg: '32rem',
+        xl: '36rem',
+        '2xl': '42rem',
+        '3xl': '48rem',
+        '4xl': '56rem',
+        '5xl': '64rem',
+        '6xl': '72rem',
+        '7xl': '80rem',
       },
     },
   },
