@@ -1,11 +1,11 @@
+import { Button } from '@/components/button';
+import { Input } from '@/components/input';
+import { Label } from '@/components/label';
 import { Loading } from '@/components/loading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Text } from '@/components/ui/text';
-import { Role } from '@/lib/enums';
-import { useOnboarding } from '@/lib/use-onboarding';
-import { db } from '@/lib/utils';
+import { Text } from '@/components/text';
+import { ROLES } from '@/utilities/constants/roles';
+import { db } from '@/utilities/db';
+import { useOnboarding } from '@/utilities/hooks/use-onboarding';
 import { id } from '@instantdb/react-native';
 import { Redirect } from 'expo-router';
 import * as React from 'react';
@@ -41,7 +41,7 @@ export default function Onboarding() {
       db.tx.profiles[userId].update({ name }).link({ user: userId }),
       db.tx.teams[teamId].update({ name }),
       db.tx.roles[roleId]
-        .update({ role: Role.Owner })
+        .update({ role: ROLES.owner })
         .link({ team: teamId, user: userId }),
       db.tx.ui[userId].update({}).link({ team: teamId, user: userId }),
     ]);

@@ -1,7 +1,7 @@
 import { Bolt } from '@/components/icons/bolt';
 import { Scroll } from '@/components/icons/scroll';
 import { Loading } from '@/components/loading';
-import { useOnboarding } from '@/lib/use-onboarding';
+import { useOnboarding } from '@/utilities/hooks/use-onboarding';
 import { Redirect, Tabs } from 'expo-router';
 
 export default function Layout() {

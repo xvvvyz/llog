@@ -1,4 +1,4 @@
-import { iconWithClassName } from '@/lib/icon-with-class-name';
+import { icon } from '@/utilities/icon';
 import { Scroll } from 'lucide-react-native';
-iconWithClassName(Scroll);
+icon(Scroll);
 export { Scroll };

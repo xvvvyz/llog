@@ -1,17 +1,16 @@
+import * as AlertModal from '@/components/alert-modal';
+import { Button } from '@/components/button';
+import * as Menu from '@/components/dropdown-menu';
 import { MoreVertical } from '@/components/icons/more-vertical';
 import { Trash } from '@/components/icons/trash';
-import * as AlertModal from '@/components/ui/alert-modal';
-import { Button } from '@/components/ui/button';
-import * as Menu from '@/components/ui/dropdown-menu';
-import { Text } from '@/components/ui/text';
-import { db } from '@/lib/utils';
+import { Text } from '@/components/text';
+import { db } from '@/utilities/db';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as React from 'react';
 
 export default function Log() {
   const navigation = useNavigation();
   const searchParams = useLocalSearchParams();
-  const [isDeleting, setIsDeleting] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const id = searchParams.id as string;
@@ -23,10 +22,9 @@ export default function Log() {
     },
   });
 
-  const handleDelete = React.useCallback(async () => {
-    setIsDeleting(true);
-    await db.transact(db.tx.logs[id].delete());
-    router.dismissTo('/');
+  const handleDelete = React.useCallback(() => {
+    db.transact(db.tx.logs[id].delete());
+    router.back();
   }, [id]);
 
   React.useEffect(() => {
@@ -70,11 +68,7 @@ export default function Log() {
           >
             <Text>Cancel</Text>
           </Button>
-          <Button
-            disabled={isDeleting}
-            onPress={handleDelete}
-            variant="destructive"
-          >
+          <Button onPress={handleDelete} variant="destructive">
             <Text>Delete</Text>
           </Button>
         </AlertModal.Footer>

@@ -1,4 +1,4 @@
-import { db } from '@/lib/utils';
+import { db } from '@/utilities/db';
 
 export function useOnboarding() {
   const auth = db.useAuth();

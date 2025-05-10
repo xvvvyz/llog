@@ -1,4 +1,4 @@
-import { iconWithClassName } from '@/lib/icon-with-class-name';
+import { icon } from '@/utilities/icon';
 import { MoreHorizontal } from 'lucide-react-native';
-iconWithClassName(MoreHorizontal);
+icon(MoreHorizontal);
 export { MoreHorizontal };

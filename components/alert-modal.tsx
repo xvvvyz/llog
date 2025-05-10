@@ -1,5 +1,5 @@
-import { Text } from '@/components/ui/text';
-import { cn } from '@/lib/utils';
+import { Text } from '@/components/text';
+import { cn } from '@/utilities/cn';
 import * as React from 'react';
 import * as RN from 'react-native';
 
@@ -16,9 +16,7 @@ const Root = React.forwardRef<
 
   const handleOpenChange = React.useCallback(
     (value: boolean) => {
-      if (!controlled) {
-        setIsOpen(value);
-      }
+      if (!controlled) setIsOpen(value);
       onOpenChange?.(value);
     },
     [controlled, onOpenChange]
@@ -56,24 +54,21 @@ const Content = React.forwardRef<
   const { open, onOpenChange } = React.useContext(ModalContext);
 
   return (
-    <RN.Modal
-      onRequestClose={() => onOpenChange(false)}
-      transparent
-      visible={open}
-    >
+    <RN.Modal onRequestClose={() => onOpenChange(false)} visible={open}>
       <RN.Pressable
-        className="flex-1 items-center justify-center bg-background p-4"
+        className="flex-1 cursor-default items-center justify-center bg-background p-4"
         onPress={() => onOpenChange(false)}
       >
-        <RN.View
+        <RN.Pressable
           ref={ref}
           className={cn(
-            'w-full max-w-lg rounded-lg border border-border bg-popover p-6',
+            'w-full max-w-lg cursor-default rounded-lg border border-border bg-popover p-6',
             className
           )}
+          onPress={(e) => e.stopPropagation()}
         >
           {children}
-        </RN.View>
+        </RN.Pressable>
       </RN.Pressable>
     </RN.Modal>
   );

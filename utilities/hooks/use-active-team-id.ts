@@ -1,4 +1,4 @@
-import { db } from '@/lib/utils';
+import { db } from '@/utilities/db';
 
 export function useActiveTeamId() {
   const auth = db.useAuth();

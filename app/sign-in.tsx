@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Text } from '@/components/ui/text';
-import { db } from '@/lib/utils';
+import { Button } from '@/components/button';
+import { Input } from '@/components/input';
+import { Label } from '@/components/label';
+import { Text } from '@/components/text';
+import { db } from '@/utilities/db';
 import { Redirect, router } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';

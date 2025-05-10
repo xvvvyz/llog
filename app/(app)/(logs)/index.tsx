@@ -1,6 +1,6 @@
 import { ChevronRight } from '@/components/icons/chevron-right';
-import { Text } from '@/components/ui/text';
-import { db } from '@/lib/utils';
+import { Text } from '@/components/text';
+import { db } from '@/utilities/db';
 import { Link } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';

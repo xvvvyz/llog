@@ -1,30 +1,24 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Text } from '@/components/ui/text';
-import { useActiveTeamId } from '@/lib/use-active-team-id';
-import { db } from '@/lib/utils';
+import { Button } from '@/components/button';
+import { Input } from '@/components/input';
+import { Label } from '@/components/label';
+import { Text } from '@/components/text';
+import { db } from '@/utilities/db';
+import { useActiveTeamId } from '@/utilities/hooks/use-active-team-id';
 import { id } from '@instantdb/react-native';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
 
 export default function NewLog() {
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [name, setName] = React.useState('');
   const router = useRouter();
   const teamId = useActiveTeamId();
-  const isDisabled = !name || !teamId || isSubmitting;
+  const isDisabled = !name || !teamId;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (isDisabled) return;
-    setIsSubmitting(true);
     const logId = id();
-
-    await db.transact(
-      db.tx.logs[logId].update({ name }).link({ team: teamId })
-    );
-
+    db.transact(db.tx.logs[logId].update({ name }).link({ team: teamId }));
     router.replace(`/${logId}`);
   };
 

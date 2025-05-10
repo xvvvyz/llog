@@ -1,4 +1,4 @@
-import { iconWithClassName } from '@/lib/icon-with-class-name';
+import { icon } from '@/utilities/icon';
 import { Trash } from 'lucide-react-native';
-iconWithClassName(Trash);
+icon(Trash);
 export { Trash };

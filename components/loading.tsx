@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/utilities/cn';
 import { ActivityIndicator, View } from 'react-native';
 
 interface LoadingProps {

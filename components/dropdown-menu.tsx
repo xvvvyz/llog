@@ -1,5 +1,5 @@
-import { TextClassContext } from '@/components/ui/text';
-import { cn } from '@/lib/utils';
+import { TextClassContext } from '@/components/text';
+import { cn } from '@/utilities/cn';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import * as React from 'react';
 import * as RN from 'react-native';
@@ -23,6 +23,7 @@ const Content = React.forwardRef<
     ref
   ) => {
     const { open } = DropdownMenuPrimitive.useRootContext();
+
     return (
       <DropdownMenuPrimitive.Portal hostName={portalHost}>
         <DropdownMenuPrimitive.Overlay

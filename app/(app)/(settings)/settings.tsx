@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
-import { db } from '@/lib/utils';
+import { Button } from '@/components/button';
+import { Text } from '@/components/text';
+import { db } from '@/utilities/db';
 import { router } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -15,7 +15,7 @@ export default function Settings() {
         onPress={async () => {
           setIsSigningOut(true);
           await db.auth.signOut();
-          router.dismissTo('/sign-in');
+          router.navigate('/sign-in');
         }}
         size="sm"
         variant="secondary"

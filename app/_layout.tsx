@@ -1,5 +1,5 @@
-import '@/global.css';
-import { NAV_THEME } from '@/lib/constants';
+import '@/themes/global.css';
+import { NAVIGATION_THEME } from '@/themes/navigation';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
@@ -17,7 +17,7 @@ export default function Layout() {
   }, []);
 
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme]}>
+    <ThemeProvider value={NAVIGATION_THEME[colorScheme]}>
       <View className="h-full bg-background">
         <View className="h-full web:mx-auto web:w-full web:max-w-md">
           <Slot />
