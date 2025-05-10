@@ -8,7 +8,7 @@ export default function Layout() {
       <Stack.Screen
         name="[id]"
         options={{
-          headerBackButtonDisplayMode: 'minimal',
+          headerBackButtonDisplayMode: 'default',
           headerTitle: '',
         }}
       />
@@ -28,7 +28,7 @@ export default function Layout() {
       <Stack.Screen
         name="new-log"
         options={{
-          headerBackButtonDisplayMode: 'minimal',
+          headerBackButtonDisplayMode: 'default',
           headerTitle: 'New log',
         }}
       />

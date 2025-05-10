@@ -1,11 +1,11 @@
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { cva, type VariantProps } from 'class-variance-authority';
+import { cva, VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable } from 'react-native';
 
 const buttonVariants = cva(
-  'group flex items-center justify-center rounded-md web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2',
+  'group flex items-center justify-center rounded-md web:transition-colors web:focus-visible:outline-none',
   {
     defaultVariants: {
       size: 'default',
@@ -25,7 +25,7 @@ const buttonVariants = cva(
           'web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
         link: 'web:underline-offset-4 web:hover:underline web:focus:underline',
         outline:
-          'border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
+          'border border-input bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
         secondary: 'bg-secondary web:hover:opacity-80 active:opacity-80',
       },
     },
@@ -33,7 +33,7 @@ const buttonVariants = cva(
 );
 
 const buttonTextVariants = cva(
-  'web:whitespace-nowrap text-sm native:text-base font-bold text-foreground web:transition-colors',
+  'web:whitespace-nowrap text-sm native:text-base font-semibold text-foreground web:transition-colors',
   {
     defaultVariants: {
       size: 'default',

@@ -13,7 +13,8 @@ export default function Settings() {
           db.auth.signOut();
           router.dismissTo('/sign-in');
         }}
-        variant="link"
+        size="sm"
+        variant="secondary"
       >
         <Text className="font-normal">Log out</Text>
       </Button>
