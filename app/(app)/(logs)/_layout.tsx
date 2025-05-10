@@ -1,6 +1,7 @@
 import { Plus } from '@/components/icons/plus';
 import { Button } from '@/components/ui/button';
 import { Link, Stack } from 'expo-router';
+import { Platform } from 'react-native';
 
 export default function Layout() {
   return (
@@ -8,7 +9,10 @@ export default function Layout() {
       <Stack.Screen
         name="[id]"
         options={{
-          headerBackButtonDisplayMode: 'default',
+          headerBackButtonDisplayMode: Platform.select({
+            native: 'default',
+            web: 'minimal',
+          }),
           headerTitle: '',
         }}
       />
@@ -28,7 +32,10 @@ export default function Layout() {
       <Stack.Screen
         name="new-log"
         options={{
-          headerBackButtonDisplayMode: 'default',
+          headerBackButtonDisplayMode: Platform.select({
+            native: 'default',
+            web: 'minimal',
+          }),
           headerTitle: 'New log',
         }}
       />

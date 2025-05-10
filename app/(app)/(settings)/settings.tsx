@@ -6,11 +6,15 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Settings() {
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+
   return (
     <View className="flex-1 items-center justify-center">
       <Button
-        onPress={() => {
-          db.auth.signOut();
+        disabled={isSigningOut}
+        onPress={async () => {
+          setIsSigningOut(true);
+          await db.auth.signOut();
           router.dismissTo('/sign-in');
         }}
         size="sm"

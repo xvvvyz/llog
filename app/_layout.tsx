@@ -18,9 +18,11 @@ export default function Layout() {
 
   return (
     <ThemeProvider value={NAV_THEME[colorScheme]}>
-      <View className="h-screen bg-background">
-        <Slot />
-        <PortalHost />
+      <View className="h-full bg-background">
+        <View className="h-full web:mx-auto web:w-full web:max-w-md">
+          <Slot />
+          <PortalHost />
+        </View>
       </View>
     </ThemeProvider>
   );

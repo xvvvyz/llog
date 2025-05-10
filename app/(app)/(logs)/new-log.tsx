@@ -31,7 +31,7 @@ export default function NewLog() {
   return (
     <View className="flex-1 justify-center gap-4 p-4">
       <Label className="text-3xl" nativeID="name">
-        What shall we call it?
+        Give your log a name
       </Label>
       <Input
         autoFocus
