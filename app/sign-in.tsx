@@ -1,7 +1,7 @@
-import { Button } from '@/components/button';
-import { Input } from '@/components/input';
-import { Label } from '@/components/label';
-import { Text } from '@/components/text';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Text } from '@/components/ui/text';
 import { db } from '@/utilities/db';
 import { Redirect, router } from 'expo-router';
 import * as React from 'react';
@@ -31,7 +31,7 @@ export default function SignIn() {
 
     return (
       <View className="flex-1 justify-center gap-4 p-4">
-        <Label className="text-3xl" nativeID="email">
+        <Label className="p-0 text-3xl" nativeID="email">
           What is your email?
         </Label>
         <Input
@@ -43,7 +43,7 @@ export default function SignIn() {
           keyboardType="email-address"
           onChangeText={setEmail}
           onSubmitEditing={handleSubmit}
-          placeholder="e.g. jane@acme.com"
+          placeholder="jane@acme.com"
           returnKeyType="next"
           value={email}
         />
@@ -65,7 +65,7 @@ export default function SignIn() {
 
   return (
     <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="text-3xl" nativeID="code">
+      <Label className="p-0 text-3xl" nativeID="code">
         Check your email for a verification code
       </Label>
       <Input
@@ -76,7 +76,7 @@ export default function SignIn() {
         keyboardType="number-pad"
         onChangeText={setCode}
         onSubmitEditing={handleSubmit}
-        placeholder="e.g. 123456"
+        placeholder="123456"
         value={code}
       />
       <Button className="w-full" disabled={isDisabled} onPress={handleSubmit}>

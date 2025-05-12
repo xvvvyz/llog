@@ -1,11 +1,11 @@
-import { TextClassContext } from '@/components/text';
+import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import { cva, VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable } from 'react-native';
 
 const buttonVariants = cva(
-  'group flex items-center justify-center rounded-md web:transition-colors web:focus-visible:outline-none',
+  'group flex items-center justify-center rounded-xl web:transition-colors web:focus-visible:outline-none',
   {
     defaultVariants: {
       size: 'default',
@@ -13,10 +13,10 @@ const buttonVariants = cva(
     },
     variants: {
       size: {
-        default: 'h-10 px-4 py-2 native:h-12 native:px-5 native:py-3',
+        default: 'h-12 px-4 py-2',
         icon: 'h-10 w-10',
-        lg: 'h-11 rounded-md px-8 native:h-14',
-        sm: 'h-9 rounded-md px-3',
+        lg: 'h-13 px-8',
+        sm: 'h-10 rounded-md px-3',
       },
       variant: {
         default: 'bg-primary web:hover:opacity-90 active:opacity-90',
@@ -81,6 +81,7 @@ const Button = React.forwardRef<
         )}
         ref={ref}
         role="button"
+        style={{ borderCurve: 'continuous' }}
         {...props}
       />
     </TextClassContext.Provider>

@@ -1,8 +1,8 @@
-import { Button } from '@/components/button';
-import { Input } from '@/components/input';
-import { Label } from '@/components/label';
 import { Loading } from '@/components/loading';
-import { Text } from '@/components/text';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Text } from '@/components/ui/text';
 import { ROLES } from '@/utilities/constants/roles';
 import { db } from '@/utilities/db';
 import { useOnboarding } from '@/utilities/hooks/use-onboarding';
@@ -21,14 +21,15 @@ export default function Onboarding() {
   }
 
   if (onboarding.requiresAuth) {
-    return <Redirect href="./sign-in" />;
+    return <Redirect href="/sign-in" />;
   }
 
   if (!onboarding.requiresOnboarding) {
     return <Redirect href="/" />;
   }
 
-  const isDisabled = !onboarding.auth.user || !name || isSubmitting;
+  const trimmedName = name.trim();
+  const isDisabled = !onboarding.auth.user || !trimmedName || isSubmitting;
 
   const handleSubmit = async () => {
     if (isDisabled) return;
@@ -38,10 +39,12 @@ export default function Onboarding() {
     const userId = onboarding.auth.user!.id;
 
     await db.transact([
-      db.tx.profiles[userId].update({ name }).link({ user: userId }),
-      db.tx.teams[teamId].update({ name }),
+      db.tx.profiles[userId]
+        .update({ name: trimmedName })
+        .link({ user: userId }),
+      db.tx.teams[teamId].update({ name: trimmedName }),
       db.tx.roles[roleId]
-        .update({ role: ROLES.owner })
+        .update({ role: ROLES.OWNER })
         .link({ team: teamId, user: userId }),
       db.tx.ui[userId].update({}).link({ team: teamId, user: userId }),
     ]);
@@ -49,7 +52,7 @@ export default function Onboarding() {
 
   return (
     <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="text-3xl" nativeID="name">
+      <Label className="p-0 text-3xl" nativeID="name">
         What is your name?
       </Label>
       <Input
@@ -60,7 +63,7 @@ export default function Onboarding() {
         className="w-full"
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
-        placeholder="e.g. Jane Doe"
+        placeholder="Jane Doe"
         returnKeyType="next"
         value={name}
       />

@@ -30,17 +30,13 @@ export default function Layout() {
       <Tabs.Screen
         name="(logs)"
         options={{
-          tabBarIcon: ({ color }) => (
-            <Scroll className="native:-mb-2" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Scroll className="-mb-2" color={color} />,
         }}
       />
       <Tabs.Screen
         name="(settings)/settings"
         options={{
-          tabBarIcon: ({ color }) => (
-            <Bolt className="native:-mb-2" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Bolt className="-mb-2" color={color} />,
         }}
       />
     </Tabs>

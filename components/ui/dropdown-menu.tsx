@@ -1,4 +1,4 @@
-import { TextClassContext } from '@/components/text';
+import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import * as React from 'react';
@@ -22,8 +22,6 @@ const Content = React.forwardRef<
     { className, overlayClassName, overlayStyle, portalHost, ...props },
     ref
   ) => {
-    const { open } = DropdownMenuPrimitive.useRootContext();
-
     return (
       <DropdownMenuPrimitive.Portal hostName={portalHost}>
         <DropdownMenuPrimitive.Overlay
@@ -45,9 +43,6 @@ const Content = React.forwardRef<
             ref={ref}
             className={cn(
               'z-50 min-w-[12rem] overflow-hidden rounded-md border border-border bg-popover py-1 web:data-[side=bottom]:slide-in-from-top-2 web:data-[side=left]:slide-in-from-right-2 web:data-[side=right]:slide-in-from-left-2 web:data-[side=top]:slide-in-from-bottom-2',
-              open
-                ? 'web:animate-in web:fade-in-0 web:zoom-in-95'
-                : 'web:animate-out web:fade-out-0 web:zoom-out-95',
               className
             )}
             {...props}

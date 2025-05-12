@@ -4,7 +4,8 @@ import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
 import * as React from 'react';
-import { Platform, useColorScheme, View } from 'react-native';
+import { Platform, View, useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function Layout() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -17,13 +18,13 @@ export default function Layout() {
   }, []);
 
   return (
-    <ThemeProvider value={NAVIGATION_THEME[colorScheme]}>
-      <View className="h-full bg-background">
-        <View className="h-full web:mx-auto web:w-full web:max-w-md">
+    <View className="flex-1 bg-background">
+      <GestureHandlerRootView>
+        <ThemeProvider value={NAVIGATION_THEME[colorScheme]}>
           <Slot />
           <PortalHost />
-        </View>
-      </View>
-    </ThemeProvider>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </View>
   );
 }

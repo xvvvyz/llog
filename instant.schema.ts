@@ -12,6 +12,7 @@ const _schema = i.schema({
       email: i.string().unique().indexed().optional(),
     }),
     logs: i.entity({
+      color: i.string().optional(),
       name: i.string(),
     }),
     profiles: i.entity({
@@ -143,7 +144,9 @@ const _schema = i.schema({
   rooms: {},
 });
 
-type AppSchema = typeof _schema;
+// this helps Typescript display better intellisense
+type _AppSchema = typeof _schema;
+interface AppSchema extends _AppSchema {}
 const schema: AppSchema = _schema;
 
 export type { AppSchema };

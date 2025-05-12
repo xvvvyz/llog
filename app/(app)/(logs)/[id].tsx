@@ -1,18 +1,22 @@
-import * as AlertModal from '@/components/alert-modal';
-import { Button } from '@/components/button';
-import * as Menu from '@/components/dropdown-menu';
+import { HeaderTitle } from '@/components/header-title';
 import { MoreVertical } from '@/components/icons/more-vertical';
+import { Pencil } from '@/components/icons/pencil';
 import { Trash } from '@/components/icons/trash';
-import { Text } from '@/components/text';
+import { LogForm } from '@/components/log-form';
+import * as AlertModal from '@/components/ui/alert-modal';
+import { Button } from '@/components/ui/button';
+import * as Menu from '@/components/ui/dropdown-menu';
+import { SheetModal } from '@/components/ui/sheet-modal';
+import { Text } from '@/components/ui/text';
 import { db } from '@/utilities/db';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as React from 'react';
-import { Platform } from 'react-native';
 
 export default function Log() {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = React.useState(false);
   const navigation = useNavigation();
   const searchParams = useLocalSearchParams();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const id = searchParams.id as string;
 
@@ -25,6 +29,7 @@ export default function Log() {
 
   const handleDelete = React.useCallback(() => {
     db.transact(db.tx.logs[id].delete());
+    setIsDeleteDialogOpen(false);
     router.back();
   }, [id]);
 
@@ -32,14 +37,8 @@ export default function Log() {
     const title = data?.logs?.[0]?.name ?? '';
 
     navigation.setOptions({
-      headerTitle:
-        Platform.OS === 'web'
-          ? () => (
-              <Text className="max-w-28 truncate 2xs:max-w-40 xs:max-w-52 sm:max-w-64 md:max-w-80">
-                {title}
-              </Text>
-            )
-          : title,
+      headerBackButtonDisplayMode: 'minimal',
+      headerTitle: () => <HeaderTitle>{title}</HeaderTitle>,
       headerRight: () => (
         <Menu.Root>
           <Menu.Trigger asChild>
@@ -48,40 +47,52 @@ export default function Log() {
             </Button>
           </Menu.Trigger>
           <Menu.Content align="end" sideOffset={12}>
+            <Menu.Item onPress={() => setIsEditSheetOpen(true)}>
+              <Pencil className="mr-2 text-muted-foreground" size={18} />
+              <Text>Edit</Text>
+            </Menu.Item>
             <Menu.Item onPress={() => setIsDeleteDialogOpen(true)}>
-              <Trash size={18} className="mr-2 text-muted-foreground" />
+              <Trash className="mr-2 text-muted-foreground" size={18} />
               <Text>Delete</Text>
             </Menu.Item>
           </Menu.Content>
         </Menu.Root>
       ),
     });
-  }, [data, navigation, isDeleteDialogOpen]);
+  }, [data, navigation]);
 
   return (
-    <AlertModal.Root
-      open={isDeleteDialogOpen}
-      onOpenChange={setIsDeleteDialogOpen}
-    >
-      <AlertModal.Content>
-        <AlertModal.Header>
-          <AlertModal.Title>Are you sure?</AlertModal.Title>
-          <AlertModal.Description>
-            Any existing log entries will be deleted.
-          </AlertModal.Description>
-        </AlertModal.Header>
-        <AlertModal.Footer>
-          <Button
-            onPress={() => setIsDeleteDialogOpen(false)}
-            variant="secondary"
-          >
-            <Text>Cancel</Text>
-          </Button>
-          <Button onPress={handleDelete} variant="destructive">
-            <Text>Delete</Text>
-          </Button>
-        </AlertModal.Footer>
-      </AlertModal.Content>
-    </AlertModal.Root>
+    <>
+      <SheetModal open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
+        <LogForm
+          log={data?.logs?.[0]}
+          onSuccess={() => setIsEditSheetOpen(false)}
+        />
+      </SheetModal>
+      <AlertModal.Root
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertModal.Content>
+          <AlertModal.Header>
+            <AlertModal.Title>Are you sure?</AlertModal.Title>
+            <AlertModal.Description>
+              Any existing log entries will be deleted.
+            </AlertModal.Description>
+          </AlertModal.Header>
+          <AlertModal.Footer>
+            <Button
+              onPress={() => setIsDeleteDialogOpen(false)}
+              variant="secondary"
+            >
+              <Text>Cancel</Text>
+            </Button>
+            <Button onPress={handleDelete} variant="destructive">
+              <Text>Delete</Text>
+            </Button>
+          </AlertModal.Footer>
+        </AlertModal.Content>
+      </AlertModal.Root>
+    </>
   );
 }

@@ -29,7 +29,7 @@
     :root {
       --background: 212 4% 4%;
       --foreground: 0 0% 95%;
-      --card: 212 4% 4%;
+      --card: 212 4% 8%;
       --card-foreground: 0 0% 98%;
       --popover: 212 4% 12%;
       --popover-foreground: 0 0% 98%;
@@ -44,7 +44,7 @@
       --destructive: 0 72% 51%;
       --destructive-foreground: 0 0% 98%;
       --border: 212 4% 12%;
-      --input: 212 4% 12%;
+      --input: 212 4% 100%;
       --ring: 212 100% 58%;
     }
   }

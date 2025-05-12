@@ -1,4 +1,4 @@
-import { Text } from '@/components/text';
+import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import * as React from 'react';
 import * as RN from 'react-native';
@@ -54,9 +54,13 @@ const Content = React.forwardRef<
   const { open, onOpenChange } = React.useContext(ModalContext);
 
   return (
-    <RN.Modal onRequestClose={() => onOpenChange(false)} visible={open}>
+    <RN.Modal
+      onRequestClose={() => onOpenChange(false)}
+      transparent
+      visible={open}
+    >
       <RN.Pressable
-        className="flex-1 cursor-default items-center justify-center bg-background p-4"
+        className="flex-1 cursor-default items-center justify-center bg-background/80 p-4"
         onPress={() => onOpenChange(false)}
       >
         <RN.Pressable
@@ -99,7 +103,7 @@ const Footer = React.forwardRef<
 >(({ children, className }, ref) => (
   <RN.View
     ref={ref}
-    className={cn('mt-4 flex-row justify-end gap-4', className)}
+    className={cn('mt-8 flex-row justify-end gap-4', className)}
   >
     {children}
   </RN.View>
@@ -114,7 +118,7 @@ const Title = React.forwardRef<
     className?: string;
   }
 >(({ children, className }, ref) => (
-  <RN.View ref={ref} className={cn('mb-4', className)}>
+  <RN.View ref={ref} className={cn(className)}>
     <Text className="text-3xl">{children}</Text>
   </RN.View>
 ));
@@ -128,7 +132,7 @@ const Description = React.forwardRef<
     className?: string;
   }
 >(({ children, className }, ref) => (
-  <RN.View ref={ref} className={cn('mb-4', className)}>
+  <RN.View ref={ref} className={cn('mt-5', className)}>
     <Text className="text-muted-foreground">{children}</Text>
   </RN.View>
 ));

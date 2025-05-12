@@ -1,8 +1,6 @@
 export const ROLES = Object.freeze({
-  admin: 'admin',
-  owner: 'owner',
-  recorder: 'recorder',
-  viewer: 'viewer',
+  ADMIN: 'admin',
+  OWNER: 'owner',
+  RECORDER: 'recorder',
+  VIEWER: 'viewer',
 });
-
-export type Role = (typeof ROLES)[keyof typeof ROLES];

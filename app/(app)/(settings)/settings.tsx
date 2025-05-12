@@ -1,5 +1,5 @@
-import { Button } from '@/components/button';
-import { Text } from '@/components/text';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { db } from '@/utilities/db';
 import { router } from 'expo-router';
 import * as React from 'react';
