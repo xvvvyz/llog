@@ -2,12 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
+import { View } from '@/components/ui/view';
+import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { useActiveTeamId } from '@/utilities/hooks/use-active-team-id';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
-import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { useMemo, useRef, useState, type ComponentRef } from 'react';
+import { Pressable } from 'react-native';
 
 const COLORS = [
   [
@@ -33,33 +35,30 @@ const COLORS = [
 ];
 
 export function LogForm({
-  onSuccess,
   log,
 }: {
-  onSuccess: () => void;
-  log?: {
-    color?: string;
-    id: string;
-    name: string;
-  };
+  log?: { color?: string; id: string; name: string };
 }) {
-  const [name, setName] = React.useState(log?.name ?? '');
-  const [color, setColor] = React.useState(log?.color ?? COLORS[0][0]);
+  const [color, setColor] = useState(log?.color ?? COLORS[0][0]);
+  const [name, setName] = useState(log?.name ?? '');
+  const logId = useMemo(() => log?.id ?? id(), [log?.id]);
   const teamId = useActiveTeamId();
+  const inputRef = useRef<ComponentRef<typeof Input>>(null);
 
   const trimmedName = name.trim();
   const isDisabled = !trimmedName || !teamId;
 
   const handleSubmit = () => {
     if (isDisabled) return;
-    const logId = log?.id ?? id();
 
     db.transact(
-      db.tx.logs[logId].update({ color, name }).link({ team: teamId })
+      db.tx.logs[logId]
+        .update({ color, name: trimmedName })
+        .link({ team: teamId })
     );
 
-    if (!log) router.push(`/${logId}`);
-    onSuccess();
+    if (!log) router.replace(`/${logId}`);
+    else router.back();
   };
 
   return (
@@ -74,23 +73,25 @@ export function LogForm({
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
         placeholder="My journal, Fido the dog, etc."
-        returnKeyType="done"
+        ref={inputRef}
+        returnKeyType="go"
         value={name}
       />
       <Label className="mt-6">Color</Label>
-      <View className="mt-2">
+      <View className="mt-2.5">
         <View className="flex-col gap-2">
           {COLORS.map((rowColors, rowIndex) => (
             <View className="flex-row gap-2" key={`row-${rowIndex}`}>
               {rowColors.map((c) => (
                 <Pressable
-                  className="aspect-square w-12 shrink rounded-full"
+                  className={cn(
+                    'aspect-square w-12 shrink rounded-full',
+                    color === c &&
+                      'scale-110 ring-4 ring-inset ring-black dark:ring-white'
+                  )}
                   key={`color-${c}`}
                   onPress={() => setColor(c)}
-                  style={[
-                    { backgroundColor: c },
-                    color === c && { borderWidth: 4, borderColor: 'white' },
-                  ]}
+                  style={{ backgroundColor: c }}
                 />
               ))}
             </View>
@@ -98,7 +99,7 @@ export function LogForm({
         </View>
       </View>
       <Button
-        className="mt-8 w-full"
+        className="mt-12 w-full"
         disabled={isDisabled}
         onPress={handleSubmit}
       >

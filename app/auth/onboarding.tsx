@@ -3,17 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
+import { View } from '@/components/ui/view';
 import { ROLES } from '@/utilities/constants/roles';
 import { db } from '@/utilities/db';
 import { useOnboarding } from '@/utilities/hooks/use-onboarding';
 import { id } from '@instantdb/react-native';
 import { Redirect } from 'expo-router';
-import * as React from 'react';
-import { View } from 'react-native';
+import { useState } from 'react';
 
 export default function Onboarding() {
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [name, setName] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [name, setName] = useState('');
   const onboarding = useOnboarding();
 
   if (onboarding.isLoading) {
@@ -21,7 +21,7 @@ export default function Onboarding() {
   }
 
   if (onboarding.requiresAuth) {
-    return <Redirect href="/sign-in" />;
+    return <Redirect href="/auth/sign-in" />;
   }
 
   if (!onboarding.requiresOnboarding) {
@@ -52,7 +52,7 @@ export default function Onboarding() {
 
   return (
     <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="p-0 text-3xl" nativeID="name">
+      <Label className="p-0 text-3xl text-foreground" nativeID="name">
         What is your name?
       </Label>
       <Input

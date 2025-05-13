@@ -1,11 +1,8 @@
+import { View } from '@/components/ui/view';
 import { cn } from '@/utilities/cn';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
-interface LoadingProps {
-  className?: string;
-}
-
-export function Loading({ className }: LoadingProps) {
+export function Loading({ className }: { className?: string }) {
   return (
     <View className={cn('flex-1 items-center justify-center', className)}>
       <ActivityIndicator />

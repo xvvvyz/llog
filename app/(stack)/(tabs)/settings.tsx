@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { View } from '@/components/ui/view';
 import { db } from '@/utilities/db';
 import { router } from 'expo-router';
-import * as React from 'react';
-import { View } from 'react-native';
+import { useState } from 'react';
 
 export default function Settings() {
-  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   return (
     <View className="flex-1 items-center justify-center">
@@ -15,12 +15,12 @@ export default function Settings() {
         onPress={async () => {
           setIsSigningOut(true);
           await db.auth.signOut();
-          router.navigate('/sign-in');
+          router.navigate('/auth/sign-in');
         }}
         size="sm"
         variant="secondary"
       >
-        <Text className="font-normal">Sign out</Text>
+        <Text>Sign out</Text>
       </Button>
     </View>
   );

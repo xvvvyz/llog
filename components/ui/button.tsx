@@ -1,7 +1,7 @@
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
-import { cva, VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { type ComponentRef, forwardRef } from 'react';
 import { Pressable } from 'react-native';
 
 const buttonVariants = cva(
@@ -33,7 +33,7 @@ const buttonVariants = cva(
 );
 
 const buttonTextVariants = cva(
-  'web:whitespace-nowrap text-sm native:text-base font-semibold text-foreground web:transition-colors',
+  'web:whitespace-nowrap font-medium text-foreground web:transition-colors',
   {
     defaultVariants: {
       size: 'default',
@@ -43,7 +43,7 @@ const buttonTextVariants = cva(
       size: {
         default: '',
         icon: '',
-        lg: 'native:text-lg',
+        lg: '',
         sm: '',
       },
       variant: {
@@ -62,31 +62,30 @@ const buttonTextVariants = cva(
 type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
-const Button = React.forwardRef<
-  React.ComponentRef<typeof Pressable>,
-  ButtonProps
->(({ className, variant, size, ...props }, ref) => {
-  return (
-    <TextClassContext.Provider
-      value={buttonTextVariants({
-        className: 'web:pointer-events-none',
-        size,
-        variant,
-      })}
-    >
-      <Pressable
-        className={cn(
-          props.disabled && 'opacity-50 web:pointer-events-none',
-          buttonVariants({ className, size, variant })
-        )}
-        ref={ref}
-        role="button"
-        style={{ borderCurve: 'continuous' }}
-        {...props}
-      />
-    </TextClassContext.Provider>
-  );
-});
+const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
+  ({ className, variant, size, ...props }, ref) => {
+    return (
+      <TextClassContext.Provider
+        value={buttonTextVariants({
+          className: 'web:pointer-events-none',
+          size,
+          variant,
+        })}
+      >
+        <Pressable
+          className={cn(
+            props.disabled && 'opacity-50 web:pointer-events-none',
+            buttonVariants({ className, size, variant })
+          )}
+          ref={ref}
+          role="button"
+          style={{ borderCurve: 'continuous' }}
+          {...props}
+        />
+      </TextClassContext.Provider>
+    );
+  }
+);
 
 Button.displayName = 'Button';
 

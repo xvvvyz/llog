@@ -12,7 +12,7 @@ const _schema = i.schema({
       email: i.string().unique().indexed().optional(),
     }),
     logs: i.entity({
-      color: i.string().optional(),
+      color: i.string(),
       name: i.string(),
     }),
     profiles: i.entity({

@@ -1,11 +1,8 @@
 import { cn } from '@/utilities/cn';
 import * as LabelPrimitive from '@rn-primitives/label';
-import * as React from 'react';
+import { forwardRef } from 'react';
 
-const Label = React.forwardRef<
-  LabelPrimitive.TextRef,
-  LabelPrimitive.TextProps
->(
+const Label = forwardRef<LabelPrimitive.TextRef, LabelPrimitive.TextProps>(
   (
     { className, onPress, onLongPress, onPressIn, onPressOut, ...props },
     ref
@@ -20,7 +17,7 @@ const Label = React.forwardRef<
       <LabelPrimitive.Text
         ref={ref}
         className={cn(
-          'px-4 leading-none text-foreground web:peer-disabled:cursor-not-allowed web:peer-disabled:opacity-70',
+          'px-4 text-base leading-none text-muted-foreground web:peer-disabled:cursor-not-allowed web:peer-disabled:opacity-70',
           className
         )}
         {...props}

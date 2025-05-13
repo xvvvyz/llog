@@ -2,17 +2,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
+import { View } from '@/components/ui/view';
 import { db } from '@/utilities/db';
 import { Redirect, router } from 'expo-router';
-import * as React from 'react';
-import { View } from 'react-native';
+import { useState } from 'react';
 
 export default function SignIn() {
   const auth = db.useAuth();
-  const [code, setCode] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [step, setStep] = React.useState<'email' | 'code'>('email');
+  const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [step, setStep] = useState<'email' | 'code'>('email');
 
   if (auth.user) {
     return <Redirect href="/" />;
@@ -31,7 +31,7 @@ export default function SignIn() {
 
     return (
       <View className="flex-1 justify-center gap-4 p-4">
-        <Label className="p-0 text-3xl" nativeID="email">
+        <Label className="p-0 text-3xl text-foreground" nativeID="email">
           What is your email?
         </Label>
         <Input
@@ -65,7 +65,7 @@ export default function SignIn() {
 
   return (
     <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="p-0 text-3xl" nativeID="code">
+      <Label className="p-0 text-3xl text-foreground" nativeID="code">
         Check your email for a verification code
       </Label>
       <Input
