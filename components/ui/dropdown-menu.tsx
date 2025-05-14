@@ -18,7 +18,7 @@ const Content = forwardRef<
         <DropdownMenuPrimitive.Content
           ref={ref}
           className={cn(
-            'min-w-[12rem] overflow-hidden rounded-2xl border border-border bg-popover py-1',
+            'min-w-[10rem] overflow-hidden rounded-2xl border border-border bg-popover py-1',
             className
           )}
           style={{ borderCurve: 'continuous' }}

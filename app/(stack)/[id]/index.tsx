@@ -19,10 +19,12 @@ export default function Index() {
   const { data } = db.useQuery({
     logs: {
       $: { where: { id: params.id } },
+      entries: {},
     },
   });
 
-  const name = data?.logs?.[0]?.name ?? '';
+  const log = data?.logs?.[0];
+  const name = log?.name ?? '';
 
   useEffect(() => {
     navigation.setOptions({
@@ -35,7 +37,7 @@ export default function Index() {
           </Menu.Trigger>
           <Menu.Content
             align="end"
-            className="mr-4 mt-2"
+            className="mr-4 translate-y-2"
             style={{ top: Platform.OS === 'ios' ? headerHeight : 0 }}
           >
             <Link asChild href={`/${params.id}/edit`}>
@@ -58,6 +60,8 @@ export default function Index() {
       },
     });
   }, [headerHeight, name, navigation, params.id]);
+
+  if (!log) return null;
 
   return null;
 }

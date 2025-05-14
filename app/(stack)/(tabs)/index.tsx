@@ -1,6 +1,10 @@
+import { MoreHorizontal } from '@/components/icons/more-horizontal';
+import { Pencil } from '@/components/icons/pencil';
 import { Search } from '@/components/icons/search';
+import { Trash } from '@/components/icons/trash';
 import { X } from '@/components/icons/x';
 import { Button } from '@/components/ui/button';
+import * as Menu from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
@@ -73,11 +77,11 @@ export default function Index() {
       numColumns={2}
       renderItem={({ item }) => (
         <View className="w-1/2 p-1.5">
-          <Link asChild href={`/${item.id}`} className="group">
-            <View className="overflow-hidden rounded-2xl bg-card hover:opacity-90 active:opacity-90">
+          <Link asChild href={`/${item.id}`}>
+            <View className="overflow-hidden rounded-2xl bg-card active:opacity-90 web:transition-opacity web:hover:opacity-90">
               <View className="h-32" style={{ backgroundColor: item.color }}>
                 <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.2)']}
+                  colors={['transparent', 'rgba(0,0,0,0.25)']}
                   end={{ x: 0.5, y: 1 }}
                   start={{ x: 0.5, y: 0 }}
                   style={StyleSheet.absoluteFill}
@@ -89,6 +93,41 @@ export default function Index() {
                   >
                     {item.name}
                   </Text>
+                </View>
+                <View className="absolute right-0 top-0">
+                  <Menu.Root>
+                    <Menu.Trigger asChild>
+                      <Button
+                        className="group size-12"
+                        size="icon"
+                        variant="link"
+                      >
+                        <View className="size-8 items-center justify-center rounded-full bg-white/15 group-active:bg-white/25 web:transition-colors web:group-hover:bg-white/25">
+                          <MoreHorizontal className="text-white" size={20} />
+                        </View>
+                      </Button>
+                    </Menu.Trigger>
+                    <Menu.Content align="end" className="-translate-x-2">
+                      <Link asChild href={`/${item.id}/edit`}>
+                        <Menu.Item>
+                          <Pencil
+                            className="mr-2 text-muted-foreground"
+                            size={18}
+                          />
+                          <Text>Edit</Text>
+                        </Menu.Item>
+                      </Link>
+                      <Link asChild href={`/${item.id}/delete`}>
+                        <Menu.Item>
+                          <Trash
+                            className="mr-2 text-muted-foreground"
+                            size={18}
+                          />
+                          <Text>Delete</Text>
+                        </Menu.Item>
+                      </Link>
+                    </Menu.Content>
+                  </Menu.Root>
                 </View>
               </View>
             </View>
