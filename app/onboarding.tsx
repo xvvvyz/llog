@@ -1,4 +1,3 @@
-import { Loading } from '@/components/loading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,15 +15,7 @@ export default function Onboarding() {
   const [name, setName] = useState('');
   const onboarding = useOnboarding();
 
-  if (onboarding.isLoading) {
-    return <Loading />;
-  }
-
-  if (onboarding.requiresAuth) {
-    return <Redirect href="/auth/sign-in" />;
-  }
-
-  if (!onboarding.requiresOnboarding) {
+  if (!onboarding.isLoading && !onboarding.requiresOnboarding) {
     return <Redirect href="/" />;
   }
 

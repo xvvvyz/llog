@@ -15,7 +15,7 @@ export default function Settings() {
         onPress={async () => {
           setIsSigningOut(true);
           await db.auth.signOut();
-          router.navigate('/auth/sign-in');
+          router.navigate('/sign-in');
         }}
         size="sm"
         variant="secondary"

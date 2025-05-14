@@ -11,11 +11,11 @@ export default function Layout() {
   }
 
   if (onboarding.requiresAuth) {
-    return <Redirect href="/auth/sign-in" />;
+    return <Redirect href="/sign-in" />;
   }
 
   if (onboarding.requiresOnboarding) {
-    return <Redirect href="/auth/onboarding" />;
+    return <Redirect href="/onboarding" />;
   }
 
   return (
