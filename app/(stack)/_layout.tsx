@@ -1,7 +1,23 @@
 import { HeaderBackButton } from '@/components/header-back-button';
-import { Stack } from 'expo-router';
+import { Loading } from '@/components/loading';
+import { useOnboarding } from '@/utilities/hooks/use-onboarding';
+import { Redirect, Stack } from 'expo-router';
 
 export default function Layout() {
+  const onboarding = useOnboarding();
+
+  if (onboarding.isLoading) {
+    return <Loading />;
+  }
+
+  if (onboarding.requiresAuth) {
+    return <Redirect href="/auth/sign-in" />;
+  }
+
+  if (onboarding.requiresOnboarding) {
+    return <Redirect href="/auth/onboarding" />;
+  }
+
   return (
     <Stack
       screenOptions={{

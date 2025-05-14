@@ -74,7 +74,7 @@ export default function Index() {
       renderItem={({ item }) => (
         <View className="w-1/2 p-1.5">
           <Link asChild href={`/${item.id}`} className="group">
-            <View className="overflow-hidden rounded-2xl bg-card transition-opacity hover:opacity-90 active:opacity-90">
+            <View className="overflow-hidden rounded-2xl bg-card hover:opacity-90 active:opacity-90">
               <View className="h-32" style={{ backgroundColor: item.color }}>
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.2)']}

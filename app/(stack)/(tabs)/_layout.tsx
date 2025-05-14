@@ -2,26 +2,10 @@ import { HeaderTitle } from '@/components/header-title';
 import { Bolt } from '@/components/icons/bolt';
 import { Plus } from '@/components/icons/plus';
 import { Scroll } from '@/components/icons/scroll';
-import { Loading } from '@/components/loading';
 import { Button } from '@/components/ui/button';
-import { useOnboarding } from '@/utilities/hooks/use-onboarding';
-import { Link, Redirect, Tabs } from 'expo-router';
+import { Link, Tabs } from 'expo-router';
 
 export default function Layout() {
-  const onboarding = useOnboarding();
-
-  if (onboarding.isLoading) {
-    return <Loading />;
-  }
-
-  if (onboarding.requiresAuth) {
-    return <Redirect href="/auth/sign-in" />;
-  }
-
-  if (onboarding.requiresOnboarding) {
-    return <Redirect href="/auth/onboarding" />;
-  }
-
   return (
     <Tabs
       screenOptions={{
