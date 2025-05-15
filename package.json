@@ -5,6 +5,7 @@
   "scripts": {
     "android": "expo start --android",
     "dev": "expo start",
+    "doc": "bunx expo-doctor",
     "format": "prettier --write .",
     "ios": "expo start --ios",
     "lint": "expo lint",
@@ -14,9 +15,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
-    "@instantdb/react-native": "0.19.6",
-    "@react-native-community/hooks": "^100.1.0",
+    "@instantdb/react-native": "0.19.7",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-navigation/stack": "^7.3.2",
     "@rn-primitives/dropdown-menu": "^1.1.0",
@@ -38,7 +37,6 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "^0.79.2",
-    "react-native-gesture-handler": "~2.24.0",
     "react-native-get-random-values": "^1.11.0",
     "react-native-reanimated": "^3.17.5",
     "react-native-safe-area-context": "^5.4.0",
@@ -50,22 +48,30 @@
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
+    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
     "@expo/metro-runtime": "^5.0.4",
     "@types/react": "~19.0.10",
     "eslint": "^9.26.0",
     "eslint-config-expo": "^9.2.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
-    "instant-cli": "0.19.6",
+    "instant-cli": "0.19.7",
     "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "typescript": "^5.8.3"
   },
+  "resolutions": {
+    "react": "19.0.0"
+  },
   "patchedDependencies": {
     "uuid@9.0.1": "patches/uuid@9.0.1.patch"
   },
-  "resolutions": {
-    "react": "19.0.0"
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false
+      }
+    }
   }
 }

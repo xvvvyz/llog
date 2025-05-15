@@ -22,8 +22,8 @@ const Content = forwardRef<
               'min-w-[10rem] overflow-hidden rounded-2xl bg-popover py-1',
               className
             )}
-            entering={FadeInUp.duration(150)}
-            exiting={FadeOutUp.duration(150)}
+            entering={FadeInUp.duration(100)}
+            exiting={FadeOutUp.duration(100)}
             style={{ borderCurve: 'continuous' }}
           >
             {children as ReactNode}

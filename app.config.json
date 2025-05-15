@@ -5,8 +5,8 @@
     "version": "0.0.0",
     "platforms": ["ios", "android", "web"],
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
     "scheme": "llog",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
     "web": {
       "bundler": "metro",

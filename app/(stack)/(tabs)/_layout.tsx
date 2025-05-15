@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { HeaderTitle } from '@/components/ui/header-title';
 import { cn } from '@/utilities/cn';
 import { Link, Tabs } from 'expo-router';
+
 export default function Layout() {
   return (
     <Tabs
@@ -26,13 +27,19 @@ export default function Layout() {
             </Link>
           ),
           headerTitle: () => <HeaderTitle>Logs</HeaderTitle>,
-          tabBarIcon: ({ color, focused }) => (
+          tabBarButton: ({ children }) => (
+            <Link asChild href="/">
+              <Button className="h-full w-full" variant="link">
+                {children}
+              </Button>
+            </Link>
+          ),
+          tabBarIcon: ({ focused }) => (
             <Scroll
               className={cn(
-                '-mb-2 stroke-muted-foreground',
+                'stroke-muted-foreground',
                 focused && 'stroke-primary'
               )}
-              color={color}
             />
           ),
         }}
@@ -41,13 +48,19 @@ export default function Layout() {
         name="settings"
         options={{
           headerTitle: () => <HeaderTitle>Settings</HeaderTitle>,
-          tabBarIcon: ({ color, focused }) => (
+          tabBarButton: ({ children }) => (
+            <Link asChild href="/settings">
+              <Button className="h-full w-full" variant="link">
+                {children}
+              </Button>
+            </Link>
+          ),
+          tabBarIcon: ({ focused }) => (
             <Bolt
               className={cn(
-                '-mb-2 stroke-muted-foreground',
+                'stroke-muted-foreground',
                 focused && 'stroke-primary'
               )}
-              color={color}
             />
           ),
         }}

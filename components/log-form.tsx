@@ -12,24 +12,24 @@ import { Pressable, View } from 'react-native';
 
 const COLORS = [
   [
-    'hsl(200, 7%, 45%)',
-    'hsl(120, 10%, 45%)',
-    'hsl(30, 20%, 45%)',
-    'hsl(20, 40%, 35%)',
-    'hsl(358, 70%, 45%)',
-    'hsl(12, 77%, 45%)',
-    'hsl(30, 73%, 45%)',
-    'hsl(48, 70%, 45%)',
+    'hsl(358,70%,45%)',
+    'hsl(12,77%,45%)',
+    'hsl(30,73%,45%)',
+    'hsl(48,70%,45%)',
+    'hsl(121,45%,45%)',
+    'hsl(168,45%,45%)',
+    'hsl(201,70%,45%)',
+    'hsl(214,90%,45%)',
   ],
   [
-    'hsl(121, 45%, 45%)',
-    'hsl(168, 45%, 45%)',
-    'hsl(201, 70%, 45%)',
-    'hsl(214, 90%, 45%)',
-    'hsl(230, 49%, 45%)',
-    'hsl(260, 39%, 45%)',
-    'hsl(280, 49%, 45%)',
-    'hsl(310, 49%, 45%)',
+    'hsl(30,20%,45%)',
+    'hsl(120,10%,45%)',
+    'hsl(200,7%,45%)',
+    'hsl(310,49%,45%)',
+    'hsl(280,49%,45%)',
+    'hsl(260,39%,45%)',
+    'hsl(230,49%,45%)',
+    '',
   ],
 ];
 
@@ -38,7 +38,7 @@ export function LogForm({
 }: {
   log?: { color: string; id: string; name: string };
 }) {
-  const [color, setColor] = useState(log?.color ?? COLORS[0][0]);
+  const [color, setColor] = useState(log?.color ?? COLORS[1][2]);
   const [name, setName] = useState(log?.name ?? '');
   const inputRef = useRef<ComponentRef<typeof Input>>(null);
   const logId = useMemo(() => log?.id ?? id(), [log?.id]);
@@ -67,7 +67,7 @@ export function LogForm({
   };
 
   return (
-    <View className="p-8">
+    <View className="mx-auto w-full p-8">
       <Label nativeID="name">Name</Label>
       <Input
         aria-labelledby="name"
@@ -83,31 +83,23 @@ export function LogForm({
         value={name}
       />
       <Label className="mt-6">Color</Label>
-      <View className="mt-2.5">
-        <View className="flex-col gap-2">
-          {COLORS.map((rowColors, rowIndex) => (
-            <View className="flex-row gap-2" key={`row-${rowIndex}`}>
-              {rowColors.map((c) => (
-                <Pressable
-                  className="aspect-square w-12 shrink rounded-full"
-                  key={`color-${c}`}
-                  onPress={() => setColor(c)}
-                  style={{ backgroundColor: c }}
-                >
-                  {color === c && (
-                    <View
-                      className="absolute -inset-1 rounded-full border-4"
-                      style={{
-                        borderCurve: 'continuous',
-                        borderColor: lightness(c, +25),
-                      }}
-                    />
-                  )}
-                </Pressable>
-              ))}
-            </View>
-          ))}
-        </View>
+      <View className="mt-2.5 flex-col gap-2">
+        {COLORS.map((rowColors, rowIndex) => (
+          <View className="flex-row gap-2" key={`row-${rowIndex}`}>
+            {rowColors.map((c) => (
+              <Pressable
+                className="aspect-square w-16 shrink rounded-full border-8"
+                disabled={!c}
+                key={`color-${c}`}
+                onPress={() => setColor(c)}
+                style={{
+                  backgroundColor: c,
+                  borderColor: color === c ? lightness(c, +25) : 'transparent',
+                }}
+              />
+            ))}
+          </View>
+        ))}
       </View>
       <Button
         className="mt-12 w-full"

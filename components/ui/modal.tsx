@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Animated, {
   FadeIn,
@@ -35,47 +36,58 @@ export const Modal = ({
   className?: string;
   isLoading?: boolean;
 } & VariantProps<typeof modalVariants>) => {
+  const insets = useSafeAreaInsets();
   const isSheet = variant === 'sheet';
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className={cn(
-        'flex-1 items-center overflow-hidden',
-        isSheet ? 'justify-end' : 'justify-center p-8'
-      )}
-    >
-      <Pressable
-        className="absolute inset-0 cursor-default"
-        onPress={router.back}
+    <View className="flex-1">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className={cn(
+          'flex-1 items-center overflow-hidden',
+          isSheet ? 'justify-end' : 'justify-center p-8'
+        )}
       >
-        <Animated.View
-          className="h-full w-full"
-          entering={FadeIn.duration(150)}
-          exiting={FadeOut.duration(150)}
+        <Pressable
+          className="absolute inset-0 cursor-default"
+          onPress={router.back}
         >
-          <BlurView className="h-full w-full" intensity={20}>
-            <View className="h-full w-full bg-background/90" />
-          </BlurView>
-        </Animated.View>
-      </Pressable>
-      <Animated.View
-        className={cn(modalVariants({ variant, className }))}
-        entering={FadeInDown.duration(150)}
-        exiting={FadeOutDown.duration(150)}
-        style={{ borderCurve: 'continuous' }}
-      >
-        {isLoading ? (
           <Animated.View
-            className="absolute inset-0 z-10"
-            exiting={FadeOut.duration(150)}
+            className="h-full w-full"
+            entering={FadeIn.duration(100)}
+            exiting={FadeOut.duration(100)}
           >
-            <Loading className="bg-popover" />
+            <BlurView className="h-full w-full" intensity={20}>
+              <View className="h-full w-full bg-background/90" />
+            </BlurView>
           </Animated.View>
-        ) : null}
-        {children}
-      </Animated.View>
-    </KeyboardAvoidingView>
+        </Pressable>
+        <Animated.View
+          className={modalVariants({ className, variant })}
+          entering={FadeInDown.duration(100)}
+          exiting={FadeOutDown.duration(100)}
+          style={{ borderCurve: 'continuous' }}
+        >
+          {isLoading && (
+            <Animated.View
+              className="absolute inset-0 z-10"
+              exiting={FadeOut.duration(100)}
+            >
+              <Loading className="bg-popover" />
+            </Animated.View>
+          )}
+          {children}
+        </Animated.View>
+      </KeyboardAvoidingView>
+      {isSheet && (
+        <Animated.View
+          className="w-full bg-popover"
+          entering={FadeIn.duration(100)}
+          exiting={FadeOut.duration(100)}
+          style={{ height: insets.bottom }}
+        />
+      )}
+    </View>
   );
 };
 
