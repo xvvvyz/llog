@@ -2,12 +2,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { View } from '@/components/ui/view';
 import { ROLES } from '@/utilities/constants/roles';
 import { db } from '@/utilities/db';
 import { useOnboarding } from '@/utilities/hooks/use-onboarding';
 import { id } from '@instantdb/react-native';
 import { Redirect } from 'expo-router';
+import { View } from 'lucide-react-native';
 import { useState } from 'react';
 
 export default function Onboarding() {

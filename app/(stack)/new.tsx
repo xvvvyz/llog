@@ -1,10 +1,9 @@
 import { LogForm } from '@/components/log-form';
-import { Modal } from '@/components/modal';
-import { router } from 'expo-router';
+import { Modal } from '@/components/ui/modal';
 
 export default function New() {
   return (
-    <Modal onClose={router.back}>
+    <Modal>
       <LogForm />
     </Modal>
   );

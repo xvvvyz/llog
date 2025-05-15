@@ -2,10 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { View } from '@/components/ui/view';
 import { db } from '@/utilities/db';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 export default function SignIn() {
   const auth = db.useAuth();

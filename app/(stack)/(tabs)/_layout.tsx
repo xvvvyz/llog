@@ -1,10 +1,10 @@
-import { HeaderTitle } from '@/components/header-title';
 import { Bolt } from '@/components/icons/bolt';
 import { Plus } from '@/components/icons/plus';
 import { Scroll } from '@/components/icons/scroll';
 import { Button } from '@/components/ui/button';
+import { HeaderTitle } from '@/components/ui/header-title';
+import { cn } from '@/utilities/cn';
 import { Link, Tabs } from 'expo-router';
-
 export default function Layout() {
   return (
     <Tabs
@@ -26,14 +26,30 @@ export default function Layout() {
             </Link>
           ),
           headerTitle: () => <HeaderTitle>Logs</HeaderTitle>,
-          tabBarIcon: ({ color }) => <Scroll className="-mb-2" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Scroll
+              className={cn(
+                '-mb-2 stroke-muted-foreground',
+                focused && 'stroke-primary'
+              )}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           headerTitle: () => <HeaderTitle>Settings</HeaderTitle>,
-          tabBarIcon: ({ color }) => <Bolt className="-mb-2" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Bolt
+              className={cn(
+                '-mb-2 stroke-muted-foreground',
+                focused && 'stroke-primary'
+              )}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>

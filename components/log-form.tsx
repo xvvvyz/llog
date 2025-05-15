@@ -2,51 +2,56 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { View } from '@/components/ui/view';
-import { cn } from '@/utilities/cn';
+import { lightness } from '@/utilities/color';
 import { db } from '@/utilities/db';
 import { useActiveTeamId } from '@/utilities/hooks/use-active-team-id';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
-import { useMemo, useRef, useState, type ComponentRef } from 'react';
-import { Pressable } from 'react-native';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { Pressable, View } from 'react-native';
 
 const COLORS = [
   [
-    'hsl(200, 7%, 54%)',
-    'hsl(120, 10%, 61%)',
-    'hsl(30, 20%, 61%)',
-    'hsl(20, 40%, 45%)',
-    'hsl(358, 70%, 61%)',
-    'hsl(12, 77%, 67%)',
-    'hsl(30, 73%, 62%)',
-    'hsl(48, 70%, 56%)',
+    'hsl(200, 7%, 45%)',
+    'hsl(120, 10%, 45%)',
+    'hsl(30, 20%, 45%)',
+    'hsl(20, 40%, 35%)',
+    'hsl(358, 70%, 45%)',
+    'hsl(12, 77%, 45%)',
+    'hsl(30, 73%, 45%)',
+    'hsl(48, 70%, 45%)',
   ],
   [
-    'hsl(121, 45%, 56%)',
-    'hsl(168, 45%, 55%)',
-    'hsl(201, 70%, 70%)',
-    'hsl(214, 90%, 60%)',
-    'hsl(230, 49%, 49%)',
-    'hsl(260, 39%, 49%)',
-    'hsl(280, 49%, 63%)',
-    'hsl(310, 49%, 68%)',
+    'hsl(121, 45%, 45%)',
+    'hsl(168, 45%, 45%)',
+    'hsl(201, 70%, 45%)',
+    'hsl(214, 90%, 45%)',
+    'hsl(230, 49%, 45%)',
+    'hsl(260, 39%, 45%)',
+    'hsl(280, 49%, 45%)',
+    'hsl(310, 49%, 45%)',
   ],
 ];
 
 export function LogForm({
   log,
 }: {
-  log?: { color?: string; id: string; name: string };
+  log?: { color: string; id: string; name: string };
 }) {
   const [color, setColor] = useState(log?.color ?? COLORS[0][0]);
   const [name, setName] = useState(log?.name ?? '');
+  const inputRef = useRef<ComponentRef<typeof Input>>(null);
   const logId = useMemo(() => log?.id ?? id(), [log?.id]);
   const teamId = useActiveTeamId();
-  const inputRef = useRef<ComponentRef<typeof Input>>(null);
 
   const trimmedName = name.trim();
   const isDisabled = !trimmedName || !teamId;
+
+  useEffect(() => {
+    if (!log) return;
+    setColor(log.color);
+    setName(log.name);
+  }, [log]);
 
   const handleSubmit = () => {
     if (isDisabled) return;
@@ -84,15 +89,21 @@ export function LogForm({
             <View className="flex-row gap-2" key={`row-${rowIndex}`}>
               {rowColors.map((c) => (
                 <Pressable
-                  className={cn(
-                    'aspect-square w-12 shrink rounded-full',
-                    color === c &&
-                      'scale-110 ring-4 ring-inset ring-black dark:ring-white'
-                  )}
+                  className="aspect-square w-12 shrink rounded-full"
                   key={`color-${c}`}
                   onPress={() => setColor(c)}
                   style={{ backgroundColor: c }}
-                />
+                >
+                  {color === c && (
+                    <View
+                      className="absolute -inset-1 rounded-full border-4"
+                      style={{
+                        borderCurve: 'continuous',
+                        borderColor: lightness(c, +25),
+                      }}
+                    />
+                  )}
+                </Pressable>
               ))}
             </View>
           ))}

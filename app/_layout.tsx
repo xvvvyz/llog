@@ -6,6 +6,7 @@ import { Slot } from 'expo-router';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { Platform, useColorScheme, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function Layout() {
@@ -21,10 +22,12 @@ export default function Layout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider value={NAVIGATION_THEME[colorScheme]}>
-        <View className="flex-1 bg-background">
-          <Slot />
-        </View>
-        <PortalHost />
+        <GestureHandlerRootView>
+          <View className="flex-1 bg-background">
+            <Slot />
+          </View>
+          <PortalHost />
+        </GestureHandlerRootView>
       </ThemeProvider>
     </SafeAreaProvider>
   );

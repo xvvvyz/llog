@@ -1,9 +1,9 @@
-import { HeaderTitle } from '@/components/header-title';
 import { MoreVertical } from '@/components/icons/more-vertical';
 import { Pencil } from '@/components/icons/pencil';
 import { Trash } from '@/components/icons/trash';
 import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
+import { HeaderTitle } from '@/components/ui/header-title';
 import { Text } from '@/components/ui/text';
 import { db } from '@/utilities/db';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -37,18 +37,18 @@ export default function Index() {
           </Menu.Trigger>
           <Menu.Content
             align="end"
-            className="mr-4 translate-y-2"
+            className="mr-4 mt-2"
             style={{ top: Platform.OS === 'ios' ? headerHeight : 0 }}
           >
             <Link asChild href={`/${params.id}/edit`}>
               <Menu.Item>
-                <Pencil className="mr-2 text-muted-foreground" size={18} />
+                <Pencil className="mr-2 text-foreground" size={18} />
                 <Text>Edit</Text>
               </Menu.Item>
             </Link>
             <Link asChild href={`/${params.id}/delete`}>
               <Menu.Item>
-                <Trash className="mr-2 text-muted-foreground" size={18} />
+                <Trash className="mr-2 text-foreground" size={18} />
                 <Text>Delete</Text>
               </Menu.Item>
             </Link>

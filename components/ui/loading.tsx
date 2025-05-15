@@ -1,6 +1,5 @@
-import { View } from '@/components/ui/view';
 import { cn } from '@/utilities/cn';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 export function Loading({ className }: { className?: string }) {
   return (

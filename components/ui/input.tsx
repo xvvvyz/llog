@@ -7,7 +7,7 @@ const Input = forwardRef<React.ComponentRef<typeof TextInput>, TextInputProps>(
     return (
       <TextInput
         className={cn(
-          'native:h-12 native:leading-[1.25] h-12 rounded-xl border border-border bg-input/10 px-4 text-base text-foreground file:border-0 file:bg-transparent file:font-medium placeholder:text-muted-foreground web:flex web:w-full web:py-2 web:focus-visible:outline-none',
+          'native:h-12 native:leading-[1.25] native:placeholder:text-muted-foreground h-12 rounded-xl border border-border bg-input px-4 text-base text-foreground file:border-0 file:bg-transparent file:font-medium web:flex web:w-full web:py-2 web:placeholder:text-muted-foreground web:focus-visible:outline-none',
           props.editable === false && 'opacity-50 web:cursor-not-allowed',
           className
         )}

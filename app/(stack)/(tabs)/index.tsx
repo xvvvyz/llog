@@ -7,12 +7,10 @@ import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { View } from '@/components/ui/view';
 import { db } from '@/utilities/db';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import * as React from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, View } from 'react-native';
 
 export default function Index() {
   const [query, setQuery] = React.useState('');
@@ -48,7 +46,7 @@ export default function Index() {
             <Input
               autoCapitalize="none"
               autoComplete="off"
-              className="pl-11 pr-11"
+              className="pl-11 pr-11 text-lg"
               onChangeText={setQuery}
               placeholder="Search"
               returnKeyType="done"
@@ -78,57 +76,46 @@ export default function Index() {
       renderItem={({ item }) => (
         <View className="w-1/2 p-1.5">
           <Link asChild href={`/${item.id}`}>
-            <View className="overflow-hidden rounded-2xl bg-card active:opacity-90 web:transition-opacity web:hover:opacity-90">
-              <View className="h-32" style={{ backgroundColor: item.color }}>
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.25)']}
-                  end={{ x: 0.5, y: 1 }}
-                  start={{ x: 0.5, y: 0 }}
-                  style={StyleSheet.absoluteFill}
-                />
-                <View className="flex-1 items-start justify-end p-4">
-                  <Text
-                    className="z-10 text-lg font-medium leading-tight text-white"
-                    numberOfLines={2}
-                  >
-                    {item.name}
-                  </Text>
-                </View>
-                <View className="absolute right-0 top-0">
-                  <Menu.Root>
-                    <Menu.Trigger asChild>
-                      <Button
-                        className="group size-12"
-                        size="icon"
-                        variant="link"
-                      >
-                        <View className="size-8 items-center justify-center rounded-full bg-white/15 group-active:bg-white/25 web:transition-colors web:group-hover:bg-white/25">
-                          <MoreHorizontal className="text-white" size={20} />
-                        </View>
-                      </Button>
-                    </Menu.Trigger>
-                    <Menu.Content align="end" className="-translate-x-2">
-                      <Link asChild href={`/${item.id}/edit`}>
-                        <Menu.Item>
-                          <Pencil
-                            className="mr-2 text-muted-foreground"
-                            size={18}
-                          />
-                          <Text>Edit</Text>
-                        </Menu.Item>
-                      </Link>
-                      <Link asChild href={`/${item.id}/delete`}>
-                        <Menu.Item>
-                          <Trash
-                            className="mr-2 text-muted-foreground"
-                            size={18}
-                          />
-                          <Text>Delete</Text>
-                        </Menu.Item>
-                      </Link>
-                    </Menu.Content>
-                  </Menu.Root>
-                </View>
+            <View
+              className="h-32 overflow-hidden rounded-2xl bg-card active:opacity-90 web:transition-opacity web:hover:opacity-90"
+              style={{ backgroundColor: item.color, borderCurve: 'continuous' }}
+            >
+              <View className="flex-1 items-start justify-end p-4">
+                <Text
+                  className="z-10 text-lg font-medium leading-tight text-white"
+                  numberOfLines={2}
+                >
+                  {item.name}
+                </Text>
+              </View>
+              <View className="absolute right-0 top-0">
+                <Menu.Root>
+                  <Menu.Trigger asChild>
+                    <Button
+                      className="group size-12"
+                      size="icon"
+                      variant="link"
+                    >
+                      <View className="size-8 items-center justify-center rounded-full bg-white/15 group-active:bg-white/25 web:transition-colors web:group-hover:bg-white/25">
+                        <MoreHorizontal className="text-white" size={20} />
+                      </View>
+                    </Button>
+                  </Menu.Trigger>
+                  <Menu.Content align="end" className="mr-2">
+                    <Link asChild href={`/${item.id}/edit`}>
+                      <Menu.Item>
+                        <Pencil className="mr-2 text-foreground" size={18} />
+                        <Text>Edit</Text>
+                      </Menu.Item>
+                    </Link>
+                    <Link asChild href={`/${item.id}/delete`}>
+                      <Menu.Item>
+                        <Trash className="mr-2 text-foreground" size={18} />
+                        <Text>Delete</Text>
+                      </Menu.Item>
+                    </Link>
+                  </Menu.Content>
+                </Menu.Root>
               </View>
             </View>
           </Link>

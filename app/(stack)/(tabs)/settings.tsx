@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { View } from '@/components/ui/view';
 import { db } from '@/utilities/db';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 export default function Settings() {
   const [isSigningOut, setIsSigningOut] = useState(false);
