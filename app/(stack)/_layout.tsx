@@ -1,6 +1,6 @@
 import { HeaderBackButton } from '@/components/ui/header-back-button';
 import { Loading } from '@/components/ui/loading';
-import { useOnboarding } from '@/utilities/hooks/use-onboarding';
+import { useOnboarding } from '@/hooks/use-onboarding';
 import { Redirect, Stack } from 'expo-router';
 
 export default function Layout() {

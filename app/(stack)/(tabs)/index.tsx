@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { COLORS, type Color } from '@/themes/colors';
 import { db } from '@/utilities/db';
+import chroma from 'chroma-js';
 import { Link } from 'expo-router';
 import * as React from 'react';
 import { FlatList, View } from 'react-native';
@@ -15,6 +18,7 @@ import { FlatList, View } from 'react-native';
 export default function Index() {
   const [query, setQuery] = React.useState('');
   const auth = db.useAuth();
+  const colorScheme = useColorScheme();
 
   const { data } = db.useQuery(
     auth.user
@@ -78,7 +82,12 @@ export default function Index() {
           <Link asChild href={`/${item.id}`}>
             <View
               className="h-32 overflow-hidden rounded-2xl bg-card active:opacity-90 web:transition-opacity web:hover:opacity-90"
-              style={{ backgroundColor: item.color, borderCurve: 'continuous' }}
+              style={{
+                backgroundColor: chroma(
+                  COLORS[colorScheme][item.color as Color]
+                ).css('rgb'),
+                borderCurve: 'continuous',
+              }}
             >
               <View className="flex-1 items-start justify-end p-4">
                 <Text

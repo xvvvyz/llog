@@ -2,44 +2,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { lightness } from '@/utilities/color';
+import { useActiveTeamId } from '@/hooks/use-active-team-id';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { COLORS, type Color } from '@/themes/colors';
 import { db } from '@/utilities/db';
-import { useActiveTeamId } from '@/utilities/hooks/use-active-team-id';
 import { id } from '@instantdb/react-native';
+import chroma from 'chroma-js';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Pressable, View } from 'react-native';
 
-const COLORS = [
-  [
-    'hsl(358,70%,45%)',
-    'hsl(12,77%,45%)',
-    'hsl(30,73%,45%)',
-    'hsl(48,70%,45%)',
-    'hsl(121,45%,45%)',
-    'hsl(168,45%,45%)',
-    'hsl(201,70%,45%)',
-    'hsl(214,90%,45%)',
-  ],
-  [
-    'hsl(30,20%,45%)',
-    'hsl(120,10%,45%)',
-    'hsl(200,7%,45%)',
-    'hsl(310,49%,45%)',
-    'hsl(280,49%,45%)',
-    'hsl(260,39%,45%)',
-    'hsl(230,49%,45%)',
-    '',
-  ],
+const COLOR_ROWS: [Color[], Color[]] = [
+  ['gray', 'magenta', 'purple', 'violet', 'indigo', 'blue', 'azure', 'cyan'],
+  ['red', 'coral', 'orange', 'amber', 'yellow', 'lime', 'green', 'teal'],
 ];
 
 export function LogForm({
   log,
 }: {
-  log?: { color: string; id: string; name: string };
+  log?: { color: Color; id: string; name: string };
 }) {
-  const [color, setColor] = useState(log?.color ?? COLORS[1][2]);
+  const [color, setColor] = useState<Color>(log?.color ?? 'gray');
   const [name, setName] = useState(log?.name ?? '');
+  const colorScheme = useColorScheme();
   const inputRef = useRef<ComponentRef<typeof Input>>(null);
   const logId = useMemo(() => log?.id ?? id(), [log?.id]);
   const teamId = useActiveTeamId();
@@ -84,20 +69,27 @@ export function LogForm({
       />
       <Label className="mt-6">Color</Label>
       <View className="mt-2.5 flex-col gap-2">
-        {COLORS.map((rowColors, rowIndex) => (
+        {COLOR_ROWS.map((rowColors, rowIndex) => (
           <View className="flex-row gap-2" key={`row-${rowIndex}`}>
-            {rowColors.map((c) => (
-              <Pressable
-                className="aspect-square w-16 shrink rounded-full border-8"
-                disabled={!c}
-                key={`color-${c}`}
-                onPress={() => setColor(c)}
-                style={{
-                  backgroundColor: c,
-                  borderColor: color === c ? lightness(c, +25) : 'transparent',
-                }}
-              />
-            ))}
+            {rowColors.map((key) => {
+              const chromaColor = chroma(COLORS[colorScheme][key]);
+
+              return (
+                <Pressable
+                  className="aspect-square w-16 shrink rounded-full border-8"
+                  key={`color-${key}`}
+                  onPress={() => setColor(key)}
+                  style={{
+                    backgroundColor:
+                      color === key
+                        ? chromaColor.brighten(1.5).css('rgb')
+                        : chromaColor.css('rgb'),
+                    borderColor:
+                      color === key ? chromaColor.css('rgb') : 'transparent',
+                  }}
+                />
+              );
+            })}
           </View>
         ))}
       </View>
