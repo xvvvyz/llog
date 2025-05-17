@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import '@/themes/global.css';
-import { NAVIGATION_THEME } from '@/themes/navigation';
+import '@/theme/global.css';
+import { NAVIGATION } from '@/theme/navigation';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
@@ -11,7 +11,7 @@ export default function Layout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={NAVIGATION_THEME[colorScheme]}>
+    <ThemeProvider value={NAVIGATION[colorScheme]}>
       <SafeAreaProvider>
         <Slot />
         <PortalHost />

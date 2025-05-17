@@ -4,31 +4,31 @@ import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { useActiveTeamId } from '@/hooks/use-active-team-id';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { COLORS, type Color } from '@/themes/colors';
+import { Color, SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
-import chroma from 'chroma-js';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Pressable, View } from 'react-native';
 
-const COLOR_ROWS: [Color[], Color[]] = [
-  ['gray', 'magenta', 'purple', 'violet', 'indigo', 'blue', 'azure', 'cyan'],
-  ['red', 'coral', 'orange', 'amber', 'yellow', 'lime', 'green', 'teal'],
+const COLOR_ROWS = [
+  ['gray', 'orange', 'red', 'pink', 'purple', 'indigo'],
+  ['brown', 'amber', 'yellow', 'green', 'cyan', 'blue'],
 ];
 
 export function LogForm({
   log,
 }: {
-  log?: { color: Color; id: string; name: string };
+  log?: { color: string; id: string; name: string };
 }) {
-  const [color, setColor] = useState<Color>(log?.color ?? 'gray');
-  const [name, setName] = useState(log?.name ?? '');
+  const [color, setColor] = useState('gray');
+  const [name, setName] = useState('');
   const colorScheme = useColorScheme();
   const inputRef = useRef<ComponentRef<typeof Input>>(null);
   const logId = useMemo(() => log?.id ?? id(), [log?.id]);
   const teamId = useActiveTeamId();
 
+  const isDark = colorScheme === 'dark';
   const trimmedName = name.trim();
   const isDisabled = !trimmedName || !teamId;
 
@@ -67,29 +67,32 @@ export function LogForm({
         returnKeyType="go"
         value={name}
       />
-      <Label className="mt-6">Color</Label>
-      <View className="mt-2.5 flex-col gap-2">
+      <View className="mt-6 flex-col gap-2">
         {COLOR_ROWS.map((rowColors, rowIndex) => (
           <View className="flex-row gap-2" key={`row-${rowIndex}`}>
-            {rowColors.map((key) => {
-              const chromaColor = chroma(COLORS[colorScheme][key]);
-
-              return (
-                <Pressable
-                  className="aspect-square w-16 shrink rounded-full border-8"
-                  key={`color-${key}`}
-                  onPress={() => setColor(key)}
-                  style={{
-                    backgroundColor:
+            {rowColors.map((key) => (
+              <Pressable
+                className="aspect-square w-16 shrink rounded-full border-4"
+                key={`color-${key}`}
+                onPress={() => setColor(key)}
+                style={{
+                  backgroundColor:
+                    SPECTRUM[colorScheme][key as Color][
                       color === key
-                        ? chromaColor.brighten(1.5).css('rgb')
-                        : chromaColor.css('rgb'),
-                    borderColor:
-                      color === key ? chromaColor.css('rgb') : 'transparent',
-                  }}
-                />
-              );
-            })}
+                        ? isDark
+                          ? 'darker'
+                          : 'lighter'
+                        : 'default'
+                    ],
+                  borderColor:
+                    color === key
+                      ? SPECTRUM[colorScheme][key as Color][
+                          isDark ? 'lighter' : 'darker'
+                        ]
+                      : 'transparent',
+                }}
+              />
+            ))}
           </View>
         ))}
       </View>

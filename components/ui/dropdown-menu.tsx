@@ -19,7 +19,7 @@ const Content = forwardRef<
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             className={cn(
-              'min-w-[10rem] overflow-hidden rounded-2xl bg-popover py-1',
+              'min-w-[10rem] overflow-hidden rounded-2xl bg-popover py-2',
               className
             )}
             entering={FadeInUp.duration(100)}
@@ -46,7 +46,7 @@ const Item = forwardRef<
     <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
-        'group relative flex flex-row items-center gap-1 px-5 py-3 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'group relative flex h-12 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
         inset && 'pl-8',
         props.disabled && 'opacity-50 web:pointer-events-none',
         className

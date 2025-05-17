@@ -13,6 +13,7 @@ import Animated, {
   FadeOut,
   FadeOutDown,
 } from 'react-native-reanimated';
+import { TextClassContext } from './text';
 
 const modalVariants = cva('w-full cursor-default bg-popover overflow-hidden', {
   defaultVariants: {
@@ -62,22 +63,24 @@ export const Modal = ({
             </BlurView>
           </Animated.View>
         </Pressable>
-        <Animated.View
-          className={modalVariants({ className, variant })}
-          entering={FadeInDown.duration(100)}
-          exiting={FadeOutDown.duration(100)}
-          style={{ borderCurve: 'continuous' }}
-        >
-          {isLoading && (
-            <Animated.View
-              className="absolute inset-0 z-10"
-              exiting={FadeOut.duration(100)}
-            >
-              <Loading className="bg-popover" />
-            </Animated.View>
-          )}
-          {children}
-        </Animated.View>
+        <TextClassContext.Provider value="text-popover-foreground">
+          <Animated.View
+            className={modalVariants({ className, variant })}
+            entering={FadeInDown.duration(100)}
+            exiting={FadeOutDown.duration(100)}
+            style={{ borderCurve: 'continuous' }}
+          >
+            {isLoading && (
+              <Animated.View
+                className="absolute inset-0 z-10"
+                exiting={FadeOut.duration(100)}
+              >
+                <Loading className="bg-popover" />
+              </Animated.View>
+            )}
+            {children}
+          </Animated.View>
+        </TextClassContext.Provider>
       </KeyboardAvoidingView>
       {isSheet && (
         <Animated.View

@@ -42,13 +42,13 @@ export default function Index() {
           >
             <Link asChild href={`/${params.id}/edit`}>
               <Menu.Item>
-                <Pencil className="mr-2 text-foreground" size={18} />
+                <Pencil className="text-placeholder" size={20} />
                 <Text>Edit</Text>
               </Menu.Item>
             </Link>
             <Link asChild href={`/${params.id}/delete`}>
               <Menu.Item>
-                <Trash className="mr-2 text-foreground" size={18} />
+                <Trash className="text-placeholder" size={20} />
                 <Text>Delete</Text>
               </Menu.Item>
             </Link>

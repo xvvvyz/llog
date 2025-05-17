@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { ROLES } from '@/constants/roles';
+import { Role } from '@/enums/roles';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
@@ -35,7 +35,7 @@ export default function Onboarding() {
         .link({ user: userId }),
       db.tx.teams[teamId].update({ name: trimmedName }),
       db.tx.roles[roleId]
-        .update({ role: ROLES.OWNER })
+        .update({ role: Role.Owner })
         .link({ team: teamId, user: userId }),
       db.tx.ui[userId].update({}).link({ team: teamId, user: userId }),
     ]);

@@ -17,7 +17,6 @@ export default function Settings() {
           await db.auth.signOut();
           router.navigate('/sign-in');
         }}
-        size="sm"
         variant="secondary"
       >
         <Text>Sign out</Text>

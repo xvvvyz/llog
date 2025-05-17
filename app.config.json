@@ -7,10 +7,10 @@
     "orientation": "portrait",
     "scheme": "llog",
     "userInterfaceStyle": "automatic",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icon.png",
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/favicon.png",
       "output": "static"
     },
     "plugins": ["expo-router"],

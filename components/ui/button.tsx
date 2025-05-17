@@ -26,7 +26,7 @@ const buttonVariants = cva(
         link: 'web:underline-offset-4 web:hover:underline web:focus:underline',
         outline:
           'border border-input bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
-        secondary: 'bg-secondary web:hover:opacity-80 active:opacity-80',
+        secondary: 'bg-secondary web:hover:opacity-90 active:opacity-90',
       },
     },
   }
