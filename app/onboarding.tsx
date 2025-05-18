@@ -43,7 +43,7 @@ export default function Onboarding() {
 
   return (
     <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="p-0 text-3xl text-foreground" nativeID="name">
+      <Label className="p-0 text-2xl text-foreground" nativeID="name">
         What is your name?
       </Label>
       <Input

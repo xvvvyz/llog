@@ -50,7 +50,7 @@ export default function Index() {
     return (
       <View className="flex-1 items-center justify-center gap-6 py-8">
         <Sparkles className="-mb-2 fill-primary stroke-primary" size={64} />
-        <Text className="text-center text-placeholder">
+        <Text className="text-center text-muted-foreground">
           Without data, you&rsquo;re just another{'\n'}person with an opinion.
         </Text>
         <Link asChild href="/new">
@@ -74,7 +74,7 @@ export default function Index() {
             <Input
               autoCapitalize="none"
               autoComplete="off"
-              className="pl-11 pr-11 text-lg"
+              className="pl-11 pr-11"
               onChangeText={setQuery}
               placeholder="Search"
               returnKeyType="done"
@@ -106,7 +106,7 @@ export default function Index() {
           <View className="w-1/2 p-1.5">
             <Link asChild href={`/${item.id}`} key={item.id}>
               <View
-                className="h-32 overflow-hidden rounded-2xl active:opacity-90 web:transition-opacity web:hover:opacity-90"
+                className="h-28 overflow-hidden rounded-2xl active:opacity-90 web:transition-opacity web:hover:opacity-90"
                 style={{
                   backgroundColor:
                     SPECTRUM[colorScheme][item.color as Color].default,
@@ -115,7 +115,7 @@ export default function Index() {
               >
                 <View className="flex-1 items-start justify-end p-4">
                   <Text
-                    className="z-10 text-lg font-medium leading-tight text-white"
+                    className="z-10 font-medium leading-tight text-white"
                     numberOfLines={2}
                   >
                     {item.name}

@@ -31,7 +31,7 @@ export default function SignIn() {
 
     return (
       <View className="flex-1 justify-center gap-4 p-4">
-        <Label className="p-0 text-3xl text-foreground" nativeID="email">
+        <Label className="p-0 text-2xl text-foreground" nativeID="email">
           What is your email?
         </Label>
         <Input
@@ -65,7 +65,7 @@ export default function SignIn() {
 
   return (
     <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="p-0 text-3xl text-foreground" nativeID="code">
+      <Label className="p-0 text-2xl text-foreground" nativeID="code">
         Check your email for a verification code
       </Label>
       <Input

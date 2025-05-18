@@ -10,7 +10,7 @@ export default function Delete() {
 
   return (
     <Modal className="p-6" variant="alert">
-      <Text className="text-3xl">Are you sure?</Text>
+      <Text className="text-2xl">Are you sure?</Text>
       <View className="mt-8 flex-row justify-end gap-4">
         <Button onPress={router.back} variant="secondary">
           <Text>Cancel</Text>

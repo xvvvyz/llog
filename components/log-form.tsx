@@ -62,7 +62,7 @@ export function LogForm({
         className="mt-2 w-full"
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
-        placeholder="My journal, Fido the dog, etc."
+        placeholder="My journal"
         ref={inputRef}
         returnKeyType="go"
         value={name}

@@ -20,7 +20,7 @@ const Content = forwardRef<
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             className={cn(
-              'min-w-[10rem] overflow-hidden rounded-2xl bg-popover py-2',
+              'min-w-36 overflow-hidden rounded-2xl bg-popover py-2',
               className
             )}
             entering={noAndroid(FadeInUp.duration(100))}
@@ -43,11 +43,11 @@ const Item = forwardRef<
     inset?: boolean;
   }
 >(({ className, inset, ...props }, ref) => (
-  <TextClassContext.Provider value="select-none text-popover-foreground text-lg">
+  <TextClassContext.Provider value="select-none text-popover-foreground">
     <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
-        'group relative flex h-12 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'group relative flex h-11 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
         inset && 'pl-8',
         props.disabled && 'opacity-50 web:pointer-events-none',
         className
