@@ -5,7 +5,7 @@ import { type ComponentRef, forwardRef } from 'react';
 import { Pressable } from 'react-native';
 
 const buttonVariants = cva(
-  'group flex items-center justify-center rounded-xl web:transition-colors web:focus-visible:outline-none',
+  'group flex-row items-center gap-2 justify-center rounded-xl web:transition-colors web:focus-visible:outline-none',
   {
     defaultVariants: {
       size: 'default',

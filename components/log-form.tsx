@@ -12,8 +12,8 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Pressable, View } from 'react-native';
 
 const COLOR_ROWS = [
-  ['gray', 'orange', 'red', 'pink', 'purple', 'indigo'],
-  ['brown', 'amber', 'yellow', 'green', 'cyan', 'blue'],
+  ['indigo', 'purple', 'pink', 'red', 'orange', 'gray'],
+  ['blue', 'teal', 'green', 'yellow', 'amber', 'brown'],
 ];
 
 export function LogForm({
@@ -21,7 +21,7 @@ export function LogForm({
 }: {
   log?: { color: string; id: string; name: string };
 }) {
-  const [color, setColor] = useState('gray');
+  const [color, setColor] = useState('indigo');
   const [name, setName] = useState('');
   const colorScheme = useColorScheme();
   const inputRef = useRef<ComponentRef<typeof Input>>(null);

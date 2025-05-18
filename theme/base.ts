@@ -3,7 +3,7 @@
 export const COLORS = Object.freeze({
   light: {
     ui: {
-      background: 'oklch(0.92 0 0)',
+      background: 'oklch(0.94 0 0)',
       foreground: 'oklch(0 0 0 / 0.95)',
       card: 'oklch(0.96 0 0)',
       cardForeground: 'oklch(0 0 0 / 0.95)',
@@ -21,7 +21,7 @@ export const COLORS = Object.freeze({
       destructiveForeground: 'oklch(1 0 0 / 0.95)',
       border: 'oklch(0 0 0 / 0.05)',
       input: 'oklch(0 0 0 / 0.05)',
-      placeholder: 'oklch(0 0 0 / 0.45)',
+      placeholder: 'oklch(0 0 0 / 0.5)',
       ring: 'oklch(0.6 0.2 256)',
     },
     spectrum: {
@@ -30,7 +30,7 @@ export const COLORS = Object.freeze({
       amber: 'oklch(0.65 0.1 60)',
       yellow: 'oklch(0.65 0.1 90)',
       green: 'oklch(0.65 0.1 144)',
-      cyan: 'oklch(0.65 0.1 180)',
+      teal: 'oklch(0.65 0.1 180)',
       blue: 'oklch(0.65 0.1 216)',
       indigo: 'oklch(0.65 0.1 252)',
       purple: 'oklch(0.65 0.1 288)',
@@ -68,7 +68,7 @@ export const COLORS = Object.freeze({
       amber: 'oklch(0.6 0.1 60)',
       yellow: 'oklch(0.6 0.1 90)',
       green: 'oklch(0.6 0.1 144)',
-      cyan: 'oklch(0.6 0.1 180)',
+      teal: 'oklch(0.6 0.1 180)',
       blue: 'oklch(0.6 0.1 216)',
       indigo: 'oklch(0.6 0.1 252)',
       purple: 'oklch(0.6 0.1 288)',

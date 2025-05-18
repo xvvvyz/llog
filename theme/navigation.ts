@@ -7,8 +7,8 @@ export const NAVIGATION = Object.freeze({
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: 'hsl(0 0% 90%)',
-      card: 'hsl(0 0% 90%)',
+      background: 'hsl(0 0% 92%)',
+      card: 'hsl(0 0% 92%)',
     },
   },
 

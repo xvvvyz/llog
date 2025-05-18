@@ -27,7 +27,7 @@ export const SPECTRUM = {
       default: 'hsl(119 23% 51%)',
       darker: 'hsl(120 25% 43%)',
     },
-    cyan: {
+    teal: {
       lighter: 'hsl(169 43% 53%)',
       default: 'hsl(170 49% 43%)',
       darker: 'hsl(172 74% 32%)',
@@ -89,7 +89,7 @@ export const SPECTRUM = {
       default: 'hsl(119 24% 46%)',
       darker: 'hsl(120 28% 37%)',
     },
-    cyan: {
+    teal: {
       lighter: 'hsl(170 45% 46%)',
       default: 'hsl(171 62% 36%)',
       darker: 'hsl(172 100% 24%)',
