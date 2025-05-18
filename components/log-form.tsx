@@ -85,11 +85,13 @@ export function LogForm({
                         : 'default'
                     ],
                   borderColor:
-                    color === key
-                      ? SPECTRUM[colorScheme][key as Color][
-                          isDark ? 'lighter' : 'darker'
-                        ]
-                      : 'transparent',
+                    SPECTRUM[colorScheme][key as Color][
+                      color === key
+                        ? isDark
+                          ? 'lighter'
+                          : 'darker'
+                        : 'default'
+                    ],
                 }}
               />
             ))}

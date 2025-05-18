@@ -1,5 +1,7 @@
 import { Loading } from '@/components/ui/loading';
+import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
+import { noAndroid } from '@/utilities/no-android';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
@@ -13,7 +15,6 @@ import Animated, {
   FadeOut,
   FadeOutDown,
 } from 'react-native-reanimated';
-import { TextClassContext } from './text';
 
 const modalVariants = cva('w-full cursor-default bg-popover overflow-hidden', {
   defaultVariants: {
@@ -42,6 +43,8 @@ export const Modal = ({
 
   return (
     <View className="flex-1">
+      {/* won't animate with the keyboard until this is fixed:
+          https://github.com/facebook/react-native/issues/47625 */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className={cn(
@@ -55,9 +58,11 @@ export const Modal = ({
         >
           <Animated.View
             className="h-full w-full"
-            entering={FadeIn.duration(100)}
-            exiting={FadeOut.duration(100)}
+            entering={noAndroid(FadeIn.duration(100))}
+            exiting={noAndroid(FadeOut.duration(100))}
           >
+            {/* doesn't blur on android
+                https://docs.expo.dev/versions/latest/sdk/blur-view/ */}
             <BlurView className="h-full w-full" intensity={20}>
               <View className="h-full w-full bg-background/90" />
             </BlurView>
@@ -66,14 +71,14 @@ export const Modal = ({
         <TextClassContext.Provider value="text-popover-foreground">
           <Animated.View
             className={modalVariants({ className, variant })}
-            entering={FadeInDown.duration(100)}
-            exiting={FadeOutDown.duration(100)}
+            entering={noAndroid(FadeInDown.duration(100))}
+            exiting={noAndroid(FadeOutDown.duration(100))}
             style={{ borderCurve: 'continuous' }}
           >
             {isLoading && (
               <Animated.View
                 className="absolute inset-0 z-10"
-                exiting={FadeOut.duration(100)}
+                exiting={noAndroid(FadeOut.duration(100))}
               >
                 <Loading className="bg-popover" />
               </Animated.View>
@@ -85,8 +90,8 @@ export const Modal = ({
       {isSheet && (
         <Animated.View
           className="w-full bg-popover"
-          entering={FadeIn.duration(100)}
-          exiting={FadeOut.duration(100)}
+          entering={noAndroid(FadeIn.duration(100))}
+          exiting={noAndroid(FadeOut.duration(100))}
           style={{ height: insets.bottom }}
         />
       )}

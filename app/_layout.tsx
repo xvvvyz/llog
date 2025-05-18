@@ -4,8 +4,7 @@ import { NAVIGATION } from '@/theme/navigation';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
-import * as React from 'react';
-import { View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function Layout() {
@@ -14,10 +13,10 @@ export default function Layout() {
   return (
     <ThemeProvider value={NAVIGATION[colorScheme]}>
       <SafeAreaProvider>
-        <View className="flex-1 bg-background">
+        <GestureHandlerRootView className="flex-1 bg-background">
           <Slot />
           <PortalHost />
-        </View>
+        </GestureHandlerRootView>
       </SafeAreaProvider>
     </ThemeProvider>
   );

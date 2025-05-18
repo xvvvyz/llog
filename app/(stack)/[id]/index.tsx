@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { HeaderTitle } from '@/components/ui/header-title';
 import { Text } from '@/components/ui/text';
+import { useHeaderHeight } from '@/hooks/use-header-height';
 import { db } from '@/utilities/db';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { Link, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
@@ -31,14 +31,20 @@ export default function Index() {
       headerRight: () => (
         <Menu.Root>
           <Menu.Trigger asChild>
-            <Button className="size-12" size="icon" variant="link">
+            <Button className="size-12 web:mr-4" size="icon" variant="link">
               <MoreVertical className="text-foreground" size={20} />
             </Button>
           </Menu.Trigger>
           <Menu.Content
             align="end"
             className="mr-4 mt-2"
-            style={{ top: Platform.OS === 'ios' ? headerHeight : 0 }}
+            style={{
+              top: Platform.select({
+                android: headerHeight,
+                default: 0,
+                ios: headerHeight,
+              }),
+            }}
           >
             <Link asChild href={`/${params.id}/edit`}>
               <Menu.Item>
@@ -55,9 +61,7 @@ export default function Index() {
           </Menu.Content>
         </Menu.Root>
       ),
-      headerTitle: () => {
-        return <HeaderTitle>{name}</HeaderTitle>;
-      },
+      headerTitle: () => <HeaderTitle>{name}</HeaderTitle>,
     });
   }, [headerHeight, name, navigation, params.id]);
 

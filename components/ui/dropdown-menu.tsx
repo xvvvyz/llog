@@ -1,5 +1,6 @@
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
+import { noAndroid } from '@/utilities/no-android';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { forwardRef, ReactNode } from 'react';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
@@ -22,8 +23,8 @@ const Content = forwardRef<
               'min-w-[10rem] overflow-hidden rounded-2xl bg-popover py-2',
               className
             )}
-            entering={FadeInUp.duration(100)}
-            exiting={FadeOutUp.duration(100)}
+            entering={noAndroid(FadeInUp.duration(100))}
+            exiting={noAndroid(FadeOutUp.duration(100))}
             style={{ borderCurve: 'continuous' }}
           >
             {children as ReactNode}

@@ -11,11 +11,11 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Color, SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
 import { Link } from 'expo-router';
-import * as React from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 
 export default function Index() {
-  const [query, setQuery] = React.useState('');
+  const [query, setQuery] = useState('');
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
 
@@ -30,7 +30,7 @@ export default function Index() {
       : null
   );
 
-  const filtered = React.useMemo(
+  const filtered = useMemo(
     () =>
       (data?.teams?.[0]?.logs ?? []).filter((log) =>
         log.name.toLowerCase().includes(query.toLowerCase())
