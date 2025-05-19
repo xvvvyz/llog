@@ -1,4 +1,5 @@
 import { TextClassContext } from '@/components/ui/text';
+import { useRippleColor } from '@/hooks/use-ripple-color';
 import { cn } from '@/utilities/cn';
 import { noAndroid } from '@/utilities/no-android';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
@@ -45,13 +46,14 @@ const Item = forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <TextClassContext.Provider value="select-none text-popover-foreground">
     <DropdownMenuPrimitive.Item
-      ref={ref}
+      android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
-        'group relative flex h-11 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'android:active:bg-transparent group relative flex h-11 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
         inset && 'pl-8',
         props.disabled && 'opacity-50 web:pointer-events-none',
         className
       )}
+      ref={ref}
       {...props}
     />
   </TextClassContext.Provider>

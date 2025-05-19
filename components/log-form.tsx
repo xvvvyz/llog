@@ -99,9 +99,9 @@ export function LogForm({
         ))}
       </View>
       <Button
-        className="mt-12 w-full"
         disabled={isDisabled}
         onPress={handleSubmit}
+        wrapperClassName="mt-12"
       >
         <Text>Save</Text>
       </Button>

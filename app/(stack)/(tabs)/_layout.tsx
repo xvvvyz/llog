@@ -3,6 +3,7 @@ import { Scroll } from '@/components/icons/scroll';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utilities/cn';
 import { Link, Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 
 export default function Layout() {
   return (
@@ -10,7 +11,12 @@ export default function Layout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: { borderTopWidth: 0 },
+        tabBarStyle: {
+          borderTopWidth: 0,
+          elevation: 0,
+          paddingEnd: Platform.OS === 'web' ? 4 : 0,
+          paddingStart: Platform.OS === 'web' ? 4 : 0,
+        },
       }}
     >
       <Tabs.Screen
@@ -18,9 +24,7 @@ export default function Layout() {
         options={{
           tabBarButton: ({ children }) => (
             <Link asChild href="/">
-              <Button className="h-full w-full" variant="link">
-                {children}
-              </Button>
+              <Button variant="ghost">{children}</Button>
             </Link>
           ),
           tabBarIcon: ({ focused }) => (
@@ -35,9 +39,7 @@ export default function Layout() {
         options={{
           tabBarButton: ({ children }) => (
             <Link asChild href="/settings">
-              <Button className="h-full w-full" variant="link">
-                {children}
-              </Button>
+              <Button variant="ghost">{children}</Button>
             </Link>
           ),
           tabBarIcon: ({ focused }) => (

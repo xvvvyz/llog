@@ -105,23 +105,22 @@ export default function Index() {
         return (
           <View className="w-1/2 p-1.5">
             <Link asChild href={`/${item.id}`} key={item.id}>
-              <View
-                className="h-28 overflow-hidden rounded-2xl active:opacity-90 web:transition-opacity web:hover:opacity-90"
+              <Button
+                className="h-28 items-end justify-start overflow-hidden rounded-2xl px-4 py-3 active:opacity-90 web:transition-opacity web:hover:opacity-90"
+                ripple="default"
                 style={{
                   backgroundColor:
                     SPECTRUM[colorScheme][item.color as Color].default,
-                  borderCurve: 'continuous',
                 }}
+                variant="ghost"
               >
-                <View className="flex-1 items-start justify-end p-4">
-                  <Text
-                    className="z-10 font-medium leading-tight text-white"
-                    numberOfLines={2}
-                  >
-                    {item.name}
-                  </Text>
-                </View>
-              </View>
+                <Text
+                  className="z-10 font-medium leading-tight text-white group-active:text-white"
+                  numberOfLines={2}
+                >
+                  {item.name}
+                </Text>
+              </Button>
             </Link>
             <View className="absolute right-1.5 top-1.5">
               <Menu.Root>

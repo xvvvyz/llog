@@ -66,7 +66,7 @@ export default function SignIn() {
   return (
     <View className="flex-1 justify-center gap-4 p-4">
       <Label className="p-0 text-2xl text-foreground" nativeID="code">
-        Check your email for a verification code
+        Check your email for a verification&nbsp;code
       </Label>
       <Input
         aria-labelledby="code"

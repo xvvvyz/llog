@@ -1,11 +1,12 @@
 import { TextClassContext } from '@/components/ui/text';
+import { useRippleColor } from '@/hooks/use-ripple-color';
 import { cn } from '@/utilities/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ComponentRef, forwardRef } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 const buttonVariants = cva(
-  'group flex-row items-center gap-2 justify-center rounded-xl web:transition-colors web:focus-visible:outline-none',
+  'group flex-row items-center gap-2 justify-center web:transition-colors web:focus-visible:outline-none',
   {
     defaultVariants: {
       size: 'default',
@@ -16,14 +17,14 @@ const buttonVariants = cva(
         default: 'h-11 px-4 py-2',
         icon: 'h-10 w-10',
         lg: 'h-12 px-8',
-        sm: 'h-10 rounded-md px-3',
+        sm: 'h-10 px-3',
       },
       variant: {
         default: 'bg-primary web:hover:opacity-90 active:opacity-90',
         destructive: 'bg-destructive web:hover:opacity-90 active:opacity-90',
         ghost:
-          'web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
-        link: 'web:underline-offset-4 web:hover:underline web:focus:underline',
+          'web:hover:bg-accent web:hover:text-accent-foreground web:active:bg-accent',
+        link: '',
         outline:
           'border border-input bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
         secondary: 'bg-secondary web:hover:opacity-90 active:opacity-90',
@@ -31,6 +32,20 @@ const buttonVariants = cva(
     },
   }
 );
+
+const buttonWrapperVariants = cva('overflow-hidden', {
+  defaultVariants: {
+    size: 'default',
+  },
+  variants: {
+    size: {
+      default: 'rounded-xl',
+      icon: 'rounded-xl',
+      lg: 'rounded-xl',
+      sm: 'rounded-md',
+    },
+  },
+});
 
 const buttonTextVariants = cva(
   'web:whitespace-nowrap font-medium text-foreground web:transition-colors',
@@ -50,7 +65,7 @@ const buttonTextVariants = cva(
         default: 'text-primary-foreground',
         destructive: 'text-destructive-foreground',
         ghost: 'group-active:text-accent-foreground',
-        link: 'text-primary group-active:underline',
+        link: 'text-primary',
         outline: 'group-active:text-accent-foreground',
         secondary:
           'text-secondary-foreground group-active:text-secondary-foreground',
@@ -60,10 +75,22 @@ const buttonTextVariants = cva(
 );
 
 type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
-  VariantProps<typeof buttonVariants>;
+  VariantProps<typeof buttonVariants> & {
+    ripple?: 'default' | 'inverse';
+    wrapperClassName?: string;
+  };
 
 const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, ripple, size, variant, wrapperClassName, ...props }, ref) => {
+    const rippleColor = useRippleColor(
+      ripple ??
+        (variant === 'ghost' || variant === 'outline' || variant === 'secondary'
+          ? 'inverse'
+          : 'default')
+    );
+
+    const shouldHaveRipple = variant !== 'link';
+
     return (
       <TextClassContext.Provider
         value={buttonTextVariants({
@@ -72,16 +99,26 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
           variant,
         })}
       >
-        <Pressable
-          className={cn(
-            props.disabled && 'opacity-50 web:pointer-events-none',
-            buttonVariants({ className, size, variant })
-          )}
-          ref={ref}
-          role="button"
-          style={{ borderCurve: 'continuous' }}
-          {...props}
-        />
+        <View className={cn(buttonWrapperVariants({ size }), wrapperClassName)}>
+          <Pressable
+            android_ripple={
+              shouldHaveRipple
+                ? {
+                    color: rippleColor,
+                    borderless: false,
+                  }
+                : undefined
+            }
+            className={cn(
+              props.disabled && 'opacity-50 web:pointer-events-none',
+              buttonVariants({ className, size, variant })
+            )}
+            ref={ref}
+            role="button"
+            style={{ borderCurve: 'continuous' }}
+            {...props}
+          />
+        </View>
       </TextClassContext.Provider>
     );
   }
