@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/utilities/cn';
 import { Link, Tabs } from 'expo-router';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -14,8 +17,9 @@ export default function Layout() {
         tabBarStyle: {
           borderTopWidth: 0,
           elevation: 0,
-          paddingEnd: Platform.OS === 'web' ? 4 : 0,
-          paddingStart: Platform.OS === 'web' ? 4 : 0,
+          height: insets.bottom + 48 + (Platform.OS === 'web' ? 8 : 0),
+          paddingEnd: 8,
+          paddingStart: 8,
         },
       }}
     >
@@ -24,7 +28,9 @@ export default function Layout() {
         options={{
           tabBarButton: ({ children }) => (
             <Link asChild href="/">
-              <Button variant="ghost">{children}</Button>
+              <Button size="lg" variant="ghost">
+                {children}
+              </Button>
             </Link>
           ),
           tabBarIcon: ({ focused }) => (
@@ -39,7 +45,9 @@ export default function Layout() {
         options={{
           tabBarButton: ({ children }) => (
             <Link asChild href="/settings">
-              <Button variant="ghost">{children}</Button>
+              <Button size="lg" variant="ghost">
+                {children}
+              </Button>
             </Link>
           ),
           tabBarIcon: ({ focused }) => (
