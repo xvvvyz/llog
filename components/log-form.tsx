@@ -10,7 +10,7 @@ import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 const COLOR_ROWS = [
   ['indigo', 'purple', 'pink', 'red', 'orange', 'gray'],
@@ -72,10 +72,11 @@ export function LogForm({
         {COLOR_ROWS.map((rowColors, rowIndex) => (
           <View className="flex-row gap-2" key={`row-${rowIndex}`}>
             {rowColors.map((key) => (
-              <Pressable
-                className="aspect-square w-16 shrink rounded-full border-4"
+              <Button
+                className="h-full w-full rounded-full border-4"
                 key={`color-${key}`}
                 onPress={() => setColor(key)}
+                ripple="default"
                 style={{
                   backgroundColor:
                     SPECTRUM[colorScheme][key as Color][
@@ -94,6 +95,8 @@ export function LogForm({
                         : 'default'
                     ],
                 }}
+                variant="ghost"
+                wrapperClassName="shrink w-16 aspect-square rounded-full"
               />
             ))}
           </View>
