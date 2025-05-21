@@ -45,7 +45,7 @@ export const COLORS = Object.freeze({
       foreground: 'oklch(1 0 0 / 0.95)',
       card: 'oklch(0.2 0 0)',
       cardForeground: 'oklch(1 0 0 / 0.95)',
-      popover: 'oklch(0.26 0 0)',
+      popover: 'oklch(0.24 0 0)',
       popoverForeground: 'oklch(1 0 0 / 0.8)',
       primary: 'oklch(0.6 0.2 256)',
       primaryForeground: 'oklch(1 0 0 / 0.95)',

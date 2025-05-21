@@ -1,10 +1,10 @@
 import { LogForm } from '@/components/log-form';
-import { Modal } from '@/components/ui/modal';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 
 export default function New() {
   return (
-    <Modal>
+    <BottomSheet>
       <LogForm />
-    </Modal>
+    </BottomSheet>
   );
 }

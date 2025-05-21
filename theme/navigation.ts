@@ -7,17 +7,18 @@ export const NAVIGATION = Object.freeze({
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: 'hsl(0 0% 92%)',
-      card: 'hsl(0 0% 92%)',
+      background: 'rgb(235, 235, 235)',
+      card: 'rgb(235, 235, 235)',
+      border: 'rgba(0, 0, 0, 0.05)',
     },
   },
-
   dark: {
     ...DarkTheme,
     colors: {
       ...DarkTheme.colors,
-      background: 'hsl(0 0% 5%)',
-      card: 'hsl(0 0% 5%)',
+      background: 'rgb(13, 13, 13)',
+      card: 'rgb(13, 13, 13)',
+      border: 'rgba(255, 255, 255, 0.05)',
     },
   },
 });

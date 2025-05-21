@@ -42,8 +42,8 @@ export default function Onboarding() {
   };
 
   return (
-    <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="p-0 text-2xl text-foreground" nativeID="name">
+    <View className="flex-1 justify-center p-4">
+      <Label className="p-0 text-2xl" nativeID="name">
         What is your name?
       </Label>
       <Input
@@ -51,14 +51,19 @@ export default function Onboarding() {
         autoCapitalize="none"
         autoComplete="name"
         autoFocus
-        className="w-full"
+        className="mt-2.5 w-full"
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
         placeholder="Jane Doe"
         returnKeyType="next"
         value={name}
       />
-      <Button className="w-full" disabled={isDisabled} onPress={handleSubmit}>
+      <Button
+        className="w-full"
+        disabled={isDisabled}
+        onPress={handleSubmit}
+        wrapperClassName="mt-4"
+      >
         <Text>Continue</Text>
       </Button>
     </View>

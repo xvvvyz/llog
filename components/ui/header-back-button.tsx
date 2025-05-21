@@ -10,10 +10,11 @@ export function HeaderBackButton() {
 
   return (
     <Button
-      className="size-12 web:ml-4"
+      className="size-12"
       onPress={() => navigation.goBack()}
       size="icon"
       variant="link"
+      wrapperClassName="web:ml-4"
     >
       {Platform.OS === 'android' ? (
         <ArrowLeft className="color-foreground" />

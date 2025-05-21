@@ -5,6 +5,28 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { type ComponentRef, forwardRef } from 'react';
 import { Pressable, View } from 'react-native';
 
+const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
+  defaultVariants: {
+    size: 'default',
+  },
+  variants: {
+    size: {
+      default: '',
+      icon: '',
+      lg: '',
+      sm: '',
+    },
+    variant: {
+      default: '',
+      destructive: '',
+      ghost: '',
+      link: '',
+      outline: 'border border-input',
+      secondary: '',
+    },
+  },
+});
+
 const buttonVariants = cva(
   'group flex-row items-center gap-2 justify-center web:transition-colors web:focus-visible:outline-none',
   {
@@ -15,8 +37,8 @@ const buttonVariants = cva(
     variants: {
       size: {
         default: 'h-11 px-4 py-2',
-        icon: 'h-10 w-10',
-        lg: 'h-12 px-8',
+        icon: 'h-11 w-11',
+        lg: 'h-12 px-5',
         sm: 'h-10 px-3',
       },
       variant: {
@@ -26,26 +48,12 @@ const buttonVariants = cva(
           'web:hover:bg-accent web:hover:text-accent-foreground web:active:bg-accent',
         link: '',
         outline:
-          'border border-input bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
+          'bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
         secondary: 'bg-secondary web:hover:opacity-90 active:opacity-90',
       },
     },
   }
 );
-
-const buttonWrapperVariants = cva('overflow-hidden', {
-  defaultVariants: {
-    size: 'default',
-  },
-  variants: {
-    size: {
-      default: 'rounded-xl',
-      icon: 'rounded-xl',
-      lg: 'rounded-xl',
-      sm: 'rounded-md',
-    },
-  },
-});
 
 const buttonTextVariants = cva(
   'web:whitespace-nowrap font-medium text-foreground web:transition-colors',
@@ -99,7 +107,15 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
           variant,
         })}
       >
-        <View className={cn(buttonWrapperVariants({ size }), wrapperClassName)}>
+        <View
+          className={cn(
+            buttonWrapperVariants({
+              className: wrapperClassName,
+              size,
+              variant,
+            })
+          )}
+        >
           <Pressable
             android_ripple={
               shouldHaveRipple

@@ -1,5 +1,5 @@
 import { LogForm } from '@/components/log-form';
-import { Modal } from '@/components/ui/modal';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { db } from '@/utilities/db';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -13,8 +13,8 @@ export default function Edit() {
   });
 
   return (
-    <Modal isLoading={isLoading}>
+    <BottomSheet isLoading={isLoading}>
       <LogForm log={data?.logs?.[0]} />
-    </Modal>
+    </BottomSheet>
   );
 }

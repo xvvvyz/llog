@@ -31,13 +31,18 @@ export default function Index() {
       headerRight: () => (
         <Menu.Root>
           <Menu.Trigger asChild>
-            <Button className="size-12 web:mr-4" size="icon" variant="link">
+            <Button
+              className="size-12"
+              size="icon"
+              variant="link"
+              wrapperClassName="web:mr-4"
+            >
               <MoreVertical className="text-foreground" size={20} />
             </Button>
           </Menu.Trigger>
           <Menu.Content
             align="end"
-            className="mr-4 mt-2"
+            className="mr-4"
             style={{
               top: Platform.select({
                 android: headerHeight,

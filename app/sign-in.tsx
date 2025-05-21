@@ -30,8 +30,8 @@ export default function SignIn() {
     };
 
     return (
-      <View className="flex-1 justify-center gap-4 p-4">
-        <Label className="p-0 text-2xl text-foreground" nativeID="email">
+      <View className="mx-auto w-full max-w-sm flex-1 justify-center p-4">
+        <Label className="p-0 text-2xl" nativeID="email">
           What is your email?
         </Label>
         <Input
@@ -39,7 +39,7 @@ export default function SignIn() {
           autoCapitalize="none"
           autoComplete="email"
           autoFocus
-          className="w-full"
+          className="mt-2.5 w-full"
           keyboardType="email-address"
           onChangeText={setEmail}
           onSubmitEditing={handleSubmit}
@@ -47,7 +47,12 @@ export default function SignIn() {
           returnKeyType="next"
           value={email}
         />
-        <Button className="w-full" disabled={isDisabled} onPress={handleSubmit}>
+        <Button
+          className="w-full"
+          disabled={isDisabled}
+          onPress={handleSubmit}
+          wrapperClassName="mt-4"
+        >
           <Text>Send verification code</Text>
         </Button>
       </View>
@@ -64,22 +69,27 @@ export default function SignIn() {
   };
 
   return (
-    <View className="flex-1 justify-center gap-4 p-4">
-      <Label className="p-0 text-2xl text-foreground" nativeID="code">
+    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-4">
+      <Label className="p-0 text-2xl" nativeID="code">
         Check your email for a verification&nbsp;code
       </Label>
       <Input
         aria-labelledby="code"
         autoComplete="off"
         autoFocus
-        className="w-full"
+        className="mt-2.5 w-full"
         keyboardType="number-pad"
         onChangeText={setCode}
         onSubmitEditing={handleSubmit}
         placeholder="123456"
         value={code}
       />
-      <Button className="w-full" disabled={isDisabled} onPress={handleSubmit}>
+      <Button
+        className="w-full"
+        disabled={isDisabled}
+        onPress={handleSubmit}
+        wrapperClassName="mt-4"
+      >
         <Text>Sign in</Text>
       </Button>
     </View>

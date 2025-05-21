@@ -6,6 +6,7 @@ import { useActiveTeamId } from '@/hooks/use-active-team-id';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Color, SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
@@ -47,18 +48,18 @@ export function LogForm({
         .link({ team: teamId })
     );
 
-    if (!log) router.replace(`/${logId}`);
-    else router.back();
+    if (log) router.back();
+    else router.replace(`/${logId}`);
   };
 
   return (
-    <View className="mx-auto w-full p-8">
+    <BottomSheetView className="mx-auto w-full max-w-md p-8">
       <Label nativeID="name">Name</Label>
       <Input
         aria-labelledby="name"
         autoCapitalize="none"
         autoComplete="off"
-        autoFocus
+        bottomSheet
         className="mt-2 w-full"
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
@@ -105,6 +106,6 @@ export function LogForm({
       >
         <Text>Save</Text>
       </Button>
-    </View>
+    </BottomSheetView>
   );
 }
