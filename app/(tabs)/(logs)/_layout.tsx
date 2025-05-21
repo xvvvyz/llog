@@ -1,21 +1,16 @@
 import { HeaderBackButton } from '@/components/ui/header-back-button';
 import { HeaderTitle } from '@/components/ui/header-title';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
+import { useHeaderConfig } from '@/hooks/use-header-config';
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
 
 export default function Layout() {
   const breakpoints = useBreakpoints();
+  const headerConfig = useHeaderConfig();
 
   return (
-    <Stack
-      screenOptions={{
-        headerBackVisible: false,
-        headerShadowVisible: breakpoints.md,
-        headerTitleAlign: breakpoints.md ? 'left' : 'center',
-        title: '',
-      }}
-    >
+    <Stack screenOptions={headerConfig}>
       <Stack.Screen
         name="index"
         options={{

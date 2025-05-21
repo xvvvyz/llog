@@ -17,7 +17,7 @@ const Label = forwardRef<LabelPrimitive.TextRef, LabelPrimitive.TextProps>(
       <LabelPrimitive.Text
         ref={ref}
         className={cn(
-          'px-4 text-base leading-none text-muted-foreground web:peer-disabled:cursor-not-allowed web:peer-disabled:opacity-70',
+          'px-2 pb-1.5 text-base leading-tight text-muted-foreground web:peer-disabled:cursor-not-allowed web:peer-disabled:opacity-70',
           className
         )}
         {...props}

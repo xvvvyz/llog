@@ -10,16 +10,17 @@ export function HeaderBackButton() {
 
   return (
     <Button
-      className="size-12"
+      accessibilityHint="Navigates to the previous screen"
+      accessibilityLabel="Go back"
+      className="size-14"
       onPress={() => navigation.goBack()}
       size="icon"
       variant="link"
-      wrapperClassName="web:ml-4"
     >
       {Platform.OS === 'android' ? (
-        <ArrowLeft className="color-foreground" />
+        <ArrowLeft aria-hidden className="color-foreground" />
       ) : (
-        <ChevronLeft className="color-foreground" />
+        <ChevronLeft aria-hidden className="color-foreground" />
       )}
     </Button>
   );

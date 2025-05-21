@@ -21,11 +21,11 @@ const Content = forwardRef<
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             className={cn(
-              'min-w-36 overflow-hidden rounded-2xl bg-popover py-2',
+              'min-w-36 overflow-hidden rounded-3xl bg-popover py-2',
               className
             )}
-            entering={noAndroid(FadeInUp.duration(100))}
-            exiting={noAndroid(FadeOutUp.duration(100))}
+            entering={noAndroid(FadeInUp.duration(150))}
+            exiting={noAndroid(FadeOutUp.duration(150))}
             style={{ borderCurve: 'continuous' }}
           >
             {children as ReactNode}

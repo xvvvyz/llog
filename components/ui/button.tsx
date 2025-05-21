@@ -72,11 +72,10 @@ const buttonTextVariants = cva(
       variant: {
         default: 'text-primary-foreground',
         destructive: 'text-destructive-foreground',
-        ghost: 'group-active:text-accent-foreground',
+        ghost: '',
         link: 'text-primary',
-        outline: 'group-active:text-accent-foreground',
-        secondary:
-          'text-secondary-foreground group-active:text-secondary-foreground',
+        outline: '',
+        secondary: 'text-secondary-foreground',
       },
     },
   }
@@ -115,8 +114,10 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
               variant,
             })
           )}
+          style={{ borderCurve: 'continuous' }}
         >
           <Pressable
+            accessibilityRole="button"
             android_ripple={
               shouldHaveRipple
                 ? {
@@ -131,7 +132,6 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
             )}
             ref={ref}
             role="button"
-            style={{ borderCurve: 'continuous' }}
             {...props}
           />
         </View>

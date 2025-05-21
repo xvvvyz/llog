@@ -31,15 +31,12 @@ export default function SignIn() {
 
     return (
       <View className="mx-auto w-full max-w-sm flex-1 justify-center p-4">
-        <Label className="p-0 text-2xl" nativeID="email">
-          What is your email?
-        </Label>
+        <Label nativeID="email">What is your email?</Label>
         <Input
           aria-labelledby="email"
           autoCapitalize="none"
           autoComplete="email"
           autoFocus
-          className="mt-2.5 w-full"
           keyboardType="email-address"
           onChangeText={setEmail}
           onSubmitEditing={handleSubmit}
@@ -51,7 +48,7 @@ export default function SignIn() {
           className="w-full"
           disabled={isDisabled}
           onPress={handleSubmit}
-          wrapperClassName="mt-4"
+          wrapperClassName="mt-8"
         >
           <Text>Send verification code</Text>
         </Button>
@@ -70,14 +67,14 @@ export default function SignIn() {
 
   return (
     <View className="mx-auto w-full max-w-sm flex-1 justify-center p-4">
-      <Label className="p-0 text-2xl" nativeID="code">
-        Check your email for a verification&nbsp;code
+      <Label nativeID="code">
+        Enter the code that was sent to{' '}
+        <Text className="font-medium">{email}</Text>
       </Label>
       <Input
         aria-labelledby="code"
         autoComplete="off"
         autoFocus
-        className="mt-2.5 w-full"
         keyboardType="number-pad"
         onChangeText={setCode}
         onSubmitEditing={handleSubmit}
@@ -88,7 +85,7 @@ export default function SignIn() {
         className="w-full"
         disabled={isDisabled}
         onPress={handleSubmit}
-        wrapperClassName="mt-4"
+        wrapperClassName="mt-8"
       >
         <Text>Sign in</Text>
       </Button>

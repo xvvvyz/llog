@@ -3,7 +3,7 @@ import { noAndroid } from '@/utilities/no-android';
 import { Portal } from '@rn-primitives/portal';
 import { useRouter } from 'expo-router';
 import { ReactNode, useCallback, useRef } from 'react';
-import { Platform, View } from 'react-native';
+import { Keyboard, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Animated, {
@@ -13,11 +13,11 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
+import { useOnEscape } from '@/hooks/use-on-escape';
 import BottomSheetPrimative, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
   BottomSheetBackgroundProps,
-  useBottomSheetSpringConfigs,
 } from '@gorhom/bottom-sheet';
 
 const Backdrop = ({
@@ -25,14 +25,14 @@ const Backdrop = ({
   style,
   ...props
 }: BottomSheetBackdropProps) => {
-  const containerAnimatedStyle = useAnimatedStyle(() => {
+  const animatedOpacity = useAnimatedStyle(() => {
     'worklet';
 
     return {
       opacity: interpolate(
         animatedIndex.value,
         [-1, 0],
-        [0, 0.8],
+        [0, 0.95],
         Extrapolation.CLAMP
       ),
     };
@@ -44,16 +44,27 @@ const Backdrop = ({
       animatedIndex={animatedIndex}
       appearsOnIndex={0}
       disappearsOnIndex={-1}
+      onPress={Keyboard.dismiss}
+      opacity={1}
       pressBehavior="close"
-      style={[style, containerAnimatedStyle]}
+      style={[style, { backgroundColor: 'rgba(0, 0, 0, 0)' }]}
     >
-      <View className="absolute inset-0 bg-background" />
+      <Animated.View
+        className="absolute inset-0 bg-background"
+        style={animatedOpacity}
+      />
     </BottomSheetBackdrop>
   );
 };
 
-const Background = (props: BottomSheetBackgroundProps) => {
-  return <View {...props} className="-mb-64 rounded-t-3xl bg-popover" />;
+const Background = ({ style, ...props }: BottomSheetBackgroundProps) => {
+  return (
+    <View
+      {...props}
+      className="-mb-64 rounded-t-3xl bg-popover"
+      style={[style, { borderCurve: 'continuous' }]}
+    />
+  );
 };
 
 export const BottomSheet = ({
@@ -63,22 +74,24 @@ export const BottomSheet = ({
   children: ReactNode;
   isLoading?: boolean;
 }) => {
-  const animation = useBottomSheetSpringConfigs({ duration: 150 });
   const insets = useSafeAreaInsets();
   const ref = useRef<BottomSheetPrimative>(null);
   const router = useRouter();
 
   const handleSheetChanges = useCallback(
     (index: number) => {
-      if (index === -1) router.back();
+      if (index >= 0) return;
+      router.back();
     },
     [router]
   );
 
+  useOnEscape(() => ref.current?.close());
+
   const content = (
     <BottomSheetPrimative
+      accessibilityLabel="Bottom sheet"
       animateOnMount
-      animationConfigs={animation}
       backdropComponent={Backdrop}
       backgroundComponent={Background}
       bottomInset={insets.bottom}

@@ -1,12 +1,9 @@
-import { MoreHorizontal } from '@/components/icons/more-horizontal';
-import { Pencil } from '@/components/icons/pencil';
 import { Plus } from '@/components/icons/plus';
 import { Search } from '@/components/icons/search';
 import { Sparkles } from '@/components/icons/sparkles';
-import { Trash } from '@/components/icons/trash';
 import { X } from '@/components/icons/x';
+import { LogDropdownMenu } from '@/components/log-dropdown-menu';
 import { Button } from '@/components/ui/button';
-import * as Menu from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
@@ -27,26 +24,30 @@ const SearchBar = ({
 }) => (
   <View className="relative md:mr-2">
     <View className="absolute left-3 top-1/2 -translate-y-1/2">
-      <Search className="text-placeholder" size={20} />
+      <Search className="text-placeholder" size={20} aria-hidden />
     </View>
     <Input
+      accessibilityHint="Type to filter your logs"
+      accessibilityLabel="Search logs"
       autoCapitalize="none"
       autoComplete="off"
-      className="pl-11 pr-11 md:h-10 md:w-56"
+      className="px-10 md:h-10 md:w-56"
       onChangeText={setQuery}
       placeholder="Search"
       returnKeyType="done"
       value={query}
     />
     {!!query.length && (
-      <View className="absolute right-1 top-1/2 -translate-y-1/2">
+      <View className="absolute right-1.5 top-1/2 -translate-y-1/2 md:right-1">
         <Button
+          accessibilityHint="Clears the search input"
+          accessibilityLabel="Clear search"
+          className="size-8 rounded-full"
+          onPress={() => setQuery('')}
           size="icon"
           variant="ghost"
-          className="rounded-full"
-          onPress={() => setQuery('')}
         >
-          <X className="text-muted-foreground" size={16} />
+          <X className="text-muted-foreground" size={16} aria-hidden />
         </Button>
       </View>
     )}
@@ -56,9 +57,9 @@ const SearchBar = ({
 export default function Index() {
   const [query, setQuery] = useState('');
   const auth = db.useAuth();
+  const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
-  const breakpoints = useBreakpoints();
 
   const { data, isLoading } = db.useQuery(
     auth.user
@@ -93,21 +94,24 @@ export default function Index() {
     navigation.setOptions({
       headerRight: () => (
         <View className="flex-row items-center gap-2">
-          {breakpoints.md && <SearchBar query={query} setQuery={setQuery} />}
+          {breakpoints.md && logs.length && (
+            <SearchBar query={query} setQuery={setQuery} />
+          )}
           <Link asChild href="/new">
             <Button
-              className="size-12"
-              wrapperClassName="web:mr-4"
+              accessibilityHint="Opens a form to create a new log"
+              accessibilityLabel="New log"
+              className="size-14"
               size="icon"
               variant="link"
             >
-              <Plus className="color-foreground" />
+              <Plus aria-hidden className="color-foreground" />
             </Button>
           </Link>
         </View>
       ),
     });
-  }, [breakpoints.md, query, navigation]);
+  }, [breakpoints.md, logs.length, navigation, query]);
 
   if (isLoading) {
     return null;
@@ -116,14 +120,17 @@ export default function Index() {
   if (!logs.length) {
     return (
       <View className="flex-1 items-center justify-center gap-6 py-8">
-        <Sparkles className="-mb-2 stroke-primary" size={64} />
-        <Text className="text-center text-placeholder">
+        <Sparkles className="-mb-2 stroke-primary" size={64} aria-hidden />
+        <Text className="text-center text-muted-foreground">
           &ldquo;Without data, you&rsquo;re just another{'\n'}person with an
           opinion.&rdquo;
         </Text>
         <Link asChild href="/new">
-          <Button>
-            <Plus className="-ml-0.5 text-white" size={20} />
+          <Button
+            accessibilityHint="Opens a form to create your first log"
+            accessibilityLabel="Create your first log"
+          >
+            <Plus className="-ml-0.5 text-white" size={20} aria-hidden />
             <Text>New log</Text>
           </Button>
         </Link>
@@ -133,6 +140,8 @@ export default function Index() {
 
   return (
     <FlatList
+      accessibilityLabel="Logs grid"
+      accessibilityRole="list"
       ListHeaderComponent={
         !breakpoints.md ? (
           <View className="p-1.5 pb-3">
@@ -150,6 +159,7 @@ export default function Index() {
       renderItem={({ item }) => {
         return (
           <View
+            accessibilityRole="none"
             className={cn('p-2', {
               'w-1/2': columns === 2,
               'w-1/3': columns === 3,
@@ -160,7 +170,9 @@ export default function Index() {
           >
             <Link asChild href={`/${item.id}`} key={item.id}>
               <Button
-                className="h-28 items-end justify-start overflow-hidden rounded-2xl px-4 py-3 active:opacity-90 web:transition-opacity web:hover:opacity-90"
+                accessibilityHint={`Opens the log ${item.name}`}
+                accessibilityLabel={`Open ${item.name}`}
+                className="h-28 items-end justify-start rounded-2xl px-4 py-3 active:opacity-90 web:transition-opacity web:hover:opacity-90"
                 ripple="default"
                 style={{
                   backgroundColor:
@@ -169,37 +181,15 @@ export default function Index() {
                 variant="ghost"
               >
                 <Text
-                  className="z-10 font-medium leading-tight text-white group-active:text-white"
-                  numberOfLines={2}
+                  className="font-medium leading-tight text-white"
+                  numberOfLines={1}
                 >
                   {item.name}
                 </Text>
               </Button>
             </Link>
             <View className="absolute right-1.5 top-1.5">
-              <Menu.Root>
-                <Menu.Trigger asChild>
-                  <Button className="group size-12" size="icon" variant="link">
-                    <View className="size-8 items-center justify-center rounded-full bg-white/15 group-active:bg-white/25 web:transition-colors web:group-hover:bg-white/25">
-                      <MoreHorizontal className="text-white" size={20} />
-                    </View>
-                  </Button>
-                </Menu.Trigger>
-                <Menu.Content align="end" className="mr-2">
-                  <Link asChild href={`/${item.id}/edit`}>
-                    <Menu.Item>
-                      <Pencil className="text-placeholder" size={20} />
-                      <Text>Edit</Text>
-                    </Menu.Item>
-                  </Link>
-                  <Link asChild href={`/${item.id}/delete`}>
-                    <Menu.Item>
-                      <Trash className="text-placeholder" size={20} />
-                      <Text>Delete</Text>
-                    </Menu.Item>
-                  </Link>
-                </Menu.Content>
-              </Menu.Root>
+              <LogDropdownMenu logId={item.id} logName={item.name} />
             </View>
           </View>
         );

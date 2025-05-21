@@ -6,11 +6,11 @@ import { useActiveTeamId } from '@/hooks/use-active-team-id';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Color, SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetView, useBottomSheet } from '@gorhom/bottom-sheet';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
-import { View } from 'react-native';
+import { Keyboard, View } from 'react-native';
 
 const COLOR_ROWS = [
   ['indigo', 'purple', 'pink', 'red', 'orange', 'gray'],
@@ -24,6 +24,7 @@ export function LogForm({
 }) {
   const [color, setColor] = useState('indigo');
   const [name, setName] = useState('');
+  const bottomSheet = useBottomSheet();
   const colorScheme = useColorScheme();
   const inputRef = useRef<ComponentRef<typeof Input>>(null);
   const logId = useMemo(() => log?.id ?? id(), [log?.id]);
@@ -48,8 +49,9 @@ export function LogForm({
         .link({ team: teamId })
     );
 
-    if (log) router.back();
+    if (log) bottomSheet.close();
     else router.replace(`/${logId}`);
+    Keyboard.dismiss();
   };
 
   return (
@@ -60,7 +62,6 @@ export function LogForm({
         autoCapitalize="none"
         autoComplete="off"
         bottomSheet
-        className="mt-2 w-full"
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
         placeholder="My journal"
@@ -68,7 +69,7 @@ export function LogForm({
         returnKeyType="go"
         value={name}
       />
-      <View className="mt-6 flex-col gap-2">
+      <View className="mt-8 flex-col gap-2">
         {COLOR_ROWS.map((rowColors, rowIndex) => (
           <View className="flex-row gap-2" key={`row-${rowIndex}`}>
             {rowColors.map((key) => (
@@ -102,13 +103,25 @@ export function LogForm({
           </View>
         ))}
       </View>
-      <Button
-        disabled={isDisabled}
-        onPress={handleSubmit}
-        wrapperClassName="mt-12"
-      >
-        <Text>Save</Text>
-      </Button>
+      <View className="mt-12 flex-row gap-4">
+        <Button
+          onPress={() => {
+            bottomSheet.close();
+            Keyboard.dismiss();
+          }}
+          variant="secondary"
+          wrapperClassName="shrink w-full"
+        >
+          <Text>Cancel</Text>
+        </Button>
+        <Button
+          disabled={isDisabled}
+          onPress={handleSubmit}
+          wrapperClassName="shrink w-full"
+        >
+          <Text>Save</Text>
+        </Button>
+      </View>
     </BottomSheetView>
   );
 }

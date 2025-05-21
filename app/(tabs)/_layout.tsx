@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { HeaderTitle } from '@/components/ui/header-title';
 import { Loading } from '@/components/ui/loading';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
+import { useHeaderConfig } from '@/hooks/use-header-config';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { cn } from '@/utilities/cn';
 import { Redirect, Tabs } from 'expo-router';
@@ -12,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
   const breakpoints = useBreakpoints();
+  const headerConfig = useHeaderConfig();
   const insets = useSafeAreaInsets();
   const onboarding = useOnboarding();
 
@@ -30,12 +32,11 @@ export default function Layout() {
   return (
     <Tabs
       screenOptions={{
+        ...headerConfig,
         animation: 'shift',
-        headerShadowVisible: false,
-        headerStyle: { borderBottomWidth: breakpoints.md ? 1 : 0 },
-        headerTitleAlign: breakpoints.md ? 'left' : 'center',
         tabBarItemStyle: {
           marginBottom: breakpoints.md ? 8 : 0,
+          marginRight: breakpoints.md ? 0 : 8,
           marginTop: 0,
         },
         tabBarPosition: breakpoints.md ? 'left' : 'bottom',
@@ -52,7 +53,6 @@ export default function Layout() {
           paddingStart: 8,
           paddingTop: 8,
         },
-        title: '',
       }}
     >
       <Tabs.Screen
@@ -62,7 +62,10 @@ export default function Layout() {
           tabBarButton: ({ children, onPress, ...props }) => (
             <Button
               aria-selected={props['aria-selected']}
-              className="web:aria-selected:bg-accent"
+              className={cn(
+                'web:aria-selected:bg-accent',
+                breakpoints.md && 'size-14'
+              )}
               onPress={onPress}
               size={breakpoints.md ? 'icon' : 'default'}
               variant="ghost"
@@ -76,7 +79,6 @@ export default function Layout() {
                 'stroke-placeholder',
                 focused && 'stroke-foreground'
               )}
-              size={breakpoints.md ? 20 : 24}
             />
           ),
         }}
@@ -88,7 +90,10 @@ export default function Layout() {
           tabBarButton: ({ children, onPress, ...props }) => (
             <Button
               aria-selected={props['aria-selected']}
-              className="web:aria-selected:bg-accent"
+              className={cn(
+                'web:aria-selected:bg-accent',
+                breakpoints.md && 'size-14'
+              )}
               onPress={onPress}
               size={breakpoints.md ? 'icon' : 'default'}
               variant="ghost"
@@ -102,7 +107,6 @@ export default function Layout() {
                 'stroke-placeholder',
                 focused && 'stroke-foreground'
               )}
-              size={breakpoints.md ? 20 : 24}
             />
           ),
         }}
@@ -115,7 +119,10 @@ export default function Layout() {
           tabBarButton: ({ children, onPress, ...props }) => (
             <Button
               aria-selected={props['aria-selected']}
-              className="web:aria-selected:bg-accent"
+              className={cn(
+                'web:aria-selected:bg-accent',
+                breakpoints.md && 'size-14'
+              )}
               onPress={onPress}
               size={breakpoints.md ? 'icon' : 'default'}
               variant="ghost"
@@ -129,7 +136,6 @@ export default function Layout() {
                 'stroke-placeholder',
                 focused && 'stroke-foreground'
               )}
-              size={breakpoints.md ? 20 : 24}
             />
           ),
         }}

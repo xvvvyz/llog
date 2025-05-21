@@ -1,4 +1,5 @@
 import { Text, TextClassContext } from '@/components/ui/text';
+import { useOnEscape } from '@/hooks/use-on-escape';
 import { cn } from '@/utilities/cn';
 import { noAndroid } from '@/utilities/no-android';
 import { Portal } from '@rn-primitives/portal';
@@ -20,17 +21,24 @@ const Root = ({
   children: ReactNode;
   className?: string;
 }) => {
+  useOnEscape(router.back);
+
   const content = (
     <KeyboardAvoidingView
+      aria-label="Alert dialog"
+      aria-modal
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="absolute inset-0 flex-1 items-center justify-center overflow-hidden p-8"
+      role="alertdialog"
     >
       <Pressable
         className="absolute inset-0 cursor-default"
         onPress={router.back}
+        role="presentation"
+        aria-hidden
       >
         <Animated.View
-          className="h-full w-full bg-background/80"
+          className="h-full w-full bg-background/95"
           entering={noAndroid(FadeIn.duration(150))}
           exiting={noAndroid(FadeOut.duration(150))}
         />
@@ -43,6 +51,7 @@ const Root = ({
           )}
           entering={noAndroid(FadeInDown.duration(150))}
           exiting={noAndroid(FadeOutDown.duration(150))}
+          role="document"
           style={{ borderCurve: 'continuous' }}
         >
           {children}
@@ -59,11 +68,23 @@ const Root = ({
 };
 
 const Footer = ({ children }: { children: ReactNode }) => {
-  return <View className="mt-8 flex-row justify-end gap-4">{children}</View>;
+  return (
+    <View
+      aria-label="Dialog actions"
+      className="mt-8 flex-row justify-end gap-4"
+      role="group"
+    >
+      {children}
+    </View>
+  );
 };
 
 const Title = ({ children }: { children: ReactNode }) => {
-  return <Text className="text-2xl">{children}</Text>;
+  return (
+    <Text aria-level={2} className="text-2xl" role="heading">
+      {children}
+    </Text>
+  );
 };
 
 export { Footer, Root, Title };
