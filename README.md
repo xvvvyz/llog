@@ -21,11 +21,3 @@
    ```bash
    bun dev
    ```
-
-## Relevant Issues
-
-https://github.com/facebook/react-native/issues/47625
-https://github.com/facebook/react-native/issues/49077
-https://github.com/react-navigation/react-navigation/issues/11295
-https://github.com/react-navigation/react-navigation/issues/12502
-https://github.com/react-navigation/react-navigation/issues/12545
