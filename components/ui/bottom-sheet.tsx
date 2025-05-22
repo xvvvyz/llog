@@ -1,8 +1,9 @@
 import { Loading } from '@/components/ui/loading';
+import { useOnEscape } from '@/hooks/use-on-escape';
 import { noAndroid } from '@/utilities/no-android';
 import { Portal } from '@rn-primitives/portal';
 import { useRouter } from 'expo-router';
-import { ReactNode, useCallback, useRef } from 'react';
+import { ReactNode, useRef } from 'react';
 import { Keyboard, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +14,6 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
-import { useOnEscape } from '@/hooks/use-on-escape';
 import BottomSheetPrimative, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
@@ -78,20 +78,11 @@ export const BottomSheet = ({
   const ref = useRef<BottomSheetPrimative>(null);
   const router = useRouter();
 
-  const handleSheetChanges = useCallback(
-    (index: number) => {
-      if (index >= 0) return;
-      router.back();
-    },
-    [router]
-  );
-
   useOnEscape(() => ref.current?.close());
 
   const content = (
     <BottomSheetPrimative
       accessibilityLabel="Bottom sheet"
-      animateOnMount
       backdropComponent={Backdrop}
       backgroundComponent={Background}
       bottomInset={insets.bottom}
@@ -101,7 +92,8 @@ export const BottomSheet = ({
       enableHandlePanningGesture={false}
       enablePanDownToClose
       handleComponent={null}
-      onChange={handleSheetChanges}
+      keyboardBlurBehavior="restore"
+      onClose={router.back}
       ref={ref}
     >
       {children}

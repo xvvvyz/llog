@@ -64,9 +64,9 @@ export function LogForm({
         bottomSheet
         onChangeText={setName}
         onSubmitEditing={handleSubmit}
-        placeholder="My journal"
+        placeholder="My journal, Fido the dog, etc."
         ref={inputRef}
-        returnKeyType="go"
+        returnKeyType="next"
         value={name}
       />
       <View className="mt-8 flex-col gap-2">
