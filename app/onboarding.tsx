@@ -7,8 +7,8 @@ import { useOnboarding } from '@/hooks/use-onboarding';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 import { Redirect } from 'expo-router';
-import { View } from 'lucide-react-native';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 export default function Onboarding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,7 +42,7 @@ export default function Onboarding() {
   };
 
   return (
-    <View className="flex-1 justify-center p-4">
+    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-4">
       <Label nativeID="name">What is your name?</Label>
       <Input
         aria-labelledby="name"
