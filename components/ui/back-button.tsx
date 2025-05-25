@@ -1,10 +1,10 @@
-import { ArrowLeft } from '@/components/icons/arrow-left';
-import { ChevronLeft } from '@/components/icons/chevron-left';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { useNavigation } from 'expo-router';
+import { ArrowLeft, ChevronLeft } from 'lucide-react-native';
 import { Platform } from 'react-native';
 
-export function HeaderBackButton() {
+export function BackButton() {
   const navigation = useNavigation();
   if (!navigation.canGoBack()) return null;
 
@@ -18,9 +18,9 @@ export function HeaderBackButton() {
       variant="link"
     >
       {Platform.OS === 'android' ? (
-        <ArrowLeft aria-hidden className="color-foreground" />
+        <Icon aria-hidden className="color-foreground" icon={ArrowLeft} />
       ) : (
-        <ChevronLeft aria-hidden className="color-foreground" />
+        <Icon aria-hidden className="color-foreground" icon={ChevronLeft} />
       )}
     </Button>
   );

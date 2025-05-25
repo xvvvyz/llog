@@ -1,5 +1,5 @@
+import tailwindConfig from '@/tailwind.config.js';
 import { useWindowDimensions } from 'react-native';
-import tailwindConfig from '../tailwind.config.js';
 
 const breakpoints = Object.entries(
   tailwindConfig.theme?.extend?.screens ?? {}

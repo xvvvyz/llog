@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import { type ReactNode } from 'react';
 
-export const HeaderTitle = ({
+export const Title = ({
   children,
   className,
 }: {

@@ -11,6 +11,10 @@ const _schema = i.schema({
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
     }),
+    logTags: i.entity({
+      name: i.string(),
+      order: i.number().indexed(),
+    }),
     logs: i.entity({
       color: i.string(),
       name: i.string(),
@@ -43,6 +47,18 @@ const _schema = i.schema({
         label: 'log',
         required: true,
         onDelete: 'cascade',
+      },
+    },
+    logsLogTags: {
+      forward: {
+        on: 'logs',
+        has: 'many',
+        label: 'logTags',
+      },
+      reverse: {
+        on: 'logTags',
+        has: 'many',
+        label: 'logs',
       },
     },
     profilesUser: {
@@ -108,6 +124,20 @@ const _schema = i.schema({
       },
       reverse: {
         on: 'roles',
+        has: 'one',
+        label: 'team',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
+    teamsLogTags: {
+      forward: {
+        on: 'teams',
+        has: 'many',
+        label: 'logTags',
+      },
+      reverse: {
+        on: 'logTags',
         has: 'one',
         label: 'team',
         required: true,

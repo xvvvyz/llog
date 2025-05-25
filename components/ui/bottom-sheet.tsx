@@ -2,9 +2,8 @@ import { Loading } from '@/components/ui/loading';
 import { useOnEscape } from '@/hooks/use-on-escape';
 import { noAndroid } from '@/utilities/no-android';
 import { Portal } from '@rn-primitives/portal';
-import { useRouter } from 'expo-router';
 import { ReactNode, useRef } from 'react';
-import { Keyboard, Platform, View } from 'react-native';
+import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Animated, {
@@ -67,50 +66,58 @@ const Background = ({ style, ...props }: BottomSheetBackgroundProps) => {
   );
 };
 
+const Handle = () => {
+  return (
+    <View className="flex-row justify-center pt-3">
+      <View className="h-1 w-8 rounded-full bg-placeholder" />
+    </View>
+  );
+};
+
 export const BottomSheet = ({
   children,
   isLoading,
+  onClose,
+  open,
 }: {
   children: ReactNode;
   isLoading?: boolean;
+  onClose?: () => void;
+  open?: boolean;
 }) => {
   const insets = useSafeAreaInsets();
   const ref = useRef<BottomSheetPrimative>(null);
-  const router = useRouter();
 
   useOnEscape(() => ref.current?.close());
+  if (!open) return null;
 
-  const content = (
-    <BottomSheetPrimative
-      accessibilityLabel="Bottom sheet"
-      backdropComponent={Backdrop}
-      backgroundComponent={Background}
-      bottomInset={insets.bottom}
-      detached
-      enableContentPanningGesture
-      enableDynamicSizing
-      enableHandlePanningGesture={false}
-      enablePanDownToClose
-      handleComponent={null}
-      keyboardBlurBehavior="restore"
-      onClose={router.back}
-      ref={ref}
-    >
-      {children}
-      {isLoading && (
-        <Animated.View
-          className="absolute inset-0 rounded-t-3xl bg-popover"
-          exiting={noAndroid(FadeOut.duration(150))}
-        >
-          <Loading />
-        </Animated.View>
-      )}
-    </BottomSheetPrimative>
-  );
-
-  return Platform.OS === 'ios' ? (
-    content
-  ) : (
-    <Portal name="bottom-sheet">{content}</Portal>
+  return (
+    <Portal name="bottom-sheet">
+      <BottomSheetPrimative
+        accessibilityLabel="Bottom sheet"
+        animateOnMount
+        backdropComponent={Backdrop}
+        backgroundComponent={Background}
+        bottomInset={insets.bottom}
+        detached
+        enableContentPanningGesture
+        enableHandlePanningGesture
+        enablePanDownToClose
+        handleComponent={Handle}
+        keyboardBlurBehavior="restore"
+        onClose={onClose}
+        ref={ref}
+      >
+        {children}
+        {isLoading && (
+          <Animated.View
+            className="absolute inset-0 rounded-t-3xl bg-popover"
+            exiting={noAndroid(FadeOut.duration(150))}
+          >
+            <Loading />
+          </Animated.View>
+        )}
+      </BottomSheetPrimative>
+    </Portal>
   );
 };

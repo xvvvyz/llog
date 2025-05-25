@@ -48,7 +48,7 @@ const Item = forwardRef<
     <DropdownMenuPrimitive.Item
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
-        'android:active:bg-transparent group relative flex h-11 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
         inset && 'pl-8',
         props.disabled && 'opacity-50 web:pointer-events-none',
         className

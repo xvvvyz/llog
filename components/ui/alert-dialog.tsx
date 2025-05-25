@@ -3,7 +3,6 @@ import { useOnEscape } from '@/hooks/use-on-escape';
 import { cn } from '@/utilities/cn';
 import { noAndroid } from '@/utilities/no-android';
 import { Portal } from '@rn-primitives/portal';
-import { router } from 'expo-router';
 import { type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 
@@ -14,56 +13,54 @@ import Animated, {
   FadeOutDown,
 } from 'react-native-reanimated';
 
-const Root = ({
-  children,
-  className,
-}: {
+interface RootProps {
   children: ReactNode;
   className?: string;
-}) => {
-  useOnEscape(router.back);
+  onClose?: () => void;
+  open?: boolean;
+}
 
-  const content = (
-    <KeyboardAvoidingView
-      aria-label="Alert dialog"
-      aria-modal
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="absolute inset-0 flex-1 items-center justify-center overflow-hidden p-8"
-      role="alertdialog"
-    >
-      <Pressable
-        className="absolute inset-0 cursor-default"
-        onPress={router.back}
-        role="presentation"
-        aria-hidden
+const Root = ({ children, className, onClose, open = true }: RootProps) => {
+  useOnEscape(onClose);
+  if (!open) return null;
+
+  return (
+    <Portal name="alert-dialog">
+      <KeyboardAvoidingView
+        aria-label="Alert dialog"
+        aria-modal
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="absolute inset-0 flex-1 items-center justify-center overflow-hidden p-4"
+        role="alertdialog"
       >
-        <Animated.View
-          className="h-full w-full bg-background/95"
-          entering={noAndroid(FadeIn.duration(150))}
-          exiting={noAndroid(FadeOut.duration(150))}
-        />
-      </Pressable>
-      <TextClassContext.Provider value="text-popover-foreground">
-        <Animated.View
-          className={cn(
-            'w-full max-w-xs cursor-default rounded-3xl bg-popover p-6',
-            className
-          )}
-          entering={noAndroid(FadeInDown.duration(150))}
-          exiting={noAndroid(FadeOutDown.duration(150))}
-          role="document"
-          style={{ borderCurve: 'continuous' }}
+        <Pressable
+          className="absolute inset-0 cursor-default"
+          onPress={onClose}
+          role="presentation"
+          aria-hidden
         >
-          {children}
-        </Animated.View>
-      </TextClassContext.Provider>
-    </KeyboardAvoidingView>
-  );
-
-  return Platform.OS === 'ios' ? (
-    content
-  ) : (
-    <Portal name="alert-dialog">{content}</Portal>
+          <Animated.View
+            className="h-full w-full bg-background/95"
+            entering={noAndroid(FadeIn.duration(150))}
+            exiting={noAndroid(FadeOut.duration(150))}
+          />
+        </Pressable>
+        <TextClassContext.Provider value="text-popover-foreground">
+          <Animated.View
+            className={cn(
+              'w-full max-w-sm cursor-default rounded-3xl bg-popover p-6',
+              className
+            )}
+            entering={noAndroid(FadeInDown.duration(150))}
+            exiting={noAndroid(FadeOutDown.duration(150))}
+            role="document"
+            style={{ borderCurve: 'continuous' }}
+          >
+            {children}
+          </Animated.View>
+        </TextClassContext.Provider>
+      </KeyboardAvoidingView>
+    </Portal>
   );
 };
 
@@ -87,4 +84,8 @@ const Title = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export { Footer, Root, Title };
+const Description = ({ children }: { children: ReactNode }) => {
+  return <Text className="mt-5 text-muted-foreground">{children}</Text>;
+};
+
+export { Description, Footer, Root, Title };

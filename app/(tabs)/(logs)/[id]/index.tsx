@@ -1,5 +1,5 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
-import { HeaderTitle } from '@/components/ui/header-title';
+import { Title } from '@/components/ui/title';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { db } from '@/utilities/db';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -30,7 +30,7 @@ export default function Index() {
           variant="header"
         />
       ),
-      headerTitle: () => <HeaderTitle>{name}</HeaderTitle>,
+      headerTitle: () => <Title>{name}</Title>,
     });
   }, [headerHeight, name, navigation, params.id]);
 

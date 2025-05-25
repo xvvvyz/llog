@@ -1,14 +1,13 @@
-import { Bell } from '@/components/icons/bell';
-import { Bolt } from '@/components/icons/bolt';
-import { Scroll } from '@/components/icons/scroll';
 import { Button } from '@/components/ui/button';
-import { HeaderTitle } from '@/components/ui/header-title';
+import { Icon } from '@/components/ui/icon';
 import { Loading } from '@/components/ui/loading';
+import { Title } from '@/components/ui/title';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderConfig } from '@/hooks/use-header-config';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { cn } from '@/utilities/cn';
 import { Redirect, Tabs } from 'expo-router';
+import { Bell, Bolt, Scroll } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
@@ -74,11 +73,9 @@ export default function Layout() {
             </Button>
           ),
           tabBarIcon: ({ focused }) => (
-            <Scroll
-              className={cn(
-                'stroke-placeholder',
-                focused && 'stroke-foreground'
-              )}
+            <Icon
+              className={cn('text-placeholder', focused && 'text-foreground')}
+              icon={Scroll}
             />
           ),
         }}
@@ -86,7 +83,7 @@ export default function Layout() {
       <Tabs.Screen
         name="inbox"
         options={{
-          headerTitle: () => <HeaderTitle>Inbox</HeaderTitle>,
+          headerTitle: () => <Title>Inbox</Title>,
           tabBarButton: ({ children, onPress, ...props }) => (
             <Button
               aria-selected={props['aria-selected']}
@@ -102,11 +99,9 @@ export default function Layout() {
             </Button>
           ),
           tabBarIcon: ({ focused }) => (
-            <Bell
-              className={cn(
-                'stroke-placeholder',
-                focused && 'stroke-foreground'
-              )}
+            <Icon
+              className={cn('text-placeholder', focused && 'text-foreground')}
+              icon={Bell}
             />
           ),
         }}
@@ -114,7 +109,7 @@ export default function Layout() {
       <Tabs.Screen
         name="settings"
         options={{
-          headerTitle: () => <HeaderTitle>Settings</HeaderTitle>,
+          headerTitle: () => <Title>Settings</Title>,
           tabBarItemStyle: breakpoints.md ? { marginTop: 'auto' } : undefined,
           tabBarButton: ({ children, onPress, ...props }) => (
             <Button
@@ -131,11 +126,9 @@ export default function Layout() {
             </Button>
           ),
           tabBarIcon: ({ focused }) => (
-            <Bolt
-              className={cn(
-                'stroke-placeholder',
-                focused && 'stroke-foreground'
-              )}
+            <Icon
+              className={cn('text-placeholder', focused && 'text-foreground')}
+              icon={Bolt}
             />
           ),
         }}

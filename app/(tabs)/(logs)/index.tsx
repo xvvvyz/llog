@@ -1,58 +1,19 @@
-import { Plus } from '@/components/icons/plus';
-import { Search } from '@/components/icons/search';
-import { Sparkles } from '@/components/icons/sparkles';
-import { X } from '@/components/icons/x';
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
+import { SearchBar } from '@/components/search-bar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useActiveTeamId } from '@/hooks/use-active-team-id';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Color, SPECTRUM } from '@/theme/spectrum';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
-import { Link, useNavigation } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { id } from '@instantdb/react-native';
+import { Link, useNavigation, useRouter } from 'expo-router';
+import { Plus, Sparkles, Tag } from 'lucide-react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
-
-const SearchBar = ({
-  query,
-  setQuery,
-}: {
-  query: string;
-  setQuery: (query: string) => void;
-}) => (
-  <View className="relative md:mr-2">
-    <View className="absolute left-3 top-1/2 -translate-y-1/2">
-      <Search className="text-placeholder" size={20} aria-hidden />
-    </View>
-    <Input
-      accessibilityHint="Type to filter your logs"
-      accessibilityLabel="Search logs"
-      autoCapitalize="none"
-      autoComplete="off"
-      className="px-10 md:h-10 md:w-56"
-      onChangeText={setQuery}
-      placeholder="Search"
-      returnKeyType="done"
-      value={query}
-    />
-    {!!query.length && (
-      <View className="absolute right-1.5 top-1/2 -translate-y-1/2 md:right-1">
-        <Button
-          accessibilityHint="Clears the search input"
-          accessibilityLabel="Clear search"
-          className="size-8 rounded-full"
-          onPress={() => setQuery('')}
-          size="icon"
-          variant="ghost"
-        >
-          <X className="text-muted-foreground" size={16} aria-hidden />
-        </Button>
-      </View>
-    )}
-  </View>
-);
 
 export default function Index() {
   const [query, setQuery] = useState('');
@@ -60,19 +21,28 @@ export default function Index() {
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
+  const router = useRouter();
+  const { teamId } = useActiveTeamId();
 
   const { data, isLoading } = db.useQuery(
-    auth.user
+    auth.user && teamId
       ? {
           teams: {
             $: { where: { 'ui.user.id': auth.user.id } },
-            logs: {},
+            logs: {
+              logTags: {},
+            },
+          },
+          logTags: {
+            $: { order: { order: 'asc' }, where: { team: teamId } },
           },
         }
       : null
   );
 
   const logs = useMemo(() => data?.teams?.[0]?.logs ?? [], [data]);
+  const logTags = data?.logTags ?? [];
+  const isSearchVisible = breakpoints.md && logs.length;
 
   const filtered = useMemo(
     () =>
@@ -90,28 +60,37 @@ export default function Index() {
     return 2;
   }, [breakpoints]);
 
+  const newLog = useCallback(() => {
+    const logId = id();
+
+    db.transact(
+      db.tx.logs[logId]
+        .update({ color: 'indigo', name: 'New log' })
+        .link({ team: teamId })
+    );
+
+    router.push(`/${logId}`);
+  }, [router, teamId]);
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <View className="flex-row items-center gap-2">
-          {breakpoints.md && logs.length && (
-            <SearchBar query={query} setQuery={setQuery} />
-          )}
-          <Link asChild href="/new">
-            <Button
-              accessibilityHint="Opens a form to create a new log"
-              accessibilityLabel="New log"
-              className="size-14"
-              size="icon"
-              variant="link"
-            >
-              <Plus aria-hidden className="color-foreground" />
-            </Button>
-          </Link>
+          {isSearchVisible && <SearchBar query={query} setQuery={setQuery} />}
+          <Button
+            accessibilityHint="Opens a form to create a new log"
+            accessibilityLabel="New log"
+            className="size-14"
+            onPress={newLog}
+            size="icon"
+            variant="link"
+          >
+            <Icon aria-hidden className="text-foreground" icon={Plus} />
+          </Button>
         </View>
       ),
     });
-  }, [breakpoints.md, logs.length, navigation, query]);
+  }, [newLog, isSearchVisible, navigation, query]);
 
   if (isLoading) {
     return null;
@@ -120,27 +99,36 @@ export default function Index() {
   if (!logs.length) {
     return (
       <View className="flex-1 items-center justify-center gap-6 py-8">
-        <Sparkles className="-mb-2 stroke-primary" size={64} aria-hidden />
+        <Icon
+          aria-hidden
+          className="-mb-2 text-primary"
+          icon={Sparkles}
+          size={64}
+        />
         <Text className="text-center text-muted-foreground">
           &ldquo;Without data, you&rsquo;re just another{'\n'}person with an
           opinion.&rdquo;
         </Text>
-        <Link asChild href="/new">
-          <Button
-            accessibilityHint="Opens a form to create your first log"
-            accessibilityLabel="Create your first log"
-          >
-            <Plus className="-ml-0.5 text-white" size={20} aria-hidden />
-            <Text>New log</Text>
-          </Button>
-        </Link>
+        <Button
+          accessibilityHint="Opens a form to create your first log"
+          accessibilityLabel="Create your first log"
+          onPress={newLog}
+        >
+          <Icon
+            icon={Plus}
+            className="-ml-0.5 text-white"
+            size={20}
+            aria-hidden
+          />
+          <Text>New log</Text>
+        </Button>
       </View>
     );
   }
 
   return (
     <FlatList
-      accessibilityLabel="Logs grid"
+      accessibilityLabel="Logs"
       accessibilityRole="list"
       ListHeaderComponent={
         !breakpoints.md ? (
@@ -157,6 +145,8 @@ export default function Index() {
       keyboardShouldPersistTaps="always"
       numColumns={columns}
       renderItem={({ item }) => {
+        const color = SPECTRUM[colorScheme][item.color as Color].default;
+
         return (
           <View
             accessibilityRole="none"
@@ -172,23 +162,49 @@ export default function Index() {
               <Button
                 accessibilityHint={`Opens the log ${item.name}`}
                 accessibilityLabel={`Open ${item.name}`}
-                className="h-28 items-end justify-start rounded-2xl px-4 py-3 active:opacity-90 web:transition-opacity web:hover:opacity-90"
+                className="flex h-28 w-full flex-col items-start justify-between rounded-2xl p-4 active:opacity-90 web:transition-opacity web:hover:opacity-90"
                 ripple="default"
-                style={{
-                  backgroundColor:
-                    SPECTRUM[colorScheme][item.color as Color].default,
-                }}
+                style={{ backgroundColor: color }}
                 variant="ghost"
               >
                 <Text
-                  className="font-medium leading-tight text-white"
+                  className="-mt-1 pr-8 font-medium leading-tight text-white"
                   numberOfLines={1}
                 >
                   {item.name}
                 </Text>
+                {!!item.logTags?.length && (
+                  <View className="max-h-11 flex-row flex-wrap gap-1 overflow-hidden">
+                    {logTags
+                      .filter((logTag) =>
+                        item.logTags.some(
+                          (itemLogTag) => itemLogTag.id === logTag.id
+                        )
+                      )
+                      .map((tag) => (
+                        <View
+                          key={tag.id}
+                          className="h-5 flex-row items-center gap-1 rounded-full bg-white/15 px-1.5"
+                        >
+                          <Icon
+                            aria-hidden
+                            className="text-white"
+                            icon={Tag}
+                            size={12}
+                          />
+                          <Text
+                            className="text-xs font-normal text-white"
+                            numberOfLines={1}
+                          >
+                            {tag.name}
+                          </Text>
+                        </View>
+                      ))}
+                  </View>
+                )}
               </Button>
             </Link>
-            <View className="absolute right-1.5 top-1.5">
+            <View className="absolute right-0.5 top-0.5">
               <LogDropdownMenu logId={item.id} logName={item.name} />
             </View>
           </View>
