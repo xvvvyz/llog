@@ -201,12 +201,9 @@ export function LogTagsForm({ logId }: { logId: string }) {
     [log, setTagDeleteFormId, toggleTag, trimmedQuery]
   );
 
-  if (isLogLoading || isLogTagsLoading) {
-    return <BottomSheetLoading />;
-  }
-
   return (
     <Fragment>
+      {(isLogLoading || isLogTagsLoading) && <BottomSheetLoading />}
       <BottomSheetScrollView
         keyboardShouldPersistTaps="always"
         ref={scrollViewRef}

@@ -101,7 +101,7 @@ export const BottomSheet = ({
 export const BottomSheetLoading = () => {
   return (
     <Animated.View
-      className="absolute inset-0 rounded-t-3xl bg-popover"
+      className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
       exiting={Platform.select({
         // https://github.com/facebook/react-native/issues/49077
         android: undefined,
