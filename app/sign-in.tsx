@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
+import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
@@ -11,7 +12,6 @@ export default function SignIn() {
   const auth = db.useAuth();
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<'email' | 'code'>('email');
 
   if (auth.user) {
@@ -19,19 +19,22 @@ export default function SignIn() {
   }
 
   if (step === 'email') {
-    const isDisabled = !email || isSubmitting;
-
     const handleSubmit = async () => {
-      if (isDisabled) return;
-      setIsSubmitting(true);
-      await db.auth.sendMagicCode({ email });
+      if (!email) return;
+
+      try {
+        await db.auth.sendMagicCode({ email });
+      } catch {
+        alert({ message: 'Invalid email', title: 'Error' });
+        return;
+      }
+
       setStep('code');
-      setIsSubmitting(false);
     };
 
     return (
-      <View className="mx-auto w-full max-w-sm flex-1 justify-center p-4">
-        <Label nativeID="email">What is your email?</Label>
+      <View className="mx-auto w-full max-w-sm flex-1 justify-center p-8">
+        <Label nativeID="email">Email address</Label>
         <Input
           aria-labelledby="email"
           autoCapitalize="none"
@@ -46,30 +49,32 @@ export default function SignIn() {
         />
         <Button
           className="w-full"
-          disabled={isDisabled}
           onPress={handleSubmit}
           wrapperClassName="mt-8"
         >
-          <Text>Send verification code</Text>
+          <Text>Sign in</Text>
         </Button>
       </View>
     );
   }
 
-  const isDisabled = !code || isSubmitting;
-
   const handleSubmit = async () => {
-    if (isDisabled) return;
-    setIsSubmitting(true);
-    await db.auth.signInWithMagicCode({ email, code });
+    if (!code) return;
+
+    try {
+      await db.auth.signInWithMagicCode({ email, code });
+    } catch {
+      alert({ message: 'Invalid code', title: 'Error' });
+      return;
+    }
+
     router.replace('/');
   };
 
   return (
-    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-4">
+    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-8">
       <Label nativeID="code">
-        Enter the code that was sent to{' '}
-        <Text className="font-medium">{email}</Text>
+        Enter the code sent to <Text className="font-medium">{email}</Text>
       </Label>
       <Input
         aria-labelledby="code"
@@ -81,13 +86,8 @@ export default function SignIn() {
         placeholder="123456"
         value={code}
       />
-      <Button
-        className="w-full"
-        disabled={isDisabled}
-        onPress={handleSubmit}
-        wrapperClassName="mt-8"
-      >
-        <Text>Sign in</Text>
+      <Button className="w-full" onPress={handleSubmit} wrapperClassName="mt-8">
+        <Text>Confirm</Text>
       </Button>
     </View>
   );

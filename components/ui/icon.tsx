@@ -1,8 +1,8 @@
+import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import { LucideIcon } from 'lucide-react-native';
 import { cssInterop } from 'nativewind';
 import React, { ComponentProps, useContext } from 'react';
-import { TextClassContext } from './text';
 
 interface IconProps extends ComponentProps<LucideIcon> {
   className?: string;

@@ -42,14 +42,14 @@ const buttonVariants = cva(
         sm: 'h-10 px-3',
       },
       variant: {
-        default: 'bg-primary web:hover:opacity-90 active:opacity-90',
-        destructive: 'bg-destructive web:hover:opacity-90 active:opacity-90',
+        default: 'bg-primary web:hover:opacity-90 active:opacity-80',
+        destructive: 'bg-destructive web:hover:opacity-90 active:opacity-80',
         ghost:
-          'web:hover:bg-accent web:hover:text-accent-foreground web:active:bg-accent',
+          'web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
         link: '',
         outline:
           'bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
-        secondary: 'bg-secondary web:hover:opacity-90 active:opacity-90',
+        secondary: 'bg-secondary web:hover:opacity-90 active:opacity-80',
       },
     },
   }

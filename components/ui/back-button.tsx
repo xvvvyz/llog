@@ -17,11 +17,12 @@ export function BackButton() {
       size="icon"
       variant="link"
     >
-      {Platform.OS === 'android' ? (
-        <Icon aria-hidden className="color-foreground" icon={ArrowLeft} />
-      ) : (
-        <Icon aria-hidden className="color-foreground" icon={ChevronLeft} />
-      )}
+      <Icon
+        aria-hidden
+        className="color-foreground"
+        icon={Platform.select({ default: ArrowLeft, ios: ChevronLeft })}
+        size={Platform.select({ default: 24, ios: 30 })}
+      />
     </Button>
   );
 }

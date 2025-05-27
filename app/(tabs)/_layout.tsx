@@ -8,6 +8,7 @@ import { useOnboarding } from '@/hooks/use-onboarding';
 import { cn } from '@/utilities/cn';
 import { Redirect, Tabs } from 'expo-router';
 import { Bell, Bolt, Scroll } from 'lucide-react-native';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
@@ -32,7 +33,11 @@ export default function Layout() {
     <Tabs
       screenOptions={{
         ...headerConfig,
-        animation: 'shift',
+        animation: Platform.select({
+          // android emulator has background color flashes with shift animation
+          android: 'none',
+          default: 'shift',
+        }),
         tabBarItemStyle: {
           marginBottom: breakpoints.md ? 8 : 0,
           marginRight: breakpoints.md ? 0 : 8,

@@ -1,8 +1,8 @@
 // https://www.instantdb.com/docs/modeling-data
 
-import { i } from '@instantdb/react';
+import { i, InstaQLEntity } from '@instantdb/react';
 
-const _schema = i.schema({
+const schema = i.schema({
   entities: {
     $files: i.entity({
       path: i.string().unique().indexed().optional(),
@@ -174,10 +174,9 @@ const _schema = i.schema({
   rooms: {},
 });
 
-// this helps Typescript display better intellisense
-type _AppSchema = typeof _schema;
-interface AppSchema extends _AppSchema {}
-const schema: AppSchema = _schema;
+type Log = InstaQLEntity<typeof schema, 'logs'>;
+type LogTag = InstaQLEntity<typeof schema, 'logTags'>;
+type Record = InstaQLEntity<typeof schema, 'records'>;
 
-export type { AppSchema };
+export type { Log, LogTag, Record };
 export default schema;

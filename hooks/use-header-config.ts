@@ -17,8 +17,16 @@ type HeaderConfig = Pick<
 
 export const useHeaderConfig = (): HeaderConfig => {
   const breakpoints = useBreakpoints();
-  const height = Platform.OS === 'web' && breakpoints.md ? 70 : undefined;
-  const padding = Platform.OS === 'web' ? (breakpoints.md ? 16 : 8) : undefined;
+
+  const height = Platform.select({
+    default: undefined,
+    web: breakpoints.md ? 70 : undefined,
+  });
+
+  const padding = Platform.select({
+    default: undefined,
+    web: breakpoints.md ? 16 : 8,
+  });
 
   return {
     headerBackVisible: false,

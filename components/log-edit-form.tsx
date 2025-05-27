@@ -1,8 +1,7 @@
-import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { BottomSheetLoading } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useActiveTeamId } from '@/hooks/use-active-team-id';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Color, SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
@@ -14,38 +13,23 @@ const COLOR_ROWS = [
   ['blue', 'teal', 'green', 'yellow', 'amber', 'brown'],
 ];
 
-export function LogEditForm({
-  logId,
-  open,
-  onClose,
-}: {
-  logId: string;
-  onClose: () => void;
-  open: boolean;
-}) {
+export function LogEditForm({ logId }: { logId: string }) {
   const colorScheme = useColorScheme();
-  const { teamId } = useActiveTeamId();
 
-  const { data, isLoading } = db.useQuery(
-    teamId
-      ? {
-          logs: {
-            $: { where: { id: logId } },
-            logTags: {},
-          },
-          logTags: {
-            $: { where: { team: teamId } },
-          },
-        }
-      : null
-  );
+  const { data, isLoading } = db.useQuery({
+    logs: { $: { where: { id: logId } } },
+  });
 
-  const isDark = colorScheme === 'dark';
   const log = data?.logs?.[0];
+  const isDark = colorScheme === 'dark';
+
+  if (isLoading) {
+    return <BottomSheetLoading />;
+  }
 
   return (
-    <BottomSheet isLoading={isLoading} open={open} onClose={onClose}>
-      <BottomSheetView className="mx-auto w-full max-w-md p-8">
+    <BottomSheetView>
+      <View className="mx-auto w-full max-w-md p-8">
         <View>
           <Label nativeID="name">Name</Label>
           <Input
@@ -54,6 +38,7 @@ export function LogEditForm({
             autoComplete="off"
             bottomSheet
             defaultValue={log?.name}
+            maxLength={40}
             onChangeText={(name) => {
               if (!log) return;
               db.transact(db.tx.logs[log.id].update({ name }));
@@ -101,7 +86,7 @@ export function LogEditForm({
             ))}
           </View>
         </View>
-      </BottomSheetView>
-    </BottomSheet>
+      </View>
+    </BottomSheetView>
   );
 }

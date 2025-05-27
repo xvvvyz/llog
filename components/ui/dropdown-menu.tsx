@@ -1,9 +1,9 @@
 import { TextClassContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
 import { cn } from '@/utilities/cn';
-import { noAndroid } from '@/utilities/no-android';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { forwardRef, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 const Root = DropdownMenuPrimitive.Root;
 
@@ -24,8 +24,16 @@ const Content = forwardRef<
               'min-w-36 overflow-hidden rounded-3xl bg-popover py-2',
               className
             )}
-            entering={noAndroid(FadeInUp.duration(150))}
-            exiting={noAndroid(FadeOutUp.duration(150))}
+            entering={Platform.select({
+              // https://github.com/facebook/react-native/issues/49077
+              android: undefined,
+              default: FadeInUp.duration(150),
+            })}
+            exiting={Platform.select({
+              // https://github.com/facebook/react-native/issues/49077
+              android: undefined,
+              default: FadeOutUp.duration(150),
+            })}
             style={{ borderCurve: 'continuous' }}
           >
             {children as ReactNode}
@@ -48,7 +56,7 @@ const Item = forwardRef<
     <DropdownMenuPrimitive.Item
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
-        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-5 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
         inset && 'pl-8',
         props.disabled && 'opacity-50 web:pointer-events-none',
         className

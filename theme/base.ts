@@ -41,7 +41,7 @@ export const COLORS = Object.freeze({
   },
   dark: {
     ui: {
-      background: 'oklch(0.16 0 0)',
+      background: 'oklch(0.18 0 0)',
       foreground: 'oklch(1 0 0 / 0.95)',
       card: 'oklch(0.2 0 0)',
       cardForeground: 'oklch(1 0 0 / 0.95)',

@@ -1,9 +1,7 @@
 import { Loading } from '@/components/ui/loading';
-import { useOnEscape } from '@/hooks/use-on-escape';
-import { noAndroid } from '@/utilities/no-android';
 import { Portal } from '@rn-primitives/portal';
-import { ReactNode, useRef } from 'react';
-import { Keyboard, View } from 'react-native';
+import React, { ReactNode, useRef } from 'react';
+import { Keyboard, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Animated, {
@@ -17,6 +15,7 @@ import BottomSheetPrimative, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
   BottomSheetBackgroundProps,
+  BottomSheetProps,
 } from '@gorhom/bottom-sheet';
 
 const Backdrop = ({
@@ -66,33 +65,19 @@ const Background = ({ style, ...props }: BottomSheetBackgroundProps) => {
   );
 };
 
-const Handle = () => {
-  return (
-    <View className="flex-row justify-center pt-3">
-      <View className="h-1 w-8 rounded-full bg-placeholder" />
-    </View>
-  );
-};
-
 export const BottomSheet = ({
   children,
-  isLoading,
-  onClose,
-  open,
-}: {
+  portalName,
+  ...props
+}: BottomSheetProps & {
   children: ReactNode;
-  isLoading?: boolean;
-  onClose?: () => void;
-  open?: boolean;
+  portalName: string;
 }) => {
   const insets = useSafeAreaInsets();
   const ref = useRef<BottomSheetPrimative>(null);
 
-  useOnEscape(() => ref.current?.close());
-  if (!open) return null;
-
   return (
-    <Portal name="bottom-sheet">
+    <Portal name={portalName}>
       <BottomSheetPrimative
         accessibilityLabel="Bottom sheet"
         animateOnMount
@@ -100,24 +85,30 @@ export const BottomSheet = ({
         backgroundComponent={Background}
         bottomInset={insets.bottom}
         detached
-        enableContentPanningGesture
-        enableHandlePanningGesture
+        enableBlurKeyboardOnGesture={false}
         enablePanDownToClose
-        handleComponent={Handle}
+        handleComponent={null}
         keyboardBlurBehavior="restore"
-        onClose={onClose}
         ref={ref}
+        {...props}
       >
         {children}
-        {isLoading && (
-          <Animated.View
-            className="absolute inset-0 rounded-t-3xl bg-popover"
-            exiting={noAndroid(FadeOut.duration(150))}
-          >
-            <Loading />
-          </Animated.View>
-        )}
       </BottomSheetPrimative>
     </Portal>
+  );
+};
+
+export const BottomSheetLoading = () => {
+  return (
+    <Animated.View
+      className="absolute inset-0 rounded-t-3xl bg-popover"
+      exiting={Platform.select({
+        // https://github.com/facebook/react-native/issues/49077
+        android: undefined,
+        default: FadeOut.duration(150),
+      })}
+    >
+      <Loading />
+    </Animated.View>
   );
 };

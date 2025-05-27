@@ -16,7 +16,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@gorhom/bottom-sheet": "^5.1.4",
+    "@gorhom/bottom-sheet": "^5.1.5",
     "@instantdb/react-native": "0.19.9",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-navigation/elements": "^2.4.2",
@@ -45,7 +45,7 @@
     "react-native-get-random-values": "^1.11.0",
     "react-native-reanimated": "^3.17.5",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-sortables": "^1.6.0",
+    "react-native-sortables": "^1.7.0",
     "react-native-svg": "15.11.2",
     "react-native-web": "^0.20.0",
     "tailwind-merge": "^3.3.0",

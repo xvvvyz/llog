@@ -12,6 +12,7 @@ export const useBreakpoints = () => {
   const { width } = useWindowDimensions();
 
   return {
+    '2xs': width >= breakpoints['2xs'],
     xs: width >= breakpoints.xs,
     sm: width >= breakpoints.sm,
     md: width >= breakpoints.md,

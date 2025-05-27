@@ -15,7 +15,7 @@ export default function Layout() {
         name="index"
         options={{
           headerLeft: () =>
-            breakpoints.md ? null : <View className="size-12" />,
+            breakpoints.md ? null : <View className="size-14" />,
           headerTitle: () => <Title>Logs</Title>,
         }}
       />
