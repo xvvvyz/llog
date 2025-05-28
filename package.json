@@ -4,7 +4,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "android": "expo start --android",
-    "dev": "expo start",
+    "dev": "bun watchman && expo start",
     "doc": "bunx expo-doctor",
     "format": "prettier --write .",
     "ios": "expo start --ios",
@@ -13,11 +13,12 @@
     "push": "instant-cli push",
     "theme": "bun scripts/generate-theme.ts",
     "up": "bun update --latest && bun i tailwindcss@3.4.17 && expo install --fix",
+    "watchman": "watchman watch-del $(pwd) && watchman watch-project $(pwd)",
     "web": "expo start --web"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.1.5",
-    "@instantdb/react-native": "0.19.9",
+    "@instantdb/react-native": "0.19.10",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-navigation/elements": "^2.4.2",
     "@react-navigation/stack": "^7.3.2",
@@ -64,7 +65,7 @@
     "eslint-config-expo": "^9.2.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
-    "instant-cli": "0.19.9",
+    "instant-cli": "0.19.10",
     "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-tailwindcss": "^0.6.11",
