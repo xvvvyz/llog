@@ -96,19 +96,14 @@ export function LogTagsForm({ logId }: { logId: string }) {
   const toggleTag = useCallback(
     (itemId: string) => {
       if (!log) return;
-      const isSelected = log.logTags.some((t) => t.id === itemId);
 
-      if (isSelected) {
-        const tag = log.logTags.find((t) => t.id === itemId);
-        if (!tag) return;
-        db.transact(db.tx.logTags[tag.id].unlink({ logs: log.id }));
-      } else {
-        const existing = logTags.find((t) => t.id === itemId);
-        if (!existing) return;
-        db.transact(db.tx.logTags[existing.id].link({ logs: log.id }));
-      }
+      const action = log.logTags.some((t) => t.id === itemId)
+        ? 'unlink'
+        : 'link';
+
+      db.transact(db.tx.logTags[itemId][action]({ logs: log.id }));
     },
-    [log, logTags]
+    [log]
   );
 
   const reorderTags = useCallback(
