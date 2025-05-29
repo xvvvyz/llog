@@ -7,53 +7,54 @@ import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const LogDropdownMenuForms = ({
-  logDeleteFormId,
-  logEditFormId,
-  logTagsFromId,
-  setLogDeleteFormId,
-  setLogEditFormId,
-  setLogTagsFromId,
+  deleteFormId,
+  editFormId,
+  setDeleteFormId,
+  setEditFormId,
+  setTagsFormId,
+  tagsFormId,
 }: {
-  logDeleteFormId: string | null;
-  logEditFormId: string | null;
-  logTagsFromId: string | null;
-  setLogDeleteFormId: (id: string | null) => void;
-  setLogEditFormId: (id: string | null) => void;
-  setLogTagsFromId: (id: string | null) => void;
+  deleteFormId: string | null;
+  editFormId: string | null;
+  setDeleteFormId: (id: string | null) => void;
+  setEditFormId: (id: string | null) => void;
+  setTagsFormId: (id: string | null) => void;
+  tagsFormId: string | null;
 }) => {
   const insets = useSafeAreaInsets();
   const windowDimensions = useWindowDimensions();
 
-  const snapPoints = useMemo(() => {
-    return [(windowDimensions.height - insets.top - insets.bottom) * 0.5];
-  }, [insets.bottom, insets.top, windowDimensions.height]);
+  const snapPoints = useMemo(
+    () => [(windowDimensions.height - insets.top - insets.bottom) * 0.5],
+    [insets.bottom, insets.top, windowDimensions.height]
+  );
 
   return (
     <Fragment>
-      {logDeleteFormId && (
+      {deleteFormId && (
         <BottomSheet
-          onClose={() => setLogDeleteFormId(null)}
+          onClose={() => setDeleteFormId(null)}
           portalName="delete-log-form"
         >
-          <LogDeleteForm logId={logDeleteFormId} />
+          <LogDeleteForm logId={deleteFormId} />
         </BottomSheet>
       )}
-      {logEditFormId && (
+      {editFormId && (
         <BottomSheet
-          onClose={() => setLogEditFormId(null)}
+          onClose={() => setEditFormId(null)}
           portalName="log-edit-form"
         >
-          <LogEditForm logId={logEditFormId} />
+          <LogEditForm logId={editFormId} />
         </BottomSheet>
       )}
-      {logTagsFromId && (
+      {tagsFormId && (
         <BottomSheet
           enableDynamicSizing={false}
-          onClose={() => setLogTagsFromId(null)}
+          onClose={() => setTagsFormId(null)}
           portalName="log-tag-form"
           snapPoints={snapPoints}
         >
-          <LogTagsForm logId={logTagsFromId} />
+          <LogTagsForm logId={tagsFormId} />
         </BottomSheet>
       )}
     </Fragment>

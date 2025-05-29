@@ -1,16 +1,16 @@
 import { useState } from 'react';
 
 export const useLogDropdownMenuForms = () => {
-  const [logDeleteFormId, setLogDeleteFormId] = useState<string | null>(null);
-  const [logEditFormId, setLogEditFormId] = useState<string | null>(null);
-  const [logTagsFromId, setLogTagsFromId] = useState<string | null>(null);
+  const [deleteFormId, setDeleteFormId] = useState<string | null>(null);
+  const [editFormId, setEditFormId] = useState<string | null>(null);
+  const [tagsFormId, setTagsFormId] = useState<string | null>(null);
 
   return {
-    logDeleteFormId,
-    logEditFormId,
-    logTagsFromId,
-    setLogDeleteFormId,
-    setLogEditFormId,
-    setLogTagsFromId,
+    deleteFormId,
+    editFormId,
+    tagsFormId,
+    setDeleteFormId,
+    setEditFormId,
+    setTagsFormId,
   };
 };

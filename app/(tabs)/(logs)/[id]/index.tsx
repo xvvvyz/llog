@@ -27,11 +27,11 @@ export default function Index() {
         <Fragment>
           <LogDropdownMenu
             headerHeight={headerHeight}
-            logId={log?.id}
-            logName={log?.name}
-            setLogDeleteFormId={dropdownMenuForms.setLogDeleteFormId}
-            setLogEditFormId={dropdownMenuForms.setLogEditFormId}
-            setLogTagsFromId={dropdownMenuForms.setLogTagsFromId}
+            id={log?.id}
+            name={log?.name}
+            setDeleteFormId={dropdownMenuForms.setDeleteFormId}
+            setEditFormId={dropdownMenuForms.setEditFormId}
+            setTagsFormId={dropdownMenuForms.setTagsFormId}
             variant="header"
           />
           <LogDropdownMenuForms {...dropdownMenuForms} />

@@ -1,28 +1,27 @@
-import { LogDropdownMenu } from '@/components/log-dropdown-menu';
 import { LogDropdownMenuForms } from '@/components/log-dropdown-menu-forms';
+import { LogListActions, SortBy } from '@/components/log-list-actions';
 import { LogListEmptyState } from '@/components/log-list-empty-state';
+import { LogListLog } from '@/components/log-list-log';
 import { Button } from '@/components/ui/button';
+import { SortDirection } from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
-import { SearchInput } from '@/components/ui/search-input';
-import { Text } from '@/components/ui/text';
+import { List } from '@/components/ui/list';
 import { useActiveTeamId } from '@/hooks/use-active-team-id';
 import { useGridColumns as useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLogDropdownMenuForms } from '@/hooks/use-log-dropdown-menu-forms';
 import { Log, LogTag } from '@/instant.schema';
-import { Color, SPECTRUM } from '@/theme/spectrum';
-import { cn } from '@/utilities/cn';
+import { SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
-import { Link, useNavigation, useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function Index() {
   const [query, setQuery] = useState('');
-  const auth = db.useAuth();
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
@@ -30,25 +29,59 @@ export default function Index() {
   const navigation = useNavigation();
   const router = useRouter();
   const { teamId } = useActiveTeamId();
+  const { user } = db.useAuth();
 
-  const { data: logsData, isLoading: isLogsLoading } = db.useQuery(
-    auth.user
+  const trimmedQuery = useMemo(() => query.trim(), [query]);
+
+  const { data: uiData, isLoading: isUiLoading } = db.useQuery(
+    user
       ? {
-          teams: {
-            $: { where: { 'ui.user.id': auth.user.id } },
-            logs: { logTags: { $: { fields: ['id'] } } },
+          ui: {
+            $: {
+              where: { user: user.id },
+              fields: ['logsSortBy', 'logsSortDirection'],
+            },
+            logTags: { $: { fields: ['id'] } },
           },
         }
       : null
   );
 
-  const { data: logTagsData } = db.useQuery(
-    teamId ? { logTags: { $: { where: { team: teamId } } } } : null
+  const ui = uiData?.ui?.[0];
+  const sortBy = (ui?.logsSortBy ?? 'serverCreatedAt') as SortBy;
+  const sortDirection = (ui?.logsSortDirection ?? 'desc') as SortDirection;
+
+  const selectedTagIds = useMemo(
+    () => new Set(ui?.logTags?.map((tag) => tag.id) ?? []),
+    [ui?.logTags]
   );
 
-  const logs = useMemo(
-    () => logsData?.teams?.[0]?.logs ?? [],
-    [logsData?.teams]
+  const { data: logsData, isLoading: isLogsLoading } = db.useQuery(
+    teamId && !isUiLoading
+      ? {
+          logs: {
+            $: {
+              order: { [sortBy]: sortDirection },
+              where: {
+                team: teamId,
+                ...(selectedTagIds.size
+                  ? { logTags: { $in: Array.from(selectedTagIds) } }
+                  : {}),
+                ...(trimmedQuery
+                  ? { name: { $ilike: `%${trimmedQuery}%` } }
+                  : {}),
+              },
+            },
+            logTags: { $: { fields: ['id'] } },
+          },
+        }
+      : null
+  );
+
+  const logs = logsData?.logs ?? [];
+
+  const { data: logTagsData } = db.useQuery(
+    teamId ? { logTags: { $: { where: { team: teamId } } } } : null
   );
 
   const logTags = useMemo(
@@ -57,114 +90,77 @@ export default function Index() {
     [logTagsData?.logTags]
   );
 
-  const filteredLogs = useMemo(
-    () =>
-      logs.filter((log) =>
-        log.name.toLowerCase().includes(query.toLowerCase())
-      ),
-    [logs, query]
-  );
-
   const createLog = useCallback(() => {
     const logId = id();
 
     db.transact(
       db.tx.logs[logId]
-        .update({ color: 'indigo', name: 'New log' })
+        .update({ color: 11, name: 'New log' })
         .link({ team: teamId })
     );
 
     router.push(`/${logId}`);
   }, [router, teamId]);
 
-  const ListHeaderComponent = useCallback(
-    () =>
-      !breakpoints.md ? (
-        <View className="p-1.5">
-          <SearchInput query={query} setQuery={setQuery} />
-        </View>
-      ) : null,
-    [breakpoints.md, query]
+  const sort = useCallback(
+    (sort: [SortBy, SortDirection]) => {
+      if (!user?.id) return;
+
+      db.transact(
+        db.tx.ui[user?.id].update({
+          logsSortBy: sort[0],
+          logsSortDirection: sort[1],
+        })
+      );
+    },
+    [user?.id]
+  );
+
+  const toggleTag = useCallback(
+    (tagId: string) => {
+      if (!user?.id) return;
+      const action = selectedTagIds.has(tagId) ? 'unlink' : 'link';
+      db.transact(db.tx.ui[user.id][action]({ logTags: tagId }));
+    },
+    [selectedTagIds, user?.id]
   );
 
   const renderLog = useCallback(
-    ({ item }: { item: Log & { logTags: Pick<LogTag, 'id'>[] } }) => {
-      const color = SPECTRUM[colorScheme][item.color as Color];
+    ({ item: log }: { item: Log & { logTags: Pick<LogTag, 'id'>[] } }) => {
+      const color =
+        SPECTRUM[colorScheme][log.color] ?? SPECTRUM[colorScheme][0];
+
+      const itemLogTagIds = new Set(log.logTags.map((tag) => tag.id));
 
       return (
-        <View
-          accessibilityRole="none"
-          className={cn(
-            'p-1.5 web:transition-opacity web:hover:opacity-90 md:p-2',
-            {
-              'w-1/1': columns === 1,
-              'w-1/2': columns === 2,
-              'w-1/3': columns === 3,
-              'w-1/4': columns === 4,
-              'w-1/5': columns === 5,
-              'w-1/6': columns === 6,
-            }
-          )}
-        >
-          <Link asChild href={`/${item.id}`} key={item.id}>
-            <Button
-              accessibilityHint={`Opens the log ${item.name}`}
-              accessibilityLabel={`Open ${item.name}`}
-              className="flex h-28 w-full flex-col items-start justify-between p-4 active:opacity-90"
-              ripple="default"
-              style={{ backgroundColor: color.default }}
-              variant="ghost"
-              wrapperClassName="rounded-2xl"
-            >
-              <View className="max-h-11 flex-row flex-wrap gap-1 overflow-hidden pr-10">
-                {logTags
-                  .filter((logTag) =>
-                    item.logTags.some(
-                      (itemLogTag) => itemLogTag.id === logTag.id
-                    )
-                  )
-                  .map((tag) => (
-                    <View
-                      key={tag.id}
-                      className="rounded bg-black/10 px-1.5 py-0.5"
-                    >
-                      <Text className="text-xs text-white/80" numberOfLines={1}>
-                        {tag.name}
-                      </Text>
-                    </View>
-                  ))}
-              </View>
-              <Text className="-mb-1.5 text-white" numberOfLines={1}>
-                {item.name}
-              </Text>
-            </Button>
-          </Link>
-          <View className="absolute right-1 top-1 md:right-1.5 md:top-1.5">
-            <LogDropdownMenu
-              logId={item.id}
-              logName={item.name}
-              setLogDeleteFormId={dropdownMenuForms.setLogDeleteFormId}
-              setLogEditFormId={dropdownMenuForms.setLogEditFormId}
-              setLogTagsFromId={dropdownMenuForms.setLogTagsFromId}
-            />
-          </View>
-        </View>
+        <LogListLog
+          color={color.default}
+          id={log.id}
+          name={log.name}
+          setDeleteFormId={dropdownMenuForms.setDeleteFormId}
+          setEditFormId={dropdownMenuForms.setEditFormId}
+          setTagsFormId={dropdownMenuForms.setTagsFormId}
+          tags={logTags.filter((tag) => itemLogTagIds.has(tag.id))}
+        />
       );
     },
-    [colorScheme, columns, dropdownMenuForms, logTags]
+    [colorScheme, dropdownMenuForms, logTags]
   );
 
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <View className="flex-row items-center gap-2">
-          {!!logs.length && breakpoints.md && (
-            <SearchInput
-              query={query}
-              setQuery={setQuery}
-              wrapperClassName="mr-2 w-52"
-            />
-          )}
+        <View className="flex-row items-center gap-4">
+          <LogListActions
+            className="hidden md:flex"
+            filteredTagIds={selectedTagIds}
+            logTags={logTags}
+            onSort={sort}
+            query={query}
+            setQuery={setQuery}
+            sortBy={[sortBy, sortDirection]}
+            toggleTag={toggleTag}
+          />
           <Button
             accessibilityHint="Opens a form to create a new log"
             accessibilityLabel="New log"
@@ -178,24 +174,52 @@ export default function Index() {
         </View>
       ),
     });
-  }, [breakpoints.md, logs.length, createLog, navigation, query]);
+  }, [
+    breakpoints.md,
+    createLog,
+    selectedTagIds,
+    logTags,
+    navigation,
+    query,
+    sort,
+    sortBy,
+    sortDirection,
+    toggleTag,
+  ]);
 
-  if (isLogsLoading) {
-    return null;
-  }
-
-  if (!logs.length) {
+  if (!isLogsLoading && !query && !selectedTagIds.size && !logs.length) {
     return <LogListEmptyState createLog={createLog} />;
   }
 
   return (
-    <FlatList
-      ListFooterComponent={<LogDropdownMenuForms {...dropdownMenuForms} />}
-      ListHeaderComponent={ListHeaderComponent}
+    <List
+      ListFooterComponent={
+        <LogDropdownMenuForms
+          deleteFormId={dropdownMenuForms.deleteFormId}
+          editFormId={dropdownMenuForms.editFormId}
+          setDeleteFormId={dropdownMenuForms.setDeleteFormId}
+          setEditFormId={dropdownMenuForms.setEditFormId}
+          setTagsFormId={dropdownMenuForms.setTagsFormId}
+          tagsFormId={dropdownMenuForms.tagsFormId}
+        />
+      }
+      ListHeaderComponent={
+        <LogListActions
+          className="mb-3 p-1.5 md:hidden"
+          filteredTagIds={selectedTagIds}
+          logTags={logTags}
+          onSort={sort}
+          query={query}
+          setQuery={setQuery}
+          sortBy={[sortBy, sortDirection]}
+          toggleTag={toggleTag}
+        />
+      }
       accessibilityLabel="Logs"
       accessibilityRole="list"
       contentContainerClassName="p-1.5 md:p-6"
-      data={filteredLogs}
+      data={logs}
+      extraData={[]}
       key={`grid-${columns}`}
       keyExtractor={(item) => item.id}
       keyboardDismissMode="on-drag"

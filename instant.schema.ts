@@ -16,8 +16,8 @@ const schema = i.schema({
       order: i.number().indexed(),
     }),
     logs: i.entity({
-      color: i.string(),
-      name: i.string(),
+      color: i.number().indexed(),
+      name: i.string().indexed(),
     }),
     profiles: i.entity({
       name: i.string(),
@@ -32,7 +32,10 @@ const schema = i.schema({
     teams: i.entity({
       name: i.string(),
     }),
-    ui: i.entity({}),
+    ui: i.entity({
+      logsSortBy: i.string().optional(),
+      logsSortDirection: i.string().optional(),
+    }),
   },
   links: {
     logsRecords: {
@@ -142,6 +145,18 @@ const schema = i.schema({
         label: 'team',
         required: true,
         onDelete: 'cascade',
+      },
+    },
+    uiLogTags: {
+      forward: {
+        on: 'ui',
+        has: 'many',
+        label: 'logTags',
+      },
+      reverse: {
+        on: 'logTags',
+        has: 'many',
+        label: 'ui',
       },
     },
     uiTeam: {

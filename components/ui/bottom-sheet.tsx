@@ -30,7 +30,7 @@ const Backdrop = ({
       opacity: interpolate(
         animatedIndex.value,
         [-1, 0],
-        [0, 0.95],
+        [0, 0.9],
         Extrapolation.CLAMP
       ),
     };

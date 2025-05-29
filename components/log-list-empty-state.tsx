@@ -25,7 +25,7 @@ export const LogListEmptyState = ({ createLog }: { createLog: () => void }) => {
         <Icon
           icon={Plus}
           className="-ml-0.5 text-white"
-          size={20}
+          size={18}
           aria-hidden
         />
         <Text>New log</Text>

@@ -3,18 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Color, SPECTRUM } from '@/theme/spectrum';
+import { SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Fragment } from 'react';
 import { View } from 'react-native';
 
-const COLOR_ROWS = [
-  ['indigo', 'purple', 'pink', 'red', 'orange', 'gray'],
-  ['blue', 'teal', 'green', 'yellow', 'amber', 'brown'],
-];
-
-export function LogEditForm({ logId }: { logId: string }) {
+export const LogEditForm = ({ logId }: { logId: string }) => {
   const colorScheme = useColorScheme();
 
   const { data, isLoading } = db.useQuery({
@@ -46,31 +41,33 @@ export function LogEditForm({ logId }: { logId: string }) {
             />
           </View>
           <View className="mt-8">
-            <Label>Color</Label>
             <View className="gap-2">
-              {COLOR_ROWS.map((rowColors, rowIndex) => (
+              {[
+                [11, 0, 9, 8, 7, 6],
+                [10, 1, 2, 3, 4, 5],
+              ].map((row, rowIndex) => (
                 <View className="flex-row gap-2" key={`row-${rowIndex}`}>
-                  {rowColors.map((key) => (
+                  {row.map((color) => (
                     <Button
                       className="h-full w-full rounded-full border-4"
-                      key={`color-${key}`}
+                      key={`color-${color}`}
                       onPress={() => {
                         if (!log) return;
-                        db.transact(db.tx.logs[log.id].update({ color: key }));
+                        db.transact(db.tx.logs[log.id].update({ color }));
                       }}
                       ripple="default"
                       style={{
                         backgroundColor:
-                          SPECTRUM[colorScheme][key as Color][
-                            log?.color === key
+                          SPECTRUM[colorScheme][color][
+                            log?.color === color
                               ? isDark
                                 ? 'darker'
                                 : 'lighter'
                               : 'default'
                           ],
                         borderColor:
-                          SPECTRUM[colorScheme][key as Color][
-                            log?.color === key
+                          SPECTRUM[colorScheme][color][
+                            log?.color === color
                               ? isDark
                                 ? 'lighter'
                                 : 'darker'
@@ -89,4 +86,4 @@ export function LogEditForm({ logId }: { logId: string }) {
       </BottomSheetView>
     </Fragment>
   );
-}
+};

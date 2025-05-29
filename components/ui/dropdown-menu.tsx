@@ -1,15 +1,24 @@
+import { Icon } from '@/components/ui/icon';
 import { TextClassContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
 import { cn } from '@/utilities/cn';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
-import { forwardRef, ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { Check, SortAsc, SortDesc } from 'lucide-react-native';
+import { Platform, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+
+import {
+  forwardRef,
+  ReactNode,
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+
 const Root = DropdownMenuPrimitive.Root;
 
 const Trigger = DropdownMenuPrimitive.Trigger;
-
-const Portal = DropdownMenuPrimitive.Portal;
 
 const Content = forwardRef<
   DropdownMenuPrimitive.ContentRef,
@@ -21,7 +30,7 @@ const Content = forwardRef<
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             className={cn(
-              'min-w-36 overflow-hidden rounded-3xl bg-popover py-2',
+              'min-w-36 overflow-hidden rounded-2xl bg-popover py-2',
               className
             )}
             entering={Platform.select({
@@ -48,17 +57,13 @@ Content.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const Item = forwardRef<
   DropdownMenuPrimitive.ItemRef,
-  DropdownMenuPrimitive.ItemProps & {
-    inset?: boolean;
-  }
->(({ className, inset, ...props }, ref) => (
-  <TextClassContext.Provider value="select-none text-popover-foreground">
+  DropdownMenuPrimitive.ItemProps
+>(({ className, ...props }, ref) => (
+  <TextClassContext.Provider value="text-popover-foreground">
     <DropdownMenuPrimitive.Item
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
         'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-5 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
-        inset && 'pl-8',
-        props.disabled && 'opacity-50 web:pointer-events-none',
         className
       )}
       ref={ref}
@@ -69,17 +74,137 @@ const Item = forwardRef<
 
 Item.displayName = DropdownMenuPrimitive.Item.displayName;
 
-const Separator = forwardRef<
-  DropdownMenuPrimitive.SeparatorRef,
-  DropdownMenuPrimitive.SeparatorProps
->(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Separator
-    ref={ref}
-    className={cn('-mx-1 my-1 h-px bg-border', className)}
-    {...props}
-  />
-));
+const CheckboxItem = ({
+  checked,
+  children,
+  className,
+  onCheckedChange,
+  ...props
+}: DropdownMenuPrimitive.CheckboxItemProps & {
+  children?: React.ReactNode;
+  ref?: React.RefObject<DropdownMenuPrimitive.CheckboxItemRef>;
+}) => {
+  const [opChecked, setOpChecked] = useState(checked);
+  useEffect(() => setOpChecked(checked), [checked]);
 
-Separator.displayName = DropdownMenuPrimitive.Separator.displayName;
+  const handleCheckedChange = useCallback(
+    (checked: boolean) => {
+      setOpChecked(checked);
+      startTransition(() => onCheckedChange?.(checked));
+    },
+    [onCheckedChange]
+  );
 
-export { Content, Item, Portal, Root, Separator, Trigger };
+  return (
+    <TextClassContext.Provider value="text-popover-foreground">
+      <DropdownMenuPrimitive.CheckboxItem
+        android_ripple={{ color: useRippleColor('inverse') }}
+        className={cn(
+          'android:active:bg-transparent group relative h-10 flex-row items-center justify-between gap-4 px-5 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+          className
+        )}
+        checked={opChecked}
+        closeOnPress={false}
+        onCheckedChange={handleCheckedChange}
+        {...props}
+      >
+        <View className="flex-row items-center gap-4">{children}</View>
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Icon className="-mr-1.5" icon={Check} size={18} />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </DropdownMenuPrimitive.CheckboxItem>
+    </TextClassContext.Provider>
+  );
+};
+
+CheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
+
+// const RadioItem = ({
+//   className,
+//   children,
+//   ...props
+// }: DropdownMenuPrimitive.RadioItemProps & {
+//   ref?: React.RefObject<DropdownMenuPrimitive.RadioItemRef>;
+//   children?: React.ReactNode;
+// }) => {
+//   return (
+//     <DropdownMenuPrimitive.RadioItem
+//       android_ripple={{ color: useRippleColor('inverse') }}
+//       className={cn(
+//         'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-5 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+//         className
+//       )}
+//       closeOnPress={false}
+//       {...props}
+//     >
+//       <View className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+//         <DropdownMenuPrimitive.ItemIndicator>
+//           <View className="h-2 w-2 rounded-full bg-foreground" />
+//         </DropdownMenuPrimitive.ItemIndicator>
+//       </View>
+//       {children}
+//     </DropdownMenuPrimitive.RadioItem>
+//   );
+// };
+
+// RadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
+
+export type SortDirection = 'asc' | 'desc';
+
+const SortItem = <T extends string>({
+  children,
+  className,
+  currentSort,
+  onSort,
+  value,
+  ...props
+}: DropdownMenuPrimitive.ItemProps & {
+  children: ReactNode;
+  currentSort: [T, SortDirection];
+  onSort: (sort: [T, SortDirection]) => void;
+  value: T;
+}) => {
+  const [opSort, setOpSort] = useState(currentSort);
+  useEffect(() => setOpSort(currentSort), [currentSort]);
+  const isActive = opSort[0] === value;
+
+  const handleSort = useCallback(() => {
+    const newSort: [T, SortDirection] = [
+      value,
+      isActive ? (currentSort[1] === 'asc' ? 'desc' : 'asc') : 'asc',
+    ];
+
+    setOpSort(newSort);
+    startTransition(() => onSort(newSort));
+  }, [currentSort, isActive, onSort, value]);
+
+  return (
+    <Item
+      className={cn('justify-between', className)}
+      closeOnPress={false}
+      onPress={handleSort}
+      {...props}
+    >
+      <View className="flex-row items-center gap-4">{children}</View>
+      {isActive && (
+        <Icon
+          className="-mr-1.5"
+          icon={opSort[1] === 'asc' ? SortAsc : SortDesc}
+          size={18}
+        />
+      )}
+    </Item>
+  );
+};
+
+SortItem.displayName = 'SortItem';
+
+export {
+  CheckboxItem,
+  Content,
+  Item,
+  // RadioItem,
+  Root,
+  SortItem,
+  Trigger,
+};

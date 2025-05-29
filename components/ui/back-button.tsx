@@ -4,7 +4,7 @@ import { useNavigation } from 'expo-router';
 import { ArrowLeft, ChevronLeft } from 'lucide-react-native';
 import { Platform } from 'react-native';
 
-export function BackButton() {
+export const BackButton = () => {
   const navigation = useNavigation();
   if (!navigation.canGoBack()) return null;
 
@@ -25,4 +25,4 @@ export function BackButton() {
       />
     </Button>
   );
-}
+};

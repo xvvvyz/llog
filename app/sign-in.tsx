@@ -33,7 +33,7 @@ export default function SignIn() {
     };
 
     return (
-      <View className="mx-auto w-full max-w-sm flex-1 justify-center p-8">
+      <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
         <Label nativeID="email">Email address</Label>
         <Input
           aria-labelledby="email"
@@ -72,7 +72,7 @@ export default function SignIn() {
   };
 
   return (
-    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-8">
+    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
       <Label nativeID="code">
         Enter the code sent to <Text className="font-medium">{email}</Text>
       </Label>

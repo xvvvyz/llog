@@ -85,12 +85,12 @@ function generateSpectrumTS() {
     return variants;
   }
 
-  const spectrum: any = { light: {}, dark: {} };
+  const spectrum: any = { light: [], dark: [] };
 
   for (const mode of ['light', 'dark'] as const) {
     const modeColors = COLORS[mode] as typeof COLORS.light;
 
-    for (const [key, value] of Object.entries(modeColors.spectrum)) {
+    for (const [key, value] of modeColors.spectrum.entries()) {
       spectrum[mode][key] = getVariants(value as string);
     }
   }

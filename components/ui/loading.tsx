@@ -3,7 +3,7 @@ import { cn } from '@/utilities/cn';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-export function Loading({ className }: { className?: string }) {
+export const Loading = ({ className }: { className?: string }) => {
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
 
   useEffect(() => {
@@ -23,4 +23,4 @@ export function Loading({ className }: { className?: string }) {
       )}
     </View>
   );
-}
+};

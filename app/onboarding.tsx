@@ -42,7 +42,7 @@ export default function Onboarding() {
   };
 
   return (
-    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-8">
+    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
       <Label nativeID="name">What is your name?</Label>
       <Input
         aria-labelledby="name"
