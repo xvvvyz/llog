@@ -59,7 +59,7 @@ export default function Onboarding() {
         className="w-full"
         disabled={isDisabled}
         onPress={handleSubmit}
-        wrapperClassName="mt-8"
+        wrapperClassName="mt-6"
       >
         <Text>Continue</Text>
       </Button>

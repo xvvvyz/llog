@@ -13,6 +13,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLogDropdownMenuForms } from '@/hooks/use-log-dropdown-menu-forms';
 import { Log, LogTag } from '@/instant.schema';
 import { SPECTRUM } from '@/theme/spectrum';
+import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 import { useNavigation, useRouter } from 'expo-router';
@@ -56,7 +57,7 @@ export default function Index() {
     [ui?.logTags]
   );
 
-  const { data: logsData, isLoading: isLogsLoading } = db.useQuery(
+  const { data, isLoading } = db.useQuery(
     teamId && !isUiLoading
       ? {
           logs: {
@@ -74,21 +75,20 @@ export default function Index() {
             },
             logTags: { $: { fields: ['id'] } },
           },
+          logTags: { $: { where: { team: teamId } } },
         }
       : null
   );
 
-  const logs = logsData?.logs ?? [];
-
-  const { data: logTagsData } = db.useQuery(
-    teamId ? { logTags: { $: { where: { team: teamId } } } } : null
-  );
+  const logs = data?.logs ?? [];
 
   const logTags = useMemo(
     // https://discord.com/channels/1031957483243188235/1148284450992574535/threads/1376250736416919567/
-    () => logTagsData?.logTags?.sort((a, b) => a.order - b.order) ?? [],
-    [logTagsData?.logTags]
+    () => data?.logTags?.sort((a, b) => a.order - b.order) ?? [],
+    [data?.logTags]
   );
+
+  const isEmpty = !isLoading && !query && !selectedTagIds.size && !logs.length;
 
   const createLog = useCallback(() => {
     const logId = id();
@@ -150,9 +150,9 @@ export default function Index() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <View className="flex-row items-center gap-4">
+        <View className="flex-row items-center gap-3">
           <LogListActions
-            className="hidden md:flex"
+            className={cn('hidden md:flex', isEmpty && 'md:hidden')}
             filteredTagIds={selectedTagIds}
             logTags={logTags}
             onSort={sort}
@@ -177,17 +177,18 @@ export default function Index() {
   }, [
     breakpoints.md,
     createLog,
-    selectedTagIds,
+    isEmpty,
     logTags,
     navigation,
     query,
+    selectedTagIds,
     sort,
     sortBy,
     sortDirection,
     toggleTag,
   ]);
 
-  if (!isLogsLoading && !query && !selectedTagIds.size && !logs.length) {
+  if (isEmpty) {
     return <LogListEmptyState createLog={createLog} />;
   }
 
@@ -205,7 +206,7 @@ export default function Index() {
       }
       ListHeaderComponent={
         <LogListActions
-          className="mb-3 p-1.5 md:hidden"
+          className="p-1.5 md:hidden"
           filteredTagIds={selectedTagIds}
           logTags={logTags}
           onSort={sort}

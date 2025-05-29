@@ -2,7 +2,7 @@ import { cn } from '@/utilities/cn';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
-import { Platform, TextInput } from 'react-native';
+import { TextInput } from 'react-native';
 
 const inputVariants = cva(
   'native:leading-5 text-base ios:overflow-hidden native:placeholder:text-placeholder rounded-xl bg-input text-foreground file:border-0 file:bg-transparent file:font-medium web:w-full web:placeholder:text-placeholder web:focus-visible:outline-none',
@@ -29,7 +29,7 @@ const Input = forwardRef<
 >(({ className, bottomSheet, size, ...props }, ref) => {
   const Component = bottomSheet ? BottomSheetTextInput : TextInput;
 
-  const content = (
+  return (
     <Component
       className={cn(
         inputVariants({ size }),
@@ -42,11 +42,6 @@ const Input = forwardRef<
       {...props}
     />
   );
-
-  return Platform.select({
-    default: content,
-    web: <form onSubmit={(e) => e.preventDefault()}>{content}</form>,
-  });
 });
 
 Input.displayName = 'Input';

@@ -22,7 +22,7 @@ export const LogDeleteForm = ({ logId }: { logId: string }) => {
       {isLoading && <BottomSheetLoading />}
       <BottomSheetView className="mx-auto w-full max-w-md p-8">
         <Text className="text-center text-2xl">
-          Delete &quot;{log?.name}&quot; log?
+          Delete &quot;{log?.name}&quot;?
         </Text>
         <Text className="mt-5 text-center text-muted-foreground">
           This cannot be undone.
@@ -42,7 +42,7 @@ export const LogDeleteForm = ({ logId }: { logId: string }) => {
         <Button
           onPress={() => bottomSheet.close()}
           variant="secondary"
-          wrapperClassName="mt-4"
+          wrapperClassName="mt-3"
         >
           <Text>Cancel</Text>
         </Button>

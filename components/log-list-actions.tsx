@@ -5,8 +5,17 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Text } from '@/components/ui/text';
 import { LogTag } from '@/instant.schema';
 import { cn } from '@/utilities/cn';
-import { Filter, SortAsc, SortDesc, Tag } from 'lucide-react-native';
 import { View } from 'react-native';
+
+import {
+  Calendar,
+  Filter,
+  LetterText,
+  Palette,
+  SortAsc,
+  SortDesc,
+  Tag,
+} from 'lucide-react-native';
 
 export type SortBy = 'serverCreatedAt' | 'name' | 'color';
 
@@ -30,7 +39,7 @@ export const LogListActions = ({
   toggleTag: (tagId: string) => void;
 }) => {
   return (
-    <View className={cn('flex-row gap-2', className)}>
+    <View className={cn('flex-row gap-3', className)}>
       {!!logTags.length && (
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
@@ -48,7 +57,7 @@ export const LogListActions = ({
               />
             </Button>
           </DropdownMenu.Trigger>
-          <DropdownMenu.Content align="start" className="mt-2">
+          <DropdownMenu.Content align="start" className="mt-2 min-w-40">
             {logTags.map((tag) => (
               <DropdownMenu.CheckboxItem
                 checked={filteredTagIds.has(tag.id)}
@@ -83,12 +92,18 @@ export const LogListActions = ({
             />
           </Button>
         </DropdownMenu.Trigger>
-        <DropdownMenu.Content align="start" className="mt-2">
+        <DropdownMenu.Content align="start" className="mt-2 min-w-40">
           <DropdownMenu.SortItem<SortBy>
             currentSort={sortBy}
             onSort={onSort}
             value="serverCreatedAt"
           >
+            <Icon
+              aria-hidden
+              className="text-placeholder"
+              icon={Calendar}
+              size={18}
+            />
             <Text>Created</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
@@ -96,6 +111,12 @@ export const LogListActions = ({
             onSort={onSort}
             value="name"
           >
+            <Icon
+              aria-hidden
+              className="text-placeholder"
+              icon={LetterText}
+              size={18}
+            />
             <Text>Name</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
@@ -103,6 +124,12 @@ export const LogListActions = ({
             onSort={onSort}
             value="color"
           >
+            <Icon
+              aria-hidden
+              className="text-placeholder"
+              icon={Palette}
+              size={18}
+            />
             <Text>Color</Text>
           </DropdownMenu.SortItem>
         </DropdownMenu.Content>
@@ -123,7 +150,7 @@ export const LogListActions = ({
       <SearchInput
         query={query}
         setQuery={setQuery}
-        wrapperClassName="shrink w-full md:w-52 ml-1"
+        wrapperClassName="shrink w-full md:w-52"
       />
     </View>
   );

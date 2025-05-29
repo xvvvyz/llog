@@ -13,7 +13,7 @@ export const Loading = ({ className }: { className?: string }) => {
 
   return (
     <View
-      className={cn('flex-1 items-center justify-center gap-8 p-3', className)}
+      className={cn('flex-1 items-center justify-center gap-6 p-3', className)}
     >
       <ActivityIndicator accessibilityRole="progressbar" />
       {showTimeoutMessage && (

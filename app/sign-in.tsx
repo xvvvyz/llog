@@ -9,10 +9,11 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 export default function SignIn() {
-  const auth = db.useAuth();
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<'email' | 'code'>('email');
+  const auth = db.useAuth();
 
   if (auth.user) {
     return <Redirect href="/" />;
@@ -21,12 +22,15 @@ export default function SignIn() {
   if (step === 'email') {
     const handleSubmit = async () => {
       if (!email) return;
+      setIsSubmitting(true);
 
       try {
         await db.auth.sendMagicCode({ email });
       } catch {
         alert({ message: 'Invalid email', title: 'Error' });
         return;
+      } finally {
+        setIsSubmitting(false);
       }
 
       setStep('code');
@@ -49,8 +53,9 @@ export default function SignIn() {
         />
         <Button
           className="w-full"
+          disabled={isSubmitting}
           onPress={handleSubmit}
-          wrapperClassName="mt-8"
+          wrapperClassName="mt-6"
         >
           <Text>Sign in</Text>
         </Button>
@@ -60,12 +65,15 @@ export default function SignIn() {
 
   const handleSubmit = async () => {
     if (!code) return;
+    setIsSubmitting(true);
 
     try {
       await db.auth.signInWithMagicCode({ email, code });
     } catch {
       alert({ message: 'Invalid code', title: 'Error' });
       return;
+    } finally {
+      setIsSubmitting(false);
     }
 
     router.replace('/');
@@ -86,7 +94,12 @@ export default function SignIn() {
         placeholder="123456"
         value={code}
       />
-      <Button className="w-full" onPress={handleSubmit} wrapperClassName="mt-8">
+      <Button
+        className="w-full"
+        disabled={isSubmitting}
+        onPress={handleSubmit}
+        wrapperClassName="mt-6"
+      >
         <Text>Confirm</Text>
       </Button>
     </View>

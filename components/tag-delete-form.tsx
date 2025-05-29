@@ -21,7 +21,7 @@ export const TagDeleteForm = ({ tagId }: { tagId: string }) => {
       {isLoading && <BottomSheetLoading />}
       <BottomSheetView className="mx-auto w-full max-w-md p-8">
         <Text className="text-center text-2xl">
-          Delete &ldquo;{tag?.name}&rdquo; tag?
+          Delete &ldquo;{tag?.name}&rdquo;?
         </Text>
         <Text className="mx-auto mt-5 max-w-xs text-center text-muted-foreground">
           This cannot be undone.
@@ -40,7 +40,7 @@ export const TagDeleteForm = ({ tagId }: { tagId: string }) => {
         <Button
           onPress={() => bottomSheet.close()}
           variant="secondary"
-          wrapperClassName="mt-4"
+          wrapperClassName="mt-3"
         >
           <Text>Cancel</Text>
         </Button>
