@@ -1,3 +1,4 @@
+import { SheetManagerProvider } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import '@/theme/global.css';
 import { NAVIGATION } from '@/theme/navigation';
@@ -12,12 +13,14 @@ export default function Layout() {
 
   return (
     <ThemeProvider value={NAVIGATION[colorScheme]}>
-      <SafeAreaProvider>
-        <GestureHandlerRootView className="flex-1 bg-background">
-          <Slot />
-          <PortalHost />
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
+      <SheetManagerProvider>
+        <SafeAreaProvider>
+          <GestureHandlerRootView className="flex-1 bg-background">
+            <Slot />
+            <PortalHost />
+          </GestureHandlerRootView>
+        </SafeAreaProvider>
+      </SheetManagerProvider>
     </ThemeProvider>
   );
 }

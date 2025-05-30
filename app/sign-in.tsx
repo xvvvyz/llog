@@ -43,6 +43,7 @@ export default function SignIn() {
           aria-labelledby="email"
           autoCapitalize="none"
           autoComplete="email"
+          autoCorrect={false}
           autoFocus
           keyboardType="email-address"
           onChangeText={setEmail}
@@ -86,8 +87,9 @@ export default function SignIn() {
       </Label>
       <Input
         aria-labelledby="code"
+        autoCapitalize="none"
         autoComplete="off"
-        autoFocus
+        autoCorrect={false}
         keyboardType="number-pad"
         onChangeText={setCode}
         onSubmitEditing={handleSubmit}

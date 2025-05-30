@@ -1,9 +1,9 @@
 import { db } from '@/utilities/db';
 
-export function useActiveTeamId() {
+export const useActiveTeamId = () => {
   const auth = db.useAuth();
 
-  const { data, isLoading } = db.useQuery(
+  const { data } = db.useQuery(
     auth.user
       ? {
           teams: {
@@ -13,5 +13,5 @@ export function useActiveTeamId() {
       : null
   );
 
-  return { isLoading, teamId: data?.teams?.[0]?.id };
-}
+  return data?.teams?.[0]?.id;
+};

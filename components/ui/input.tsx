@@ -1,8 +1,18 @@
 import { cn } from '@/utilities/cn';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
 import { TextInput } from 'react-native';
+
+import {
+  ComponentPropsWithoutRef,
+  ComponentRef,
+  forwardRef,
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 const inputVariants = cva(
   'native:leading-5 text-base ios:overflow-hidden native:placeholder:text-placeholder rounded-xl bg-input text-foreground file:border-0 file:bg-transparent file:font-medium web:w-full web:placeholder:text-placeholder web:focus-visible:outline-none',
@@ -26,23 +36,58 @@ const Input = forwardRef<
     VariantProps<typeof inputVariants> & {
       bottomSheet?: boolean;
     }
->(({ className, bottomSheet, size, ...props }, ref) => {
-  const Component = bottomSheet ? BottomSheetTextInput : TextInput;
+>(
+  (
+    {
+      className,
+      bottomSheet,
+      size,
+      value,
+      onChangeText,
+      defaultValue,
+      ...props
+    },
+    ref
+  ) => {
+    const [localValue, setLocalValue] = useState(value ?? defaultValue ?? '');
 
-  return (
-    <Component
-      className={cn(
-        inputVariants({ size }),
-        props.editable === false && 'opacity-50 web:cursor-not-allowed',
-        className
-      )}
-      lineBreakModeIOS="clip"
-      ref={ref}
-      style={{ borderCurve: 'continuous' }}
-      {...props}
-    />
-  );
-});
+    useEffect(() => {
+      if (value !== undefined) setLocalValue(value);
+    }, [value]);
+
+    const handleChangeText = useCallback(
+      (text: string) => {
+        setLocalValue(text);
+        if (onChangeText) startTransition(() => onChangeText(text));
+      },
+      [onChangeText]
+    );
+
+    const inputProps = useMemo(
+      () => ({
+        className: cn(
+          inputVariants({ size }),
+          props.editable === false && 'opacity-50 web:cursor-not-allowed',
+          className
+        ),
+        lineBreakModeIOS: 'clip' as const,
+        onChangeText: handleChangeText,
+        ref,
+        style: { borderCurve: 'continuous' as const },
+        value: localValue,
+        ...props,
+      }),
+      [className, handleChangeText, localValue, props, ref, size]
+    );
+
+    const Input = useMemo(
+      () => (bottomSheet ? BottomSheetTextInput : TextInput),
+      [bottomSheet]
+    );
+
+    return <Input {...inputProps} />;
+  }
+);
 
 Input.displayName = 'Input';
 

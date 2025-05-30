@@ -1,6 +1,6 @@
 import { db } from '@/utilities/db';
 
-export function useOnboarding() {
+export const useOnboarding = () => {
   const auth = db.useAuth();
 
   const { data, isLoading } = db.useQuery(
@@ -19,4 +19,4 @@ export function useOnboarding() {
     requiresAuth: !auth.isLoading && !auth.user,
     requiresOnboarding: !isLoading && !data?.profiles.length,
   };
-}
+};

@@ -110,7 +110,7 @@ const CheckboxItem = ({
       >
         <View className="flex-row items-center gap-4">{children}</View>
         <DropdownMenuPrimitive.ItemIndicator>
-          <Icon className="-mr-1.5" icon={Check} size={18} />
+          <Icon className="-mr-1.5" icon={Check} size={20} />
         </DropdownMenuPrimitive.ItemIndicator>
       </DropdownMenuPrimitive.CheckboxItem>
     </TextClassContext.Provider>
@@ -154,29 +154,31 @@ export type SortDirection = 'asc' | 'desc';
 const SortItem = <T extends string>({
   children,
   className,
-  currentSort,
+  sortBy,
+  sortDirection,
   onSort,
   value,
   ...props
 }: DropdownMenuPrimitive.ItemProps & {
   children: ReactNode;
-  currentSort: [T, SortDirection];
+  sortBy: T;
+  sortDirection: SortDirection;
   onSort: (sort: [T, SortDirection]) => void;
   value: T;
 }) => {
-  const [opSort, setOpSort] = useState(currentSort);
-  useEffect(() => setOpSort(currentSort), [currentSort]);
+  const [opSort, setOpSort] = useState([sortBy, sortDirection]);
+  useEffect(() => setOpSort([sortBy, sortDirection]), [sortBy, sortDirection]);
   const isActive = opSort[0] === value;
 
   const handleSort = useCallback(() => {
     const newSort: [T, SortDirection] = [
       value,
-      isActive ? (currentSort[1] === 'asc' ? 'desc' : 'asc') : 'asc',
+      isActive ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc',
     ];
 
     setOpSort(newSort);
     startTransition(() => onSort(newSort));
-  }, [currentSort, isActive, onSort, value]);
+  }, [isActive, onSort, sortDirection, value]);
 
   return (
     <Item
@@ -190,7 +192,7 @@ const SortItem = <T extends string>({
         <Icon
           className="-mr-1.5"
           icon={opSort[1] === 'asc' ? SortAsc : SortDesc}
-          size={18}
+          size={20}
         />
       )}
     </Item>

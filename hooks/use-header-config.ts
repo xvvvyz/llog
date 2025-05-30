@@ -20,18 +20,18 @@ export const useHeaderConfig = (): HeaderConfig => {
 
   const height = Platform.select({
     default: undefined,
-    web: breakpoints.md ? 70 : undefined,
+    web: breakpoints.md ? 70 : 56,
   });
 
   const padding = Platform.select({
     default: undefined,
-    web: breakpoints.md ? 16 : 8,
+    web: breakpoints.md ? 16 : 12,
   });
 
   return {
     headerBackVisible: false,
     headerShadowVisible: false,
-    headerStyle: { borderBottomWidth: breakpoints.md ? 1 : 0, height },
+    headerStyle: { borderBottomWidth: 0, height },
     headerTitleAlign: breakpoints.md ? 'left' : 'center',
     headerLeftContainerStyle: { paddingLeft: padding },
     headerRightContainerStyle: { paddingRight: padding },

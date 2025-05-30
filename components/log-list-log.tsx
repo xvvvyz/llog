@@ -9,17 +9,11 @@ export const LogListLog = ({
   color,
   id,
   name,
-  setDeleteFormId,
-  setEditFormId,
-  setTagsFormId,
   tags,
 }: {
   color: string;
   id: string;
   name: string;
-  setDeleteFormId: (id: string | null) => void;
-  setEditFormId: (id: string | null) => void;
-  setTagsFormId: (id: string | null) => void;
   tags: LogTag[];
 }) => {
   return (
@@ -31,11 +25,11 @@ export const LogListLog = ({
         <Button
           accessibilityHint={`Opens the log ${name}`}
           accessibilityLabel={`Open ${name}`}
-          className="flex h-28 w-full flex-col items-start justify-between p-3 active:opacity-90"
+          className="flex h-28 w-full flex-col items-start justify-between p-4 active:opacity-90"
           ripple="default"
           style={{ backgroundColor: color }}
           variant="ghost"
-          wrapperClassName="rounded-xl"
+          wrapperClassName="rounded-2xl"
         >
           <View className="max-h-11 flex-row flex-wrap gap-1 overflow-hidden pr-10">
             {tags.map((tag) => (
@@ -46,19 +40,13 @@ export const LogListLog = ({
               </View>
             ))}
           </View>
-          <Text className="-mb-1.5 text-white" numberOfLines={1}>
+          <Text className="-mb-1.5 text-primary-foreground" numberOfLines={1}>
             {name}
           </Text>
         </Button>
       </Link>
-      <View className="absolute right-0 top-0 md:right-0.5 md:top-0.5">
-        <LogDropdownMenu
-          id={id}
-          name={name}
-          setDeleteFormId={setDeleteFormId}
-          setEditFormId={setEditFormId}
-          setTagsFormId={setTagsFormId}
-        />
+      <View className="absolute right-1 top-1 md:right-1.5 md:top-1.5">
+        <LogDropdownMenu id={id} name={name} />
       </View>
     </View>
   );

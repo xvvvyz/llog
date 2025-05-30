@@ -1,6 +1,7 @@
 import { useHeaderHeight as useHeaderHeightPrimative } from '@react-navigation/elements';
 import { useMemo } from 'react';
 
+// must be used in the root page component, children don't work
 export const useHeaderHeight = () => {
   const originalHeight = useHeaderHeightPrimative();
 

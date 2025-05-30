@@ -7,8 +7,8 @@ export const NAVIGATION = Object.freeze({
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: 'rgb(235, 235, 235)',
-      card: 'rgb(235, 235, 235)',
+      background: 'rgb(252, 252, 252)',
+      card: 'rgb(252, 252, 252)',
       border: 'rgba(0, 0, 0, 0.06)',
     },
   },
@@ -18,7 +18,7 @@ export const NAVIGATION = Object.freeze({
       ...DarkTheme.colors,
       background: 'rgb(18, 18, 18)',
       card: 'rgb(18, 18, 18)',
-      border: 'rgba(255, 255, 255, 0.05)',
+      border: 'rgba(255, 255, 255, 0.06)',
     },
   },
 });

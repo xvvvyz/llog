@@ -1,19 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
+import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/utilities/cn';
 import { Search, X } from 'lucide-react-native';
 import { View } from 'react-native';
 
-import {
-  ComponentPropsWithoutRef,
-  ComponentRef,
-  forwardRef,
-  startTransition,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
 
 export const SearchInput = forwardRef<
   ComponentRef<typeof Input>,
@@ -38,21 +31,7 @@ export const SearchInput = forwardRef<
     },
     ref
   ) => {
-    const [opQuery, setOpQuery] = useState(query);
-    useEffect(() => setOpQuery(query), [query]);
-
-    const handleChange = useCallback(
-      (text: string) => {
-        setOpQuery(text);
-        startTransition(() => setQuery(text));
-      },
-      [setQuery]
-    );
-
-    const handleClear = useCallback(() => {
-      setOpQuery('');
-      startTransition(() => setQuery(''));
-    }, [setQuery]);
+    const breakpoints = useBreakpoints();
 
     return (
       <View className={cn('relative', wrapperClassName)}>
@@ -60,7 +39,7 @@ export const SearchInput = forwardRef<
           <Icon
             icon={Search}
             className="text-placeholder"
-            size={18}
+            size={20}
             aria-hidden
           />
         </View>
@@ -69,14 +48,15 @@ export const SearchInput = forwardRef<
           accessibilityLabel="Search"
           autoCapitalize="none"
           autoComplete="off"
+          autoCorrect={false}
           bottomSheet={bottomSheet}
           className={cn('px-10', className)}
-          onChangeText={handleChange}
+          onChangeText={setQuery}
           placeholder={placeholder}
           ref={ref}
           returnKeyType="done"
-          size="sm"
-          value={opQuery}
+          size={breakpoints.md ? 'sm' : 'default'}
+          value={query}
           {...props}
         />
         {!!query.length && (
@@ -84,7 +64,7 @@ export const SearchInput = forwardRef<
             accessibilityHint="Clears the search input"
             accessibilityLabel="Clear search"
             className="size-8"
-            onPress={handleClear}
+            onPress={() => setQuery('')}
             size="icon"
             variant="ghost"
             wrapperClassName="rounded-full absolute right-1 top-1/2 -translate-y-1/2"
@@ -93,7 +73,7 @@ export const SearchInput = forwardRef<
               aria-hidden
               className="text-muted-foreground"
               icon={X}
-              size={18}
+              size={20}
             />
           </Button>
         )}

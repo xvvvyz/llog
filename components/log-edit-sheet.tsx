@@ -1,28 +1,35 @@
-import { BottomSheetLoading } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Sheet, SheetView } from '@/components/ui/sheet';
+import { useSheetManager } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { updateLog } from '@/mutations/update-log';
 import { SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Fragment } from 'react';
 import { View } from 'react-native';
 
-export const LogEditForm = ({ logId }: { logId: string }) => {
+export const LogEditSheet = () => {
   const colorScheme = useColorScheme();
+  const sheetManager = useSheetManager();
 
-  const { data, isLoading } = db.useQuery({
-    logs: { $: { where: { id: logId } } },
-  });
+  const logId = sheetManager.getId('log-edit');
+
+  const { data, isLoading } = db.useQuery(
+    logId ? { logs: { $: { where: { id: logId } } } } : null
+  );
 
   const log = data?.logs?.[0];
   const isDark = colorScheme === 'dark';
 
   return (
-    <Fragment>
-      {isLoading && <BottomSheetLoading />}
-      <BottomSheetView>
+    <Sheet
+      loading={isLoading}
+      onDismiss={() => sheetManager.close('log-edit')}
+      open={sheetManager.isOpen('log-edit')}
+      portalName="log-edit"
+    >
+      <SheetView>
         <View className="mx-auto w-full max-w-md p-8">
           <View>
             <Label nativeID="name">Name</Label>
@@ -30,14 +37,12 @@ export const LogEditForm = ({ logId }: { logId: string }) => {
               aria-labelledby="name"
               autoCapitalize="none"
               autoComplete="off"
+              autoCorrect={false}
               bottomSheet
-              defaultValue={log?.name}
-              maxLength={40}
-              onChangeText={(name) => {
-                if (!log) return;
-                db.transact(db.tx.logs[log.id].update({ name }));
-              }}
+              maxLength={32}
+              onChangeText={(name) => updateLog({ name, id: log?.id })}
               returnKeyType="done"
+              value={log?.name ?? ''}
             />
           </View>
           <View className="mt-8">
@@ -51,10 +56,7 @@ export const LogEditForm = ({ logId }: { logId: string }) => {
                     <Button
                       className="h-full w-full rounded-full border-4"
                       key={`color-${color}`}
-                      onPress={() => {
-                        if (!log) return;
-                        db.transact(db.tx.logs[log.id].update({ color }));
-                      }}
+                      onPress={() => updateLog({ color, id: log?.id })}
                       ripple="default"
                       style={{
                         backgroundColor:
@@ -83,7 +85,7 @@ export const LogEditForm = ({ logId }: { logId: string }) => {
             </View>
           </View>
         </View>
-      </BottomSheetView>
-    </Fragment>
+      </SheetView>
+    </Sheet>
   );
 };

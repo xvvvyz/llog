@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/utilities/cn';
-import { Check } from 'lucide-react-native';
+import { Check, Plus } from 'lucide-react-native';
 import { startTransition, useCallback, useEffect, useState } from 'react';
 
 export const Checkbox = ({
@@ -31,9 +31,9 @@ export const Checkbox = ({
       variant="secondary"
     >
       <Icon
-        className={cn(opChecked ? 'text-white' : 'opacity-50')}
-        icon={Check}
-        size={18}
+        className={cn(opChecked && 'text-primary-foreground')}
+        icon={opChecked ? Check : Plus}
+        size={20}
       />
     </Button>
   );

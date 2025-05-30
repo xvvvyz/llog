@@ -12,7 +12,7 @@ const schema = i.schema({
       email: i.string().unique().indexed().optional(),
     }),
     logTags: i.entity({
-      name: i.string(),
+      name: i.string().indexed(),
       order: i.number().indexed(),
     }),
     logs: i.entity({

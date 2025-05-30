@@ -1,49 +1,35 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
-import { LogDropdownMenuForms } from '@/components/log-dropdown-menu-forms';
+import { BackButton } from '@/components/ui/back-button';
 import { Title } from '@/components/ui/title';
-import { useActiveTeamId } from '@/hooks/use-active-team-id';
 import { useHeaderHeight } from '@/hooks/use-header-height';
-import { useLogDropdownMenuForms } from '@/hooks/use-log-dropdown-menu-forms';
 import { db } from '@/utilities/db';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
-import { Fragment, useEffect } from 'react';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { Fragment } from 'react';
 
 export default function Index() {
-  const dropdownMenuForms = useLogDropdownMenuForms();
   const headerHeight = useHeaderHeight();
-  const navigation = useNavigation();
   const params = useLocalSearchParams<{ id: string }>();
-  const { teamId } = useActiveTeamId();
 
-  const { data } = db.useQuery(
-    teamId ? { logs: { $: { where: { id: params.id } } } } : null
-  );
+  const { data } = db.useQuery({ logs: { $: { where: { id: params.id } } } });
 
   const log = data?.logs?.[0];
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Fragment>
-          <LogDropdownMenu
-            headerHeight={headerHeight}
-            id={log?.id}
-            name={log?.name}
-            setDeleteFormId={dropdownMenuForms.setDeleteFormId}
-            setEditFormId={dropdownMenuForms.setEditFormId}
-            setTagsFormId={dropdownMenuForms.setTagsFormId}
-            variant="header"
-          />
-          <LogDropdownMenuForms {...dropdownMenuForms} />
-        </Fragment>
-      ),
-      headerTitle: () => <Title>{log?.name}</Title>,
-    });
-  }, [dropdownMenuForms, headerHeight, log, navigation, params.id]);
-
-  if (!log) {
-    return null;
-  }
-
-  return null;
+  return (
+    <Fragment>
+      <Stack.Screen
+        options={{
+          headerLeft: () => <BackButton />,
+          headerRight: () => (
+            <LogDropdownMenu
+              headerHeight={headerHeight}
+              id={log?.id}
+              name={log?.name}
+              variant="header"
+            />
+          ),
+          headerTitle: () => <Title>{log?.name}</Title>,
+        }}
+      />
+    </Fragment>
+  );
 }

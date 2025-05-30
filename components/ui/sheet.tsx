@@ -1,6 +1,6 @@
 import { Loading } from '@/components/ui/loading';
 import { Portal } from '@rn-primitives/portal';
-import React, { ReactNode, useRef } from 'react';
+import React, { ReactNode, useEffect, useRef } from 'react';
 import { Keyboard, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,11 +11,14 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
-import BottomSheetPrimative, {
+import {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
   BottomSheetBackgroundProps,
-  BottomSheetProps,
+  BottomSheetModal,
+  BottomSheetModalProps,
+  BottomSheetModalProvider,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 
 const Backdrop = ({
@@ -65,50 +68,60 @@ const Background = ({ style, ...props }: BottomSheetBackgroundProps) => {
   );
 };
 
-export const BottomSheet = ({
+export const Sheet = ({
   children,
+  loading,
   portalName,
+  open,
   ...props
-}: BottomSheetProps & {
+}: BottomSheetModalProps & {
   children: ReactNode;
+  loading?: boolean;
   portalName: string;
+  open: boolean;
 }) => {
   const insets = useSafeAreaInsets();
-  const ref = useRef<BottomSheetPrimative>(null);
+  const ref = useRef<BottomSheetModal>(null);
+
+  useEffect(() => {
+    if (open) ref.current?.present();
+    else ref.current?.dismiss();
+  }, [open]);
 
   return (
     <Portal name={portalName}>
-      <BottomSheetPrimative
-        accessibilityLabel="Bottom sheet"
-        animateOnMount
-        backdropComponent={Backdrop}
-        backgroundComponent={Background}
-        bottomInset={insets.bottom}
-        detached
-        enableBlurKeyboardOnGesture={false}
-        enablePanDownToClose
-        handleComponent={null}
-        keyboardBlurBehavior="restore"
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </BottomSheetPrimative>
+      <BottomSheetModalProvider>
+        <BottomSheetModal
+          accessibilityLabel="Bottom sheet"
+          animateOnMount
+          backdropComponent={Backdrop}
+          backgroundComponent={Background}
+          bottomInset={insets.bottom}
+          detached
+          enableBlurKeyboardOnGesture={false}
+          enablePanDownToClose
+          handleComponent={null}
+          keyboardBlurBehavior="restore"
+          ref={ref}
+          {...props}
+        >
+          {loading && (
+            <Animated.View
+              className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
+              exiting={Platform.select({
+                // https://github.com/facebook/react-native/issues/49077
+                android: undefined,
+                default: FadeOut.duration(150),
+              })}
+            >
+              <Loading />
+            </Animated.View>
+          )}
+          {children}
+        </BottomSheetModal>
+      </BottomSheetModalProvider>
     </Portal>
   );
 };
 
-export const BottomSheetLoading = () => {
-  return (
-    <Animated.View
-      className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
-      exiting={Platform.select({
-        // https://github.com/facebook/react-native/issues/49077
-        android: undefined,
-        default: FadeOut.duration(150),
-      })}
-    >
-      <Loading />
-    </Animated.View>
-  );
-};
+export const SheetView = BottomSheetView;
