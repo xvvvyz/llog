@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
-import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/utilities/cn';
 import { Search, X } from 'lucide-react-native';
 import { View } from 'react-native';
@@ -31,8 +30,6 @@ export const SearchInput = forwardRef<
     },
     ref
   ) => {
-    const breakpoints = useBreakpoints();
-
     return (
       <View className={cn('relative', wrapperClassName)}>
         <View className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -55,7 +52,6 @@ export const SearchInput = forwardRef<
           placeholder={placeholder}
           ref={ref}
           returnKeyType="done"
-          size={breakpoints.md ? 'sm' : 'default'}
           value={query}
           {...props}
         />

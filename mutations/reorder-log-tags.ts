@@ -19,7 +19,7 @@ export const reorderLogTags = async ({
   const [reorderedTag] = newTags.splice(fromIndex, 1);
   newTags.splice(toIndex, 0, reorderedTag);
 
-  db.transact(
+  return db.transact(
     newTags.map((tag, index) => db.tx.logTags[tag.id].update({ order: index }))
   );
 };

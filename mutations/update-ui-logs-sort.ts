@@ -2,17 +2,16 @@ import { SortBy } from '@/components/log-list-actions';
 import { SortDirection } from '@/components/ui/dropdown-menu';
 import { db } from '@/utilities/db';
 
-export const updateUiLogsSort = ({
+export const updateUiLogsSort = async ({
   sort,
-  userId,
 }: {
   sort: [SortBy, SortDirection];
-  userId?: string;
 }) => {
-  if (!userId) return;
+  const auth = await db.getAuth();
+  if (!auth) return;
 
-  db.transact(
-    db.tx.ui[userId].update({
+  return db.transact(
+    db.tx.ui[auth.id].update({
       logsSortBy: sort[0],
       logsSortDirection: sort[1],
     })

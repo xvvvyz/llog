@@ -3,35 +3,28 @@ import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { deleteLogTag } from '@/mutations/delete-log-tag';
-import { db } from '@/utilities/db';
+import { useLogTag } from '@/queries/use-log-tag';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 
 export const TagDeleteSheet = () => {
   const sheetManager = useSheetManager();
-
-  const tagId = sheetManager.getId('tag-delete');
-
-  const { data, isLoading } = db.useQuery(
-    tagId ? { logTags: { $: { where: { id: tagId } } } } : null
-  );
-
-  const tag = data?.logTags?.[0];
+  const logTag = useLogTag({ id: sheetManager.getId('tag-delete') });
 
   return (
     <Sheet
-      loading={isLoading}
+      loading={logTag.isLoading}
       onDismiss={() => sheetManager.close('tag-delete')}
       open={sheetManager.isOpen('tag-delete')}
       portalName="tag-delete"
     >
       <BottomSheetView className="mx-auto w-full max-w-md p-8">
         <Text className="text-center text-2xl">
-          Delete &ldquo;{tag?.name}&rdquo; tag?
+          Delete &ldquo;{logTag.name}&rdquo; tag?
         </Text>
         <Button
           onPress={() => {
             sheetManager.close('tag-delete');
-            deleteLogTag({ id: tag?.id });
+            deleteLogTag({ id: logTag.id });
           }}
           variant="destructive"
           wrapperClassName="mt-12"

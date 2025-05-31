@@ -1,6 +1,6 @@
 import { db } from '@/utilities/db';
 
-export const deleteLogTag = ({ id }: { id?: string }) => {
+export const deleteLogTag = async ({ id }: { id?: string }) => {
   if (!id) return;
-  db.transact(db.tx.logTags[id].delete());
+  return db.transact(db.tx.logTags[id].delete());
 };

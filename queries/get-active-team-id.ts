@@ -5,10 +5,8 @@ export const getActiveTeamId = async () => {
   if (!auth) return;
 
   const { data } = await db.queryOnce({
-    teams: {
-      $: { fields: ['id'], where: { 'ui.user.id': auth.id } },
-    },
+    ui: { $: { where: { user: auth.id } }, team: {} },
   });
 
-  return data.teams?.[0]?.id;
+  return data.ui?.[0]?.team?.id;
 };

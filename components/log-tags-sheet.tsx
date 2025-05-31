@@ -8,9 +8,9 @@ import { useSheetManager } from '@/context/sheet-manager';
 import { addLogTagToLog } from '@/mutations/add-log-tag-to-log';
 import { createLogTag } from '@/mutations/create-log-tag';
 import { reorderLogTags } from '@/mutations/reorder-log-tags';
-import { useActiveTeamId } from '@/queries/use-active-team-id';
-import { cn } from '@/utilities/cn';
-import { db } from '@/utilities/db';
+import { useHasNoLogTags } from '@/queries/use-has-no-log-tags';
+import { useLog } from '@/queries/use-log';
+import { useLogTags } from '@/queries/use-log-tags';
 import { Tags } from 'lucide-react-native';
 import { ComponentRef, useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -20,52 +20,17 @@ import Sortable from 'react-native-sortables';
 
 export const LogTagsSheet = () => {
   const [rawQuery, setRawQuery] = useState('');
+  const isEmpty = useHasNoLogTags();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const searchInputRef = useRef<ComponentRef<typeof SearchInput>>(null);
   const sheetManager = useSheetManager();
-  const teamId = useActiveTeamId();
 
-  const logId = sheetManager.getId('log-tags');
-  const query = useMemo(() => rawQuery.trim(), [rawQuery]);
+  const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
 
-  const { data, isLoading } = db.useQuery(
-    logId && teamId
-      ? {
-          logs: {
-            $: { fields: ['id'], where: { id: logId } },
-            logTags: { $: { fields: ['id'] } },
-          },
-          logTags: {
-            $: {
-              where: {
-                team: teamId,
-                ...(query ? { name: { $ilike: `%${query}%` } } : {}),
-              },
-            },
-          },
-        }
-      : null
-  );
+  const log = useLog({ id: sheetManager.getId('log-tags') });
+  const logTags = useLogTags({ query });
 
-  const log = data?.logs?.[0];
-
-  const logTags = useMemo(
-    // TODO: use order: { order: 'asc' } in the query when this is fixed:
-    // https://discord.com/channels/1031957483243188235/1376250736416919567
-    () => data?.logTags?.sort((a, b) => a.order - b.order) ?? [],
-    [data?.logTags]
-  );
-
-  const selectedTagIds = useMemo(
-    () => new Set(log?.logTags?.map((tag) => tag.id) ?? []),
-    [log?.logTags]
-  );
-
-  const queryExistingTagId = useMemo(
-    () =>
-      logTags.find((tag) => tag.name.toLowerCase() === query.toLowerCase())?.id,
-    [logTags, query]
-  );
+  const isLoading = log.isLoading || logTags.isLoading;
 
   const createTag = useCallback(async () => {
     if (!query) {
@@ -73,14 +38,14 @@ export const LogTagsSheet = () => {
       return;
     }
 
-    if (queryExistingTagId) {
-      addLogTagToLog({ logId: log?.id, tagId: queryExistingTagId });
+    if (logTags.queryExistingTagId) {
+      addLogTagToLog({ logId: log.id, tagId: logTags.queryExistingTagId });
     } else {
-      createLogTag({ logId: log?.id, name: query });
+      createLogTag({ logId: log.id, name: query });
     }
 
     setRawQuery('');
-  }, [log, query, queryExistingTagId]);
+  }, [log, logTags.queryExistingTagId, query]);
 
   return (
     <Sheet
@@ -91,17 +56,14 @@ export const LogTagsSheet = () => {
     >
       <SheetView>
         <ScrollView
-          contentContainerClassName={cn(
-            'p-8 xs:mx-auto',
-            !logTags.length && 'mx-auto'
-          )}
+          contentContainerClassName="p-8 xs:mx-auto"
           horizontal
           keyboardShouldPersistTaps="always"
           ref={scrollViewRef}
           showsHorizontalScrollIndicator={false}
         >
           <View className="h-10">
-            {!logTags.length && !query && (
+            {isEmpty && (
               <Icon
                 aria-hidden
                 className="text-primary"
@@ -119,21 +81,21 @@ export const LogTagsSheet = () => {
                 itemExiting={null}
                 onDragEnd={reorderLogTags}
                 scrollableRef={scrollViewRef}
-                sortEnabled={!query}
+                sortEnabled={!rawQuery}
               >
-                {logTags.map((tag) => (
+                {logTags.data.map((tag) => (
                   <LogTagsSheetTag
                     id={tag.id}
-                    isSelected={selectedTagIds.has(tag.id)}
+                    isSelected={log.logTagIdsSet.has(tag.id)}
                     key={tag.id}
-                    logId={log?.id}
+                    logId={log.id}
                     name={tag.name}
                   />
                 ))}
-                {!!query && !queryExistingTagId && (
+                {!!rawQuery && !logTags.queryExistingTagId && (
                   <Button onPress={createTag} size="sm" variant="secondary">
                     <Text numberOfLines={1}>
-                      Create tag &ldquo;{query}&rdquo;
+                      Create tag &ldquo;{rawQuery}&rdquo;
                     </Text>
                   </Button>
                 )}

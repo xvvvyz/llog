@@ -18,7 +18,7 @@ export const createLogTag = async ({
     logTags: { $: { order: { order: 'asc' }, where: { team: teamId } } },
   });
 
-  db.transact([
+  await db.transact([
     ...data.logTags.map((tag) =>
       db.tx.logTags[tag.id].update({ order: tag.order + 1 })
     ),

@@ -3,11 +3,12 @@ import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { SearchInput } from '@/components/ui/search-input';
 import { Text } from '@/components/ui/text';
+import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { LogTag } from '@/instant.schema';
 import { toggleUiLogTag } from '@/mutations/toggle-ui-log-tag';
 import { updateUiLogsSort } from '@/mutations/update-ui-logs-sort';
+import { useUi } from '@/queries/use-ui';
 import { cn } from '@/utilities/cn';
-import { db } from '@/utilities/db';
 import { View } from 'react-native';
 
 import {
@@ -26,20 +27,15 @@ export const LogListActions = ({
   className,
   logTags,
   query,
-  selectedTagIds,
   setQuery,
-  sortBy,
-  sortDirection,
 }: {
   className?: string;
   logTags: LogTag[];
   query: string;
-  selectedTagIds: Set<string>;
   setQuery: (query: string) => void;
-  sortBy: SortBy;
-  sortDirection: DropdownMenu.SortDirection;
 }) => {
-  const { user } = db.useAuth();
+  const breakpoints = useBreakpoints();
+  const ui = useUi();
 
   return (
     <View className={cn('flex-row gap-3', className)}>
@@ -63,13 +59,12 @@ export const LogListActions = ({
           <DropdownMenu.Content align="start" className="mt-3 min-w-44">
             {logTags.map((tag) => (
               <DropdownMenu.CheckboxItem
-                checked={selectedTagIds.has(tag.id)}
+                checked={ui.logsFilterByTagIdsSet.has(tag.id)}
                 key={tag.id}
                 onCheckedChange={() =>
                   toggleUiLogTag({
-                    isSelected: selectedTagIds.has(tag.id),
+                    isSelected: ui.logsFilterByTagIdsSet.has(tag.id),
                     tagId: tag.id,
-                    userId: user?.id,
                   })
                 }
               >
@@ -96,16 +91,16 @@ export const LogListActions = ({
             <Icon
               aria-hidden
               className="text-secondary-foreground"
-              icon={sortDirection === 'asc' ? SortAsc : SortDesc}
+              icon={ui.logsSortDirection === 'asc' ? SortAsc : SortDesc}
               size={20}
             />
           </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="start" className="mt-3 min-w-44">
           <DropdownMenu.SortItem<SortBy>
-            onSort={(sort) => updateUiLogsSort({ sort, userId: user?.id })}
-            sortBy={sortBy}
-            sortDirection={sortDirection}
+            onSort={(sort) => updateUiLogsSort({ sort })}
+            sortBy={ui.logsSortBy}
+            sortDirection={ui.logsSortDirection}
             value="serverCreatedAt"
           >
             <Icon
@@ -117,9 +112,9 @@ export const LogListActions = ({
             <Text>Created</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
-            onSort={(sort) => updateUiLogsSort({ sort, userId: user?.id })}
-            sortBy={sortBy}
-            sortDirection={sortDirection}
+            onSort={(sort) => updateUiLogsSort({ sort })}
+            sortBy={ui.logsSortBy}
+            sortDirection={ui.logsSortDirection}
             value="name"
           >
             <Icon
@@ -131,9 +126,9 @@ export const LogListActions = ({
             <Text>Name</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
-            onSort={(sort) => updateUiLogsSort({ sort, userId: user?.id })}
-            sortBy={sortBy}
-            sortDirection={sortDirection}
+            onSort={(sort) => updateUiLogsSort({ sort })}
+            sortBy={ui.logsSortBy}
+            sortDirection={ui.logsSortDirection}
             value="color"
           >
             <Icon
@@ -162,6 +157,7 @@ export const LogListActions = ({
       <SearchInput
         query={query}
         setQuery={setQuery}
+        size={breakpoints.md ? 'sm' : 'default'}
         wrapperClassName="shrink w-full md:w-52"
       />
     </View>

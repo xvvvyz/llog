@@ -5,26 +5,20 @@ import { Sheet, SheetView } from '@/components/ui/sheet';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { updateLog } from '@/mutations/update-log';
+import { useLog } from '@/queries/use-log';
 import { SPECTRUM } from '@/theme/spectrum';
-import { db } from '@/utilities/db';
 import { View } from 'react-native';
 
 export const LogEditSheet = () => {
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
 
-  const logId = sheetManager.getId('log-edit');
-
-  const { data, isLoading } = db.useQuery(
-    logId ? { logs: { $: { where: { id: logId } } } } : null
-  );
-
-  const log = data?.logs?.[0];
   const isDark = colorScheme === 'dark';
+  const log = useLog({ id: sheetManager.getId('log-edit') });
 
   return (
     <Sheet
-      loading={isLoading}
+      loading={log.isLoading}
       onDismiss={() => sheetManager.close('log-edit')}
       open={sheetManager.isOpen('log-edit')}
       portalName="log-edit"
@@ -40,9 +34,9 @@ export const LogEditSheet = () => {
               autoCorrect={false}
               bottomSheet
               maxLength={32}
-              onChangeText={(name) => updateLog({ name, id: log?.id })}
+              onChangeText={(name) => updateLog({ id: log.id, name })}
               returnKeyType="done"
-              value={log?.name ?? ''}
+              value={log.name}
             />
           </View>
           <View className="mt-8">
@@ -56,12 +50,12 @@ export const LogEditSheet = () => {
                     <Button
                       className="h-full w-full rounded-full border-4"
                       key={`color-${color}`}
-                      onPress={() => updateLog({ color, id: log?.id })}
+                      onPress={() => updateLog({ color, id: log.id })}
                       ripple="default"
                       style={{
                         backgroundColor:
                           SPECTRUM[colorScheme][color][
-                            log?.color === color
+                            log.color === color
                               ? isDark
                                 ? 'darker'
                                 : 'lighter'
@@ -69,7 +63,7 @@ export const LogEditSheet = () => {
                           ],
                         borderColor:
                           SPECTRUM[colorScheme][color][
-                            log?.color === color
+                            log.color === color
                               ? isDark
                                 ? 'lighter'
                                 : 'darker'

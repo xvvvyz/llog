@@ -1,15 +1,14 @@
 import { db } from '@/utilities/db';
 
-export const toggleUiLogTag = ({
+export const toggleUiLogTag = async ({
   isSelected,
   tagId,
-  userId,
 }: {
   isSelected: boolean;
   tagId: string;
-  userId?: string;
 }) => {
-  if (!userId) return;
+  const auth = await db.getAuth();
+  if (!auth) return;
   const action = isSelected ? 'unlink' : 'link';
-  db.transact(db.tx.ui[userId][action]({ logTags: tagId }));
+  return db.transact(db.tx.ui[auth.id][action]({ logTags: tagId }));
 };

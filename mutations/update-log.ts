@@ -1,6 +1,6 @@
 import { db } from '@/utilities/db';
 
-export const updateLog = ({
+export const updateLog = async ({
   color,
   id,
   name,
@@ -10,5 +10,5 @@ export const updateLog = ({
   name?: string;
 }) => {
   if (!id) return;
-  db.transact(db.tx.logs[id].update({ color, name }));
+  return db.transact(db.tx.logs[id].update({ color, name }));
 };
