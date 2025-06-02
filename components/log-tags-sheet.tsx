@@ -11,10 +11,10 @@ import { reorderLogTags } from '@/mutations/reorder-log-tags';
 import { useHasNoLogTags } from '@/queries/use-has-no-log-tags';
 import { useLog } from '@/queries/use-log';
 import { useLogTags } from '@/queries/use-log-tags';
+import { cn } from '@/utilities/cn';
 import { Tags } from 'lucide-react-native';
-import { ComponentRef, useCallback, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable from 'react-native-sortables';
 
@@ -22,7 +22,6 @@ export const LogTagsSheet = () => {
   const [rawQuery, setRawQuery] = useState('');
   const isEmpty = useHasNoLogTags();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
-  const searchInputRef = useRef<ComponentRef<typeof SearchInput>>(null);
   const sheetManager = useSheetManager();
 
   const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
@@ -31,21 +30,6 @@ export const LogTagsSheet = () => {
   const logTags = useLogTags({ query });
 
   const isLoading = log.isLoading || logTags.isLoading;
-
-  const createTag = useCallback(async () => {
-    if (!query) {
-      searchInputRef.current?.blur();
-      return;
-    }
-
-    if (logTags.queryExistingTagId) {
-      addLogTagToLog({ logId: log.id, tagId: logTags.queryExistingTagId });
-    } else {
-      createLogTag({ logId: log.id, name: query });
-    }
-
-    setRawQuery('');
-  }, [log, logTags.queryExistingTagId, query]);
 
   return (
     <Sheet
@@ -56,14 +40,17 @@ export const LogTagsSheet = () => {
     >
       <SheetView>
         <ScrollView
-          contentContainerClassName="p-8 xs:mx-auto"
+          contentContainerClassName={cn(
+            'p-8 sm:mx-auto',
+            isEmpty && !rawQuery && 'mx-auto'
+          )}
           horizontal
           keyboardShouldPersistTaps="always"
           ref={scrollViewRef}
           showsHorizontalScrollIndicator={false}
         >
           <View className="h-10">
-            {isEmpty && (
+            {isEmpty && !rawQuery && (
               <Icon
                 aria-hidden
                 className="text-primary"
@@ -93,7 +80,27 @@ export const LogTagsSheet = () => {
                   />
                 ))}
                 {!!rawQuery && !logTags.queryExistingTagId && (
-                  <Button onPress={createTag} size="sm" variant="secondary">
+                  <Button
+                    onPress={() => {
+                      if (!query) return;
+
+                      if (logTags.queryExistingTagId) {
+                        addLogTagToLog({
+                          logId: log.id,
+                          tagId: logTags.queryExistingTagId,
+                        });
+                      } else {
+                        createLogTag({
+                          logId: log.id,
+                          name: query,
+                        });
+                      }
+
+                      setRawQuery('');
+                    }}
+                    size="sm"
+                    variant="secondary"
+                  >
                     <Text numberOfLines={1}>
                       Create tag &ldquo;{rawQuery}&rdquo;
                     </Text>
@@ -103,16 +110,14 @@ export const LogTagsSheet = () => {
             )}
           </View>
         </ScrollView>
-        <View className="mx-auto w-full max-w-md p-8 pt-0">
+        <View className="w-full p-8 pt-0 sm:mx-auto sm:max-w-sm">
           <SearchInput
             bottomSheet
             maxLength={16}
-            onSubmitEditing={createTag}
             placeholder="Type in a tag"
             query={rawQuery}
-            ref={searchInputRef}
             setQuery={setRawQuery}
-            submitBehavior="submit"
+            size="sm"
           />
         </View>
       </SheetView>

@@ -42,14 +42,15 @@ const buttonVariants = cva(
         sm: 'h-10 px-3',
       },
       variant: {
-        default: 'bg-primary web:hover:opacity-90 active:opacity-80',
-        destructive: 'bg-destructive web:hover:opacity-90 active:opacity-80',
+        default: 'bg-primary web:hover:bg-primary/80 active:bg-primary/60',
+        destructive:
+          'bg-destructive web:hover:bg-destructive/80 active:bg-destructive/60',
         ghost:
           'web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
         link: '',
         outline:
           'bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
-        secondary: 'bg-secondary web:hover:opacity-90 active:opacity-80',
+        secondary: 'bg-secondary web:hover:opacity-80 active:opacity-60',
       },
     },
   }
@@ -88,7 +89,10 @@ type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
   };
 
 const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
-  ({ className, ripple, size, variant, wrapperClassName, ...props }, ref) => {
+  (
+    { className, disabled, ripple, size, variant, wrapperClassName, ...props },
+    ref
+  ) => {
     const rippleColor = useRippleColor(
       ripple ??
         (variant === 'ghost' || variant === 'outline' || variant === 'secondary'
@@ -112,7 +116,8 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
               className: wrapperClassName,
               size,
               variant,
-            })
+            }),
+            disabled && 'opacity-50'
           )}
           style={{ borderCurve: 'continuous' }}
         >
@@ -126,10 +131,8 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
                   }
                 : undefined
             }
-            className={cn(
-              props.disabled && 'opacity-50 web:pointer-events-none',
-              buttonVariants({ className, size, variant })
-            )}
+            className={cn(buttonVariants({ className, size, variant }))}
+            disabled={disabled}
             ref={ref}
             role="button"
             {...props}

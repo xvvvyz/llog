@@ -5,11 +5,11 @@ import { Text } from '@/components/ui/text';
 import { onboardUser } from '@/mutations/onboard-user';
 import { useOnboarding } from '@/queries/use-onboarding';
 import { Redirect } from 'expo-router';
-import { useState } from 'react';
-import { View } from 'react-native';
+import React, { useState, useTransition } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function Onboarding() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTransitioning, startTransition] = useTransition();
   const [rawName, setRawName] = useState('');
   const onboarding = useOnboarding();
 
@@ -18,13 +18,13 @@ export default function Onboarding() {
   }
 
   const name = rawName.trim();
-  const isDisabled = !name || isSubmitting;
+  const isDisabled = !name || isTransitioning;
 
-  const handleSubmit = () => {
-    if (isDisabled) return;
-    setIsSubmitting(true);
-    onboardUser({ id: onboarding.auth.user?.id, name });
-  };
+  const handleSubmit = () =>
+    startTransition(async () => {
+      if (isDisabled) return;
+      await onboardUser({ id: onboarding.auth.user?.id, name });
+    });
 
   return (
     <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
@@ -47,7 +47,11 @@ export default function Onboarding() {
         onPress={handleSubmit}
         wrapperClassName="mt-6"
       >
-        <Text>Continue</Text>
+        {isTransitioning ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text>Continue</Text>
+        )}
       </Button>
     </View>
   );

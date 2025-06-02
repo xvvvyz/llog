@@ -94,9 +94,9 @@ export default function Layout() {
           }}
         />
         <Tabs.Screen
-          name="inbox"
+          name="notifications"
           options={{
-            headerTitle: () => <Title>Inbox</Title>,
+            headerTitle: () => <Title>Notifications</Title>,
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}

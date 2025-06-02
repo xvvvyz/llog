@@ -17,7 +17,6 @@ import {
   BottomSheetBackgroundProps,
   BottomSheetModal,
   BottomSheetModalProps,
-  BottomSheetModalProvider,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 
@@ -90,36 +89,36 @@ export const Sheet = ({
 
   return (
     <Portal name={portalName}>
-      <BottomSheetModalProvider>
-        <BottomSheetModal
-          accessibilityLabel="Bottom sheet"
-          animateOnMount
-          backdropComponent={Backdrop}
-          backgroundComponent={Background}
-          bottomInset={insets.bottom}
-          detached
-          enableBlurKeyboardOnGesture={false}
-          enablePanDownToClose
-          handleComponent={null}
-          keyboardBlurBehavior="restore"
-          ref={ref}
-          {...props}
-        >
-          {loading && (
-            <Animated.View
-              className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
-              exiting={Platform.select({
-                // https://github.com/facebook/react-native/issues/49077
-                android: undefined,
-                default: FadeOut.duration(150),
-              })}
-            >
-              <Loading />
-            </Animated.View>
-          )}
-          {children}
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
+      <BottomSheetModal
+        accessibilityLabel="Bottom sheet"
+        android_keyboardInputMode="adjustResize"
+        animateOnMount
+        backdropComponent={Backdrop}
+        backgroundComponent={Background}
+        bottomInset={insets.bottom}
+        detached
+        enableBlurKeyboardOnGesture={false}
+        enablePanDownToClose
+        handleComponent={null}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        ref={ref}
+        {...props}
+      >
+        {loading && (
+          <Animated.View
+            className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
+            exiting={Platform.select({
+              // https://github.com/facebook/react-native/issues/49077
+              android: undefined,
+              default: FadeOut.duration(150),
+            })}
+          >
+            <Loading />
+          </Animated.View>
+        )}
+        {children}
+      </BottomSheetModal>
     </Portal>
   );
 };

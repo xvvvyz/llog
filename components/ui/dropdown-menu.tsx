@@ -63,7 +63,7 @@ const Item = forwardRef<
     <DropdownMenuPrimitive.Item
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
-        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-5 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-4 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
         className
       )}
       ref={ref}
@@ -100,7 +100,7 @@ const CheckboxItem = ({
       <DropdownMenuPrimitive.CheckboxItem
         android_ripple={{ color: useRippleColor('inverse') }}
         className={cn(
-          'android:active:bg-transparent group relative h-10 flex-row items-center justify-between gap-4 px-5 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+          'android:active:bg-transparent group relative h-10 flex-row items-center justify-between gap-4 px-4 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
           className
         )}
         checked={opChecked}
@@ -118,36 +118,6 @@ const CheckboxItem = ({
 };
 
 CheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
-
-// const RadioItem = ({
-//   className,
-//   children,
-//   ...props
-// }: DropdownMenuPrimitive.RadioItemProps & {
-//   ref?: React.RefObject<DropdownMenuPrimitive.RadioItemRef>;
-//   children?: React.ReactNode;
-// }) => {
-//   return (
-//     <DropdownMenuPrimitive.RadioItem
-//       android_ripple={{ color: useRippleColor('inverse') }}
-//       className={cn(
-//         'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-5 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
-//         className
-//       )}
-//       closeOnPress={false}
-//       {...props}
-//     >
-//       <View className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
-//         <DropdownMenuPrimitive.ItemIndicator>
-//           <View className="h-2 w-2 rounded-full bg-foreground" />
-//         </DropdownMenuPrimitive.ItemIndicator>
-//       </View>
-//       {children}
-//     </DropdownMenuPrimitive.RadioItem>
-//   );
-// };
-
-// RadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -189,11 +159,7 @@ const SortItem = <T extends string>({
     >
       <View className="flex-row items-center gap-4">{children}</View>
       {isActive && (
-        <Icon
-          className="-mr-1.5"
-          icon={opSort[1] === 'asc' ? SortAsc : SortDesc}
-          size={20}
-        />
+        <Icon icon={opSort[1] === 'asc' ? SortAsc : SortDesc} size={20} />
       )}
     </Item>
   );

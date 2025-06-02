@@ -12,9 +12,9 @@ import { cn } from '@/utilities/cn';
 import { View } from 'react-native';
 
 import {
+  BookA,
   Calendar,
   Filter,
-  LetterText,
   Palette,
   SortAsc,
   SortDesc,
@@ -39,6 +39,12 @@ export const LogListActions = ({
 
   return (
     <View className={cn('flex-row gap-3', className)}>
+      <SearchInput
+        query={query}
+        setQuery={setQuery}
+        size={breakpoints.md ? 'sm' : 'default'}
+        wrapperClassName="shrink w-full md:w-52"
+      />
       {!!logTags.length && (
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
@@ -56,7 +62,7 @@ export const LogListActions = ({
               />
             </Button>
           </DropdownMenu.Trigger>
-          <DropdownMenu.Content align="start" className="mt-3 min-w-44">
+          <DropdownMenu.Content align="end" className="mt-3 min-w-44">
             {logTags.map((tag) => (
               <DropdownMenu.CheckboxItem
                 checked={ui.logsFilterByTagIdsSet.has(tag.id)}
@@ -96,7 +102,7 @@ export const LogListActions = ({
             />
           </Button>
         </DropdownMenu.Trigger>
-        <DropdownMenu.Content align="start" className="mt-3 min-w-44">
+        <DropdownMenu.Content align="end" className="mt-3 min-w-44">
           <DropdownMenu.SortItem<SortBy>
             onSort={(sort) => updateUiLogsSort({ sort })}
             sortBy={ui.logsSortBy}
@@ -120,7 +126,7 @@ export const LogListActions = ({
             <Icon
               aria-hidden
               className="text-placeholder"
-              icon={LetterText}
+              icon={BookA}
               size={20}
             />
             <Text>Name</Text>
@@ -154,12 +160,6 @@ export const LogListActions = ({
           size={20}
         />
       </Button> */}
-      <SearchInput
-        query={query}
-        setQuery={setQuery}
-        size={breakpoints.md ? 'sm' : 'default'}
-        wrapperClassName="shrink w-full md:w-52"
-      />
     </View>
   );
 };

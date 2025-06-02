@@ -15,6 +15,7 @@ import { useLogTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
 import { SPECTRUM } from '@/theme/spectrum';
 import { cn } from '@/utilities/cn';
+import { id } from '@instantdb/react-native';
 import { router, Stack } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { Fragment, ReactElement, useMemo, useRef, useState } from 'react';
@@ -55,7 +56,11 @@ export default function Index() {
                 accessibilityHint="Opens a form to create a new log"
                 accessibilityLabel="New log"
                 className="size-14"
-                onPress={async () => router.push(`/${await createLog()}`)}
+                onPress={() => {
+                  const logId = id();
+                  createLog({ color: 11, id: logId, name: 'New log' });
+                  router.push(`/${logId}`);
+                }}
                 size="icon"
                 variant="link"
               >

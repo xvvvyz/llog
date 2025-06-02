@@ -1,21 +1,23 @@
 import { getActiveTeamId } from '@/queries/get-active-team-id';
+import { Color } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
-import { id } from '@instantdb/react-native';
+import { id as generateId } from '@instantdb/react-native';
 
 export const createLog = async ({
-  color = 11,
-  name = 'New log',
+  color,
+  id,
+  name,
 }: {
-  color?: number;
-  name?: string;
-} = {}) => {
+  color: Color;
+  id?: string;
+  name: string;
+}) => {
   const teamId = await getActiveTeamId();
   if (!teamId) return;
-  const logId = id();
 
-  await db.transact(
-    db.tx.logs[logId].update({ color, name }).link({ team: teamId })
+  return db.transact(
+    db.tx.logs[id ?? generateId()]
+      .update({ color: color as number, name })
+      .link({ team: teamId })
   );
-
-  return logId;
 };

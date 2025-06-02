@@ -1,24 +1,27 @@
 import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { db } from '@/utilities/db';
-import { id } from '@instantdb/react-native';
+import { id as generateId } from '@instantdb/react-native';
 
 export const createLogTag = async ({
+  id,
   logId,
   name,
 }: {
+  id?: string;
   logId?: string;
   name: string;
 }) => {
   if (!logId) return;
   const teamId = await getActiveTeamId();
   if (!teamId) return;
-  const tagId = id();
 
   const { data } = await db.queryOnce({
     logTags: { $: { order: { order: 'asc' }, where: { team: teamId } } },
   });
 
-  await db.transact([
+  const tagId = id ?? generateId();
+
+  return db.transact([
     ...data.logTags.map((tag) =>
       db.tx.logTags[tag.id].update({ order: tag.order + 1 })
     ),
@@ -26,6 +29,4 @@ export const createLogTag = async ({
       .update({ name, order: 0 })
       .link({ logs: logId, team: teamId }),
   ]);
-
-  return tagId;
 };
