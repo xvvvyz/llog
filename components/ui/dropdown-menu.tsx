@@ -1,10 +1,11 @@
 import { Icon } from '@/components/ui/icon';
 import { TextClassContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
+import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { Check, SortAsc, SortDesc } from 'lucide-react-native';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 
 import {
@@ -33,16 +34,8 @@ const Content = forwardRef<
               'min-w-36 overflow-hidden rounded-2xl bg-popover py-2',
               className
             )}
-            entering={Platform.select({
-              // https://github.com/facebook/react-native/issues/49077
-              android: undefined,
-              default: FadeInUp.duration(150),
-            })}
-            exiting={Platform.select({
-              // https://github.com/facebook/react-native/issues/49077
-              android: undefined,
-              default: FadeOutUp.duration(150),
-            })}
+            entering={animation(FadeInUp)}
+            exiting={animation(FadeOutUp)}
             style={{ borderCurve: 'continuous' }}
           >
             {children as ReactNode}

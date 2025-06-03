@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetView } from '@/components/ui/sheet';
+import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { deleteLog } from '@/mutations/delete-log';
 import { useLog } from '@/queries/use-log';
 import { router } from 'expo-router';
+import { View } from 'react-native';
 
 export const LogDeleteSheet = () => {
   const sheetManager = useSheetManager();
@@ -17,7 +18,7 @@ export const LogDeleteSheet = () => {
       open={sheetManager.isOpen('log-delete')}
       portalName="log-delete"
     >
-      <SheetView className="mx-auto w-full max-w-md p-8">
+      <View className="mx-auto w-full max-w-md p-8">
         <Text className="text-center text-2xl">
           Delete &quot;{log.name}&quot; log?
         </Text>
@@ -39,7 +40,7 @@ export const LogDeleteSheet = () => {
         >
           <Text>Cancel</Text>
         </Button>
-      </SheetView>
+      </View>
     </Sheet>
   );
 };

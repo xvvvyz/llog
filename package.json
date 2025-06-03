@@ -17,7 +17,6 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@gorhom/bottom-sheet": "^5.1.5",
     "@instantdb/react-native": "0.19.14",
     "@legendapp/list": "^1.0.14",
     "@react-native-community/netinfo": "^11.4.1",

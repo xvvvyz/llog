@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { deleteLogTag } from '@/mutations/delete-log-tag';
 import { useLogTag } from '@/queries/use-log-tag';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { View } from 'react-native';
 
 export const TagDeleteSheet = () => {
   const sheetManager = useSheetManager();
@@ -17,7 +17,7 @@ export const TagDeleteSheet = () => {
       open={sheetManager.isOpen('tag-delete')}
       portalName="tag-delete"
     >
-      <BottomSheetView className="mx-auto w-full max-w-md p-8">
+      <View className="mx-auto w-full max-w-md p-8">
         <Text className="text-center text-2xl">
           Delete &ldquo;{logTag.name}&rdquo; tag?
         </Text>
@@ -38,7 +38,7 @@ export const TagDeleteSheet = () => {
         >
           <Text>Cancel</Text>
         </Button>
-      </BottomSheetView>
+      </View>
     </Sheet>
   );
 };

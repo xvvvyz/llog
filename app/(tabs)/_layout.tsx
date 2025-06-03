@@ -147,9 +147,9 @@ export default function Layout() {
           }}
         />
       </Tabs>
-      <LogDeleteSheet />
       <LogEditSheet />
       <LogTagsSheet />
+      <LogDeleteSheet />
       <TagDeleteSheet />
     </Fragment>
   );

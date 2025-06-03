@@ -6,9 +6,10 @@ import { useSheetManager } from '@/context/sheet-manager';
 import { toggleLogTag } from '@/mutations/toggle-log-tag';
 import { updateLogTag } from '@/mutations/update-log-tag';
 import { cn } from '@/utilities/cn';
-import { X } from 'lucide-react-native';
+import { GripVertical, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
+import Sortable from 'react-native-sortables';
 
 export const LogTagsSheetTag = ({
   className,
@@ -27,7 +28,7 @@ export const LogTagsSheetTag = ({
   const sheetManager = useSheetManager();
 
   return (
-    <View className={cn('w-36 flex-row rounded-xl bg-input', className)}>
+    <View className={cn('w-40 flex-row rounded-xl bg-input', className)}>
       <Checkbox
         checked={isSelected}
         className="size-10"
@@ -35,11 +36,7 @@ export const LogTagsSheetTag = ({
       />
       <View className="group relative flex-1">
         <Input
-          autoCapitalize="none"
-          autoComplete="name"
-          autoCorrect={false}
-          bottomSheet
-          className="bg-transparent focus:pr-10"
+          className="bg-transparent pr-10"
           defaultValue={name}
           maxLength={16}
           multiline={false}
@@ -47,10 +44,9 @@ export const LogTagsSheetTag = ({
           onChangeText={(name) => updateLogTag({ id: id, name })}
           onFocus={() => setIsDeleteButtonVisible(true)}
           placeholder="Tag"
-          returnKeyType="done"
           size="sm"
         />
-        {isDeleteButtonVisible && (
+        {isDeleteButtonVisible ? (
           <Button
             accessibilityHint="Removes this tag"
             accessibilityLabel={`Remove ${name}`}
@@ -62,6 +58,18 @@ export const LogTagsSheetTag = ({
           >
             <Icon className="text-muted-foreground" icon={X} size={20} />
           </Button>
+        ) : (
+          <View className="absolute right-0 top-0 size-10 cursor-grab">
+            <Sortable.Handle>
+              <View className="size-10 items-center justify-center">
+                <Icon
+                  className="text-placeholder"
+                  icon={GripVertical}
+                  size={20}
+                />
+              </View>
+            </Sortable.Handle>
+          </View>
         )}
       </View>
     </View>

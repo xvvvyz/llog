@@ -10,7 +10,6 @@ import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
 export const SearchInput = forwardRef<
   ComponentRef<typeof Input>,
   ComponentPropsWithoutRef<typeof Input> & {
-    bottomSheet?: boolean;
     className?: string;
     placeholder?: string;
     query: string;
@@ -20,7 +19,6 @@ export const SearchInput = forwardRef<
 >(
   (
     {
-      bottomSheet,
       className,
       placeholder = 'Search',
       query,
@@ -43,15 +41,10 @@ export const SearchInput = forwardRef<
         <Input
           accessibilityHint="Type to search"
           accessibilityLabel="Search"
-          autoCapitalize="none"
-          autoComplete="off"
-          autoCorrect={false}
-          bottomSheet={bottomSheet}
           className={cn('px-10', className)}
           onChangeText={setQuery}
           placeholder={placeholder}
           ref={ref}
-          returnKeyType="done"
           value={query}
           {...props}
         />

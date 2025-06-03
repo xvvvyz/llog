@@ -7,7 +7,7 @@ export default function Root({ children }: PropsWithChildren) {
       <head>
         <meta charSet="utf-8" />
         <meta
-          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no, interactive-widget=resizes-content"
           name="viewport"
         />
         <ScrollViewStyleReset />

@@ -9,9 +9,9 @@ import {
   useState,
 } from 'react';
 
-type SheetState = {
-  id: string;
-  isOpen: boolean;
+type SheetStackItem = {
+  name: SheetName;
+  id?: string;
 };
 
 const SheetContext = createContext<{
@@ -29,32 +29,37 @@ const SheetContext = createContext<{
 });
 
 export const SheetManagerProvider = ({ children }: { children: ReactNode }) => {
-  const [state, setState] = useState<Record<SheetName, SheetState>>(
-    {} as Record<SheetName, SheetState>
-  );
+  const [sheetStack, setSheetStack] = useState<SheetStackItem[]>([]);
 
-  const close = useCallback(
-    (name: SheetName) =>
-      setState((prev) => ({ ...prev, [name]: { isOpen: false } })),
-    []
-  );
+  const close = useCallback((name: SheetName) => {
+    setSheetStack((prev) => {
+      const index = prev.findIndex((item) => item.name === name);
+      if (index === -1) return prev;
+      return prev.slice(0, index);
+    });
+  }, []);
 
-  const getId = useCallback((name: SheetName) => state[name]?.id, [state]);
+  const getId = useCallback(
+    (name: SheetName) => sheetStack.find((item) => item.name === name)?.id,
+    [sheetStack]
+  );
 
   const isOpen = useCallback(
-    (name: SheetName) => state[name]?.isOpen ?? false,
-    [state]
+    (name: SheetName) => sheetStack[sheetStack.length - 1]?.name === name,
+    [sheetStack]
   );
 
   const open = useCallback((name: SheetName, id?: string) => {
     Keyboard.dismiss();
-    setState((prev) => ({ ...prev, [name]: { isOpen: true, id } }));
+
+    setSheetStack((prev) => {
+      const index = prev.findIndex((item) => item.name === name);
+      const newStack = index === -1 ? prev : prev.slice(0, index);
+      return [...newStack, { name, id }];
+    });
   }, []);
 
-  const someOpen = useCallback(
-    () => Object.values(state).some((sheet) => sheet.isOpen),
-    [state]
-  );
+  const someOpen = useCallback(() => !!sheetStack.length, [sheetStack]);
 
   return (
     <SheetContext.Provider value={{ close, getId, isOpen, open, someOpen }}>

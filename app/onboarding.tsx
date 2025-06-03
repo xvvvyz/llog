@@ -31,9 +31,7 @@ export default function Onboarding() {
       <Label nativeID="name">What is your name?</Label>
       <Input
         aria-labelledby="name"
-        autoCapitalize="none"
         autoComplete="name"
-        autoCorrect={false}
         autoFocus
         onChangeText={setRawName}
         onSubmitEditing={handleSubmit}

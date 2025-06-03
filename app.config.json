@@ -8,6 +8,9 @@
     "scheme": "llog",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
+    "android": {
+      "softwareKeyboardLayoutMode": "pan"
+    },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png",

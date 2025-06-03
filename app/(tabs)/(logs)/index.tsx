@@ -53,12 +53,12 @@ export default function Index() {
                 setQuery={setRawQuery}
               />
               <Button
-                accessibilityHint="Opens a form to create a new log"
+                accessibilityHint="Creates a new log"
                 accessibilityLabel="New log"
                 className="size-14"
                 onPress={() => {
                   const logId = id();
-                  createLog({ color: 11, id: logId, name: 'New log' });
+                  createLog({ color: 11, id: logId, name: 'Log' });
                   router.push(`/${logId}`);
                 }}
                 size="icon"

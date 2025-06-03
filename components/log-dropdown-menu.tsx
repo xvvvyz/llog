@@ -30,13 +30,7 @@ export const LogDropdownMenu = ({
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
-        <Button
-          accessibilityHint="Opens a menu with more options"
-          accessibilityLabel={`More options for ${name}`}
-          className="size-14"
-          size="icon"
-          variant="link"
-        >
+        <Button className="size-14" size="icon" variant="link">
           {variant === 'list' ? (
             <View
               className="size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20"
@@ -71,11 +65,7 @@ export const LogDropdownMenu = ({
             : undefined
         }
       >
-        <Menu.Item
-          accessibilityHint="Opens the edit form for this log"
-          accessibilityLabel={`Edit ${name}`}
-          onPress={() => sheetManager.open('log-edit', id)}
-        >
+        <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
           <Icon
             aria-hidden
             className="text-placeholder"
@@ -84,11 +74,7 @@ export const LogDropdownMenu = ({
           />
           <Text>Edit</Text>
         </Menu.Item>
-        <Menu.Item
-          accessibilityHint="Opens the tags management form"
-          accessibilityLabel={`Manage tags for ${name}`}
-          onPress={() => sheetManager.open('log-tags', id)}
-        >
+        <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
           <Icon aria-hidden className="text-placeholder" icon={Tag} size={20} />
           <Text>Tags</Text>
         </Menu.Item>

@@ -15,11 +15,11 @@ export const LogListEmptyState = () => {
         Track anything in your world.
       </Text>
       <Button
-        accessibilityHint="Opens a form to create your first log"
-        accessibilityLabel="Create your first log"
+        accessibilityHint="Creates a new log"
+        accessibilityLabel="New log"
         onPress={() => {
           const logId = id();
-          createLog({ color: 11, id: logId, name: 'New log' });
+          createLog({ color: 11, id: logId, name: 'Log' });
           router.push(`/${logId}`);
         }}
       >

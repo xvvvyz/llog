@@ -1,126 +1,76 @@
 import { Loading } from '@/components/ui/loading';
+import { animation } from '@/utilities/animation';
 import { Portal } from '@rn-primitives/portal';
-import React, { ReactNode, useEffect, useRef } from 'react';
-import { Keyboard, Platform, View } from 'react-native';
+import { ReactNode } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Animated, {
-  Extrapolation,
+  FadeIn,
+  FadeInDown,
   FadeOut,
-  interpolate,
-  useAnimatedStyle,
+  FadeOutDown,
 } from 'react-native-reanimated';
-
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetBackgroundProps,
-  BottomSheetModal,
-  BottomSheetModalProps,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
-
-const Backdrop = ({
-  animatedIndex,
-  style,
-  ...props
-}: BottomSheetBackdropProps) => {
-  const animatedOpacity = useAnimatedStyle(() => {
-    'worklet';
-
-    return {
-      opacity: interpolate(
-        animatedIndex.value,
-        [-1, 0],
-        [0, 0.9],
-        Extrapolation.CLAMP
-      ),
-    };
-  }, []);
-
-  return (
-    <BottomSheetBackdrop
-      {...props}
-      animatedIndex={animatedIndex}
-      appearsOnIndex={0}
-      disappearsOnIndex={-1}
-      onPress={Keyboard.dismiss}
-      opacity={1}
-      pressBehavior="close"
-      style={[style, { backgroundColor: 'rgba(0, 0, 0, 0)' }]}
-    >
-      <Animated.View
-        className="absolute inset-0 bg-background"
-        style={animatedOpacity}
-      />
-    </BottomSheetBackdrop>
-  );
-};
-
-const Background = ({ style, ...props }: BottomSheetBackgroundProps) => {
-  return (
-    <View
-      {...props}
-      className="-mb-64 rounded-t-3xl bg-popover"
-      style={[style, { borderCurve: 'continuous' }]}
-    />
-  );
-};
 
 export const Sheet = ({
   children,
   loading,
-  portalName,
+  onDismiss,
   open,
-  ...props
-}: BottomSheetModalProps & {
+  portalName,
+}: {
   children: ReactNode;
-  loading?: boolean;
-  portalName: string;
+  loading: boolean;
+  onDismiss: () => void;
   open: boolean;
+  portalName: string;
 }) => {
-  const insets = useSafeAreaInsets();
-  const ref = useRef<BottomSheetModal>(null);
-
-  useEffect(() => {
-    if (open) ref.current?.present();
-    else ref.current?.dismiss();
-  }, [open]);
+  const inset = useSafeAreaInsets();
 
   return (
     <Portal name={portalName}>
-      <BottomSheetModal
-        accessibilityLabel="Bottom sheet"
-        android_keyboardInputMode="adjustResize"
-        animateOnMount
-        backdropComponent={Backdrop}
-        backgroundComponent={Background}
-        bottomInset={insets.bottom}
-        detached
-        enableBlurKeyboardOnGesture={false}
-        enablePanDownToClose
-        handleComponent={null}
-        keyboardBehavior="interactive"
-        keyboardBlurBehavior="restore"
-        ref={ref}
-        {...props}
-      >
-        {loading && (
-          <Animated.View
-            className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
-            exiting={Platform.select({
-              // https://github.com/facebook/react-native/issues/49077
-              android: undefined,
-              default: FadeOut.duration(150),
-            })}
+      <Modal onRequestClose={onDismiss} transparent visible={open}>
+        <GestureHandlerRootView>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            className="flex-1 justify-end"
           >
-            <Loading />
-          </Animated.View>
-        )}
-        {children}
-      </BottomSheetModal>
+            <Animated.View
+              className="absolute inset-0 bg-background/50"
+              entering={animation(FadeIn)}
+              exiting={animation(FadeOut)}
+            >
+              <Pressable
+                className="h-full w-full cursor-default"
+                onPress={onDismiss}
+              />
+            </Animated.View>
+            <Animated.View
+              className="rounded-t-3xl bg-popover"
+              entering={animation(FadeInDown)}
+              exiting={animation(FadeOutDown)}
+              style={{ borderCurve: 'continuous' }}
+            >
+              {children}
+              {loading && (
+                <Animated.View
+                  className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
+                  exiting={animation(FadeOut)}
+                >
+                  <Loading />
+                </Animated.View>
+              )}
+            </Animated.View>
+          </KeyboardAvoidingView>
+          <Animated.View
+            className="bg-popover"
+            entering={animation(FadeInDown)}
+            exiting={animation(FadeOutDown)}
+            style={{ height: inset.bottom }}
+          />
+        </GestureHandlerRootView>
+      </Modal>
     </Portal>
   );
 };
-
-export const SheetView = BottomSheetView;
