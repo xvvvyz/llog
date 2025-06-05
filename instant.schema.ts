@@ -27,7 +27,9 @@ const schema = i.schema({
       text: i.string(),
     }),
     roles: i.entity({
+      key: i.string().unique(),
       role: i.string(),
+      userId: i.string(),
     }),
     teams: i.entity({
       name: i.string(),
@@ -82,11 +84,11 @@ const schema = i.schema({
       forward: {
         on: 'records',
         has: 'one',
-        label: 'authors',
+        label: 'author',
         required: true,
       },
       reverse: {
-        on: '$users',
+        on: 'profiles',
         has: 'many',
         label: 'records',
       },

@@ -31,7 +31,7 @@ export const useHeaderConfig = (): HeaderConfig => {
   return {
     headerBackVisible: false,
     headerShadowVisible: false,
-    headerStyle: { borderBottomWidth: 0, height },
+    headerStyle: { borderBottomWidth: breakpoints.md ? 1 : 0, height },
     headerTitleAlign: breakpoints.md ? 'left' : 'center',
     headerLeftContainerStyle: { paddingLeft: padding },
     headerRightContainerStyle: { paddingRight: padding },

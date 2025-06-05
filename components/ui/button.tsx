@@ -8,6 +8,7 @@ import { Pressable, View } from 'react-native';
 const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
   defaultVariants: {
     size: 'default',
+    variant: 'default',
   },
   variants: {
     size: {
@@ -15,6 +16,7 @@ const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
       icon: '',
       lg: '',
       sm: '',
+      xs: 'rounded-lg',
     },
     variant: {
       default: '',
@@ -39,17 +41,16 @@ const buttonVariants = cva(
         default: 'h-11 px-4 py-2',
         icon: 'h-11 w-11',
         lg: 'h-12 px-5',
-        sm: 'h-10 px-3',
+        sm: 'h-10 px-4',
+        xs: 'h-8 px-3',
       },
       variant: {
         default: 'bg-primary web:hover:bg-primary/80 active:bg-primary/60',
         destructive:
           'bg-destructive web:hover:bg-destructive/80 active:bg-destructive/60',
-        ghost:
-          'web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
+        ghost: 'web:hover:bg-accent active:bg-accent',
         link: '',
-        outline:
-          'bg-transparent web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent',
+        outline: 'bg-transparent web:hover:bg-accent active:bg-accent',
         secondary: 'bg-secondary web:hover:opacity-80 active:opacity-60',
       },
     },
@@ -57,24 +58,17 @@ const buttonVariants = cva(
 );
 
 const buttonTextVariants = cva(
-  'web:whitespace-nowrap font-medium text-foreground web:transition-colors',
+  'web:whitespace-nowrap leading-5 font-medium text-foreground web:transition-colors',
   {
     defaultVariants: {
-      size: 'default',
       variant: 'default',
     },
     variants: {
-      size: {
-        default: '',
-        icon: '',
-        lg: '',
-        sm: '',
-      },
       variant: {
         default: 'text-primary-foreground',
         destructive: 'text-destructive-foreground',
         ghost: '',
-        link: 'text-primary',
+        link: '',
         outline: '',
         secondary: 'text-secondary-foreground',
       },
@@ -106,7 +100,6 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
       <TextClassContext.Provider
         value={buttonTextVariants({
           className: 'web:pointer-events-none',
-          size,
           variant,
         })}
       >

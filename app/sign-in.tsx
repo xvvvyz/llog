@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loading } from '@/components/ui/loading';
 import { Text } from '@/components/ui/text';
 import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
@@ -17,6 +18,10 @@ export default function SignIn() {
 
   if (auth.user) {
     return <Redirect href="/" />;
+  }
+
+  if (auth.isLoading) {
+    return <Loading />;
   }
 
   if (step === 'email') {

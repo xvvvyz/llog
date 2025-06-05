@@ -1,12 +1,6 @@
-import { db } from '@/utilities/db';
+import { getUi } from './get-ui';
 
 export const getActiveTeamId = async () => {
-  const auth = await db.getAuth();
-  if (!auth) return;
-
-  const { data } = await db.queryOnce({
-    ui: { $: { where: { user: auth.id } }, team: {} },
-  });
-
-  return data.ui?.[0]?.team?.id;
+  const ui = await getUi();
+  return ui?.team?.id;
 };

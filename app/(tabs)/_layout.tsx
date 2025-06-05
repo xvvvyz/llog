@@ -8,8 +8,9 @@ import { Loading } from '@/components/ui/loading';
 import { Title } from '@/components/ui/title';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderConfig } from '@/hooks/use-header-config';
-import { useOnboarding } from '@/queries/use-onboarding';
+import { useProfile } from '@/queries/use-profile';
 import { cn } from '@/utilities/cn';
+import { db } from '@/utilities/db';
 import { Redirect, Tabs } from 'expo-router';
 import { Bell, Bolt, Scroll } from 'lucide-react-native';
 import { Fragment } from 'react';
@@ -17,21 +18,22 @@ import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
+  const auth = db.useAuth();
   const breakpoints = useBreakpoints();
   const headerConfig = useHeaderConfig();
   const insets = useSafeAreaInsets();
-  const onboarding = useOnboarding();
+  const profile = useProfile();
 
-  if (onboarding.isLoading) {
-    return <Loading />;
-  }
-
-  if (onboarding.requiresAuth) {
+  if (!auth.isLoading && !auth.user) {
     return <Redirect href="/sign-in" />;
   }
 
-  if (onboarding.requiresOnboarding) {
+  if (!profile.isLoading && !profile.id) {
     return <Redirect href="/onboarding" />;
+  }
+
+  if (profile.isLoading) {
+    return <Loading />;
   }
 
   return (
@@ -74,20 +76,17 @@ export default function Layout() {
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
-                className={cn(
-                  'md:web:aria-selected:bg-accent',
-                  breakpoints.md && 'size-14'
-                )}
+                className={cn(breakpoints.md && 'size-14')}
                 onPress={onPress}
                 size={breakpoints.md ? 'icon' : 'default'}
-                variant="ghost"
+                variant="link"
               >
                 {children}
               </Button>
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
-                className={cn('text-placeholder', focused && 'text-foreground')}
+                className={cn('text-placeholder', focused && 'text-primary')}
                 icon={Scroll}
               />
             ),
@@ -100,20 +99,17 @@ export default function Layout() {
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
-                className={cn(
-                  'md:web:aria-selected:bg-accent',
-                  breakpoints.md && 'size-14'
-                )}
+                className={cn(breakpoints.md && 'size-14')}
                 onPress={onPress}
                 size={breakpoints.md ? 'icon' : 'default'}
-                variant="ghost"
+                variant="link"
               >
                 {children}
               </Button>
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
-                className={cn('text-placeholder', focused && 'text-foreground')}
+                className={cn('text-placeholder', focused && 'text-primary')}
                 icon={Bell}
               />
             ),
@@ -127,20 +123,17 @@ export default function Layout() {
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
-                className={cn(
-                  'md:web:aria-selected:bg-accent',
-                  breakpoints.md && 'size-14'
-                )}
+                className={cn(breakpoints.md && 'size-14')}
                 onPress={onPress}
                 size={breakpoints.md ? 'icon' : 'default'}
-                variant="ghost"
+                variant="link"
               >
                 {children}
               </Button>
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
-                className={cn('text-placeholder', focused && 'text-foreground')}
+                className={cn('text-placeholder', focused && 'text-primary')}
                 icon={Bolt}
               />
             ),

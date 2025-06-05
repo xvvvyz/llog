@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loading } from '@/components/ui/loading';
 import { Text } from '@/components/ui/text';
 import { onboardUser } from '@/mutations/onboard-user';
-import { useOnboarding } from '@/queries/use-onboarding';
+import { useProfile } from '@/queries/use-profile';
+import { db } from '@/utilities/db';
 import { Redirect } from 'expo-router';
 import React, { useState, useTransition } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -11,10 +13,19 @@ import { ActivityIndicator, View } from 'react-native';
 export default function Onboarding() {
   const [isTransitioning, startTransition] = useTransition();
   const [rawName, setRawName] = useState('');
-  const onboarding = useOnboarding();
+  const auth = db.useAuth();
+  const profile = useProfile();
 
-  if (!onboarding.isLoading && !onboarding.requiresOnboarding) {
+  if (!auth.isLoading && !auth.user) {
+    return <Redirect href="/sign-in" />;
+  }
+
+  if (profile.id) {
     return <Redirect href="/" />;
+  }
+
+  if (profile.isLoading) {
+    return <Loading />;
   }
 
   const name = rawName.trim();
@@ -23,7 +34,7 @@ export default function Onboarding() {
   const handleSubmit = () =>
     startTransition(async () => {
       if (isDisabled) return;
-      await onboardUser({ id: onboarding.auth.user?.id, name });
+      await onboardUser({ name });
     });
 
   return (
@@ -33,6 +44,7 @@ export default function Onboarding() {
         aria-labelledby="name"
         autoComplete="name"
         autoFocus
+        maxLength={32}
         onChangeText={setRawName}
         onSubmitEditing={handleSubmit}
         placeholder="Jane Doe"

@@ -18,7 +18,7 @@ export const Loading = ({ className }: { className?: string }) => {
       <ActivityIndicator accessibilityRole="progressbar" />
       {showTimeoutMessage && (
         <Text className="mx-auto max-w-[15rem] text-center text-sm text-placeholder">
-          This is taking longer than it should. Is your internet working?
+          This is taking longer than it should. Is&nbsp;your internet working?
         </Text>
       )}
     </View>

@@ -39,7 +39,6 @@ export const LogTagsSheetTag = ({
           className="bg-transparent pr-10"
           defaultValue={name}
           maxLength={16}
-          multiline={false}
           onBlur={() => setTimeout(() => setIsDeleteButtonVisible(false), 200)}
           onChangeText={(name) => updateLogTag({ id: id, name })}
           onFocus={() => setIsDeleteButtonVisible(true)}

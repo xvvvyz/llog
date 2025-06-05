@@ -17,10 +17,7 @@ export const LogListLog = ({
   tags: LogTag[];
 }) => {
   return (
-    <View
-      accessibilityRole="none"
-      className="w-full p-1.5 web:transition-opacity web:hover:opacity-90 md:p-2"
-    >
+    <View className="w-full p-1.5 web:transition-opacity web:hover:opacity-90 md:p-2">
       <Link asChild href={`/${id}`} key={id}>
         <Button
           accessibilityHint={`Opens the log ${name}`}

@@ -4,6 +4,7 @@ import { LogListLog } from '@/components/log-list-log';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { List } from '@/components/ui/list';
+import { Loading } from '@/components/ui/loading';
 import { Title } from '@/components/ui/title';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useGridColumns as useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
@@ -34,6 +35,10 @@ export default function Index() {
   const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs({ query });
 
+  if (logs.isLoading) {
+    return <Loading />;
+  }
+
   if (sheetManager.someOpen()) {
     return renderCacheRef.current;
   }
@@ -46,12 +51,14 @@ export default function Index() {
             breakpoints.md ? null : <View className="size-14" />,
           headerRight: () => (
             <View className="flex-row items-center gap-4">
-              <LogListActions
-                className={cn('hidden md:flex', isEmpty && 'md:hidden')}
-                logTags={logTags.data}
-                query={rawQuery}
-                setQuery={setRawQuery}
-              />
+              {breakpoints.md && !isEmpty && (
+                <LogListActions
+                  className={cn(isEmpty && 'md:hidden')}
+                  logTags={logTags.data}
+                  query={rawQuery}
+                  setQuery={setRawQuery}
+                />
+              )}
               <Button
                 accessibilityHint="Creates a new log"
                 accessibilityLabel="New log"
@@ -76,16 +83,18 @@ export default function Index() {
       ) : (
         <List
           ListHeaderComponent={
-            <LogListActions
-              className="mb-3 p-1.5 md:hidden"
-              logTags={logTags.data}
-              query={rawQuery}
-              setQuery={setRawQuery}
-            />
+            !breakpoints.md && !isEmpty ? (
+              <LogListActions
+                className="mt-3 p-1.5 pt-0"
+                logTags={logTags.data}
+                query={rawQuery}
+                setQuery={setRawQuery}
+              />
+            ) : null
           }
           accessibilityLabel="Logs"
           accessibilityRole="list"
-          contentContainerClassName="p-1.5 md:p-6"
+          contentContainerClassName="p-1.5 pt-0 md:p-6"
           data={logs.data}
           estimatedItemSize={112}
           key={`grid-${columns}`}

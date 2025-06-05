@@ -2,23 +2,21 @@ import { Role } from '@/enums/roles';
 import { db } from '@/utilities/db';
 import { id as generateId } from '@instantdb/react-native';
 
-export const onboardUser = async ({
-  id,
-  name,
-}: {
-  id?: string;
-  name: string;
-}) => {
-  if (!id) return;
-  const roleId = generateId();
+export const onboardUser = async ({ name }: { name: string }) => {
+  const auth = await db.getAuth();
+  if (!auth) return;
   const teamId = generateId();
 
   return db.transact([
-    db.tx.profiles[id].update({ name }).link({ user: id }),
+    db.tx.profiles[generateId()].update({ name }).link({ user: auth.id }),
     db.tx.teams[teamId].update({ name }),
-    db.tx.roles[roleId]
-      .update({ role: Role.Owner })
-      .link({ team: teamId, user: id }),
-    db.tx.ui[id].update({}).link({ team: teamId, user: id }),
+    db.tx.roles[generateId()]
+      .update({
+        key: `${Role.Owner}_${auth.id}`,
+        role: Role.Owner,
+        userId: auth.id,
+      })
+      .link({ team: teamId, user: auth.id }),
+    db.tx.ui[generateId()].update({}).link({ team: teamId, user: auth.id }),
   ]);
 };

@@ -4,13 +4,13 @@ import { db } from '@/utilities/db';
 import { useMemo } from 'react';
 
 export const useUi = () => {
-  const { user } = db.useAuth();
+  const auth = db.useAuth();
 
   const { data, isLoading } = db.useQuery(
-    user
+    auth.user
       ? {
           ui: {
-            $: { where: { user: user.id } },
+            $: { where: { user: auth.user.id } },
             logTags: { $: { fields: ['id'] } },
             team: {},
           },
