@@ -1,5 +1,4 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
-import { RecordCreateForm } from '@/components/record-create-form';
 import { RecordListHeader } from '@/components/record-list-header';
 import { Avatar } from '@/components/ui/avatar';
 import { BackButton } from '@/components/ui/back-button';
@@ -49,9 +48,7 @@ export default function Index() {
         <Loading />
       ) : (
         <List
-          ListEmptyComponent={
-            <RecordCreateForm className="mt-3 md:mt-8" logId={params.id} />
-          }
+          ListEmptyComponent={<RecordListHeader logId={params.id} />}
           ListHeaderComponent={
             records.data.length ? <RecordListHeader logId={params.id} /> : null
           }

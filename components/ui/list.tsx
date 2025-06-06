@@ -1,10 +1,8 @@
 import { LegendList } from '@legendapp/list';
-import { cssInterop } from 'nativewind';
+import { remapProps } from 'nativewind';
 
-const List = cssInterop(LegendList, {
-  contentContainerClassName: {
-    target: 'contentContainerStyle',
-  },
+const List = remapProps(LegendList, {
+  contentContainerClassName: 'contentContainerStyle',
 }) as typeof LegendList;
 
 export { List };
