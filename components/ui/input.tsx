@@ -1,4 +1,4 @@
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { TextInput } from 'react-native';
 

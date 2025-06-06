@@ -11,7 +11,7 @@ import { reorderLogTags } from '@/mutations/reorder-log-tags';
 import { useHasNoLogTags } from '@/queries/use-has-no-log-tags';
 import { useLog } from '@/queries/use-log';
 import { useLogTags } from '@/queries/use-log-tags';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { Tags } from 'lucide-react-native';
 import { ComponentRef, useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';

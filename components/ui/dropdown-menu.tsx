@@ -2,7 +2,7 @@ import { Icon } from '@/components/ui/icon';
 import { TextClassContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
 import { animation } from '@/utilities/animation';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { Check, SortAsc, SortDesc } from 'lucide-react-native';
 import { View } from 'react-native';

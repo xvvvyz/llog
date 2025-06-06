@@ -1,12 +1,6 @@
 {
   "aliases": {
     "components": "@/components",
-    "hooks": "@/utilities/hooks",
-    "lib": "@/utilities",
-    "ui": "@/components/ui",
-    "utils": "@/utilities/cn"
-  },
-  "tailwind": {
-    "css": "themes/global.css"
+    "lib": "@/utilities/ui"
   }
 }

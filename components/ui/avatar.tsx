@@ -1,4 +1,4 @@
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { Image } from 'expo-image';
 
 export const Avatar = ({

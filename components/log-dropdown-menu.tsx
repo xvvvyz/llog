@@ -3,7 +3,7 @@ import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { Platform, View } from 'react-native';
 
 import {

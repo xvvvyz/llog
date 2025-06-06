@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/text';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 

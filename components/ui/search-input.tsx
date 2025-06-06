@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { Search, X } from 'lucide-react-native';
 import { View } from 'react-native';
 

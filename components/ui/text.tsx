@@ -1,4 +1,4 @@
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { Text as SlotText } from '@rn-primitives/slot';
 import { type SlottableTextProps, type TextRef } from '@rn-primitives/types';
 import { createContext, forwardRef, useContext } from 'react';

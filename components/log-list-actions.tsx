@@ -8,7 +8,7 @@ import { LogTag } from '@/instant.schema';
 import { toggleUiLogTag } from '@/mutations/toggle-ui-log-tag';
 import { updateUiLogsSort } from '@/mutations/update-ui-logs-sort';
 import { useUi } from '@/queries/use-ui';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { View } from 'react-native';
 
 import {

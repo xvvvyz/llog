@@ -1,6 +1,6 @@
 import { TextClassContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ComponentRef, forwardRef } from 'react';
 import { Pressable, View } from 'react-native';

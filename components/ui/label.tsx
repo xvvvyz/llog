@@ -1,4 +1,4 @@
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import * as LabelPrimitive from '@rn-primitives/label';
 import { forwardRef } from 'react';
 

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { cn } from '@/utilities/cn';
+import { cn } from '@/utilities/ui/utils';
 import { Check, Plus } from 'lucide-react-native';
 import { startTransition, useCallback, useEffect, useState } from 'react';
 
