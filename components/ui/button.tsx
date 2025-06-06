@@ -23,14 +23,14 @@ const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
       destructive: '',
       ghost: '',
       link: '',
-      outline: 'border border-input',
+      outline: '',
       secondary: '',
     },
   },
 });
 
 const buttonVariants = cva(
-  'group flex-row items-center gap-2 justify-center web:transition-colors web:focus-visible:outline-none',
+  'group flex-row items-center rounded-xl gap-3 justify-center web:transition-colors web:focus-visible:outline-none',
   {
     defaultVariants: {
       size: 'default',
@@ -42,16 +42,18 @@ const buttonVariants = cva(
         icon: 'h-11 w-11',
         lg: 'h-12 px-5',
         sm: 'h-10 px-4',
-        xs: 'h-8 px-3',
+        xs: 'h-8 px-3 rounded-lg',
       },
       variant: {
         default: 'bg-primary web:hover:bg-primary/80 active:bg-primary/60',
         destructive:
           'bg-destructive web:hover:bg-destructive/80 active:bg-destructive/60',
         ghost: 'web:hover:bg-accent active:bg-accent',
-        link: '',
-        outline: 'bg-transparent web:hover:bg-accent active:bg-accent',
-        secondary: 'bg-secondary web:hover:opacity-80 active:opacity-60',
+        link: 'p-0 h-auto',
+        outline:
+          'bg-transparent web:hover:bg-accent active:bg-accent border border-border',
+        secondary:
+          'bg-secondary web:hover:opacity-80 active:opacity-60 border border-border-secondary',
       },
     },
   }
@@ -115,7 +117,6 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
           style={{ borderCurve: 'continuous' }}
         >
           <Pressable
-            accessibilityRole="button"
             android_ripple={
               shouldHaveRipple
                 ? {
@@ -128,6 +129,7 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
             disabled={disabled}
             ref={ref}
             role="button"
+            style={{ borderCurve: 'continuous' }}
             {...props}
           />
         </View>

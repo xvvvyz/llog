@@ -48,14 +48,8 @@ export const LogListActions = ({
       {!!logTags.length && (
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <Button
-              accessibilityLabel="Filter logs"
-              className="md:size-10"
-              size="icon"
-              variant="secondary"
-            >
+            <Button className="md:size-10" size="icon" variant="secondary">
               <Icon
-                aria-hidden
                 className="text-secondary-foreground"
                 icon={Filter}
                 size={20}
@@ -74,12 +68,7 @@ export const LogListActions = ({
                   })
                 }
               >
-                <Icon
-                  aria-hidden
-                  className="text-placeholder"
-                  icon={Tag}
-                  size={20}
-                />
+                <Icon className="text-placeholder" icon={Tag} size={20} />
                 <Text>{tag.name}</Text>
               </DropdownMenu.CheckboxItem>
             ))}
@@ -88,14 +77,8 @@ export const LogListActions = ({
       )}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <Button
-            accessibilityLabel="Sort logs"
-            className="md:size-10"
-            size="icon"
-            variant="secondary"
-          >
+          <Button className="md:size-10" size="icon" variant="secondary">
             <Icon
-              aria-hidden
               className="text-secondary-foreground"
               icon={ui.logsSortDirection === 'asc' ? SortAsc : SortDesc}
               size={20}
@@ -109,12 +92,7 @@ export const LogListActions = ({
             sortDirection={ui.logsSortDirection}
             value="serverCreatedAt"
           >
-            <Icon
-              aria-hidden
-              className="text-placeholder"
-              icon={Calendar}
-              size={20}
-            />
+            <Icon className="text-placeholder" icon={Calendar} size={20} />
             <Text>Created</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
@@ -123,12 +101,7 @@ export const LogListActions = ({
             sortDirection={ui.logsSortDirection}
             value="name"
           >
-            <Icon
-              aria-hidden
-              className="text-placeholder"
-              icon={BookA}
-              size={20}
-            />
+            <Icon className="text-placeholder" icon={BookA} size={20} />
             <Text>Name</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
@@ -137,24 +110,17 @@ export const LogListActions = ({
             sortDirection={ui.logsSortDirection}
             value="color"
           >
-            <Icon
-              aria-hidden
-              className="text-placeholder"
-              icon={Palette}
-              size={20}
-            />
+            <Icon className="text-placeholder" icon={Palette} size={20} />
             <Text>Color</Text>
           </DropdownMenu.SortItem>
         </DropdownMenu.Content>
       </DropdownMenu.Root>
       {/* <Button
-        accessibilityLabel="Group logs"
         className="size-10"
         size="icon"
         variant="secondary"
       >
         <Icon
-          aria-hidden
           className="text-secondary-foreground"
           icon={Group}
           size={20}

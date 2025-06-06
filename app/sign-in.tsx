@@ -41,9 +41,8 @@ export default function SignIn() {
 
     return (
       <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
-        <Label nativeID="email">Email address</Label>
+        <Label>Email address</Label>
         <Input
-          aria-labelledby="email"
           autoComplete="email"
           autoFocus
           keyboardType="email-address"
@@ -85,11 +84,10 @@ export default function SignIn() {
 
   return (
     <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
-      <Label nativeID="code">
+      <Label>
         Enter the code sent to <Text className="font-medium">{email}</Text>
       </Label>
       <Input
-        aria-labelledby="code"
         keyboardType="number-pad"
         onChangeText={setCode}
         onSubmitEditing={handleSubmit}

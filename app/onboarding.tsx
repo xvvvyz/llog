@@ -39,9 +39,8 @@ export default function Onboarding() {
 
   return (
     <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
-      <Label nativeID="name">What is your name?</Label>
+      <Label>What is your name?</Label>
       <Input
-        aria-labelledby="name"
         autoComplete="name"
         autoFocus
         maxLength={32}

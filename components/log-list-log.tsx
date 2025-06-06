@@ -20,8 +20,6 @@ export const LogListLog = ({
     <View className="w-full p-1.5 web:transition-opacity web:hover:opacity-90 md:p-2">
       <Link asChild href={`/${id}`} key={id}>
         <Button
-          accessibilityHint={`Opens the log ${name}`}
-          accessibilityLabel={`Open ${name}`}
           className="flex h-28 w-full flex-col items-start justify-between p-4 active:opacity-90"
           ripple="default"
           style={{ backgroundColor: color }}

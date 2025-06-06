@@ -13,11 +13,31 @@
    ```bash
    # .env
 
-   EXPO_PUBLIC_INSTANT_APP_ID=<ID>
+   EXPO_PUBLIC_API_URL=http://localhost:8787/v1
+   EXPO_PUBLIC_INSTANT_APP_ID=<YOUR_ID>
    ```
 
-3. Start the app
+   ```bash
+   # .dev.vars
+
+   INSTANT_APP_ADMIN_TOKEN=<YOUR_TOKEN>
+   INSTANT_APP_ID=<YOUR_ID>
+   ```
+
+3. Generate types
 
    ```bash
-   bun dev
+   bun api:types
+   ```
+
+4. Start the API
+
+   ```bash
+   bun api:dev
+   ```
+
+5. Start the app
+
+   ```bash
+   bun app:dev
    ```

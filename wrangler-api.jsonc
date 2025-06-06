@@ -1,0 +1,6 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "compatibility_date": "2025-06-05",
+  "name": "llog-api",
+  "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
+}

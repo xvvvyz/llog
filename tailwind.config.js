@@ -11,7 +11,10 @@ module.exports = {
         hairline: hairlineWidth(),
       },
       colors: {
-        border: 'hsl(var(--border))',
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          secondary: 'hsl(var(--border-secondary))',
+        },
         input: 'hsl(var(--input))',
         placeholder: 'hsl(var(--placeholder))',
         ring: 'hsl(var(--ring))',

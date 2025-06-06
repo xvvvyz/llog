@@ -13,7 +13,7 @@ import {
 } from 'react';
 
 const inputVariants = cva(
-  'text-base leading-5 ios:overflow-hidden native:placeholder:text-placeholder rounded-xl bg-input text-foreground file:border-0 file:bg-transparent file:font-medium web:w-full web:placeholder:text-placeholder web:focus-visible:outline-none',
+  'text-base leading-5 border border-border-secondary ios:overflow-hidden native:placeholder:text-placeholder rounded-xl bg-input text-foreground file:border-0 file:bg-transparent file:font-medium web:w-full web:placeholder:text-placeholder web:focus-visible:outline-none',
   {
     defaultVariants: {
       size: 'default',

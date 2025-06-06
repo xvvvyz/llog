@@ -22,12 +22,5 @@ export const useLog = ({ id }: { id?: string }) => {
 
   const logTagIdsSet = useMemo(() => new Set(logTagIdsArray), [logTagIdsArray]);
 
-  return {
-    color: log?.color,
-    id: log?.id,
-    isLoading,
-    logTagIdsArray,
-    logTagIdsSet,
-    name: log?.name,
-  };
+  return { ...log, isLoading, logTagIdsArray, logTagIdsSet };
 };

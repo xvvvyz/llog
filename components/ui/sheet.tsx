@@ -47,7 +47,7 @@ export const Sheet = ({
               />
             </Animated.View>
             <Animated.View
-              className="rounded-t-3xl bg-popover"
+              className="rounded-t-3xl border-x border-t border-border-secondary bg-popover"
               entering={animation(FadeInDown)}
               exiting={animation(FadeOutDown)}
               style={{ borderCurve: 'continuous' }}
@@ -64,7 +64,7 @@ export const Sheet = ({
             </Animated.View>
           </KeyboardAvoidingView>
           <Animated.View
-            className="bg-popover"
+            className="border-x border-border bg-popover"
             entering={animation(FadeInDown)}
             exiting={animation(FadeOutDown)}
             style={{ height: inset.bottom }}

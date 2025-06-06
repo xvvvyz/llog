@@ -36,15 +36,10 @@ export const LogDropdownMenu = ({
               className="size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20"
               style={{ borderCurve: 'continuous' }}
             >
-              <Icon
-                aria-hidden
-                className="text-white"
-                icon={MoreHorizontal}
-                size={20}
-              />
+              <Icon className="text-white" icon={MoreHorizontal} size={20} />
             </View>
           ) : (
-            <Icon aria-hidden className="text-foreground" icon={MoreVertical} />
+            <Icon className="text-foreground" icon={MoreVertical} />
           )}
         </Button>
       </Menu.Trigger>
@@ -66,29 +61,15 @@ export const LogDropdownMenu = ({
         }
       >
         <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
-          <Icon
-            aria-hidden
-            className="text-placeholder"
-            icon={Pencil}
-            size={20}
-          />
+          <Icon className="text-placeholder" icon={Pencil} size={20} />
           <Text>Edit</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
-          <Icon aria-hidden className="text-placeholder" icon={Tag} size={20} />
+          <Icon className="text-placeholder" icon={Tag} size={20} />
           <Text>Tags</Text>
         </Menu.Item>
-        <Menu.Item
-          accessibilityHint="Opens the delete confirmation dialog"
-          accessibilityLabel={`Delete ${name}`}
-          onPress={() => sheetManager.open('log-delete', id)}
-        >
-          <Icon
-            aria-hidden
-            className="text-placeholder"
-            icon={Trash}
-            size={20}
-          />
+        <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
+          <Icon className="text-placeholder" icon={Trash} size={20} />
           <Text>Delete</Text>
         </Menu.Item>
       </Menu.Content>

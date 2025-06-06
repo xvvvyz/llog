@@ -2,6 +2,7 @@ import { LogDeleteSheet } from '@/components/log-delete-sheet';
 import { LogEditSheet } from '@/components/log-edit-sheet';
 import { LogTagsSheet } from '@/components/log-tags-sheet';
 import { TagDeleteSheet } from '@/components/tag-delete-sheet';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Loading } from '@/components/ui/loading';
@@ -12,7 +13,7 @@ import { useProfile } from '@/queries/use-profile';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { Redirect, Tabs } from 'expo-router';
-import { Bell, Bolt, Scroll } from 'lucide-react-native';
+import { Bell, Scroll } from 'lucide-react-native';
 import { Fragment } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,7 +87,7 @@ export default function Layout() {
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
-                className={cn('text-placeholder', focused && 'text-primary')}
+                className={cn('text-placeholder', focused && 'text-foreground')}
                 icon={Scroll}
               />
             ),
@@ -109,16 +110,16 @@ export default function Layout() {
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
-                className={cn('text-placeholder', focused && 'text-primary')}
+                className={cn('text-placeholder', focused && 'text-foreground')}
                 icon={Bell}
               />
             ),
           }}
         />
         <Tabs.Screen
-          name="settings"
+          name="account"
           options={{
-            headerTitle: () => <Title>Settings</Title>,
+            headerTitle: () => <Title>Account</Title>,
             tabBarItemStyle: breakpoints.md ? { marginTop: 'auto' } : undefined,
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
@@ -131,10 +132,11 @@ export default function Layout() {
                 {children}
               </Button>
             ),
-            tabBarIcon: ({ focused }) => (
-              <Icon
-                className={cn('text-placeholder', focused && 'text-primary')}
-                icon={Bolt}
+            tabBarIcon: () => (
+              <Avatar
+                avatar={profile.avatar}
+                className="size-7"
+                id={profile.id}
               />
             ),
           }}

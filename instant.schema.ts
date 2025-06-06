@@ -20,6 +20,7 @@ const schema = i.schema({
       name: i.string().indexed(),
     }),
     profiles: i.entity({
+      avatar: i.string().optional(),
       name: i.string(),
     }),
     records: i.entity({

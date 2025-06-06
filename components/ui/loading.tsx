@@ -15,7 +15,7 @@ export const Loading = ({ className }: { className?: string }) => {
     <View
       className={cn('flex-1 items-center justify-center gap-6 p-3', className)}
     >
-      <ActivityIndicator accessibilityRole="progressbar" />
+      <ActivityIndicator />
       {showTimeoutMessage && (
         <Text className="mx-auto max-w-[15rem] text-center text-sm text-placeholder">
           This is taking longer than it should. Is&nbsp;your internet working?

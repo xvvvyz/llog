@@ -47,8 +47,6 @@ export const LogTagsSheetTag = ({
         />
         {isDeleteButtonVisible ? (
           <Button
-            accessibilityHint="Removes this tag"
-            accessibilityLabel={`Remove ${name}`}
             className="size-8"
             onPress={() => sheetManager.open('tag-delete', id)}
             size="icon"

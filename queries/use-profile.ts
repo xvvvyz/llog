@@ -15,9 +15,5 @@ export const useProfile = () => {
 
   const profile = data?.profiles?.[0];
 
-  return {
-    id: profile?.id,
-    isLoading,
-    name: profile?.name,
-  };
+  return { ...profile, isLoading };
 };

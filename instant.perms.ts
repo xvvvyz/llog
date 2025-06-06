@@ -1,7 +1,7 @@
 // https://www.instantdb.com/docs/permissions
 
+import { Role } from '@/enums/roles';
 import type { InstantRules } from '@instantdb/react-native';
-import { Role } from './enums/roles';
 
 const rules = {
   $default: {
@@ -67,7 +67,7 @@ const rules = {
     },
     bind: [
       `isValidName`,
-      `size(newData.name) > 0 && size(newData.name) <= 32`,
+      `newData.name == null || size(newData.name) <= 32`,
       `isAuthenticated`,
       `auth.id != null`,
       `isTeammate`,

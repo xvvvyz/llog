@@ -2,13 +2,18 @@
   "expo": {
     "name": "llog",
     "slug": "llog",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "platforms": ["ios", "android", "web"],
     "orientation": "portrait",
     "scheme": "llog",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
+    "ios": {
+      "bundleIdentifier": "xyz.xvvvyz.llog"
+    },
     "android": {
+      "edgeToEdgeEnabled": true,
+      "package": "xyz.xvvvyz.llog",
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
@@ -16,7 +21,7 @@
       "favicon": "./assets/favicon.png",
       "output": "static"
     },
-    "plugins": ["expo-router"],
+    "plugins": ["expo-router", "expo-image-picker"],
     "experiments": {
       "typedRoutes": true
     }

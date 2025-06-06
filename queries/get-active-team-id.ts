@@ -1,4 +1,4 @@
-import { getUi } from './get-ui';
+import { getUi } from '@/queries/get-ui';
 
 export const getActiveTeamId = async () => {
   const ui = await getUi();

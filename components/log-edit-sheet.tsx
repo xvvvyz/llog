@@ -25,9 +25,8 @@ export const LogEditSheet = () => {
     >
       <View className="mx-auto w-full max-w-md p-8">
         <View>
-          <Label nativeID="name">Name</Label>
+          <Label>Name</Label>
           <Input
-            aria-labelledby="name"
             maxLength={32}
             onChangeText={(name) => updateLog({ id: log.id, name })}
             value={log.name}

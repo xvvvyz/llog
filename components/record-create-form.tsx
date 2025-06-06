@@ -1,20 +1,18 @@
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
 import { createRecord } from '@/mutations/create-record';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Text } from './ui/text';
 
 export const RecordCreateForm = ({
   className,
   logId,
   onEmptyBlur,
-  placeholder,
 }: {
   className?: string;
   logId?: string;
   onEmptyBlur?: () => void;
-  placeholder: string;
 }) => {
   const [text, setText] = useState('');
 
@@ -22,14 +20,13 @@ export const RecordCreateForm = ({
     <View className={className}>
       <Input
         autoFocus
-        className="h-auto pb-16 pt-3"
+        className="h-auto pb-16 pt-2.5 leading-normal"
         lineBreakModeIOS="wordWrapping"
         maxLength={10240}
         multiline
         numberOfLines={Platform.select({ ios: 7, web: 3 })}
         onBlur={() => !text && onEmptyBlur?.()}
         onChangeText={setText}
-        placeholder={placeholder}
         returnKeyType="default"
         submitBehavior="newline"
         value={text}
@@ -45,7 +42,7 @@ export const RecordCreateForm = ({
         size="xs"
         wrapperClassName="absolute bottom-3 right-3"
       >
-        <Text>Save</Text>
+        <Text>Record</Text>
       </Button>
     </View>
   );

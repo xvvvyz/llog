@@ -10,15 +10,12 @@ export const BackButton = () => {
 
   return (
     <Button
-      accessibilityHint="Navigates to the previous screen"
-      accessibilityLabel="Go back"
       className="size-14"
       onPress={() => navigation.goBack()}
       size="icon"
       variant="link"
     >
       <Icon
-        aria-hidden
         className="color-foreground"
         icon={Platform.select({ default: ArrowLeft, ios: ChevronLeft })}
         size={Platform.select({ default: 24, ios: 30 })}

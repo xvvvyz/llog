@@ -1,8 +1,8 @@
+import { COLORS } from '@/theme/base';
 import { execSync } from 'child_process';
 import chroma from 'chroma-js';
 import fs from 'fs';
 import path from 'path';
-import { COLORS } from '../theme/base';
 
 function parseOKLCH(oklchStr: string): {
   l: number;

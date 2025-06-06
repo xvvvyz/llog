@@ -31,16 +31,9 @@ export const SearchInput = forwardRef<
     return (
       <View className={cn('relative', wrapperClassName)}>
         <View className="absolute left-3 top-1/2 -translate-y-1/2">
-          <Icon
-            icon={Search}
-            className="text-placeholder"
-            size={20}
-            aria-hidden
-          />
+          <Icon icon={Search} className="text-placeholder" size={20} />
         </View>
         <Input
-          accessibilityHint="Type to search"
-          accessibilityLabel="Search"
           className={cn('px-10', className)}
           onChangeText={setQuery}
           placeholder={placeholder}
@@ -50,20 +43,13 @@ export const SearchInput = forwardRef<
         />
         {!!query.length && (
           <Button
-            accessibilityHint="Clears the search input"
-            accessibilityLabel="Clear search"
             className="size-8"
             onPress={() => setQuery('')}
             size="icon"
             variant="ghost"
             wrapperClassName="rounded-full absolute right-1 top-1/2 -translate-y-1/2"
           >
-            <Icon
-              aria-hidden
-              className="text-muted-foreground"
-              icon={X}
-              size={20}
-            />
+            <Icon className="text-muted-foreground" icon={X} size={20} />
           </Button>
         )}
       </View>

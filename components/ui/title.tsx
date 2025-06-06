@@ -11,7 +11,6 @@ export const Title = ({
 }) => {
   return (
     <Text
-      aria-level={1}
       className={cn(
         // full width to prevent dynamic header titles from being cut off.
         // requires the header to have both left and right icons or neither.
@@ -20,7 +19,6 @@ export const Title = ({
         className
       )}
       numberOfLines={1}
-      role="heading"
     >
       {children}
     </Text>

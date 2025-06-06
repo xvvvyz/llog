@@ -35,10 +35,6 @@ export default function Index() {
   const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs({ query });
 
-  if (logs.isLoading) {
-    return <Loading />;
-  }
-
   if (sheetManager.someOpen()) {
     return renderCacheRef.current;
   }
@@ -60,8 +56,6 @@ export default function Index() {
                 />
               )}
               <Button
-                accessibilityHint="Creates a new log"
-                accessibilityLabel="New log"
                 className="size-14"
                 onPress={() => {
                   const logId = id();
@@ -71,14 +65,16 @@ export default function Index() {
                 size="icon"
                 variant="link"
               >
-                <Icon aria-hidden className="text-foreground" icon={Plus} />
+                <Icon className="text-foreground" icon={Plus} />
               </Button>
             </View>
           ),
           headerTitle: () => <Title>Logs</Title>,
         }}
       />
-      {isEmpty ? (
+      {logs.isLoading ? (
+        <Loading />
+      ) : isEmpty ? (
         <LogListEmptyState />
       ) : (
         <List
@@ -92,8 +88,6 @@ export default function Index() {
               />
             ) : null
           }
-          accessibilityLabel="Logs"
-          accessibilityRole="list"
           contentContainerClassName="p-1.5 pt-0 md:p-6"
           data={logs.data}
           estimatedItemSize={112}
