@@ -18,7 +18,8 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "static"
     },
     "plugins": ["expo-router", "expo-image-picker"],
     "experiments": {

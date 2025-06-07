@@ -12,7 +12,7 @@
     "app:native:build": "expo prebuild --clean",
     "app:theme": "bun scripts/generate-theme.ts",
     "app:watch": "watchman watch-del $(pwd) && watchman watch-project $(pwd)",
-    "app:web:build": "expo export --platform web --output-dir web",
+    "app:web:build": "expo export --platform web --output-dir web --reset-cache",
     "app:web:push": "wrangler pages deploy web",
     "db:pull": "instant-cli pull",
     "db:push": "instant-cli push",
