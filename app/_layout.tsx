@@ -5,20 +5,17 @@ import { NAVIGATION } from '@/theme/navigation';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
-import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function Layout() {
   return (
     <ThemeProvider value={NAVIGATION[useColorScheme()]}>
-      <GestureHandlerRootView>
-        <SheetManagerProvider>
-          <View className="flex-1 bg-background">
-            <Slot />
-            <PortalHost />
-          </View>
-        </SheetManagerProvider>
-      </GestureHandlerRootView>
+      <SheetManagerProvider>
+        <GestureHandlerRootView className="flex-1 bg-background">
+          <Slot />
+          <PortalHost />
+        </GestureHandlerRootView>
+      </SheetManagerProvider>
     </ThemeProvider>
   );
 }
