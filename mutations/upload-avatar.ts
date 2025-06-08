@@ -32,8 +32,8 @@ export const uploadAvatar = async () => {
     .renderAsync();
 
   const { uri } = await manipulated.saveAsync({
-    compress: 0.8,
-    format: SaveFormat.JPEG,
+    compress: 1,
+    format: SaveFormat.WEBP,
   });
 
   const body = new FormData();

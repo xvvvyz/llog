@@ -36,7 +36,7 @@ export const LogTagsSheetTag = ({
       />
       <View className="group relative flex-1">
         <Input
-          className="bg-transparent pr-10"
+          className="border-none bg-transparent pr-10"
           defaultValue={name}
           maxLength={16}
           onBlur={() => setTimeout(() => setIsDeleteButtonVisible(false), 200)}

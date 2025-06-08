@@ -1,6 +1,20 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "compatibility_date": "2025-06-05",
+  "compatibility_date": "2025-06-07",
   "name": "llog",
-  "pages_build_output_dir": "web",
+  "main": "api/index.ts",
+  "assets": {
+    "directory": "web",
+    "not_found_handling": "404-page",
+  },
+  "env": {
+    "development": {
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
+      "vars": { "ENV": "development" },
+    },
+    "production": {
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
+      "vars": { "ENV": "production" },
+    },
+  },
 }

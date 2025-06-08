@@ -23,7 +23,6 @@ export const useLogTags = ({ query }: { query?: string } = {}) => {
   );
 
   const logTags = useMemo(
-    // TODO: use order: { order: 'asc' } in the query when this is fixed:
     // https://discord.com/channels/1031957483243188235/1376250736416919567
     () => data?.logTags?.sort((a, b) => a.order - b.order) ?? [],
     [data?.logTags]

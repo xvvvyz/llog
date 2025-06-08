@@ -1,22 +1,17 @@
-import { auth, AuthVariables } from '@/middleware/auth';
 import { db } from '@/middleware/db';
+import { headers } from '@/middleware/headers';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
-const app = new Hono<{
-  Bindings: CloudflareBindings;
-  Variables: AuthVariables;
-}>();
-
-app.use('/v1/*', cors());
+const app = new Hono<{ Bindings: CloudflareEnv }>()
+  .basePath('/api/v1')
+  .use(headers());
 
 app.put(
-  '/v1/me/avatar',
-  db(),
-  auth(),
+  '/me/avatar',
+  db({ asUser: true }),
   zValidator('form', z.object({ file: z.instanceof(File) })),
   async (c) => {
     const file = c.req.valid('form').file;
@@ -40,9 +35,9 @@ app.put(
       throw new HTTPException(400, { message: 'User has no profile' });
     }
 
-    await c.var.db.asUser({ token: c.var.user.refresh_token }).transact(
+    await c.var.db.transact(
       c.var.db.tx.profiles[profile.id].update({
-        avatar: `${upload.key}?etag=${upload.httpEtag}`,
+        avatar: `${upload.key}?v=${upload.version}`,
       })
     );
 
@@ -50,7 +45,7 @@ app.put(
   }
 );
 
-app.delete('/v1/me/avatar', db(), auth(), async (c) => {
+app.delete('/me/avatar', db({ asUser: true }), async (c) => {
   const { profiles } = await c.var.db.query({
     profiles: { $: { fields: ['avatar'], where: { user: c.var.user.id } } },
   });
@@ -58,17 +53,17 @@ app.delete('/v1/me/avatar', db(), auth(), async (c) => {
   const profile = profiles[0];
 
   if (profile?.avatar) {
-    await c.env.R2.delete(profile.avatar.split('?')[0]);
+    await c.env.R2.delete(profile.avatar);
 
-    await c.var.db
-      .asUser({ token: c.var.user.refresh_token })
-      .transact(c.var.db.tx.profiles[profile.id].update({ avatar: null }));
+    await c.var.db.transact(
+      c.var.db.tx.profiles[profile.id].update({ avatar: null })
+    );
   }
 
   return c.json({ success: true });
 });
 
-app.get('/v1/files/:key{.+}', async (c) => {
+app.get('/files/:key{.+}', async (c) => {
   const file = await c.env.R2.get(c.req.param('key'));
 
   if (!file) {

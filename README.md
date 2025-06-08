@@ -11,14 +11,13 @@
 2. Add environment variables
 
    ```bash
-   # .env
+   # .env.development.local
 
-   EXPO_PUBLIC_API_URL=http://localhost:8787/v1
    EXPO_PUBLIC_INSTANT_APP_ID=<YOUR_ID>
    ```
 
    ```bash
-   # .dev.vars
+   # .dev.vars.development
 
    INSTANT_APP_ADMIN_TOKEN=<YOUR_TOKEN>
    INSTANT_APP_ID=<YOUR_ID>

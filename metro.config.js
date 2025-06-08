@@ -4,7 +4,13 @@ const reanimated = require('react-native-reanimated/metro-config');
 
 const expoConfig = metro.getDefaultConfig(__dirname);
 
-expoConfig.transformer.minifierConfig = { compress: { drop_console: true } };
+expoConfig.transformer.getTransformOptions = () => ({
+  transform: { experimentalImportSupport: true, inlineRequires: true },
+});
+
+expoConfig.transformer.minifierConfig = {
+  compress: { drop_console: true },
+};
 
 const withNativeWindConfig = nativeWind.withNativeWind(expoConfig, {
   input: './theme/global.css',
