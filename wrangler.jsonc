@@ -3,10 +3,7 @@
   "compatibility_date": "2025-06-07",
   "name": "llog",
   "main": "api/index.ts",
-  "assets": {
-    "directory": "web",
-    "not_found_handling": "404-page",
-  },
+  "assets": { "directory": "web" },
   "env": {
     "development": {
       "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],

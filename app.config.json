@@ -22,7 +22,7 @@
       "output": "static",
       "outputDirectory": "web"
     },
-    "plugins": ["expo-router", "expo-image-picker"],
+    "plugins": [["expo-router", { "sitemap": false }], "expo-image-picker"],
     "experiments": {
       "typedRoutes": true
     }

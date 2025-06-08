@@ -70,13 +70,12 @@ app.get('/files/:key{.+}', async (c) => {
     throw new HTTPException(404, { message: 'File not found' });
   }
 
-  if (c.req.header('If-None-Match') === file.httpEtag) {
-    return new Response(null, { status: 304 });
+  c.header('Cache-Control', 'public, max-age=31536000, immutable');
+
+  if (file.httpMetadata) {
+    c.header('Content-Type', file.httpMetadata.contentType);
   }
 
-  c.header('Cache-Control', 'public, no-cache');
-  c.header('Content-Type', file.httpMetadata!.contentType);
-  c.header('ETag', file.httpEtag);
   return c.body(file.body);
 });
 
