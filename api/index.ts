@@ -15,7 +15,7 @@ app.put(
   zValidator('form', z.object({ file: z.instanceof(File) })),
   async (c) => {
     const file = c.req.valid('form').file;
-    const key = `${c.var.user.id}/avatar`;
+    const key = `profiles/${c.var.user.id}/avatar`;
 
     if (!file.type.startsWith('image/')) {
       throw new HTTPException(400, { message: 'Invalid file format' });
