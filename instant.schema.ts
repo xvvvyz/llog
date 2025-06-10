@@ -1,6 +1,6 @@
 // https://www.instantdb.com/docs/modeling-data
 
-import { i, InstaQLEntity } from '@instantdb/react';
+import { i } from '@instantdb/react';
 
 const schema = i.schema({
   entities: {
@@ -31,6 +31,9 @@ const schema = i.schema({
       key: i.string().unique(),
       role: i.string(),
       userId: i.string(),
+    }),
+    rules: i.entity({
+      prompt: i.string(),
     }),
     teams: i.entity({
       name: i.string(),
@@ -108,6 +111,19 @@ const schema = i.schema({
         label: 'roles',
       },
     },
+    rulesAuthors: {
+      forward: {
+        on: 'rules',
+        has: 'one',
+        label: 'author',
+        required: true,
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'rules',
+      },
+    },
     teamsLogs: {
       forward: {
         on: 'teams',
@@ -144,6 +160,20 @@ const schema = i.schema({
       },
       reverse: {
         on: 'logTags',
+        has: 'one',
+        label: 'team',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
+    teamsRules: {
+      forward: {
+        on: 'teams',
+        has: 'many',
+        label: 'rules',
+      },
+      reverse: {
+        on: 'rules',
         has: 'one',
         label: 'team',
         required: true,
@@ -192,9 +222,4 @@ const schema = i.schema({
   rooms: {},
 });
 
-type Log = InstaQLEntity<typeof schema, 'logs'>;
-type LogTag = InstaQLEntity<typeof schema, 'logTags'>;
-type Record = InstaQLEntity<typeof schema, 'records'>;
-
-export type { Log, LogTag, Record };
 export default schema;

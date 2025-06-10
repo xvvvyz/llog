@@ -24,12 +24,14 @@ export const db = <T extends DbMiddlewareOptions>({ asUser }: T = {} as T) =>
     });
 
     if (asUser) {
-      const token = c.req.header('Authorization')?.split(' ')[1];
-      if (!token) throw new HTTPException(401, { message: 'Unauthorized' });
-      const user = await db.auth.verifyToken(token);
-      if (!user) throw new HTTPException(401, { message: 'Unauthorized' });
-      c.set('db', db.asUser({ token }));
-      c.set('user', user as DbMiddleware<T>['Variables']['user']);
+      try {
+        const token = c.req.header('Authorization')?.split(' ')[1] ?? '';
+        const user = await db.auth.verifyToken(token);
+        c.set('db', db.asUser({ token }));
+        c.set('user', user as DbMiddleware<T>['Variables']['user']);
+      } catch (e) {
+        throw new HTTPException(401, { message: 'Unauthorized' });
+      }
     } else {
       c.set('db', db);
       c.set('user', undefined as DbMiddleware<T>['Variables']['user']);

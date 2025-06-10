@@ -1,5 +1,5 @@
 import { Role } from '@/enums/roles';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { id as generateId } from '@instantdb/react-native';
 
 export const onboardUser = async ({ name }: { name: string }) => {

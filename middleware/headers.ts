@@ -2,7 +2,7 @@ import { createMiddleware } from 'hono/factory';
 import { secureHeaders } from 'hono/secure-headers';
 
 export const headers = () =>
-  createMiddleware<{ Bindings: CloudflareEnv }>((c, next) =>
+  createMiddleware((c, next) =>
     c.env.ENV === 'production'
       ? secureHeaders({
           strictTransportSecurity: 'max-age=31536000; includeSubDomains',

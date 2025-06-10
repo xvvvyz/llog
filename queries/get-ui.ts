@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 
 export const getUi = async () => {
   const auth = await db.getAuth();

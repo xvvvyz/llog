@@ -1,3 +1,5 @@
+import { TeamAgent } from '@/agents/team';
+import { agents } from '@/middleware/agents';
 import { db } from '@/middleware/db';
 import { headers } from '@/middleware/headers';
 import { zValidator } from '@hono/zod-validator';
@@ -5,9 +7,12 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
-const app = new Hono<{ Bindings: CloudflareEnv }>()
-  .basePath('/api/v1')
-  .use(headers());
+export { TeamAgent };
+
+const app = new Hono<{ Bindings: CloudflareEnv }>().basePath('/api/v1');
+
+app.use(headers());
+app.use('/agents/*', agents());
 
 app.put(
   '/me/avatar',

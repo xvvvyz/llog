@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { useMemo } from 'react';
 
 export const useLog = ({ id }: { id?: string }) => {

@@ -1,5 +1,5 @@
 import { getActiveTeamId } from '@/queries/get-active-team-id';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 
 export const reorderLogTags = async ({
   fromIndex,

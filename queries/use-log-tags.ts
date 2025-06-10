@@ -1,5 +1,5 @@
 import { useUi } from '@/queries/use-ui';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { useMemo } from 'react';
 
 export const useLogTags = ({ query }: { query?: string } = {}) => {

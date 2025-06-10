@@ -1,5 +1,5 @@
 import { useUi } from '@/queries/use-ui';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 
 export const useLogs = ({ query }: { query?: string } = {}) => {
   const ui = useUi();

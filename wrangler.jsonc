@@ -1,17 +1,49 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "compatibility_date": "2025-06-07",
+  "compatibility_flags": ["nodejs_compat"],
   "name": "llog",
   "main": "api/index.ts",
-  "assets": { "directory": "web", "not_found_handling": "single-page-application" },
   "env": {
     "development": {
-      "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
-      "vars": { "ENV": "development" },
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "TeamAgent",
+            "name": "TEAM_AGENT",
+          },
+        ],
+      },
+      "migrations": [
+        {
+          "new_sqlite_classes": ["TeamAgent"],
+          "tag": "v1",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "llog",
+        },
+      ],
+      "vars": {
+        "ENV": "development",
+      },
     },
     "production": {
-      "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
-      "vars": { "ENV": "production" },
+      "assets": {
+        "directory": "web",
+        "not_found_handling": "single-page-application",
+      },
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "llog",
+        },
+      ],
+      "vars": {
+        "ENV": "production",
+      },
     },
   },
 }

@@ -9,13 +9,14 @@ import { Loading } from '@/components/ui/loading';
 import { Title } from '@/components/ui/title';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderConfig } from '@/hooks/use-header-config';
+import { createRule } from '@/mutations/create-rule';
 import { useProfile } from '@/queries/use-profile';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { cn } from '@/utilities/ui/utils';
 import { Redirect, Tabs } from 'expo-router';
-import { Bell, Scroll } from 'lucide-react-native';
+import { Bell, Plus, Scroll, WandSparkles } from 'lucide-react-native';
 import { Fragment } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
@@ -94,9 +95,44 @@ export default function Layout() {
           }}
         />
         <Tabs.Screen
-          name="notifications"
+          name="rules"
           options={{
-            headerTitle: () => <Title>Notifications</Title>,
+            headerLeft: () =>
+              breakpoints.md ? null : <View className="size-14" />,
+            headerRight: () => (
+              <Button
+                className="size-14"
+                onPress={() => createRule({ prompt: '' })}
+                size="icon"
+                variant="link"
+              >
+                <Icon className="text-foreground" icon={Plus} />
+              </Button>
+            ),
+            headerTitle: () => <Title>Rules</Title>,
+            tabBarButton: ({ children, onPress, ...props }) => (
+              <Button
+                aria-selected={props['aria-selected']}
+                className={cn(breakpoints.md && 'size-14')}
+                onPress={onPress}
+                size={breakpoints.md ? 'icon' : 'default'}
+                variant="link"
+              >
+                {children}
+              </Button>
+            ),
+            tabBarIcon: ({ focused }) => (
+              <Icon
+                className={cn('text-placeholder', focused && 'text-foreground')}
+                icon={WandSparkles}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="alerts"
+          options={{
+            headerTitle: () => <Title>Alerts</Title>,
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}

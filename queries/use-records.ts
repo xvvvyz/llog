@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 
 export const useRecords = ({ logId }: { logId?: string }) => {
   const { data, isLoading } = db.useQuery(

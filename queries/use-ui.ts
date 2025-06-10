@@ -1,6 +1,6 @@
 import { SortBy } from '@/components/log-list-actions';
 import { SortDirection } from '@/components/ui/dropdown-menu';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { useMemo } from 'react';
 
 export const useUi = () => {

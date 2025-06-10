@@ -1,6 +1,6 @@
 import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { Color } from '@/theme/spectrum';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { id as generateId } from '@instantdb/react-native';
 
 export const createLog = async ({

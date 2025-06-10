@@ -5,7 +5,7 @@ import { Loading } from '@/components/ui/loading';
 import { Text } from '@/components/ui/text';
 import { onboardUser } from '@/mutations/onboard-user';
 import { useProfile } from '@/queries/use-profile';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { Redirect } from 'expo-router';
 import React, { useState, useTransition } from 'react';
 import { ActivityIndicator, View } from 'react-native';

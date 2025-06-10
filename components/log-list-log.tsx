@@ -1,7 +1,8 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { LogTag } from '@/instant.schema';
+import schema from '@/instant.schema';
+import { InstaQLEntity } from '@instantdb/react-native';
 import { Link } from 'expo-router';
 import { View } from 'react-native';
 
@@ -14,7 +15,7 @@ export const LogListLog = ({
   color: string;
   id: string;
   name: string;
-  tags: LogTag[];
+  tags: InstaQLEntity<typeof schema, 'logTags'>[];
 }) => {
   return (
     <View className="w-full p-1.5 web:transition-opacity web:hover:opacity-90 md:p-2">

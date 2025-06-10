@@ -1,0 +1,6 @@
+---
+description: 
+globs: *.tsx,*.ts,*.json
+alwaysApply: false
+---
+- When there are formatting linter errors, run `bunx prettier --write ./path/to/file` instead of manually fixing them.

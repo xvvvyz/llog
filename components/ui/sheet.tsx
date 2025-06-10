@@ -1,5 +1,5 @@
 import { Loading } from '@/components/ui/loading';
-import { animation } from '@/utilities/animation';
+import { animation } from '@/utilities/ui/utils';
 import { Portal } from '@rn-primitives/portal';
 import { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable } from 'react-native';

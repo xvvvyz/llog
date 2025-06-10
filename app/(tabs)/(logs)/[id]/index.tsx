@@ -10,7 +10,7 @@ import { useSheetManager } from '@/context/sheet-manager';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useLog } from '@/queries/use-log';
 import { useRecords } from '@/queries/use-records';
-import { formatDate } from '@/utilities/time';
+import { formatDate } from '@/utilities/ui/time';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Fragment, ReactElement, useRef } from 'react';
 import { View } from 'react-native';
@@ -52,7 +52,7 @@ export default function Index() {
           ListHeaderComponent={
             records.data.length ? <RecordListHeader logId={params.id} /> : null
           }
-          contentContainerClassName="mx-auto w-full max-w-lg p-3 pt-0 md:p-8 md:pt-0"
+          contentContainerClassName="mx-auto w-full max-w-xl p-3 pt-0 md:p-8 md:pt-0"
           data={records.data}
           keyExtractor={(record) => record.id}
           keyboardDismissMode="on-drag"
@@ -78,6 +78,7 @@ export default function Index() {
               </Text>
             </View>
           )}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </Fragment>

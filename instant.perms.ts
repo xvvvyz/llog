@@ -49,7 +49,7 @@ const rules = {
     },
     bind: [
       `isValidName`,
-      `size(newData.name) <= 16`,
+      `size(newData.name) <= 32`,
       `isTeamMember`,
       `auth.id in data.ref('team.roles.user.id')`,
       `isTeamAdmin`,
@@ -118,6 +118,22 @@ const rules = {
       `data.ref('user.id') == auth.ref('$user.id')`,
       `isTeamMember`,
       `auth.id in data.ref('team.roles.user.id')`,
+      `isTeamOwner`,
+      `'${Role.Owner}_' + auth.id in data.ref('team.roles.key')`,
+    ],
+  },
+  rules: {
+    allow: {
+      view: `isTeamAdmin || isTeamOwner`,
+      create: `(isTeamAdmin || isTeamOwner) && isValidPrompt`,
+      update: `(isTeamAdmin || isTeamOwner) && isValidPrompt`,
+      delete: `(isTeamAdmin || isTeamOwner)`,
+    },
+    bind: [
+      `isValidPrompt`,
+      `size(newData.prompt) <= 10240`,
+      `isTeamAdmin`,
+      `'${Role.Admin}_' + auth.id in data.ref('team.roles.key')`,
       `isTeamOwner`,
       `'${Role.Owner}_' + auth.id in data.ref('team.roles.key')`,
     ],

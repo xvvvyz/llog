@@ -9,13 +9,13 @@ import { deleteAvatar } from '@/mutations/delete-avatar';
 import { updateProfile } from '@/mutations/update-profile';
 import { uploadAvatar } from '@/mutations/upload-avatar';
 import { useProfile } from '@/queries/use-profile';
-import { db } from '@/utilities/db';
+import { db } from '@/utilities/ui/db';
 import { router } from 'expo-router';
 import { LogOut, Trash, Upload } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-export default function Profile() {
+export default function Account() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const auth = db.useAuth();
   const profile = useProfile();
