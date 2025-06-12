@@ -1,4 +1,4 @@
-import { systemPrompt } from '@/agent/prompts/system';
+import { eventSystemPrompt } from '@/agent/prompts/event-system';
 import { generateId } from '@/agent/tools/generate-id';
 import { getCurrentTime } from '@/agent/tools/get-current-time';
 import { queryData } from '@/agent/tools/query-data';
@@ -63,7 +63,7 @@ export class AppAgent extends Agent<CloudflareEnv> {
         onStepFinish: this.onStepFinish<typeof tools>,
         prompt: await r.text(),
         stopWhen: stepCountIs(10),
-        system: systemPrompt({ agentProfileId, teamId: this.name }),
+        system: eventSystemPrompt({ agentProfileId, teamId: this.name }),
         tools,
       });
 

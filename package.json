@@ -76,7 +76,7 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.25.62"
+    "zod": "^3.25.63"
   },
   "devDependencies": {
     "@babel/core": "^7.27.4",
@@ -97,7 +97,7 @@
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-tailwindcss": "^0.6.12",
     "typescript": "^5.8.3",
-    "wrangler": "^4.19.2"
+    "wrangler": "^4.20.0"
   },
   "resolutions": {
     "react": "19.0.0"
