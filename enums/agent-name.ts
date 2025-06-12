@@ -1,3 +1,3 @@
 export enum AgentName {
-  TeamAgent = 'TEAM_AGENT',
+  AppAgent = 'APP_AGENT',
 }

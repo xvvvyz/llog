@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "compatibility_date": "2025-06-07",
+  "compatibility_date": "2025-05-25",
   "compatibility_flags": ["nodejs_compat"],
   "name": "llog",
   "main": "api/index.ts",
@@ -9,14 +9,14 @@
       "durable_objects": {
         "bindings": [
           {
-            "class_name": "TeamAgent",
-            "name": "TEAM_AGENT",
+            "class_name": "AppAgent",
+            "name": "APP_AGENT",
           },
         ],
       },
       "migrations": [
         {
-          "new_sqlite_classes": ["TeamAgent"],
+          "new_sqlite_classes": ["AppAgent"],
           "tag": "v1",
         },
       ],

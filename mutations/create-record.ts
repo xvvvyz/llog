@@ -1,4 +1,3 @@
-import { AgentName } from '@/enums/agent-name';
 import { getProfile } from '@/queries/get-profile';
 import { agent } from '@/utilities/ui/agent';
 import { db } from '@/utilities/ui/db';
@@ -21,5 +20,7 @@ export const createRecord = async ({
       .link({ author: profile.id, log: logId })
   );
 
-  void agent(AgentName.TeamAgent, `New record created: ${recordId}`);
+  void agent(
+    `New record created. recordId:${recordId} authorId:${profile.id} logId:${logId}`
+  );
 };

@@ -21,11 +21,11 @@ const schema = i.schema({
     }),
     profiles: i.entity({
       avatar: i.string().optional(),
-      name: i.string(),
+      name: i.string().indexed(),
     }),
     records: i.entity({
       date: i.date().indexed(),
-      text: i.string(),
+      text: i.string().indexed(),
     }),
     roles: i.entity({
       key: i.string().unique(),

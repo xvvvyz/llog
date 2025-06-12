@@ -27,7 +27,7 @@ const rules = {
       view: `isTeamMember`,
       create: `(isTeamAdmin || isTeamOwner) && isValidName`,
       update: `(isTeamAdmin || isTeamOwner) && isValidName`,
-      delete: `isTeamOwner`,
+      delete: `(isTeamAdmin || isTeamOwner)`,
     },
     bind: [
       `isValidName`,
@@ -45,7 +45,7 @@ const rules = {
       view: `isTeamMember`,
       create: `(isTeamAdmin || isTeamOwner) && isValidName`,
       update: `(isTeamAdmin || isTeamOwner) && isValidName`,
-      delete: `isTeamOwner`,
+      delete: `(isTeamAdmin || isTeamOwner)`,
     },
     bind: [
       `isValidName`,
@@ -80,7 +80,7 @@ const rules = {
     allow: {
       view: `isTeamMember`,
       create: `(isTeamRecorder || isTeamAdmin || isTeamOwner) && isValidText`,
-      update: `isAuthor && isValidText`,
+      update: `(isAuthor || isTeamAdmin || isTeamOwner) && isValidText`,
       delete: `isAuthor || isTeamAdmin || isTeamOwner`,
     },
     bind: [
