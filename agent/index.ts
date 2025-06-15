@@ -11,6 +11,7 @@ import { WeatherClient } from '@agentic/weather';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createXai } from '@ai-sdk/xai';
 import { id, init, User } from '@instantdb/admin';
 import { Agent } from 'agents';
 
@@ -29,6 +30,7 @@ export class AppAgent extends Agent<CloudflareEnv> {
     anthropic: createAnthropic({ apiKey: this.env.ANTHROPIC_API_KEY }),
     google: createGoogleGenerativeAI({ apiKey: this.env.GOOGLE_API_KEY }),
     openai: createOpenAI({ apiKey: this.env.OPENAI_API_KEY }),
+    xai: createXai({ apiKey: this.env.XAI_API_KEY }),
   });
 
   private db = init({

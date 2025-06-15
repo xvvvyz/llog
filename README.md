@@ -26,6 +26,7 @@
    INSTANT_APP_ID=<YOUR_ID>
    OPENAI_API_KEY=<YOUR_KEY>
    WEATHER_API_KEY=<YOUR_KEY>
+   XAI_API_KEY=<YOUR_KEY>
    ```
 
 3. Generate types
