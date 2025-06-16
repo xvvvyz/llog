@@ -1,6 +1,7 @@
 import { LogDeleteSheet } from '@/components/log-delete-sheet';
 import { LogEditSheet } from '@/components/log-edit-sheet';
 import { LogTagsSheet } from '@/components/log-tags-sheet';
+import { RecordCreateSheet } from '@/components/record-create-sheet';
 import { TagDeleteSheet } from '@/components/tag-delete-sheet';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/ui/db';
 import { cn } from '@/utilities/ui/utils';
 import { Redirect, Tabs } from 'expo-router';
-import { Bell, Plus, Scroll, WandSparkles } from 'lucide-react-native';
+import { Bell, LayoutGrid, ListCheck, Plus } from 'lucide-react-native';
 import { Fragment } from 'react';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,7 +79,7 @@ export default function Layout() {
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
-                className={cn(breakpoints.md && 'size-14')}
+                className={cn('h-11', breakpoints.md && 'size-14')}
                 onPress={onPress}
                 size={breakpoints.md ? 'icon' : 'default'}
                 variant="link"
@@ -89,7 +90,7 @@ export default function Layout() {
             tabBarIcon: ({ focused }) => (
               <Icon
                 className={cn('text-placeholder', focused && 'text-foreground')}
-                icon={Scroll}
+                icon={LayoutGrid}
               />
             ),
           }}
@@ -113,7 +114,7 @@ export default function Layout() {
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
-                className={cn(breakpoints.md && 'size-14')}
+                className={cn('h-11', breakpoints.md && 'size-14')}
                 onPress={onPress}
                 size={breakpoints.md ? 'icon' : 'default'}
                 variant="link"
@@ -124,7 +125,7 @@ export default function Layout() {
             tabBarIcon: ({ focused }) => (
               <Icon
                 className={cn('text-placeholder', focused && 'text-foreground')}
-                icon={WandSparkles}
+                icon={ListCheck}
               />
             ),
           }}
@@ -136,7 +137,7 @@ export default function Layout() {
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
-                className={cn(breakpoints.md && 'size-14')}
+                className={cn('h-11', breakpoints.md && 'size-14')}
                 onPress={onPress}
                 size={breakpoints.md ? 'icon' : 'default'}
                 variant="link"
@@ -160,7 +161,7 @@ export default function Layout() {
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
-                className={cn(breakpoints.md && 'size-14')}
+                className={cn('h-11', breakpoints.md && 'size-14')}
                 onPress={onPress}
                 size={breakpoints.md ? 'icon' : 'default'}
                 variant="link"
@@ -180,6 +181,7 @@ export default function Layout() {
       </Tabs>
       <LogEditSheet />
       <LogTagsSheet />
+      <RecordCreateSheet />
       <LogDeleteSheet />
       <TagDeleteSheet />
     </Fragment>

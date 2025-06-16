@@ -9,7 +9,7 @@ export const NAVIGATION = Object.freeze({
       ...DefaultTheme.colors,
       background: 'rgb(235, 235, 235)',
       card: 'rgb(235, 235, 235)',
-      border: 'rgba(0, 0, 0, 0.04)',
+      border: 'rgba(0, 0, 0, 0.06)',
     },
   },
   dark: {

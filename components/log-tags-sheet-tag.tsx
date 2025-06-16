@@ -3,6 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { useSheetManager } from '@/context/sheet-manager';
+import { useLogColor } from '@/hooks/use-log-color';
 import { toggleLogTag } from '@/mutations/toggle-log-tag';
 import { updateLogTag } from '@/mutations/update-log-tag';
 import { cn } from '@/utilities/ui/utils';
@@ -25,14 +26,23 @@ export const LogTagsSheetTag = ({
   name: string;
 }) => {
   const [isDeleteButtonVisible, setIsDeleteButtonVisible] = useState(false);
+  const logColor = useLogColor({ id: logId });
   const sheetManager = useSheetManager();
 
   return (
-    <View className={cn('w-40 flex-row rounded-xl bg-input', className)}>
+    <View
+      className={cn(
+        'w-40 flex-row items-center rounded-full border border-border-secondary bg-input',
+        className
+      )}
+      style={{ borderCurve: 'continuous' }}
+    >
       <Checkbox
         checked={isSelected}
-        className="size-10"
+        checkedColor={logColor.default}
+        className="size-10 border-none"
         onCheckedChange={() => toggleLogTag({ id, isSelected, logId })}
+        wrapperClassName="rounded-full"
       />
       <View className="group relative flex-1">
         <Input

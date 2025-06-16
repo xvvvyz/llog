@@ -29,7 +29,10 @@ export const LogListLog = ({
         >
           <View className="max-h-11 flex-row flex-wrap gap-1 overflow-hidden pr-10">
             {tags.map((tag) => (
-              <View key={tag.id} className="rounded bg-black/10 px-1.5 py-0.5">
+              <View
+                key={tag.id}
+                className="rounded-full bg-black/10 px-1.5 py-0.5"
+              >
                 <Text className="text-xs text-white/80" numberOfLines={1}>
                   {tag.name}
                 </Text>

@@ -7,9 +7,9 @@ import { cn } from '@/utilities/ui/utils';
 import { Platform, View } from 'react-native';
 
 import {
+  FolderPen,
   MoreHorizontal,
   MoreVertical,
-  Pencil,
   Tag,
   Trash,
 } from 'lucide-react-native';
@@ -45,9 +45,7 @@ export const LogDropdownMenu = ({
       </Menu.Trigger>
       <Menu.Content
         align="end"
-        className={cn(Platform.select({ native: 'mt-1' }), {
-          '-mt-0.5 mr-3.5': variant === 'list',
-        })}
+        className={cn(variant === 'list' ? '-mt-0.5 mr-3.5' : 'mt-1')}
         style={
           variant === 'header'
             ? {
@@ -61,7 +59,7 @@ export const LogDropdownMenu = ({
         }
       >
         <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
-          <Icon className="text-placeholder" icon={Pencil} size={20} />
+          <Icon className="text-placeholder" icon={FolderPen} size={20} />
           <Text>Edit</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>

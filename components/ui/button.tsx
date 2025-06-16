@@ -30,7 +30,7 @@ const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
 });
 
 const buttonVariants = cva(
-  'group flex-row items-center rounded-xl gap-3 justify-center web:transition-colors web:focus-visible:outline-none',
+  'group flex-row items-center rounded-xl gap-3 justify-center web:transition-opacity web:transition-colors web:focus-visible:outline-none',
   {
     defaultVariants: {
       size: 'default',

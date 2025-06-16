@@ -1,3 +1,4 @@
+import { RuleListEmptyState } from '@/components/rule-list-empty-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { List } from '@/components/ui/list';
@@ -11,9 +12,15 @@ import { View } from 'react-native';
 export default function Rules() {
   const rules = useRules();
 
-  return rules.isLoading ? (
-    <Loading />
-  ) : !rules.data.length ? null : (
+  if (rules.isLoading) {
+    return <Loading />;
+  }
+
+  if (!rules.data.length) {
+    return <RuleListEmptyState />;
+  }
+
+  return (
     <List
       contentContainerClassName="mx-auto w-full max-w-xl p-3 pt-0 md:p-8 md:pt-5"
       data={rules.data}

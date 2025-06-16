@@ -59,7 +59,7 @@ export default function Index() {
                 className="size-14"
                 onPress={() => {
                   const logId = id();
-                  createLog({ color: 11, id: logId, name: 'Log' });
+                  createLog({ color: 7, id: logId, name: 'Log' });
                   router.push(`/${logId}`);
                 }}
                 size="icon"
@@ -111,7 +111,6 @@ export default function Index() {
               />
             );
           }}
-          showsVerticalScrollIndicator={false}
         />
       )}
     </Fragment>

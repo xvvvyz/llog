@@ -9,7 +9,7 @@ import { View } from 'react-native';
 
 export const LogListEmptyState = () => {
   return (
-    <View className="flex-1 items-center justify-center gap-8 py-8">
+    <View className="flex-1 items-center justify-center gap-8 px-3 py-8">
       <Icon className="-mb-2 text-primary" icon={Globe} size={64} />
       <Text className="text-center text-muted-foreground">
         Track anything in your world.
@@ -17,7 +17,7 @@ export const LogListEmptyState = () => {
       <Button
         onPress={() => {
           const logId = id();
-          createLog({ color: 11, id: logId, name: 'Log' });
+          createLog({ color: 7, id: logId, name: 'Log' });
           router.push(`/${logId}`);
         }}
       >

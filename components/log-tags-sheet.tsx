@@ -5,6 +5,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
+import { useLogColor } from '@/hooks/use-log-color';
 import { addLogTagToLog } from '@/mutations/add-log-tag-to-log';
 import { createLogTag } from '@/mutations/create-log-tag';
 import { reorderLogTags } from '@/mutations/reorder-log-tags';
@@ -14,7 +15,7 @@ import { useLogTags } from '@/queries/use-log-tags';
 import { cn } from '@/utilities/ui/utils';
 import { Tags } from 'lucide-react-native';
 import { ComponentRef, useCallback, useMemo, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable from 'react-native-sortables';
 
@@ -28,6 +29,7 @@ export const LogTagsSheet = () => {
   const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
 
   const log = useLog({ id: sheetManager.getId('log-tags') });
+  const logColor = useLogColor({ id: log.id });
   const logTags = useLogTags({ query });
 
   const isLoading = log.isLoading || logTags.isLoading;
@@ -69,7 +71,13 @@ export const LogTagsSheet = () => {
       >
         <View className="h-10">
           {isEmpty && !rawQuery && (
-            <Icon aria-hidden className="text-primary" icon={Tags} size={48} />
+            <Icon
+              aria-hidden
+              className="text-primary"
+              icon={Tags}
+              size={48}
+              style={{ color: logColor.default } as ViewStyle}
+            />
           )}
           {!isLoading && (
             <Sortable.Flex
@@ -95,7 +103,13 @@ export const LogTagsSheet = () => {
                 />
               ))}
               {!!rawQuery && !logTags.queryExistingTagId && (
-                <Button onPress={handleCreateTag} size="sm" variant="secondary">
+                <Button
+                  className="rounded-full"
+                  onPress={handleCreateTag}
+                  size="sm"
+                  variant="secondary"
+                  wrapperClassName="rounded-full"
+                >
                   <Text numberOfLines={1}>
                     Create tag &ldquo;{rawQuery}&rdquo;
                   </Text>
