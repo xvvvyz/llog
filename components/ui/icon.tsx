@@ -1,7 +1,7 @@
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/utilities/ui/utils';
 import { LucideIcon } from 'lucide-react-native';
-import { remapProps } from 'nativewind';
+import { cssInterop } from 'nativewind';
 import React, { ComponentProps, useContext } from 'react';
 
 interface IconProps extends ComponentProps<LucideIcon> {
@@ -16,7 +16,7 @@ export const Icon = ({
 }: IconProps) => {
   const textClass = useContext(TextClassContext);
 
-  const StyledIcon = remapProps(IconComponent, {
+  const StyledIcon = cssInterop(IconComponent, {
     className: {
       target: 'style',
       nativeStyleToProp: { color: true, opacity: true },

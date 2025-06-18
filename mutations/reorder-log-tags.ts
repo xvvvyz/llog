@@ -1,13 +1,8 @@
 import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { db } from '@/utilities/ui/db';
+import { SortableFlexDragEndParams } from 'react-native-sortables';
 
-export const reorderLogTags = async ({
-  fromIndex,
-  toIndex,
-}: {
-  fromIndex: number;
-  toIndex: number;
-}) => {
+export const reorderLogTags = async ({ order }: SortableFlexDragEndParams) => {
   const teamId = await getActiveTeamId();
   if (!teamId) return;
 
@@ -15,11 +10,9 @@ export const reorderLogTags = async ({
     logTags: { $: { order: { order: 'asc' }, where: { team: teamId } } },
   });
 
-  const newTags = [...data.logTags];
-  const [reorderedTag] = newTags.splice(fromIndex, 1);
-  newTags.splice(toIndex, 0, reorderedTag);
-
   return db.transact(
-    newTags.map((tag, index) => db.tx.logTags[tag.id].update({ order: index }))
+    order(data.logTags).map((tag, index) =>
+      db.tx.logTags[tag.id].update({ order: index })
+    )
   );
 };

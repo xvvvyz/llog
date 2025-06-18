@@ -11,6 +11,9 @@ const schema = i.schema({
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
     }),
+    comments: i.entity({
+      text: i.string().indexed(),
+    }),
     logTags: i.entity({
       name: i.string().indexed(),
       order: i.number().indexed(),
@@ -44,6 +47,19 @@ const schema = i.schema({
     }),
   },
   links: {
+    commentsAuthors: {
+      forward: {
+        on: 'comments',
+        has: 'one',
+        label: 'author',
+        required: true,
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'comments',
+      },
+    },
     logsRecords: {
       forward: {
         on: 'logs',
@@ -70,7 +86,7 @@ const schema = i.schema({
         label: 'logs',
       },
     },
-    profilesUser: {
+    profilesUsers: {
       forward: {
         on: 'profiles',
         has: 'one',
@@ -97,7 +113,21 @@ const schema = i.schema({
         label: 'records',
       },
     },
-    rolesUser: {
+    recordsComments: {
+      forward: {
+        on: 'records',
+        has: 'many',
+        label: 'comments',
+      },
+      reverse: {
+        on: 'comments',
+        has: 'one',
+        label: 'record',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
+    rolesUsers: {
       forward: {
         on: 'roles',
         has: 'one',
@@ -192,7 +222,7 @@ const schema = i.schema({
         label: 'ui',
       },
     },
-    uiTeam: {
+    uiTeams: {
       forward: {
         on: 'ui',
         has: 'one',
@@ -204,7 +234,7 @@ const schema = i.schema({
         label: 'ui',
       },
     },
-    uiUser: {
+    uiUsers: {
       forward: {
         on: 'ui',
         has: 'one',

@@ -18,7 +18,7 @@ export const NAVIGATION = Object.freeze({
       ...DarkTheme.colors,
       background: 'rgb(13, 13, 13)',
       card: 'rgb(13, 13, 13)',
-      border: 'rgba(255, 255, 255, 0.04)',
+      border: 'rgba(255, 255, 255, 0.05)',
     },
   },
 });

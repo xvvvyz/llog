@@ -33,19 +33,19 @@ export const LogListLog = ({
                 key={tag.id}
                 className="rounded-full bg-black/10 px-1.5 py-0.5"
               >
-                <Text className="text-xs text-white/80" numberOfLines={1}>
+                <Text className="text-xs text-white/90" numberOfLines={1}>
                   {tag.name}
                 </Text>
               </View>
             ))}
           </View>
-          <Text className="-mb-1.5 text-primary-foreground" numberOfLines={1}>
+          <Text className="-mb-1.5 text-white" numberOfLines={1}>
             {name}
           </Text>
         </Button>
       </Link>
       <View className="absolute right-1 top-1 md:right-1.5 md:top-1.5">
-        <LogDropdownMenu id={id} name={name} />
+        <LogDropdownMenu id={id} />
       </View>
     </View>
   );

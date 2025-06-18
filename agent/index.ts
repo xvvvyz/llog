@@ -18,10 +18,9 @@ import { Agent } from 'agents';
 import {
   createProviderRegistry,
   generateText,
-  InvalidToolArgumentsError,
+  InvalidToolInputError,
   stepCountIs,
   StepResult,
-  ToolExecutionError,
   ToolSet,
 } from 'ai';
 
@@ -64,7 +63,7 @@ export class AppAgent extends Agent<CloudflareEnv> {
         model: this.ai.languageModel('google:gemini-2.0-flash'),
         onStepFinish: this.onStepFinish<typeof tools>,
         prompt: await r.text(),
-        stopWhen: stepCountIs(10),
+        stopWhen: stepCountIs(20),
         system: eventSystemPrompt({ agentProfileId, teamId: this.name }),
         tools,
       });
@@ -75,11 +74,8 @@ export class AppAgent extends Agent<CloudflareEnv> {
         console.log(error.message);
       }
 
-      if (
-        ToolExecutionError.isInstance(error) ||
-        InvalidToolArgumentsError.isInstance(error)
-      ) {
-        console.log(error.toolArgs);
+      if (InvalidToolInputError.isInstance(error)) {
+        console.log(error.toolInput);
       }
 
       return Response.json({ error: 'Internal server error' }, { status: 500 });
@@ -130,7 +126,7 @@ export class AppAgent extends Agent<CloudflareEnv> {
     text,
     toolResults,
   }: StepResult<T>) {
-    const fn = toolResults.map((r) => [r.args, r.result])[0];
+    const fn = toolResults.map((r) => [r.input, r.output])[0];
     console.log(JSON.stringify({ text, fn }, null, 2).replaceAll('\\', ''));
   }
 }

@@ -1,7 +1,9 @@
 import { api } from '@/utilities/ui/api';
+import { uriToFileLike } from '@/utilities/ui/uri-to-file-like';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'react-native';
+
+const SIZE = 250;
 
 export const uploadAvatar = async () => {
   const picker = await ImagePicker.launchImageLibraryAsync({
@@ -12,32 +14,29 @@ export const uploadAvatar = async () => {
   });
 
   if (picker.canceled) return;
+  const { height, uri: originalUri, width } = picker.assets[0];
+  const aspectRatio = width / height;
 
-  const dimensions = await new Promise<{ width: number; height: number }>(
-    (resolve) => {
-      Image.getSize(picker.assets[0].uri, (width, height) =>
-        resolve({ width, height })
-      );
-    }
-  );
+  let newWidth = SIZE;
+  let newHeight = SIZE;
+  let originX = 0;
+  let originY = 0;
 
-  const size = 250;
-  const aspectRatio = dimensions.width / dimensions.height;
-  const newHeight = Math.round(size / aspectRatio);
-  const originY = Math.max(0, Math.round((newHeight - size) / 2));
+  if (aspectRatio > 1) {
+    newWidth = Math.round(SIZE * aspectRatio);
+    originX = Math.round((newWidth - SIZE) / 2);
+  } else {
+    newHeight = Math.round(SIZE / aspectRatio);
+    originY = Math.round((newHeight - SIZE) / 2);
+  }
 
-  const manipulated = await ImageManipulator.manipulate(picker.assets[0].uri)
-    .resize({ width: size })
-    .crop({ height: size, originX: 0, originY, width: size })
+  const manipulated = await ImageManipulator.manipulate(originalUri)
+    .resize({ width: newWidth, height: newHeight })
+    .crop({ height: SIZE, originX, originY, width: SIZE })
     .renderAsync();
 
-  const { uri } = await manipulated.saveAsync({
-    compress: 1,
-    format: SaveFormat.WEBP,
-  });
-
+  const { uri } = await manipulated.saveAsync({ format: SaveFormat.WEBP });
   const body = new FormData();
-  const file = await fetch(uri);
-  body.append('file', await file.blob());
+  body.append('file', await uriToFileLike(uri));
   await api('/me/avatar', { body, method: 'PUT' });
 };

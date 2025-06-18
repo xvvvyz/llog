@@ -2,10 +2,10 @@ import { LogListActions } from '@/components/log-list-actions';
 import { LogListEmptyState } from '@/components/log-list-empty-state';
 import { LogListLog } from '@/components/log-list-log';
 import { Button } from '@/components/ui/button';
+import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
 import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
-import { Title } from '@/components/ui/title';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useGridColumns as useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
@@ -17,7 +17,7 @@ import { useLogs } from '@/queries/use-logs';
 import { SPECTRUM } from '@/theme/spectrum';
 import { cn } from '@/utilities/ui/utils';
 import { id } from '@instantdb/react-native';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { Fragment, ReactElement, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -41,36 +41,33 @@ export default function Index() {
 
   renderCacheRef.current = (
     <Fragment>
-      <Stack.Screen
-        options={{
-          headerLeft: () =>
-            breakpoints.md ? null : <View className="size-14" />,
-          headerRight: () => (
-            <View className="flex-row items-center gap-4">
-              {breakpoints.md && !isEmpty && (
-                <LogListActions
-                  className={cn(isEmpty && 'md:hidden')}
-                  logTags={logTags.data}
-                  query={rawQuery}
-                  setQuery={setRawQuery}
-                />
-              )}
-              <Button
-                className="size-14"
-                onPress={() => {
-                  const logId = id();
-                  createLog({ color: 7, id: logId, name: 'Log' });
-                  router.push(`/${logId}`);
-                }}
-                size="icon"
-                variant="link"
-              >
-                <Icon className="text-foreground" icon={Plus} />
-              </Button>
-            </View>
-          ),
-          headerTitle: () => <Title>Logs</Title>,
-        }}
+      <Header
+        right={
+          <View className="flex-row items-center">
+            {breakpoints.md && !isEmpty && (
+              <LogListActions
+                className={cn(isEmpty && 'md:hidden')}
+                logTags={logTags.data}
+                query={rawQuery}
+                setQuery={setRawQuery}
+              />
+            )}
+            <Button
+              className="size-10"
+              onPress={() => {
+                const logId = id();
+                createLog({ color: 7, id: logId, name: 'Log' });
+                router.push(`/${logId}`);
+              }}
+              size="icon"
+              variant="link"
+              wrapperClassName="md:-mr-2.5 md:ml-5"
+            >
+              <Icon className="text-foreground" icon={Plus} />
+            </Button>
+          </View>
+        }
+        title="Logs"
       />
       {logs.isLoading ? (
         <Loading />
@@ -96,17 +93,17 @@ export default function Index() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
           numColumns={columns}
-          renderItem={({ item: log }) => {
+          renderItem={({ item }) => {
             const color =
-              SPECTRUM[colorScheme][log.color] ?? SPECTRUM[colorScheme][0];
+              SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
 
-            const itemLogTagIds = new Set(log.logTags.map((tag) => tag.id));
+            const itemLogTagIds = new Set(item.logTags.map((tag) => tag.id));
 
             return (
               <LogListLog
                 color={color.default}
-                id={log.id}
-                name={log.name}
+                id={item.id}
+                name={item.name}
                 tags={logTags.data.filter((tag) => itemLogTagIds.has(tag.id))}
               />
             );

@@ -7,23 +7,19 @@ import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Loading } from '@/components/ui/loading';
-import { Title } from '@/components/ui/title';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { useHeaderConfig } from '@/hooks/use-header-config';
-import { createRule } from '@/mutations/create-rule';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/ui/db';
 import { cn } from '@/utilities/ui/utils';
 import { Redirect, Tabs } from 'expo-router';
-import { Bell, LayoutGrid, ListCheck, Plus } from 'lucide-react-native';
+import { Bell, LayoutGrid, Rows3 } from 'lucide-react-native';
 import { Fragment } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
   const auth = db.useAuth();
   const breakpoints = useBreakpoints();
-  const headerConfig = useHeaderConfig();
   const insets = useSafeAreaInsets();
   const profile = useProfile();
 
@@ -43,12 +39,8 @@ export default function Layout() {
     <Fragment>
       <Tabs
         screenOptions={{
-          ...headerConfig,
-          animation: Platform.select({
-            // android emulator has background color flashes with shift animation
-            android: 'none',
-            default: 'shift',
-          }),
+          animation: 'shift',
+          headerShown: false,
           tabBarItemStyle: {
             marginBottom: breakpoints.md ? 8 : 0,
             marginRight: 0,
@@ -57,7 +49,7 @@ export default function Layout() {
           tabBarPosition: breakpoints.md ? 'left' : 'bottom',
           tabBarShowLabel: false,
           tabBarStyle: {
-            borderRightWidth: breakpoints.md ? 1 : 0,
+            borderRightWidth: 0,
             borderTopWidth: 0,
             elevation: 0,
             height: breakpoints.md
@@ -75,7 +67,6 @@ export default function Layout() {
         <Tabs.Screen
           name="(logs)"
           options={{
-            headerShown: false,
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
@@ -98,19 +89,6 @@ export default function Layout() {
         <Tabs.Screen
           name="rules"
           options={{
-            headerLeft: () =>
-              breakpoints.md ? null : <View className="size-14" />,
-            headerRight: () => (
-              <Button
-                className="size-14"
-                onPress={() => createRule({ prompt: '' })}
-                size="icon"
-                variant="link"
-              >
-                <Icon className="text-foreground" icon={Plus} />
-              </Button>
-            ),
-            headerTitle: () => <Title>Rules</Title>,
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
@@ -125,7 +103,7 @@ export default function Layout() {
             tabBarIcon: ({ focused }) => (
               <Icon
                 className={cn('text-placeholder', focused && 'text-foreground')}
-                icon={ListCheck}
+                icon={Rows3}
               />
             ),
           }}
@@ -133,7 +111,6 @@ export default function Layout() {
         <Tabs.Screen
           name="alerts"
           options={{
-            headerTitle: () => <Title>Alerts</Title>,
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
                 aria-selected={props['aria-selected']}
@@ -156,7 +133,6 @@ export default function Layout() {
         <Tabs.Screen
           name="account"
           options={{
-            headerTitle: () => <Title>Account</Title>,
             tabBarItemStyle: breakpoints.md ? { marginTop: 'auto' } : undefined,
             tabBarButton: ({ children, onPress, ...props }) => (
               <Button
@@ -172,8 +148,9 @@ export default function Layout() {
             tabBarIcon: () => (
               <Avatar
                 avatar={profile.avatar}
-                className="size-7"
+                height={28}
                 id={profile.id}
+                width={28}
               />
             ),
           }}

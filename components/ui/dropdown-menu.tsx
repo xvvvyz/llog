@@ -5,7 +5,13 @@ import { animation, cn } from '@/utilities/ui/utils';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { Check, SortAsc, SortDesc } from 'lucide-react-native';
 import { View } from 'react-native';
-import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  FadeOut,
+  FadeOutUp,
+} from 'react-native-reanimated';
 
 import {
   forwardRef,
@@ -27,6 +33,11 @@ const Content = forwardRef<
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Overlay className="absolute inset-0">
+        <Animated.View
+          className="absolute inset-0 bg-background/90"
+          entering={animation(FadeIn)}
+          exiting={animation(FadeOut)}
+        />
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             className={cn(

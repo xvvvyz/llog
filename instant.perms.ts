@@ -22,6 +22,28 @@ const rules = {
       create: `false`,
     },
   },
+  comments: {
+    allow: {
+      view: `isTeamMember`,
+      create: `(isTeamRecorder || isTeamAdmin || isTeamOwner) && isValidText`,
+      update: `(isAuthor || isTeamAdmin || isTeamOwner) && isValidText`,
+      delete: `isAuthor || isTeamAdmin || isTeamOwner`,
+    },
+    bind: [
+      `isValidText`,
+      `size(newData.text) <= 10240`,
+      `isAuthor`,
+      `data.ref('author.user.id') == auth.ref('$user.id')`,
+      `isTeamMember`,
+      `auth.id in data.ref('record.log.team.roles.user.id')`,
+      `isTeamRecorder`,
+      `'${Role.Recorder}_' + auth.id in data.ref('record.log.team.roles.key')`,
+      `isTeamAdmin`,
+      `'${Role.Admin}_' + auth.id in data.ref('record.log.team.roles.key')`,
+      `isTeamOwner`,
+      `'${Role.Owner}_' + auth.id in data.ref('record.log.team.roles.key')`,
+    ],
+  },
   logTags: {
     allow: {
       view: `isTeamMember`,

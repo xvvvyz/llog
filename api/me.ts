@@ -1,4 +1,5 @@
 import { db } from '@/middleware/db';
+import { fileLike } from '@/schemas/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -9,18 +10,19 @@ const app = new Hono();
 app.put(
   '/avatar',
   db({ asUser: true }),
-  zValidator('form', z.object({ file: z.instanceof(File) })),
+  zValidator('form', z.object({ file: fileLike })),
   async (c) => {
-    const file = c.req.valid('form').file;
-    const key = `profiles/${c.var.user.id}/avatar`;
+    const { file } = c.req.valid('form');
 
     if (!file.type.startsWith('image/')) {
       throw new HTTPException(400, { message: 'Invalid file format' });
     }
 
-    const upload = await c.env.R2.put(key, file, {
-      httpMetadata: { contentType: file.type },
-    });
+    const upload = await c.env.R2.put(
+      `profiles/${c.var.user.id}/avatar`,
+      file as File,
+      { httpMetadata: { contentType: file.type } }
+    );
 
     const { profiles } = await c.var.db.query({
       profiles: { $: { fields: ['id'], where: { user: c.var.user.id } } },

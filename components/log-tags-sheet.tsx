@@ -81,6 +81,7 @@ export const LogTagsSheet = () => {
           )}
           {!isLoading && (
             <Sortable.Flex
+              activeItemShadowOpacity={0}
               autoScrollActivationOffset={50}
               autoScrollDirection="horizontal"
               customHandle

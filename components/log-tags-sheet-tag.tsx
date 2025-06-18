@@ -40,13 +40,13 @@ export const LogTagsSheetTag = ({
       <Checkbox
         checked={isSelected}
         checkedColor={logColor.default}
-        className="size-10 border-none"
+        className="size-10 border-0"
         onCheckedChange={() => toggleLogTag({ id, isSelected, logId })}
         wrapperClassName="rounded-full"
       />
       <View className="group relative flex-1">
         <Input
-          className="border-none bg-transparent pr-10"
+          className="border-0 bg-transparent pr-10"
           defaultValue={name}
           maxLength={16}
           onBlur={() => setTimeout(() => setIsDeleteButtonVisible(false), 200)}

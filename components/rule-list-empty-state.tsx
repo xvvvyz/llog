@@ -11,7 +11,7 @@ export const RuleListEmptyState = () => {
     <View className="flex-1 items-center justify-center gap-8 px-3 py-8">
       <Icon className="-mb-2 text-primary" icon={Sparkles} size={64} />
       <Text className="text-center text-muted-foreground">
-        Automate your workflows.
+        Create automated workflows.
       </Text>
       <Button onPress={() => createRule({ id: id(), prompt: '' })}>
         <Icon icon={Plus} className="-ml-0.5 text-white" size={20} />

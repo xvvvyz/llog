@@ -42,7 +42,7 @@ const buttonVariants = cva(
         icon: 'h-11 w-11',
         lg: 'h-12 px-5',
         sm: 'h-10 px-4',
-        xs: 'h-8 px-3 rounded-lg',
+        xs: 'h-8 px-3 rounded-lg gap-2',
       },
       variant: {
         default: 'bg-primary web:hover:bg-primary/80 active:bg-primary/60',
@@ -63,9 +63,17 @@ const buttonTextVariants = cva(
   'web:whitespace-nowrap leading-5 font-medium text-foreground web:transition-colors',
   {
     defaultVariants: {
+      size: 'default',
       variant: 'default',
     },
     variants: {
+      size: {
+        default: '',
+        icon: '',
+        lg: '',
+        sm: '',
+        xs: 'text-sm',
+      },
       variant: {
         default: 'text-primary-foreground',
         destructive: 'text-destructive-foreground',
@@ -102,6 +110,7 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
       <TextClassContext.Provider
         value={buttonTextVariants({
           className: 'web:pointer-events-none',
+          size,
           variant,
         })}
       >

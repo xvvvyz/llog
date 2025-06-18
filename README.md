@@ -32,17 +32,18 @@
 3. Generate types
 
    ```bash
-   bun api:types
+   bun types
    ```
 
-4. Start the API
+4. Optionally, create iOS/Android builds
 
    ```bash
-   bun api:dev
+   bun ios
+   bun android
    ```
 
-5. Start the app
+5. Start the dev server
 
    ```bash
-   bun app:dev
+   bun dev
    ```

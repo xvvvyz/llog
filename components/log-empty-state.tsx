@@ -9,30 +9,33 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
   const sheetManager = useSheetManager();
 
   return (
-    <View className="mx-auto w-full max-w-xs flex-1 justify-center gap-3 px-3 py-8">
+    <View className="mx-auto w-full max-w-[13rem] flex-1 justify-center gap-3 px-3 py-8">
       <Button
-        className="justify-between gap-4"
+        className="justify-between"
         onPress={() => sheetManager.open('log-edit', logId)}
+        size="xs"
         variant="secondary"
       >
-        <Text>Edit log name/color</Text>
-        <Icon icon={FolderPen} className="text-placeholder" size={20} />
+        <Text>Edit log details</Text>
+        <Icon className="-mr-0.5" icon={FolderPen} size={16} />
       </Button>
       <Button
-        className="justify-between gap-4"
+        className="justify-between"
         onPress={() => sheetManager.open('log-tags', logId)}
+        size="xs"
         variant="secondary"
       >
         <Text>Manage log tags</Text>
-        <Icon icon={Tag} className="text-placeholder" size={20} />
+        <Icon className="-mr-0.5" icon={Tag} size={16} />
       </Button>
       <Button
-        className="justify-between gap-4"
+        className="justify-between"
         onPress={() => sheetManager.open('record-create', logId)}
+        size="xs"
         variant="secondary"
       >
         <Text>New log record</Text>
-        <Icon icon={PencilLine} className="text-placeholder" size={20} />
+        <Icon className="-mr-0.5" icon={PencilLine} size={16} />
       </Button>
     </View>
   );
