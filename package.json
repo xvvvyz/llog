@@ -30,10 +30,10 @@
     "@agentic/calculator": "^7.6.7",
     "@agentic/core": "^7.6.7",
     "@agentic/weather": "^7.6.7",
-    "@ai-sdk/anthropic": "^2.0.0-alpha.14",
-    "@ai-sdk/google": "^2.0.0-alpha.14",
-    "@ai-sdk/openai": "^2.0.0-alpha.14",
-    "@ai-sdk/xai": "^2.0.0-alpha.14",
+    "@ai-sdk/anthropic": "^2.0.0-alpha.15",
+    "@ai-sdk/google": "^2.0.0-alpha.15",
+    "@ai-sdk/openai": "^2.0.0-alpha.15",
+    "@ai-sdk/xai": "^2.0.0-alpha.15",
     "@hono/zod-validator": "^0.7.0",
     "@instantdb/admin": "^0.19.20",
     "@instantdb/react-native": "0.19.20",
@@ -51,7 +51,7 @@
     "@rn-primitives/toggle": "^1.2.0",
     "@rn-primitives/types": "^1.2.0",
     "agents": "^0.0.95",
-    "ai": "^5.0.0-alpha.14",
+    "ai": "^5.0.0-alpha.15",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -67,7 +67,7 @@
     "expo-system-ui": "^5.0.8",
     "hono": "^4.8.0",
     "hono-agents": "^0.0.85",
-    "lucide-react-native": "^0.516.0",
+    "lucide-react-native": "^0.517.0",
     "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
@@ -105,7 +105,7 @@
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-tailwindcss": "^0.6.12",
     "typescript": "^5.8.3",
-    "wrangler": "^4.20.1"
+    "wrangler": "^4.20.3"
   },
   "resolutions": {
     "react": "19.0.0"

@@ -61,7 +61,7 @@ export default function Account() {
                 <Label className="p-0">Name</Label>
                 <Input
                   maxLength={32}
-                  className="w-full rounded-none border-0 bg-transparent pr-0 text-right"
+                  className="rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(text) =>
                     updateProfile({ id: profile.id, name: text })
                   }
@@ -75,7 +75,7 @@ export default function Account() {
                 <Input
                   editable={false}
                   maxLength={32}
-                  className="w-full rounded-none border-0 bg-transparent pr-0 text-right"
+                  className="rounded-none border-0 bg-transparent pr-0 text-right"
                   value={auth.user?.email}
                 />
               </View>
