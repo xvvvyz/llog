@@ -12,7 +12,7 @@ import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/ui/db';
 import { cn } from '@/utilities/ui/utils';
 import { Redirect, Tabs } from 'expo-router';
-import { Bell, LayoutGrid, Rows3 } from 'lucide-react-native';
+import { Bell, LayoutGrid } from 'lucide-react-native';
 import { Fragment } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -80,26 +80,6 @@ export default function Layout() {
               <Icon
                 className={cn('text-placeholder', focused && 'text-foreground')}
                 icon={LayoutGrid}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="rules"
-          options={{
-            tabBarButton: ({ children, onPress, ...props }) => (
-              <TabButton
-                aria-selected={props['aria-selected']}
-                href="/rules"
-                onPress={onPress}
-              >
-                {children}
-              </TabButton>
-            ),
-            tabBarIcon: ({ focused }) => (
-              <Icon
-                className={cn('text-placeholder', focused && 'text-foreground')}
-                icon={Rows3}
               />
             ),
           }}

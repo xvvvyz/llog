@@ -144,22 +144,6 @@ const rules = {
       `'${Role.Owner}_' + auth.id in data.ref('team.roles.key')`,
     ],
   },
-  rules: {
-    allow: {
-      view: `isTeamAdmin || isTeamOwner`,
-      create: `(isTeamAdmin || isTeamOwner) && isValidPrompt`,
-      update: `(isTeamAdmin || isTeamOwner) && isValidPrompt`,
-      delete: `(isTeamAdmin || isTeamOwner)`,
-    },
-    bind: [
-      `isValidPrompt`,
-      `size(newData.prompt) <= 10240`,
-      `isTeamAdmin`,
-      `'${Role.Admin}_' + auth.id in data.ref('team.roles.key')`,
-      `isTeamOwner`,
-      `'${Role.Owner}_' + auth.id in data.ref('team.roles.key')`,
-    ],
-  },
   teams: {
     allow: {
       view: `isTeamMember || hasTeamId`,

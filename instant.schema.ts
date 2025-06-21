@@ -36,9 +36,6 @@ const schema = i.schema({
       role: i.string(),
       userId: i.string(),
     }),
-    rules: i.entity({
-      prompt: i.string(),
-    }),
     teams: i.entity({
       name: i.string(),
     }),
@@ -142,19 +139,6 @@ const schema = i.schema({
         label: 'roles',
       },
     },
-    rulesAuthors: {
-      forward: {
-        on: 'rules',
-        has: 'one',
-        label: 'author',
-        required: true,
-      },
-      reverse: {
-        on: 'profiles',
-        has: 'many',
-        label: 'rules',
-      },
-    },
     teamsLogs: {
       forward: {
         on: 'teams',
@@ -191,20 +175,6 @@ const schema = i.schema({
       },
       reverse: {
         on: 'logTags',
-        has: 'one',
-        label: 'team',
-        required: true,
-        onDelete: 'cascade',
-      },
-    },
-    teamsRules: {
-      forward: {
-        on: 'teams',
-        has: 'many',
-        label: 'rules',
-      },
-      reverse: {
-        on: 'rules',
         has: 'one',
         label: 'team',
         required: true,

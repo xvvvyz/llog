@@ -6,20 +6,20 @@
   "main": "api/index.ts",
   "env": {
     "development": {
-      "durable_objects": {
-        "bindings": [
-          {
-            "class_name": "AppAgent",
-            "name": "APP_AGENT",
-          },
-        ],
-      },
-      "migrations": [
-        {
-          "new_sqlite_classes": ["AppAgent"],
-          "tag": "v1",
-        },
-      ],
+      // "durable_objects": {
+      //   "bindings": [
+      //     {
+      //       "class_name": "AppAgent",
+      //       "name": "APP_AGENT",
+      //     },
+      //   ],
+      // },
+      // "migrations": [
+      //   {
+      //     "new_sqlite_classes": ["AppAgent"],
+      //     "tag": "v1",
+      //   },
+      // ],
       "r2_buckets": [
         {
           "binding": "R2",
