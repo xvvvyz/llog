@@ -85,12 +85,12 @@ export default function Layout() {
           }}
         />
         <Tabs.Screen
-          name="alerts"
+          name="activity"
           options={{
             tabBarButton: ({ children, onPress, ...props }) => (
               <TabButton
                 aria-selected={props['aria-selected']}
-                href="/alerts"
+                href="/activity"
                 onPress={onPress}
               >
                 {children}

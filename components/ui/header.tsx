@@ -8,14 +8,14 @@ export const Header = ({
   left,
   right,
   title,
-  titleAbsolute,
   titleClassName,
+  titleWrapperClassName,
 }: {
   left?: React.ReactNode;
   right?: React.ReactNode;
   title?: string;
-  titleAbsolute?: boolean;
   titleClassName?: string;
+  titleWrapperClassName?: string;
 }) => {
   const height = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -23,14 +23,14 @@ export const Header = ({
   return (
     <View style={{ paddingTop: insets.top }}>
       <View
-        className="flex-row items-center justify-between px-1 md:px-8"
+        className="flex-row items-center justify-between px-4 md:px-8"
         style={{ height }}
       >
         <View>{left}</View>
         <View
           className={cn(
-            'flex-1 justify-center',
-            titleAbsolute && 'absolute inset-0 md:relative'
+            'absolute left-20 right-20 -z-10 flex-1 justify-center md:static',
+            titleWrapperClassName
           )}
         >
           <Text

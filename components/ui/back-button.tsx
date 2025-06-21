@@ -10,7 +10,7 @@ export const BackButton = () => {
 
   return (
     <Button
-      className="size-12"
+      className="size-11"
       onPress={() => navigation.goBack()}
       size="icon"
       variant="link"

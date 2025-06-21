@@ -40,7 +40,7 @@ export const RecordCommentForm = ({
             maxLength={10240}
             onChangeText={setText}
             onSubmitEditing={handleAddComment}
-            placeholder="Add a comment"
+            placeholder="Add a reply"
             value={text}
             ref={textareaRef}
           />

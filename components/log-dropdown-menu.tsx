@@ -26,7 +26,7 @@ export const LogDropdownMenu = ({
     <Menu.Root>
       <Menu.Trigger asChild>
         <Button
-          className="size-12"
+          className="size-11"
           size="icon"
           variant="link"
           wrapperClassName={triggerWrapperClassName}

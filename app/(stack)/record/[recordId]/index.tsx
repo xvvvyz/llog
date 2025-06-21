@@ -28,7 +28,8 @@ export default function Index() {
       <Header
         left={<BackButton />}
         title={textToTitle(record.text)}
-        titleClassName="text-left"
+        titleClassName="md:text-center"
+        titleWrapperClassName="md:absolute"
       />
       {record.isLoading ? (
         <Loading />

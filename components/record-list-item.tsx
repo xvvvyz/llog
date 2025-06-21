@@ -38,8 +38,8 @@ const RecordListItem = ({
       <Link asChild href={`/record/${record.id}?focus=comment`}>
         <Button size="xs" variant="ghost" wrapperClassName="-mr-2">
           <Text className="text-sm font-normal text-muted-foreground">
-            {record.comments.length} comment
-            {record.comments.length === 1 ? '' : 's'}
+            {record.comments.length} repl
+            {record.comments.length === 1 ? 'y' : 'ies'}
           </Text>
           <Icon
             className="-mr-0.5 text-muted-foreground"

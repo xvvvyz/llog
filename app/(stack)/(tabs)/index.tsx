@@ -53,7 +53,7 @@ export default function Index() {
               />
             )}
             <Button
-              className="size-12"
+              className="size-11"
               onPress={() => {
                 const logId = id();
                 createLog({ color: 7, id: logId, name: 'Log' });
@@ -68,7 +68,6 @@ export default function Index() {
           </View>
         }
         title="Logs"
-        titleAbsolute
       />
       {logs.isLoading ? (
         <Loading />
