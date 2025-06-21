@@ -8,7 +8,8 @@ const Textarea = forwardRef<
   ComponentPropsWithoutRef<typeof TextInput>
 >(({ className, value, ...props }, ref) => (
   <Input
-    className={cn('h-auto flex-1 py-2.5', className)}
+    className={cn('h-auto py-2.5', className)}
+    lineBreakModeIOS="wordWrapping"
     multiline
     numberOfLines={12}
     ref={ref}

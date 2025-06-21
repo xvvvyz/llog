@@ -1,5 +1,6 @@
 import { RuleListEmptyState } from '@/components/rule-list-empty-state';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,6 @@ import { updateRule } from '@/mutations/update-rule';
 import { useRules } from '@/queries/use-rules';
 import { Plus } from 'lucide-react-native';
 import { Fragment } from 'react';
-import { View } from 'react-native';
 
 export default function Rules() {
   const rules = useRules();
@@ -32,6 +32,7 @@ export default function Rules() {
             <Icon className="text-foreground" icon={Plus} />
           </Button>
         }
+        titleAbsolute
       />
       {rules.isLoading ? (
         <Loading />
@@ -39,14 +40,14 @@ export default function Rules() {
         <RuleListEmptyState />
       ) : (
         <List
-          contentContainerClassName="mx-auto w-full max-w-xl p-3 pt-0 md:p-8 md:pt-5"
+          contentContainerClassName="mx-auto w-full max-w-lg p-3 pt-0 md:p-8 md:pt-5"
           data={rules.data}
           estimatedItemSize={112}
           keyExtractor={(item) => item.id}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
           renderItem={({ item: rule }) => (
-            <View className="mt-3 gap-3 rounded-2xl border border-border-secondary bg-card p-4">
+            <Card className="mt-3">
               <Input
                 className="h-auto pb-16 pt-2.5 leading-normal"
                 lineBreakModeIOS="wordWrapping"
@@ -65,7 +66,7 @@ export default function Rules() {
               >
                 <Text>Delete</Text>
               </Button>
-            </View>
+            </Card>
           )}
           showsVerticalScrollIndicator={false}
         />

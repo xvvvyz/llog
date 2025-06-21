@@ -1,5 +1,6 @@
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
@@ -25,10 +26,7 @@ export default function Account() {
     <Fragment>
       <Header title="Account" />
       <View className="flex-1 items-center justify-center p-3">
-        <View
-          className="w-full max-w-xs overflow-hidden rounded-2xl border border-border-secondary bg-card"
-          style={{ borderCurve: 'continuous' }}
-        >
+        <Card className="w-full max-w-xs overflow-hidden p-0">
           <View className="items-center justify-center py-8">
             <Menu.Root>
               <Menu.Trigger asChild>
@@ -99,7 +97,7 @@ export default function Account() {
               />
             </Button>
           </View>
-        </View>
+        </Card>
       </View>
     </Fragment>
   );

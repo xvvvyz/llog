@@ -24,7 +24,7 @@ export const RecordCreateSheet = () => {
       open={sheetManager.isOpen('record-create')}
       portalName="record-create"
     >
-      <View className="mx-auto w-full max-w-xl gap-3 px-7 py-8">
+      <View className="mx-auto w-full max-w-lg gap-3 p-8">
         <View className="flex-row gap-3">
           <Avatar
             avatar={profile.avatar}
@@ -34,8 +34,9 @@ export const RecordCreateSheet = () => {
           />
           <Textarea
             autoFocus
+            className="flex-1"
             maxLength={10240}
-            placeholder="What's happening?"
+            placeholder="What’s happening?"
             onChangeText={setText}
             value={text}
           />

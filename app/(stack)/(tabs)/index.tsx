@@ -1,6 +1,6 @@
 import { LogListActions } from '@/components/log-list-actions';
 import { LogListEmptyState } from '@/components/log-list-empty-state';
-import { LogListLog } from '@/components/log-list-log';
+import { LogListItem } from '@/components/log-list-item';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
@@ -53,7 +53,7 @@ export default function Index() {
               />
             )}
             <Button
-              className="size-10"
+              className="size-12"
               onPress={() => {
                 const logId = id();
                 createLog({ color: 7, id: logId, name: 'Log' });
@@ -61,13 +61,14 @@ export default function Index() {
               }}
               size="icon"
               variant="link"
-              wrapperClassName="md:-mr-2.5 md:ml-5"
+              wrapperClassName="md:-mr-4 md:ml-4"
             >
               <Icon className="text-foreground" icon={Plus} />
             </Button>
           </View>
         }
         title="Logs"
+        titleAbsolute
       />
       {logs.isLoading ? (
         <Loading />
@@ -78,14 +79,14 @@ export default function Index() {
           ListHeaderComponent={
             !breakpoints.md && !isEmpty ? (
               <LogListActions
-                className="mt-3 p-1.5 pt-0"
+                className="p-1.5 pt-4 md:p-2"
                 logTags={logTags.data}
                 query={rawQuery}
                 setQuery={setRawQuery}
               />
             ) : null
           }
-          contentContainerClassName="p-1.5 pt-0 md:p-6"
+          contentContainerClassName="p-2.5 pt-0 md:p-6"
           data={logs.data}
           estimatedItemSize={112}
           key={`grid-${columns}`}
@@ -100,7 +101,8 @@ export default function Index() {
             const itemLogTagIds = new Set(item.logTags.map((tag) => tag.id));
 
             return (
-              <LogListLog
+              <LogListItem
+                className="p-1.5 md:p-2"
                 color={color.default}
                 id={item.id}
                 name={item.name}

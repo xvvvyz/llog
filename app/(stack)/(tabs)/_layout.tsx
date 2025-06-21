@@ -4,9 +4,9 @@ import { LogTagsSheet } from '@/components/log-tags-sheet';
 import { RecordCreateSheet } from '@/components/record-create-sheet';
 import { TagDeleteSheet } from '@/components/tag-delete-sheet';
 import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Loading } from '@/components/ui/loading';
+import { TabButton } from '@/components/ui/tab-button';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/ui/db';
@@ -49,7 +49,7 @@ export default function Layout() {
           tabBarPosition: breakpoints.md ? 'left' : 'bottom',
           tabBarShowLabel: false,
           tabBarStyle: {
-            borderRightWidth: 0,
+            borderRightWidth: breakpoints.md ? 1 : 0,
             borderTopWidth: 0,
             elevation: 0,
             height: breakpoints.md
@@ -57,7 +57,7 @@ export default function Layout() {
               : Platform.select({ default: 50, web: 56 }) + insets.bottom,
             marginTop: 0,
             minWidth: 0,
-            paddingBottom: breakpoints.md ? 8 : undefined,
+            paddingBottom: breakpoints.md ? 8 : 0,
             paddingEnd: breakpoints.md ? 8 : 12,
             paddingStart: breakpoints.md ? 8 : 12,
             paddingTop: breakpoints.md ? 8 : 6,
@@ -65,18 +65,16 @@ export default function Layout() {
         }}
       >
         <Tabs.Screen
-          name="(logs)"
+          name="index"
           options={{
             tabBarButton: ({ children, onPress, ...props }) => (
-              <Button
+              <TabButton
                 aria-selected={props['aria-selected']}
-                className={cn('h-11', breakpoints.md && 'size-14')}
+                href="/"
                 onPress={onPress}
-                size={breakpoints.md ? 'icon' : 'default'}
-                variant="link"
               >
                 {children}
-              </Button>
+              </TabButton>
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
@@ -90,15 +88,13 @@ export default function Layout() {
           name="rules"
           options={{
             tabBarButton: ({ children, onPress, ...props }) => (
-              <Button
+              <TabButton
                 aria-selected={props['aria-selected']}
-                className={cn('h-11', breakpoints.md && 'size-14')}
+                href="/rules"
                 onPress={onPress}
-                size={breakpoints.md ? 'icon' : 'default'}
-                variant="link"
               >
                 {children}
-              </Button>
+              </TabButton>
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
@@ -112,15 +108,13 @@ export default function Layout() {
           name="alerts"
           options={{
             tabBarButton: ({ children, onPress, ...props }) => (
-              <Button
+              <TabButton
                 aria-selected={props['aria-selected']}
-                className={cn('h-11', breakpoints.md && 'size-14')}
+                href="/alerts"
                 onPress={onPress}
-                size={breakpoints.md ? 'icon' : 'default'}
-                variant="link"
               >
                 {children}
-              </Button>
+              </TabButton>
             ),
             tabBarIcon: ({ focused }) => (
               <Icon
@@ -135,15 +129,13 @@ export default function Layout() {
           options={{
             tabBarItemStyle: breakpoints.md ? { marginTop: 'auto' } : undefined,
             tabBarButton: ({ children, onPress, ...props }) => (
-              <Button
+              <TabButton
                 aria-selected={props['aria-selected']}
-                className={cn('h-11', breakpoints.md && 'size-14')}
+                href="/account"
                 onPress={onPress}
-                size={breakpoints.md ? 'icon' : 'default'}
-                variant="link"
               >
                 {children}
-              </Button>
+              </TabButton>
             ),
             tabBarIcon: () => (
               <Avatar

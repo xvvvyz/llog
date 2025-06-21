@@ -38,5 +38,5 @@ export const uploadAvatar = async () => {
   const { uri } = await manipulated.saveAsync({ format: SaveFormat.WEBP });
   const body = new FormData();
   body.append('file', await uriToFileLike(uri));
-  await api('/me/avatar', { body, method: 'PUT' });
+  return api('/me/avatar', { body, method: 'PUT' });
 };

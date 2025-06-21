@@ -5,20 +5,37 @@ import TextareaAutosize from 'react-textarea-autosize';
 
 export const Textarea = forwardRef<
   ComponentRef<typeof TextareaAutosize>,
-  ComponentPropsWithoutRef<typeof TextInput>
+  ComponentPropsWithoutRef<typeof TextInput> & {
+    onSubmitEditing?: () => void;
+  }
 >(
   (
-    { autoFocus, className, maxLength, onChangeText, placeholder, value },
+    {
+      autoFocus,
+      className,
+      maxLength,
+      onChangeText,
+      onSubmitEditing,
+      placeholder,
+      value,
+    },
     ref
   ) => (
     <TextareaAutosize
       autoFocus={autoFocus}
       className={cn(
-        'w-full resize-none rounded-xl border border-border-secondary bg-input px-4 py-2.5 text-foreground placeholder:text-placeholder focus-visible:outline-none',
+        'native:placeholder:text-placeholder w-full resize-none rounded-xl border border-border-secondary bg-input px-4 py-2.5 text-foreground focus-visible:outline-none web:placeholder:text-placeholder',
         className
       )}
       maxLength={maxLength}
-      onChange={(event) => onChangeText?.(event.target.value)}
+      maxRows={12}
+      onChange={(e) => onChangeText?.(e.target.value)}
+      onKeyDown={(e) => {
+        if (!e.shiftKey && e.key === 'Enter' && onSubmitEditing) {
+          e.preventDefault();
+          onSubmitEditing();
+        }
+      }}
       placeholder={placeholder}
       ref={ref}
       value={value}

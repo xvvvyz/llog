@@ -10,6 +10,9 @@ export const useRecords = ({ logId }: { logId?: string }) => {
               where: { log: logId },
             },
             author: {},
+            comments: {
+              $: { fields: ['id'] },
+            },
           },
         }
       : null

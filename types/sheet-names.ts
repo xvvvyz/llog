@@ -3,6 +3,9 @@ export type SheetNames = readonly [
   'log-edit',
   'log-tags',
   'record-create',
+  'record-delete',
+  'record-edit',
+  'record-tags',
   'tag-delete',
 ];
 

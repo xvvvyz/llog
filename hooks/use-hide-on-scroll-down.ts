@@ -35,13 +35,13 @@ export const useHideOnScrollDown = () => {
 
         if (
           scrollDirectionCurrent === 'down' &&
-          scrollAccumulated.current > 50
+          scrollAccumulated.current > 25
         ) {
           setIsVisible(false);
           scrollAccumulated.current = 0;
         } else if (
           scrollDirectionCurrent === 'up' &&
-          scrollAccumulated.current > 100
+          scrollAccumulated.current > 25
         ) {
           setIsVisible(true);
           scrollAccumulated.current = 0;

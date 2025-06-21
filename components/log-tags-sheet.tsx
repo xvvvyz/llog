@@ -120,7 +120,7 @@ export const LogTagsSheet = () => {
           )}
         </View>
       </ScrollView>
-      <View className="w-full p-8 pt-0 sm:mx-auto sm:max-w-sm">
+      <View className="w-full p-8 pt-0 sm:mx-auto sm:max-w-sm md:pt-0">
         <SearchInput
           maxLength={16}
           onSubmitEditing={handleCreateTag}

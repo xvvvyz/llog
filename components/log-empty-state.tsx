@@ -16,7 +16,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
         size="xs"
         variant="secondary"
       >
-        <Text>Edit log details</Text>
+        <Text>Edit details</Text>
         <Icon className="-mr-0.5" icon={FolderPen} size={16} />
       </Button>
       <Button
@@ -25,7 +25,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
         size="xs"
         variant="secondary"
       >
-        <Text>Manage log tags</Text>
+        <Text>Manage tags</Text>
         <Icon className="-mr-0.5" icon={Tag} size={16} />
       </Button>
       <Button
@@ -34,7 +34,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
         size="xs"
         variant="secondary"
       >
-        <Text>New log record</Text>
+        <Text>New record</Text>
         <Icon className="-mr-0.5" icon={PencilLine} size={16} />
       </Button>
     </View>

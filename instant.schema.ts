@@ -12,10 +12,11 @@ const schema = i.schema({
       email: i.string().unique().indexed().optional(),
     }),
     comments: i.entity({
-      text: i.string().indexed(),
+      date: i.date().indexed(),
+      text: i.string(),
     }),
     logTags: i.entity({
-      name: i.string().indexed(),
+      name: i.string(),
       order: i.number().indexed(),
     }),
     logs: i.entity({
@@ -24,11 +25,11 @@ const schema = i.schema({
     }),
     profiles: i.entity({
       avatar: i.string().optional(),
-      name: i.string().indexed(),
+      name: i.string(),
     }),
     records: i.entity({
       date: i.date().indexed(),
-      text: i.string().indexed(),
+      text: i.string(),
     }),
     roles: i.entity({
       key: i.string().unique(),

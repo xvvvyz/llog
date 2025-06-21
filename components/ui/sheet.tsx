@@ -1,5 +1,5 @@
 import { Loading } from '@/components/ui/loading';
-import { animation } from '@/utilities/ui/utils';
+import { animation, cn } from '@/utilities/ui/utils';
 import { Portal } from '@rn-primitives/portal';
 import { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable } from 'react-native';
@@ -14,12 +14,14 @@ import Animated, {
 
 export const Sheet = ({
   children,
+  className,
   loading,
   onDismiss,
   open,
   portalName,
 }: {
   children: ReactNode;
+  className?: string;
   loading?: boolean;
   onDismiss: () => void;
   open: boolean;
@@ -50,7 +52,10 @@ export const Sheet = ({
             />
           </Animated.View>
           <Animated.View
-            className="rounded-t-3xl border-x border-t border-border-secondary bg-popover"
+            className={cn(
+              'rounded-t-4xl border-x border-t border-border-secondary bg-popover',
+              className
+            )}
             entering={animation(FadeInDown)}
             exiting={animation(FadeOutDown)}
             style={{ borderCurve: 'continuous' }}
@@ -58,7 +63,7 @@ export const Sheet = ({
             {children}
             {loading && (
               <Animated.View
-                className="absolute inset-0 z-10 rounded-t-3xl bg-popover"
+                className="absolute inset-0 z-10 rounded-t-4xl bg-popover"
                 exiting={animation(FadeOut)}
               >
                 <Loading />

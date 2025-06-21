@@ -1,6 +1,6 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
 import { LogEmptyState } from '@/components/log-empty-state';
-import RecordListRecord from '@/components/record-list-record';
+import RecordListItem from '@/components/record-list-item';
 import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
@@ -9,26 +9,30 @@ import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
+import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useHideOnScrollDown } from '@/hooks/use-hide-on-scroll-down';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useLog } from '@/queries/use-log';
 import { useRecords } from '@/queries/use-records';
-import { animation } from '@/utilities/ui/utils';
+import { animation, cn } from '@/utilities/ui/utils';
 import { useLocalSearchParams } from 'expo-router';
-import { PencilLine, Plus } from 'lucide-react-native';
+import { MoreVertical, Plus, PlusIcon } from 'lucide-react-native';
 import { Fragment, ReactElement, useRef } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Index() {
+  const headerHeight = useHeaderHeight();
   const hideOnScrollDown = useHideOnScrollDown();
-  const params = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ logId: string }>();
   const renderCacheRef = useRef<ReactElement | null>(null);
   const sheetManager = useSheetManager();
 
-  const log = useLog({ id: params.id });
-  const logColor = useLogColor({ id: params.id });
-  const records = useRecords({ logId: params.id });
+  const log = useLog({ id: params.logId });
+  const logColor = useLogColor({ id: params.logId });
+  const records = useRecords({ logId: params.logId });
 
   if (sheetManager.someOpen()) {
     return renderCacheRef.current;
@@ -42,19 +46,27 @@ export default function Index() {
           <View className="flex-row items-center">
             <Button
               className="hidden md:flex"
-              onPress={() => sheetManager.open('record-create', params.id)}
+              onPress={() => sheetManager.open('record-create', params.logId)}
               size="xs"
               style={{ backgroundColor: logColor.default }}
               variant="secondary"
             >
-              <Icon
-                className="-ml-0.5 text-white"
-                icon={PencilLine}
-                size={16}
-              />
+              <Icon className="-ml-0.5 text-white" icon={PlusIcon} size={20} />
               <Text className="text-white">New record</Text>
             </Button>
-            <LogDropdownMenu id={log.id} variant="header" />
+            <LogDropdownMenu
+              contentClassName="mt-2 mr-3"
+              contentStyle={{
+                top: Platform.select({
+                  default: headerHeight + insets.top,
+                  web: 0,
+                }),
+              }}
+              id={log.id}
+              triggerWrapperClassName="md:-mr-4 md:ml-4"
+            >
+              <Icon className="text-foreground" icon={MoreVertical} />
+            </LogDropdownMenu>
           </View>
         }
         title={log.name}
@@ -62,27 +74,38 @@ export default function Index() {
       {records.isLoading ? (
         <Loading />
       ) : !records.data.length ? (
-        <LogEmptyState logId={params.id} />
+        <LogEmptyState logId={params.logId} />
       ) : (
         <List
-          contentContainerClassName="mx-auto w-full max-w-xl px-3 pb-3 md:px-8 md:pb-8 md:pt-5"
+          contentContainerClassName="mx-auto w-full max-w-lg px-4"
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
           data={records.data}
           keyExtractor={(record) => record.id}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
           onScroll={hideOnScrollDown.onScroll}
-          renderItem={({ item }) => <RecordListRecord record={item} />}
+          renderItem={({ index, item }) => (
+            <RecordListItem
+              className={cn(
+                'mt-4',
+                index === 0 && 'md:mt-8',
+                index === records.data.length - 1 && 'mb-4 md:mb-8'
+              )}
+              record={item}
+            />
+          )}
         />
       )}
       {hideOnScrollDown.isVisible && (
         <Animated.View
+          className="absolute bottom-8 right-8 md:hidden"
           entering={animation(FadeInUp)}
           exiting={animation(FadeOutUp)}
-          className="absolute bottom-6 right-6 md:hidden"
+          style={{ marginBottom: insets.bottom }}
         >
           <Button
             className="size-14 rounded-full"
-            onPress={() => sheetManager.open('record-create', params.id)}
+            onPress={() => sheetManager.open('record-create', params.logId)}
             size="icon"
             style={{ backgroundColor: logColor.default }}
             variant="secondary"

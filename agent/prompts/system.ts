@@ -15,7 +15,7 @@ Use this data model when querying and updating the database.
 
 ### Entities
 
-All entities have a unique id and a serverCreatedAt timestamp.
+All entities have a unique id.
 
 #### logTags (tags that can be associated with logs for organization)
 

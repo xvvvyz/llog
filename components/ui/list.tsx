@@ -1,4 +1,3 @@
-import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/utilities/ui/utils';
 import { LegendList, LegendListProps, LegendListRef } from '@legendapp/list';
 import { cssInterop } from 'nativewind';
@@ -20,7 +19,6 @@ export const List = <T,>({
   const [isAtTop, setIsAtTop] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const ref = useRef<LegendListRef>(null);
-  const breakpoints = useBreakpoints();
 
   return (
     <View
@@ -42,7 +40,6 @@ export const List = <T,>({
         }}
         onScroll={(event) => {
           onScroll?.(event);
-          if (breakpoints.md) return;
           const { contentOffset } = event.nativeEvent;
 
           startTransition(() => {
@@ -56,8 +53,11 @@ export const List = <T,>({
             );
           });
         }}
+        recycleItems
         {...props}
       />
     </View>
   );
 };
+
+List.displayName = 'List';

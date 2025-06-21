@@ -22,7 +22,7 @@ const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
       default: '',
       destructive: '',
       ghost: '',
-      link: '',
+      link: 'rounded-none',
       outline: '',
       secondary: '',
     },
@@ -49,7 +49,7 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive web:hover:bg-destructive/80 active:bg-destructive/60',
         ghost: 'web:hover:bg-accent active:bg-accent',
-        link: 'p-0 h-auto',
+        link: 'p-0 h-auto w-auto rounded-none',
         outline:
           'bg-transparent web:hover:bg-accent active:bg-accent border border-border',
         secondary:
@@ -77,7 +77,7 @@ const buttonTextVariants = cva(
       variant: {
         default: 'text-primary-foreground',
         destructive: 'text-destructive-foreground',
-        ghost: '',
+        ghost: 'text-muted-foreground',
         link: '',
         outline: '',
         secondary: 'text-secondary-foreground',

@@ -57,4 +57,6 @@ With nested associations:
 
 To count results, query with fields=["id"] and count the returned array length.
 
+serverCreatedAt is available on all entities for ordering.
+
 Filter or limit queries when possible to avoid returning too many results.`;
