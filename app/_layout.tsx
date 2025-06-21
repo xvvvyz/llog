@@ -1,27 +1,33 @@
 import { SheetManagerProvider } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import '@/theme/global.css';
-import { NAVIGATION } from '@/theme/navigation';
 import NetInfo from '@react-native-community/netinfo';
-import { ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
-import { setBackgroundColorAsync } from 'expo-system-ui';
-import { Fragment, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 
 NetInfo.configure({ reachabilityShouldRun: () => false });
 
 export default function Layout() {
   const colorScheme = useColorScheme();
 
-  useEffect(() => {
-    setBackgroundColorAsync(NAVIGATION[colorScheme].colors.background);
-  }, [colorScheme]);
-
   return (
-    <Fragment>
+    <ThemeProvider
+      value={{
+        colors: {
+          background: 'transparent',
+          border: 'transparent',
+          card: 'transparent',
+          notification: 'transparent',
+          primary: 'transparent',
+          text: 'transparent',
+        },
+        dark: colorScheme === 'dark',
+        fonts: DefaultTheme.fonts,
+      }}
+    >
       {Platform.OS === 'web' && (
         <Head>
           <title>llog</title>
@@ -31,18 +37,14 @@ export default function Layout() {
             content="width=device-width, initial-scale=1, shrink-to-fit=no, interactive-widget=resizes-content, user-scalable=no"
           />
           <meta name="color-scheme" content="light dark" />
-          <meta
-            name="theme-color"
-            content={NAVIGATION[colorScheme].colors.background}
-          />
         </Head>
       )}
-      <ThemeProvider value={NAVIGATION[colorScheme]}>
-        <SheetManagerProvider>
+      <SheetManagerProvider>
+        <View className="flex-1 bg-background">
           <Slot />
           <PortalHost />
-        </SheetManagerProvider>
-      </ThemeProvider>
-    </Fragment>
+        </View>
+      </SheetManagerProvider>
+    </ThemeProvider>
   );
 }

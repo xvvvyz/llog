@@ -1,7 +1,7 @@
 // https://www.instantdb.com/docs/permissions
 
 import { Role } from '@/enums/roles';
-import type { InstantRules } from '@instantdb/react-native';
+import { InstantRules } from '@instantdb/react-native';
 
 const rules = {
   $default: {
