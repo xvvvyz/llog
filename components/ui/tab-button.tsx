@@ -1,7 +1,7 @@
+import { Button, ButtonProps } from '@/components/ui/button';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { cn } from '@/utilities/ui/utils';
+import { cn } from '@/utilities/cn';
 import { Href, Link, useRouter } from 'expo-router';
-import { Button, ButtonProps } from './button';
 
 export const TabButton = ({
   children,

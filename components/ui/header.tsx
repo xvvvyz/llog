@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/text';
 import { useHeaderHeight } from '@/hooks/use-header-height';
-import { cn } from '@/utilities/ui/utils';
+import { cn } from '@/utilities/cn';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

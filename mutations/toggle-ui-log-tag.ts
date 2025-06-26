@@ -1,5 +1,5 @@
 import { getUi } from '@/queries/get-ui';
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 
 export const toggleUiLogTag = async ({
   isSelected,

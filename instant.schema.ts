@@ -15,6 +15,9 @@ const schema = i.schema({
       date: i.date().indexed(),
       text: i.string(),
     }),
+    images: i.entity({
+      uri: i.string(),
+    }),
     logTags: i.entity({
       name: i.string(),
       order: i.number().indexed(),
@@ -24,12 +27,12 @@ const schema = i.schema({
       name: i.string().indexed(),
     }),
     profiles: i.entity({
-      avatar: i.string().optional(),
       name: i.string(),
     }),
     records: i.entity({
       date: i.date().indexed(),
-      text: i.string(),
+      isDraft: i.boolean().indexed(),
+      text: i.string().optional(),
     }),
     roles: i.entity({
       key: i.string().unique(),
@@ -58,6 +61,19 @@ const schema = i.schema({
         label: 'comments',
       },
     },
+    commentsImages: {
+      forward: {
+        on: 'comments',
+        has: 'many',
+        label: 'images',
+      },
+      reverse: {
+        on: 'images',
+        has: 'one',
+        label: 'comment',
+        onDelete: 'cascade',
+      },
+    },
     logsRecords: {
       forward: {
         on: 'logs',
@@ -82,6 +98,19 @@ const schema = i.schema({
         on: 'logTags',
         has: 'many',
         label: 'logs',
+      },
+    },
+    profilesImages: {
+      forward: {
+        on: 'profiles',
+        has: 'one',
+        label: 'image',
+      },
+      reverse: {
+        on: 'images',
+        has: 'one',
+        label: 'profile',
+        onDelete: 'cascade',
       },
     },
     profilesUsers: {
@@ -122,6 +151,19 @@ const schema = i.schema({
         has: 'one',
         label: 'record',
         required: true,
+        onDelete: 'cascade',
+      },
+    },
+    recordsImages: {
+      forward: {
+        on: 'records',
+        has: 'many',
+        label: 'images',
+      },
+      reverse: {
+        on: 'images',
+        has: 'one',
+        label: 'record',
         onDelete: 'cascade',
       },
     },

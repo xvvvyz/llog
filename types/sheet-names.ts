@@ -5,6 +5,7 @@ export type SheetNames = readonly [
   'record-create',
   'record-delete',
   'record-edit',
+  'record-images',
   'record-tags',
   'tag-delete',
 ];

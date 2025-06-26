@@ -1,6 +1,6 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
 import { LogEmptyState } from '@/components/log-empty-state';
-import RecordListItem from '@/components/record-list-item';
+import { RecordOrComment } from '@/components/record-or-comment';
 import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
@@ -14,7 +14,8 @@ import { useHideOnScrollDown } from '@/hooks/use-hide-on-scroll-down';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useLog } from '@/queries/use-log';
 import { useRecords } from '@/queries/use-records';
-import { animation, cn } from '@/utilities/ui/utils';
+import { animation } from '@/utilities/animation';
+import { cn } from '@/utilities/cn';
 import { useLocalSearchParams } from 'expo-router';
 import { MoreVertical, Plus, PlusIcon } from 'lucide-react-native';
 import { Fragment, ReactElement, useRef } from 'react';
@@ -85,12 +86,13 @@ export default function Index() {
           keyboardShouldPersistTaps="always"
           onScroll={hideOnScrollDown.onScroll}
           renderItem={({ index, item }) => (
-            <RecordListItem
+            <RecordOrComment
               className={cn(
                 'mt-4',
                 index === 0 && 'md:mt-8',
                 index === records.data.length - 1 && 'mb-28 md:mb-8'
               )}
+              numberOfLines={3}
               record={item}
             />
           )}

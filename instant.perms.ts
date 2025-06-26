@@ -44,6 +44,29 @@ const rules = {
       `'${Role.Owner}_' + auth.id in data.ref('record.log.team.roles.key')`,
     ],
   },
+  images: {
+    allow: {
+      view: `isProfileOwner || isTeamMember`,
+      create: `hasOneLink && (isProfileOwner || isTeamRecorder || isTeamAdmin || isTeamOwner)`,
+      delete: `isProfileOwner || isRecordAuthor || isTeamAdmin || isTeamOwner`,
+    },
+    bind: [
+      `hasOneLink`,
+      `size(data.ref('record.id')) + size(data.ref('comment.id')) + size(data.ref('profile.id')) == 1`,
+      `isProfileOwner`,
+      `data.ref('profile.user.id') == auth.ref('$user.id')`,
+      `isRecordAuthor`,
+      `data.ref('record.author.user.id') == auth.ref('$user.id')`,
+      `isTeamMember`,
+      `auth.id in data.ref('record.log.team.roles.user.id')`,
+      `isTeamRecorder`,
+      `'${Role.Recorder}_' + auth.id in data.ref('record.log.team.roles.key')`,
+      `isTeamAdmin`,
+      `'${Role.Admin}_' + auth.id in data.ref('record.log.team.roles.key')`,
+      `isTeamOwner`,
+      `'${Role.Owner}_' + auth.id in data.ref('record.log.team.roles.key')`,
+    ],
+  },
   logTags: {
     allow: {
       view: `isTeamMember`,
@@ -100,16 +123,18 @@ const rules = {
   },
   records: {
     allow: {
-      view: `isTeamMember`,
+      view: `(!isDraft && isTeamMember) || isAuthor`,
       create: `(isTeamRecorder || isTeamAdmin || isTeamOwner) && isValidText`,
       update: `(isAuthor || isTeamAdmin || isTeamOwner) && isValidText`,
       delete: `isAuthor || isTeamAdmin || isTeamOwner`,
     },
     bind: [
       `isValidText`,
-      `size(newData.text) <= 10240`,
+      `newData.text == null || size(newData.text) <= 10240`,
       `isAuthor`,
       `data.ref('author.user.id') == auth.ref('$user.id')`,
+      `isDraft`,
+      `data.isDraft == true`,
       `isTeamMember`,
       `auth.id in data.ref('log.team.roles.user.id')`,
       `isTeamRecorder`,

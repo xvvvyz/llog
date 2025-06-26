@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Textarea } from '@/components/ui/textarea';
 import { addComment } from '@/mutations/add-comment';
-import { animation } from '@/utilities/ui/utils';
+import { animation } from '@/utilities/animation';
 import { ArrowUp } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { TextInput, View } from 'react-native';
@@ -33,7 +33,7 @@ export const RecordCommentForm = ({
       exiting={animation(FadeOutDown)}
       style={{ paddingBottom: insets.bottom }}
     >
-      <View className="mx-auto w-full max-w-lg p-4 xs:px-8">
+      <View className="mx-auto w-full max-w-lg p-4">
         <View className="relative">
           <Textarea
             className="pr-10"

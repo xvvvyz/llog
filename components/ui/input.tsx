@@ -1,4 +1,4 @@
-import { cn } from '@/utilities/ui/utils';
+import { cn } from '@/utilities/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { TextInput } from 'react-native';
 
@@ -62,7 +62,7 @@ const Input = forwardRef<
       onChangeText={handleChangeText}
       ref={ref}
       returnKeyType="done"
-      style={{ borderCurve: 'continuous' as const }}
+      style={{ borderCurve: 'continuous' }}
       submitBehavior="submit"
       value={localValue}
       {...props}

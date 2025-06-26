@@ -1,4 +1,4 @@
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 
 export const useProfile = () => {
   const auth = db.useAuth();
@@ -8,6 +8,7 @@ export const useProfile = () => {
       ? {
           profiles: {
             $: { where: { user: auth.user.id } },
+            image: {},
           },
         }
       : null

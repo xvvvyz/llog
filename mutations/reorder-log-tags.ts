@@ -1,5 +1,5 @@
 import { getActiveTeamId } from '@/queries/get-active-team-id';
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 import { SortableFlexDragEndParams } from 'react-native-sortables';
 
 export const reorderLogTags = async ({ order }: SortableFlexDragEndParams) => {

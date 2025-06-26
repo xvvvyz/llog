@@ -4,12 +4,11 @@ import { Icon } from '@/components/ui/icon';
 import { SearchInput } from '@/components/ui/search-input';
 import { Text } from '@/components/ui/text';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import schema from '@/instant.schema';
 import { toggleUiLogTag } from '@/mutations/toggle-ui-log-tag';
 import { updateUiLogsSort } from '@/mutations/update-ui-logs-sort';
 import { useUi } from '@/queries/use-ui';
-import { cn } from '@/utilities/ui/utils';
-import { InstaQLEntity } from '@instantdb/react-native';
+import { LogTag } from '@/types/log-tag';
+import { cn } from '@/utilities/cn';
 import { View } from 'react-native';
 
 import {
@@ -31,7 +30,7 @@ export const LogListActions = ({
   setQuery,
 }: {
   className?: string;
-  logTags: InstaQLEntity<typeof schema, 'logTags'>[];
+  logTags: LogTag[];
   query: string;
   setQuery: (query: string) => void;
 }) => {

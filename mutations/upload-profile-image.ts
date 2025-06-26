@@ -1,11 +1,11 @@
-import { api } from '@/utilities/ui/api';
-import { uriToFileLike } from '@/utilities/ui/uri-to-file-like';
+import { api } from '@/utilities/api';
+import { uriToFileLike } from '@/utilities/uri-to-file-like';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
 const SIZE = 250;
 
-export const uploadAvatar = async () => {
+export const uploadProfileImage = async () => {
   const picker = await ImagePicker.launchImageLibraryAsync({
     allowsEditing: true,
     aspect: [1, 1],
@@ -38,5 +38,5 @@ export const uploadAvatar = async () => {
   const { uri } = await manipulated.saveAsync({ format: SaveFormat.WEBP });
   const body = new FormData();
   body.append('file', await uriToFileLike(uri));
-  return api('/me/avatar', { body, method: 'PUT' });
+  return api('/files/me/avatar', { body, method: 'PUT' });
 };

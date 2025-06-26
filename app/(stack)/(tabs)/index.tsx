@@ -15,7 +15,7 @@ import { useHasNoLogs } from '@/queries/use-has-no-logs';
 import { useLogTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
 import { SPECTRUM } from '@/theme/spectrum';
-import { cn } from '@/utilities/ui/utils';
+import { cn } from '@/utilities/cn';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';

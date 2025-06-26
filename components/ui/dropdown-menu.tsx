@@ -1,7 +1,8 @@
 import { Icon } from '@/components/ui/icon';
-import { TextClassContext } from '@/components/ui/text';
+import { TextContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
-import { animation, cn } from '@/utilities/ui/utils';
+import { animation } from '@/utilities/animation';
+import { cn } from '@/utilities/cn';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { Check, SortAsc, SortDesc } from 'lucide-react-native';
 import { View } from 'react-native';
@@ -62,7 +63,7 @@ const Item = forwardRef<
   DropdownMenuPrimitive.ItemRef,
   DropdownMenuPrimitive.ItemProps
 >(({ className, ...props }, ref) => (
-  <TextClassContext.Provider value="text-popover-foreground">
+  <TextContext.Provider value="text-popover-foreground">
     <DropdownMenuPrimitive.Item
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
@@ -72,7 +73,7 @@ const Item = forwardRef<
       ref={ref}
       {...props}
     />
-  </TextClassContext.Provider>
+  </TextContext.Provider>
 ));
 
 Item.displayName = DropdownMenuPrimitive.Item.displayName;
@@ -99,7 +100,7 @@ const CheckboxItem = ({
   );
 
   return (
-    <TextClassContext.Provider value="text-popover-foreground">
+    <TextContext.Provider value="text-popover-foreground">
       <DropdownMenuPrimitive.CheckboxItem
         android_ripple={{ color: useRippleColor('inverse') }}
         className={cn(
@@ -116,7 +117,7 @@ const CheckboxItem = ({
           <Icon className="-mr-1.5" icon={Check} size={20} />
         </DropdownMenuPrimitive.ItemIndicator>
       </DropdownMenuPrimitive.CheckboxItem>
-    </TextClassContext.Provider>
+    </TextContext.Provider>
   );
 };
 

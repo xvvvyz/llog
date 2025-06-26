@@ -1,6 +1,4 @@
-import { ClassValue, clsx } from 'clsx';
-import { Alert as NativeAlert, Platform } from 'react-native';
-import { twMerge } from 'tailwind-merge';
+import { Platform } from 'react-native';
 
 import {
   FadeIn,
@@ -10,19 +8,6 @@ import {
   FadeOutDown,
   FadeOutUp,
 } from 'react-native-reanimated';
-
-export const alert = ({
-  message,
-  title,
-}: {
-  message: string;
-  title: string;
-}) => {
-  Platform.select({
-    default: NativeAlert.alert(title, message),
-    web: window.alert(message),
-  });
-};
 
 export const animation = (
   type:
@@ -38,5 +23,3 @@ export const animation = (
     android: undefined,
     default: type.duration(150),
   });
-
-export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));

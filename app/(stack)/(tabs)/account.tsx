@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { deleteAvatar } from '@/mutations/delete-avatar';
 import { updateProfile } from '@/mutations/update-profile';
-import { uploadAvatar } from '@/mutations/upload-avatar';
+import { uploadProfileImage } from '@/mutations/upload-profile-image';
 import { useProfile } from '@/queries/use-profile';
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 import { router } from 'expo-router';
 import { LogOut, Trash, Upload } from 'lucide-react-native';
 import { Fragment, useState } from 'react';
@@ -32,19 +32,18 @@ export default function Account() {
               <Menu.Trigger asChild>
                 <Button variant="link">
                   <Avatar
-                    avatar={profile.avatar}
-                    height={112}
+                    avatar={profile.image?.uri}
+                    className="size-36"
                     id={profile.id}
-                    width={112}
                   />
                 </Button>
               </Menu.Trigger>
               <Menu.Content align="center" className="mt-3">
-                <Menu.Item onPress={uploadAvatar}>
+                <Menu.Item onPress={uploadProfileImage}>
                   <Icon className="text-placeholder" icon={Upload} size={20} />
                   <Text>Upload</Text>
                 </Menu.Item>
-                {profile.avatar && (
+                {profile.image && (
                   <Menu.Item onPress={deleteAvatar}>
                     <Icon className="text-placeholder" icon={Trash} size={20} />
                     <Text>Remove</Text>

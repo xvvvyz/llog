@@ -1,4 +1,4 @@
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 
 export const getProfile = async () => {
   const auth = await db.getAuth();
@@ -7,6 +7,7 @@ export const getProfile = async () => {
   const { data } = await db.queryOnce({
     profiles: {
       $: { where: { user: auth.id } },
+      image: {},
     },
   });
 

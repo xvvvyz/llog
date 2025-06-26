@@ -1,5 +1,5 @@
 import { Input } from '@/components/ui/input';
-import { cn } from '@/utilities/ui/utils';
+import { cn } from '@/utilities/cn';
 import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
 import { TextInput } from 'react-native';
 
@@ -11,7 +11,6 @@ const Textarea = forwardRef<
     className={cn('h-auto py-2.5', className)}
     lineBreakModeIOS="wordWrapping"
     multiline
-    numberOfLines={12}
     ref={ref}
     returnKeyType="default"
     submitBehavior="newline"

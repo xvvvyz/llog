@@ -1,5 +1,5 @@
 import { useUi } from '@/queries/use-ui';
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 
 export const useHasNoLogTags = () => {
   const ui = useUi();

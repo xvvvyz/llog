@@ -1,5 +1,5 @@
-import { TextClassContext } from '@/components/ui/text';
-import { cn } from '@/utilities/ui/utils';
+import { TextContext } from '@/components/ui/text';
+import { cn } from '@/utilities/cn';
 import { LucideIcon } from 'lucide-react-native';
 import { cssInterop } from 'nativewind';
 import React, { ComponentProps, useContext } from 'react';
@@ -14,7 +14,7 @@ export const Icon = ({
   className,
   ...props
 }: IconProps) => {
-  const textClass = useContext(TextClassContext);
+  const textClass = useContext(TextContext);
 
   const StyledIcon = cssInterop(IconComponent, {
     className: {

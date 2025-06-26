@@ -1,18 +1,18 @@
-import { cn } from '@/utilities/ui/utils';
+import { TextContext } from '@/components/ui/text';
+import { cn } from '@/utilities/cn';
 import { View, ViewProps } from 'react-native';
-import { TextClassContext } from './text';
 
 export const Card = ({ children, className, ...props }: ViewProps) => (
   <View
     className={cn(
-      'w-full rounded-xl border border-border-secondary bg-card p-4',
+      'w-full rounded-xl border border-border-secondary bg-card',
       className
     )}
     style={{ borderCurve: 'continuous' }}
     {...props}
   >
-    <TextClassContext.Provider value="text-card-foreground">
+    <TextContext.Provider value="text-card-foreground">
       {children}
-    </TextClassContext.Provider>
+    </TextContext.Provider>
   </View>
 );

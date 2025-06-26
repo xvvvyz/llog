@@ -1,13 +1,14 @@
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 
-export const useRecord = ({ recordId }: { recordId?: string }) => {
+export const useRecord = ({ id }: { id?: string }) => {
   const { data, isLoading } = db.useQuery(
-    recordId
+    id
       ? {
           records: {
-            $: { where: { id: recordId } },
-            author: {},
-            comments: { author: {} },
+            $: { where: { id } },
+            author: { image: {} },
+            comments: { author: { image: {} }, images: {} },
+            images: {},
           },
         }
       : null
@@ -15,5 +16,6 @@ export const useRecord = ({ recordId }: { recordId?: string }) => {
 
   const record = data?.records?.[0];
   const comments = record?.comments ?? [];
-  return { ...record, comments, isLoading };
+  const images = record?.images ?? [];
+  return { ...record, comments, images, isLoading };
 };

@@ -40,7 +40,7 @@ export default function Layout() {
         </Head>
       )}
       <SheetManagerProvider>
-        <View className="flex-1 bg-background">
+        <View className="flex-1 touch-none bg-background">
           <Slot />
           <PortalHost />
         </View>

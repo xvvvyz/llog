@@ -1,6 +1,6 @@
-import { TextClassContext } from '@/components/ui/text';
+import { TextContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
-import { cn } from '@/utilities/ui/utils';
+import { cn } from '@/utilities/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ComponentRef, forwardRef } from 'react';
 import { Pressable, View } from 'react-native';
@@ -51,7 +51,7 @@ const buttonVariants = cva(
         ghost: 'web:hover:bg-accent active:bg-accent',
         link: 'p-0 h-auto w-auto rounded-none',
         outline:
-          'bg-transparent web:hover:bg-accent active:bg-accent border border-border',
+          'bg-none web:hover:bg-accent active:bg-accent border border-border',
         secondary:
           'bg-secondary web:hover:opacity-80 active:opacity-60 border border-border-secondary',
       },
@@ -107,7 +107,7 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
     const shouldHaveRipple = variant !== 'link';
 
     return (
-      <TextClassContext.Provider
+      <TextContext.Provider
         value={buttonTextVariants({
           className: 'web:pointer-events-none',
           size,
@@ -142,7 +142,7 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
             {...props}
           />
         </View>
-      </TextClassContext.Provider>
+      </TextContext.Provider>
     );
   }
 );

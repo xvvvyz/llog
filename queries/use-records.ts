@@ -1,4 +1,4 @@
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 
 export const useRecords = ({ logId }: { logId?: string }) => {
   const { data, isLoading } = db.useQuery(
@@ -7,12 +7,11 @@ export const useRecords = ({ logId }: { logId?: string }) => {
           records: {
             $: {
               order: { date: 'desc' },
-              where: { log: logId },
+              where: { log: logId, isDraft: false },
             },
-            author: {},
-            comments: {
-              $: { fields: ['id'] },
-            },
+            author: { image: {} },
+            comments: { $: { fields: ['id'] } },
+            images: {},
           },
         }
       : null

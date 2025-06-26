@@ -1,5 +1,5 @@
-import { api } from '@/utilities/ui/api';
+import { api } from '@/utilities/api';
 
 export const deleteAvatar = async () => {
-  return api('/me/avatar', { method: 'DELETE' });
+  return api('/files/me/avatar', { method: 'DELETE' });
 };

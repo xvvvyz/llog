@@ -10,21 +10,24 @@ import {
 } from 'react';
 
 type SheetStackItem = {
-  name: SheetName;
+  context?: string;
   id?: string;
+  name: SheetName;
 };
 
 const SheetContext = createContext<{
   close: (name: SheetName) => void;
+  getContext: (name: SheetName) => string | undefined;
   getId: (name: SheetName) => string | undefined;
   isOpen: (name: SheetName) => boolean;
-  open: (name: SheetName, id?: string) => void;
+  open: (name: SheetName, id?: string, context?: string) => void;
   someOpen: () => boolean;
 }>({
   close: () => {},
+  getContext: () => undefined,
+  getId: () => undefined,
   isOpen: () => false,
   open: () => {},
-  getId: () => undefined,
   someOpen: () => false,
 });
 
@@ -39,6 +42,11 @@ export const SheetManagerProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
+  const getContext = useCallback(
+    (name: SheetName) => sheetStack.find((item) => item.name === name)?.context,
+    [sheetStack]
+  );
+
   const getId = useCallback(
     (name: SheetName) => sheetStack.find((item) => item.name === name)?.id,
     [sheetStack]
@@ -49,20 +57,22 @@ export const SheetManagerProvider = ({ children }: { children: ReactNode }) => {
     [sheetStack]
   );
 
-  const open = useCallback((name: SheetName, id?: string) => {
+  const open = useCallback((name: SheetName, id?: string, context?: string) => {
     Keyboard.dismiss();
 
     setSheetStack((prev) => {
       const index = prev.findIndex((item) => item.name === name);
       const newStack = index === -1 ? prev : prev.slice(0, index);
-      return [...newStack, { name, id }];
+      return [...newStack, { context, name, id }];
     });
   }, []);
 
   const someOpen = useCallback(() => !!sheetStack.length, [sheetStack]);
 
   return (
-    <SheetContext.Provider value={{ close, getId, isOpen, open, someOpen }}>
+    <SheetContext.Provider
+      value={{ close, getContext, getId, isOpen, open, someOpen }}
+    >
       {children}
     </SheetContext.Provider>
   );

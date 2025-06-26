@@ -1,58 +1,128 @@
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { Image } from '@/components/ui/image';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useLogColor } from '@/hooks/use-log-color';
-import { createRecord } from '@/mutations/create-record';
-import { useProfile } from '@/queries/use-profile';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { deleteRecordImage } from '@/mutations/delete-record-image';
+import { publishRecord } from '@/mutations/publish-record';
+import { updateRecordDraft } from '@/mutations/update-record-draft';
+import { uploadRecordImages } from '@/mutations/upload-record-images';
+import { useRecordDraft } from '@/queries/use-record-draft';
+import * as ImagePicker from 'expo-image-picker';
+import { ImagePlus, X } from 'lucide-react-native';
+import { useCallback, useTransition } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 
 export const RecordCreateSheet = () => {
-  const [text, setText] = useState('');
-  const profile = useProfile();
+  const [isDeleteTransitioning, startDeleteTransition] = useTransition();
+  const [isUploadTransitioning, startUploadTransition] = useTransition();
   const sheetManager = useSheetManager();
 
   const logId = sheetManager.getId('record-create');
+
+  const draft = useRecordDraft({ logId });
   const logColor = useLogColor({ id: logId });
+
+  const handleUploadImages = useCallback(async () => {
+    const picker = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      allowsMultipleSelection: true,
+      mediaTypes: ['images'],
+      orderedSelection: true,
+      quality: 0.8,
+    });
+
+    if (picker.canceled) return;
+
+    startUploadTransition(async () => {
+      await uploadRecordImages({ images: picker.assets, recordId: draft.id });
+    });
+  }, [draft.id, startUploadTransition]);
+
+  const handleDeleteImage = useCallback(
+    (imageId: string) =>
+      startDeleteTransition(async () => {
+        await deleteRecordImage({ imageId, recordId: draft.id });
+      }),
+    [draft.id, startDeleteTransition]
+  );
 
   return (
     <Sheet
+      className="rounded-t-2xl xs:rounded-t-4xl"
+      loading={!!logId && draft.log?.id !== logId}
       onDismiss={() => sheetManager.close('record-create')}
       open={sheetManager.isOpen('record-create')}
       portalName="record-create"
     >
-      <View className="mx-auto w-full max-w-lg gap-3 p-8">
-        <View className="flex-row gap-3">
-          <Avatar
-            avatar={profile.avatar}
-            height={44}
-            id={profile.id}
-            width={44}
-          />
+      <View className="mx-auto w-full max-w-lg gap-3 p-4 pb-8 sm:pt-8">
+        <View className="max-h-[40dvh] flex-1 rounded-xl border border-border-secondary bg-input md:max-h-[60dvh]">
           <Textarea
             autoFocus
-            className="flex-1"
+            className="flex-2 border-none bg-transparent"
             maxLength={10240}
-            placeholder="What’s happening?"
-            onChangeText={setText}
-            value={text}
+            numberOfLines={16}
+            onChangeText={(text) => updateRecordDraft({ id: draft.id, text })}
+            placeholder="What's happening?"
+            value={draft.text ?? ''}
           />
+          {!!draft.images.length && (
+            <ScrollView
+              className="shrink-0"
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ borderCurve: 'continuous' }}
+            >
+              <View className="flex-row gap-3 p-4">
+                {draft.images.map((image) => (
+                  <View className="relative" key={image.id}>
+                    <Pressable
+                      onPress={() =>
+                        sheetManager.open('record-images', draft.id, image.id)
+                      }
+                    >
+                      <Image
+                        className="size-16"
+                        uri={image.uri}
+                        wrapperClassName="rounded"
+                      />
+                    </Pressable>
+                    <Button
+                      className="size-6"
+                      onPress={() => handleDeleteImage(image.id)}
+                      size="icon"
+                      variant="link"
+                      wrapperClassName="transition-colors rounded-sm bg-background/50 hover:bg-background/60 absolute right-1.5 top-1.5"
+                    >
+                      <Icon className="text-foreground" icon={X} size={16} />
+                    </Button>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          )}
         </View>
-        <View className="flex-row justify-end">
+        <View className="flex-row justify-end gap-3">
+          <Button
+            disabled={isUploadTransitioning}
+            onPress={handleUploadImages}
+            size="xs"
+            variant="secondary"
+          >
+            <Icon icon={ImagePlus} size={16} />
+            <Text>Add visuals</Text>
+          </Button>
           <Button
             className="text-white web:hover:opacity-90"
-            disabled={!text.trim()}
+            disabled={isUploadTransitioning || isDeleteTransitioning}
             onPress={() => {
-              const trimmedText = text.trim();
-              if (!trimmedText || !logId) return;
-              createRecord({ logId: logId, text: trimmedText });
+              publishRecord({ id: draft.id });
               sheetManager.close('record-create');
-              setText('');
             }}
-            size="sm"
+            size="xs"
             style={{ backgroundColor: logColor.default }}
           >
             <Text>Record</Text>

@@ -1,7 +1,7 @@
-import { cn } from '@/utilities/ui/utils';
+import { cn } from '@/utilities/cn';
 import { LegendList, LegendListProps, LegendListRef } from '@legendapp/list';
 import { cssInterop } from 'nativewind';
-import { startTransition, useRef, useState } from 'react';
+import { RefObject, startTransition, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 const StyledList = cssInterop(LegendList, {
@@ -9,28 +9,33 @@ const StyledList = cssInterop(LegendList, {
 }) as typeof LegendList;
 
 export const List = <T,>({
+  horizontal,
+  listRef,
   onLoad,
   onScroll,
   wrapperClassName,
   ...props
 }: LegendListProps<T> & {
+  listRef?: RefObject<LegendListRef | null>;
   wrapperClassName?: string;
 }) => {
   const [isAtTop, setIsAtTop] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const ref = useRef<LegendListRef>(null);
+  const innerRef = useRef<LegendListRef>(null);
+  const ref = listRef ?? innerRef;
 
   return (
     <View
       className={cn(
-        'flex-1 border-y border-b-transparent border-t-transparent',
-        !isAtTop && 'border-t-border',
-        !isAtBottom && 'border-b-border',
+        'flex-1',
+        !horizontal && 'border-y border-b-transparent border-t-transparent',
+        !isAtTop && !horizontal && 'border-t-border',
+        !isAtBottom && !horizontal && 'border-b-border',
         wrapperClassName
       )}
     >
       <StyledList<T>
-        ref={ref}
+        horizontal={horizontal}
         onLoad={(event) => {
           onLoad?.(event);
           if (!ref.current) return;
@@ -54,6 +59,7 @@ export const List = <T,>({
           });
         }}
         recycleItems
+        ref={ref}
         {...props}
       />
     </View>

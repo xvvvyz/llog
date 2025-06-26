@@ -1,9 +1,17 @@
 import { Loading } from '@/components/ui/loading';
-import { animation, cn } from '@/utilities/ui/utils';
+import { animation } from '@/utilities/animation';
+import { cn } from '@/utilities/cn';
 import { Portal } from '@rn-primitives/portal';
 import { ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  View,
+} from 'react-native';
 
 import Animated, {
   FadeIn,
@@ -15,14 +23,18 @@ import Animated, {
 export const Sheet = ({
   children,
   className,
+  detached,
   loading,
+  loadingClassName,
   onDismiss,
   open,
   portalName,
 }: {
   children: ReactNode;
   className?: string;
+  detached?: boolean;
   loading?: boolean;
+  loadingClassName?: string;
   onDismiss: () => void;
   open: boolean;
   portalName: string;
@@ -39,7 +51,7 @@ export const Sheet = ({
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 justify-end"
+          className={cn('flex-1 justify-end', detached && 'justify-center')}
         >
           <Animated.View
             className="absolute inset-0 bg-background/90"
@@ -53,17 +65,24 @@ export const Sheet = ({
           </Animated.View>
           <Animated.View
             className={cn(
-              'rounded-t-4xl border-x border-t border-border-secondary bg-popover',
+              'overflow-hidden rounded-t-4xl border-x border-t border-border-secondary bg-popover',
+              detached && 'rounded-4xl border',
               className
             )}
             entering={animation(FadeInDown)}
             exiting={animation(FadeOutDown)}
             style={{ borderCurve: 'continuous' }}
           >
-            {children}
+            <View className={cn(loading && 'pointer-events-none opacity-0')}>
+              {children}
+            </View>
             {loading && (
               <Animated.View
-                className="absolute inset-0 z-10 rounded-t-4xl bg-popover"
+                className={cn(
+                  'absolute inset-0 z-10 rounded-t-4xl bg-popover',
+                  detached && 'rounded-4xl',
+                  loadingClassName
+                )}
                 exiting={animation(FadeOut)}
               >
                 <Loading />
@@ -71,12 +90,14 @@ export const Sheet = ({
             )}
           </Animated.View>
         </KeyboardAvoidingView>
-        <Animated.View
-          className="border-x border-border bg-popover"
-          entering={animation(FadeInDown)}
-          exiting={animation(FadeOutDown)}
-          style={{ height: inset.bottom }}
-        />
+        {!detached && (
+          <Animated.View
+            className="border-x border-border bg-popover"
+            entering={animation(FadeInDown)}
+            exiting={animation(FadeOutDown)}
+            style={{ height: inset.bottom }}
+          />
+        )}
       </Modal>
     </Portal>
   );

@@ -1,5 +1,5 @@
 import { getProfile } from '@/queries/get-profile';
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 
 export const addComment = async ({

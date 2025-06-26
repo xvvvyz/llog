@@ -1,6 +1,6 @@
 import { AgentName } from '@/enums/agent-name';
 import { getActiveTeamId } from '@/queries/get-active-team-id';
-import { db } from '@/utilities/ui/db';
+import { db } from '@/utilities/db';
 import { agentFetch } from 'agents/client';
 
 export const agent = async (body: string) => {
