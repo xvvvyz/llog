@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { deleteAvatar } from '@/mutations/delete-avatar';
 import { updateProfile } from '@/mutations/update-profile';
-import { uploadFile } from '@/mutations/upload-file';
+import { uploadProfileImage } from '@/mutations/upload-profile-image';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/db';
-import * as ImagePicker from 'expo-image-picker';
+import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
 import { LogOut, Trash, Upload } from 'lucide-react-native';
 import { Fragment, useCallback, useState } from 'react';
@@ -24,15 +24,14 @@ export default function Account() {
   const profile = useProfile();
 
   const handleUploadProfileImage = useCallback(async () => {
-    const picker = await ImagePicker.launchImageLibraryAsync({
+    const picker = await launchImageLibraryAsync({
       allowsEditing: true,
       aspect: [1, 1],
-      mediaTypes: ['images'],
-      quality: 1,
+      exif: false,
     });
 
     if (picker.canceled) return;
-    await uploadFile('me/avatar', picker.assets[0]);
+    await uploadProfileImage(picker.assets[0]);
   }, []);
 
   return (

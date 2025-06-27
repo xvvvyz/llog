@@ -9,9 +9,9 @@ import { useLogColor } from '@/hooks/use-log-color';
 import { deleteRecordImage } from '@/mutations/delete-record-image';
 import { publishRecord } from '@/mutations/publish-record';
 import { updateRecordDraft } from '@/mutations/update-record-draft';
-import { uploadFile } from '@/mutations/upload-file';
+import { uploadRecordImage } from '@/mutations/upload-record-image';
 import { useRecordDraft } from '@/queries/use-record-draft';
-import * as ImagePicker from 'expo-image-picker';
+import { launchImageLibraryAsync } from 'expo-image-picker';
 import { ImagePlus, X } from 'lucide-react-native';
 import { useCallback, useTransition } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -27,19 +27,17 @@ export const RecordCreateSheet = () => {
   const logColor = useLogColor({ id: logId });
 
   const handleUploadImages = useCallback(async () => {
-    const picker = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: false,
+    const picker = await launchImageLibraryAsync({
       allowsMultipleSelection: true,
-      mediaTypes: ['images'],
+      exif: false,
       orderedSelection: true,
-      quality: 1,
     });
 
     if (picker.canceled) return;
 
     startUploadTransition(async () => {
       for (const asset of picker.assets) {
-        await uploadFile(`records/${draft.id}/images`, asset);
+        await uploadRecordImage({ asset, recordId: draft.id });
       }
     });
   }, [draft.id, startUploadTransition]);
