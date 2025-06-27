@@ -12,15 +12,29 @@ import { updateProfile } from '@/mutations/update-profile';
 import { uploadProfileImage } from '@/mutations/upload-profile-image';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/db';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { LogOut, Trash, Upload } from 'lucide-react-native';
-import { Fragment, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 export default function Account() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const auth = db.useAuth();
   const profile = useProfile();
+
+  const handleUploadProfileImage = useCallback(async () => {
+    const picker = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      mediaTypes: ['images'],
+      quality: 1,
+    });
+
+    if (picker.canceled) return;
+
+    await uploadProfileImage({ image: picker.assets[0] });
+  }, []);
 
   return (
     <Fragment>
@@ -39,7 +53,7 @@ export default function Account() {
                 </Button>
               </Menu.Trigger>
               <Menu.Content align="center" className="mt-3">
-                <Menu.Item onPress={uploadProfileImage}>
+                <Menu.Item onPress={handleUploadProfileImage}>
                   <Icon className="text-placeholder" icon={Upload} size={20} />
                   <Text>Upload</Text>
                 </Menu.Item>

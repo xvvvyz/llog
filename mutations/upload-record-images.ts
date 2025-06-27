@@ -1,9 +1,8 @@
+import { ImageSize } from '@/enums/image-size';
 import { api } from '@/utilities/api';
 import { uriToFileLike } from '@/utilities/uri-to-file-like';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-
-const MAX_SIZE = 1024;
 
 export const uploadRecordImages = async ({
   images,
@@ -18,8 +17,12 @@ export const uploadRecordImages = async ({
     let newWidth = width;
     let newHeight = height;
 
-    if (width > MAX_SIZE || height > MAX_SIZE) {
-      const scale = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+    if (width > ImageSize.Record || height > ImageSize.Record) {
+      const scale = Math.min(
+        ImageSize.Record / width,
+        ImageSize.Record / height
+      );
+
       newWidth = Math.round(width * scale);
       newHeight = Math.round(height * scale);
     }

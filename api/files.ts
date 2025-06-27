@@ -53,11 +53,12 @@ app.put(
     }
 
     const imageId = id();
+    const processed = await format(file as File, c.env.IMAGES);
 
     const upload = await c.env.R2.put(
       `profiles/${c.var.user.id}/images/${imageId}`,
-      file as File,
-      { httpMetadata: { contentType: file.type } }
+      processed,
+      { httpMetadata: { contentType: processed.type } }
     );
 
     await c.var.db.transact(
@@ -109,11 +110,12 @@ app.put(
     }
 
     const imageId = id();
+    const processed = await format(file as File, c.env.IMAGES);
 
     const upload = await c.env.R2.put(
       `records/${recordId}/images/${imageId}`,
-      file as File,
-      { httpMetadata: { contentType: file.type } }
+      processed,
+      { httpMetadata: { contentType: processed.type } }
     );
 
     await c.var.db.transact(
@@ -136,5 +138,17 @@ app.delete(
     return c.json({ success: true });
   }
 );
+
+async function format(
+  file: File,
+  images: CloudflareEnv['IMAGES']
+): Promise<File> {
+  const imageStream = file.stream();
+  const image = images.input(imageStream);
+  const result = await image.output({ format: 'image/webp' });
+  const response = new Response(result.image());
+  const buffer = await response.arrayBuffer();
+  return new File([buffer], file.name, { type: 'image/webp' });
+}
 
 export default app;

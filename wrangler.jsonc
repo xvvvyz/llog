@@ -20,6 +20,9 @@
       //     "tag": "v1",
       //   },
       // ],
+      "images": {
+        "binding": "IMAGES",
+      },
       "r2_buckets": [
         {
           "binding": "R2",
@@ -34,6 +37,9 @@
       "assets": {
         "directory": "web",
         "not_found_handling": "single-page-application",
+      },
+      "images": {
+        "binding": "IMAGES",
       },
       "r2_buckets": [
         {

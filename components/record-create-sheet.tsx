@@ -32,7 +32,7 @@ export const RecordCreateSheet = () => {
       allowsMultipleSelection: true,
       mediaTypes: ['images'],
       orderedSelection: true,
-      quality: 0.8,
+      quality: 1,
     });
 
     if (picker.canceled) return;
