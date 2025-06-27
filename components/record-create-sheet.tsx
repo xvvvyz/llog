@@ -9,7 +9,7 @@ import { useLogColor } from '@/hooks/use-log-color';
 import { deleteRecordImage } from '@/mutations/delete-record-image';
 import { publishRecord } from '@/mutations/publish-record';
 import { updateRecordDraft } from '@/mutations/update-record-draft';
-import { uploadRecordImages } from '@/mutations/upload-record-images';
+import { uploadFile } from '@/mutations/upload-file';
 import { useRecordDraft } from '@/queries/use-record-draft';
 import * as ImagePicker from 'expo-image-picker';
 import { ImagePlus, X } from 'lucide-react-native';
@@ -38,7 +38,9 @@ export const RecordCreateSheet = () => {
     if (picker.canceled) return;
 
     startUploadTransition(async () => {
-      await uploadRecordImages({ images: picker.assets, recordId: draft.id });
+      for (const asset of picker.assets) {
+        await uploadFile(`records/${draft.id}/images`, asset);
+      }
     });
   }, [draft.id, startUploadTransition]);
 
@@ -85,17 +87,17 @@ export const RecordCreateSheet = () => {
                       }
                     >
                       <Image
-                        className="size-16"
+                        className="size-20"
                         uri={image.uri}
                         wrapperClassName="rounded"
                       />
                     </Pressable>
                     <Button
-                      className="size-6"
+                      className="size-6 rounded-full"
                       onPress={() => handleDeleteImage(image.id)}
                       size="icon"
                       variant="link"
-                      wrapperClassName="transition-colors rounded-sm bg-background/50 hover:bg-background/60 absolute right-1.5 top-1.5"
+                      wrapperClassName="transition-colors rounded-full bg-background/40 hover:bg-background/50 absolute right-1 top-1"
                     >
                       <Icon className="text-foreground" icon={X} size={16} />
                     </Button>

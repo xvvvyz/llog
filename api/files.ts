@@ -1,3 +1,4 @@
+import { ImageSize } from '@/enums/image-size';
 import { db } from '@/middleware/db';
 import { fileLike } from '@/schemas/file-like';
 import { zValidator } from '@hono/zod-validator';
@@ -53,7 +54,12 @@ app.put(
     }
 
     const imageId = id();
-    const processed = await format(file as File, c.env.IMAGES);
+
+    const processed = await formatImage(file as File, c.env.IMAGES, {
+      fit: 'cover',
+      height: ImageSize.Avatar,
+      width: ImageSize.Avatar,
+    });
 
     const upload = await c.env.R2.put(
       `profiles/${c.var.user.id}/images/${imageId}`,
@@ -110,7 +116,12 @@ app.put(
     }
 
     const imageId = id();
-    const processed = await format(file as File, c.env.IMAGES);
+
+    const processed = await formatImage(file as File, c.env.IMAGES, {
+      fit: 'scale-down',
+      height: ImageSize.Record,
+      width: ImageSize.Record,
+    });
 
     const upload = await c.env.R2.put(
       `records/${recordId}/images/${imageId}`,
@@ -139,13 +150,15 @@ app.delete(
   }
 );
 
-async function format(
+async function formatImage(
   file: File,
-  images: CloudflareEnv['IMAGES']
+  images: CloudflareEnv['IMAGES'],
+  transformations?: ImageTransform
 ): Promise<File> {
   const imageStream = file.stream();
   const image = images.input(imageStream);
-  const result = await image.output({ format: 'image/webp' });
+  const formed = transformations ? image.transform(transformations) : image;
+  const result = await formed.output({ format: 'image/webp', quality: 80 });
   const response = new Response(result.image());
   const buffer = await response.arrayBuffer();
   return new File([buffer], file.name, { type: 'image/webp' });

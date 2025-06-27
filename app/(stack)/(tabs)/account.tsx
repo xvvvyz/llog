@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { deleteAvatar } from '@/mutations/delete-avatar';
 import { updateProfile } from '@/mutations/update-profile';
-import { uploadProfileImage } from '@/mutations/upload-profile-image';
+import { uploadFile } from '@/mutations/upload-file';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/db';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,8 +32,7 @@ export default function Account() {
     });
 
     if (picker.canceled) return;
-
-    await uploadProfileImage({ image: picker.assets[0] });
+    await uploadFile('me/avatar', picker.assets[0]);
   }, []);
 
   return (
