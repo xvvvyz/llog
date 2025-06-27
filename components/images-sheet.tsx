@@ -89,24 +89,22 @@ export const ImagesSheet = () => {
       portalName="record-images"
     >
       {!isLoading && !!record.images.length && (
-        <View className="flex-1">
-          <List
-            data={record.images}
-            estimatedItemSize={windowDimensions.width}
-            horizontal
-            keyExtractor={(image) => image.id}
-            listRef={listRef}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <ImagesListItem
-                image={item}
-                maxHeight={windowDimensions.height}
-                maxWidth={windowDimensions.width}
-              />
-            )}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
+        <List
+          data={record.images}
+          estimatedItemSize={windowDimensions.width}
+          horizontal
+          keyExtractor={(image) => image.id}
+          listRef={listRef}
+          scrollEnabled={false}
+          renderItem={({ item }) => (
+            <ImagesListItem
+              image={item}
+              maxHeight={windowDimensions.height}
+              maxWidth={windowDimensions.width}
+            />
+          )}
+          showsHorizontalScrollIndicator={false}
+        />
       )}
       {!isLoading && record.images.length > 1 && (
         <View className="absolute bottom-8 left-0 right-0 items-center">

@@ -130,9 +130,9 @@ app.delete(
   '/records/:recordId/images/:imageId',
   db({ asUser: true }),
   async (c) => {
-    const { imageId } = c.req.param();
+    const { imageId, recordId } = c.req.param();
     await c.var.db.transact(c.var.db.tx.images[imageId].delete());
-    await c.env.R2.delete(imageId);
+    await c.env.R2.delete(`records/${recordId}/images/${imageId}`);
     return c.json({ success: true });
   }
 );

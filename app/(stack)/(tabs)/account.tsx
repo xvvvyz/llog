@@ -7,7 +7,7 @@ import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { deleteAvatar } from '@/mutations/delete-avatar';
+import { deleteProfileImage } from '@/mutations/delete-profile-image';
 import { updateProfile } from '@/mutations/update-profile';
 import { uploadProfileImage } from '@/mutations/upload-profile-image';
 import { useProfile } from '@/queries/use-profile';
@@ -56,7 +56,7 @@ export default function Account() {
                   <Text>Upload</Text>
                 </Menu.Item>
                 {profile.image && (
-                  <Menu.Item onPress={deleteAvatar}>
+                  <Menu.Item onPress={deleteProfileImage}>
                     <Icon className="text-placeholder" icon={Trash} size={20} />
                     <Text>Remove</Text>
                   </Menu.Item>
