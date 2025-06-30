@@ -9,21 +9,15 @@ interface IconProps extends ComponentProps<LucideIcon> {
   icon: LucideIcon;
 }
 
-export const Icon = ({
-  icon: IconComponent,
-  className,
-  ...props
-}: IconProps) => {
+export const Icon = ({ icon, className, ...props }: IconProps) => {
   const textClass = useContext(TextContext);
 
-  const StyledIcon = cssInterop(IconComponent, {
+  const Icon = cssInterop(icon, {
     className: {
       target: 'style',
       nativeStyleToProp: { color: true, opacity: true },
     },
   });
 
-  return (
-    <StyledIcon className={cn('shrink-0', textClass, className)} {...props} />
-  );
+  return <Icon className={cn('shrink-0', textClass, className)} {...props} />;
 };

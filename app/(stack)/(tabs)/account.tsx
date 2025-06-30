@@ -45,8 +45,8 @@ export default function Account() {
                 <Button variant="link">
                   <Avatar
                     avatar={profile.image?.uri}
-                    className="size-36"
                     id={profile.id}
+                    size={156}
                   />
                 </Button>
               </Menu.Trigger>

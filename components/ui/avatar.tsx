@@ -5,17 +5,20 @@ export const Avatar = ({
   avatar,
   className,
   id,
+  size = 40,
 }: {
   avatar?: string;
   className?: string;
   id?: string;
+  size?: number;
 }) => (
   <Image
-    className={cn('size-10', className)}
+    height={size}
     uri={
       avatar ??
       `https://api.dicebear.com/9.x/glass/png?seed=${id}&backgroundType=gradientLinear&size=250`
     }
-    wrapperClassName="rounded-full bg-border"
+    width={size}
+    wrapperClassName={cn('rounded-full', className)}
   />
 );

@@ -29,7 +29,7 @@ export const uploadRecordImage = async ({
     .resize({ height: newHeight, width: newWidth })
     .renderAsync();
 
-  const { uri } = await manipulated.saveAsync({ compress: 0.8 });
+  const { uri } = await manipulated.saveAsync();
   const body = new FormData();
 
   body.append(

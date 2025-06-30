@@ -1,8 +1,8 @@
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { RatioImage } from '@/components/ui/fixed-ratio-image';
 import { Icon } from '@/components/ui/icon';
+import { Image } from '@/components/ui/image';
 import { List } from '@/components/ui/list';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
@@ -49,7 +49,7 @@ export const RecordOrComment = ({
           {record.text}
         </Text>
       )}
-      {!!record?.images?.length && (
+      {!!record.images?.length && record.images.length > 1 && (
         <List
           data={record.images}
           horizontal
@@ -60,16 +60,34 @@ export const RecordOrComment = ({
                 sheetManager.open('record-images', record.id, item.id)
               }
             >
-              <RatioImage
-                className="h-44 xs:h-64"
-                key={item.id}
+              <Image
+                height={200}
                 uri={item.uri}
-                wrapperClassName={cn('rounded-xl mr-4', index === 0 && 'ml-4')}
+                wrapperClassName={cn(
+                  'mr-3 rounded-xl',
+                  index === 0 && 'ml-4',
+                  index === record.images!.length - 1 && 'mr-4'
+                )}
               />
             </Pressable>
           )}
           showsHorizontalScrollIndicator={false}
         />
+      )}
+      {record.images?.length === 1 && (
+        <Pressable
+          onPress={() =>
+            sheetManager.open('record-images', record.id, record.images![0].id)
+          }
+        >
+          <Image
+            contentFit="cover"
+            height={200}
+            maintainAspectRatio={false}
+            uri={record.images[0].uri}
+            wrapperClassName="rounded-xl"
+          />
+        </Pressable>
       )}
       <View className="-mt-1 flex-row justify-between gap-3 p-2 pt-0">
         <Button

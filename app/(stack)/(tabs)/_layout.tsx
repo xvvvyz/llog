@@ -113,8 +113,8 @@ export default function Layout() {
           tabBarIcon: () => (
             <Avatar
               avatar={profile.image?.uri}
-              className="size-7 md:size-9"
               id={profile.id}
+              size={breakpoints.md ? 36 : 28}
             />
           ),
         }}

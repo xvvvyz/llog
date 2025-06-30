@@ -1,29 +1,73 @@
 import { cn } from '@/utilities/cn';
 import { fileUriToSrc } from '@/utilities/file-uri-to-src';
-import { Image as ImagePrimitive, ImageStyle, View } from 'react-native';
+import { View } from 'react-native';
+
+import {
+  ImageContentFit,
+  Image as ImagePrimitive,
+  ImageStyle,
+  useImage,
+} from 'expo-image';
 
 export const Image = ({
-  className,
+  contentFit,
+  height,
+  maintainAspectRatio = true,
+  maxHeight,
+  maxWidth,
   style,
   uri,
+  width,
   wrapperClassName,
 }: {
-  className?: string;
+  contentFit?: ImageContentFit;
+  height?: number;
+  maintainAspectRatio?: boolean;
+  maxHeight?: number;
+  maxWidth?: number;
   style?: ImageStyle;
   uri: string;
+  width?: number;
   wrapperClassName?: string;
 }) => {
-  const src = fileUriToSrc(uri);
+  const image = useImage(fileUriToSrc(uri));
+
+  if (image && (!height || !width)) {
+    const aspectRatio = image.width / image.height;
+
+    if (!width && !height) {
+      width = image.width;
+      height = image.height;
+    } else if (maintainAspectRatio && !width && height) {
+      width = height * aspectRatio;
+    } else if (maintainAspectRatio && !height && width) {
+      height = width / aspectRatio;
+    }
+  }
+
+  if (width && height && (maxWidth || maxHeight)) {
+    const aspectRatio = width / height;
+
+    if (maxWidth && width > maxWidth) {
+      width = maxWidth;
+      height = width / aspectRatio;
+    }
+
+    if (maxHeight && height > maxHeight) {
+      height = maxHeight;
+      width = height * aspectRatio;
+    }
+  }
 
   return (
     <View
-      className={cn('overflow-hidden', wrapperClassName)}
-      style={{ borderCurve: 'continuous' }}
+      className={cn('relative overflow-hidden bg-border', wrapperClassName)}
+      style={{ borderCurve: 'continuous', height, width }}
     >
       <ImagePrimitive
-        className={className}
-        source={{ uri: src }}
-        style={style}
+        contentFit={contentFit}
+        source={image}
+        style={{ height, width, ...style }}
       />
     </View>
   );

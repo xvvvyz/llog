@@ -19,15 +19,11 @@ export const useImageDimensions = (src: string) => {
       return;
     }
 
-    Image.getSize(
-      src,
-      (width, height) => {
-        const aspectRatio = width / height;
-        dimensionsCache.set(src, { aspectRatio, height, width });
-        setDimensions({ aspectRatio, height, width });
-      },
-      console.log
-    );
+    Image.getSize(src, (width, height) => {
+      const aspectRatio = width / height;
+      dimensionsCache.set(src, { aspectRatio, height, width });
+      setDimensions({ aspectRatio, height, width });
+    });
   }, [src]);
 
   return dimensions;

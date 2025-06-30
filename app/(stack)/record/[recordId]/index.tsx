@@ -62,6 +62,7 @@ export default function Index() {
               record={item}
             />
           )}
+          wrapperClassName="flex-1"
         />
       )}
       <RecordCommentForm recordId={params.recordId} textareaRef={commentRef} />

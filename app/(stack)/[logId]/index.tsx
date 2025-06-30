@@ -96,6 +96,7 @@ export default function Index() {
               record={item}
             />
           )}
+          wrapperClassName="flex-1"
         />
       )}
       {hideOnScrollDown.isVisible && (

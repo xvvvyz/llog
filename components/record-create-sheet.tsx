@@ -59,10 +59,10 @@ export const RecordCreateSheet = () => {
       portalName="record-create"
     >
       <View className="mx-auto w-full max-w-lg gap-3 p-4 pb-8 sm:pt-8">
-        <View className="max-h-[40dvh] flex-1 rounded-xl border border-border-secondary bg-input md:max-h-[60dvh]">
+        <View className="max-h-[40dvh] rounded-xl border border-border-secondary bg-input md:max-h-[60dvh]">
           <Textarea
             autoFocus
-            className="flex-2 border-none bg-transparent"
+            className="border-0 bg-transparent"
             maxLength={10240}
             numberOfLines={16}
             onChangeText={(text) => updateRecordDraft({ id: draft.id, text })}
@@ -85,8 +85,9 @@ export const RecordCreateSheet = () => {
                       }
                     >
                       <Image
-                        className="size-20"
+                        height={64}
                         uri={image.uri}
+                        width={64}
                         wrapperClassName="rounded"
                       />
                     </Pressable>
@@ -95,7 +96,7 @@ export const RecordCreateSheet = () => {
                       onPress={() => handleDeleteImage(image.id)}
                       size="icon"
                       variant="link"
-                      wrapperClassName="transition-colors rounded-full bg-background/40 hover:bg-background/50 absolute right-1 top-1"
+                      wrapperClassName="transition-colors rounded-full bg-background/50 hover:bg-background/60 absolute right-1 top-1"
                     >
                       <Icon className="text-foreground" icon={X} size={16} />
                     </Button>

@@ -30,13 +30,9 @@ export const uploadProfileImage = async (asset: ImagePickerAsset) => {
     })
     .renderAsync();
 
-  const { uri } = await manipulated.saveAsync({ compress: 0.8 });
+  const { uri } = await manipulated.saveAsync();
   const body = new FormData();
-
-  body.append(
-    'file',
-    await assetToFileLike({ ...asset, mimeType: 'image/jpeg', uri })
-  );
-
+  const file = await assetToFileLike({ ...asset, mimeType: 'image/jpeg', uri });
+  body.append('file', file);
   await api(`/files/me/avatar`, { body, method: 'PUT' });
 };

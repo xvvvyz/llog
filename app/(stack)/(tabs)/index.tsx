@@ -109,6 +109,7 @@ export default function Index() {
               />
             );
           }}
+          wrapperClassName="flex-1"
         />
       )}
     </Fragment>

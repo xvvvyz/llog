@@ -3,15 +3,8 @@ import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { Portal } from '@rn-primitives/portal';
 import { ReactNode } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  View,
-} from 'react-native';
 
 import Animated, {
   FadeIn,
@@ -46,12 +39,16 @@ export const Sheet = ({
       <Modal
         focusable={false}
         onRequestClose={onDismiss}
+        statusBarTranslucent
         transparent
         visible={open}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className={cn('flex-1 justify-end', detached && 'justify-center')}
+          className={cn(
+            'absolute inset-0 justify-end',
+            detached && 'justify-center'
+          )}
         >
           <Animated.View
             className="absolute inset-0 bg-background/90"
@@ -73,9 +70,7 @@ export const Sheet = ({
             exiting={animation(FadeOutDown)}
             style={{ borderCurve: 'continuous' }}
           >
-            <View className={cn(loading && 'pointer-events-none opacity-0')}>
-              {children}
-            </View>
+            {children}
             {loading && (
               <Animated.View
                 className={cn(

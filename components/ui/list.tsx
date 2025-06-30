@@ -4,9 +4,7 @@ import { cssInterop } from 'nativewind';
 import { RefObject, startTransition, useRef, useState } from 'react';
 import { View } from 'react-native';
 
-const StyledList = cssInterop(LegendList, {
-  contentContainerClassName: 'contentContainerStyle',
-}) as typeof LegendList;
+cssInterop(LegendList, { contentContainerClassName: 'contentContainerStyle' });
 
 export const List = <T,>({
   horizontal,
@@ -27,14 +25,13 @@ export const List = <T,>({
   return (
     <View
       className={cn(
-        'flex-1',
         !horizontal && 'border-y border-b-transparent border-t-transparent',
         !isAtTop && !horizontal && 'border-t-border',
         !isAtBottom && !horizontal && 'border-b-border',
         wrapperClassName
       )}
     >
-      <StyledList<T>
+      <LegendList<T>
         horizontal={horizontal}
         onLoad={(event) => {
           onLoad?.(event);
