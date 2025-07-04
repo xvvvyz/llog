@@ -3,7 +3,9 @@ import { Icon } from '@/components/ui/icon';
 import { Loading } from '@/components/ui/loading';
 import { TabButton } from '@/components/ui/tab-button';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useProfile } from '@/queries/use-profile';
+import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { Redirect, Tabs } from 'expo-router';
@@ -14,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function Layout() {
   const auth = db.useAuth();
   const breakpoints = useBreakpoints();
+  const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const profile = useProfile();
 
@@ -42,6 +45,7 @@ export default function Layout() {
         tabBarPosition: breakpoints.md ? 'left' : 'bottom',
         tabBarShowLabel: false,
         tabBarStyle: {
+          backgroundColor: UI[colorScheme].background,
           borderRightWidth: breakpoints.md ? 1 : 0,
           borderTopWidth: 0,
           elevation: 0,

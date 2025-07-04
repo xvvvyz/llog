@@ -4,6 +4,7 @@ import { BackButton } from '@/components/ui/back-button';
 import { Header } from '@/components/ui/header';
 import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
+import { Page } from '@/components/ui/page';
 import { useRecord } from '@/queries/use-record';
 import { cn } from '@/utilities/cn';
 import { textToTitle } from '@/utilities/text-to-title';
@@ -28,7 +29,7 @@ export default function Index() {
   }, [params.focus]);
 
   return (
-    <View className="flex-1 bg-card">
+    <Page className="bg-card">
       <Header
         left={<BackButton />}
         title={textToTitle(record.text)}
@@ -66,6 +67,6 @@ export default function Index() {
         />
       )}
       <RecordCommentForm recordId={params.recordId} textareaRef={commentRef} />
-    </View>
+    </Page>
   );
 }

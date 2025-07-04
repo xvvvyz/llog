@@ -6,6 +6,7 @@ import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
 import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
+import { Page } from '@/components/ui/page';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useGridColumns as useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
@@ -19,7 +20,7 @@ import { cn } from '@/utilities/cn';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';
-import { Fragment, ReactElement, useMemo, useRef, useState } from 'react';
+import { ReactElement, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 export default function Index() {
@@ -40,7 +41,7 @@ export default function Index() {
   }
 
   renderCacheRef.current = (
-    <Fragment>
+    <Page>
       <Header
         right={
           <View className="flex-row items-center">
@@ -112,7 +113,7 @@ export default function Index() {
           wrapperClassName="flex-1"
         />
       )}
-    </Fragment>
+    </Page>
   );
 
   return renderCacheRef.current;

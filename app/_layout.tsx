@@ -1,50 +1,58 @@
 import { SheetManagerProvider } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import '@/theme/global.css';
-import NetInfo from '@react-native-community/netinfo';
+import { UI } from '@/theme/ui';
+import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
-import { Platform, View } from 'react-native';
+import { setBackgroundColorAsync } from 'expo-system-ui';
+import { Fragment, useEffect } from 'react';
+import { Platform } from 'react-native';
 
-NetInfo.configure({ reachabilityShouldRun: () => false });
+configureNetInfo({ reachabilityShouldRun: () => false });
+setBackgroundColorAsync('transparent');
 
 export default function Layout() {
   const colorScheme = useColorScheme();
 
+  useEffect(() => {
+    setBackgroundColorAsync(UI[colorScheme].background);
+  }, [colorScheme]);
+
   return (
-    <ThemeProvider
-      value={{
-        colors: {
-          background: 'transparent',
-          border: 'transparent',
-          card: 'transparent',
-          notification: 'transparent',
-          primary: 'transparent',
-          text: 'transparent',
-        },
-        dark: colorScheme === 'dark',
-        fonts: DefaultTheme.fonts,
-      }}
-    >
+    <Fragment>
       {Platform.OS === 'web' && (
         <Head>
           <title>llog</title>
+          <meta name="color-scheme" content="light dark" />
           <meta name="description" content="Track anything in your world." />
           <meta
             name="viewport"
             content="width=device-width, initial-scale=1, shrink-to-fit=no, interactive-widget=resizes-content, user-scalable=no"
           />
-          <meta name="color-scheme" content="light dark" />
         </Head>
       )}
-      <SheetManagerProvider>
-        <View className="flex-1 touch-none bg-background">
+      <ThemeProvider
+        value={{
+          colors: {
+            background: 'transparent',
+            border: 'transparent',
+            card: 'transparent',
+            notification: 'transparent',
+            primary: 'transparent',
+            text: 'transparent',
+          },
+          dark: colorScheme === 'dark',
+          fonts: DefaultTheme.fonts,
+        }}
+      >
+        <SheetManagerProvider>
           <Slot />
           <PortalHost />
-        </View>
-      </SheetManagerProvider>
-    </ThemeProvider>
+        </SheetManagerProvider>
+      </ThemeProvider>
+    </Fragment>
   );
 }

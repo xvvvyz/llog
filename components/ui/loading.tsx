@@ -13,7 +13,10 @@ export const Loading = ({ className }: { className?: string }) => {
 
   return (
     <View
-      className={cn('flex-1 items-center justify-center gap-6 p-3', className)}
+      className={cn(
+        'flex-1 items-center justify-center gap-6 bg-background p-3',
+        className
+      )}
     >
       <ActivityIndicator />
       {showTimeoutMessage && (

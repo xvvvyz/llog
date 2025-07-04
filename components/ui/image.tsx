@@ -10,6 +10,7 @@ import {
 } from 'expo-image';
 
 export const Image = ({
+  className,
   contentFit,
   height,
   maintainAspectRatio = true,
@@ -20,6 +21,7 @@ export const Image = ({
   width,
   wrapperClassName,
 }: {
+  className?: string;
   contentFit?: ImageContentFit;
   height?: number;
   maintainAspectRatio?: boolean;
@@ -61,10 +63,11 @@ export const Image = ({
 
   return (
     <View
-      className={cn('relative overflow-hidden bg-border', wrapperClassName)}
+      className={cn('overflow-hidden bg-border', wrapperClassName)}
       style={{ borderCurve: 'continuous', height, width }}
     >
       <ImagePrimitive
+        className={className}
         contentFit={contentFit}
         source={image}
         style={{ height, width, ...style }}

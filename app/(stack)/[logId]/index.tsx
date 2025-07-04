@@ -7,6 +7,7 @@ import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
 import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
+import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useHeaderHeight } from '@/hooks/use-header-height';
@@ -18,7 +19,7 @@ import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { useLocalSearchParams } from 'expo-router';
 import { MoreVertical, Plus, PlusIcon } from 'lucide-react-native';
-import { Fragment, ReactElement, useRef } from 'react';
+import { ReactElement, useRef } from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,7 +41,7 @@ export default function Index() {
   }
 
   renderCacheRef.current = (
-    <Fragment>
+    <Page>
       <Header
         left={<BackButton />}
         right={
@@ -118,7 +119,7 @@ export default function Index() {
           </Button>
         </Animated.View>
       )}
-    </Fragment>
+    </Page>
   );
 
   return renderCacheRef.current;

@@ -3,17 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
-import { List } from '@/components/ui/list';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
 import { Comment } from '@/types/comment';
 import { Image as ImageType } from '@/types/image';
 import { Profile } from '@/types/profile';
-import { Record } from '@/types/record';
+import { Record as RecordType } from '@/types/record';
 import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { MessageCirclePlus, SmilePlus } from 'lucide-react-native';
+import { useCallback, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 
 export const RecordOrComment = ({
@@ -24,14 +23,49 @@ export const RecordOrComment = ({
   className?: string;
   numberOfLines?: number;
   record: Partial<
-    (Record | Comment) & {
+    (RecordType | Comment) & {
       author: Profile & { image?: ImageType };
       comments: Pick<Comment, 'id'>[];
       images: ImageType[];
     }
   >;
 }) => {
-  const sheetManager = useSheetManager();
+  const idIndexMap = useMemo(
+    () =>
+      (record.images || []).reduce(
+        (acc, image, index) => {
+          acc[image.id] = index;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+    [record.images]
+  );
+
+  const renderImage = useCallback(
+    (image: ImageType) => {
+      return (
+        <Pressable
+          className="flex-1"
+          key={image.id}
+          onPress={() =>
+            router.push(
+              `/record/${record.id}/images?defaultIndex=${idIndexMap[image.id]}`
+            )
+          }
+        >
+          <Image
+            contentFit="cover"
+            height={record.images!.length < 4 ? 250 : 124}
+            maintainAspectRatio={false}
+            uri={image.uri}
+            wrapperClassName="rounded-2xl"
+          />
+        </Pressable>
+      );
+    },
+    [idIndexMap, record.id, record.images]
+  );
 
   return (
     <Card className={cn('gap-4', className)}>
@@ -49,47 +83,19 @@ export const RecordOrComment = ({
           {record.text}
         </Text>
       )}
-      {!!record.images?.length && record.images.length > 1 && (
-        <List
-          data={record.images}
-          horizontal
-          keyExtractor={(image) => image.id}
-          renderItem={({ index, item }) => (
-            <Pressable
-              onPress={() =>
-                sheetManager.open('record-images', record.id, item.id)
-              }
-            >
-              <Image
-                height={200}
-                uri={item.uri}
-                wrapperClassName={cn(
-                  'mr-3 rounded-xl',
-                  index === 0 && 'ml-4',
-                  index === record.images!.length - 1 && 'mr-4'
-                )}
-              />
-            </Pressable>
+      {!!record.images?.length && (
+        <View className="gap-0.5">
+          <View className="flex-row gap-0.5">
+            {record.images.slice(0, 3).map(renderImage)}
+          </View>
+          {record.images.length > 3 && (
+            <View className="flex-row gap-0.5">
+              {record.images.slice(3, 5).map(renderImage)}
+            </View>
           )}
-          showsHorizontalScrollIndicator={false}
-        />
+        </View>
       )}
-      {record.images?.length === 1 && (
-        <Pressable
-          onPress={() =>
-            sheetManager.open('record-images', record.id, record.images![0].id)
-          }
-        >
-          <Image
-            contentFit="cover"
-            height={200}
-            maintainAspectRatio={false}
-            uri={record.images[0].uri}
-            wrapperClassName="rounded-xl"
-          />
-        </Pressable>
-      )}
-      <View className="-mt-1 flex-row justify-between gap-3 p-2 pt-0">
+      <View className="-mt-1.5 flex-row justify-between gap-3 p-2 pt-0">
         <Button
           className="size-8 rounded-lg"
           size="icon"

@@ -2,12 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loading } from '@/components/ui/loading';
+import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
 import { Redirect, router } from 'expo-router';
 import { useState, useTransition } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
 export default function SignIn() {
   const [code, setCode] = useState('');
@@ -40,7 +41,7 @@ export default function SignIn() {
       });
 
     return (
-      <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
+      <Page className="mx-auto w-full max-w-sm justify-center p-6">
         <Label>Email address</Label>
         <Input
           autoComplete="email"
@@ -64,7 +65,7 @@ export default function SignIn() {
             <Text>Sign in</Text>
           )}
         </Button>
-      </View>
+      </Page>
     );
   }
 
@@ -83,7 +84,7 @@ export default function SignIn() {
     });
 
   return (
-    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
+    <Page className="mx-auto w-full max-w-sm justify-center p-6">
       <Label>
         Enter the code sent to <Text className="font-medium">{email}</Text>
       </Label>
@@ -106,6 +107,6 @@ export default function SignIn() {
           <Text>Confirm</Text>
         )}
       </Button>
-    </View>
+    </Page>
   );
 }

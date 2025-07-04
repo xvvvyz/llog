@@ -2,13 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loading } from '@/components/ui/loading';
+import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { onboardUser } from '@/mutations/onboard-user';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/db';
 import { Redirect } from 'expo-router';
 import React, { useState, useTransition } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
 export default function Onboarding() {
   const [isTransitioning, startTransition] = useTransition();
@@ -38,7 +39,7 @@ export default function Onboarding() {
     });
 
   return (
-    <View className="mx-auto w-full max-w-sm flex-1 justify-center p-6">
+    <Page className="mx-auto w-full max-w-sm justify-center p-6">
       <Label>What is your name?</Label>
       <Input
         autoComplete="name"
@@ -62,6 +63,6 @@ export default function Onboarding() {
           <Text>Continue</Text>
         )}
       </Button>
-    </View>
+    </Page>
   );
 }

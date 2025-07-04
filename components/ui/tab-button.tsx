@@ -1,7 +1,7 @@
 import { Button, ButtonProps } from '@/components/ui/button';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/utilities/cn';
-import { Href, Link, useRouter } from 'expo-router';
+import { Href, Link, router } from 'expo-router';
 
 export const TabButton = ({
   children,
@@ -10,7 +10,6 @@ export const TabButton = ({
   ...props
 }: ButtonProps & { href: Href }) => {
   const breakpoints = useBreakpoints();
-  const router = useRouter();
   const canGoBack = router.canGoBack();
 
   const button = (

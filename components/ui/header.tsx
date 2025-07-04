@@ -29,7 +29,7 @@ export const Header = ({
         <View>{left}</View>
         <View
           className={cn(
-            'absolute left-20 right-20 -z-10 flex-1 justify-center md:static',
+            'absolute left-20 right-20 flex-1 justify-center md:static',
             titleWrapperClassName
           )}
         >

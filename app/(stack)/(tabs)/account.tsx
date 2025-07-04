@@ -6,6 +6,7 @@ import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { deleteProfileImage } from '@/mutations/delete-profile-image';
 import { updateProfile } from '@/mutations/update-profile';
@@ -15,7 +16,7 @@ import { db } from '@/utilities/db';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
 import { LogOut, Trash, Upload } from 'lucide-react-native';
-import { Fragment, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 export default function Account() {
@@ -35,7 +36,7 @@ export default function Account() {
   }, []);
 
   return (
-    <Fragment>
+    <Page>
       <Header title="Account" />
       <View className="flex-1 items-center justify-center p-3">
         <Card className="w-full max-w-xs overflow-hidden p-0">
@@ -110,6 +111,6 @@ export default function Account() {
           </View>
         </Card>
       </View>
-    </Fragment>
+    </Page>
   );
 }

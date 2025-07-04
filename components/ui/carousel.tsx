@@ -69,11 +69,11 @@ export const Carousel = ({
       />
       {images.length > 1 && (
         <Pagination
-          activeDotClassName="!bg-white"
-          containerClassName="absolute gap-3 bottom-8"
+          activeDotClassName="!bg-foreground"
+          containerClassName="absolute gap-2 bottom-8"
           containerStyle={{ marginBottom: insets.bottom }}
           data={images}
-          dotClassName="bg-white/60 shadow rounded-full"
+          dotClassName="bg-muted-foreground shadow-xl rounded-full"
           onPress={(index) =>
             ref.current?.scrollTo({
               count: index - progress.value,

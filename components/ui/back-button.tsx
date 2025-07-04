@@ -1,17 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { useNavigation } from 'expo-router';
+import { router } from 'expo-router';
 import { ArrowLeft, ChevronLeft } from 'lucide-react-native';
 import { Platform } from 'react-native';
 
 export const BackButton = () => {
-  const navigation = useNavigation();
-  if (!navigation.canGoBack()) return null;
+  if (!router.canGoBack()) return null;
 
   return (
     <Button
       className="size-11"
-      onPress={() => navigation.goBack()}
+      onPress={() => router.back()}
       size="icon"
       variant="link"
       wrapperClassName="md:-ml-4 md:mr-4"
