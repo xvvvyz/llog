@@ -27,10 +27,6 @@
     "watchman": "watchman watch-del $(pwd) && watchman watch-project $(pwd)"
   },
   "dependencies": {
-    "@agentic/ai-sdk": "^8.4.4",
-    "@agentic/calculator": "^7.6.9",
-    "@agentic/core": "^8.4.4",
-    "@agentic/weather": "^7.6.9",
     "@ai-sdk/anthropic": "^2.0.1",
     "@ai-sdk/google": "^2.0.3",
     "@ai-sdk/openai": "^2.0.7",

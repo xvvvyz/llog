@@ -1,15 +1,15 @@
 import { updateDataPrompt } from '@/agent/prompts/update-data';
 import { updateDataSchema } from '@/agent/schemas/update-data';
 import schema from '@/instant.schema';
-import { createAIFunction } from '@agentic/core';
 import { init, InstantAPIError, TransactionChunk } from '@instantdb/admin';
+import { tool } from 'ai';
+import { z } from 'zod';
 
 export const updateData = (db: ReturnType<typeof init<typeof schema>>) =>
-  createAIFunction({
-    name: 'updateData',
+  tool({
     description: updateDataPrompt,
     inputSchema: updateDataSchema,
-    execute: async ({ transactions }) => {
+    execute: async ({ transactions }: z.infer<typeof updateDataSchema>) => {
       const txs = JSON.parse(transactions) as {
         action: 'update' | 'merge' | 'delete' | 'link' | 'unlink';
         data?: Record<string, unknown>;

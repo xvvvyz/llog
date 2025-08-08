@@ -1,15 +1,15 @@
 import { queryDataPrompt } from '@/agent/prompts/query-data';
 import { queryDataSchema } from '@/agent/schemas/query-data';
 import schema from '@/instant.schema';
-import { createAIFunction } from '@agentic/core';
 import { init, InstantAPIError } from '@instantdb/admin';
+import { tool } from 'ai';
+import { z } from 'zod';
 
 export const queryData = (db: ReturnType<typeof init<typeof schema>>) =>
-  createAIFunction({
-    name: 'queryData',
+  tool({
     description: queryDataPrompt,
     inputSchema: queryDataSchema,
-    execute: async ({ query }) => {
+    execute: async ({ query }: z.infer<typeof queryDataSchema>) => {
       try {
         return await db.query(JSON.parse(query));
       } catch (error) {

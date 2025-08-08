@@ -5,9 +5,6 @@ import { queryData } from '@/agent/tools/query-data';
 import { updateData } from '@/agent/tools/update-data';
 import { Role } from '@/enums/roles';
 import schema from '@/instant.schema';
-import { createAISDKTools } from '@agentic/ai-sdk';
-import { calculator } from '@agentic/calculator';
-import { WeatherClient } from '@agentic/weather';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
@@ -49,23 +46,19 @@ export class AppAgent extends Agent<CloudflareEnv> {
       const agent = await this.authenticateAgent();
       const agentProfileId = await this.getAgentProfileId(agent);
 
-      const tools = createAISDKTools(
-        generateId,
-        getCurrentTime,
-        queryData(this.db.asUser(agent)),
-        updateData(this.db.asUser(agent)),
-        calculator,
-        new WeatherClient({ apiKey: this.env.WEATHER_API_KEY })
-      );
-
       const response = await generateText({
         maxRetries: 3,
         model: this.ai.languageModel('google:gemini-2.0-flash'),
-        onStepFinish: this.onStepFinish<typeof tools>,
+        onStepFinish: this.onStepFinish,
         prompt: await r.text(),
         stopWhen: stepCountIs(20),
         system: systemPrompt({ agentProfileId, teamId: this.name }),
-        tools,
+        tools: [
+          generateId,
+          getCurrentTime,
+          queryData(this.db.asUser(agent)),
+          updateData(this.db.asUser(agent)),
+        ],
       });
 
       return Response.json(response.text);
