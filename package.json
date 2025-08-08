@@ -105,12 +105,6 @@
     "typescript": "~5.8.3",
     "wrangler": "^4.28.1"
   },
-  "resolutions": {
-    "react": "19.0.0"
-  },
-  "patchedDependencies": {
-    "uuid@9.0.1": "patches/uuid@9.0.1.patch"
-  },
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
