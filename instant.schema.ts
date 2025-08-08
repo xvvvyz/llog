@@ -19,7 +19,7 @@ const schema = i.schema({
       uri: i.string(),
     }),
     logTags: i.entity({
-      name: i.string(),
+      name: i.string().indexed(),
       order: i.number().indexed(),
     }),
     logs: i.entity({
