@@ -127,4 +127,4 @@ export const SPECTRUM = {
   ],
 };
 
-export type SpectrumColor = keyof typeof SPECTRUM.light;
+export type Color = keyof typeof SPECTRUM.light;

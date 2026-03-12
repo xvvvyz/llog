@@ -11,22 +11,17 @@
 2. Add environment variables
 
    ```bash
-   # .env.development.local
+   # .env.development
 
    EXPO_PUBLIC_INSTANT_APP_ID=<YOUR_ID>
+   EXPO_PUBLIC_API_URL=http://localhost:8787/api/v1
    ```
 
    ```bash
    # .dev.vars.development
 
-   AGENT_EMAIL_DOMAIN=<YOUR_DOMAIN>
-   ANTHROPIC_API_KEY=<YOUR_KEY>
-   GOOGLE_API_KEY=<YOUR_KEY>
    INSTANT_APP_ADMIN_TOKEN=<YOUR_TOKEN>
    INSTANT_APP_ID=<YOUR_ID>
-   OPENAI_API_KEY=<YOUR_KEY>
-   WEATHER_API_KEY=<YOUR_KEY>
-   XAI_API_KEY=<YOUR_KEY>
    ```
 
 3. Generate types

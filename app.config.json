@@ -9,11 +9,10 @@
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "ios": {
-      "bundleIdentifier": "xyz.xvvvyz.llog"
+      "bundleIdentifier": "co.xvyz.llog"
     },
     "android": {
-      "edgeToEdgeEnabled": true,
-      "package": "xyz.xvvvyz.llog",
+      "package": "co.xvyz.llog",
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {

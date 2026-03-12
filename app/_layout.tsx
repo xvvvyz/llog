@@ -8,8 +8,12 @@ import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
 import { setBackgroundColorAsync } from 'expo-system-ui';
+import { cssInterop } from 'nativewind';
 import { Fragment, useEffect } from 'react';
 import { Platform } from 'react-native';
+import Animated from 'react-native-reanimated';
+
+cssInterop(Animated.View, { className: 'style' });
 
 configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
