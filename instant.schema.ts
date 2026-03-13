@@ -29,6 +29,9 @@ const schema = i.schema({
     profiles: i.entity({
       name: i.string(),
     }),
+    reactions: i.entity({
+      emoji: i.string().indexed(),
+    }),
     records: i.entity({
       date: i.date().indexed(),
       isDraft: i.boolean().indexed(),
@@ -48,6 +51,19 @@ const schema = i.schema({
     }),
   },
   links: {
+    commentsReactions: {
+      forward: {
+        on: 'comments',
+        has: 'many',
+        label: 'reactions',
+      },
+      reverse: {
+        on: 'reactions',
+        has: 'one',
+        label: 'comment',
+        onDelete: 'cascade',
+      },
+    },
     commentsAuthors: {
       forward: {
         on: 'comments',
@@ -127,6 +143,19 @@ const schema = i.schema({
         label: 'profile',
       },
     },
+    reactionsAuthors: {
+      forward: {
+        on: 'reactions',
+        has: 'one',
+        label: 'author',
+        required: true,
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'reactions',
+      },
+    },
     recordsAuthors: {
       forward: {
         on: 'records',
@@ -138,6 +167,19 @@ const schema = i.schema({
         on: 'profiles',
         has: 'many',
         label: 'records',
+      },
+    },
+    recordsReactions: {
+      forward: {
+        on: 'records',
+        has: 'many',
+        label: 'reactions',
+      },
+      reverse: {
+        on: 'reactions',
+        has: 'one',
+        label: 'record',
+        onDelete: 'cascade',
       },
     },
     recordsComments: {

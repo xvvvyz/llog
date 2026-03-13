@@ -1,3 +1,5 @@
+import { EmojiPicker } from '@/components/emoji-picker';
+import { Reactions } from '@/components/reactions';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -7,11 +9,12 @@ import { Text } from '@/components/ui/text';
 import { Comment } from '@/types/comment';
 import { Image as ImageType } from '@/types/image';
 import { Profile } from '@/types/profile';
+import { Reaction } from '@/types/reaction';
 import { Record as RecordType } from '@/types/record';
 import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { Link, router } from 'expo-router';
-import { MessageCirclePlus, SmilePlus } from 'lucide-react-native';
+import { MessageCirclePlus } from 'lucide-react-native';
 import { useCallback, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -27,6 +30,7 @@ export const RecordOrComment = ({
       author: Profile & { image?: ImageType };
       comments: Pick<Comment, 'id'>[];
       images: ImageType[];
+      reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
     }
   >;
 }) => {
@@ -95,15 +99,18 @@ export const RecordOrComment = ({
           )}
         </View>
       )}
-      <View className="-mt-1.5 flex-row justify-between gap-3 p-2 pt-0">
-        <Button
-          className="size-8 rounded-lg"
-          size="icon"
-          variant="ghost"
-          wrapperClassName="rounded-lg"
-        >
-          <Icon icon={SmilePlus} size={20} />
-        </Button>
+      <View className="-mt-1.5 flex-row items-center justify-between gap-3 p-2 pt-0">
+        <View className="flex-1 flex-row flex-wrap items-center gap-2">
+          <EmojiPicker
+            {...(record.comments ? { recordId: record.id } : { commentId: record.id })}
+          />
+          {!!record.reactions?.length && (
+            <Reactions
+              reactions={record.reactions}
+              {...(record.comments ? { recordId: record.id } : { commentId: record.id })}
+            />
+          )}
+        </View>
         {!!record.comments && (
           <Link asChild href={`/record/${record.id}?focus=comment`}>
             <Button size="xs" variant="ghost">

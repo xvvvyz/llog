@@ -12,6 +12,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             author: { image: {} },
             comments: { $: { fields: ['id'] } },
             images: {},
+            reactions: { author: {} },
           },
         }
       : null

@@ -7,8 +7,9 @@ export const useRecord = ({ id }: { id?: string }) => {
           records: {
             $: { where: { id } },
             author: { image: {} },
-            comments: { author: { image: {} }, images: {} },
+            comments: { author: { image: {} }, images: {}, reactions: { author: {} } },
             images: {},
+            reactions: { author: {} },
           },
         }
       : null

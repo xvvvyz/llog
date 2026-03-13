@@ -103,6 +103,29 @@ const rules = {
       `'${Role.Owner}_' + auth.id in data.ref('team.roles.key')`,
     ],
   },
+  reactions: {
+    allow: {
+      view: `isRecordTeamMember || isCommentTeamMember`,
+      create: `isRecordTeamMember || isCommentTeamMember`,
+      delete: `isAuthor || isRecordTeamAdmin || isRecordTeamOwner || isCommentTeamAdmin || isCommentTeamOwner`,
+    },
+    bind: [
+      `isAuthor`,
+      `data.ref('author.user.id') == auth.ref('$user.id')`,
+      `isRecordTeamMember`,
+      `auth.id in data.ref('record.log.team.roles.user.id')`,
+      `isCommentTeamMember`,
+      `auth.id in data.ref('comment.record.log.team.roles.user.id')`,
+      `isRecordTeamAdmin`,
+      `'${Role.Admin}_' + auth.id in data.ref('record.log.team.roles.key')`,
+      `isRecordTeamOwner`,
+      `'${Role.Owner}_' + auth.id in data.ref('record.log.team.roles.key')`,
+      `isCommentTeamAdmin`,
+      `'${Role.Admin}_' + auth.id in data.ref('comment.record.log.team.roles.key')`,
+      `isCommentTeamOwner`,
+      `'${Role.Owner}_' + auth.id in data.ref('comment.record.log.team.roles.key')`,
+    ],
+  },
   profiles: {
     allow: {
       view: `isProfileOwner || isTeammate`,
