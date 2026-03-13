@@ -10,7 +10,7 @@ import { cn } from '@/utilities/cn';
 import { textToTitle } from '@/utilities/text-to-title';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef } from 'react';
-import { TextInput, View } from 'react-native';
+import { TextInput } from 'react-native';
 
 export default function Index() {
   const commentRef = useRef<TextInput>(null);
@@ -31,6 +31,7 @@ export default function Index() {
   return (
     <Page className="bg-card">
       <Header
+        className="border-b border-border"
         left={<BackButton />}
         title={textToTitle(record.text)}
         titleClassName="md:text-center"
@@ -40,9 +41,6 @@ export default function Index() {
         <Loading />
       ) : (
         <List
-          ItemSeparatorComponent={() => (
-            <View className="mt-4 h-px bg-border" />
-          )}
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
           data={data}
           estimatedItemSize={100}
@@ -58,12 +56,12 @@ export default function Index() {
               className={cn(
                 'mt-4 border-transparent',
                 index === 0 && 'md:mt-8',
-                index === record.comments.length && 'mb-28 md:mb-8'
+                index === record.comments.length && 'mb-4 md:mb-8'
               )}
               record={item}
             />
           )}
-          wrapperClassName="flex-1"
+          wrapperClassName="-mt-px flex-1"
         />
       )}
       <RecordCommentForm recordId={params.recordId} textareaRef={commentRef} />

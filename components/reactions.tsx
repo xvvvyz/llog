@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
@@ -5,7 +6,6 @@ import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { cn } from '@/utilities/cn';
 import { useMemo } from 'react';
-import { Pressable, View } from 'react-native';
 
 export const Reactions = ({
   reactions,
@@ -44,17 +44,19 @@ export const Reactions = ({
   return (
     <>
       {Array.from(grouped.entries()).map(([emoji, { count, userReacted }]) => (
-        <Pressable
+        <Button
           key={emoji}
           className={cn(
-            'flex-row items-center gap-0.5 rounded-full border px-1.5 py-0.5',
+            'h-auto gap-0.5 rounded-full border px-2 py-0.5',
             userReacted
-              ? 'border-primary bg-primary/10'
-              : 'border-border bg-muted'
+              ? 'border-primary bg-primary/10 active:bg-primary/20'
+              : 'border-border bg-muted active:bg-accent'
           )}
+          variant="ghost"
+          wrapperClassName="rounded-full"
           onPress={() => toggleReaction({ emoji, recordId, commentId })}
         >
-          <Text className="text-xs">{emoji}</Text>
+          <Text className="text-xs text-foreground">{emoji}</Text>
           <Text
             className={cn(
               'text-xs',
@@ -63,7 +65,7 @@ export const Reactions = ({
           >
             {count}
           </Text>
-        </Pressable>
+        </Button>
       ))}
     </>
   );

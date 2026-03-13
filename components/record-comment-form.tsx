@@ -31,6 +31,7 @@ export const RecordCommentForm = ({
     <Animated.View
       entering={animation(FadeInDown)}
       exiting={animation(FadeOutDown)}
+      className="border-t border-border"
       style={{ paddingBottom: insets.bottom }}
     >
       <View className="mx-auto w-full max-w-lg p-4">

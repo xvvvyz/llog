@@ -91,9 +91,9 @@ export default function Index() {
               className={cn(
                 'mt-4',
                 index === 0 && 'md:mt-8',
-                index === records.data.length - 1 && 'mb-28 md:mb-8'
+                index === records.data.length - 1 && 'mb-4 md:mb-8'
               )}
-              numberOfLines={3}
+              numberOfLines={5}
               record={item}
             />
           )}

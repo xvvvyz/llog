@@ -5,12 +5,14 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const Header = ({
+  className,
   left,
   right,
   title,
   titleClassName,
   titleWrapperClassName,
 }: {
+  className?: string;
   left?: React.ReactNode;
   right?: React.ReactNode;
   title?: string;
@@ -21,7 +23,7 @@ export const Header = ({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ paddingTop: insets.top }}>
+    <View className={className} style={{ paddingTop: insets.top }}>
       <View
         className="flex-row items-center justify-between px-4 md:px-8"
         style={{ height }}

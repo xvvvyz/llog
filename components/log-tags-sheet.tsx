@@ -32,7 +32,7 @@ export const LogTagsSheet = () => {
   const logColor = useLogColor({ id: log.id });
   const logTags = useLogTags({ query });
 
-  const isLoading = log.isLoading || logTags.isLoading;
+  const isLoading = log.isLoading || (!query && logTags.isLoading);
 
   const handleCreateTag = useCallback(() => {
     if (!query) return;

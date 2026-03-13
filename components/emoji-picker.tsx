@@ -25,11 +25,11 @@ export const EmojiPicker = ({
           <Icon icon={SmilePlus} size={20} />
         </Button>
       </Menu.Trigger>
-      <Menu.Content align="start" className="flex-row" sideOffset={2}>
+      <Menu.Content align="start" className="flex-row px-1 py-1" sideOffset={2}>
         {REACTION_EMOJIS.map((emoji) => (
           <Menu.Item
             key={emoji}
-            className="h-8 min-w-0 px-2"
+            className="h-8 min-w-0 rounded-xl px-2"
             onPress={() => toggleReaction({ emoji, recordId, commentId })}
           >
             <Text className="text-base">{emoji}</Text>

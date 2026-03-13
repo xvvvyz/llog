@@ -15,7 +15,7 @@ import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { Link, router } from 'expo-router';
 import { MessageCirclePlus } from 'lucide-react-native';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 export const RecordOrComment = ({
@@ -83,9 +83,11 @@ export const RecordOrComment = ({
         </View>
       </View>
       {record.text && (
-        <Text className="select-text px-4" numberOfLines={numberOfLines}>
-          {record.text}
-        </Text>
+        <TruncatedText
+          className="select-text px-4"
+          numberOfLines={numberOfLines}
+          text={record.text}
+        />
       )}
       {!!record.images?.length && (
         <View className="gap-0.5">
@@ -99,15 +101,19 @@ export const RecordOrComment = ({
           )}
         </View>
       )}
-      <View className="-mt-1.5 flex-row items-center justify-between gap-3 p-2 pt-0">
+      <View className="-mt-1 flex-row items-center justify-between gap-3 p-2 pt-0">
         <View className="flex-1 flex-row flex-wrap items-center gap-2">
           <EmojiPicker
-            {...(record.comments ? { recordId: record.id } : { commentId: record.id })}
+            {...(record.comments
+              ? { recordId: record.id }
+              : { commentId: record.id })}
           />
           {!!record.reactions?.length && (
             <Reactions
               reactions={record.reactions}
-              {...(record.comments ? { recordId: record.id } : { commentId: record.id })}
+              {...(record.comments
+                ? { recordId: record.id }
+                : { commentId: record.id })}
             />
           )}
         </View>
@@ -128,5 +134,48 @@ export const RecordOrComment = ({
         )}
       </View>
     </Card>
+  );
+};
+
+const TruncatedText = ({
+  className,
+  numberOfLines,
+  text,
+}: {
+  className?: string;
+  numberOfLines?: number;
+  text: string;
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const [truncated, setTruncated] = useState(false);
+  const textRef = useRef<View>(null);
+
+  useEffect(() => {
+    if (!numberOfLines || expanded) return;
+
+    const node = textRef.current as unknown as HTMLElement | null;
+    if (!node) return;
+
+    // scrollHeight > clientHeight means text is clipped by numberOfLines
+    if (node.scrollHeight > node.clientHeight) {
+      setTruncated(true);
+    }
+  }, [numberOfLines, expanded, text]);
+
+  return (
+    <View>
+      <Text
+        ref={textRef}
+        className={className}
+        numberOfLines={expanded ? undefined : numberOfLines}
+      >
+        {text}
+      </Text>
+      {truncated && !expanded && (
+        <Pressable className="px-4 pt-1" onPress={() => setExpanded(true)}>
+          <Text className="text-primary hover:underline">Show more</Text>
+        </Pressable>
+      )}
+    </View>
   );
 };
