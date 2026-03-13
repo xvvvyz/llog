@@ -20,10 +20,13 @@ import { Pressable, View } from 'react-native';
 
 export const RecordOrComment = ({
   className,
+  commentId,
   numberOfLines,
   record,
+  recordId: recordIdProp,
 }: {
   className?: string;
+  commentId?: string;
   numberOfLines?: number;
   record: Partial<
     (RecordType | Comment) & {
@@ -33,7 +36,9 @@ export const RecordOrComment = ({
       reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
     }
   >;
+  recordId?: string;
 }) => {
+  const recordId = recordIdProp ?? record.id ?? '';
   const idIndexMap = useMemo(
     () =>
       (record.images || []).reduce(
@@ -103,17 +108,12 @@ export const RecordOrComment = ({
       )}
       <View className="-mt-1 flex-row items-center justify-between gap-3 p-2 pt-0">
         <View className="flex-1 flex-row flex-wrap items-center gap-2">
-          <EmojiPicker
-            {...(record.comments
-              ? { recordId: record.id }
-              : { commentId: record.id })}
-          />
+          <EmojiPicker commentId={commentId} recordId={recordId} />
           {!!record.reactions?.length && (
             <Reactions
+              commentId={commentId}
               reactions={record.reactions}
-              {...(record.comments
-                ? { recordId: record.id }
-                : { commentId: record.id })}
+              recordId={recordId}
             />
           )}
         </View>
@@ -127,7 +127,7 @@ export const RecordOrComment = ({
               <Icon
                 className="-mr-0.5 text-muted-foreground"
                 icon={MessageCirclePlus}
-                size={20}
+                size={16}
               />
             </Button>
           </Link>

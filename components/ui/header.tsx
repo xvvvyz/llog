@@ -15,7 +15,7 @@ export const Header = ({
   className?: string;
   left?: React.ReactNode;
   right?: React.ReactNode;
-  title?: string;
+  title?: React.ReactNode;
   titleClassName?: string;
   titleWrapperClassName?: string;
 }) => {
@@ -29,22 +29,28 @@ export const Header = ({
         style={{ height }}
       >
         <View>{left}</View>
-        <View
-          className={cn(
-            'absolute left-20 right-20 flex-1 justify-center md:static',
-            titleWrapperClassName
-          )}
-        >
-          <Text
+        {title ? (
+          <View
             className={cn(
-              'android:text-lg text-center font-medium md:text-left web:md:text-xl',
-              titleClassName
+              'absolute left-20 right-20 flex-1 justify-center md:static',
+              titleWrapperClassName
             )}
-            numberOfLines={1}
           >
-            {title}
-          </Text>
-        </View>
+            {typeof title === 'string' ? (
+              <Text
+                className={cn(
+                  'android:text-lg text-center font-medium md:text-left web:md:text-xl',
+                  titleClassName
+                )}
+                numberOfLines={1}
+              >
+                {title}
+              </Text>
+            ) : (
+              title
+            )}
+          </View>
+        ) : null}
         <View>{right}</View>
       </View>
     </View>

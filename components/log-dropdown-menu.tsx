@@ -3,6 +3,7 @@ import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
+import { useMyRole } from '@/queries/use-my-role';
 import { FolderPen, Tag, Trash } from 'lucide-react-native';
 import { ReactNode } from 'react';
 import { ViewStyle } from 'react-native';
@@ -20,7 +21,10 @@ export const LogDropdownMenu = ({
   id?: string;
   triggerWrapperClassName?: string;
 }) => {
+  const { canManage } = useMyRole();
   const sheetManager = useSheetManager();
+
+  if (!canManage) return null;
 
   return (
     <Menu.Root>
@@ -40,15 +44,15 @@ export const LogDropdownMenu = ({
         style={contentStyle}
       >
         <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
-          <Icon className="text-placeholder" icon={FolderPen} size={20} />
+          <Icon className="text-placeholder" icon={FolderPen} size={16} />
           <Text>Edit</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
-          <Icon className="text-placeholder" icon={Tag} size={20} />
+          <Icon className="text-placeholder" icon={Tag} size={16} />
           <Text>Tags</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
-          <Icon className="text-placeholder" icon={Trash} size={20} />
+          <Icon className="text-placeholder" icon={Trash} size={16} />
           <Text>Delete</Text>
         </Menu.Item>
       </Menu.Content>

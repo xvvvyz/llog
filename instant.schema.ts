@@ -18,6 +18,11 @@ const schema = i.schema({
     images: i.entity({
       uri: i.string(),
     }),
+    invites: i.entity({
+      email: i.string().indexed(),
+      role: i.string(),
+      teamId: i.string().indexed(),
+    }),
     logTags: i.entity({
       name: i.string().indexed(),
       order: i.number().indexed(),
@@ -38,8 +43,10 @@ const schema = i.schema({
       text: i.string().optional(),
     }),
     roles: i.entity({
+      adminId: i.string().optional().indexed(),
       key: i.string().unique(),
       role: i.string(),
+      teamId: i.string().indexed(),
       userId: i.string(),
     }),
     teams: i.entity({
@@ -62,6 +69,33 @@ const schema = i.schema({
         has: 'one',
         label: 'comment',
         onDelete: 'cascade',
+      },
+    },
+    teamsInvites: {
+      forward: {
+        on: 'teams',
+        has: 'many',
+        label: 'invites',
+      },
+      reverse: {
+        on: 'invites',
+        has: 'one',
+        label: 'team',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
+    invitesCreators: {
+      forward: {
+        on: 'invites',
+        has: 'one',
+        label: 'creator',
+        required: true,
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'invites',
       },
     },
     commentsAuthors: {

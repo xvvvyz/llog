@@ -8,7 +8,7 @@ export const toggleReaction = async ({
   commentId,
 }: {
   emoji: string;
-  recordId?: string;
+  recordId: string;
   commentId?: string;
 }) => {
   const profile = await getProfile();
@@ -20,7 +20,7 @@ export const toggleReaction = async ({
         where: {
           emoji,
           author: profile.id,
-          ...(recordId ? { record: recordId } : { comment: commentId }),
+          ...(commentId ? { comment: commentId } : { record: recordId }),
         },
       },
     },
@@ -36,8 +36,11 @@ export const toggleReaction = async ({
     author: profile.id,
   };
 
-  if (recordId) link.record = recordId;
-  if (commentId) link.comment = commentId;
+  if (commentId) {
+    link.comment = commentId;
+  } else {
+    link.record = recordId;
+  }
 
   return db.transact(db.tx.reactions[id()].update({ emoji }).link(link));
 };

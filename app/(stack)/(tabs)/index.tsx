@@ -1,6 +1,7 @@
 import { LogListActions } from '@/components/log-list-actions';
 import { LogListEmptyState } from '@/components/log-list-empty-state';
 import { LogListItem } from '@/components/log-list-item';
+import { TeamSwitcher } from '@/components/team-switcher';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
@@ -15,6 +16,7 @@ import { createLog } from '@/mutations/create-log';
 import { useHasNoLogs } from '@/queries/use-has-no-logs';
 import { useLogTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
+import { useMyRole } from '@/queries/use-my-role';
 import { SPECTRUM } from '@/theme/spectrum';
 import { cn } from '@/utilities/cn';
 import { id } from '@instantdb/react-native';
@@ -30,6 +32,7 @@ export default function Index() {
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
   const isEmpty = useHasNoLogs();
   const logTags = useLogTags();
+  const { canManage } = useMyRole();
   const renderCacheRef = useRef<ReactElement | null>(null);
   const sheetManager = useSheetManager();
 
@@ -43,6 +46,7 @@ export default function Index() {
   renderCacheRef.current = (
     <Page>
       <Header
+        title={<TeamSwitcher />}
         right={
           <View className="flex-row items-center">
             {breakpoints.md && !isEmpty && (
@@ -53,22 +57,23 @@ export default function Index() {
                 setQuery={setRawQuery}
               />
             )}
-            <Button
-              className="size-11"
-              onPress={() => {
-                const logId = id();
-                createLog({ color: 7, id: logId, name: 'Log' });
-                router.push(`/${logId}`);
-              }}
-              size="icon"
-              variant="link"
-              wrapperClassName="md:-mr-4 md:ml-4"
-            >
-              <Icon className="text-foreground" icon={Plus} />
-            </Button>
+            {canManage && (
+              <Button
+                className="size-11"
+                onPress={() => {
+                  const logId = id();
+                  createLog({ color: 7, id: logId, name: 'Log' });
+                  router.push(`/${logId}`);
+                }}
+                size="icon"
+                variant="link"
+                wrapperClassName="md:-mr-4 md:ml-4"
+              >
+                <Icon className="text-foreground" icon={Plus} size={24} />
+              </Button>
+            )}
           </View>
         }
-        title="Logs"
       />
       {logs.isLoading ? (
         <Loading />

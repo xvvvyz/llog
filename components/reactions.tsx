@@ -13,7 +13,7 @@ export const Reactions = ({
   commentId,
 }: {
   reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
-  recordId?: string;
+  recordId: string;
   commentId?: string;
 }) => {
   const profile = useProfile();

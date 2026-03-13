@@ -1,14 +1,18 @@
 import { Role } from '@/enums/roles';
+import { getUi } from '@/queries/get-ui';
 import { db } from '@/utilities/db';
 import { id as generateId } from '@instantdb/react-native';
 
-export const onboardUser = async ({ name }: { name: string }) => {
+export const createTeam = async ({ name }: { name: string }) => {
   const auth = await db.getAuth();
   if (!auth) return;
+
+  const ui = await getUi();
+  if (!ui) return;
+
   const teamId = generateId();
 
-  return db.transact([
-    db.tx.profiles[generateId()].update({ name }).link({ user: auth.id }),
+  await db.transact([
     db.tx.teams[teamId].update({ name }),
     db.tx.roles[generateId()]
       .update({
@@ -19,6 +23,8 @@ export const onboardUser = async ({ name }: { name: string }) => {
         userId: auth.id,
       })
       .link({ team: teamId, user: auth.id }),
-    db.tx.ui[generateId()].update({}).link({ team: teamId, user: auth.id }),
+    db.tx.ui[ui.id].link({ team: teamId }),
   ]);
+
+  return teamId;
 };

@@ -1,4 +1,5 @@
 export type SheetNames = readonly [
+  'invite-member',
   'log-delete',
   'log-edit',
   'log-tags',
@@ -8,6 +9,9 @@ export type SheetNames = readonly [
   'record-images',
   'record-tags',
   'tag-delete',
+  'team-delete',
+  'team-leave',
+  'team-switch',
 ];
 
 export type SheetName = SheetNames[number];

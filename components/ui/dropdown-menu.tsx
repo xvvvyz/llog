@@ -67,7 +67,7 @@ const Item = forwardRef<
     <DropdownMenuPrimitive.Item
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
-        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 px-4 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 pl-4 pr-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
         className
       )}
       ref={ref}
@@ -114,7 +114,7 @@ const CheckboxItem = ({
       >
         <View className="flex-row items-center gap-4">{children}</View>
         <DropdownMenuPrimitive.ItemIndicator>
-          <Icon className="-mr-1.5" icon={Check} size={20} />
+          <Icon className="-mr-1.5" icon={Check} size={16} />
         </DropdownMenuPrimitive.ItemIndicator>
       </DropdownMenuPrimitive.CheckboxItem>
     </TextContext.Provider>
@@ -163,7 +163,7 @@ const SortItem = <T extends string>({
     >
       <View className="flex-row items-center gap-4">{children}</View>
       {isActive && (
-        <Icon icon={opSort[1] === 'asc' ? SortAsc : SortDesc} size={20} />
+        <Icon icon={opSort[1] === 'asc' ? SortAsc : SortDesc} size={16} />
       )}
     </Item>
   );
@@ -171,12 +171,15 @@ const SortItem = <T extends string>({
 
 SortItem.displayName = 'SortItem';
 
+const Separator = () => <View className="my-2 border-t border-border" />;
+
 export {
   CheckboxItem,
   Content,
   Item,
   // RadioItem,
   Root,
+  Separator,
   SortItem,
   Trigger,
 };

@@ -52,7 +52,7 @@ export const LogListActions = ({
               <Icon
                 className="text-secondary-foreground"
                 icon={Filter}
-                size={20}
+                size={16}
               />
             </Button>
           </DropdownMenu.Trigger>
@@ -68,7 +68,7 @@ export const LogListActions = ({
                   })
                 }
               >
-                <Icon className="text-placeholder" icon={Tag} size={20} />
+                <Icon className="text-placeholder" icon={Tag} size={16} />
                 <Text>{tag.name}</Text>
               </DropdownMenu.CheckboxItem>
             ))}
@@ -81,7 +81,7 @@ export const LogListActions = ({
             <Icon
               className="text-secondary-foreground"
               icon={ui.logsSortDirection === 'asc' ? SortAsc : SortDesc}
-              size={20}
+              size={16}
             />
           </Button>
         </DropdownMenu.Trigger>
@@ -92,7 +92,7 @@ export const LogListActions = ({
             sortDirection={ui.logsSortDirection}
             value="serverCreatedAt"
           >
-            <Icon className="text-placeholder" icon={Calendar} size={20} />
+            <Icon className="text-placeholder" icon={Calendar} size={16} />
             <Text>Created</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
@@ -101,7 +101,7 @@ export const LogListActions = ({
             sortDirection={ui.logsSortDirection}
             value="name"
           >
-            <Icon className="text-placeholder" icon={BookA} size={20} />
+            <Icon className="text-placeholder" icon={BookA} size={16} />
             <Text>Name</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
@@ -110,7 +110,7 @@ export const LogListActions = ({
             sortDirection={ui.logsSortDirection}
             value="color"
           >
-            <Icon className="text-placeholder" icon={Palette} size={20} />
+            <Icon className="text-placeholder" icon={Palette} size={16} />
             <Text>Color</Text>
           </DropdownMenu.SortItem>
         </DropdownMenu.Content>
@@ -123,7 +123,7 @@ export const LogListActions = ({
         <Icon
           className="text-secondary-foreground"
           icon={Group}
-          size={20}
+          size={16}
         />
       </Button> */}
     </View>

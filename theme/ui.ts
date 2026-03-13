@@ -29,7 +29,7 @@ export const UI = {
     foreground: 'hsl(0 0% 100% / 0.8)',
     card: 'hsl(0 0% 9%)',
     cardForeground: 'hsl(0 0% 100% / 0.8)',
-    popover: 'hsl(0 0% 12%)',
+    popover: 'hsl(0 0% 9%)',
     popoverForeground: 'hsl(0 0% 100% / 0.8)',
     primary: 'hsl(211 78% 58%)',
     primaryForeground: 'hsl(0 0% 100% / 0.8)',

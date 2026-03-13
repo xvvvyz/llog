@@ -10,7 +10,7 @@ export const EmojiPicker = ({
   recordId,
   commentId,
 }: {
-  recordId?: string;
+  recordId: string;
   commentId?: string;
 }) => {
   return (
@@ -22,7 +22,7 @@ export const EmojiPicker = ({
           variant="ghost"
           wrapperClassName="rounded-lg"
         >
-          <Icon icon={SmilePlus} size={20} />
+          <Icon icon={SmilePlus} size={16} />
         </Button>
       </Menu.Trigger>
       <Menu.Content align="start" className="flex-row px-1 py-1" sideOffset={2}>

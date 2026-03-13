@@ -53,12 +53,12 @@ export default function Account() {
               </Menu.Trigger>
               <Menu.Content align="center" className="mt-3">
                 <Menu.Item onPress={handleUploadProfileImage}>
-                  <Icon className="text-placeholder" icon={Upload} size={20} />
+                  <Icon className="text-placeholder" icon={Upload} size={16} />
                   <Text>Upload</Text>
                 </Menu.Item>
                 {profile.image && (
                   <Menu.Item onPress={deleteProfileImage}>
-                    <Icon className="text-placeholder" icon={Trash} size={20} />
+                    <Icon className="text-placeholder" icon={Trash} size={16} />
                     <Text>Remove</Text>
                   </Menu.Item>
                 )}
@@ -105,7 +105,7 @@ export default function Account() {
               <Icon
                 className="-mr-1 text-placeholder"
                 icon={LogOut}
-                size={20}
+                size={16}
               />
             </Button>
           </View>

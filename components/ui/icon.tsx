@@ -9,7 +9,7 @@ interface IconProps extends ComponentProps<LucideIcon> {
   icon: LucideIcon;
 }
 
-export const Icon = ({ icon, className, ...props }: IconProps) => {
+export const Icon = ({ icon, className, size = 16, ...props }: IconProps) => {
   const textClass = useContext(TextContext);
 
   const Icon = cssInterop(icon, {
@@ -19,5 +19,11 @@ export const Icon = ({ icon, className, ...props }: IconProps) => {
     },
   });
 
-  return <Icon className={cn('shrink-0', textClass, className)} {...props} />;
+  return (
+    <Icon
+      className={cn('shrink-0', textClass, className)}
+      size={size}
+      {...props}
+    />
+  );
 };

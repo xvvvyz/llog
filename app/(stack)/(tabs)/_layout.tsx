@@ -4,6 +4,7 @@ import { Loading } from '@/components/ui/loading';
 import { TabButton } from '@/components/ui/tab-button';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useMyInvites } from '@/queries/use-my-invites';
 import { useProfile } from '@/queries/use-profile';
 import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
@@ -18,6 +19,7 @@ export default function Layout() {
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { invites, isLoading: isLoadingInvites } = useMyInvites();
   const profile = useProfile();
 
   if (!auth.isLoading && !auth.user) {
@@ -28,8 +30,12 @@ export default function Layout() {
     return <Redirect href="/onboarding" />;
   }
 
-  if (profile.isLoading) {
+  if (profile.isLoading || isLoadingInvites) {
     return <Loading />;
+  }
+
+  if (invites.length) {
+    return <Redirect href="/invites" />;
   }
 
   return (
@@ -77,6 +83,7 @@ export default function Layout() {
             <Icon
               className={cn('text-placeholder', focused && 'text-foreground')}
               icon={LayoutGrid}
+              size={24}
             />
           ),
         }}
@@ -84,6 +91,7 @@ export default function Layout() {
       <Tabs.Screen
         name="activity"
         options={{
+          tabBarItemStyle: breakpoints.md ? { marginTop: 'auto' } : undefined,
           tabBarButton: ({ children, onPress, ...props }) => (
             <TabButton
               aria-selected={props['aria-selected']}
@@ -97,6 +105,7 @@ export default function Layout() {
             <Icon
               className={cn('text-placeholder', focused && 'text-foreground')}
               icon={Bell}
+              size={24}
             />
           ),
         }}
@@ -104,7 +113,6 @@ export default function Layout() {
       <Tabs.Screen
         name="account"
         options={{
-          tabBarItemStyle: breakpoints.md ? { marginTop: 'auto' } : undefined,
           tabBarButton: ({ children, onPress, ...props }) => (
             <TabButton
               aria-selected={props['aria-selected']}

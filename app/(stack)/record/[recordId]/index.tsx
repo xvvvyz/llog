@@ -31,7 +31,6 @@ export default function Index() {
   return (
     <Page className="bg-card">
       <Header
-        className="border-b border-border"
         left={<BackButton />}
         title={textToTitle(record.text)}
         titleClassName="md:text-center"
@@ -58,10 +57,12 @@ export default function Index() {
                 index === 0 && 'md:mt-8',
                 index === record.comments.length && 'mb-4 md:mb-8'
               )}
+              commentId={index > 0 ? item.id : undefined}
               record={item}
+              recordId={params.recordId}
             />
           )}
-          wrapperClassName="-mt-px flex-1"
+          wrapperClassName="flex-1"
         />
       )}
       <RecordCommentForm recordId={params.recordId} textareaRef={commentRef} />
