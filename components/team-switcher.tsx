@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { createTeam } from '@/mutations/create-team';
 import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
@@ -13,6 +14,7 @@ import { useRef } from 'react';
 import { View } from 'react-native';
 
 export const TeamSwitcher = () => {
+  const breakpoints = useBreakpoints();
   const { activeTeamId } = useUi();
   const { teams } = useTeams();
   const activeTeam = teams.find((t) => t.id === activeTeamId);
@@ -33,7 +35,10 @@ export const TeamSwitcher = () => {
           />
         </Button>
       </Menu.Trigger>
-      <Menu.Content align="center" className="mt-3">
+      <Menu.Content
+        align={breakpoints.md ? 'start' : 'center'}
+        className="mt-3"
+      >
         {teams.map((t) => (
           <Menu.Item
             className="justify-between"
