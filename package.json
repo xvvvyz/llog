@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "android": "bunx concurrently --raw 'bun run:android' 'adb reverse tcp:8787 tcp:8787' 'bun dev:wrangler'",
-    "build": "expo export --platform web --output-dir web && bun scripts/inject-theme.ts",
+    "build:web": "expo export --platform web --output-dir web && bun scripts/inject-theme.ts",
     "dev": "bunx concurrently --raw 'bun dev:expo' 'bun dev:wrangler'",
     "dev:expo": "expo start --offline --web --port 3000",
     "dev:wrangler": "wrangler dev --env development --ip 0.0.0.0",
