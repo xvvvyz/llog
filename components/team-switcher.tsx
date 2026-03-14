@@ -25,7 +25,7 @@ export const TeamSwitcher = () => {
     <Menu.Root>
       <Menu.Trigger asChild>
         <Button
-          className="-mx-3 -my-3 h-auto gap-1 px-3 py-3 md:self-start"
+          className="h-auto gap-1 py-3 md:self-start"
           variant="link"
         >
           <Text className="web:md:text-xl">
