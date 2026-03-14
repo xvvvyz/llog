@@ -62,9 +62,7 @@ export const Item = ({
             </Text>
           )}
         </View>
-        {selected && (
-          <Icon className="text-primary" icon={Check} size={18} weight="bold" />
-        )}
+        {selected && <Icon className="text-primary" icon={Check} />}
       </View>
     </RadioGroupPrimitive.Item>
   );

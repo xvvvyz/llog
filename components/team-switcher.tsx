@@ -24,21 +24,17 @@ export const TeamSwitcher = () => {
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
-        <Button className="h-auto gap-1 px-0 md:self-start" variant="link">
+        <Button
+          className="-mx-3 -my-3 h-auto gap-1 px-3 py-3 md:self-start"
+          variant="link"
+        >
           <Text className="web:md:text-xl">
             {activeTeam?.name ?? lastNameRef.current}
           </Text>
-          <Icon
-            className="-mr-0.5 text-placeholder"
-            icon={CaretDown}
-            size={18}
-          />
+          <Icon className="-mr-0.5 text-placeholder" icon={CaretDown} />
         </Button>
       </Menu.Trigger>
-      <Menu.Content
-        align={breakpoints.md ? 'start' : 'center'}
-        className="mt-3"
-      >
+      <Menu.Content align={breakpoints.md ? 'start' : 'center'}>
         {teams.map((t) => (
           <Menu.Item
             className="justify-between"
@@ -47,20 +43,18 @@ export const TeamSwitcher = () => {
           >
             <Avatar id={t.id} size={20} />
             <Text className="flex-1">{t.name}</Text>
-            {t.id === activeTeamId && (
-              <Icon className="-mr-1" icon={Check} size={18} />
-            )}
+            {t.id === activeTeamId && <Icon className="-mr-1" icon={Check} />}
           </Menu.Item>
         ))}
         <Menu.Item onPress={() => createTeam({ name: 'Team' })}>
           <View className="w-5 items-center">
-            <Icon className="text-placeholder" icon={Plus} size={18} />
+            <Icon className="text-placeholder" icon={Plus} />
           </View>
           <Text>New team</Text>
         </Menu.Item>
         <Menu.Item onPress={() => router.push('/team')}>
           <View className="w-5 items-center">
-            <Icon className="text-placeholder" icon={GearSix} size={18} />
+            <Icon className="text-placeholder" icon={GearSix} />
           </View>
           <Text>Team settings</Text>
         </Menu.Item>

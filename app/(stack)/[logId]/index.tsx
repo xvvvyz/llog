@@ -53,7 +53,7 @@ export default function Index() {
               style={{ backgroundColor: logColor.default }}
               variant="secondary"
             >
-              <Icon className="-ml-0.5 text-white" icon={Plus} size={18} />
+              <Icon className="-ml-0.5 text-white" icon={Plus} />
               <Text className="text-white">New record</Text>
             </Button>
             <LogDropdownMenu
@@ -97,6 +97,7 @@ export default function Index() {
                 index === 0 && 'md:mt-8',
                 index === records.data.length - 1 && 'mb-4 md:mb-8'
               )}
+              logId={params.logId}
               numberOfLines={5}
               record={item}
             />

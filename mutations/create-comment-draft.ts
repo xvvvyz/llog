@@ -1,15 +1,16 @@
 import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { getProfile } from '@/queries/get-profile';
 import { db } from '@/utilities/db';
-import { id } from '@instantdb/react-native';
 
-export const addComment = async ({
+export const createCommentDraft = async ({
+  commentId,
   recordId,
-  text,
 }: {
-  recordId: string;
-  text: string;
+  commentId: string;
+  recordId?: string;
 }) => {
+  if (!recordId) return;
+
   const [profile, teamId] = await Promise.all([
     getProfile(),
     getActiveTeamId(),
@@ -18,8 +19,13 @@ export const addComment = async ({
   if (!profile || !teamId) return;
 
   return db.transact(
-    db.tx.comments[id()]
-      .update({ date: new Date().toISOString(), teamId, text })
+    db.tx.comments[commentId]
+      .update({
+        date: new Date().toISOString(),
+        isDraft: true,
+        teamId,
+        text: '',
+      })
       .link({ author: profile.id, record: recordId })
   );
 };

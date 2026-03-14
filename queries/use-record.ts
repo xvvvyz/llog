@@ -8,11 +8,13 @@ export const useRecord = ({ id }: { id?: string }) => {
             $: { where: { id } },
             author: { image: {} },
             comments: {
+              $: { where: { isDraft: { $not: true } } },
               author: { image: {} },
               images: {},
               reactions: { author: {} },
             },
             images: {},
+            log: {},
             reactions: { author: {} },
           },
         }

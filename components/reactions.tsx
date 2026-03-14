@@ -10,10 +10,12 @@ import { cn } from '@/utilities/cn';
 import { useMemo } from 'react';
 
 export const Reactions = ({
+  color,
   reactions,
   recordId,
   commentId,
 }: {
+  color?: string;
   reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
   recordId: string;
   commentId?: string;
@@ -57,28 +59,30 @@ export const Reactions = ({
           <Button
             key={emoji}
             className={cn(
-              'h-auto gap-1.5 rounded-full border px-2 py-0.5',
-              userReacted
-                ? 'border-primary bg-primary/10 active:bg-primary/20'
-                : 'border-border bg-muted active:bg-accent'
+              'gap-1.5 rounded-lg',
+              userReacted ? 'active:bg-primary/20' : 'active:bg-accent'
             )}
+            size="xs"
             variant="ghost"
-            wrapperClassName="rounded-full"
+            wrapperClassName="rounded-lg"
             onPress={() => toggleReaction({ emoji, recordId, commentId })}
           >
             <Icon
               className={cn(
-                'text-xs',
-                userReacted ? 'text-primary' : 'text-foreground'
+                userReacted && !color && 'text-primary',
+                !userReacted && 'text-muted-foreground'
               )}
               icon={REACTION_ICONS[emoji as keyof typeof REACTION_ICONS]}
-              size={14}
+              style={userReacted && color ? { color } : undefined}
+              weight={userReacted ? 'fill' : 'regular'}
             />
             <Text
               className={cn(
-                'text-xs',
-                userReacted ? 'text-primary' : 'text-muted-foreground'
+                'text-sm',
+                userReacted && !color && 'text-primary',
+                !userReacted && 'text-muted-foreground'
               )}
+              style={userReacted && color ? { color } : undefined}
             >
               {count}
             </Text>

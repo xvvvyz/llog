@@ -6,25 +6,28 @@ import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useLogColor } from '@/hooks/use-log-color';
-import { deleteRecordImage } from '@/mutations/delete-record-image';
-import { publishRecord } from '@/mutations/publish-record';
-import { updateRecordDraft } from '@/mutations/update-record-draft';
-import { uploadRecordImage } from '@/mutations/upload-record-image';
-import { useRecordDraft } from '@/queries/use-record-draft';
+import { deleteCommentImage } from '@/mutations/delete-comment-image';
+import { publishComment } from '@/mutations/publish-comment';
+import { uploadCommentImage } from '@/mutations/upload-comment-image';
+import { useCommentDraft } from '@/queries/use-comment-draft';
+import { useRecord } from '@/queries/use-record';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { Image as ImageIcon, X } from 'phosphor-react-native';
-import { useCallback, useTransition } from 'react';
+import { useCallback, useState, useTransition } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-export const RecordCreateSheet = () => {
+export const CommentCreateSheet = () => {
   const [isDeleteTransitioning, startDeleteTransition] = useTransition();
   const [isUploadTransitioning, startUploadTransition] = useTransition();
+  const [text, setText] = useState('');
   const sheetManager = useSheetManager();
 
-  const logId = sheetManager.getId('record-create');
+  const recordId = sheetManager.getId('comment-create');
+  const record = useRecord({ id: recordId });
+  const logColor = useLogColor({ id: record.log?.id });
+  const draft = useCommentDraft({ recordId });
 
-  const draft = useRecordDraft({ logId });
-  const logColor = useLogColor({ id: logId });
+  const hasContent = !!text.trim() || !!draft.images.length;
 
   const handleUploadImages = useCallback(async () => {
     const picker = await launchImageLibraryAsync({
@@ -38,27 +41,37 @@ export const RecordCreateSheet = () => {
     startUploadTransition(() =>
       Promise.all(
         picker.assets.map((asset) =>
-          uploadRecordImage({ asset, recordId: draft.id })
+          uploadCommentImage({ asset, commentId: draft.id, recordId })
         )
       )
     );
-  }, [draft.id, startUploadTransition]);
+  }, [draft.id, recordId, startUploadTransition]);
 
   const handleDeleteImage = useCallback(
     (imageId: string) =>
       startDeleteTransition(async () => {
-        await deleteRecordImage({ imageId, recordId: draft.id });
+        await deleteCommentImage({ commentId: draft.id, imageId, recordId });
       }),
-    [draft.id, startDeleteTransition]
+    [draft.id, recordId, startDeleteTransition]
   );
+
+  const handleSubmit = useCallback(() => {
+    if (!hasContent || !draft.id) return;
+    publishComment({ id: draft.id, text: text.trim() });
+    sheetManager.close('comment-create');
+    setText('');
+  }, [draft.id, hasContent, sheetManager, text]);
 
   return (
     <Sheet
       className="rounded-t-2xl xs:rounded-t-4xl"
-      loading={!!logId && draft.log?.id !== logId}
-      onDismiss={() => sheetManager.close('record-create')}
-      open={sheetManager.isOpen('record-create')}
-      portalName="record-create"
+      loading={!!recordId && !draft.id}
+      onDismiss={() => {
+        sheetManager.close('comment-create');
+        setText('');
+      }}
+      open={sheetManager.isOpen('comment-create')}
+      portalName="comment-create"
     >
       <View className="mx-auto w-full max-w-lg gap-3 p-4 pb-8 sm:pt-8">
         <View className="max-h-[40dvh] rounded-xl border border-border-secondary bg-input md:max-h-[60dvh]">
@@ -67,9 +80,9 @@ export const RecordCreateSheet = () => {
             className="border-0 bg-transparent"
             maxLength={10240}
             numberOfLines={16}
-            onChangeText={(text) => updateRecordDraft({ id: draft.id, text })}
-            placeholder="What's happening?"
-            value={draft.text ?? ''}
+            onChangeText={setText}
+            placeholder="Add a reply"
+            value={text}
           />
           {!!draft.images.length && (
             <ScrollView
@@ -81,11 +94,7 @@ export const RecordCreateSheet = () => {
               <View className="flex-row gap-3 p-4">
                 {draft.images.map((image) => (
                   <View className="relative" key={image.id}>
-                    <Pressable
-                      onPress={() =>
-                        sheetManager.open('record-images', draft.id, image.id)
-                      }
-                    >
+                    <Pressable>
                       <Image
                         height={64}
                         uri={image.uri}
@@ -119,16 +128,15 @@ export const RecordCreateSheet = () => {
             <Text>Add visuals</Text>
           </Button>
           <Button
-            className="text-white web:hover:opacity-90"
-            disabled={isUploadTransitioning || isDeleteTransitioning}
-            onPress={() => {
-              publishRecord({ id: draft.id });
-              sheetManager.close('record-create');
-            }}
+            disabled={
+              isUploadTransitioning || isDeleteTransitioning || !hasContent
+            }
+            onPress={handleSubmit}
             size="xs"
-            style={{ backgroundColor: logColor.default }}
+            style={{ backgroundColor: logColor?.default }}
+            variant="secondary"
           >
-            <Text>Record</Text>
+            <Text className="text-white">Reply</Text>
           </Button>
         </View>
       </View>

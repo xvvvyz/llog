@@ -63,17 +63,13 @@ export const LogTagsSheetTag = ({
             variant="ghost"
             wrapperClassName="rounded-full absolute right-1 top-1"
           >
-            <Icon className="text-muted-foreground" icon={X} size={18} />
+            <Icon className="text-muted-foreground" icon={X} />
           </Button>
         ) : (
           <View className="absolute right-0 top-0 size-10 cursor-grab">
             <Sortable.Handle>
               <View className="size-10 items-center justify-center">
-                <Icon
-                  className="text-placeholder"
-                  icon={DotsSixVertical}
-                  size={18}
-                />
+                <Icon className="text-placeholder" icon={DotsSixVertical} />
               </View>
             </Sortable.Handle>
           </View>

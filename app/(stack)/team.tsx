@@ -121,7 +121,6 @@ export default function Team() {
                               <Icon
                                 className="text-placeholder"
                                 icon={CaretDown}
-                                size={18}
                               />
                             </Button>
                           </Menu.Trigger>
@@ -142,11 +141,7 @@ export default function Team() {
                                 >
                                   <Text>{ROLE_LABELS[r]}</Text>
                                   {member.role === r && (
-                                    <Icon
-                                      className="-mr-1"
-                                      icon={Check}
-                                      size={18}
-                                    />
+                                    <Icon className="-mr-1" icon={Check} />
                                   )}
                                 </Menu.Item>
                               )
@@ -158,7 +153,6 @@ export default function Team() {
                               <Icon
                                 className="text-destructive"
                                 icon={UserMinus}
-                                size={18}
                               />
                               <Text className="text-destructive">Remove</Text>
                             </Menu.Item>
@@ -173,11 +167,7 @@ export default function Team() {
                           onPress={() => sheetManager.open('team-leave')}
                           wrapperClassName="-mr-[7px]"
                         >
-                          <Icon
-                            className="text-placeholder"
-                            icon={SignOut}
-                            size={18}
-                          />
+                          <Icon className="text-placeholder" icon={SignOut} />
                         </Button>
                       )}
                     </View>
@@ -212,7 +202,6 @@ export default function Team() {
                             <Icon
                               className="text-placeholder"
                               icon={CaretDown}
-                              size={18}
                             />
                           </Button>
                         </Menu.Trigger>
@@ -227,11 +216,7 @@ export default function Team() {
                             >
                               <Text>{ROLE_LABELS[r]}</Text>
                               {invite.role === r && (
-                                <Icon
-                                  className="-mr-1"
-                                  icon={Check}
-                                  size={18}
-                                />
+                                <Icon className="-mr-1" icon={Check} />
                               )}
                             </Menu.Item>
                           ))}
@@ -239,11 +224,7 @@ export default function Team() {
                           <Menu.Item
                             onPress={() => cancelInvite({ id: invite.id })}
                           >
-                            <Icon
-                              className="text-destructive"
-                              icon={X}
-                              size={18}
-                            />
+                            <Icon className="text-destructive" icon={X} />
                             <Text className="text-destructive">
                               Cancel invite
                             </Text>
@@ -263,11 +244,7 @@ export default function Team() {
                   wrapperClassName="rounded-none"
                 >
                   <Text className="font-normal">Invite team member</Text>
-                  <Icon
-                    className="text-placeholder"
-                    icon={UserPlus}
-                    size={18}
-                  />
+                  <Icon className="text-placeholder" icon={UserPlus} />
                 </Button>
               )}
               {isOwner && teams.length > 1 && (
@@ -283,7 +260,7 @@ export default function Team() {
                   <Text className="font-normal text-destructive">
                     Delete team
                   </Text>
-                  <Icon className="text-destructive" icon={Trash} size={18} />
+                  <Icon className="text-destructive" icon={Trash} />
                 </Button>
               )}
             </View>

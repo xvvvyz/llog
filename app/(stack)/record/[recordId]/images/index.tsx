@@ -2,7 +2,7 @@ import { BackButton } from '@/components/ui/back-button';
 import { Carousel } from '@/components/ui/carousel';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
-import { useRecordImages } from '@/queries/use-record-images';
+import { useCommentImages, useRecordImages } from '@/queries/use-record-images';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform, View } from 'react-native';
@@ -12,11 +12,19 @@ export default function Index() {
   const insets = useSafeAreaInsets();
 
   const params = useLocalSearchParams<{
+    commentId?: string;
     defaultIndex: string;
     recordId: string;
   }>();
 
-  const record = useRecordImages({ id: params.recordId });
+  const record = useRecordImages({
+    id: params.commentId ? undefined : params.recordId,
+  });
+
+  const comment = useCommentImages({ id: params.commentId });
+
+  const images = params.commentId ? comment.images : record.images;
+  const isLoading = params.commentId ? comment.isLoading : record.isLoading;
   const defaultIndex = params.defaultIndex ? Number(params.defaultIndex) : 0;
 
   useEffect(() => {
@@ -30,11 +38,11 @@ export default function Index() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  if (record.isLoading) {
+  if (isLoading) {
     return <Loading />;
   }
 
-  if (!record.images.length || isNaN(defaultIndex)) {
+  if (!images.length || isNaN(defaultIndex)) {
     return <Redirect href={`/record/${params.recordId}`} />;
   }
 
@@ -48,8 +56,8 @@ export default function Index() {
       </View>
       <Carousel
         defaultIndex={defaultIndex}
-        images={record.images}
-        isKeyboardNavigationEnabled={record.images.length > 1}
+        images={images}
+        isKeyboardNavigationEnabled={images.length > 1}
       />
     </Page>
   );

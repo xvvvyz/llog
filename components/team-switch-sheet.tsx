@@ -37,11 +37,7 @@ export const TeamSwitchSheet = () => {
             >
               <Text className="font-normal">{t.name}</Text>
               {t.id === activeTeamId && (
-                <Icon
-                  className="-mr-1 text-placeholder"
-                  icon={Check}
-                  size={18}
-                />
+                <Icon className="-mr-1 text-placeholder" icon={Check} />
               )}
             </Button>
           ))}
@@ -54,7 +50,7 @@ export const TeamSwitchSheet = () => {
           variant="secondary"
           wrapperClassName="mt-8"
         >
-          <Icon className="text-placeholder" icon={Plus} size={18} />
+          <Icon className="text-placeholder" icon={Plus} />
           <Text>New team</Text>
         </Button>
         <Button

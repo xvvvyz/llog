@@ -9,7 +9,7 @@ interface IconProps extends PhosphorIconProps {
   icon: ComponentType<PhosphorIconProps>;
 }
 
-export const Icon = ({ icon, className, size = 16, ...props }: IconProps) => {
+export const Icon = ({ icon, className, size = 20, ...props }: IconProps) => {
   const textClass = useContext(TextContext);
 
   const Icon = cssInterop(icon, {

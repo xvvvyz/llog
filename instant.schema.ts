@@ -13,6 +13,7 @@ const schema = i.schema({
     }),
     comments: i.entity({
       date: i.date().indexed(),
+      isDraft: i.boolean().optional().indexed(),
       teamId: i.string().indexed(),
       text: i.string(),
     }),

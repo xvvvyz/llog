@@ -114,7 +114,7 @@ const CheckboxItem = ({
       >
         <View className="flex-row items-center gap-4">{children}</View>
         <DropdownMenuPrimitive.ItemIndicator>
-          <Icon className="-mr-1.5" icon={Check} size={18} />
+          <Icon className="-mr-1.5" icon={Check} />
         </DropdownMenuPrimitive.ItemIndicator>
       </DropdownMenuPrimitive.CheckboxItem>
     </TextContext.Provider>
@@ -163,10 +163,7 @@ const SortItem = <T extends string>({
     >
       <View className="flex-row items-center gap-4">{children}</View>
       {isActive && (
-        <Icon
-          icon={opSort[1] === 'asc' ? SortAscending : SortDescending}
-          size={18}
-        />
+        <Icon icon={opSort[1] === 'asc' ? SortAscending : SortDescending} />
       )}
     </Item>
   );

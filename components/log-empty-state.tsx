@@ -21,7 +21,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
             variant="secondary"
           >
             <Text>Edit details</Text>
-            <Icon className="-mr-0.5" icon={NotePencil} size={18} />
+            <Icon className="-mr-0.5" icon={NotePencil} />
           </Button>
           <Button
             className="justify-between"
@@ -30,7 +30,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
             variant="secondary"
           >
             <Text>Manage tags</Text>
-            <Icon className="-mr-0.5" icon={Tag} size={18} />
+            <Icon className="-mr-0.5" icon={Tag} />
           </Button>
         </>
       )}
@@ -41,7 +41,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
         variant="secondary"
       >
         <Text>New record</Text>
-        <Icon className="-mr-0.5" icon={PencilLine} size={18} />
+        <Icon className="-mr-0.5" icon={PencilLine} />
       </Button>
     </View>
   );

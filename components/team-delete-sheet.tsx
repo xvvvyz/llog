@@ -26,12 +26,12 @@ export const TeamDeleteSheet = () => {
         </Text>
         <Button
           onPress={async () => {
-            sheetManager.close('team-delete');
             const nextTeam = teams.find((t) => t.id !== team.id);
             if (!nextTeam) return;
+            sheetManager.close('team-delete');
+            router.replace('/');
             await switchTeam({ teamId: nextTeam.id });
             await deleteTeam({ id: team.id });
-            router.replace('/');
           }}
           variant="destructive"
           wrapperClassName="mt-12"

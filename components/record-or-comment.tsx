@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
 import { Text } from '@/components/ui/text';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useLogColor } from '@/hooks/use-log-color';
 import { Comment } from '@/types/comment';
 import { Image as ImageType } from '@/types/image';
 import { Profile } from '@/types/profile';
@@ -21,12 +23,15 @@ import { Pressable, View } from 'react-native';
 export const RecordOrComment = ({
   className,
   commentId,
+  logId,
   numberOfLines,
   record,
   recordId: recordIdProp,
+  variant,
 }: {
   className?: string;
   commentId?: string;
+  logId?: string;
   numberOfLines?: number;
   record: Partial<
     (RecordType | Comment) & {
@@ -37,7 +42,11 @@ export const RecordOrComment = ({
     }
   >;
   recordId?: string;
+  variant?: 'compact';
 }) => {
+  const colorScheme = useColorScheme();
+  const logColor = useLogColor({ id: logId });
+  const accentColor = logColor?.[colorScheme === 'dark' ? 'lighter' : 'darker'];
   const recordId = recordIdProp ?? record.id ?? '';
   const idIndexMap = useMemo(
     () =>
@@ -52,20 +61,25 @@ export const RecordOrComment = ({
   );
 
   const renderImage = useCallback(
-    (image: ImageType) => {
+    (image: ImageType, height: number) => {
       return (
         <Pressable
           className="flex-1"
           key={image.id}
           onPress={() =>
-            router.push(
-              `/record/${record.id}/images?defaultIndex=${idIndexMap[image.id]}`
-            )
+            router.push({
+              pathname: `/record/[recordId]/images`,
+              params: {
+                recordId: recordId || record.id!,
+                ...(commentId && { commentId }),
+                defaultIndex: String(idIndexMap[image.id]),
+              },
+            })
           }
         >
           <Image
             contentFit="cover"
-            height={record.images!.length < 4 ? 250 : 124}
+            height={height}
             maintainAspectRatio={false}
             uri={image.uri}
             wrapperClassName="rounded-2xl"
@@ -73,8 +87,79 @@ export const RecordOrComment = ({
         </Pressable>
       );
     },
-    [idIndexMap, record.id, record.images]
+    [commentId, idIndexMap, record.id, record.images, recordId]
   );
+
+  const cardImageHeight = record.images && record.images.length < 4 ? 250 : 124;
+  const compactImageHeight =
+    record.images && record.images.length < 4 ? 220 : 110;
+
+  if (variant === 'compact') {
+    return (
+      <View
+        className={cn(
+          'border-t border-border-secondary px-4 pb-3 pt-4',
+          className
+        )}
+      >
+        <View className="flex-row gap-3">
+          <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
+          <View className="flex-1">
+            <View className="flex-row items-baseline gap-2">
+              <Text className="font-medium leading-5">
+                {record.author?.name}
+              </Text>
+              <Text className="text-sm leading-5 text-muted-foreground">
+                {formatDate(record.date)}
+              </Text>
+            </View>
+            {!!record.text && (
+              <TruncatedText
+                className="select-text"
+                color={accentColor}
+                numberOfLines={numberOfLines}
+                text={record.text}
+              />
+            )}
+            {!!record.images?.length && (
+              <View className="mb-1 mt-2 gap-0.5">
+                <View className="flex-row gap-0.5">
+                  {record.images
+                    .slice(0, 3)
+                    .map((image) => renderImage(image, compactImageHeight))}
+                </View>
+                {record.images.length > 3 && (
+                  <View className="flex-row gap-0.5">
+                    {record.images
+                      .slice(3, 5)
+                      .map((image) => renderImage(image, compactImageHeight))}
+                  </View>
+                )}
+              </View>
+            )}
+            <View className="-mb-1 -ml-2 mt-1 flex-row items-center gap-1.5">
+              <EmojiPicker
+                color={accentColor}
+                commentId={commentId}
+                reactions={record.reactions}
+                recordId={recordId}
+              />
+              {!!record.reactions?.length && (
+                <View className="flex-row items-center">
+                  <Reactions
+                    color={accentColor}
+                    commentId={commentId}
+                    reactions={record.reactions}
+                    recordId={recordId}
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <Card className={cn('gap-4', className)}>
@@ -87,9 +172,10 @@ export const RecordOrComment = ({
           </Text>
         </View>
       </View>
-      {record.text && (
+      {!!record.text && (
         <TruncatedText
           className="select-text px-4"
+          color={accentColor}
           numberOfLines={numberOfLines}
           text={record.text}
         />
@@ -97,24 +183,36 @@ export const RecordOrComment = ({
       {!!record.images?.length && (
         <View className="gap-0.5">
           <View className="flex-row gap-0.5">
-            {record.images.slice(0, 3).map(renderImage)}
+            {record.images
+              .slice(0, 3)
+              .map((image) => renderImage(image, cardImageHeight))}
           </View>
           {record.images.length > 3 && (
             <View className="flex-row gap-0.5">
-              {record.images.slice(3, 5).map(renderImage)}
+              {record.images
+                .slice(3, 5)
+                .map((image) => renderImage(image, cardImageHeight))}
             </View>
           )}
         </View>
       )}
-      <View className="-mt-1 flex-row items-center justify-between gap-3 p-2 pt-0">
-        <View className="flex-1 flex-row flex-wrap items-center gap-2">
-          <EmojiPicker commentId={commentId} recordId={recordId} />
+      <View className="-mt-1 flex-row justify-between gap-3 p-2 pt-0">
+        <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
+          <EmojiPicker
+            color={accentColor}
+            commentId={commentId}
+            reactions={record.reactions}
+            recordId={recordId}
+          />
           {!!record.reactions?.length && (
-            <Reactions
-              commentId={commentId}
-              reactions={record.reactions}
-              recordId={recordId}
-            />
+            <View className="flex-row items-center">
+              <Reactions
+                color={accentColor}
+                commentId={commentId}
+                reactions={record.reactions}
+                recordId={recordId}
+              />
+            </View>
           )}
         </View>
         {!!record.comments && (
@@ -127,7 +225,6 @@ export const RecordOrComment = ({
               <Icon
                 className="-mr-0.5 text-muted-foreground"
                 icon={ChatCircleDots}
-                size={18}
               />
             </Button>
           </Link>
@@ -139,10 +236,12 @@ export const RecordOrComment = ({
 
 const TruncatedText = ({
   className,
+  color,
   numberOfLines,
   text,
 }: {
   className?: string;
+  color?: string;
   numberOfLines?: number;
   text: string;
 }) => {
@@ -172,8 +271,13 @@ const TruncatedText = ({
         {text}
       </Text>
       {truncated && !expanded && (
-        <Pressable className="px-4 pt-1" onPress={() => setExpanded(true)}>
-          <Text className="text-primary hover:underline">Show more</Text>
+        <Pressable className="px-4" onPress={() => setExpanded(true)}>
+          <Text
+            className={cn(!color && 'text-primary', 'hover:underline')}
+            style={color ? { color } : undefined}
+          >
+            Show more
+          </Text>
         </Pressable>
       )}
     </View>

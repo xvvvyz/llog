@@ -40,15 +40,15 @@ export const RecordDropdownMenu = ({
         style={contentStyle}
       >
         <Menu.Item onPress={() => sheetManager.open('record-edit', id)}>
-          <Icon className="text-placeholder" icon={Pen} size={18} />
+          <Icon className="text-placeholder" icon={Pen} />
           <Text>Edit</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('record-tags', id)}>
-          <Icon className="text-placeholder" icon={Tag} size={18} />
+          <Icon className="text-placeholder" icon={Tag} />
           <Text>Tags</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('record-delete', id)}>
-          <Icon className="text-placeholder" icon={Trash} size={18} />
+          <Icon className="text-placeholder" icon={Trash} />
           <Text>Delete</Text>
         </Menu.Item>
       </Menu.Content>

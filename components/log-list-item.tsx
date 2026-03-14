@@ -59,7 +59,7 @@ export const LogListItem = ({
             className="size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20"
             style={{ borderCurve: 'continuous' }}
           >
-            <Icon className="text-white" icon={DotsThree} size={18} />
+            <Icon className="text-white" icon={DotsThree} />
           </View>
         </LogDropdownMenu>
       </View>

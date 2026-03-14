@@ -1,3 +1,4 @@
+import { CommentCreateSheet } from '@/components/comment-create-sheet';
 import { InviteMemberSheet } from '@/components/invite-member-sheet';
 import { LogDeleteSheet } from '@/components/log-delete-sheet';
 import { LogEditSheet } from '@/components/log-edit-sheet';
@@ -14,6 +15,7 @@ export default function Layout() {
   return (
     <Fragment>
       <Stack screenOptions={{ headerShown: false }} />
+      <CommentCreateSheet />
       <InviteMemberSheet />
       <LogEditSheet />
       <LogTagsSheet />
