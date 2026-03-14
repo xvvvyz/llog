@@ -48,7 +48,6 @@ export default function Layout() {
             primary: 'transparent',
             text: 'transparent',
           },
-          dark: colorScheme === 'dark',
           fonts: DefaultTheme.fonts,
         }}
       >

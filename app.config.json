@@ -18,7 +18,7 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png",
-      "output": "static",
+      "output": "single",
       "outputDirectory": "web"
     },
     "plugins": ["expo-router", "expo-image-picker"],
