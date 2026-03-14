@@ -15,7 +15,7 @@ import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/db';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
-import { LogOut, Trash, Upload } from 'lucide-react-native';
+import { SignOut, Trash, UploadSimple } from 'phosphor-react-native';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
@@ -53,7 +53,11 @@ export default function Account() {
               </Menu.Trigger>
               <Menu.Content align="center" className="mt-3">
                 <Menu.Item onPress={handleUploadProfileImage}>
-                  <Icon className="text-placeholder" icon={Upload} size={16} />
+                  <Icon
+                    className="text-placeholder"
+                    icon={UploadSimple}
+                    size={16}
+                  />
                   <Text>Upload</Text>
                 </Menu.Item>
                 {profile.image && (
@@ -104,7 +108,7 @@ export default function Account() {
               <Text className="font-normal">Sign out</Text>
               <Icon
                 className="-mr-1 text-placeholder"
-                icon={LogOut}
+                icon={SignOut}
                 size={16}
               />
             </Button>

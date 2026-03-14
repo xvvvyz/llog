@@ -10,7 +10,7 @@ import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { Redirect, Tabs } from 'expo-router';
-import { Bell, LayoutGrid } from 'lucide-react-native';
+import { Bell, SquaresFour } from 'phosphor-react-native';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -82,7 +82,7 @@ export default function Layout() {
           tabBarIcon: ({ focused }) => (
             <Icon
               className={cn('text-placeholder', focused && 'text-foreground')}
-              icon={LayoutGrid}
+              icon={SquaresFour}
               size={24}
             />
           ),

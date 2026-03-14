@@ -7,7 +7,7 @@ import { useLogColor } from '@/hooks/use-log-color';
 import { toggleLogTag } from '@/mutations/toggle-log-tag';
 import { updateLogTag } from '@/mutations/update-log-tag';
 import { cn } from '@/utilities/cn';
-import { GripVertical, X } from 'lucide-react-native';
+import { DotsSixVertical, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 import Sortable from 'react-native-sortables';
@@ -71,7 +71,7 @@ export const LogTagsSheetTag = ({
               <View className="size-10 items-center justify-center">
                 <Icon
                   className="text-placeholder"
-                  icon={GripVertical}
+                  icon={DotsSixVertical}
                   size={16}
                 />
               </View>

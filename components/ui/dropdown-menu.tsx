@@ -4,7 +4,7 @@ import { useRippleColor } from '@/hooks/use-ripple-color';
 import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
-import { Check, SortAsc, SortDesc } from 'lucide-react-native';
+import { Check, SortAscending, SortDescending } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 import Animated, {
@@ -163,7 +163,10 @@ const SortItem = <T extends string>({
     >
       <View className="flex-row items-center gap-4">{children}</View>
       {isActive && (
-        <Icon icon={opSort[1] === 'asc' ? SortAsc : SortDesc} size={16} />
+        <Icon
+          icon={opSort[1] === 'asc' ? SortAscending : SortDescending}
+          size={16}
+        />
       )}
     </Item>
   );

@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text';
 import { createLog } from '@/mutations/create-log';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
-import { Globe, Plus } from 'lucide-react-native';
+import { Globe, Plus } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const LogListEmptyState = () => {

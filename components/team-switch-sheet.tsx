@@ -7,7 +7,7 @@ import { createTeam } from '@/mutations/create-team';
 import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
-import { Check, Plus } from 'lucide-react-native';
+import { Check, Plus } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const TeamSwitchSheet = () => {

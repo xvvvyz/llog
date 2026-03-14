@@ -1,12 +1,12 @@
 import { TextContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
-import { LucideIcon } from 'lucide-react-native';
 import { cssInterop } from 'nativewind';
-import React, { ComponentProps, useContext } from 'react';
+import { IconProps as PhosphorIconProps } from 'phosphor-react-native';
+import React, { ComponentType, useContext } from 'react';
 
-interface IconProps extends ComponentProps<LucideIcon> {
+interface IconProps extends PhosphorIconProps {
   className?: string;
-  icon: LucideIcon;
+  icon: ComponentType<PhosphorIconProps>;
 }
 
 export const Icon = ({ icon, className, size = 16, ...props }: IconProps) => {

@@ -3,6 +3,9 @@
 import { InstantRules } from '@instantdb/react-native';
 import { Role } from './enums/roles';
 
+const isOwner = `'${Role.Owner}_' + auth.id + '_' + data.teamId in`;
+const isAdmin = `'${Role.Admin}_' + auth.id + '_' + data.teamId in`;
+
 const rules = {
   $default: {
     allow: {
@@ -32,7 +35,7 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('record.log.team.roles.user.id')",
       'canManage',
-      "auth.id in data.ref('record.log.team.roles.adminId')",
+      `${isOwner} data.ref('record.log.team.roles.key') || ${isAdmin} data.ref('record.log.team.roles.key')`,
     ],
     allow: {
       view: 'isTeamMember',
@@ -52,7 +55,7 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('record.log.team.roles.user.id')",
       'canManage',
-      "auth.id in data.ref('record.log.team.roles.adminId')",
+      `${isOwner} data.ref('record.log.team.roles.key') || ${isAdmin} data.ref('record.log.team.roles.key')`,
       'isTeammate',
       "auth.id in data.ref('profile.user.roles.team.roles.user.id')",
     ],
@@ -85,7 +88,7 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'canManage',
-      "auth.id in data.ref('team.roles.adminId')",
+      `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`,
     ],
     allow: {
       view: 'isTeamMember',
@@ -101,7 +104,7 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'canManage',
-      "auth.id in data.ref('team.roles.adminId')",
+      `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`,
     ],
     allow: {
       view: 'isTeamMember',
@@ -137,9 +140,9 @@ const rules = {
       'isCommentTeamMember',
       "auth.id in data.ref('comment.record.log.team.roles.user.id')",
       'canManageRecord',
-      "auth.id in data.ref('record.log.team.roles.adminId')",
+      `${isOwner} data.ref('record.log.team.roles.key') || ${isAdmin} data.ref('record.log.team.roles.key')`,
       'canManageComment',
-      "auth.id in data.ref('comment.record.log.team.roles.adminId')",
+      `${isOwner} data.ref('comment.record.log.team.roles.key') || ${isAdmin} data.ref('comment.record.log.team.roles.key')`,
     ],
     allow: {
       view: 'isRecordTeamMember || isCommentTeamMember',
@@ -158,7 +161,7 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('log.team.roles.user.id')",
       'canManage',
-      "auth.id in data.ref('log.team.roles.adminId')",
+      `${isOwner} data.ref('log.team.roles.key') || ${isAdmin} data.ref('log.team.roles.key')`,
     ],
     allow: {
       view: '(!isDraft && isTeamMember) || isAuthor',

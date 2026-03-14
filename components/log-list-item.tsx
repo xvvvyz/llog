@@ -5,7 +5,7 @@ import { Text } from '@/components/ui/text';
 import { LogTag } from '@/types/log-tag';
 import { cn } from '@/utilities/cn';
 import { Link } from 'expo-router';
-import { MoreHorizontal } from 'lucide-react-native';
+import { DotsThree } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const LogListItem = ({
@@ -59,7 +59,7 @@ export const LogListItem = ({
             className="size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20"
             style={{ borderCurve: 'continuous' }}
           >
-            <Icon className="text-white" icon={MoreHorizontal} size={16} />
+            <Icon className="text-white" icon={DotsThree} size={16} />
           </View>
         </LogDropdownMenu>
       </View>

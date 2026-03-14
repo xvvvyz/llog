@@ -3,7 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useMyRole } from '@/queries/use-my-role';
-import { FolderPen, PencilLine, Tag } from 'lucide-react-native';
+import { NotePencil, PencilLine, Tag } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const LogEmptyState = ({ logId }: { logId: string }) => {
@@ -21,7 +21,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
             variant="secondary"
           >
             <Text>Edit details</Text>
-            <Icon className="-mr-0.5" icon={FolderPen} size={16} />
+            <Icon className="-mr-0.5" icon={NotePencil} size={16} />
           </Button>
           <Button
             className="justify-between"

@@ -13,7 +13,7 @@ import { useHasNoLogTags } from '@/queries/use-has-no-log-tags';
 import { useLog } from '@/queries/use-log';
 import { useLogTags } from '@/queries/use-log-tags';
 import { cn } from '@/utilities/cn';
-import { Tags } from 'lucide-react-native';
+import { Tag } from 'phosphor-react-native';
 import { ComponentRef, useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -74,7 +74,7 @@ export const LogTagsSheet = () => {
             <Icon
               aria-hidden
               className="text-primary"
-              icon={Tags}
+              icon={Tag}
               size={48}
               style={{ color: logColor.default } as ViewStyle}
             />

@@ -21,7 +21,7 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { cn } from '@/utilities/cn';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Plus } from 'phosphor-react-native';
 import { ReactElement, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 

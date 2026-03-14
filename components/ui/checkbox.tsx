@@ -1,7 +1,7 @@
 import { Button, ButtonProps } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/utilities/cn';
-import { Check, Plus } from 'lucide-react-native';
+import { Check, Plus } from 'phosphor-react-native';
 import { startTransition, useCallback, useEffect, useState } from 'react';
 
 export const Checkbox = ({

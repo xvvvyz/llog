@@ -3,7 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { Textarea } from '@/components/ui/textarea';
 import { addComment } from '@/mutations/add-comment';
 import { animation } from '@/utilities/animation';
-import { ArrowUp } from 'lucide-react-native';
+import { ArrowUp } from 'phosphor-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { TextInput, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';

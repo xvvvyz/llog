@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utilities/cn';
-import { Search, X } from 'lucide-react-native';
+import { MagnifyingGlass, X } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
@@ -31,7 +31,7 @@ export const SearchInput = forwardRef<
     return (
       <View className={cn('relative', wrapperClassName)}>
         <View className="absolute left-3 top-1/2 -translate-y-1/2">
-          <Icon icon={Search} className="text-placeholder" size={20} />
+          <Icon icon={MagnifyingGlass} className="text-placeholder" size={20} />
         </View>
         <Input
           className={cn('px-10', className)}

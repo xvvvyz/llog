@@ -12,7 +12,6 @@ export const onboardUser = async ({ name }: { name: string }) => {
     db.tx.teams[teamId].update({ name }),
     db.tx.roles[generateId()]
       .update({
-        adminId: auth.id,
         key: `${Role.Owner}_${auth.id}_${teamId}`,
         role: Role.Owner,
         teamId,

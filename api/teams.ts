@@ -138,7 +138,6 @@ app.post('/invites/:inviteId/accept', db(), async (c) => {
   await c.var.db.transact([
     c.var.db.tx.roles[id()]
       .update({
-        adminId: invite.role !== Role.Recorder ? user.id : '',
         key: `${invite.role}_${user.id}_${teamId}`,
         role: invite.role,
         teamId,
@@ -204,7 +203,6 @@ app.post('/resolve-invites', db(), async (c) => {
     return [
       c.var.db.tx.roles[id()]
         .update({
-          adminId: invite.role !== Role.Recorder ? user.id : '',
           key: `${invite.role}_${user.id}_${teamId}`,
           role: invite.role,
           teamId,

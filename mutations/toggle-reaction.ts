@@ -1,3 +1,4 @@
+import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { getProfile } from '@/queries/get-profile';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
@@ -11,8 +12,12 @@ export const toggleReaction = async ({
   recordId: string;
   commentId?: string;
 }) => {
-  const profile = await getProfile();
-  if (!profile) return;
+  const [profile, teamId] = await Promise.all([
+    getProfile(),
+    getActiveTeamId(),
+  ]);
+
+  if (!profile || !teamId) return;
 
   const { data } = await db.queryOnce({
     reactions: {
@@ -42,5 +47,7 @@ export const toggleReaction = async ({
     link.record = recordId;
   }
 
-  return db.transact(db.tx.reactions[id()].update({ emoji }).link(link));
+  return db.transact(
+    db.tx.reactions[id()].update({ emoji, teamId }).link(link)
+  );
 };

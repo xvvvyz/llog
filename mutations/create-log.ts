@@ -17,7 +17,7 @@ export const createLog = async ({
 
   return db.transact(
     db.tx.logs[id ?? generateId()]
-      .update({ color: color as number, name })
+      .update({ color: color as number, name, teamId })
       .link({ team: teamId })
   );
 };

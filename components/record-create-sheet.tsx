@@ -12,7 +12,7 @@ import { updateRecordDraft } from '@/mutations/update-record-draft';
 import { uploadRecordImage } from '@/mutations/upload-record-image';
 import { useRecordDraft } from '@/queries/use-record-draft';
 import { launchImageLibraryAsync } from 'expo-image-picker';
-import { ImagePlus, X } from 'lucide-react-native';
+import { Image as ImageIcon, X } from 'phosphor-react-native';
 import { useCallback, useTransition } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -113,7 +113,7 @@ export const RecordCreateSheet = () => {
             size="xs"
             variant="secondary"
           >
-            <Icon icon={ImagePlus} size={16} />
+            <Icon icon={ImageIcon} size={16} />
             <Text>Add visuals</Text>
           </Button>
           <Button

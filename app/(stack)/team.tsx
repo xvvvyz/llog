@@ -25,14 +25,14 @@ import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import {
+  CaretDown,
   Check,
-  ChevronDown,
-  LogOut,
+  SignOut,
   Trash,
   UserMinus,
   UserPlus,
   X,
-} from 'lucide-react-native';
+} from 'phosphor-react-native';
 import { ScrollView, View } from 'react-native';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -116,7 +116,7 @@ export default function Team() {
                             >
                               <Icon
                                 className="text-placeholder"
-                                icon={ChevronDown}
+                                icon={CaretDown}
                                 size={16}
                               />
                             </Button>
@@ -171,7 +171,7 @@ export default function Team() {
                         >
                           <Icon
                             className="text-placeholder"
-                            icon={LogOut}
+                            icon={SignOut}
                             size={16}
                           />
                         </Button>
@@ -204,7 +204,7 @@ export default function Team() {
                           >
                             <Icon
                               className="text-placeholder"
-                              icon={ChevronDown}
+                              icon={CaretDown}
                               size={16}
                             />
                           </Button>

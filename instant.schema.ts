@@ -13,9 +13,11 @@ const schema = i.schema({
     }),
     comments: i.entity({
       date: i.date().indexed(),
+      teamId: i.string().indexed(),
       text: i.string(),
     }),
     images: i.entity({
+      teamId: i.string().optional().indexed(),
       uri: i.string(),
     }),
     invites: i.entity({
@@ -26,24 +28,27 @@ const schema = i.schema({
     logTags: i.entity({
       name: i.string().indexed(),
       order: i.number().indexed(),
+      teamId: i.string().indexed(),
     }),
     logs: i.entity({
       color: i.number().indexed(),
       name: i.string().indexed(),
+      teamId: i.string().indexed(),
     }),
     profiles: i.entity({
       name: i.string(),
     }),
     reactions: i.entity({
       emoji: i.string().indexed(),
+      teamId: i.string().indexed(),
     }),
     records: i.entity({
       date: i.date().indexed(),
       isDraft: i.boolean().indexed(),
+      teamId: i.string().indexed(),
       text: i.string().optional(),
     }),
     roles: i.entity({
-      adminId: i.string().optional().indexed(),
       key: i.string().unique(),
       role: i.string(),
       teamId: i.string().indexed(),

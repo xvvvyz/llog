@@ -14,7 +14,7 @@ import { Record as RecordType } from '@/types/record';
 import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { Link, router } from 'expo-router';
-import { MessageCirclePlus } from 'lucide-react-native';
+import { ChatCircleDots } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -126,7 +126,7 @@ export const RecordOrComment = ({
               </Text>
               <Icon
                 className="-mr-0.5 text-muted-foreground"
-                icon={MessageCirclePlus}
+                icon={ChatCircleDots}
                 size={16}
               />
             </Button>

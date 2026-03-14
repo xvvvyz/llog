@@ -101,11 +101,22 @@ app.put(
     }
 
     const { records } = await c.var.db.query({
-      records: { $: { fields: ['id'], where: { id: recordId } } },
+      records: {
+        $: { fields: ['id'], where: { id: recordId } },
+        log: { team: { $: { fields: ['id'] } } },
+      },
     });
 
-    if (!records.length) {
+    const record = records[0];
+
+    if (!record) {
       throw new HTTPException(400, { message: 'Record not found' });
+    }
+
+    const teamId = record.log?.team?.id;
+
+    if (!teamId) {
+      throw new HTTPException(400, { message: 'Record has no team' });
     }
 
     const imageId = id();
@@ -118,7 +129,7 @@ app.put(
 
     await c.var.db.transact(
       c.var.db.tx.images[imageId]
-        .update({ uri: upload.key })
+        .update({ teamId, uri: upload.key })
         .link({ record: recordId })
     );
 

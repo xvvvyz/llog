@@ -26,7 +26,7 @@ export const createLogTag = async ({
       db.tx.logTags[tag.id].update({ order: tag.order + 1 })
     ),
     db.tx.logTags[tagId]
-      .update({ name, order: 0 })
+      .update({ name, order: 0, teamId })
       .link({ logs: logId, team: teamId }),
   ]);
 };

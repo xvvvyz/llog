@@ -3,7 +3,7 @@ import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
-import { PenLine, Tag, Trash } from 'lucide-react-native';
+import { Pen, Tag, Trash } from 'phosphor-react-native';
 import { ReactNode } from 'react';
 import { ViewStyle } from 'react-native';
 
@@ -40,7 +40,7 @@ export const RecordDropdownMenu = ({
         style={contentStyle}
       >
         <Menu.Item onPress={() => sheetManager.open('record-edit', id)}>
-          <Icon className="text-placeholder" icon={PenLine} size={16} />
+          <Icon className="text-placeholder" icon={Pen} size={16} />
           <Text>Edit</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('record-tags', id)}>

@@ -8,7 +8,7 @@ import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { router } from 'expo-router';
-import { Check, ChevronDown, Plus, Settings } from 'lucide-react-native';
+import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
 import { useRef } from 'react';
 import { View } from 'react-native';
 
@@ -28,7 +28,7 @@ export const TeamSwitcher = () => {
           </Text>
           <Icon
             className="-mr-0.5 text-placeholder"
-            icon={ChevronDown}
+            icon={CaretDown}
             size={16}
           />
         </Button>
@@ -55,7 +55,7 @@ export const TeamSwitcher = () => {
         </Menu.Item>
         <Menu.Item onPress={() => router.push('/team')}>
           <View className="w-5 items-center">
-            <Icon className="text-placeholder" icon={Settings} size={16} />
+            <Icon className="text-placeholder" icon={GearSix} size={16} />
           </View>
           <Text>Team settings</Text>
         </Menu.Item>

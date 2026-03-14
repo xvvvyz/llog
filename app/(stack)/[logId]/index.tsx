@@ -18,7 +18,7 @@ import { useRecords } from '@/queries/use-records';
 import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { useLocalSearchParams } from 'expo-router';
-import { MoreVertical, Plus, PlusIcon } from 'lucide-react-native';
+import { DotsThreeVertical, Plus } from 'phosphor-react-native';
 import { ReactElement, useRef } from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
@@ -53,7 +53,7 @@ export default function Index() {
               style={{ backgroundColor: logColor.default }}
               variant="secondary"
             >
-              <Icon className="-ml-0.5 text-white" icon={PlusIcon} size={16} />
+              <Icon className="-ml-0.5 text-white" icon={Plus} size={16} />
               <Text className="text-white">New record</Text>
             </Button>
             <LogDropdownMenu
@@ -67,7 +67,11 @@ export default function Index() {
               id={log.id}
               triggerWrapperClassName="md:-mr-4 md:ml-4"
             >
-              <Icon className="text-foreground" icon={MoreVertical} size={24} />
+              <Icon
+                className="text-foreground"
+                icon={DotsThreeVertical}
+                size={24}
+              />
             </LogDropdownMenu>
           </View>
         }

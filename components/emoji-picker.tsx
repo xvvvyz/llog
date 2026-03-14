@@ -3,7 +3,7 @@ import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { REACTION_EMOJIS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
-import { SmilePlus } from 'lucide-react-native';
+import { SmileySticker } from 'phosphor-react-native';
 import { Text } from 'react-native';
 
 export const EmojiPicker = ({
@@ -22,7 +22,7 @@ export const EmojiPicker = ({
           variant="ghost"
           wrapperClassName="rounded-lg"
         >
-          <Icon icon={SmilePlus} size={16} />
+          <Icon icon={SmileySticker} size={16} />
         </Button>
       </Menu.Trigger>
       <Menu.Content align="start" className="flex-row px-1 py-1" sideOffset={2}>

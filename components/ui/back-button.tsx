@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { router } from 'expo-router';
-import { ArrowLeft, ChevronLeft } from 'lucide-react-native';
+import { ArrowLeft, CaretLeft } from 'phosphor-react-native';
 import { Platform } from 'react-native';
 
 export const BackButton = () => {
@@ -17,7 +17,7 @@ export const BackButton = () => {
     >
       <Icon
         className="color-foreground"
-        icon={Platform.select({ default: ArrowLeft, ios: ChevronLeft })}
+        icon={Platform.select({ default: ArrowLeft, ios: CaretLeft })}
         size={Platform.select({ default: 24, ios: 30 })}
       />
     </Button>

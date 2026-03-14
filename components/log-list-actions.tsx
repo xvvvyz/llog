@@ -12,14 +12,14 @@ import { cn } from '@/utilities/cn';
 import { View } from 'react-native';
 
 import {
-  BookA,
   Calendar,
-  Filter,
+  Funnel,
   Palette,
-  SortAsc,
-  SortDesc,
+  SortAscending,
+  SortDescending,
   Tag,
-} from 'lucide-react-native';
+  TextAa,
+} from 'phosphor-react-native';
 
 export type SortBy = 'serverCreatedAt' | 'name' | 'color';
 
@@ -51,7 +51,7 @@ export const LogListActions = ({
             <Button className="md:size-10" size="icon" variant="secondary">
               <Icon
                 className="text-secondary-foreground"
-                icon={Filter}
+                icon={Funnel}
                 size={16}
               />
             </Button>
@@ -80,7 +80,9 @@ export const LogListActions = ({
           <Button className="md:size-10" size="icon" variant="secondary">
             <Icon
               className="text-secondary-foreground"
-              icon={ui.logsSortDirection === 'asc' ? SortAsc : SortDesc}
+              icon={
+                ui.logsSortDirection === 'asc' ? SortAscending : SortDescending
+              }
               size={16}
             />
           </Button>
@@ -101,7 +103,7 @@ export const LogListActions = ({
             sortDirection={ui.logsSortDirection}
             value="name"
           >
-            <Icon className="text-placeholder" icon={BookA} size={16} />
+            <Icon className="text-placeholder" icon={TextAa} size={16} />
             <Text>Name</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
