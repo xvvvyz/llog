@@ -21,7 +21,7 @@ export const LogListEmptyState = () => {
           router.push(`/${logId}`);
         }}
       >
-        <Icon icon={Plus} className="-ml-0.5 text-white" size={16} />
+        <Icon icon={Plus} className="-ml-0.5 text-white" size={18} />
         <Text>New log</Text>
       </Button>
     </View>

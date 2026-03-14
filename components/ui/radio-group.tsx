@@ -1,6 +1,8 @@
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import * as RadioGroupPrimitive from '@rn-primitives/radio-group';
+import { Check } from 'phosphor-react-native';
 import { createContext, useContext } from 'react';
 import { View } from 'react-native';
 
@@ -39,20 +41,17 @@ export const Item = ({
       )}
       value={value}
     >
-      <View className="flex-row items-center gap-1.5">
-        <Text className={cn('text-sm font-medium', selected && 'text-primary')}>
-          {label}
-        </Text>
-        {description && (
-          <>
-            <Text
-              className={cn(
-                'text-xs text-placeholder',
-                selected && 'text-primary'
-              )}
-            >
-              —
-            </Text>
+      <View className="flex-row items-center justify-between">
+        <View className="gap-0.5">
+          <Text
+            className={cn(
+              'text-sm font-medium leading-tight',
+              selected && 'text-primary'
+            )}
+          >
+            {label}
+          </Text>
+          {description && (
             <Text
               className={cn(
                 'text-xs text-placeholder',
@@ -61,7 +60,10 @@ export const Item = ({
             >
               {description}
             </Text>
-          </>
+          )}
+        </View>
+        {selected && (
+          <Icon className="text-primary" icon={Check} size={18} weight="bold" />
         )}
       </View>
     </RadioGroupPrimitive.Item>

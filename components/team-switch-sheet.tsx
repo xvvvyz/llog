@@ -40,7 +40,7 @@ export const TeamSwitchSheet = () => {
                 <Icon
                   className="-mr-1 text-placeholder"
                   icon={Check}
-                  size={16}
+                  size={18}
                 />
               )}
             </Button>
@@ -54,7 +54,7 @@ export const TeamSwitchSheet = () => {
           variant="secondary"
           wrapperClassName="mt-8"
         >
-          <Icon className="text-placeholder" icon={Plus} size={16} />
+          <Icon className="text-placeholder" icon={Plus} size={18} />
           <Text>New team</Text>
         </Button>
         <Button

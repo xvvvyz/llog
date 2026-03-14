@@ -98,7 +98,7 @@ export const RecordCreateSheet = () => {
                       variant="link"
                       wrapperClassName="transition-colors rounded-full bg-background/50 hover:bg-background/60 absolute right-1 top-1"
                     >
-                      <Icon className="text-foreground" icon={X} size={16} />
+                      <Icon className="text-foreground" icon={X} size={18} />
                     </Button>
                   </View>
                 ))}
@@ -113,7 +113,7 @@ export const RecordCreateSheet = () => {
             size="xs"
             variant="secondary"
           >
-            <Icon icon={ImageIcon} size={16} />
+            <Icon icon={ImageIcon} size={18} />
             <Text>Add visuals</Text>
           </Button>
           <Button

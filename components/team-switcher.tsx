@@ -29,7 +29,7 @@ export const TeamSwitcher = () => {
           <Icon
             className="-mr-0.5 text-placeholder"
             icon={CaretDown}
-            size={16}
+            size={18}
           />
         </Button>
       </Menu.Trigger>
@@ -43,19 +43,19 @@ export const TeamSwitcher = () => {
             <Avatar id={t.id} size={20} />
             <Text className="flex-1">{t.name}</Text>
             {t.id === activeTeamId && (
-              <Icon className="-mr-1" icon={Check} size={16} />
+              <Icon className="-mr-1" icon={Check} size={18} />
             )}
           </Menu.Item>
         ))}
         <Menu.Item onPress={() => createTeam({ name: 'Team' })}>
           <View className="w-5 items-center">
-            <Icon className="text-placeholder" icon={Plus} size={16} />
+            <Icon className="text-placeholder" icon={Plus} size={18} />
           </View>
           <Text>New team</Text>
         </Menu.Item>
         <Menu.Item onPress={() => router.push('/team')}>
           <View className="w-5 items-center">
-            <Icon className="text-placeholder" icon={GearSix} size={16} />
+            <Icon className="text-placeholder" icon={GearSix} size={18} />
           </View>
           <Text>Team settings</Text>
         </Menu.Item>

@@ -1,9 +1,10 @@
 import { Image } from '@/components/ui/image';
+import { ZoomableView } from '@/components/ui/zoomable-view';
 import { useWindowDimensions } from '@/hooks/use-window-dimensions';
 import { Image as ImageType } from '@/types/image';
 import { cn } from '@/utilities/cn';
 import { cssInterop } from 'nativewind';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +31,7 @@ export const Carousel = ({
   images: ImageType[];
   isKeyboardNavigationEnabled?: boolean;
 }) => {
+  const [isZoomed, setIsZoomed] = useState(false);
   const insets = useSafeAreaInsets();
   const progress = useSharedValue<number>(0);
   const ref = useRef<ICarouselInstance>(null);
@@ -52,18 +54,18 @@ export const Carousel = ({
       <CarouselPrimitive
         data={images}
         defaultIndex={defaultIndex}
-        enabled={images.length > 1}
+        enabled={!isZoomed && images.length > 1}
         height={windowDimensions.height}
         onProgressChange={progress}
         ref={ref}
         renderItem={({ item }) => (
-          <View className="size-full items-center justify-center">
+          <ZoomableView isZoomed={isZoomed} onZoomChange={setIsZoomed}>
             <Image
               maxHeight={windowDimensions.height}
               maxWidth={windowDimensions.width}
               uri={item.uri}
             />
-          </View>
+          </ZoomableView>
         )}
         width={windowDimensions.width}
       />

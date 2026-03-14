@@ -53,7 +53,7 @@ export default function Index() {
               style={{ backgroundColor: logColor.default }}
               variant="secondary"
             >
-              <Icon className="-ml-0.5 text-white" icon={Plus} size={16} />
+              <Icon className="-ml-0.5 text-white" icon={Plus} size={18} />
               <Text className="text-white">New record</Text>
             </Button>
             <LogDropdownMenu

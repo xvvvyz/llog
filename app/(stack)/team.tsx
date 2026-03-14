@@ -79,6 +79,7 @@ export default function Team() {
                 {members.map((member) => {
                   const profile = member.user?.profile;
                   const isSelf = member.userId === auth.user?.id;
+
                   const isLastOwner =
                     member.role === Role.Owner && ownerCount <= 1;
 
@@ -94,10 +95,13 @@ export default function Team() {
                           size={36}
                         />
                         <View className="flex-1">
-                          <Text numberOfLines={1}>
+                          <Text className="text-sm" numberOfLines={1}>
                             {profile?.name ?? 'Unknown'}
                             {isSelf ? (
-                              <Text className="text-placeholder"> (you)</Text>
+                              <Text className="text-sm text-placeholder">
+                                {' '}
+                                (you)
+                              </Text>
                             ) : null}
                           </Text>
                           <Text className="text-xs text-placeholder">
@@ -117,7 +121,7 @@ export default function Team() {
                               <Icon
                                 className="text-placeholder"
                                 icon={CaretDown}
-                                size={16}
+                                size={18}
                               />
                             </Button>
                           </Menu.Trigger>
@@ -141,7 +145,7 @@ export default function Team() {
                                     <Icon
                                       className="-mr-1"
                                       icon={Check}
-                                      size={16}
+                                      size={18}
                                     />
                                   )}
                                 </Menu.Item>
@@ -154,7 +158,7 @@ export default function Team() {
                               <Icon
                                 className="text-destructive"
                                 icon={UserMinus}
-                                size={16}
+                                size={18}
                               />
                               <Text className="text-destructive">Remove</Text>
                             </Menu.Item>
@@ -172,7 +176,7 @@ export default function Team() {
                           <Icon
                             className="text-placeholder"
                             icon={SignOut}
-                            size={16}
+                            size={18}
                           />
                         </Button>
                       )}
@@ -186,7 +190,10 @@ export default function Team() {
                       key={invite.id}
                     >
                       <View className="flex-1">
-                        <Text className="text-placeholder" numberOfLines={1}>
+                        <Text
+                          className="text-sm text-placeholder"
+                          numberOfLines={1}
+                        >
                           {invite.email}
                         </Text>
                         <Text className="text-xs text-placeholder">
@@ -205,7 +212,7 @@ export default function Team() {
                             <Icon
                               className="text-placeholder"
                               icon={CaretDown}
-                              size={16}
+                              size={18}
                             />
                           </Button>
                         </Menu.Trigger>
@@ -223,7 +230,7 @@ export default function Team() {
                                 <Icon
                                   className="-mr-1"
                                   icon={Check}
-                                  size={16}
+                                  size={18}
                                 />
                               )}
                             </Menu.Item>
@@ -235,7 +242,7 @@ export default function Team() {
                             <Icon
                               className="text-destructive"
                               icon={X}
-                              size={16}
+                              size={18}
                             />
                             <Text className="text-destructive">
                               Cancel invite
@@ -259,7 +266,7 @@ export default function Team() {
                   <Icon
                     className="text-placeholder"
                     icon={UserPlus}
-                    size={16}
+                    size={18}
                   />
                 </Button>
               )}
@@ -276,7 +283,7 @@ export default function Team() {
                   <Text className="font-normal text-destructive">
                     Delete team
                   </Text>
-                  <Icon className="text-destructive" icon={Trash} size={16} />
+                  <Icon className="text-destructive" icon={Trash} size={18} />
                 </Button>
               )}
             </View>

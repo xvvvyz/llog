@@ -127,7 +127,7 @@ export const RecordOrComment = ({
               <Icon
                 className="-mr-0.5 text-muted-foreground"
                 icon={ChatCircleDots}
-                size={16}
+                size={18}
               />
             </Button>
           </Link>

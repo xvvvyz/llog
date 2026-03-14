@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
-import { REACTION_EMOJIS } from '@/enums/emojis';
+import { REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { SmileySticker } from 'phosphor-react-native';
-import { Text } from 'react-native';
 
 export const EmojiPicker = ({
   recordId,
@@ -22,7 +21,7 @@ export const EmojiPicker = ({
           variant="ghost"
           wrapperClassName="rounded-lg"
         >
-          <Icon icon={SmileySticker} size={16} />
+          <Icon icon={SmileySticker} size={18} />
         </Button>
       </Menu.Trigger>
       <Menu.Content align="start" className="flex-row px-1 py-1" sideOffset={2}>
@@ -32,7 +31,11 @@ export const EmojiPicker = ({
             className="h-8 min-w-0 rounded-xl px-2"
             onPress={() => toggleReaction({ emoji, recordId, commentId })}
           >
-            <Text className="text-base">{emoji}</Text>
+            <Icon
+              className="text-foreground"
+              icon={REACTION_ICONS[emoji]}
+              size={18}
+            />
           </Menu.Item>
         ))}
       </Menu.Content>

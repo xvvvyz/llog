@@ -56,13 +56,13 @@ export default function Account() {
                   <Icon
                     className="text-placeholder"
                     icon={UploadSimple}
-                    size={16}
+                    size={18}
                   />
                   <Text>Upload</Text>
                 </Menu.Item>
                 {profile.image && (
                   <Menu.Item onPress={deleteProfileImage}>
-                    <Icon className="text-placeholder" icon={Trash} size={16} />
+                    <Icon className="text-placeholder" icon={Trash} size={18} />
                     <Text>Remove</Text>
                   </Menu.Item>
                 )}
@@ -109,7 +109,7 @@ export default function Account() {
               <Icon
                 className="-mr-1 text-placeholder"
                 icon={SignOut}
-                size={16}
+                size={18}
               />
             </Button>
           </View>
