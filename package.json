@@ -22,13 +22,13 @@
     "run:ios": "expo run:ios",
     "theme": "bun scripts/generate-theme.ts",
     "types": "wrangler types --env development --env-interface CloudflareEnv",
-    "up": "bun update --latest && bun i tailwindcss@3.4.17 eslint@~9.28.0 && expo install --fix",
+    "up": "bun update --latest && bun i tailwindcss@3.4.17 eslint@~9.28.0 react-native-css-interop@0.2.3 && expo install --fix",
     "watchman": "watchman watch-del $(pwd) && watchman watch-project $(pwd)"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
-    "@instantdb/admin": "0.22.158",
-    "@instantdb/react-native": "0.22.158",
+    "@instantdb/admin": "0.22.162",
+    "@instantdb/react-native": "0.22.162",
     "@legendapp/list": "^2.0.19",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "11.5.2",
@@ -56,13 +56,13 @@
     "expo-router": "^55.0.5",
     "expo-secure-store": "^55.0.8",
     "expo-system-ui": "^55.0.9",
-    "hono": "^4.12.7",
-    "nativewind": "^4.2.2",
+    "hono": "^4.12.8",
+    "nativewind": "^4.2.3",
     "phosphor-react-native": "^3.0.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "0.83.2",
-    "react-native-css-interop": "0.2.2",
+    "react-native-css-interop": "0.2.3",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-get-random-values": "~1.11.0",
     "react-native-reanimated": "4.2.1",
@@ -82,7 +82,7 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
-    "@cloudflare/workers-types": "^4.20260313.1",
+    "@cloudflare/workers-types": "^4.20260317.1",
     "@expo/metro-runtime": "^55.0.6",
     "@types/chroma-js": "^3.1.2",
     "@types/react": "~19.2.14",
@@ -93,12 +93,12 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "expo-dev-client": "^55.0.16",
-    "instant-cli": "0.22.158",
+    "instant-cli": "0.22.162",
     "prettier": "^3.8.1",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript": "~5.9.3",
-    "wrangler": "^4.73.0"
+    "wrangler": "^4.74.0"
   },
   "expo": {
     "doctor": {
@@ -108,6 +108,6 @@
     }
   },
   "patchedDependencies": {
-    "react-native-css-interop@0.2.2": "patches/react-native-css-interop@0.2.2.patch"
+    "react-native-css-interop@0.2.3": "patches/react-native-css-interop@0.2.3.patch"
   }
 }
