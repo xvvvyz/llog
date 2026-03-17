@@ -87,7 +87,7 @@ export const RecordOrComment = ({
         </Pressable>
       );
     },
-    [commentId, idIndexMap, record.id, record.images, recordId]
+    [commentId, idIndexMap, record.id, recordId]
   );
 
   const cardImageHeight = record.images && record.images.length < 4 ? 250 : 124;

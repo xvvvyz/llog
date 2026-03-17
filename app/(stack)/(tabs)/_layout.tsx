@@ -10,7 +10,7 @@ import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { Redirect, Tabs } from 'expo-router';
-import { Bell, SquaresFour } from 'phosphor-react-native';
+import { Bell, MagnifyingGlass, SquaresFour } from 'phosphor-react-native';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -83,6 +83,27 @@ export default function Layout() {
             <Icon
               className={cn('text-placeholder', focused && 'text-foreground')}
               icon={SquaresFour}
+              size={24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          tabBarButton: ({ children, onPress, ...props }) => (
+            <TabButton
+              aria-selected={props['aria-selected']}
+              href="/search"
+              onPress={onPress}
+            >
+              {children}
+            </TabButton>
+          ),
+          tabBarIcon: ({ focused }) => (
+            <Icon
+              className={cn('text-placeholder', focused && 'text-foreground')}
+              icon={MagnifyingGlass}
               size={24}
             />
           ),

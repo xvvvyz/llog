@@ -3,37 +3,42 @@ import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { deleteLog } from '@/mutations/delete-log';
-import { useLog } from '@/queries/use-log';
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 export const LogDeleteSheet = () => {
+  const [isPending, setIsPending] = useState(false);
   const sheetManager = useSheetManager();
-  const log = useLog({ id: sheetManager.getId('log-delete') });
 
   return (
     <Sheet
-      loading={log.isLoading}
       onDismiss={() => sheetManager.close('log-delete')}
       open={sheetManager.isOpen('log-delete')}
       portalName="log-delete"
     >
       <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">
-          Delete &quot;{log.name}&quot; log?
-        </Text>
+        <Text className="text-center text-2xl">Delete log?</Text>
         <Button
-          onPress={() => {
+          disabled={isPending}
+          onPress={async () => {
+            setIsPending(true);
+            await deleteLog({ id: sheetManager.getId('log-delete') });
             sheetManager.close('log-delete');
             router.dismissTo('/');
-            deleteLog({ id: log.id });
+            setIsPending(false);
           }}
           variant="destructive"
           wrapperClassName="mt-12"
         >
-          <Text>Delete</Text>
+          {isPending ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Text>Delete</Text>
+          )}
         </Button>
         <Button
+          disabled={isPending}
           onPress={() => sheetManager.close('log-delete')}
           variant="secondary"
           wrapperClassName="mt-3"

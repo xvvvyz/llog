@@ -38,6 +38,8 @@ export default function Index() {
 
   const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs({ query });
+  const hasLoadedRef = useRef(false);
+  if (!logs.isLoading) hasLoadedRef.current = true;
 
   if (sheetManager.someOpen()) {
     return renderCacheRef.current;
@@ -75,7 +77,7 @@ export default function Index() {
           </View>
         }
       />
-      {logs.isLoading ? (
+      {logs.isLoading && !hasLoadedRef.current ? (
         <Loading />
       ) : isEmpty ? (
         <LogListEmptyState />
