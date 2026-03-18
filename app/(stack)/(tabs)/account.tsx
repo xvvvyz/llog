@@ -57,10 +57,13 @@ export default function Account() {
                   <Text>Upload</Text>
                 </Menu.Item>
                 {profile.image && (
-                  <Menu.Item onPress={deleteProfileImage}>
-                    <Icon className="text-placeholder" icon={Trash} />
-                    <Text>Remove</Text>
-                  </Menu.Item>
+                  <>
+                    <Menu.Separator />
+                    <Menu.Item onPress={deleteProfileImage}>
+                      <Icon className="text-destructive" icon={Trash} />
+                      <Text className="text-destructive">Remove</Text>
+                    </Menu.Item>
+                  </>
                 )}
               </Menu.Content>
             </Menu.Root>

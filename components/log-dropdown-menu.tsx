@@ -51,9 +51,10 @@ export const LogDropdownMenu = ({
           <Icon className="text-placeholder" icon={Tag} />
           <Text>Tags</Text>
         </Menu.Item>
+        <Menu.Separator />
         <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
-          <Icon className="text-placeholder" icon={Trash} />
-          <Text>Delete</Text>
+          <Icon className="text-destructive" icon={Trash} />
+          <Text className="text-destructive">Delete</Text>
         </Menu.Item>
       </Menu.Content>
     </Menu.Root>
