@@ -26,12 +26,13 @@ export const CommentCreateSheet = () => {
   const hasContent = !!text.trim() || !!draft.media.length;
 
   const handleUploadImages = useCallback(
-    (assets: import('expo-image-picker').ImagePickerAsset[]) =>
-      Promise.all(
+    async (assets: import('expo-image-picker').ImagePickerAsset[]) => {
+      await Promise.all(
         assets.map((asset) =>
           uploadCommentMedia({ asset, commentId: draft.id, recordId })
         )
-      ) as Promise<any>,
+      );
+    },
     [draft.id, recordId]
   );
 

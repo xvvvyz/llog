@@ -12,7 +12,7 @@ import { View } from 'react-native';
 
 export const TeamSwitchSheet = () => {
   const sheetManager = useSheetManager();
-  const { activeTeamId } = useUi();
+  const ui = useUi();
   const { teams } = useTeams();
 
   return (
@@ -29,14 +29,14 @@ export const TeamSwitchSheet = () => {
               className="justify-between rounded-none"
               key={t.id}
               onPress={() => {
-                switchTeam({ teamId: t.id });
+                switchTeam({ teamId: t.id, uiId: ui.id });
                 sheetManager.close('team-switch');
               }}
               variant="ghost"
               wrapperClassName="rounded-none"
             >
               <Text className="font-normal">{t.name}</Text>
-              {t.id === activeTeamId && (
+              {t.id === ui.activeTeamId && (
                 <Icon className="-mr-1 text-placeholder" icon={Check} />
               )}
             </Button>

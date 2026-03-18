@@ -3,6 +3,8 @@ import { init, User } from '@instantdb/admin';
 import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
 
+export type Db = ReturnType<typeof init<typeof schema>>;
+
 interface DbMiddlewareOptions {
   asUser?: boolean;
 }

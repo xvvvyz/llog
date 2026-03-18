@@ -1,44 +1,31 @@
-import { getActiveTeamId } from '@/queries/get-active-team-id';
-import { getProfile } from '@/queries/get-profile';
+import { resolveProfileAndTeam } from '@/queries/resolve-profile-and-team';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 
 export const toggleReaction = async ({
   emoji,
+  existingReactionId,
+  profileId,
+  teamId,
   recordId,
   commentId,
 }: {
   emoji: string;
+  existingReactionId?: string;
+  profileId?: string;
+  teamId?: string;
   recordId: string;
   commentId?: string;
 }) => {
-  const [profile, teamId] = await Promise.all([
-    getProfile(),
-    getActiveTeamId(),
-  ]);
-
-  if (!profile || !teamId) return;
-
-  const { data } = await db.queryOnce({
-    reactions: {
-      $: {
-        where: {
-          emoji,
-          author: profile.id,
-          ...(commentId ? { comment: commentId } : { record: recordId }),
-        },
-      },
-    },
-  });
-
-  const existing = data?.reactions?.[0];
-
-  if (existing) {
-    return db.transact(db.tx.reactions[existing.id].delete());
+  if (existingReactionId) {
+    return db.transact(db.tx.reactions[existingReactionId].delete());
   }
 
+  const resolved = await resolveProfileAndTeam(profileId, teamId);
+  if (!resolved) return;
+
   const link: { author: string; record?: string; comment?: string } = {
-    author: profile.id,
+    author: resolved.profileId,
   };
 
   if (commentId) {
@@ -48,6 +35,6 @@ export const toggleReaction = async ({
   }
 
   return db.transact(
-    db.tx.reactions[id()].update({ emoji, teamId }).link(link)
+    db.tx.reactions[id()].update({ emoji, teamId: resolved.teamId }).link(link)
   );
 };

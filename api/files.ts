@@ -1,4 +1,4 @@
-import { db } from '@/middleware/db';
+import { db, type Db } from '@/middleware/db';
 import { fileLike } from '@/schemas/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -26,7 +26,7 @@ app.get('/:key{.+}', async (c) => {
 
 const queryProfileWithImage = (userId: string) => ({
   profiles: {
-    $: { fields: ['id'] as const, where: { user: userId } },
+    $: { fields: ['id'] as ['id'], where: { user: userId } },
     image: {},
   },
 });
@@ -42,11 +42,8 @@ app.put(
       throw new HTTPException(400, { message: 'Invalid file format' });
     }
 
-    const { profiles } = await c.var.db.query(
-      queryProfileWithImage(c.var.user.id)
-    );
-
-    const profile = profiles[0];
+    const result = await c.var.db.query(queryProfileWithImage(c.var.user.id));
+    const profile = result.profiles?.[0];
 
     if (!profile.id) {
       throw new HTTPException(400, { message: 'Profile not found' });
@@ -75,11 +72,8 @@ app.put(
 );
 
 app.delete('/me/avatar', db({ asUser: true }), async (c) => {
-  const { profiles } = await c.var.db.query(
-    queryProfileWithImage(c.var.user.id)
-  );
-
-  const profile = profiles[0];
+  const result = await c.var.db.query(queryProfileWithImage(c.var.user.id));
+  const profile = result.profiles?.[0];
 
   if (profile.image) {
     await c.var.db.transact(c.var.db.tx.media[profile.image.id].delete());
@@ -89,23 +83,32 @@ app.delete('/me/avatar', db({ asUser: true }), async (c) => {
   return c.json({ success: true });
 });
 
-const uploadMedia = async (
-  c: any,
-  {
-    keyPrefix,
-    linkField,
-    linkId,
-  }: { keyPrefix: string; linkField: string; linkId: string }
-) => {
-  const { duration, file } = c.req.valid('form');
-
+const uploadMedia = async ({
+  db: dbClient,
+  duration,
+  file,
+  keyPrefix,
+  linkField,
+  linkId,
+  r2,
+  recordId,
+}: {
+  db: Db;
+  duration?: number;
+  file: z.infer<typeof fileLike>;
+  keyPrefix: string;
+  linkField: string;
+  linkId: string;
+  r2: R2Bucket;
+  recordId: string;
+}) => {
   if (!file.type.startsWith('image/') && !file.type.startsWith('audio/')) {
     throw new HTTPException(400, { message: 'Invalid file format' });
   }
 
-  const { records } = await c.var.db.query({
+  const { records } = await dbClient.query({
     records: {
-      $: { fields: ['id'], where: { id: c.req.param('recordId') } },
+      $: { fields: ['id'], where: { id: recordId } },
       log: { team: { $: { fields: ['id'] } } },
     },
   });
@@ -127,11 +130,11 @@ const uploadMedia = async (
   const key = `${keyPrefix}/media/${mediaId}`;
 
   await Promise.all([
-    c.env.R2.put(key, file as File, {
+    r2.put(key, file as File, {
       httpMetadata: { contentType: file.type },
     }),
-    c.var.db.transact(
-      c.var.db.tx.media[mediaId]
+    dbClient.transact(
+      dbClient.tx.media[mediaId]
         .update({
           teamId,
           type,
@@ -141,8 +144,6 @@ const uploadMedia = async (
         .link({ [linkField]: linkId })
     ),
   ]);
-
-  return c.json({ success: true });
 };
 
 const mediaValidator = zValidator(
@@ -156,12 +157,20 @@ app.put(
   mediaValidator,
   async (c) => {
     const { recordId } = c.req.param();
+    const { duration, file } = c.req.valid('form');
 
-    return uploadMedia(c, {
+    await uploadMedia({
+      db: c.var.db,
+      duration,
+      file,
       keyPrefix: `records/${recordId}`,
       linkField: 'record',
       linkId: recordId,
+      r2: c.env.R2,
+      recordId,
     });
+
+    return c.json({ success: true });
   }
 );
 
@@ -180,12 +189,21 @@ app.put(
   db({ asUser: true }),
   mediaValidator,
   async (c) => {
-    const { commentId } = c.req.param();
-    return uploadMedia(c, {
+    const { commentId, recordId } = c.req.param();
+    const { duration, file } = c.req.valid('form');
+
+    await uploadMedia({
+      db: c.var.db,
+      duration,
+      file,
       keyPrefix: `comments/${commentId}`,
       linkField: 'comment',
       linkId: commentId,
+      r2: c.env.R2,
+      recordId,
     });
+
+    return c.json({ success: true });
   }
 );
 

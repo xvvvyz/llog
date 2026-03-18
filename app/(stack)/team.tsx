@@ -12,7 +12,6 @@ import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { Role } from '@/enums/roles';
 import { cancelInvite } from '@/mutations/cancel-invite';
-
 import { removeMember } from '@/mutations/remove-member';
 import { updateInvite } from '@/mutations/update-invite';
 import { updateRole } from '@/mutations/update-role';
@@ -236,13 +235,13 @@ export default function Team() {
             <View>
               {canManage && (
                 <Button
-                  className="justify-between rounded-none pr-4"
+                  className="justify-between rounded-none"
                   onPress={() => sheetManager.open('invite-member')}
                   variant="ghost"
                   wrapperClassName="rounded-none"
                 >
                   <Text className="font-normal">Invite team member</Text>
-                  <Icon className="text-placeholder" icon={UserPlus} />
+                  <Icon className="-mr-0.5 text-placeholder" icon={UserPlus} />
                 </Button>
               )}
               {isOwner && teams.length > 1 && (
@@ -250,7 +249,7 @@ export default function Team() {
               )}
               {isOwner && teams.length > 1 && (
                 <Button
-                  className="justify-between rounded-none pr-4"
+                  className="justify-between rounded-none"
                   onPress={() => sheetManager.open('team-delete')}
                   variant="ghost"
                   wrapperClassName="rounded-none"
@@ -258,7 +257,7 @@ export default function Team() {
                   <Text className="font-normal text-destructive">
                     Delete team
                   </Text>
-                  <Icon className="text-destructive" icon={Trash} />
+                  <Icon className="-mr-0.5 text-destructive" icon={Trash} />
                 </Button>
               )}
             </View>

@@ -1,5 +1,6 @@
 import {
   Confetti,
+  Fire,
   HandsPraying,
   Heart,
   Smiley,
@@ -7,7 +8,17 @@ import {
   ThumbsUp,
 } from 'phosphor-react-native';
 
-export const REACTION_EMOJIS = ['👍', '👎', '❤️', '😊', '🎉', '🙏'] as const;
+export const REACTION_EMOJIS = [
+  '❤️',
+  '🔥',
+  '🎉',
+  '😊',
+  '👍',
+  '👎',
+  '🙏',
+] as const;
+
+export type Emoji = (typeof REACTION_EMOJIS)[number];
 
 export const REACTION_ICONS = {
   '👍': ThumbsUp,
@@ -16,4 +27,5 @@ export const REACTION_ICONS = {
   '😊': Smiley,
   '🎉': Confetti,
   '🙏': HandsPraying,
+  '🔥': Fire,
 } as const;

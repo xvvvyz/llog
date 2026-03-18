@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
+import { Emoji, REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
+import { useUi } from '@/queries/use-ui';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { cn } from '@/utilities/cn';
@@ -21,9 +22,13 @@ export const Reactions = ({
   commentId?: string;
 }) => {
   const profile = useProfile();
+  const ui = useUi();
 
   const grouped = useMemo(() => {
-    const map = new Map<string, { count: number; userReacted: boolean }>();
+    const map = new Map<
+      string,
+      { count: number; userReacted: boolean; userReactionId?: string }
+    >();
 
     for (const reaction of reactions) {
       const entry = map.get(reaction.emoji) ?? {
@@ -35,6 +40,7 @@ export const Reactions = ({
 
       if (reaction.author?.id === profile.id) {
         entry.userReacted = true;
+        entry.userReactionId = reaction.id;
       }
 
       map.set(reaction.emoji, entry);
@@ -49,13 +55,12 @@ export const Reactions = ({
     <>
       {Array.from(grouped.entries())
         .sort(([a], [b]) => {
-          type Emoji = (typeof REACTION_EMOJIS)[number];
           return (
             REACTION_EMOJIS.indexOf(a as Emoji) -
             REACTION_EMOJIS.indexOf(b as Emoji)
           );
         })
-        .map(([emoji, { count, userReacted }]) => (
+        .map(([emoji, { count, userReacted, userReactionId }]) => (
           <Button
             key={emoji}
             className={cn(
@@ -65,7 +70,16 @@ export const Reactions = ({
             size="xs"
             variant="ghost"
             wrapperClassName="rounded-lg"
-            onPress={() => toggleReaction({ emoji, recordId, commentId })}
+            onPress={() =>
+              toggleReaction({
+                emoji,
+                existingReactionId: userReactionId,
+                profileId: profile.id,
+                teamId: ui.activeTeamId,
+                recordId,
+                commentId,
+              })
+            }
           >
             <Icon
               className={cn(

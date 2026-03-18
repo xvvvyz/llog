@@ -105,7 +105,9 @@ export default function Index() {
             const color =
               SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
 
-            const itemLogTagIds = new Set(item.logTags.map((tag) => tag.id));
+            const itemLogTagIds = new Set(
+              item.logTags.map((tag: { id: string }) => tag.id)
+            );
 
             return (
               <LogListItem

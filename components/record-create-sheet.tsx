@@ -23,10 +23,11 @@ export const RecordCreateSheet = () => {
   const logColor = useLogColor({ id: logId });
 
   const handleUploadImages = useCallback(
-    (assets: import('expo-image-picker').ImagePickerAsset[]) =>
-      Promise.all(
+    async (assets: import('expo-image-picker').ImagePickerAsset[]) => {
+      await Promise.all(
         assets.map((asset) => uploadRecordMedia({ asset, recordId: draft.id }))
-      ) as Promise<any>,
+      );
+    },
     [draft.id]
   );
 

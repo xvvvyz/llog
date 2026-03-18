@@ -1,5 +1,6 @@
 import { SortBy } from '@/components/log-list-actions';
 import { SortDirection } from '@/components/ui/dropdown-menu';
+import { Emoji, REACTION_EMOJIS } from '@/enums/emojis';
 import { db } from '@/utilities/db';
 import { useMemo } from 'react';
 
@@ -32,6 +33,10 @@ export const useUi = () => {
 
   return {
     activeTeamId: ui?.team?.id,
+    doubleTapEmoji: (REACTION_EMOJIS.includes(ui?.doubleTapEmoji as Emoji)
+      ? ui?.doubleTapEmoji
+      : '❤️') as Emoji,
+    id: ui?.id,
     isLoading,
     logsFilterByTagIdsArray,
     logsFilterByTagIdsSet,

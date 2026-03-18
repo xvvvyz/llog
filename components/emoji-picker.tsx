@@ -4,6 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
+import { useUi } from '@/queries/use-ui';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { cn } from '@/utilities/cn';
@@ -22,17 +23,18 @@ export const EmojiPicker = ({
   reactions?: (Reaction & { author?: Pick<Profile, 'id'> })[];
 }) => {
   const profile = useProfile();
+  const ui = useUi();
 
-  const userEmojis = useMemo(() => {
-    const set = new Set<string>();
+  const userReactions = useMemo(() => {
+    const map = new Map<string, string>();
 
     for (const reaction of reactions ?? []) {
       if (reaction.author?.id === profile.id) {
-        set.add(reaction.emoji);
+        map.set(reaction.emoji, reaction.id);
       }
     }
 
-    return set;
+    return map;
   }, [reactions, profile.id]);
 
   return (
@@ -49,13 +51,23 @@ export const EmojiPicker = ({
       </Menu.Trigger>
       <Menu.Content align="start" className="flex-row px-1 py-1" sideOffset={2}>
         {REACTION_EMOJIS.map((emoji) => {
-          const selected = userEmojis.has(emoji);
+          const existingReactionId = userReactions.get(emoji);
+          const selected = !!existingReactionId;
 
           return (
             <Menu.Item
               key={emoji}
               className="size-10 min-w-0 justify-center rounded-xl pl-0 pr-0"
-              onPress={() => toggleReaction({ emoji, recordId, commentId })}
+              onPress={() =>
+                toggleReaction({
+                  emoji,
+                  existingReactionId,
+                  profileId: profile.id,
+                  teamId: ui.activeTeamId,
+                  recordId,
+                  commentId,
+                })
+              }
             >
               <Icon
                 className={cn(

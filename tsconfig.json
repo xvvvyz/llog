@@ -11,5 +11,6 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts",
     "worker-configuration.d.ts"
-  ]
+  ],
+  "exclude": ["node_modules", "scripts"]
 }

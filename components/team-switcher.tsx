@@ -15,9 +15,9 @@ import { View } from 'react-native';
 
 export const TeamSwitcher = () => {
   const breakpoints = useBreakpoints();
-  const { activeTeamId } = useUi();
+  const ui = useUi();
   const { teams } = useTeams();
-  const activeTeam = teams.find((t) => t.id === activeTeamId);
+  const activeTeam = teams.find((t) => t.id === ui.activeTeamId);
   const lastNameRef = useRef(activeTeam?.name);
   if (activeTeam?.name) lastNameRef.current = activeTeam.name;
 
@@ -36,11 +36,13 @@ export const TeamSwitcher = () => {
           <Menu.Item
             className="justify-between"
             key={t.id}
-            onPress={() => switchTeam({ teamId: t.id })}
+            onPress={() => switchTeam({ teamId: t.id, uiId: ui.id })}
           >
             <Avatar id={t.id} size={20} />
             <Text className="flex-1">{t.name}</Text>
-            {t.id === activeTeamId && <Icon className="-mr-1" icon={Check} />}
+            {t.id === ui.activeTeamId && (
+              <Icon className="-mr-1" icon={Check} />
+            )}
           </Menu.Item>
         ))}
         <Menu.Item onPress={() => createTeam({ name: 'Team' })}>

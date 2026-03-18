@@ -61,6 +61,7 @@ const schema = i.schema({
       name: i.string(),
     }),
     ui: i.entity({
+      doubleTapEmoji: i.string().optional(),
       logsSortBy: i.string().optional(),
       logsSortDirection: i.string().optional(),
     }),

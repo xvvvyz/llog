@@ -19,6 +19,6 @@ export const Avatar = ({
       `https://api.dicebear.com/9.x/glass/png?seed=${id}&backgroundType=gradientLinear&size=250`
     }
     width={size}
-    wrapperClassName={cn('rounded-full', className)}
+    wrapperClassName={cn('select-none rounded-full', className)}
   />
 );

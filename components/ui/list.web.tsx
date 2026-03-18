@@ -1,5 +1,6 @@
 import { cn } from '@/utilities/cn';
 import { LegendListProps } from '@legendapp/list';
+import { ComponentType, ReactElement } from 'react';
 import { ScrollView, View } from 'react-native';
 
 export const List = <T,>({
@@ -11,6 +12,18 @@ export const List = <T,>({
   const { contentContainerClassName, ...restProps } = props as typeof props & {
     contentContainerClassName?: string;
   };
+
+  const renderItem = restProps.renderItem as
+    | ((info: { item: T; index: number }) => ReactElement | null)
+    | undefined;
+
+  const keyExtractor = restProps.keyExtractor as
+    | ((item: T, index: number) => string)
+    | undefined;
+
+  const ItemSeparator = restProps.ItemSeparatorComponent as
+    | ComponentType
+    | undefined;
 
   return (
     <View
@@ -36,41 +49,20 @@ export const List = <T,>({
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {(restProps.data ?? []).map((item, index) => (
                 <View
-                  key={restProps.keyExtractor?.(item, index) ?? index}
+                  key={keyExtractor?.(item, index) ?? index}
                   style={{ width: `${100 / restProps.numColumns!}%` }}
                 >
-                  {restProps.renderItem?.({
-                    index,
-                    item,
-                    target: 'Cell',
-                    extraData: undefined,
-                    separators: {
-                      highlight: () => {},
-                      unhighlight: () => {},
-                      updateProps: () => {},
-                    },
-                  })}
+                  {renderItem?.({ item, index })}
                 </View>
               ))}
             </View>
           ) : (
             (restProps.data ?? []).map((item, index) => (
-              <View key={restProps.keyExtractor?.(item, index) ?? index}>
-                {restProps.renderItem?.({
-                  index,
-                  item,
-                  target: 'Cell',
-                  extraData: undefined,
-                  separators: {
-                    highlight: () => {},
-                    unhighlight: () => {},
-                    updateProps: () => {},
-                  },
-                })}
-                {restProps.ItemSeparatorComponent &&
-                  index < (restProps.data?.length ?? 0) - 1 && (
-                    <restProps.ItemSeparatorComponent />
-                  )}
+              <View key={keyExtractor?.(item, index) ?? index}>
+                {renderItem?.({ item, index })}
+                {ItemSeparator && index < (restProps.data?.length ?? 0) - 1 && (
+                  <ItemSeparator />
+                )}
               </View>
             ))
           )}

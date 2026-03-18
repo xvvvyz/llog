@@ -6,6 +6,7 @@ import { deleteTeam } from '@/mutations/delete-team';
 import { switchTeam } from '@/mutations/switch-team';
 import { useTeam } from '@/queries/use-team';
 import { useTeams } from '@/queries/use-teams';
+import { useUi } from '@/queries/use-ui';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -13,6 +14,7 @@ export const TeamDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const team = useTeam();
   const { teams } = useTeams();
+  const ui = useUi();
 
   return (
     <Sheet
@@ -30,7 +32,7 @@ export const TeamDeleteSheet = () => {
             if (!nextTeam) return;
             sheetManager.close('team-delete');
             router.replace('/');
-            await switchTeam({ teamId: nextTeam.id });
+            await switchTeam({ teamId: nextTeam.id, uiId: ui.id });
             await deleteTeam({ id: team.id });
           }}
           variant="destructive"

@@ -84,7 +84,7 @@ export default function Index() {
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
-          contentContainerStyle={{ paddingBottom: `${insets.bottom}px` }}
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
           data={records.data}
           keyExtractor={(record) => record.id}
           keyboardDismissMode="on-drag"

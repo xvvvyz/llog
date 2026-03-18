@@ -61,6 +61,7 @@ export const LogListActions = ({
                   toggleUiLogTag({
                     isSelected: ui.logsFilterByTagIdsSet.has(tag.id),
                     tagId: tag.id,
+                    uiId: ui.id,
                   })
                 }
               >
@@ -84,7 +85,7 @@ export const LogListActions = ({
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="end" className="mt-3 min-w-44">
           <DropdownMenu.SortItem<SortBy>
-            onSort={(sort) => updateUiLogsSort({ sort })}
+            onSort={(sort) => updateUiLogsSort({ sort, uiId: ui.id })}
             sortBy={ui.logsSortBy}
             sortDirection={ui.logsSortDirection}
             value="serverCreatedAt"
@@ -93,7 +94,7 @@ export const LogListActions = ({
             <Text>Created</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
-            onSort={(sort) => updateUiLogsSort({ sort })}
+            onSort={(sort) => updateUiLogsSort({ sort, uiId: ui.id })}
             sortBy={ui.logsSortBy}
             sortDirection={ui.logsSortDirection}
             value="name"
@@ -102,7 +103,7 @@ export const LogListActions = ({
             <Text>Name</Text>
           </DropdownMenu.SortItem>
           <DropdownMenu.SortItem<SortBy>
-            onSort={(sort) => updateUiLogsSort({ sort })}
+            onSort={(sort) => updateUiLogsSort({ sort, uiId: ui.id })}
             sortBy={ui.logsSortBy}
             sortDirection={ui.logsSortDirection}
             value="color"

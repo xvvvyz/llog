@@ -37,12 +37,12 @@ function oklchToHSLStr(oklchStr: string): string {
   return `${hVal} ${sVal}% ${lVal}%`;
 }
 
-function genCSSVars(theme: any) {
+function genCSSVars(theme: Record<string, string>) {
   let css = '';
 
   for (const [key, value] of Object.entries(theme)) {
     const varName = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-    css += `${varName}:${oklchToHSLStr(value as string)};`;
+    css += `${varName}:${oklchToHSLStr(value)};`;
   }
 
   return css;
@@ -67,7 +67,10 @@ function generateSpectrumTS() {
     return variants;
   }
 
-  const spectrum: any = { light: [], dark: [] };
+  const spectrum: Record<string, ReturnType<typeof getVariants>[]> = {
+    light: [],
+    dark: [],
+  };
 
   for (const mode of ['light', 'dark'] as const) {
     const modeColors = COLORS[mode] as typeof COLORS.light;
@@ -81,7 +84,10 @@ function generateSpectrumTS() {
 }
 
 function generateUITS() {
-  const ui: any = { light: {}, dark: {} };
+  const ui: Record<string, Record<string, string>> = {
+    light: {},
+    dark: {},
+  };
 
   for (const mode of ['light', 'dark'] as const) {
     const modeColors = COLORS[mode] as typeof COLORS.light;

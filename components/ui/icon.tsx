@@ -11,20 +11,25 @@ interface IconProps extends PhosphorIconProps {
 
 const interopCache = new WeakMap<
   ComponentType<PhosphorIconProps>,
-  ComponentType<any>
+  ComponentType<PhosphorIconProps & { className?: string }>
 >();
 
 const getInteropIcon = (icon: ComponentType<PhosphorIconProps>) => {
   let wrapped = interopCache.get(icon);
+
   if (!wrapped) {
     wrapped = cssInterop(icon, {
       className: {
         target: 'style',
-        nativeStyleToProp: { color: true, opacity: true },
+        nativeStyleToProp: { color: true, opacity: true } as Record<
+          string,
+          boolean
+        >,
       },
     });
     interopCache.set(icon, wrapped);
   }
+
   return wrapped;
 };
 

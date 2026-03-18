@@ -11,7 +11,9 @@ export const useAudioRecorderHook = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [level, setLevel] = useState(0);
   const startTime = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(
+    undefined
+  );
 
   const analyserRef = useRef<{
     ctx: AudioContext;
@@ -130,7 +132,8 @@ export const useAudioRecorderHook = () => {
       recorder.record();
 
       // access the stream from the recorder to track audio levels
-      const stream = (recorder as any).stream as MediaStream | null;
+      const stream = (recorder as unknown as { stream: MediaStream | null })
+        .stream;
 
       if (stream) startLevelTracking(stream);
       setIsRecording(true);

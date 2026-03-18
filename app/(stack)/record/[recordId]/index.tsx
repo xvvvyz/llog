@@ -64,7 +64,7 @@ export default function Index() {
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg border border-border-secondary rounded-4xl my-4 bg-card md:my-8"
-          contentContainerStyle={{ paddingBottom: `${insets.bottom}px` }}
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
           data={data}
           estimatedItemSize={100}
           keyExtractor={(item) => item.id ?? ''}

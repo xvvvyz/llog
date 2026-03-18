@@ -8,10 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
+import { REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { deleteProfileImage } from '@/mutations/delete-profile-image';
 import { updateProfile } from '@/mutations/update-profile';
 import { uploadProfileImage } from '@/mutations/upload-profile-image';
 import { useProfile } from '@/queries/use-profile';
+import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -23,6 +25,7 @@ export default function Account() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const auth = db.useAuth();
   const profile = useProfile();
+  const ui = useUi();
 
   const handleUploadProfileImage = useCallback(async () => {
     const picker = await launchImageLibraryAsync({
@@ -89,10 +92,51 @@ export default function Account() {
                   editable={false}
                   maxLength={32}
                   className="rounded-none border-0 bg-transparent pr-0 text-right"
-                  value={auth.user?.email}
+                  value={auth.user?.email ?? undefined}
                 />
               </View>
             </View>
+            <Menu.Root>
+              <Menu.Trigger asChild>
+                <Button
+                  className="justify-between rounded-none"
+                  variant="ghost"
+                  wrapperClassName="rounded-none"
+                >
+                  <Text className="font-normal">Double tap reaction</Text>
+                  <Icon
+                    className="-mr-0.5"
+                    icon={REACTION_ICONS[ui.doubleTapEmoji]}
+                  />
+                </Button>
+              </Menu.Trigger>
+              <Menu.Content align="center" className="flex-row px-1 py-1">
+                {REACTION_EMOJIS.map((emoji) => (
+                  <Menu.Item
+                    key={emoji}
+                    className="size-10 min-w-0 justify-center rounded-xl pl-0 pr-0"
+                    onPress={() =>
+                      ui.id &&
+                      db.transact(
+                        db.tx.ui[ui.id].update({
+                          doubleTapEmoji: emoji,
+                        })
+                      )
+                    }
+                  >
+                    <Icon
+                      className={
+                        ui.doubleTapEmoji === emoji
+                          ? 'text-primary'
+                          : 'text-muted-foreground'
+                      }
+                      icon={REACTION_ICONS[emoji]}
+                      weight={ui.doubleTapEmoji === emoji ? 'fill' : 'regular'}
+                    />
+                  </Menu.Item>
+                ))}
+              </Menu.Content>
+            </Menu.Root>
             <Button
               className="justify-between rounded-none"
               disabled={isSigningOut}
@@ -105,7 +149,7 @@ export default function Account() {
               wrapperClassName="rounded-none pt-4"
             >
               <Text className="font-normal">Sign out</Text>
-              <Icon className="-mr-1 text-placeholder" icon={SignOut} />
+              <Icon className="-mr-0.5 text-placeholder" icon={SignOut} />
             </Button>
           </View>
         </Card>

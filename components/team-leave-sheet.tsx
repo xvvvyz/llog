@@ -14,7 +14,7 @@ export const TeamLeaveSheet = () => {
   const sheetManager = useSheetManager();
   const team = useTeam();
   const { teams } = useTeams();
-  const { activeTeamId } = useUi();
+  const ui = useUi();
   const myRole = useMyRole();
 
   return (
@@ -31,7 +31,14 @@ export const TeamLeaveSheet = () => {
           onPress={async () => {
             sheetManager.close('team-leave');
             if (!myRole.id || teams.length <= 1) return;
-            await leaveTeam({ roleId: myRole.id, teams, activeTeamId });
+
+            await leaveTeam({
+              roleId: myRole.id,
+              teams,
+              activeTeamId: ui.activeTeamId,
+              uiId: ui.id,
+            });
+
             router.replace('/');
           }}
           variant="destructive"

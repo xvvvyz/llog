@@ -345,7 +345,6 @@ export const AudioPlayer = ({
       >
         <Icon icon={player.playing ? Pause : Play} size={16} />
       </Button>
-      {/* @ts-expect-error - web-only JSX */}
       <div
         ref={trackRef}
         style={{
@@ -357,7 +356,6 @@ export const AudioPlayer = ({
           touchAction: 'none',
         }}
       >
-        {/* @ts-expect-error - web-only JSX */}
         <div
           style={{
             width: '100%',
@@ -367,7 +365,6 @@ export const AudioPlayer = ({
             overflow: 'hidden',
           }}
         >
-          {/* @ts-expect-error - web-only JSX */}
           <div
             style={{
               width: `${Math.min(progress * 100, 100)}%`,

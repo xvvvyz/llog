@@ -11,6 +11,7 @@ import { setBackgroundColorAsync } from 'expo-system-ui';
 import { cssInterop } from 'nativewind';
 import { Fragment, useEffect } from 'react';
 import { Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 
 cssInterop(Animated.View, { className: 'style' });
@@ -40,6 +41,7 @@ export default function Layout() {
       )}
       <ThemeProvider
         value={{
+          dark: colorScheme === 'dark',
           colors: {
             background: 'transparent',
             border: 'transparent',
@@ -51,10 +53,12 @@ export default function Layout() {
           fonts: DefaultTheme.fonts,
         }}
       >
-        <SheetManagerProvider>
-          <Slot />
-          <PortalHost />
-        </SheetManagerProvider>
+        <GestureHandlerRootView className="flex-1">
+          <SheetManagerProvider>
+            <Slot />
+            <PortalHost />
+          </SheetManagerProvider>
+        </GestureHandlerRootView>
       </ThemeProvider>
     </Fragment>
   );
