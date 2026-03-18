@@ -2,9 +2,9 @@ import { BackButton } from '@/components/ui/back-button';
 import { Carousel } from '@/components/ui/carousel';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
-import { useCommentImages, useRecordImages } from '@/queries/use-record-images';
+import { useCommentMedia, useRecordMedia } from '@/queries/use-record-media';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,13 +17,17 @@ export default function Index() {
     recordId: string;
   }>();
 
-  const record = useRecordImages({
+  const record = useRecordMedia({
     id: params.commentId ? undefined : params.recordId,
   });
 
-  const comment = useCommentImages({ id: params.commentId });
+  const comment = useCommentMedia({ id: params.commentId });
 
-  const images = params.commentId ? comment.images : record.images;
+  const allMedia = params.commentId ? comment.media : record.media;
+  const images = useMemo(
+    () => allMedia.filter((m) => m.type === 'image'),
+    [allMedia]
+  );
   const isLoading = params.commentId ? comment.isLoading : record.isLoading;
   const defaultIndex = params.defaultIndex ? Number(params.defaultIndex) : 0;
 

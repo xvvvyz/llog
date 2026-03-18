@@ -48,7 +48,7 @@ export const LogListItem = ({
               </View>
             ))}
           </View>
-          <Text className="-mb-1 text-white" numberOfLines={1}>
+          <Text className="-mb-1 leading-snug text-white" numberOfLines={1}>
             {name}
           </Text>
         </Button>

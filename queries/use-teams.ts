@@ -1,4 +1,5 @@
 import { db } from '@/utilities/db';
+import { useMemo } from 'react';
 
 export const useTeams = () => {
   const auth = db.useAuth();
@@ -14,16 +15,18 @@ export const useTeams = () => {
       : null
   );
 
-  const seen = new Set<string>();
-
-  const teams =
-    data?.roles
-      ?.map((role) => role.team)
-      .filter((team): team is NonNullable<typeof team> => {
-        if (!team || seen.has(team.id)) return false;
-        seen.add(team.id);
-        return true;
-      }) ?? [];
+  const teams = useMemo(() => {
+    const seen = new Set<string>();
+    return (
+      data?.roles
+        ?.map((role) => role.team)
+        .filter((team): team is NonNullable<typeof team> => {
+          if (!team || seen.has(team.id)) return false;
+          seen.add(team.id);
+          return true;
+        }) ?? []
+    );
+  }, [data?.roles]);
 
   return { teams, isLoading };
 };

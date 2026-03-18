@@ -1,19 +1,9 @@
 import { ImageSize } from '@/enums/image-size';
-import { api } from '@/utilities/api';
 import { assetToFileLike } from '@/utilities/asset-to-file-like';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { ImagePickerAsset } from 'expo-image-picker';
 
-export const uploadCommentImage = async ({
-  asset,
-  commentId,
-  recordId,
-}: {
-  asset: ImagePickerAsset;
-  commentId?: string;
-  recordId?: string;
-}) => {
-  if (!commentId || !recordId) return;
+export const processImageAsset = async (asset: ImagePickerAsset) => {
   let newWidth = asset.width;
   let newHeight = asset.height;
 
@@ -32,15 +22,6 @@ export const uploadCommentImage = async ({
     .renderAsync();
 
   const { uri } = await manipulated.saveAsync();
-  const body = new FormData();
 
-  body.append(
-    'file',
-    await assetToFileLike({ ...asset, mimeType: 'image/jpeg', uri })
-  );
-
-  await api(`/files/records/${recordId}/comments/${commentId}/images`, {
-    body,
-    method: 'PUT',
-  });
+  return assetToFileLike({ ...asset, mimeType: 'image/jpeg', uri });
 };

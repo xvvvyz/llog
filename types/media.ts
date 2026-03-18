@@ -1,4 +1,4 @@
 import schema from '@/instant.schema';
 import { InstaQLEntity } from '@instantdb/react-native';
 
-export type Image = InstaQLEntity<typeof schema, 'images'>;
+export type Media = InstaQLEntity<typeof schema, 'media'>;

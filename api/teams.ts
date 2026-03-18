@@ -11,40 +11,47 @@ const app = new Hono<{ Bindings: CloudflareEnv }>();
 app.post(
   '/:teamId/invites',
   db({ asUser: true }),
-  zValidator('json', z.object({ email: z.string().email(), role: z.string() })),
+  zValidator(
+    'json',
+    z.object({
+      email: z.string().email(),
+      role: z.enum([Role.Owner, Role.Admin, Role.Recorder]),
+    })
+  ),
   async (c) => {
     const { teamId } = c.req.param();
     const { email: rawEmail, role } = c.req.valid('json');
     const email = rawEmail.toLowerCase();
 
-    const validRoles = [Role.Owner, Role.Admin, Role.Recorder];
-
-    if (!validRoles.includes(role as Role)) {
-      throw new HTTPException(400, { message: 'Invalid role' });
-    }
-
-    const { roles: callerRoles } = await c.var.db.query({
-      roles: {
-        $: {
-          where: {
-            team: teamId,
-            userId: c.var.user.id,
+    const [{ roles: callerRoles }, { invites: existingInvites }, { profiles }] =
+      await Promise.all([
+        c.var.db.query({
+          roles: {
+            $: {
+              where: {
+                team: teamId,
+                userId: c.var.user.id,
+              },
+            },
           },
-        },
-      },
-    });
+        }),
+        c.var.db.query({
+          invites: {
+            $: { where: { email, team: teamId } },
+          },
+        }),
+        c.var.db.query({
+          profiles: {
+            $: { where: { user: c.var.user.id }, fields: ['id'] },
+          },
+        }),
+      ]);
 
     const callerRole = callerRoles[0]?.role;
 
     if (callerRole !== Role.Owner && callerRole !== Role.Admin) {
       throw new HTTPException(403, { message: 'Forbidden' });
     }
-
-    const { invites: existingInvites } = await c.var.db.query({
-      invites: {
-        $: { where: { email, team: teamId } },
-      },
-    });
 
     if (existingInvites.length) {
       throw new HTTPException(400, { message: 'Invite already exists' });
@@ -65,12 +72,6 @@ app.post(
         throw new HTTPException(400, { message: 'User is already a member' });
       }
     }
-
-    const { profiles } = await c.var.db.query({
-      profiles: {
-        $: { where: { user: c.var.user.id }, fields: ['id'] },
-      },
-    });
 
     const creatorProfileId = profiles[0]?.id;
 

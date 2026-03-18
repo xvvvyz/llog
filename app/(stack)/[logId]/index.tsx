@@ -54,7 +54,7 @@ export default function Index() {
               variant="secondary"
             >
               <Icon className="-ml-0.5 text-white" icon={Plus} />
-              <Text className="text-white">New record</Text>
+              <Text className="text-white">Record</Text>
             </Button>
             <LogDropdownMenu
               contentClassName="mt-2"

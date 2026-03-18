@@ -1,24 +1,19 @@
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Image } from '@/components/ui/image';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
 import { useSheetManager } from '@/context/sheet-manager';
 import { useLogColor } from '@/hooks/use-log-color';
-import { deleteCommentImage } from '@/mutations/delete-comment-image';
+import { useMediaComposer } from '@/hooks/use-media-composer';
+import { deleteCommentMedia } from '@/mutations/delete-comment-media';
 import { publishComment } from '@/mutations/publish-comment';
-import { uploadCommentImage } from '@/mutations/upload-comment-image';
+import { uploadCommentMedia } from '@/mutations/upload-comment-media';
 import { useCommentDraft } from '@/queries/use-comment-draft';
 import { useRecord } from '@/queries/use-record';
-import { launchImageLibraryAsync } from 'expo-image-picker';
-import { Image as ImageIcon, X } from 'phosphor-react-native';
-import { useCallback, useState, useTransition } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View } from 'react-native';
 
 export const CommentCreateSheet = () => {
-  const [isDeleteTransitioning, startDeleteTransition] = useTransition();
-  const [isUploadTransitioning, startUploadTransition] = useTransition();
   const [text, setText] = useState('');
   const sheetManager = useSheetManager();
 
@@ -27,33 +22,34 @@ export const CommentCreateSheet = () => {
   const logColor = useLogColor({ id: record.log?.id });
   const draft = useCommentDraft({ recordId });
 
-  const hasContent = !!text.trim() || !!draft.images.length;
+  const isOpen = sheetManager.isOpen('comment-create');
+  const hasContent = !!text.trim() || !!draft.media.length;
 
-  const handleUploadImages = useCallback(async () => {
-    const picker = await launchImageLibraryAsync({
-      allowsMultipleSelection: true,
-      exif: false,
-      orderedSelection: true,
-    });
-
-    if (picker.canceled) return;
-
-    startUploadTransition(() =>
+  const handleUploadImages = useCallback(
+    (assets: import('expo-image-picker').ImagePickerAsset[]) =>
       Promise.all(
-        picker.assets.map((asset) =>
-          uploadCommentImage({ asset, commentId: draft.id, recordId })
+        assets.map((asset) =>
+          uploadCommentMedia({ asset, commentId: draft.id, recordId })
         )
-      )
-    );
-  }, [draft.id, recordId, startUploadTransition]);
-
-  const handleDeleteImage = useCallback(
-    (imageId: string) =>
-      startDeleteTransition(async () => {
-        await deleteCommentImage({ commentId: draft.id, imageId, recordId });
-      }),
-    [draft.id, recordId, startDeleteTransition]
+      ) as Promise<any>,
+    [draft.id, recordId]
   );
+
+  const handleDeleteMedia = useCallback(
+    async (mediaId: string) => {
+      await deleteCommentMedia({ commentId: draft.id, mediaId, recordId });
+    },
+    [draft.id, recordId]
+  );
+
+  const { isBusy, mediaPreview, toolbar } = useMediaComposer({
+    isOpen,
+    media: draft.media,
+    onDeleteMedia: handleDeleteMedia,
+    onOpenAudio: () =>
+      sheetManager.open('record-audio', draft.id, `comment:${recordId}`),
+    onUploadImages: handleUploadImages,
+  });
 
   const handleSubmit = useCallback(() => {
     if (!hasContent || !draft.id) return;
@@ -84,53 +80,12 @@ export const CommentCreateSheet = () => {
             placeholder="Add a reply"
             value={text}
           />
-          {!!draft.images.length && (
-            <ScrollView
-              className="shrink-0 border-t border-border-secondary"
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ borderCurve: 'continuous' }}
-            >
-              <View className="flex-row gap-3 p-4">
-                {draft.images.map((image) => (
-                  <View className="relative" key={image.id}>
-                    <Pressable>
-                      <Image
-                        height={64}
-                        uri={image.uri}
-                        width={64}
-                        wrapperClassName="rounded"
-                      />
-                    </Pressable>
-                    <Button
-                      className="size-6 rounded-full"
-                      onPress={() => handleDeleteImage(image.id)}
-                      size="icon"
-                      variant="link"
-                      wrapperClassName="transition-colors rounded-full bg-background/50 hover:bg-background/60 absolute right-1 top-1"
-                    >
-                      <Icon className="text-foreground" icon={X} />
-                    </Button>
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-          )}
+          {mediaPreview}
         </View>
         <View className="flex-row justify-end gap-3">
+          {toolbar}
           <Button
-            disabled={isUploadTransitioning}
-            onPress={handleUploadImages}
-            size="xs"
-            variant="secondary"
-          >
-            <Icon icon={ImageIcon} />
-            <Text>Add visuals</Text>
-          </Button>
-          <Button
-            disabled={
-              isUploadTransitioning || isDeleteTransitioning || !hasContent
-            }
+            disabled={isBusy || !hasContent}
             onPress={handleSubmit}
             size="xs"
             style={{ backgroundColor: logColor?.default }}

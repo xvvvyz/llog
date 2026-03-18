@@ -1,7 +1,7 @@
 import { Image } from '@/components/ui/image';
 import { ZoomableView } from '@/components/ui/zoomable-view';
 import { useWindowDimensions } from '@/hooks/use-window-dimensions';
-import { Image as ImageType } from '@/types/image';
+import { Media } from '@/types/media';
 import { cn } from '@/utilities/cn';
 import { cssInterop } from 'nativewind';
 import { useEffect, useRef, useState } from 'react';
@@ -28,7 +28,7 @@ export const Carousel = ({
 }: {
   className?: string;
   defaultIndex?: number;
-  images: ImageType[];
+  images: Media[];
   isKeyboardNavigationEnabled?: boolean;
 }) => {
   const [isZoomed, setIsZoomed] = useState(false);

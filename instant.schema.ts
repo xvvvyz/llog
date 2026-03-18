@@ -17,8 +17,10 @@ const schema = i.schema({
       teamId: i.string().indexed(),
       text: i.string(),
     }),
-    images: i.entity({
+    media: i.entity({
+      duration: i.number().optional(),
       teamId: i.string().optional().indexed(),
+      type: i.string(),
       uri: i.string(),
     }),
     invites: i.entity({
@@ -117,14 +119,14 @@ const schema = i.schema({
         label: 'comments',
       },
     },
-    commentsImages: {
+    commentsMedia: {
       forward: {
         on: 'comments',
         has: 'many',
-        label: 'images',
+        label: 'media',
       },
       reverse: {
-        on: 'images',
+        on: 'media',
         has: 'one',
         label: 'comment',
         onDelete: 'cascade',
@@ -156,14 +158,14 @@ const schema = i.schema({
         label: 'logs',
       },
     },
-    profilesImages: {
+    profilesMedia: {
       forward: {
         on: 'profiles',
         has: 'one',
         label: 'image',
       },
       reverse: {
-        on: 'images',
+        on: 'media',
         has: 'one',
         label: 'profile',
         onDelete: 'cascade',
@@ -236,14 +238,14 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
-    recordsImages: {
+    recordsMedia: {
       forward: {
         on: 'records',
         has: 'many',
-        label: 'images',
+        label: 'media',
       },
       reverse: {
-        on: 'images',
+        on: 'media',
         has: 'one',
         label: 'record',
         onDelete: 'cascade',

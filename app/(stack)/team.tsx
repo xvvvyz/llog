@@ -50,9 +50,7 @@ export default function Team() {
   const { members } = useTeamMembers();
   const { invites } = useTeamInvites();
   const myRole = useMyRole();
-  const isOwner = myRole.role === Role.Owner;
-  const isAdmin = myRole.role === Role.Admin;
-  const canManage = isOwner || isAdmin;
+  const { canManage, isOwner } = myRole;
 
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
 

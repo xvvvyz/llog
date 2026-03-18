@@ -22,7 +22,9 @@ export const useMyRole = () => {
   );
 
   const role = data?.roles?.[0];
-  const canManage = role?.role === Role.Owner || role?.role === Role.Admin;
+  const isOwner = role?.role === Role.Owner;
+  const isAdmin = role?.role === Role.Admin;
+  const canManage = isOwner || isAdmin;
 
-  return { ...role, canManage, isLoading };
+  return { ...role, canManage, isAdmin, isLoading, isOwner };
 };

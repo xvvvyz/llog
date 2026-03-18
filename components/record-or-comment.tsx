@@ -1,5 +1,6 @@
 import { EmojiPicker } from '@/components/emoji-picker';
 import { Reactions } from '@/components/reactions';
+import { AudioPlaylist } from '@/components/ui/audio-player';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -7,9 +8,10 @@ import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
 import { Text } from '@/components/ui/text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { useLogColor } from '@/hooks/use-log-color';
 import { Comment } from '@/types/comment';
-import { Image as ImageType } from '@/types/image';
+import { Media } from '@/types/media';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { Record as RecordType } from '@/types/record';
@@ -35,9 +37,9 @@ export const RecordOrComment = ({
   numberOfLines?: number;
   record: Partial<
     (RecordType | Comment) & {
-      author: Profile & { image?: ImageType };
+      author: Profile & { image?: Media };
       comments: Pick<Comment, 'id'>[];
-      images: ImageType[];
+      media: Media[];
       reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
     }
   >;
@@ -48,27 +50,30 @@ export const RecordOrComment = ({
   const logColor = useLogColor({ id: logId });
   const accentColor = logColor?.[colorScheme === 'dark' ? 'lighter' : 'darker'];
   const recordId = recordIdProp ?? record.id ?? '';
+
+  const { audioMedia, imageMedia } = useFilteredMedia(record.media || []);
+
   const idIndexMap = useMemo(
     () =>
-      (record.images || []).reduce(
+      imageMedia.reduce(
         (acc, image, index) => {
           acc[image.id] = index;
           return acc;
         },
         {} as Record<string, number>
       ),
-    [record.images]
+    [imageMedia]
   );
 
   const renderImage = useCallback(
-    (image: ImageType, height: number) => {
+    (image: Media, height: number) => {
       return (
         <Pressable
           className="flex-1"
           key={image.id}
           onPress={() =>
             router.push({
-              pathname: `/record/[recordId]/images`,
+              pathname: `/record/[recordId]/media`,
               params: {
                 recordId: recordId || record.id!,
                 ...(commentId && { commentId }),
@@ -90,9 +95,8 @@ export const RecordOrComment = ({
     [commentId, idIndexMap, record.id, recordId]
   );
 
-  const cardImageHeight = record.images && record.images.length < 4 ? 250 : 124;
-  const compactImageHeight =
-    record.images && record.images.length < 4 ? 220 : 110;
+  const cardImageHeight = imageMedia.length < 4 ? 250 : 124;
+  const compactImageHeight = imageMedia.length < 4 ? 220 : 110;
 
   if (variant === 'compact') {
     return (
@@ -121,23 +125,28 @@ export const RecordOrComment = ({
                 text={record.text}
               />
             )}
-            {!!record.images?.length && (
-              <View className="mb-1 mt-2 gap-0.5">
+            {!!imageMedia.length && (
+              <View className="mt-4 gap-0.5">
                 <View className="flex-row gap-0.5">
-                  {record.images
+                  {imageMedia
                     .slice(0, 3)
                     .map((image) => renderImage(image, compactImageHeight))}
                 </View>
-                {record.images.length > 3 && (
+                {imageMedia.length > 3 && (
                   <View className="flex-row gap-0.5">
-                    {record.images
+                    {imageMedia
                       .slice(3, 5)
                       .map((image) => renderImage(image, compactImageHeight))}
                   </View>
                 )}
               </View>
             )}
-            <View className="-mb-1 -ml-2 mt-1 flex-row items-center gap-1.5">
+            {audioMedia.length > 0 && (
+              <View className="mt-4 gap-2">
+                <AudioPlaylist clips={audioMedia} />
+              </View>
+            )}
+            <View className="mt-3 flex-row items-center gap-1.5">
               <EmojiPicker
                 color={accentColor}
                 commentId={commentId}
@@ -180,23 +189,28 @@ export const RecordOrComment = ({
           text={record.text}
         />
       )}
-      {!!record.images?.length && (
+      {!!imageMedia.length && (
         <View className="gap-0.5">
           <View className="flex-row gap-0.5">
-            {record.images
+            {imageMedia
               .slice(0, 3)
               .map((image) => renderImage(image, cardImageHeight))}
           </View>
-          {record.images.length > 3 && (
+          {imageMedia.length > 3 && (
             <View className="flex-row gap-0.5">
-              {record.images
+              {imageMedia
                 .slice(3, 5)
                 .map((image) => renderImage(image, cardImageHeight))}
             </View>
           )}
         </View>
       )}
-      <View className="-mt-1 flex-row justify-between gap-3 p-2 pt-0">
+      {audioMedia.length > 0 && (
+        <View className="gap-2 px-4">
+          <AudioPlaylist clips={audioMedia} />
+        </View>
+      )}
+      <View className="-mt-1 flex-row justify-between gap-3 px-4 pb-3">
         <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
           <EmojiPicker
             color={accentColor}

@@ -15,12 +15,10 @@ export const useLog = ({ id }: { id?: string }) => {
 
   const log = data?.logs?.[0];
 
-  const logTagIdsArray = useMemo(
-    () => log?.logTags?.map((tag) => tag.id) ?? [],
+  const logTagIdsSet = useMemo(
+    () => new Set(log?.logTags?.map((tag) => tag.id)),
     [log?.logTags]
   );
 
-  const logTagIdsSet = useMemo(() => new Set(logTagIdsArray), [logTagIdsArray]);
-
-  return { ...log, isLoading, logTagIdsArray, logTagIdsSet };
+  return { ...log, isLoading, logTagIdsSet };
 };

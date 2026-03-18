@@ -9,21 +9,21 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
   const { records } = await c.var.db.query({
     records: {
       $: { where: { log: logId } },
-      images: {},
-      comments: { images: {} },
+      media: {},
+      comments: { media: {} },
     },
   });
 
   const r2Keys: string[] = [];
 
   for (const record of records) {
-    for (const image of record.images ?? []) {
-      r2Keys.push(image.uri as string);
+    for (const item of record.media ?? []) {
+      r2Keys.push(item.uri as string);
     }
 
     for (const comment of record.comments ?? []) {
-      for (const image of comment.images ?? []) {
-        r2Keys.push(image.uri as string);
+      for (const item of comment.media ?? []) {
+        r2Keys.push(item.uri as string);
       }
     }
   }

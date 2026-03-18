@@ -15,7 +15,7 @@ import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { textToTitle } from '@/utilities/text-to-title';
 import { useLocalSearchParams } from 'expo-router';
-import { ChatCircleDots } from 'phosphor-react-native';
+import { ArrowBendUpLeft } from 'phosphor-react-native';
 import { ReactElement, useMemo, useRef } from 'react';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,7 +51,7 @@ export default function Index() {
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"
           >
-            <Icon className="-ml-0.5 text-white" icon={ChatCircleDots} />
+            <Icon className="-ml-0.5 text-white" icon={ArrowBendUpLeft} />
             <Text className="text-white">Reply</Text>
           </Button>
         }
@@ -101,7 +101,7 @@ export default function Index() {
             variant="secondary"
             wrapperClassName="rounded-full"
           >
-            <Icon className="text-white" icon={ChatCircleDots} />
+            <Icon className="text-white" icon={ArrowBendUpLeft} />
           </Button>
         </Animated.View>
       )}

@@ -3,6 +3,7 @@ import { InviteMemberSheet } from '@/components/invite-member-sheet';
 import { LogDeleteSheet } from '@/components/log-delete-sheet';
 import { LogEditSheet } from '@/components/log-edit-sheet';
 import { LogTagsSheet } from '@/components/log-tags-sheet';
+import { RecordAudioSheet } from '@/components/record-audio-sheet';
 import { RecordCreateSheet } from '@/components/record-create-sheet';
 import { TagDeleteSheet } from '@/components/tag-delete-sheet';
 import { TeamDeleteSheet } from '@/components/team-delete-sheet';
@@ -19,6 +20,7 @@ export default function Layout() {
       <InviteMemberSheet />
       <LogEditSheet />
       <LogTagsSheet />
+      <RecordAudioSheet />
       <RecordCreateSheet />
       <LogDeleteSheet />
       <TagDeleteSheet />

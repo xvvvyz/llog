@@ -46,16 +46,16 @@ const rules = {
       delete: 'isAuthor || canManage',
     },
   },
-  images: {
+  media: {
     bind: [
       'hasOneLink',
       "size(data.ref('record.id')) + size(data.ref('comment.id')) + size(data.ref('profile.id')) == 1",
       'isProfileOwner',
-      "data.ref('profile.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('profile.user.id')",
       'isRecordAuthor',
-      "data.ref('record.author.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('record.author.user.id')",
       'isCommentAuthor',
-      "data.ref('comment.author.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('comment.author.user.id')",
       'isRecordTeamMember',
       "auth.id in data.ref('record.log.team.roles.user.id')",
       'isCommentTeamMember',

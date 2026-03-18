@@ -11,7 +11,7 @@ export const useRecordDraft = ({ logId }: { logId?: string }) => {
       ? {
           records: {
             $: { where: { author: profile.id, log: logId, isDraft: true } },
-            images: {},
+            media: {},
             log: { $: { fields: ['id'] } },
           },
         }
@@ -25,6 +25,6 @@ export const useRecordDraft = ({ logId }: { logId?: string }) => {
     createRecordDraft({ logId });
   }, [isLoading, logId, record]);
 
-  const images = record?.images ?? [];
-  return { ...record, images, isLoading };
+  const media = record?.media ?? [];
+  return { ...record, media, isLoading };
 };

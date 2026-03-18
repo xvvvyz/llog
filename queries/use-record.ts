@@ -10,10 +10,10 @@ export const useRecord = ({ id }: { id?: string }) => {
             comments: {
               $: { where: { isDraft: { $not: true } } },
               author: { image: {} },
-              images: {},
+              media: {},
               reactions: { author: {} },
             },
-            images: {},
+            media: {},
             log: {},
             reactions: { author: {} },
           },
@@ -23,6 +23,6 @@ export const useRecord = ({ id }: { id?: string }) => {
 
   const record = data?.records?.[0];
   const comments = record?.comments ?? [];
-  const images = record?.images ?? [];
-  return { ...record, comments, images, isLoading };
+  const media = record?.media ?? [];
+  return { ...record, comments, media, isLoading };
 };

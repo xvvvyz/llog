@@ -13,7 +13,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             comments: {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
-            images: {},
+            media: {},
             reactions: { author: {} },
           },
         }

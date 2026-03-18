@@ -15,7 +15,7 @@ export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
             $: {
               where: { author: profile.id, record: recordId, isDraft: true },
             },
-            images: {},
+            media: {},
           },
         }
       : null
@@ -29,6 +29,6 @@ export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
     createCommentDraft({ commentId: commentIdRef.current, recordId });
   }, [isLoading, recordId, comment]);
 
-  const images = comment?.images ?? [];
-  return { ...comment, images, isLoading };
+  const media = comment?.media ?? [];
+  return { ...comment, media, isLoading };
 };

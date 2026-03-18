@@ -44,7 +44,7 @@ export const EmojiPicker = ({
           variant="ghost"
           wrapperClassName="rounded-lg"
         >
-          <Icon icon={SmileySticker} />
+          <Icon className="text-muted-foreground" icon={SmileySticker} />
         </Button>
       </Menu.Trigger>
       <Menu.Content align="start" className="flex-row px-1 py-1" sideOffset={2}>
