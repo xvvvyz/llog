@@ -22,12 +22,13 @@ export default function Index() {
   });
 
   const comment = useCommentMedia({ id: params.commentId });
-
   const allMedia = params.commentId ? comment.media : record.media;
-  const images = useMemo(
-    () => allMedia.filter((m) => m.type === 'image'),
+
+  const visualMedia = useMemo(
+    () => allMedia.filter((m) => m.type === 'image' || m.type === 'video'),
     [allMedia]
   );
+
   const isLoading = params.commentId ? comment.isLoading : record.isLoading;
   const defaultIndex = params.defaultIndex ? Number(params.defaultIndex) : 0;
 
@@ -46,7 +47,7 @@ export default function Index() {
     return <Loading />;
   }
 
-  if (!images.length || isNaN(defaultIndex)) {
+  if (!visualMedia.length || isNaN(defaultIndex)) {
     return <Redirect href={`/record/${params.recordId}`} />;
   }
 
@@ -60,8 +61,9 @@ export default function Index() {
       </View>
       <Carousel
         defaultIndex={defaultIndex}
-        images={images}
-        isKeyboardNavigationEnabled={images.length > 1}
+        media={visualMedia}
+        isKeyboardNavigationEnabled={visualMedia.length > 1}
+        onClose={() => router.back()}
       />
     </Page>
   );

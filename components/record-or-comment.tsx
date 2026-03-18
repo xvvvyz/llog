@@ -78,33 +78,33 @@ export const RecordOrComment = ({
     })
     .runOnJS(true);
 
-  const { audioMedia, imageMedia } = useFilteredMedia(record.media || []);
+  const { audioMedia, visualMedia } = useFilteredMedia(record.media || []);
 
   const idIndexMap = useMemo(
     () =>
-      imageMedia.reduce(
-        (acc, image, index) => {
-          acc[image.id] = index;
+      visualMedia.reduce(
+        (acc, item, index) => {
+          acc[item.id] = index;
           return acc;
         },
         {} as Record<string, number>
       ),
-    [imageMedia]
+    [visualMedia]
   );
 
-  const renderImage = useCallback(
-    (image: Media, height: number) => {
+  const renderMediaThumb = useCallback(
+    (item: Media, height: number) => {
       return (
         <Pressable
           className="flex-1"
-          key={image.id}
+          key={item.id}
           onPress={() =>
             router.push({
               pathname: `/record/[recordId]/media`,
               params: {
                 recordId: recordId || record.id!,
                 ...(commentId && { commentId }),
-                defaultIndex: String(idIndexMap[image.id]),
+                defaultIndex: String(idIndexMap[item.id]),
               },
             })
           }
@@ -113,7 +113,7 @@ export const RecordOrComment = ({
             contentFit="cover"
             height={height}
             maintainAspectRatio={false}
-            uri={image.uri}
+            uri={item.type === 'video' ? item.uri : item.uri}
             wrapperClassName="rounded-2xl"
           />
         </Pressable>
@@ -122,8 +122,8 @@ export const RecordOrComment = ({
     [commentId, idIndexMap, record.id, recordId]
   );
 
-  const cardImageHeight = imageMedia.length < 4 ? 250 : 124;
-  const compactImageHeight = imageMedia.length < 4 ? 220 : 110;
+  const cardImageHeight = visualMedia.length < 4 ? 250 : 124;
+  const compactImageHeight = visualMedia.length < 4 ? 220 : 110;
 
   if (variant === 'compact') {
     return (
@@ -153,18 +153,22 @@ export const RecordOrComment = ({
                   text={record.text}
                 />
               )}
-              {!!imageMedia.length && (
+              {!!visualMedia.length && (
                 <View className="mt-4 gap-0.5">
                   <View className="flex-row gap-0.5">
-                    {imageMedia
+                    {visualMedia
                       .slice(0, 3)
-                      .map((image) => renderImage(image, compactImageHeight))}
+                      .map((item) =>
+                        renderMediaThumb(item, compactImageHeight)
+                      )}
                   </View>
-                  {imageMedia.length > 3 && (
+                  {visualMedia.length > 3 && (
                     <View className="flex-row gap-0.5">
-                      {imageMedia
+                      {visualMedia
                         .slice(3, 5)
-                        .map((image) => renderImage(image, compactImageHeight))}
+                        .map((item) =>
+                          renderMediaThumb(item, compactImageHeight)
+                        )}
                     </View>
                   )}
                 </View>
@@ -219,18 +223,18 @@ export const RecordOrComment = ({
             text={record.text}
           />
         )}
-        {!!imageMedia.length && (
+        {!!visualMedia.length && (
           <View className="gap-0.5">
             <View className="flex-row gap-0.5">
-              {imageMedia
+              {visualMedia
                 .slice(0, 3)
-                .map((image) => renderImage(image, cardImageHeight))}
+                .map((item) => renderMediaThumb(item, cardImageHeight))}
             </View>
-            {imageMedia.length > 3 && (
+            {visualMedia.length > 3 && (
               <View className="flex-row gap-0.5">
-                {imageMedia
+                {visualMedia
                   .slice(3, 5)
-                  .map((image) => renderImage(image, cardImageHeight))}
+                  .map((item) => renderMediaThumb(item, cardImageHeight))}
               </View>
             )}
           </View>
