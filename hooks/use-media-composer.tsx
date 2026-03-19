@@ -1,15 +1,15 @@
 import { AudioPlayer } from '@/components/ui/audio-player';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Image } from '@/components/ui/image';
 import { Text } from '@/components/ui/text';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { Media } from '@/types/media';
 import { clipboardToAssets } from '@/utilities/clipboard-to-assets';
+import { fileUriToSrc } from '@/utilities/file-uri-to-src';
 import { id } from '@instantdb/react-native';
 import { Image as ImagePrimitive } from 'expo-image';
 import { ImagePickerAsset, launchImageLibraryAsync } from 'expo-image-picker';
-import { Microphone, Play, Plus, X } from 'phosphor-react-native';
+import { Microphone, Plus, X } from 'phosphor-react-native';
 import {
   useCallback,
   useEffect,
@@ -88,23 +88,39 @@ export const useMediaComposer = ({
       ]);
 
       const baseOrder = media.length;
+      const concurrency = 2;
 
-      assets.forEach((asset, i) => {
-        const mediaId = mediaIds[i];
+      const queue = assets.map((asset, i) => ({
+        asset,
+        mediaId: mediaIds[i],
+        order: baseOrder + i,
+      }));
 
-        onUploadMedia(
-          asset,
-          (progress) => {
-            setPendingUploads((prev) =>
-              prev.map((p) => (p.id === mediaId ? { ...p, progress } : p))
+      const run = async (items: typeof queue) => {
+        for (const { asset, mediaId, order } of items) {
+          try {
+            await onUploadMedia(
+              asset,
+              (progress) => {
+                setPendingUploads((prev) =>
+                  prev.map((p) => (p.id === mediaId ? { ...p, progress } : p))
+                );
+              },
+              mediaId,
+              order
             );
-          },
-          mediaId,
-          baseOrder + i
-        ).catch(() => {
-          setPendingUploads((prev) => prev.filter((p) => p.id !== mediaId));
-        });
-      });
+          } catch {
+            setPendingUploads((prev) => prev.filter((p) => p.id !== mediaId));
+          }
+        }
+      };
+
+      const lanes: (typeof queue)[] = Array.from(
+        { length: concurrency },
+        () => []
+      );
+      queue.forEach((item, i) => lanes[i % concurrency].push(item));
+      lanes.forEach((lane) => run(lane));
     },
     [onUploadMedia]
   );
@@ -149,16 +165,24 @@ export const useMediaComposer = ({
     () => [
       ...visualMedia
         .filter((m) => !pendingIdSet.has(m.id))
-        .map((item) => ({ ...item, pending: false, progress: 100 })),
+        .map((item) => ({
+          ...item,
+          pending: false,
+          progress: 100,
+          localUri: undefined as string | undefined,
+        })),
       ...pendingUploads.map((p) => {
         const real = realMediaById.get(p.id);
-        if (real) return { ...real, pending: false, progress: 100 };
+        if (real)
+          return { ...real, pending: false, progress: 100, localUri: p.uri };
+
         return {
           id: p.id,
           uri: p.uri,
           type: p.type,
           pending: true,
           progress: p.progress,
+          localUri: p.uri,
         };
       }),
     ],
@@ -183,16 +207,7 @@ export const useMediaComposer = ({
                 <Pressable>
                   {item.pending ? (
                     <View className="size-16">
-                      {item.type === 'video' ? (
-                        <View className="size-16 items-center justify-center bg-black/60">
-                          <Icon
-                            className="text-white"
-                            icon={Play}
-                            size={20}
-                            weight="fill"
-                          />
-                        </View>
-                      ) : (
+                      {item.type !== 'video' && (
                         <ImagePrimitive
                           contentFit="cover"
                           source={{ uri: item.uri }}
@@ -229,14 +244,18 @@ export const useMediaComposer = ({
                       </View>
                     </View>
                   ) : (
-                    <Image
-                      height={64}
-                      uri={
+                    <ImagePrimitive
+                      contentFit="cover"
+                      placeholder={
+                        item.localUri ? { uri: item.localUri } : undefined
+                      }
+                      placeholderContentFit="cover"
+                      source={fileUriToSrc(
                         item.type === 'video'
                           ? (item as Media).previewUri!
                           : item.uri
-                      }
-                      width={64}
+                      )}
+                      style={{ height: 64, width: 64 }}
                     />
                   )}
                 </Pressable>

@@ -1,5 +1,17 @@
+diff --git a/node_modules/react-native-zoom-toolkit/.bun-tag-4803b8d49b5a42bf b/.bun-tag-4803b8d49b5a42bf
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/react-native-zoom-toolkit/.bun-tag-6fb8bef5dd7fd68b b/.bun-tag-6fb8bef5dd7fd68b
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/react-native-zoom-toolkit/.bun-tag-c1b11eaba87e2a68 b/.bun-tag-c1b11eaba87e2a68
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/react-native-zoom-toolkit/.bun-tag-cd1fb998cd1a935d b/.bun-tag-cd1fb998cd1a935d
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/lib/commonjs/commons/utils/getSwipeDirection.js b/lib/commonjs/commons/utils/getSwipeDirection.js
-index 20c248421a9a9ba3f22aee4631204623575fffe1..f49e2ac04a9ce62ded71dbde1853b343fc26a22e 100644
+index 20c248421a9a9ba3f22aee4631204623575fffe1..5180a866059362cb4c490c6b966ac3bf9bb14bf5 100644
 --- a/lib/commonjs/commons/utils/getSwipeDirection.js
 +++ b/lib/commonjs/commons/utils/getSwipeDirection.js
 @@ -4,8 +4,8 @@ Object.defineProperty(exports, "__esModule", {
@@ -8,13 +20,13 @@ index 20c248421a9a9ba3f22aee4631204623575fffe1..f49e2ac04a9ce62ded71dbde1853b343
  exports.getSwipeDirection = void 0;
 -const SWIPE_TIME = 175;
 -const SWIPE_VELOCITY = 500;
-+const SWIPE_TIME = 350;
-+const SWIPE_VELOCITY = 250;
++const SWIPE_TIME = 400;
++const SWIPE_VELOCITY = 100;
  const SWIPE_DISTANCE = 20;
  const getSwipeDirection = (e, options) => {
    'worklet';
 diff --git a/lib/commonjs/commons/utils/snapPoint.js b/lib/commonjs/commons/utils/snapPoint.js
-index db49d341501cacd9cade69318615840587684bb8..ed31b951036fa9c8fe0b8a4a62e0d973f4c328fd 100644
+index db49d341501cacd9cade69318615840587684bb8..ee8f2618d4c15269e354438cd4bee3ee47c68172 100644
 --- a/lib/commonjs/commons/utils/snapPoint.js
 +++ b/lib/commonjs/commons/utils/snapPoint.js
 @@ -7,7 +7,7 @@ exports.snapPoint = void 0;
@@ -22,39 +34,100 @@ index db49d341501cacd9cade69318615840587684bb8..ed31b951036fa9c8fe0b8a4a62e0d973
    'worklet';
  
 -  const point = value + 0.05 * velocity;
-+  const point = value + 0.15 * velocity;
++  const point = value + 0.25 * velocity;
    const deltas = points.map(p => Math.abs(point - p));
    const minDelta = Math.min.apply(null, deltas);
    return points.filter(p => Math.abs(point - p) === minDelta)[0];
 diff --git a/lib/commonjs/components/gallery/GalleryGestureHandler.js b/lib/commonjs/components/gallery/GalleryGestureHandler.js
-index f2d7c9c7a2e2a8b82aa0a92e563224cb3327c000..94a5beabdab3ee170d740afd50d682f427f67e02 100644
+index f2d7c9c7a2e2a8b82aa0a92e563224cb3327c000..b8aa1113308722a5e8572ec8cc6074e07599fc7c 100644
 --- a/lib/commonjs/components/gallery/GalleryGestureHandler.js
 +++ b/lib/commonjs/components/gallery/GalleryGestureHandler.js
-@@ -20,8 +20,8 @@ function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return
- function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+@@ -21,7 +21,7 @@ function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e;
  const minScale = 1;
  const config = {
--  duration: 300,
+   duration: 300,
 -  easing: _reactNativeReanimated.Easing.linear
-+  duration: 250,
 +  easing: _reactNativeReanimated.Easing.out(_reactNativeReanimated.Easing.cubic)
  };
  /*
   * Pinchable views are really heavy components, therefore in order to maximize performance
+@@ -120,7 +120,8 @@ const GalleryGestureHandler = ({
+       gap
+     });
+     const velocity = vertical ? e.velocityY : e.velocityX;
+-    const toScroll = (0, _snapPoint.snapPoint)(scroll.value, velocity, [prev, current, next]);
++    const displacement = scroll.value - scrollOffset.value;
++    const toScroll = (0, _snapPoint.snapPoint)(scroll.value, displacement !== 0 && Math.sign(velocity) !== Math.sign(displacement) ? 0 : velocity, [prev, current, next]);
+     scroll.value = (0, _reactNativeReanimated.withTiming)(toScroll, config, finished => {
+       if (!finished) return;
+       if (toScroll !== current) {
+@@ -216,7 +217,7 @@ const GalleryGestureHandler = ({
+     }
+     onPinchStart(e);
+   }).onUpdate(onPinchUpdate).onEnd(onPinchEnd);
+-  const pan = _reactNativeGestureHandler.Gesture.Pan().withTestId('pan').maxPointers(1).minVelocity(100).enabled(gesturesEnabled && enablePanGestureByDoubleTap).onStart(e => {
++  const pan = _reactNativeGestureHandler.Gesture.Pan().withTestId('pan').maxPointers(1).minVelocity(50).enabled(gesturesEnabled && enablePanGestureByDoubleTap).onStart(e => {
+     (0, _reactNativeReanimated.cancelAnimation)(translate.x);
+     (0, _reactNativeReanimated.cancelAnimation)(translate.y);
+     (0, _reactNativeReanimated.cancelAnimation)(scroll);
+@@ -313,22 +314,11 @@ const GalleryGestureHandler = ({
+       width: rootSize.width.value,
+       height: rootSize.height.value
+     };
+-    const rect = (0, _getVisibleRect.getVisibleRect)({
+-      scale: scale.value,
+-      containerSize: gallerySize,
+-      itemSize: gallerySize,
+-      translation: {
+-        x: translate.x.value,
+-        y: translate.y.value
+-      }
+-    });
+-    const tapEdge = 44 / scale.value;
+-    const leftEdge = rect.x + tapEdge;
+-    const rightEdge = rect.x + rect.width - tapEdge;
++    const tapEdge = 80;
+     let toIndex = activeIndex.value;
+     const canGoToItem = tapOnEdgeToItem && !vertical;
+-    if (event.x <= leftEdge && canGoToItem) toIndex -= 1;
+-    if (event.x >= rightEdge && canGoToItem) toIndex += 1;
++    if (event.x <= tapEdge && canGoToItem) toIndex -= 1;
++    if (event.x >= gallerySize.width - tapEdge && canGoToItem) toIndex += 1;
+     toIndex = (0, _clamp.clamp)(toIndex, 0, length - 1);
+     if (toIndex === activeIndex.value) {
+       onTap && (0, _reactNativeReanimated.runOnJS)(onTap)(event, activeIndex.value);
+@@ -343,7 +333,6 @@ const GalleryGestureHandler = ({
+     activeIndex.value = toIndex;
+     reset(0, 0, minScale, false);
+   });
+-  const doubleTap = _reactNativeGestureHandler.Gesture.Tap().withTestId('doubleTap').enabled(gesturesEnabled && zoomEnabled).numberOfTaps(2).maxDuration(250).onStart(onDoubleTapStart).onEnd(onDoubleTapEnd);
+   const longPress = _reactNativeGestureHandler.Gesture.LongPress().withTestId('longPress').enabled(gesturesEnabled).minDuration(longPressDuration).runOnJS(true).onStart(e => onLongPress === null || onLongPress === void 0 ? void 0 : onLongPress(e, activeIndex.value));
+   const detectorStyle = (0, _reactNativeReanimated.useAnimatedStyle)(() => {
+     const width = Math.max(rootSize.width.value, rootChildSize.width.value);
+@@ -362,7 +351,8 @@ const GalleryGestureHandler = ({
+       }]
+     };
+   }, [rootSize, rootChildSize, translate, scale]);
+-  const composedTaps = _reactNativeGestureHandler.Gesture.Exclusive(doubleTap, tap, longPress);
++  const doubleTap = _reactNativeGestureHandler.Gesture.Tap().withTestId('doubleTap').enabled(gesturesEnabled && zoomEnabled).numberOfTaps(2).maxDuration(250).onStart(onDoubleTapStart).onEnd(onDoubleTapEnd);
++  const composedTaps = zoomEnabled ? _reactNativeGestureHandler.Gesture.Exclusive(doubleTap, tap, longPress) : _reactNativeGestureHandler.Gesture.Exclusive(tap, longPress);
+   const composed = _reactNativeGestureHandler.Gesture.Race(pan, pinch, composedTaps);
+   return /*#__PURE__*/_react.default.createElement(_reactNativeGestureHandler.GestureDetector, {
+     gesture: composed
 diff --git a/lib/module/commons/utils/getSwipeDirection.js b/lib/module/commons/utils/getSwipeDirection.js
-index 7da596ac92d55319caa8b12100cc8317af3ea8fa..e6cc279f856acb7f8760d0ed7dd85e25b5ad1580 100644
+index 7da596ac92d55319caa8b12100cc8317af3ea8fa..23c9a0875c03e389d947a602654f8faf7b71a76e 100644
 --- a/lib/module/commons/utils/getSwipeDirection.js
 +++ b/lib/module/commons/utils/getSwipeDirection.js
 @@ -1,5 +1,5 @@
 -const SWIPE_TIME = 175;
 -const SWIPE_VELOCITY = 500;
-+const SWIPE_TIME = 350;
-+const SWIPE_VELOCITY = 250;
++const SWIPE_TIME = 400;
++const SWIPE_VELOCITY = 100;
  const SWIPE_DISTANCE = 20;
  export const getSwipeDirection = (e, options) => {
    'worklet';
 diff --git a/lib/module/commons/utils/snapPoint.js b/lib/module/commons/utils/snapPoint.js
-index 6ea170c0a2a70e4ea25b1635cb3f75bce1395add..ef564e82ee3aff1713c558fab3b9617582d7089a 100644
+index 6ea170c0a2a70e4ea25b1635cb3f75bce1395add..a83d690195fd7ee257c35ff9075453bc4328c188 100644
 --- a/lib/module/commons/utils/snapPoint.js
 +++ b/lib/module/commons/utils/snapPoint.js
 @@ -1,7 +1,7 @@
@@ -62,27 +135,88 @@ index 6ea170c0a2a70e4ea25b1635cb3f75bce1395add..ef564e82ee3aff1713c558fab3b96175
    'worklet';
  
 -  const point = value + 0.05 * velocity;
-+  const point = value + 0.15 * velocity;
++  const point = value + 0.25 * velocity;
    const deltas = points.map(p => Math.abs(point - p));
    const minDelta = Math.min.apply(null, deltas);
    return points.filter(p => Math.abs(point - p) === minDelta)[0];
 diff --git a/lib/module/components/gallery/GalleryGestureHandler.js b/lib/module/components/gallery/GalleryGestureHandler.js
-index 0e53798e177dc64a3f7f74844e29317d8cbfcbfc..6f2a6fbb97a42630a6fe03c0924e23751e604e97 100644
+index 0e53798e177dc64a3f7f74844e29317d8cbfcbfc..1b8a4152717f5100caf6af2480f9e4fc3bf46ba2 100644
 --- a/lib/module/components/gallery/GalleryGestureHandler.js
 +++ b/lib/module/components/gallery/GalleryGestureHandler.js
-@@ -12,8 +12,8 @@ import { GalleryContext } from './context';
- import { getScrollPosition } from '../../commons/utils/getScrollPosition';
+@@ -13,7 +13,7 @@ import { getScrollPosition } from '../../commons/utils/getScrollPosition';
  const minScale = 1;
  const config = {
--  duration: 300,
+   duration: 300,
 -  easing: Easing.linear
-+  duration: 250,
 +  easing: Easing.out(Easing.cubic)
  };
  /*
   * Pinchable views are really heavy components, therefore in order to maximize performance
+@@ -112,7 +112,8 @@ const GalleryGestureHandler = ({
+       gap
+     });
+     const velocity = vertical ? e.velocityY : e.velocityX;
+-    const toScroll = snapPoint(scroll.value, velocity, [prev, current, next]);
++    const displacement = scroll.value - scrollOffset.value;
++    const toScroll = snapPoint(scroll.value, displacement !== 0 && Math.sign(velocity) !== Math.sign(displacement) ? 0 : velocity, [prev, current, next]);
+     scroll.value = withTiming(toScroll, config, finished => {
+       if (!finished) return;
+       if (toScroll !== current) {
+@@ -208,7 +209,7 @@ const GalleryGestureHandler = ({
+     }
+     onPinchStart(e);
+   }).onUpdate(onPinchUpdate).onEnd(onPinchEnd);
+-  const pan = Gesture.Pan().withTestId('pan').maxPointers(1).minVelocity(100).enabled(gesturesEnabled && enablePanGestureByDoubleTap).onStart(e => {
++  const pan = Gesture.Pan().withTestId('pan').maxPointers(1).minVelocity(50).enabled(gesturesEnabled && enablePanGestureByDoubleTap).onStart(e => {
+     cancelAnimation(translate.x);
+     cancelAnimation(translate.y);
+     cancelAnimation(scroll);
+@@ -305,22 +306,11 @@ const GalleryGestureHandler = ({
+       width: rootSize.width.value,
+       height: rootSize.height.value
+     };
+-    const rect = getVisibleRect({
+-      scale: scale.value,
+-      containerSize: gallerySize,
+-      itemSize: gallerySize,
+-      translation: {
+-        x: translate.x.value,
+-        y: translate.y.value
+-      }
+-    });
+-    const tapEdge = 44 / scale.value;
+-    const leftEdge = rect.x + tapEdge;
+-    const rightEdge = rect.x + rect.width - tapEdge;
++    const tapEdge = 80;
+     let toIndex = activeIndex.value;
+     const canGoToItem = tapOnEdgeToItem && !vertical;
+-    if (event.x <= leftEdge && canGoToItem) toIndex -= 1;
+-    if (event.x >= rightEdge && canGoToItem) toIndex += 1;
++    if (event.x <= tapEdge && canGoToItem) toIndex -= 1;
++    if (event.x >= gallerySize.width - tapEdge && canGoToItem) toIndex += 1;
+     toIndex = clamp(toIndex, 0, length - 1);
+     if (toIndex === activeIndex.value) {
+       onTap && runOnJS(onTap)(event, activeIndex.value);
+@@ -335,7 +325,6 @@ const GalleryGestureHandler = ({
+     activeIndex.value = toIndex;
+     reset(0, 0, minScale, false);
+   });
+-  const doubleTap = Gesture.Tap().withTestId('doubleTap').enabled(gesturesEnabled && zoomEnabled).numberOfTaps(2).maxDuration(250).onStart(onDoubleTapStart).onEnd(onDoubleTapEnd);
+   const longPress = Gesture.LongPress().withTestId('longPress').enabled(gesturesEnabled).minDuration(longPressDuration).runOnJS(true).onStart(e => onLongPress === null || onLongPress === void 0 ? void 0 : onLongPress(e, activeIndex.value));
+   const detectorStyle = useAnimatedStyle(() => {
+     const width = Math.max(rootSize.width.value, rootChildSize.width.value);
+@@ -354,7 +343,8 @@ const GalleryGestureHandler = ({
+       }]
+     };
+   }, [rootSize, rootChildSize, translate, scale]);
+-  const composedTaps = Gesture.Exclusive(doubleTap, tap, longPress);
++  const doubleTap = Gesture.Tap().withTestId('doubleTap').enabled(gesturesEnabled && zoomEnabled).numberOfTaps(2).maxDuration(250).onStart(onDoubleTapStart).onEnd(onDoubleTapEnd);
++  const composedTaps = zoomEnabled ? Gesture.Exclusive(doubleTap, tap, longPress) : Gesture.Exclusive(tap, longPress);
+   const composed = Gesture.Race(pan, pinch, composedTaps);
+   return /*#__PURE__*/React.createElement(GestureDetector, {
+     gesture: composed
 diff --git a/src/commons/utils/getSwipeDirection.ts b/src/commons/utils/getSwipeDirection.ts
-index a3599652cf52f456d23f40ac70b1546786adb36b..30b3f2c54a7df18c13920b2cf449e715825c0afd 100644
+index a3599652cf52f456d23f40ac70b1546786adb36b..1d959dbf57fec7767353dd9677946f4f91f9ea94 100644
 --- a/src/commons/utils/getSwipeDirection.ts
 +++ b/src/commons/utils/getSwipeDirection.ts
 @@ -7,8 +7,8 @@ type SwipeOptions = {
@@ -91,13 +225,13 @@ index a3599652cf52f456d23f40ac70b1546786adb36b..30b3f2c54a7df18c13920b2cf449e715
  
 -const SWIPE_TIME = 175;
 -const SWIPE_VELOCITY = 500;
-+const SWIPE_TIME = 350;
-+const SWIPE_VELOCITY = 250;
++const SWIPE_TIME = 400;
++const SWIPE_VELOCITY = 100;
  const SWIPE_DISTANCE = 20;
  
  export const getSwipeDirection = (
 diff --git a/src/commons/utils/snapPoint.ts b/src/commons/utils/snapPoint.ts
-index f8a5b7f4305a3113cdd0ea647fc94e036a35fdc4..5af0f6a978da95caf688c3e0b05bdeaf33987a1b 100644
+index f8a5b7f4305a3113cdd0ea647fc94e036a35fdc4..af5c9f71a7d65d718fc00a4c1191243422f78830 100644
 --- a/src/commons/utils/snapPoint.ts
 +++ b/src/commons/utils/snapPoint.ts
 @@ -4,7 +4,7 @@ export const snapPoint = (
@@ -105,12 +239,12 @@ index f8a5b7f4305a3113cdd0ea647fc94e036a35fdc4..5af0f6a978da95caf688c3e0b05bdeaf
  ): number => {
    'worklet';
 -  const point = value + 0.05 * velocity;
-+  const point = value + 0.15 * velocity;
++  const point = value + 0.25 * velocity;
    const deltas = points.map((p) => Math.abs(point - p));
    const minDelta = Math.min.apply(null, deltas);
    return points.filter((p) => Math.abs(point - p) === minDelta)[0]!;
 diff --git a/src/components/gallery/GalleryGestureHandler.tsx b/src/components/gallery/GalleryGestureHandler.tsx
-index f04c32c221f4e3f8d5ab8606ada3cc881a40f0c4..61bec48e934c3f08b77b0ae8e38262e995df3306 100644
+index f04c32c221f4e3f8d5ab8606ada3cc881a40f0c4..4a7498c4f92e9b279a736df8195da3d89de1a44c 100644
 --- a/src/components/gallery/GalleryGestureHandler.tsx
 +++ b/src/components/gallery/GalleryGestureHandler.tsx
 @@ -33,7 +33,7 @@ import { type GalleryProps } from './types';
@@ -118,7 +252,83 @@ index f04c32c221f4e3f8d5ab8606ada3cc881a40f0c4..61bec48e934c3f08b77b0ae8e38262e9
  
  const minScale = 1;
 -const config = { duration: 300, easing: Easing.linear };
-+const config = { duration: 250, easing: Easing.out(Easing.cubic) };
++const config = { duration: 300, easing: Easing.out(Easing.cubic) };
  
  type GalleryGestureHandlerProps = {
    length: number;
+@@ -160,7 +160,8 @@ const GalleryGestureHandler = ({
+     });
+ 
+     const velocity = vertical ? e.velocityY : e.velocityX;
+-    const toScroll = snapPoint(scroll.value, velocity, [prev, current, next]);
++    const displacement = scroll.value - scrollOffset.value;
++    const toScroll = snapPoint(scroll.value, displacement !== 0 && Math.sign(velocity) !== Math.sign(displacement) ? 0 : velocity, [prev, current, next]);
+ 
+     scroll.value = withTiming(toScroll, config, (finished) => {
+       if (!finished) return;
+@@ -289,7 +290,7 @@ const GalleryGestureHandler = ({
+   const pan = Gesture.Pan()
+     .withTestId('pan')
+     .maxPointers(1)
+-    .minVelocity(100)
++    .minVelocity(50)
+     .enabled(gesturesEnabled && enablePanGestureByDoubleTap)
+     .onStart((e) => {
+       cancelAnimation(translate.x);
+@@ -408,21 +409,12 @@ const GalleryGestureHandler = ({
+         height: rootSize.height.value,
+       };
+ 
+-      const rect = getVisibleRect({
+-        scale: scale.value,
+-        containerSize: gallerySize,
+-        itemSize: gallerySize,
+-        translation: { x: translate.x.value, y: translate.y.value },
+-      });
+-
+-      const tapEdge = 44 / scale.value;
+-      const leftEdge = rect.x + tapEdge;
+-      const rightEdge = rect.x + rect.width - tapEdge;
++      const tapEdge = 80;
+ 
+       let toIndex = activeIndex.value;
+       const canGoToItem = tapOnEdgeToItem && !vertical;
+-      if (event.x <= leftEdge && canGoToItem) toIndex -= 1;
+-      if (event.x >= rightEdge && canGoToItem) toIndex += 1;
++      if (event.x <= tapEdge && canGoToItem) toIndex -= 1;
++      if (event.x >= gallerySize.width - tapEdge && canGoToItem) toIndex += 1;
+ 
+       toIndex = clamp(toIndex, 0, length - 1);
+       if (toIndex === activeIndex.value) {
+@@ -442,14 +434,6 @@ const GalleryGestureHandler = ({
+       reset(0, 0, minScale, false);
+     });
+ 
+-  const doubleTap = Gesture.Tap()
+-    .withTestId('doubleTap')
+-    .enabled(gesturesEnabled && zoomEnabled)
+-    .numberOfTaps(2)
+-    .maxDuration(250)
+-    .onStart(onDoubleTapStart)
+-    .onEnd(onDoubleTapEnd);
+-
+   const longPress = Gesture.LongPress()
+     .withTestId('longPress')
+     .enabled(gesturesEnabled)
+@@ -474,7 +458,15 @@ const GalleryGestureHandler = ({
+     };
+   }, [rootSize, rootChildSize, translate, scale]);
+ 
+-  const composedTaps = Gesture.Exclusive(doubleTap, tap, longPress);
++  const doubleTap = Gesture.Tap()
++    .withTestId('doubleTap')
++    .enabled(gesturesEnabled && zoomEnabled)
++    .numberOfTaps(2)
++    .maxDuration(250)
++    .onStart(onDoubleTapStart)
++    .onEnd(onDoubleTapEnd);
++
++  const composedTaps = zoomEnabled ? Gesture.Exclusive(doubleTap, tap, longPress) : Gesture.Exclusive(tap, longPress);
+   const composed = Gesture.Race(pan, pinch, composedTaps);
+ 
+   return (

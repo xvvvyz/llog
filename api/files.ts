@@ -9,18 +9,46 @@ import { z } from 'zod/v4';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.get('/:key{.+}', async (c) => {
-  const file = await c.env.R2.get(c.req.param('key'));
+  const rangeHeader = c.req.header('Range');
+
+  const file = await c.env.R2.get(
+    c.req.param('key'),
+    rangeHeader ? { range: c.req.raw.headers } : undefined
+  );
 
   if (!file) {
     throw new HTTPException(404, { message: 'File not found' });
   }
 
   c.header('Cache-Control', 'public, max-age=31536000, immutable');
+  c.header('Accept-Ranges', 'bytes');
+
+  if (file.etag) {
+    c.header('ETag', file.etag);
+
+    const ifNoneMatch = c.req.header('If-None-Match');
+    if (ifNoneMatch === file.etag) {
+      return c.body(null, 304);
+    }
+  }
 
   if (file.httpMetadata?.contentType) {
     c.header('Content-Type', file.httpMetadata.contentType);
   }
 
+  if ('range' in file && file.range) {
+    const range = file.range as { offset: number; length: number };
+    c.header('Content-Length', range.length.toString());
+
+    c.header(
+      'Content-Range',
+      `bytes ${range.offset}-${range.offset + range.length - 1}/${file.size}`
+    );
+
+    return c.body(file.body, 206);
+  }
+
+  c.header('Content-Length', file.size.toString());
   return c.body(file.body);
 });
 

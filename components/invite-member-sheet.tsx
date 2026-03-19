@@ -12,8 +12,11 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 const ROLES = [
-  { value: Role.Owner, label: 'Owner', description: 'Full access' },
-  { value: Role.Admin, label: 'Admin', description: 'Manage members and logs' },
+  {
+    value: Role.Admin,
+    label: 'Admin',
+    description: 'Manage members and logs',
+  },
   {
     value: Role.Recorder,
     label: 'Recorder',

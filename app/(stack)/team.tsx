@@ -122,27 +122,25 @@ export default function Team() {
                             </Button>
                           </Menu.Trigger>
                           <Menu.Content align="end">
-                            {[Role.Owner, Role.Admin, Role.Recorder].map(
-                              (r) => (
-                                <Menu.Item
-                                  className="justify-between"
-                                  key={r}
-                                  onPress={() =>
-                                    updateRole({
-                                      id: member.id,
-                                      role: r,
-                                      teamId: activeTeamId!,
-                                      userId: member.userId,
-                                    })
-                                  }
-                                >
-                                  <Text>{ROLE_LABELS[r]}</Text>
-                                  {member.role === r && (
-                                    <Icon className="-mr-1" icon={Check} />
-                                  )}
-                                </Menu.Item>
-                              )
-                            )}
+                            {[Role.Admin, Role.Recorder].map((r) => (
+                              <Menu.Item
+                                className="justify-between"
+                                key={r}
+                                onPress={() =>
+                                  updateRole({
+                                    id: member.id,
+                                    role: r,
+                                    teamId: activeTeamId!,
+                                    userId: member.userId,
+                                  })
+                                }
+                              >
+                                <Text>{ROLE_LABELS[r]}</Text>
+                                {member.role === r && (
+                                  <Icon className="-mr-1" icon={Check} />
+                                )}
+                              </Menu.Item>
+                            ))}
                             <Menu.Separator />
                             <Menu.Item
                               onPress={() => removeMember({ id: member.id })}
@@ -203,7 +201,7 @@ export default function Team() {
                           </Button>
                         </Menu.Trigger>
                         <Menu.Content align="end">
-                          {[Role.Owner, Role.Admin, Role.Recorder].map((r) => (
+                          {[Role.Admin, Role.Recorder].map((r) => (
                             <Menu.Item
                               className="justify-between"
                               key={r}

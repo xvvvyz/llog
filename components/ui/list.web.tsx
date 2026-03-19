@@ -8,7 +8,9 @@ export const List = <T,>({
   onScroll,
   wrapperClassName,
   ...props
-}: LegendListProps<T> & { wrapperClassName?: string }) => {
+}: LegendListProps<T> & {
+  wrapperClassName?: string;
+}) => {
   const { contentContainerClassName, ...restProps } = props as typeof props & {
     contentContainerClassName?: string;
   };

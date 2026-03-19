@@ -14,16 +14,20 @@ export const VideoPlayer = ({
   handleRef,
   maxHeight,
   maxWidth,
+  muted = true,
   nativeControls = false,
   onFullscreenReady,
+  onPlayingChange,
   uri,
 }: {
   autoPlay?: boolean;
   handleRef?: React.Ref<VideoPlayerHandle>;
   maxHeight?: number;
   maxWidth?: number;
+  muted?: boolean;
   nativeControls?: boolean;
   onFullscreenReady?: (enterFullscreen: () => void) => void;
+  onPlayingChange?: (isPlaying: boolean) => void;
   uri: string;
 }) => {
   const source = fileUriToSrc(uri);
@@ -32,7 +36,7 @@ export const VideoPlayer = ({
 
   const player = useVideoPlayer(source, (player) => {
     player.loop = true;
-    player.muted = true;
+    player.muted = muted;
     if (autoPlay) player.play();
   });
 
@@ -58,8 +62,17 @@ export const VideoPlayer = ({
       setIsBuffering(status === 'loading');
     });
 
-    return () => statusSub.remove();
-  }, [player]);
+    const playingSub = onPlayingChange
+      ? player.addListener('playingChange', ({ isPlaying }) => {
+          onPlayingChange(isPlaying);
+        })
+      : null;
+
+    return () => {
+      statusSub.remove();
+      playingSub?.remove();
+    };
+  }, [player, onPlayingChange]);
 
   useEffect(() => {
     if (!onFullscreenReady) return;

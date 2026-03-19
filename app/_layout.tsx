@@ -2,6 +2,7 @@ import { SheetManagerProvider } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
+import '@/utilities/web-back-handler';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
@@ -10,12 +11,28 @@ import Head from 'expo-router/head';
 import { setBackgroundColorAsync } from 'expo-system-ui';
 import { cssInterop } from 'nativewind';
 import { Fragment, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { LogBox, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 
-cssInterop(Animated.View, { className: 'style' });
+LogBox.ignoreLogs(['Cannot find single active touch']);
 
+if (__DEV__ && Platform.OS === 'web') {
+  const origError = console.error;
+
+  console.error = (...args: unknown[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Cannot find single active touch')
+    ) {
+      return;
+    }
+
+    origError.apply(console, args);
+  };
+}
+
+cssInterop(Animated.View, { className: 'style' });
 configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
 

@@ -42,5 +42,6 @@ export const useUi = () => {
     logsFilterByTagIdsSet,
     logsSortBy: (ui?.logsSortBy ?? 'serverCreatedAt') as SortBy,
     logsSortDirection: (ui?.logsSortDirection ?? 'desc') as SortDirection,
+    videoMuted: ui?.videoMuted ?? true,
   };
 };

@@ -13,22 +13,28 @@ export const VideoPlayer = ({
   handleRef,
   maxHeight,
   maxWidth,
+  muted = true,
   onFullscreenReady,
+  onPlayingChange,
   uri,
 }: {
   autoPlay?: boolean;
   handleRef?: React.Ref<VideoPlayerHandle>;
   maxHeight?: number;
   maxWidth?: number;
+  muted?: boolean;
   nativeControls?: boolean;
   onFullscreenReady?: (enterFullscreen: () => void) => void;
+  onPlayingChange?: (isPlaying: boolean) => void;
   uri: string;
 }) => {
   const src = fileUriToSrc(uri);
   const ref = useRef<HTMLVideoElement>(null);
+
   const [size, setSize] = useState<{ width: number; height: number } | null>(
     null
   );
+
   const [isBuffering, setIsBuffering] = useState(true);
 
   useImperativeHandle(handleRef, () => ({
@@ -44,6 +50,7 @@ export const VideoPlayer = ({
     togglePlay: () => {
       const video = ref.current;
       if (!video) return false;
+
       if (video.paused) {
         video.play().catch(() => {});
         return true;
@@ -63,6 +70,7 @@ export const VideoPlayer = ({
       const vh = video.videoHeight;
       if (!vw || !vh || !maxWidth || !maxHeight) return;
       const scale = Math.min(maxWidth / vw, maxHeight / vh, 1);
+
       setSize({
         width: Math.round(vw * scale),
         height: Math.round(vh * scale),
@@ -87,11 +95,31 @@ export const VideoPlayer = ({
     video.addEventListener('playing', onPlaying);
     video.addEventListener('canplay', onCanPlay);
 
+    const onPlay = onPlayingChange ? () => onPlayingChange(true) : null;
+    const onPause = onPlayingChange ? () => onPlayingChange(false) : null;
+    if (onPlay) video.addEventListener('play', onPlay);
+    if (onPause) video.addEventListener('pause', onPause);
+
     return () => {
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('canplay', onCanPlay);
+      if (onPlay) video.removeEventListener('play', onPlay);
+      if (onPause) video.removeEventListener('pause', onPause);
     };
+  }, [onPlayingChange]);
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+
+    const onEnded = () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+
+    video.addEventListener('ended', onEnded);
+    return () => video.removeEventListener('ended', onEnded);
   }, []);
 
   useEffect(() => {
@@ -122,6 +150,7 @@ export const VideoPlayer = ({
 
     onFullscreenReady(() => {
       video.controls = true;
+
       if (webkitVideo.webkitEnterFullscreen) {
         webkitVideo.webkitEnterFullscreen();
       } else {
@@ -131,6 +160,7 @@ export const VideoPlayer = ({
 
     return () => {
       document.removeEventListener('fullscreenchange', onFullscreenChange);
+
       video.removeEventListener(
         'webkitendfullscreen',
         onWebkitFullscreenChange
@@ -139,13 +169,17 @@ export const VideoPlayer = ({
   }, [onFullscreenReady]);
 
   return (
-    <div style={{ position: 'relative', ...(size ?? {}) }}>
+    <div
+      style={{
+        position: 'relative',
+        ...(size ?? { width: maxWidth, height: maxHeight }),
+      }}
+    >
       <video
         ref={ref}
-        loop
-        muted
+        muted={muted}
         playsInline
-        preload={autoPlay ? 'auto' : 'none'}
+        preload="metadata"
         src={src}
         style={
           size
@@ -153,7 +187,7 @@ export const VideoPlayer = ({
             : { position: 'absolute', width: 0, height: 0, opacity: 0 }
         }
       />
-      {isBuffering && size && (
+      {isBuffering && (
         <div
           style={{
             position: 'absolute',

@@ -1,6 +1,6 @@
 // https://www.instantdb.com/docs/modeling-data
 
-import { i } from '@instantdb/react';
+import { i } from '@instantdb/admin';
 
 const schema = i.schema({
   entities: {
@@ -66,6 +66,7 @@ const schema = i.schema({
       doubleTapEmoji: i.string().optional(),
       logsSortBy: i.string().optional(),
       logsSortDirection: i.string().optional(),
+      videoMuted: i.boolean().optional(),
     }),
   },
   links: {
