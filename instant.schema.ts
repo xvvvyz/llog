@@ -19,7 +19,9 @@ const schema = i.schema({
     }),
     media: i.entity({
       duration: i.number().optional(),
+      order: i.number().optional(),
       teamId: i.string().optional().indexed(),
+      previewUri: i.string().optional(),
       type: i.string(),
       uri: i.string(),
     }),

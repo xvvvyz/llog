@@ -1,17 +1,17 @@
 import { cn } from '@/utilities/cn';
 import { fileUriToSrc } from '@/utilities/file-uri-to-src';
-import { View } from 'react-native';
-
 import {
   ImageContentFit,
   Image as ImagePrimitive,
   ImageStyle,
   useImage,
 } from 'expo-image';
+import { View } from 'react-native';
 
 export const Image = ({
   className,
   contentFit,
+  fill,
   height,
   maintainAspectRatio = true,
   maxHeight,
@@ -23,6 +23,7 @@ export const Image = ({
 }: {
   className?: string;
   contentFit?: ImageContentFit;
+  fill?: boolean;
   height?: number;
   maintainAspectRatio?: boolean;
   maxHeight?: number;
@@ -34,7 +35,7 @@ export const Image = ({
 }) => {
   const image = useImage(fileUriToSrc(uri));
 
-  if (image && (!height || !width)) {
+  if (!fill && image && (!height || !width)) {
     const aspectRatio = image.width / image.height;
 
     if (!width && !height) {
@@ -47,7 +48,7 @@ export const Image = ({
     }
   }
 
-  if (width && height && (maxWidth || maxHeight)) {
+  if (!fill && width && height && (maxWidth || maxHeight)) {
     const aspectRatio = width / height;
 
     if (maxWidth && width > maxWidth) {
@@ -64,13 +65,17 @@ export const Image = ({
   return (
     <View
       className={cn('overflow-hidden bg-border', wrapperClassName)}
-      style={{ borderCurve: 'continuous', height, width }}
+      style={
+        fill
+          ? { borderCurve: 'continuous', flex: 1 }
+          : { borderCurve: 'continuous', height, width }
+      }
     >
       <ImagePrimitive
         className={className}
-        contentFit={contentFit}
+        contentFit={fill ? 'cover' : contentFit}
         source={image}
-        style={{ height, width, ...style }}
+        style={fill ? { flex: 1, ...style } : { height, width, ...style }}
       />
     </View>
   );

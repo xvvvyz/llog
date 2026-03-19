@@ -6,6 +6,10 @@
   "main": "api/index.ts",
   "env": {
     "development": {
+      "media": {
+        "binding": "MEDIA",
+        "remote": true,
+      },
       "r2_buckets": [
         {
           "binding": "R2",
@@ -21,6 +25,9 @@
       "assets": {
         "directory": "web",
         "not_found_handling": "single-page-application",
+      },
+      "media": {
+        "binding": "MEDIA",
       },
       "observability": {
         "enabled": true,

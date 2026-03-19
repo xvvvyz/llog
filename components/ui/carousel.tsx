@@ -1,9 +1,21 @@
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
-import { VideoPlayer } from '@/components/ui/video-player';
+import {
+  VideoPlayer,
+  type VideoPlayerHandle,
+} from '@/components/ui/video-player';
 import { useWindowDimensions } from '@/hooks/use-window-dimensions';
 import { Media } from '@/types/media';
 import { cn } from '@/utilities/cn';
-import { useCallback, useEffect, useRef } from 'react';
+import {
+  CornersOut,
+  Pause,
+  Play,
+  SpeakerHigh,
+  SpeakerSlash,
+} from 'phosphor-react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import Animated, {
   type SharedValue,
@@ -13,6 +25,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gallery, type GalleryRefType } from 'react-native-zoom-toolkit';
+
+const CHROME_PADDING = 55;
 
 export const Carousel = ({
   className,
@@ -31,6 +45,21 @@ export const Carousel = ({
   const ref = useRef<GalleryRefType>(null);
   const windowDimensions = useWindowDimensions();
   const activeIndex = useSharedValue(defaultIndex);
+  const enterFullscreenRef = useRef<(() => void) | null>(null);
+  const videoHandleRef = useRef<VideoPlayerHandle>(null);
+
+  const [isActiveVideo, setIsActiveVideo] = useState(
+    media[defaultIndex]?.type === 'video'
+  );
+
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [activeIndexState, setActiveIndexState] = useState(defaultIndex);
+
+  const contentHeight =
+    windowDimensions.height - insets.top - insets.bottom - CHROME_PADDING * 2;
+
+  const contentWidth = windowDimensions.width;
 
   useEffect(() => {
     if (!isKeyboardNavigationEnabled || Platform.OS !== 'web') return;
@@ -49,39 +78,48 @@ export const Carousel = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isKeyboardNavigationEnabled, media.length, activeIndex]);
 
+  const handleFullscreenReady = useCallback((fn: () => void) => {
+    enterFullscreenRef.current = fn;
+  }, []);
+
+  const handleFullscreen = useCallback(() => {
+    enterFullscreenRef.current?.();
+  }, []);
+
+  const handleToggleMute = useCallback(() => {
+    const muted = videoHandleRef.current?.toggleMute();
+    if (muted != null) setIsMuted(muted);
+  }, []);
+
+  const handleTogglePlay = useCallback(() => {
+    const playing = videoHandleRef.current?.togglePlay();
+    if (playing != null) setIsPlaying(playing);
+  }, []);
+
   const renderItem = useCallback(
-    (item: Media) => {
-      if (item.type === 'video') {
-        return (
-          <View
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+    (item: Media, index: number) => (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        {item.type === 'video' ? (
+          index === activeIndexState ? (
             <VideoPlayer
-              maxHeight={windowDimensions.height}
-              maxWidth={windowDimensions.width}
+              autoPlay
+              handleRef={videoHandleRef}
+              maxHeight={contentHeight}
+              maxWidth={contentWidth}
+              onFullscreenReady={handleFullscreenReady}
               uri={item.uri}
             />
-          </View>
-        );
-      }
-
-      return (
-        <View
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-        >
+          ) : null
+        ) : (
           <Image
-            maxHeight={windowDimensions.height}
-            maxWidth={windowDimensions.width}
+            maxHeight={contentHeight}
+            maxWidth={contentWidth}
             uri={item.uri}
           />
-        </View>
-      );
-    },
-    [windowDimensions.height, windowDimensions.width]
+        )}
+      </View>
+    ),
+    [activeIndexState, contentHeight, contentWidth, handleFullscreenReady]
   );
 
   return (
@@ -90,16 +128,73 @@ export const Carousel = ({
         data={media}
         initialIndex={defaultIndex}
         keyExtractor={(item) => item.id}
+        maxScale={3}
         onIndexChange={(index) => {
           activeIndex.value = index;
+          setActiveIndexState(index);
+          const item = media[index];
+          const isVideo = item?.type === 'video';
+          setIsActiveVideo(isVideo);
+
+          if (isVideo) {
+            setIsMuted(true);
+            setIsPlaying(true);
+          } else {
+            enterFullscreenRef.current = null;
+          }
         }}
         onSwipe={(direction) => {
-          if (direction === 'up' && onClose) onClose();
+          if ((direction === 'up' || direction === 'down') && onClose) {
+            onClose();
+          }
         }}
         ref={ref}
         renderItem={renderItem}
         zoomEnabled={media.length > 0}
       />
+      {isActiveVideo && (
+        <View
+          className="absolute right-4 top-1 z-10 flex-row gap-4 md:right-4 md:top-3"
+          style={{ marginTop: insets.top + 1 }}
+        >
+          <Button
+            className="size-11"
+            onPress={handleToggleMute}
+            size="icon"
+            variant="link"
+          >
+            <Icon
+              className="color-foreground"
+              icon={isMuted ? SpeakerSlash : SpeakerHigh}
+              size={Platform.select({ default: 24, ios: 22 })}
+            />
+          </Button>
+          <Button
+            className="size-11"
+            onPress={handleTogglePlay}
+            size="icon"
+            variant="link"
+          >
+            <Icon
+              className="color-foreground"
+              icon={isPlaying ? Pause : Play}
+              size={Platform.select({ default: 24, ios: 22 })}
+            />
+          </Button>
+          <Button
+            className="size-11"
+            onPress={handleFullscreen}
+            size="icon"
+            variant="link"
+          >
+            <Icon
+              className="color-foreground"
+              icon={CornersOut}
+              size={Platform.select({ default: 24, ios: 22 })}
+            />
+          </Button>
+        </View>
+      )}
       {media.length > 1 && (
         <PaginationDots
           activeIndex={activeIndex}

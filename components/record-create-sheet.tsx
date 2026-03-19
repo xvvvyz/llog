@@ -22,11 +22,20 @@ export const RecordCreateSheet = () => {
   const draft = useRecordDraft({ logId });
   const logColor = useLogColor({ id: logId });
 
-  const handleUploadImages = useCallback(
-    async (assets: import('expo-image-picker').ImagePickerAsset[]) => {
-      await Promise.all(
-        assets.map((asset) => uploadRecordMedia({ asset, recordId: draft.id }))
-      );
+  const handleUploadMedia = useCallback(
+    async (
+      asset: import('expo-image-picker').ImagePickerAsset,
+      onProgress: (progress: number) => void,
+      mediaId: string,
+      order: number
+    ) => {
+      await uploadRecordMedia({
+        asset,
+        mediaId,
+        onProgress,
+        order,
+        recordId: draft.id,
+      });
     },
     [draft.id]
   );
@@ -43,7 +52,7 @@ export const RecordCreateSheet = () => {
     media: draft.media,
     onDeleteMedia: handleDeleteMedia,
     onOpenAudio: () => sheetManager.open('record-audio', draft.id, 'record'),
-    onUploadImages: handleUploadImages,
+    onUploadMedia: handleUploadMedia,
   });
 
   return (

@@ -19,11 +19,13 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
   for (const record of records) {
     for (const item of record.media ?? []) {
       r2Keys.push(item.uri as string);
+      if (item.previewUri) r2Keys.push(item.previewUri as string);
     }
 
     for (const comment of record.comments ?? []) {
       for (const item of comment.media ?? []) {
         r2Keys.push(item.uri as string);
+        if (item.previewUri) r2Keys.push(item.previewUri as string);
       }
     }
   }

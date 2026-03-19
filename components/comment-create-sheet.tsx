@@ -25,13 +25,21 @@ export const CommentCreateSheet = () => {
   const isOpen = sheetManager.isOpen('comment-create');
   const hasContent = !!text.trim() || !!draft.media.length;
 
-  const handleUploadImages = useCallback(
-    async (assets: import('expo-image-picker').ImagePickerAsset[]) => {
-      await Promise.all(
-        assets.map((asset) =>
-          uploadCommentMedia({ asset, commentId: draft.id, recordId })
-        )
-      );
+  const handleUploadMedia = useCallback(
+    async (
+      asset: import('expo-image-picker').ImagePickerAsset,
+      onProgress: (progress: number) => void,
+      mediaId: string,
+      order: number
+    ) => {
+      await uploadCommentMedia({
+        asset,
+        commentId: draft.id,
+        mediaId,
+        onProgress,
+        order,
+        recordId,
+      });
     },
     [draft.id, recordId]
   );
@@ -49,7 +57,7 @@ export const CommentCreateSheet = () => {
     onDeleteMedia: handleDeleteMedia,
     onOpenAudio: () =>
       sheetManager.open('record-audio', draft.id, `comment:${recordId}`),
-    onUploadImages: handleUploadImages,
+    onUploadMedia: handleUploadMedia,
   });
 
   const handleSubmit = useCallback(() => {

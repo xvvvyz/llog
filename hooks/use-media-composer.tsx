@@ -6,17 +6,43 @@ import { Text } from '@/components/ui/text';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { Media } from '@/types/media';
 import { clipboardToAssets } from '@/utilities/clipboard-to-assets';
+import { id } from '@instantdb/react-native';
+import { Image as ImagePrimitive } from 'expo-image';
 import { ImagePickerAsset, launchImageLibraryAsync } from 'expo-image-picker';
-import { Image as ImageIcon, Microphone, X } from 'phosphor-react-native';
-import { useCallback, useEffect, useTransition } from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Microphone, Play, Plus, X } from 'phosphor-react-native';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
+
+interface PendingUpload {
+  id: string;
+  uri: string;
+  type: 'image' | 'video';
+  progress: number;
+}
 
 interface UseMediaComposerOptions {
   isOpen: boolean;
   media: Media[];
   onDeleteMedia: (mediaId: string) => Promise<void>;
   onOpenAudio: () => void;
-  onUploadImages: (assets: ImagePickerAsset[]) => Promise<void>;
+  onUploadMedia: (
+    asset: ImagePickerAsset,
+    onProgress: (progress: number) => void,
+    mediaId: string,
+    order: number
+  ) => Promise<void>;
 }
 
 export const useMediaComposer = ({
@@ -24,11 +50,11 @@ export const useMediaComposer = ({
   media,
   onDeleteMedia,
   onOpenAudio,
-  onUploadImages,
+  onUploadMedia,
 }: UseMediaComposerOptions) => {
   const [isDeleteTransitioning, startDeleteTransition] = useTransition();
-  const [isUploadTransitioning, startUploadTransition] = useTransition();
-  const { audioMedia, imageMedia } = useFilteredMedia(media);
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const { audioMedia, visualMedia } = useFilteredMedia(media);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || !isOpen) return;
@@ -38,33 +64,110 @@ export const useMediaComposer = ({
       const assets = await clipboardToAssets(e.clipboardData.items);
       if (!assets.length) return;
       e.preventDefault();
-      startUploadTransition(() => onUploadImages(assets));
+      uploadAssets(assets);
     };
 
     document.addEventListener('paste', handler);
     return () => document.removeEventListener('paste', handler);
-  }, [isOpen, onUploadImages, startUploadTransition]);
+  }, [isOpen, onUploadMedia]);
 
-  const handleUploadImages = useCallback(async () => {
+  const uploadAssets = useCallback(
+    (assets: ImagePickerAsset[]) => {
+      const mediaIds = assets.map(() => id());
+
+      setPendingUploads((prev) => [
+        ...prev,
+        ...assets.map((asset, i) => ({
+          id: mediaIds[i],
+          uri: asset.uri,
+          type: (asset.type === 'video' ? 'video' : 'image') as
+            | 'image'
+            | 'video',
+          progress: 0,
+        })),
+      ]);
+
+      const baseOrder = media.length;
+
+      assets.forEach((asset, i) => {
+        const mediaId = mediaIds[i];
+
+        onUploadMedia(
+          asset,
+          (progress) => {
+            setPendingUploads((prev) =>
+              prev.map((p) => (p.id === mediaId ? { ...p, progress } : p))
+            );
+          },
+          mediaId,
+          baseOrder + i
+        ).catch(() => {
+          setPendingUploads((prev) => prev.filter((p) => p.id !== mediaId));
+        });
+      });
+    },
+    [onUploadMedia]
+  );
+
+  const handleUploadMedia = useCallback(async () => {
     const picker = await launchImageLibraryAsync({
       allowsMultipleSelection: true,
       exif: false,
+      mediaTypes: ['images', 'videos'],
       orderedSelection: true,
     });
 
     if (picker.canceled) return;
-
-    startUploadTransition(() => onUploadImages(picker.assets));
-  }, [onUploadImages, startUploadTransition]);
+    uploadAssets(picker.assets);
+  }, [uploadAssets]);
 
   const handleDeleteMedia = useCallback(
     (mediaId: string) => startDeleteTransition(() => onDeleteMedia(mediaId)),
     [onDeleteMedia, startDeleteTransition]
   );
 
+  useEffect(() => {
+    setPendingUploads((prev) => {
+      if (!prev.length) return prev;
+      const mediaIds = new Set(visualMedia.map((m) => m.id));
+      const next = prev.filter((p) => !mediaIds.has(p.id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [visualMedia]);
+
+  const pendingIdSet = useMemo(
+    () => new Set(pendingUploads.map((p) => p.id)),
+    [pendingUploads]
+  );
+
+  const realMediaById = useMemo(
+    () => new Map(visualMedia.map((m) => [m.id, m])),
+    [visualMedia]
+  );
+
+  const allVisual = useMemo(
+    () => [
+      ...visualMedia
+        .filter((m) => !pendingIdSet.has(m.id))
+        .map((item) => ({ ...item, pending: false, progress: 100 })),
+      ...pendingUploads.map((p) => {
+        const real = realMediaById.get(p.id);
+        if (real) return { ...real, pending: false, progress: 100 };
+        return {
+          id: p.id,
+          uri: p.uri,
+          type: p.type,
+          pending: true,
+          progress: p.progress,
+        };
+      }),
+    ],
+    [visualMedia, pendingUploads, pendingIdSet, realMediaById]
+  );
+
   const mediaPreview = (
     <>
-      {!!imageMedia.length && (
+      {!!allVisual.length && (
         <ScrollView
           className="shrink-0 border-t border-border-secondary"
           horizontal
@@ -72,25 +175,71 @@ export const useMediaComposer = ({
           style={{ borderCurve: 'continuous' }}
         >
           <View className="flex-row gap-3 p-4">
-            {imageMedia.map((image) => (
-              <View className="relative" key={image.id}>
+            {allVisual.map((item) => (
+              <View
+                className="relative size-16 overflow-hidden bg-border"
+                key={item.id}
+              >
                 <Pressable>
-                  <Image
-                    height={64}
-                    uri={image.uri}
-                    width={64}
-                    wrapperClassName="rounded"
-                  />
+                  {item.pending ? (
+                    <View className="size-16">
+                      {item.type === 'video' ? (
+                        <View className="size-16 items-center justify-center bg-black/60">
+                          <Icon
+                            className="text-white"
+                            icon={Play}
+                            size={20}
+                            weight="fill"
+                          />
+                        </View>
+                      ) : (
+                        <ImagePrimitive
+                          contentFit="cover"
+                          source={{ uri: item.uri }}
+                          style={{ height: 64, width: 64 }}
+                        />
+                      )}
+                      <View
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                          bottom: 0,
+                          position: 'absolute',
+                          right: 0,
+                          top: 0,
+                          width: `${100 - item.progress}%`,
+                          zIndex: 3,
+                        }}
+                      />
+                      <View
+                        style={{
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'absolute',
+                          inset: 0,
+                          zIndex: 4,
+                        }}
+                      >
+                        {item.progress >= 100 ? (
+                          <ActivityIndicator size="small" color="white" />
+                        ) : (
+                          <Text style={{ color: 'white' }}>
+                            {item.progress}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ) : (
+                    <Image
+                      height={64}
+                      uri={
+                        item.type === 'video'
+                          ? (item as Media).previewUri!
+                          : item.uri
+                      }
+                      width={64}
+                    />
+                  )}
                 </Pressable>
-                <Button
-                  className="size-6 rounded-full"
-                  onPress={() => handleDeleteMedia(image.id)}
-                  size="icon"
-                  variant="link"
-                  wrapperClassName="transition-colors rounded-full bg-background/50 hover:bg-background/60 absolute right-1 top-1"
-                >
-                  <Icon className="text-foreground" icon={X} />
-                </Button>
               </View>
             ))}
           </View>
@@ -120,19 +269,27 @@ export const useMediaComposer = ({
 
   const toolbar = (
     <>
-      <Button onPress={onOpenAudio} size="xs" variant="secondary">
-        <Icon icon={Microphone} />
-        <Text>Audio</Text>
+      <Button
+        className="size-8"
+        onPress={handleUploadMedia}
+        size="icon"
+        variant="secondary"
+      >
+        <Icon icon={Plus} />
       </Button>
-      <Button onPress={handleUploadImages} size="xs" variant="secondary">
-        <Icon icon={ImageIcon} />
-        <Text>Visuals</Text>
+      <Button
+        className="size-8"
+        onPress={onOpenAudio}
+        size="icon"
+        variant="secondary"
+      >
+        <Icon icon={Microphone} />
       </Button>
     </>
   );
 
   return {
-    isBusy: isUploadTransitioning || isDeleteTransitioning,
+    isBusy: pendingUploads.length > 0 || isDeleteTransitioning,
     mediaPreview,
     toolbar,
   };

@@ -25,7 +25,10 @@ export default function Index() {
   const allMedia = params.commentId ? comment.media : record.media;
 
   const visualMedia = useMemo(
-    () => allMedia.filter((m) => m.type === 'image' || m.type === 'video'),
+    () =>
+      allMedia
+        .filter((m) => m.type === 'image' || m.type === 'video')
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [allMedia]
   );
 

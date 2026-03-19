@@ -90,6 +90,9 @@ const uploadMedia = async ({
   keyPrefix,
   linkField,
   linkId,
+  media,
+  mediaId: clientMediaId,
+  order,
   r2,
   recordId,
 }: {
@@ -99,10 +102,17 @@ const uploadMedia = async ({
   keyPrefix: string;
   linkField: string;
   linkId: string;
+  media: MediaBinding;
+  mediaId?: string;
+  order?: number;
   r2: R2Bucket;
   recordId: string;
 }) => {
-  if (!file.type.startsWith('image/') && !file.type.startsWith('audio/')) {
+  if (
+    !file.type.startsWith('image/') &&
+    !file.type.startsWith('audio/') &&
+    !file.type.startsWith('video/')
+  ) {
     throw new HTTPException(400, { message: 'Invalid file format' });
   }
 
@@ -125,30 +135,67 @@ const uploadMedia = async ({
     throw new HTTPException(400, { message: 'Record has no team' });
   }
 
-  const mediaId = id();
-  const type = file.type.startsWith('audio/') ? 'audio' : 'image';
+  const mediaId = clientMediaId || id();
+
+  const type = file.type.startsWith('audio/')
+    ? 'audio'
+    : file.type.startsWith('video/')
+      ? 'video'
+      : 'image';
+
   const key = `${keyPrefix}/media/${mediaId}`;
 
-  await Promise.all([
-    r2.put(key, file as File, {
+  let previewUri: string | undefined;
+
+  if (type === 'video') {
+    const [, preview] = await Promise.all([
+      r2.put(key, file as File, {
+        httpMetadata: { contentType: file.type },
+      }),
+      media
+        .input((file as File).stream())
+        .transform({ width: 500 })
+        .output({ mode: 'frame', time: '0s', format: 'jpg' })
+        .response(),
+    ]);
+
+    const previewKey = `${key}_preview`;
+
+    await r2.put(previewKey, await preview.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/jpeg' },
+    });
+
+    previewUri = previewKey;
+  } else {
+    await r2.put(key, file as File, {
       httpMetadata: { contentType: file.type },
-    }),
-    dbClient.transact(
-      dbClient.tx.media[mediaId]
-        .update({
-          teamId,
-          type,
-          uri: key,
-          ...(type === 'audio' && duration != null ? { duration } : {}),
-        })
-        .link({ [linkField]: linkId })
-    ),
-  ]);
+    });
+  }
+
+  await dbClient.transact(
+    dbClient.tx.media[mediaId]
+      .update({
+        teamId,
+        type,
+        uri: key,
+        ...((type === 'audio' || type === 'video') && duration != null
+          ? { duration }
+          : {}),
+        ...(order != null ? { order } : {}),
+        ...(previewUri ? { previewUri } : {}),
+      })
+      .link({ [linkField]: linkId })
+  );
 };
 
 const mediaValidator = zValidator(
   'form',
-  z.object({ duration: z.coerce.number().optional(), file: fileLike })
+  z.object({
+    duration: z.coerce.number().optional(),
+    file: fileLike,
+    mediaId: z.string().optional(),
+    order: z.coerce.number().optional(),
+  })
 );
 
 app.put(
@@ -157,7 +204,7 @@ app.put(
   mediaValidator,
   async (c) => {
     const { recordId } = c.req.param();
-    const { duration, file } = c.req.valid('form');
+    const { duration, file, mediaId, order } = c.req.valid('form');
 
     await uploadMedia({
       db: c.var.db,
@@ -166,6 +213,9 @@ app.put(
       keyPrefix: `records/${recordId}`,
       linkField: 'record',
       linkId: recordId,
+      media: c.env.MEDIA,
+      mediaId,
+      order,
       r2: c.env.R2,
       recordId,
     });
@@ -179,7 +229,13 @@ app.delete(
   db({ asUser: true }),
   async (c) => {
     const { mediaId, recordId } = c.req.param();
-    await c.env.R2.delete(`records/${recordId}/media/${mediaId}`);
+    const key = `records/${recordId}/media/${mediaId}`;
+
+    await Promise.all([
+      c.env.R2.delete(key),
+      c.env.R2.delete(`${key}_preview`),
+    ]);
+
     return c.json({ success: true });
   }
 );
@@ -190,7 +246,7 @@ app.put(
   mediaValidator,
   async (c) => {
     const { commentId, recordId } = c.req.param();
-    const { duration, file } = c.req.valid('form');
+    const { duration, file, mediaId, order } = c.req.valid('form');
 
     await uploadMedia({
       db: c.var.db,
@@ -199,6 +255,9 @@ app.put(
       keyPrefix: `comments/${commentId}`,
       linkField: 'comment',
       linkId: commentId,
+      media: c.env.MEDIA,
+      mediaId,
+      order,
       r2: c.env.R2,
       recordId,
     });
@@ -212,7 +271,13 @@ app.delete(
   db({ asUser: true }),
   async (c) => {
     const { commentId, mediaId } = c.req.param();
-    await c.env.R2.delete(`comments/${commentId}/media/${mediaId}`);
+    const key = `comments/${commentId}/media/${mediaId}`;
+
+    await Promise.all([
+      c.env.R2.delete(key),
+      c.env.R2.delete(`${key}_preview`),
+    ]);
+
     return c.json({ success: true });
   }
 );

@@ -22,7 +22,7 @@ import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { type TextRef } from '@rn-primitives/types';
 import { Link, router } from 'expo-router';
-import { ChatCircleDots } from 'phosphor-react-native';
+import { ChatCircleDots, Play } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -93,7 +93,7 @@ export const RecordOrComment = ({
   );
 
   const renderMediaThumb = useCallback(
-    (item: Media, height: number) => {
+    (item: Media) => {
       return (
         <Pressable
           className="flex-1"
@@ -110,24 +110,41 @@ export const RecordOrComment = ({
           }
         >
           <Image
-            contentFit="cover"
-            height={height}
-            maintainAspectRatio={false}
-            uri={item.type === 'video' ? item.uri : item.uri}
+            fill
+            uri={item.type === 'video' ? item.previewUri! : item.uri}
             wrapperClassName="rounded-2xl"
           />
+          {item.type === 'video' && (
+            <View
+              className="absolute inset-0 items-center justify-center"
+              pointerEvents="none"
+            >
+              <View
+                className="items-center justify-center rounded-full"
+                style={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                }}
+              >
+                <Icon
+                  className="ml-0.5 text-white"
+                  icon={Play}
+                  size={20}
+                  weight="fill"
+                />
+              </View>
+            </View>
+          )}
         </Pressable>
       );
     },
     [commentId, idIndexMap, record.id, recordId]
   );
 
-  const cardImageHeight = visualMedia.length < 4 ? 250 : 124;
-  const compactImageHeight = visualMedia.length < 4 ? 220 : 110;
-
   if (variant === 'compact') {
     return (
-      <GestureDetector gesture={doubleTap}>
+      <GestureDetector gesture={doubleTap} touchAction="pan-y">
         <View
           className={cn(
             'border-t border-border-secondary px-4 pb-3 pt-4',
@@ -154,21 +171,13 @@ export const RecordOrComment = ({
                 />
               )}
               {!!visualMedia.length && (
-                <View className="mt-4 gap-0.5">
-                  <View className="flex-row gap-0.5">
-                    {visualMedia
-                      .slice(0, 3)
-                      .map((item) =>
-                        renderMediaThumb(item, compactImageHeight)
-                      )}
+                <View className="mt-4 gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+                  <View className="flex-1 flex-row gap-0.5">
+                    {visualMedia.slice(0, 3).map(renderMediaThumb)}
                   </View>
                   {visualMedia.length > 3 && (
-                    <View className="flex-row gap-0.5">
-                      {visualMedia
-                        .slice(3, 5)
-                        .map((item) =>
-                          renderMediaThumb(item, compactImageHeight)
-                        )}
+                    <View className="flex-1 flex-row gap-0.5">
+                      {visualMedia.slice(3, 6).map(renderMediaThumb)}
                     </View>
                   )}
                 </View>
@@ -204,7 +213,7 @@ export const RecordOrComment = ({
   }
 
   return (
-    <GestureDetector gesture={doubleTap}>
+    <GestureDetector gesture={doubleTap} touchAction="pan-y">
       <Card className={cn('gap-4', className)}>
         <View className="flex-row items-center gap-3 p-4 pb-0">
           <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
@@ -224,17 +233,13 @@ export const RecordOrComment = ({
           />
         )}
         {!!visualMedia.length && (
-          <View className="gap-0.5">
-            <View className="flex-row gap-0.5">
-              {visualMedia
-                .slice(0, 3)
-                .map((item) => renderMediaThumb(item, cardImageHeight))}
+          <View className="gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+            <View className="flex-1 flex-row gap-0.5">
+              {visualMedia.slice(0, 3).map(renderMediaThumb)}
             </View>
             {visualMedia.length > 3 && (
-              <View className="flex-row gap-0.5">
-                {visualMedia
-                  .slice(3, 5)
-                  .map((item) => renderMediaThumb(item, cardImageHeight))}
+              <View className="flex-1 flex-row gap-0.5">
+                {visualMedia.slice(3, 6).map(renderMediaThumb)}
               </View>
             )}
           </View>
