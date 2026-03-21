@@ -2,7 +2,6 @@ import { SheetManagerProvider } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
-import '@/utilities/web-back-handler';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
