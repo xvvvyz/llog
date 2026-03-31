@@ -50,6 +50,7 @@ const schema = i.schema({
     records: i.entity({
       date: i.date().indexed(),
       isDraft: i.boolean().indexed(),
+      isPinned: i.boolean().optional().indexed(),
       teamId: i.string().indexed(),
       text: i.string().optional(),
     }),

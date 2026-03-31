@@ -20,5 +20,13 @@ export const useRecords = ({ logId }: { logId?: string }) => {
       : null
   );
 
-  return { data: data?.records ?? [], isLoading };
+  const records = data?.records ?? [];
+
+  const sorted = records.toSorted((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return 0;
+  });
+
+  return { data: sorted, isLoading };
 };

@@ -3,19 +3,29 @@ import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
+import { toggleRecordPin } from '@/mutations/toggle-record-pin';
 import { useMyRole } from '@/queries/use-my-role';
 import { useProfile } from '@/queries/use-profile';
-import { DotsThreeVertical, NotePencil, Trash } from 'phosphor-react-native';
+import {
+  DotsThreeVertical,
+  NotePencil,
+  PushPin,
+  Trash,
+} from 'phosphor-react-native';
 
 export const RecordOrCommentDropdownMenu = ({
+  accentColor,
   authorId,
   commentId,
   isDetail,
+  isPinned,
   recordId,
 }: {
+  accentColor?: string;
   authorId?: string;
   commentId?: string;
   isDetail?: boolean;
+  isPinned?: boolean;
   recordId: string;
 }) => {
   const { canManage } = useMyRole();
@@ -51,6 +61,23 @@ export const RecordOrCommentDropdownMenu = ({
           <Icon className="text-placeholder" icon={NotePencil} />
           <Text>Edit</Text>
         </Menu.Item>
+        {!commentId && canManage && (
+          <Menu.Item
+            onPress={() =>
+              toggleRecordPin({ id: recordId, isPinned: !isPinned })
+            }
+          >
+            <Icon
+              className={!isPinned ? 'text-placeholder' : undefined}
+              icon={PushPin}
+              style={
+                isPinned && accentColor ? { color: accentColor } : undefined
+              }
+              weight={isPinned ? 'fill' : 'regular'}
+            />
+            <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
+          </Menu.Item>
+        )}
         <Menu.Separator />
         <Menu.Item
           onPress={() => {

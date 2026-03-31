@@ -12,6 +12,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { useLogColor } from '@/hooks/use-log-color';
 import { toggleReaction } from '@/mutations/toggle-reaction';
+import { toggleRecordPin } from '@/mutations/toggle-record-pin';
+import { useMyRole } from '@/queries/use-my-role';
 import { useProfile } from '@/queries/use-profile';
 import { useUi } from '@/queries/use-ui';
 import { Comment } from '@/types/comment';
@@ -23,7 +25,7 @@ import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { type TextRef } from '@rn-primitives/types';
 import { Link, router } from 'expo-router';
-import { ChatCircleDots, Play } from 'phosphor-react-native';
+import { ChatCircleDots, Play, PushPin } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -55,6 +57,7 @@ export const RecordOrComment = ({
   const colorScheme = useColorScheme();
   const logColor = useLogColor({ id: logId });
   const accentColor = logColor?.[colorScheme === 'dark' ? 'lighter' : 'darker'];
+  const { canManage } = useMyRole();
   const recordId = recordIdProp ?? record.id ?? '';
   const profile = useProfile();
   const ui = useUi();
@@ -165,9 +168,11 @@ export const RecordOrComment = ({
                 </Text>
               </View>
               <RecordOrCommentDropdownMenu
+                accentColor={accentColor}
                 authorId={record.author?.id}
                 commentId={commentId}
                 isDetail
+                isPinned={'isPinned' in record ? !!record.isPinned : undefined}
                 recordId={recordId}
               />
             </View>
@@ -204,7 +209,7 @@ export const RecordOrComment = ({
                 recordId={recordId}
               />
               {!!record.reactions?.length && (
-                <View className="flex-row items-center">
+                <View className="flex-row items-center gap-2">
                   <Reactions
                     color={accentColor}
                     commentId={commentId}
@@ -225,7 +230,7 @@ export const RecordOrComment = ({
 
   return (
     <Card className={cn('gap-4', className)}>
-      <View className="flex-row items-start gap-3 p-4 pb-0">
+      <View className="flex-row items-center gap-3 p-4 pb-0">
         <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
         <View className="flex-1">
           <Text className="font-medium leading-5">{record.author?.name}</Text>
@@ -233,10 +238,31 @@ export const RecordOrComment = ({
             {formatDate(record.date)}
           </Text>
         </View>
-        <RecordOrCommentDropdownMenu
-          authorId={record.author?.id}
-          recordId={recordId}
-        />
+        <View className="flex-row items-center gap-1.5">
+          {'isPinned' in record && record.isPinned && (
+            <Button
+              className="size-8 rounded-lg"
+              disabled={!canManage}
+              onPress={() => toggleRecordPin({ id: recordId, isPinned: false })}
+              size="icon"
+              variant="ghost"
+              wrapperClassName="rounded-lg opacity-100"
+            >
+              <Icon
+                icon={PushPin}
+                size={16}
+                style={accentColor ? { color: accentColor } : undefined}
+                weight="fill"
+              />
+            </Button>
+          )}
+          <RecordOrCommentDropdownMenu
+            accentColor={accentColor}
+            authorId={record.author?.id}
+            isPinned={'isPinned' in record ? !!record.isPinned : undefined}
+            recordId={recordId}
+          />
+        </View>
       </View>
       {!!record.text && (
         <TruncatedText
@@ -272,7 +298,7 @@ export const RecordOrComment = ({
             recordId={recordId}
           />
           {!!record.reactions?.length && (
-            <View className="flex-row items-center">
+            <View className="flex-row items-center gap-2">
               <Reactions
                 color={accentColor}
                 commentId={commentId}

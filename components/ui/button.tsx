@@ -116,12 +116,9 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
       >
         <View
           className={cn(
-            buttonWrapperVariants({
-              className: wrapperClassName,
-              size,
-              variant,
-            }),
-            disabled && 'opacity-50'
+            buttonWrapperVariants({ size, variant }),
+            disabled && 'opacity-50',
+            wrapperClassName
           )}
           style={{ borderCurve: 'continuous' }}
         >
