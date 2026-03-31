@@ -48,7 +48,7 @@ export const RecordOrCommentDropdownMenu = ({
           <Icon className="text-muted-foreground" icon={DotsThreeVertical} />
         </Button>
       </Menu.Trigger>
-      <Menu.Content align="end" className="mt-2">
+      <Menu.Content align="end">
         <Menu.Item
           onPress={() => {
             if (commentId) {

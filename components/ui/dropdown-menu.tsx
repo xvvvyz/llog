@@ -42,7 +42,7 @@ const Content = forwardRef<
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             className={cn(
-              'min-w-36 overflow-hidden rounded-2xl border border-border-secondary bg-popover py-2',
+              'my-2 min-w-36 overflow-hidden rounded-2xl border border-border-secondary bg-popover py-2',
               className
             )}
             entering={animation(FadeInUp)}

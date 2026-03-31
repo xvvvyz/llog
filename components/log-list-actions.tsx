@@ -52,7 +52,7 @@ export const LogListActions = ({
               <Icon className="text-secondary-foreground" icon={Funnel} />
             </Button>
           </DropdownMenu.Trigger>
-          <DropdownMenu.Content align="end" className="mt-3 min-w-44">
+          <DropdownMenu.Content align="end" className="min-w-44">
             {logTags.map((tag) => (
               <DropdownMenu.CheckboxItem
                 checked={ui.logsFilterByTagIdsSet.has(tag.id)}
@@ -83,7 +83,7 @@ export const LogListActions = ({
             />
           </Button>
         </DropdownMenu.Trigger>
-        <DropdownMenu.Content align="end" className="mt-3 min-w-44">
+        <DropdownMenu.Content align="end" className="min-w-44">
           <DropdownMenu.SortItem<SortBy>
             onSort={(sort) => updateUiLogsSort({ sort, uiId: ui.id })}
             sortBy={ui.logsSortBy}
