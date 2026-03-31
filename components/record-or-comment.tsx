@@ -1,5 +1,6 @@
 import { EmojiPicker } from '@/components/emoji-picker';
 import { Reactions } from '@/components/reactions';
+import { RecordOrCommentDropdownMenu } from '@/components/record-or-comment-dropdown-menu';
 import { AudioPlaylist } from '@/components/ui/audio-player';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -76,7 +77,8 @@ export const RecordOrComment = ({
         commentId,
       });
     })
-    .runOnJS(true);
+    .runOnJS(true)
+    .hitSlop({ top: 16, bottom: 16, left: 8, right: 16 });
 
   const { audioMedia, visualMedia } = useFilteredMedia(record.media || []);
 
@@ -144,17 +146,17 @@ export const RecordOrComment = ({
 
   if (variant === 'compact') {
     return (
-      <GestureDetector gesture={doubleTap} touchAction="pan-y">
-        <View
-          className={cn(
-            'border-t border-border-secondary px-4 pb-3 pt-4',
-            className
-          )}
-        >
-          <View className="flex-row gap-3">
-            <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
-            <View className="flex-1">
-              <View className="flex-row items-baseline gap-2">
+      <View
+        className={cn(
+          'border-t border-border-secondary px-4 pb-3 pt-4',
+          className
+        )}
+      >
+        <View className="flex-row gap-3">
+          <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
+          <View className="flex-1">
+            <View className="flex-row items-start justify-between gap-2">
+              <View className="flex-1 flex-row items-baseline gap-2">
                 <Text className="font-medium leading-5">
                   {record.author?.name}
                 </Text>
@@ -162,129 +164,143 @@ export const RecordOrComment = ({
                   {formatDate(record.date)}
                 </Text>
               </View>
-              {!!record.text && (
-                <TruncatedText
-                  className="select-text"
-                  color={accentColor}
-                  numberOfLines={numberOfLines}
-                  text={record.text}
-                />
-              )}
-              {!!visualMedia.length && (
-                <View className="mt-4 gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+              <RecordOrCommentDropdownMenu
+                authorId={record.author?.id}
+                commentId={commentId}
+                isDetail
+                recordId={recordId}
+              />
+            </View>
+            {!!record.text && (
+              <TruncatedText
+                className="select-text"
+                color={accentColor}
+                numberOfLines={numberOfLines}
+                text={record.text}
+              />
+            )}
+            {!!visualMedia.length && (
+              <View className="mt-4 gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+                <View className="flex-1 flex-row gap-0.5">
+                  {visualMedia.slice(0, 3).map(renderMediaThumb)}
+                </View>
+                {visualMedia.length > 3 && (
                   <View className="flex-1 flex-row gap-0.5">
-                    {visualMedia.slice(0, 3).map(renderMediaThumb)}
-                  </View>
-                  {visualMedia.length > 3 && (
-                    <View className="flex-1 flex-row gap-0.5">
-                      {visualMedia.slice(3, 6).map(renderMediaThumb)}
-                    </View>
-                  )}
-                </View>
-              )}
-              {audioMedia.length > 0 && (
-                <View className="mt-4 gap-2">
-                  <AudioPlaylist clips={audioMedia} />
-                </View>
-              )}
-              <View className="mt-3 flex-row items-center gap-1.5">
-                <EmojiPicker
-                  color={accentColor}
-                  commentId={commentId}
-                  reactions={record.reactions}
-                  recordId={recordId}
-                />
-                {!!record.reactions?.length && (
-                  <View className="flex-row items-center">
-                    <Reactions
-                      color={accentColor}
-                      commentId={commentId}
-                      reactions={record.reactions}
-                      recordId={recordId}
-                    />
+                    {visualMedia.slice(3, 6).map(renderMediaThumb)}
                   </View>
                 )}
               </View>
+            )}
+            {audioMedia.length > 0 && (
+              <View className="mt-4 gap-2">
+                <AudioPlaylist clips={audioMedia} />
+              </View>
+            )}
+            <View className="mt-3 flex-row items-center gap-1.5">
+              <EmojiPicker
+                color={accentColor}
+                commentId={commentId}
+                reactions={record.reactions}
+                recordId={recordId}
+              />
+              {!!record.reactions?.length && (
+                <View className="flex-row items-center">
+                  <Reactions
+                    color={accentColor}
+                    commentId={commentId}
+                    reactions={record.reactions}
+                    recordId={recordId}
+                  />
+                </View>
+              )}
+              <GestureDetector gesture={doubleTap} touchAction="pan-y">
+                <View className="min-h-7 flex-1" />
+              </GestureDetector>
             </View>
           </View>
         </View>
-      </GestureDetector>
+      </View>
     );
   }
 
   return (
-    <GestureDetector gesture={doubleTap} touchAction="pan-y">
-      <Card className={cn('gap-4', className)}>
-        <View className="flex-row items-center gap-3 p-4 pb-0">
-          <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
-          <View>
-            <Text className="font-medium leading-5">{record.author?.name}</Text>
-            <Text className="text-sm leading-5 text-muted-foreground">
-              {formatDate(record.date)}
-            </Text>
-          </View>
+    <Card className={cn('gap-4', className)}>
+      <View className="flex-row items-start gap-3 p-4 pb-0">
+        <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
+        <View className="flex-1">
+          <Text className="font-medium leading-5">{record.author?.name}</Text>
+          <Text className="text-sm leading-5 text-muted-foreground">
+            {formatDate(record.date)}
+          </Text>
         </View>
-        {!!record.text && (
-          <TruncatedText
-            className="select-text px-4"
-            color={accentColor}
-            numberOfLines={numberOfLines}
-            text={record.text}
-          />
-        )}
-        {!!visualMedia.length && (
-          <View className="gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+        <RecordOrCommentDropdownMenu
+          authorId={record.author?.id}
+          recordId={recordId}
+        />
+      </View>
+      {!!record.text && (
+        <TruncatedText
+          className="select-text px-4"
+          color={accentColor}
+          numberOfLines={numberOfLines}
+          text={record.text}
+        />
+      )}
+      {!!visualMedia.length && (
+        <View className="gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+          <View className="flex-1 flex-row gap-0.5">
+            {visualMedia.slice(0, 3).map(renderMediaThumb)}
+          </View>
+          {visualMedia.length > 3 && (
             <View className="flex-1 flex-row gap-0.5">
-              {visualMedia.slice(0, 3).map(renderMediaThumb)}
+              {visualMedia.slice(3, 6).map(renderMediaThumb)}
             </View>
-            {visualMedia.length > 3 && (
-              <View className="flex-1 flex-row gap-0.5">
-                {visualMedia.slice(3, 6).map(renderMediaThumb)}
-              </View>
-            )}
-          </View>
-        )}
-        {audioMedia.length > 0 && (
-          <View className="gap-2 px-4">
-            <AudioPlaylist clips={audioMedia} />
-          </View>
-        )}
-        <View className="-mt-1 flex-row justify-between gap-3 px-4 pb-3">
-          <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
-            <EmojiPicker
-              color={accentColor}
-              commentId={commentId}
-              reactions={record.reactions}
-              recordId={recordId}
-            />
-            {!!record.reactions?.length && (
-              <View className="flex-row items-center">
-                <Reactions
-                  color={accentColor}
-                  commentId={commentId}
-                  reactions={record.reactions}
-                  recordId={recordId}
-                />
-              </View>
-            )}
-          </View>
-          {!!record.comments && (
-            <Link asChild href={`/record/${record.id}?focus=comment`}>
-              <Button size="xs" variant="ghost">
-                <Text className="text-sm font-normal text-muted-foreground">
-                  {record.comments.length} repl
-                  {record.comments.length === 1 ? 'y' : 'ies'}
-                </Text>
-                <Icon
-                  className="-mr-0.5 text-muted-foreground"
-                  icon={ChatCircleDots}
-                />
-              </Button>
-            </Link>
           )}
         </View>
-      </Card>
-    </GestureDetector>
+      )}
+      {audioMedia.length > 0 && (
+        <View className="gap-2 px-4">
+          <AudioPlaylist clips={audioMedia} />
+        </View>
+      )}
+      <View className="-mt-1 flex-row justify-between gap-3 px-4 pb-3">
+        <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
+          <EmojiPicker
+            color={accentColor}
+            commentId={commentId}
+            reactions={record.reactions}
+            recordId={recordId}
+          />
+          {!!record.reactions?.length && (
+            <View className="flex-row items-center">
+              <Reactions
+                color={accentColor}
+                commentId={commentId}
+                reactions={record.reactions}
+                recordId={recordId}
+              />
+            </View>
+          )}
+          <GestureDetector gesture={doubleTap} touchAction="pan-y">
+            <View className="min-h-7 flex-1" />
+          </GestureDetector>
+        </View>
+        {!!record.comments && (
+          <Link asChild href={`/record/${record.id}?focus=comment`}>
+            <Button size="xs" variant="ghost">
+              <Text className="text-sm font-normal text-muted-foreground">
+                {record.comments.length} repl
+                {record.comments.length === 1 ? 'y' : 'ies'}
+              </Text>
+              <Icon
+                className="-mr-0.5 text-muted-foreground"
+                icon={ChatCircleDots}
+              />
+            </Button>
+          </Link>
+        )}
+      </View>
+    </Card>
   );
 };
 

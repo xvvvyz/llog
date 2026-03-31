@@ -1,0 +1,54 @@
+import { Button } from '@/components/ui/button';
+import { Sheet } from '@/components/ui/sheet';
+import { Text } from '@/components/ui/text';
+import { useSheetManager } from '@/context/sheet-manager';
+import { deleteComment } from '@/mutations/delete-comment';
+import { useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+
+export const CommentDeleteSheet = () => {
+  const [isPending, setIsPending] = useState(false);
+  const sheetManager = useSheetManager();
+
+  return (
+    <Sheet
+      onDismiss={() => sheetManager.close('comment-delete')}
+      open={sheetManager.isOpen('comment-delete')}
+      portalName="comment-delete"
+    >
+      <View className="mx-auto w-full max-w-md p-8">
+        <Text className="text-center text-2xl">Delete reply?</Text>
+        <Button
+          disabled={isPending}
+          onPress={async () => {
+            setIsPending(true);
+
+            await deleteComment({
+              id: sheetManager.getId('comment-delete'),
+              recordId: sheetManager.getContext('comment-delete'),
+            });
+
+            sheetManager.close('comment-delete');
+            setIsPending(false);
+          }}
+          variant="destructive"
+          wrapperClassName="mt-12"
+        >
+          {isPending ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Text>Delete</Text>
+          )}
+        </Button>
+        <Button
+          disabled={isPending}
+          onPress={() => sheetManager.close('comment-delete')}
+          variant="secondary"
+          wrapperClassName="mt-3"
+        >
+          <Text>Cancel</Text>
+        </Button>
+      </View>
+    </Sheet>
+  );
+};

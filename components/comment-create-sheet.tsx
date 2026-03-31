@@ -7,23 +7,52 @@ import { useLogColor } from '@/hooks/use-log-color';
 import { useMediaComposer } from '@/hooks/use-media-composer';
 import { deleteCommentMedia } from '@/mutations/delete-comment-media';
 import { publishComment } from '@/mutations/publish-comment';
+import { updateComment } from '@/mutations/update-comment';
 import { uploadCommentMedia } from '@/mutations/upload-comment-media';
 import { useCommentDraft } from '@/queries/use-comment-draft';
 import { useRecord } from '@/queries/use-record';
-import { useCallback, useState } from 'react';
+import { db } from '@/utilities/db';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 export const CommentCreateSheet = () => {
   const [text, setText] = useState('');
   const sheetManager = useSheetManager();
 
-  const recordId = sheetManager.getId('comment-create');
+  const editRecordId = sheetManager.getContext('comment-create');
+  const isEdit = !!editRecordId;
+  const sheetId = sheetManager.getId('comment-create');
+
+  const recordId = isEdit ? editRecordId : sheetId;
+  const editCommentId = isEdit ? sheetId : undefined;
+
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
-  const draft = useCommentDraft({ recordId });
+  const draft = useCommentDraft({ recordId: isEdit ? undefined : recordId });
+
+  const { data: editData } = db.useQuery(
+    editCommentId
+      ? {
+          comments: {
+            $: { where: { id: editCommentId } },
+            media: {},
+          },
+        }
+      : null
+  );
+
+  const editComment = editData?.comments?.[0];
+  const comment = isEdit ? editComment : draft;
+  const commentId = comment?.id;
 
   const isOpen = sheetManager.isOpen('comment-create');
-  const hasContent = !!text.trim() || !!draft.media.length;
+  const hasContent = !!text.trim() || !!(comment?.media ?? []).length;
+
+  useEffect(() => {
+    if (isEdit && editComment?.text && isOpen) {
+      setText(editComment.text);
+    }
+  }, [isEdit, editComment?.text, isOpen]);
 
   const handleUploadMedia = useCallback(
     async (
@@ -34,43 +63,49 @@ export const CommentCreateSheet = () => {
     ) => {
       await uploadCommentMedia({
         asset,
-        commentId: draft.id,
+        commentId,
         mediaId,
         onProgress,
         order,
         recordId,
       });
     },
-    [draft.id, recordId]
+    [commentId, recordId]
   );
 
   const handleDeleteMedia = useCallback(
     async (mediaId: string) => {
-      await deleteCommentMedia({ commentId: draft.id, mediaId, recordId });
+      await deleteCommentMedia({ commentId, mediaId, recordId });
     },
-    [draft.id, recordId]
+    [commentId, recordId]
   );
 
   const { isBusy, mediaPreview, toolbar } = useMediaComposer({
     isOpen,
-    media: draft.media,
+    media: comment?.media ?? [],
     onDeleteMedia: handleDeleteMedia,
     onOpenAudio: () =>
-      sheetManager.open('record-audio', draft.id, `comment:${recordId}`),
+      sheetManager.open('record-audio', commentId, `comment:${recordId}`),
     onUploadMedia: handleUploadMedia,
   });
 
   const handleSubmit = useCallback(() => {
-    if (!hasContent || !draft.id) return;
-    publishComment({ id: draft.id, text: text.trim() });
+    if (!hasContent || !commentId) return;
+
+    if (isEdit) {
+      updateComment({ id: commentId, text: text.trim() });
+    } else {
+      publishComment({ id: commentId, text: text.trim() });
+    }
+
     sheetManager.close('comment-create');
     setText('');
-  }, [draft.id, hasContent, sheetManager, text]);
+  }, [commentId, hasContent, isEdit, sheetManager, text]);
 
   return (
     <Sheet
       className="rounded-t-2xl xs:rounded-t-4xl"
-      loading={!!recordId && !draft.id}
+      loading={isEdit ? !editComment : !!recordId && !draft.id}
       onDismiss={() => {
         sheetManager.close('comment-create');
         setText('');
@@ -100,7 +135,7 @@ export const CommentCreateSheet = () => {
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"
           >
-            <Text className="text-white">Reply</Text>
+            <Text className="text-white">{isEdit ? 'Save' : 'Reply'}</Text>
           </Button>
         </View>
       </View>

@@ -321,7 +321,7 @@ const Dots = ({
             runOnJS(onPress)(target);
           }
         }),
-    [count, onPress]
+    [activeIndex.value, count, lastScrubbed, onPress, startIndex]
   );
 
   return (

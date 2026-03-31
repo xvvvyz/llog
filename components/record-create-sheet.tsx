@@ -10,17 +10,38 @@ import { publishRecord } from '@/mutations/publish-record';
 import { updateRecordDraft } from '@/mutations/update-record-draft';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
 import { useRecordDraft } from '@/queries/use-record-draft';
+import { db } from '@/utilities/db';
 import { useCallback } from 'react';
 import { View } from 'react-native';
 
 export const RecordCreateSheet = () => {
   const sheetManager = useSheetManager();
 
-  const logId = sheetManager.getId('record-create');
+  const isEdit = sheetManager.getContext('record-create') === 'edit';
+  const sheetId = sheetManager.getId('record-create');
   const isOpen = sheetManager.isOpen('record-create');
 
+  const logId = isEdit ? undefined : sheetId;
+  const editRecordId = isEdit ? sheetId : undefined;
+
   const draft = useRecordDraft({ logId });
-  const logColor = useLogColor({ id: logId });
+
+  const { data: editData } = db.useQuery(
+    editRecordId
+      ? {
+          records: {
+            $: { where: { id: editRecordId } },
+            media: {},
+            log: { $: { fields: ['id'] } },
+          },
+        }
+      : null
+  );
+
+  const editRecord = editData?.records?.[0];
+  const record = isEdit ? editRecord : draft;
+  const recordLogId = isEdit ? editRecord?.log?.id : logId;
+  const logColor = useLogColor({ id: recordLogId });
 
   const handleUploadMedia = useCallback(
     async (
@@ -34,31 +55,31 @@ export const RecordCreateSheet = () => {
         mediaId,
         onProgress,
         order,
-        recordId: draft.id,
+        recordId: record?.id,
       });
     },
-    [draft.id]
+    [record?.id]
   );
 
   const handleDeleteMedia = useCallback(
     async (mediaId: string) => {
-      await deleteRecordMedia({ mediaId, recordId: draft.id });
+      await deleteRecordMedia({ mediaId, recordId: record?.id });
     },
-    [draft.id]
+    [record?.id]
   );
 
   const { isBusy, mediaPreview, toolbar } = useMediaComposer({
     isOpen,
-    media: draft.media,
+    media: record?.media ?? [],
     onDeleteMedia: handleDeleteMedia,
-    onOpenAudio: () => sheetManager.open('record-audio', draft.id, 'record'),
+    onOpenAudio: () => sheetManager.open('record-audio', record?.id, 'record'),
     onUploadMedia: handleUploadMedia,
   });
 
   return (
     <Sheet
       className="rounded-t-2xl xs:rounded-t-4xl"
-      loading={!!logId && draft.log?.id !== logId}
+      loading={isEdit ? !editRecord : !!logId && draft.log?.id !== logId}
       onDismiss={() => sheetManager.close('record-create')}
       open={sheetManager.isOpen('record-create')}
       portalName="record-create"
@@ -70,9 +91,9 @@ export const RecordCreateSheet = () => {
             className="border-0 bg-transparent"
             maxLength={10240}
             numberOfLines={16}
-            onChangeText={(text) => updateRecordDraft({ id: draft.id, text })}
+            onChangeText={(text) => updateRecordDraft({ id: record?.id, text })}
             placeholder="What's happening?"
-            value={draft.text ?? ''}
+            value={record?.text ?? ''}
           />
           {mediaPreview}
         </View>
@@ -82,13 +103,17 @@ export const RecordCreateSheet = () => {
             className="text-white web:hover:opacity-90"
             disabled={isBusy}
             onPress={() => {
-              publishRecord({ id: draft.id });
-              sheetManager.close('record-create');
+              if (isEdit) {
+                sheetManager.close('record-create');
+              } else {
+                publishRecord({ id: record?.id });
+                sheetManager.close('record-create');
+              }
             }}
             size="xs"
             style={{ backgroundColor: logColor.default }}
           >
-            <Text>Record</Text>
+            <Text>{isEdit ? 'Save' : 'Record'}</Text>
           </Button>
         </View>
       </View>
