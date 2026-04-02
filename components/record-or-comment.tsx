@@ -168,6 +168,7 @@ export const RecordOrComment = ({
                 </Text>
               </View>
               <RecordOrCommentDropdownMenu
+                className="-mb-3"
                 accentColor={accentColor}
                 authorId={record.author?.id}
                 commentId={commentId}
@@ -230,7 +231,7 @@ export const RecordOrComment = ({
 
   return (
     <Card className={cn('gap-4', className)}>
-      <View className="flex-row items-center gap-3 p-4 pb-0">
+      <View className="flex-row items-start gap-3 p-4 pb-0">
         <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
         <View className="flex-1">
           <Text className="font-medium leading-5">{record.author?.name}</Text>
@@ -238,7 +239,7 @@ export const RecordOrComment = ({
             {formatDate(record.date)}
           </Text>
         </View>
-        <View className="flex-row items-center gap-1.5">
+        <View className="-mr-1 -mt-1 flex-row items-center gap-1.5">
           {'isPinned' in record && record.isPinned && (
             <Button
               className="size-8 rounded-lg"
