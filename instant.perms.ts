@@ -12,6 +12,15 @@ const rules = {
       $default: `false`,
     },
   },
+  activities: {
+    bind: ['isTeamMember', "auth.id in data.ref('team.roles.user.id')"],
+    allow: {
+      view: 'isTeamMember',
+      create: 'isTeamMember',
+      update: 'false',
+      delete: 'false',
+    },
+  },
   $users: {
     bind: ['isTeammate', "data.id in data.ref('ui.team.roles.user.id')"],
     allow: {

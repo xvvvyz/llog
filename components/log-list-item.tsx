@@ -34,7 +34,7 @@ export const LogListItem = ({
           ripple="default"
           style={{ backgroundColor: color }}
           variant="ghost"
-          wrapperClassName="rounded-xl"
+          wrapperClassName="rounded-2xl"
         >
           <View className="max-h-11 flex-row flex-wrap gap-1 overflow-hidden pr-10">
             {tags.map((tag) => (

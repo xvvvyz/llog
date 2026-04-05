@@ -13,11 +13,13 @@ import { useMemo } from 'react';
 
 export const EmojiPicker = ({
   color,
+  logId,
   recordId,
   commentId,
   reactions,
 }: {
   color?: string;
+  logId?: string;
   recordId: string;
   commentId?: string;
   reactions?: (Reaction & { author?: Pick<Profile, 'id'> })[];
@@ -44,7 +46,7 @@ export const EmojiPicker = ({
           className="size-8 rounded-lg"
           size="icon"
           variant="ghost"
-          wrapperClassName="rounded-lg"
+          wrapperClassName="mr-1.5 rounded-lg"
         >
           <Icon className="text-muted-foreground" icon={SmileySticker} />
         </Button>
@@ -62,6 +64,7 @@ export const EmojiPicker = ({
                 toggleReaction({
                   emoji,
                   existingReactionId,
+                  logId,
                   profileId: profile.id,
                   teamId: ui.activeTeamId,
                   recordId,

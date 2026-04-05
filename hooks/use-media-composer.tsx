@@ -2,13 +2,17 @@ import { AudioPlayer } from '@/components/ui/audio-player';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useSheetManager } from '@/context/sheet-manager';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
+import { UI } from '@/theme/ui';
 import { Media } from '@/types/media';
 import { clipboardToAssets } from '@/utilities/clipboard-to-assets';
 import { fileUriToSrc } from '@/utilities/file-uri-to-src';
 import { id } from '@instantdb/react-native';
 import { Image as ImagePrimitive } from 'expo-image';
 import { ImagePickerAsset, launchImageLibraryAsync } from 'expo-image-picker';
+import { router } from 'expo-router';
 import { Microphone, Plus, X } from 'phosphor-react-native';
 import {
   useCallback,
@@ -27,12 +31,14 @@ import {
 
 interface PendingUpload {
   id: string;
+  order: number;
   uri: string;
   type: 'image' | 'video';
   progress: number;
 }
 
 interface UseMediaComposerOptions {
+  commentId?: string;
   isOpen: boolean;
   media: Media[];
   onDeleteMedia: (mediaId: string) => Promise<void>;
@@ -43,15 +49,21 @@ interface UseMediaComposerOptions {
     mediaId: string,
     order: number
   ) => Promise<void>;
+  recordId?: string;
 }
 
 export const useMediaComposer = ({
+  commentId,
   isOpen,
   media,
   onDeleteMedia,
   onOpenAudio,
   onUploadMedia,
+  recordId,
 }: UseMediaComposerOptions) => {
+  const { suspend } = useSheetManager();
+  const colorScheme = useColorScheme();
+  const foregroundColor = UI[colorScheme].foreground;
   const [isDeleteTransitioning, startDeleteTransition] = useTransition();
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const { audioMedia, visualMedia } = useFilteredMedia(media);
@@ -74,11 +86,13 @@ export const useMediaComposer = ({
   const uploadAssets = useCallback(
     (assets: ImagePickerAsset[]) => {
       const mediaIds = assets.map(() => id());
+      const baseOrder = media.length;
 
       setPendingUploads((prev) => [
         ...prev,
         ...assets.map((asset, i) => ({
           id: mediaIds[i],
+          order: baseOrder + i,
           uri: asset.uri,
           type: (asset.type === 'video' ? 'video' : 'image') as
             | 'image'
@@ -87,7 +101,6 @@ export const useMediaComposer = ({
         })),
       ]);
 
-      const baseOrder = media.length;
       const concurrency = 2;
 
       const queue = assets.map((asset, i) => ({
@@ -119,6 +132,7 @@ export const useMediaComposer = ({
         { length: concurrency },
         () => []
       );
+
       queue.forEach((item, i) => lanes[i % concurrency].push(item));
       lanes.forEach((lane) => run(lane));
     },
@@ -162,30 +176,38 @@ export const useMediaComposer = ({
   );
 
   const allVisual = useMemo(
-    () => [
-      ...visualMedia
-        .filter((m) => !pendingIdSet.has(m.id))
-        .map((item) => ({
-          ...item,
-          pending: false,
-          progress: 100,
-          localUri: undefined as string | undefined,
-        })),
-      ...pendingUploads.map((p) => {
-        const real = realMediaById.get(p.id);
-        if (real)
-          return { ...real, pending: false, progress: 100, localUri: p.uri };
+    () =>
+      [
+        ...visualMedia
+          .filter((m) => !pendingIdSet.has(m.id))
+          .map((item) => ({
+            ...item,
+            pending: false,
+            progress: 100,
+            localUri: undefined as string | undefined,
+          })),
+        ...pendingUploads.map((p) => {
+          const real = realMediaById.get(p.id);
+          if (real)
+            return {
+              ...real,
+              order: p.order,
+              pending: false,
+              progress: 100,
+              localUri: p.uri,
+            };
 
-        return {
-          id: p.id,
-          uri: p.uri,
-          type: p.type,
-          pending: true,
-          progress: p.progress,
-          localUri: p.uri,
-        };
-      }),
-    ],
+          return {
+            id: p.id,
+            order: p.order,
+            uri: p.uri,
+            type: p.type,
+            pending: true,
+            progress: p.progress,
+            localUri: p.uri,
+          };
+        }),
+      ].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [visualMedia, pendingUploads, pendingIdSet, realMediaById]
   );
 
@@ -201,12 +223,28 @@ export const useMediaComposer = ({
           <View className="flex-row gap-3 p-4">
             {allVisual.map((item) => (
               <View
-                className="relative size-16 overflow-hidden bg-border"
+                className="relative size-16 overflow-hidden rounded-lg bg-border"
                 key={item.id}
               >
-                <Pressable>
+                <Pressable
+                  className={item.pending ? 'cursor-default' : undefined}
+                  onPress={() => {
+                    if (!item.pending && recordId) {
+                      suspend();
+
+                      router.push({
+                        pathname: '/record/[recordId]/media',
+                        params: {
+                          recordId,
+                          ...(commentId && { commentId }),
+                          id: item.id,
+                        },
+                      });
+                    }
+                  }}
+                >
                   {item.pending ? (
-                    <View className="size-16">
+                    <View className="size-16 bg-card">
                       {item.type !== 'video' && (
                         <ImagePrimitive
                           contentFit="cover"
@@ -214,17 +252,19 @@ export const useMediaComposer = ({
                           style={{ height: 64, width: 64 }}
                         />
                       )}
-                      <View
-                        style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                          bottom: 0,
-                          position: 'absolute',
-                          right: 0,
-                          top: 0,
-                          width: `${100 - item.progress}%`,
-                          zIndex: 3,
-                        }}
-                      />
+                      {item.progress > 0 && (
+                        <View
+                          style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                            bottom: 0,
+                            position: 'absolute',
+                            right: 0,
+                            top: 0,
+                            width: `${100 - item.progress}%`,
+                            zIndex: 3,
+                          }}
+                        />
+                      )}
                       <View
                         style={{
                           alignItems: 'center',
@@ -234,12 +274,13 @@ export const useMediaComposer = ({
                           zIndex: 4,
                         }}
                       >
-                        {item.progress >= 100 ? (
-                          <ActivityIndicator size="small" color="white" />
+                        {item.progress > 0 && item.progress < 100 ? (
+                          <Text className="text-white">{item.progress}</Text>
                         ) : (
-                          <Text style={{ color: 'white' }}>
-                            {item.progress}
-                          </Text>
+                          <ActivityIndicator
+                            size="small"
+                            color={foregroundColor}
+                          />
                         )}
                       </View>
                     </View>
@@ -259,6 +300,26 @@ export const useMediaComposer = ({
                     />
                   )}
                 </Pressable>
+                {!item.pending && (
+                  <Pressable
+                    onPress={() => handleDeleteMedia(item.id)}
+                    style={{
+                      alignItems: 'center',
+                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      borderCurve: 'continuous',
+                      borderRadius: 6,
+                      height: 20,
+                      justifyContent: 'center',
+                      position: 'absolute',
+                      right: 4,
+                      top: 4,
+                      width: 20,
+                      zIndex: 5,
+                    }}
+                  >
+                    <Icon className="text-white" icon={X} size={10} />
+                  </Pressable>
+                )}
               </View>
             ))}
           </View>

@@ -10,7 +10,9 @@ import { publishComment } from '@/mutations/publish-comment';
 import { updateComment } from '@/mutations/update-comment';
 import { uploadCommentMedia } from '@/mutations/upload-comment-media';
 import { useCommentDraft } from '@/queries/use-comment-draft';
+import { useProfile } from '@/queries/use-profile';
 import { useRecord } from '@/queries/use-record';
+import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
@@ -26,6 +28,8 @@ export const CommentCreateSheet = () => {
   const recordId = isEdit ? editRecordId : sheetId;
   const editCommentId = isEdit ? sheetId : undefined;
 
+  const profile = useProfile();
+  const ui = useUi();
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
   const draft = useCommentDraft({ recordId: isEdit ? undefined : recordId });
@@ -81,12 +85,14 @@ export const CommentCreateSheet = () => {
   );
 
   const { isBusy, mediaPreview, toolbar } = useMediaComposer({
+    commentId,
     isOpen,
     media: comment?.media ?? [],
     onDeleteMedia: handleDeleteMedia,
     onOpenAudio: () =>
       sheetManager.open('record-audio', commentId, `comment:${recordId}`),
     onUploadMedia: handleUploadMedia,
+    recordId,
   });
 
   const handleSubmit = useCallback(() => {
@@ -95,12 +101,29 @@ export const CommentCreateSheet = () => {
     if (isEdit) {
       updateComment({ id: commentId, text: text.trim() });
     } else {
-      publishComment({ id: commentId, text: text.trim() });
+      publishComment({
+        id: commentId,
+        text: text.trim(),
+        logId: record.log?.id,
+        profileId: profile.id,
+        recordId,
+        teamId: ui.activeTeamId,
+      });
     }
 
     sheetManager.close('comment-create');
     setText('');
-  }, [commentId, hasContent, isEdit, sheetManager, text]);
+  }, [
+    commentId,
+    hasContent,
+    isEdit,
+    profile.id,
+    record.log?.id,
+    recordId,
+    sheetManager,
+    text,
+    ui.activeTeamId,
+  ]);
 
   return (
     <Sheet
@@ -135,7 +158,7 @@ export const CommentCreateSheet = () => {
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"
           >
-            <Text className="text-white">{isEdit ? 'Save' : 'Reply'}</Text>
+            <Text className="text-white">{isEdit ? 'Done' : 'Reply'}</Text>
           </Button>
         </View>
       </View>

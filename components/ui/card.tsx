@@ -5,7 +5,7 @@ import { View, ViewProps } from 'react-native';
 export const Card = ({ children, className, ...props }: ViewProps) => (
   <View
     className={cn(
-      'w-full rounded-xl border border-border-secondary bg-card',
+      'w-full rounded-2xl border border-border-secondary bg-card',
       className
     )}
     style={{ borderCurve: 'continuous' }}

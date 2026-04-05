@@ -30,7 +30,8 @@ export const List = <T,>({
   return (
     <View
       className={cn(
-        !horizontal && 'border-y border-b-transparent border-t-transparent',
+        !horizontal &&
+          'flex-1 border-y border-b-transparent border-t-transparent',
         wrapperClassName
       )}
     >

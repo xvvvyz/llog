@@ -1,5 +1,5 @@
 import { Role } from '@/enums/roles';
-import { db } from '@/middleware/db';
+import { Db, db } from '@/middleware/db';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
@@ -7,6 +7,23 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
+
+const memberJoinedActivity = (
+  db: Db,
+  actorId: string | undefined,
+  teamId: string
+) =>
+  actorId
+    ? [
+        db.tx.activities[id()]
+          .update({
+            type: 'member_joined',
+            date: new Date().toISOString(),
+            teamId,
+          })
+          .link({ actor: actorId, team: teamId }),
+      ]
+    : [];
 
 app.post(
   '/:teamId/invites',
@@ -136,6 +153,12 @@ app.post('/invites/:inviteId/accept', db(), async (c) => {
     throw new HTTPException(400, { message: 'Invalid invite' });
   }
 
+  const { profiles } = await c.var.db.query({
+    profiles: { $: { where: { user: user.id }, fields: ['id'] } },
+  });
+
+  const actorId = profiles[0]?.id;
+
   await c.var.db.transact([
     c.var.db.tx.roles[id()]
       .update({
@@ -146,6 +169,7 @@ app.post('/invites/:inviteId/accept', db(), async (c) => {
       })
       .link({ team: teamId, user: user.id }),
     c.var.db.tx.invites[inviteId].delete(),
+    ...memberJoinedActivity(c.var.db, actorId, teamId),
   ]);
 
   return c.json({ status: 'joined', teamId });
@@ -186,16 +210,23 @@ app.post('/resolve-invites', db(), async (c) => {
     return c.json({ joined: [] });
   }
 
-  const { invites } = await c.var.db.query({
-    invites: {
-      $: { where: { email } },
-      team: { $: { fields: ['id'] } },
-    },
-  });
+  const [{ invites }, { profiles }] = await Promise.all([
+    c.var.db.query({
+      invites: {
+        $: { where: { email } },
+        team: { $: { fields: ['id'] } },
+      },
+    }),
+    c.var.db.query({
+      profiles: { $: { where: { user: user.id }, fields: ['id'] } },
+    }),
+  ]);
 
   if (!invites.length) {
     return c.json({ joined: [] });
   }
+
+  const actorId = profiles[0]?.id;
 
   const txns = invites.flatMap((invite) => {
     const teamId = invite.team?.id;
@@ -211,6 +242,7 @@ app.post('/resolve-invites', db(), async (c) => {
         })
         .link({ team: teamId, user: user.id }),
       c.var.db.tx.invites[invite.id].delete(),
+      ...memberJoinedActivity(c.var.db, actorId, teamId),
     ];
   });
 

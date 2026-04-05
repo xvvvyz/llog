@@ -42,7 +42,7 @@ const buttonVariants = cva(
         icon: 'h-11 w-11',
         lg: 'h-12 px-5',
         sm: 'h-10 px-4',
-        xs: 'h-8 px-3 rounded-lg gap-2',
+        xs: 'h-8 px-2 rounded-lg gap-2',
       },
       variant: {
         default: 'bg-primary web:hover:bg-primary/80 active:bg-primary/60',

@@ -5,6 +5,7 @@ import { id } from '@instantdb/react-native';
 export const toggleReaction = async ({
   emoji,
   existingReactionId,
+  logId,
   profileId,
   teamId,
   recordId,
@@ -12,6 +13,7 @@ export const toggleReaction = async ({
 }: {
   emoji: string;
   existingReactionId?: string;
+  logId?: string;
   profileId?: string;
   teamId?: string;
   recordId: string;
@@ -24,17 +26,44 @@ export const toggleReaction = async ({
   const resolved = await resolveProfileAndTeam(profileId, teamId);
   if (!resolved) return;
 
-  const link: { author: string; record?: string; comment?: string } = {
+  const reactionLink: { author: string; record?: string; comment?: string } = {
     author: resolved.profileId,
   };
 
   if (commentId) {
-    link.comment = commentId;
+    reactionLink.comment = commentId;
   } else {
-    link.record = recordId;
+    reactionLink.record = recordId;
+  }
+
+  if (logId) {
+    const activityLink: Record<string, string> = {
+      actor: resolved.profileId,
+      team: resolved.teamId,
+      record: recordId,
+      log: logId,
+    };
+
+    if (commentId) activityLink.comment = commentId;
+
+    return db.transact([
+      db.tx.reactions[id()]
+        .update({ emoji, teamId: resolved.teamId })
+        .link(reactionLink),
+      db.tx.activities[id()]
+        .update({
+          type: 'reaction_added',
+          date: new Date().toISOString(),
+          teamId: resolved.teamId,
+          emoji,
+        })
+        .link(activityLink),
+    ]);
   }
 
   return db.transact(
-    db.tx.reactions[id()].update({ emoji, teamId: resolved.teamId }).link(link)
+    db.tx.reactions[id()]
+      .update({ emoji, teamId: resolved.teamId })
+      .link(reactionLink)
   );
 };

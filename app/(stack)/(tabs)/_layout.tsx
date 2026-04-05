@@ -2,16 +2,20 @@ import { Avatar } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/icon';
 import { Loading } from '@/components/ui/loading';
 import { TabButton } from '@/components/ui/tab-button';
+import { Text } from '@/components/ui/text';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useActivities } from '@/queries/use-activities';
 import { useMyInvites } from '@/queries/use-my-invites';
 import { useProfile } from '@/queries/use-profile';
+import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { Redirect, Tabs } from 'expo-router';
 import { Bell, MagnifyingGlass, SquaresFour } from 'phosphor-react-native';
-import { Platform } from 'react-native';
+import { useMemo } from 'react';
+import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Layout() {
@@ -19,8 +23,21 @@ export default function Layout() {
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { activities } = useActivities();
   const { invites, isLoading: isLoadingInvites } = useMyInvites();
   const profile = useProfile();
+  const ui = useUi();
+
+  const unreadCount = useMemo(() => {
+    if (!profile.id) return 0;
+
+    return activities.filter(
+      (a) =>
+        a.actor?.id !== profile.id &&
+        (!ui.activityLastReadDate ||
+          (a.date as unknown as string) > ui.activityLastReadDate)
+    ).length;
+  }, [activities, profile.id, ui.activityLastReadDate]);
 
   if (!auth.isLoading && !auth.user) {
     return <Redirect href="/sign-in" />;
@@ -112,7 +129,9 @@ export default function Layout() {
       <Tabs.Screen
         name="activity"
         options={{
-          tabBarItemStyle: breakpoints.md ? { marginTop: 'auto' } : undefined,
+          tabBarItemStyle: breakpoints.md
+            ? { marginTop: 'auto', marginBottom: 8 }
+            : undefined,
           tabBarButton: ({ children, onPress, ...props }) => (
             <TabButton
               aria-selected={props['aria-selected']}
@@ -123,11 +142,29 @@ export default function Layout() {
             </TabButton>
           ),
           tabBarIcon: ({ focused }) => (
-            <Icon
-              className={cn('text-placeholder', focused && 'text-foreground')}
-              icon={Bell}
-              size={24}
-            />
+            <View>
+              <Icon
+                className={cn('text-placeholder', focused && 'text-foreground')}
+                icon={Bell}
+                size={24}
+              />
+              {unreadCount > 0 && (
+                <View
+                  className="absolute items-center justify-center rounded-full bg-primary"
+                  style={{
+                    right: -6,
+                    top: -4,
+                    minWidth: 16,
+                    height: 16,
+                    paddingHorizontal: 4,
+                  }}
+                >
+                  <Text className="text-[10px] font-bold leading-none text-primary-foreground">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           ),
         }}
       />

@@ -11,6 +11,12 @@ const schema = i.schema({
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
     }),
+    activities: i.entity({
+      type: i.string().indexed(),
+      date: i.date().indexed(),
+      teamId: i.string().indexed(),
+      emoji: i.string().optional(),
+    }),
     comments: i.entity({
       date: i.date().indexed(),
       isDraft: i.boolean().optional().indexed(),
@@ -64,6 +70,7 @@ const schema = i.schema({
       name: i.string(),
     }),
     ui: i.entity({
+      activityLastReadDate: i.date().optional(),
       doubleTapEmoji: i.string().optional(),
       logsSortBy: i.string().optional(),
       logsSortDirection: i.string().optional(),
@@ -71,6 +78,69 @@ const schema = i.schema({
     }),
   },
   links: {
+    activitiesActors: {
+      forward: {
+        on: 'activities',
+        has: 'one',
+        label: 'actor',
+        required: true,
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'actorActivities',
+      },
+    },
+    activitiesComments: {
+      forward: {
+        on: 'activities',
+        has: 'one',
+        label: 'comment',
+      },
+      reverse: {
+        on: 'comments',
+        has: 'many',
+        label: 'activities',
+      },
+    },
+    activitiesLogs: {
+      forward: {
+        on: 'activities',
+        has: 'one',
+        label: 'log',
+      },
+      reverse: {
+        on: 'logs',
+        has: 'many',
+        label: 'activities',
+      },
+    },
+    activitiesRecords: {
+      forward: {
+        on: 'activities',
+        has: 'one',
+        label: 'record',
+      },
+      reverse: {
+        on: 'records',
+        has: 'many',
+        label: 'activities',
+      },
+    },
+    activitiesTeams: {
+      forward: {
+        on: 'activities',
+        has: 'one',
+        label: 'team',
+        required: true,
+        onDelete: 'cascade',
+      },
+      reverse: {
+        on: 'teams',
+        has: 'many',
+        label: 'activities',
+      },
+    },
     commentsReactions: {
       forward: {
         on: 'comments',

@@ -7,16 +7,20 @@ import { useProfile } from '@/queries/use-profile';
 import { useUi } from '@/queries/use-ui';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
+import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { useMemo } from 'react';
+import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 
 export const Reactions = ({
   color,
+  logId,
   reactions,
   recordId,
   commentId,
 }: {
   color?: string;
+  logId?: string;
   reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
   recordId: string;
   commentId?: string;
@@ -61,46 +65,53 @@ export const Reactions = ({
           );
         })
         .map(([emoji, { count, userReacted, userReactionId }]) => (
-          <Button
+          <Animated.View
             key={emoji}
-            className={cn(
-              'gap-1.5 rounded-lg',
-              userReacted ? 'active:bg-primary/20' : 'active:bg-accent'
-            )}
-            size="xs"
-            variant="ghost"
-            wrapperClassName="rounded-lg"
-            onPress={() =>
-              toggleReaction({
-                emoji,
-                existingReactionId: userReactionId,
-                profileId: profile.id,
-                teamId: ui.activeTeamId,
-                recordId,
-                commentId,
-              })
-            }
+            entering={animation(ZoomIn)}
+            exiting={animation(ZoomOut)}
           >
-            <Icon
+            <Button
               className={cn(
-                userReacted && !color && 'text-primary',
-                !userReacted && 'text-muted-foreground'
+                'gap-1.5 rounded-lg',
+                userReacted ? 'active:bg-primary/20' : 'active:bg-accent'
               )}
-              icon={REACTION_ICONS[emoji as keyof typeof REACTION_ICONS]}
-              style={userReacted && color ? { color } : undefined}
-              weight={userReacted ? 'fill' : 'regular'}
-            />
-            <Text
-              className={cn(
-                'text-sm',
-                userReacted && !color && 'text-primary',
-                !userReacted && 'text-muted-foreground'
-              )}
-              style={userReacted && color ? { color } : undefined}
+              size="xs"
+              variant="ghost"
+              wrapperClassName="rounded-lg"
+              onPress={() =>
+                toggleReaction({
+                  emoji,
+                  existingReactionId: userReactionId,
+                  logId,
+                  profileId: profile.id,
+                  teamId: ui.activeTeamId,
+                  recordId,
+                  commentId,
+                })
+              }
             >
-              {count}
-            </Text>
-          </Button>
+              <Icon
+                className={cn(
+                  '-ml-0.5',
+                  userReacted && !color && 'text-primary',
+                  !userReacted && 'text-muted-foreground'
+                )}
+                icon={REACTION_ICONS[emoji as keyof typeof REACTION_ICONS]}
+                style={userReacted && color ? { color } : undefined}
+                weight={userReacted ? 'fill' : 'regular'}
+              />
+              <Text
+                className={cn(
+                  'text-sm',
+                  userReacted && !color && 'text-primary',
+                  !userReacted && 'text-muted-foreground'
+                )}
+                style={userReacted && color ? { color } : undefined}
+              >
+                {count}
+              </Text>
+            </Button>
+          </Animated.View>
         ))}
     </>
   );

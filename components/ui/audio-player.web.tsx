@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { cn } from '@/utilities/cn';
 import { fileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
 import { Pause, Play } from 'phosphor-react-native';
@@ -226,9 +227,11 @@ function useWebAudioPlayer(uri: string) {
 }
 
 export const AudioPlayer = ({
+  compact,
   duration,
   uri,
 }: {
+  compact?: boolean;
   duration?: number;
   uri: string;
 }) => {
@@ -337,19 +340,19 @@ export const AudioPlayer = ({
   return (
     <View className="flex-row items-center">
       <Button
-        className="mr-3 size-8 rounded-full"
+        className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
         disabled={!player.loaded}
         onPress={() => (player.playing ? pause() : play())}
         size="icon"
         variant="secondary"
       >
-        <Icon icon={player.playing ? Pause : Play} size={16} />
+        <Icon icon={player.playing ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
       <div
         ref={trackRef}
         style={{
           flex: 1,
-          height: 32,
+          height: compact ? 24 : 32,
           display: 'flex',
           alignItems: 'center',
           cursor: 'pointer',
@@ -384,12 +387,19 @@ export const AudioPlayer = ({
 
 export const AudioPlaylist = ({
   clips,
+  compact,
 }: {
   clips: { id: string; uri: string; duration?: number }[];
+  compact?: boolean;
 }) => (
   <>
     {clips.map((clip) => (
-      <AudioPlayer key={clip.id} duration={clip.duration} uri={clip.uri} />
+      <AudioPlayer
+        key={clip.id}
+        compact={compact}
+        duration={clip.duration}
+        uri={clip.uri}
+      />
     ))}
   </>
 );

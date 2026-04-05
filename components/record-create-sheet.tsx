@@ -9,7 +9,9 @@ import { deleteRecordMedia } from '@/mutations/delete-record-media';
 import { publishRecord } from '@/mutations/publish-record';
 import { updateRecordDraft } from '@/mutations/update-record-draft';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
+import { useProfile } from '@/queries/use-profile';
 import { useRecordDraft } from '@/queries/use-record-draft';
+import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import { useCallback } from 'react';
 import { View } from 'react-native';
@@ -24,6 +26,8 @@ export const RecordCreateSheet = () => {
   const logId = isEdit ? undefined : sheetId;
   const editRecordId = isEdit ? sheetId : undefined;
 
+  const profile = useProfile();
+  const ui = useUi();
   const draft = useRecordDraft({ logId });
 
   const { data: editData } = db.useQuery(
@@ -74,6 +78,7 @@ export const RecordCreateSheet = () => {
     onDeleteMedia: handleDeleteMedia,
     onOpenAudio: () => sheetManager.open('record-audio', record?.id, 'record'),
     onUploadMedia: handleUploadMedia,
+    recordId: record?.id,
   });
 
   return (
@@ -106,14 +111,19 @@ export const RecordCreateSheet = () => {
               if (isEdit) {
                 sheetManager.close('record-create');
               } else {
-                publishRecord({ id: record?.id });
+                publishRecord({
+                  id: record?.id,
+                  logId: recordLogId,
+                  profileId: profile.id,
+                  teamId: ui.activeTeamId,
+                });
                 sheetManager.close('record-create');
               }
             }}
             size="xs"
             style={{ backgroundColor: logColor.default }}
           >
-            <Text>{isEdit ? 'Save' : 'Record'}</Text>
+            <Text>{isEdit ? 'Done' : 'Record'}</Text>
           </Button>
         </View>
       </View>

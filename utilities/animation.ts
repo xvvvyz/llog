@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-
 import {
   FadeIn,
   FadeInDown,
@@ -7,6 +6,8 @@ import {
   FadeOut,
   FadeOutDown,
   FadeOutUp,
+  ZoomIn,
+  ZoomOut,
 } from 'react-native-reanimated';
 
 export const animation = (
@@ -17,6 +18,8 @@ export const animation = (
     | typeof FadeOut
     | typeof FadeOutDown
     | typeof FadeOutUp
+    | typeof ZoomIn
+    | typeof ZoomOut
 ) =>
   Platform.select({
     // https://github.com/facebook/react-native/issues/49077

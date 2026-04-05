@@ -32,6 +32,7 @@ export const useUi = () => {
   );
 
   return {
+    activityLastReadDate: ui?.activityLastReadDate,
     activeTeamId: ui?.team?.id,
     doubleTapEmoji: (REACTION_EMOJIS.includes(ui?.doubleTapEmoji as Emoji)
       ? ui?.doubleTapEmoji

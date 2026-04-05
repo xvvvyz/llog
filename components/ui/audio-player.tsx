@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { cn } from '@/utilities/cn';
 import { fileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -22,9 +23,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 export const AudioPlayer = ({
+  compact,
   duration,
   uri,
 }: {
+  compact?: boolean;
   duration?: number;
   uri: string;
 }) => {
@@ -147,16 +150,18 @@ export const AudioPlayer = ({
   return (
     <View className="flex-row items-center">
       <Button
-        className="mr-3 size-8 rounded-full"
+        className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
         onPress={() => (status.playing ? player.pause() : handlePlay())}
         size="icon"
         variant="secondary"
       >
-        <Icon icon={status.playing ? Pause : Play} size={16} />
+        <Icon icon={status.playing ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
       <GestureHandlerRootView className="flex-1 self-stretch">
         <GestureDetector gesture={gesture}>
-          <Animated.View className="h-8 flex-1 justify-center">
+          <Animated.View
+            className={cn('flex-1 justify-center', compact ? 'h-6' : 'h-8')}
+          >
             <View
               className="h-1 overflow-hidden rounded-full bg-border"
               onLayout={onTrackLayout}
@@ -178,12 +183,19 @@ export const AudioPlayer = ({
 
 export const AudioPlaylist = ({
   clips,
+  compact,
 }: {
   clips: { id: string; uri: string; duration?: number }[];
+  compact?: boolean;
 }) => (
   <>
     {clips.map((clip) => (
-      <AudioPlayer key={clip.id} duration={clip.duration} uri={clip.uri} />
+      <AudioPlayer
+        key={clip.id}
+        compact={compact}
+        duration={clip.duration}
+        uri={clip.uri}
+      />
     ))}
   </>
 );

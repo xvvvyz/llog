@@ -1,4 +1,5 @@
 import { SheetName } from '@/types/sheet-names';
+import { usePathname } from 'expo-router';
 import { Keyboard } from 'react-native';
 
 import {
@@ -6,6 +7,8 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -22,6 +25,7 @@ const SheetContext = createContext<{
   isOpen: (name: SheetName) => boolean;
   open: (name: SheetName, id?: string, context?: string) => void;
   someOpen: () => boolean;
+  suspend: () => void;
 }>({
   close: () => {},
   getContext: () => undefined,
@@ -29,10 +33,24 @@ const SheetContext = createContext<{
   isOpen: () => false,
   open: () => {},
   someOpen: () => false,
+  suspend: () => {},
 });
 
 export const SheetManagerProvider = ({ children }: { children: ReactNode }) => {
+  const pathname = usePathname();
   const [sheetStack, setSheetStack] = useState<SheetStackItem[]>([]);
+
+  const suspendedRef = useRef<{
+    pathname: string;
+    stack: SheetStackItem[];
+  } | null>(null);
+
+  useEffect(() => {
+    if (suspendedRef.current && pathname === suspendedRef.current.pathname) {
+      setSheetStack(suspendedRef.current.stack);
+      suspendedRef.current = null;
+    }
+  }, [pathname]);
 
   const close = useCallback((name: SheetName) => {
     setSheetStack((prev) => {
@@ -59,6 +77,7 @@ export const SheetManagerProvider = ({ children }: { children: ReactNode }) => {
 
   const open = useCallback((name: SheetName, id?: string, context?: string) => {
     Keyboard.dismiss();
+    suspendedRef.current = null;
 
     setSheetStack((prev) => {
       const index = prev.findIndex((item) => item.name === name);
@@ -69,9 +88,17 @@ export const SheetManagerProvider = ({ children }: { children: ReactNode }) => {
 
   const someOpen = useCallback(() => !!sheetStack.length, [sheetStack]);
 
+  const suspend = useCallback(() => {
+    setSheetStack((prev) => {
+      if (!prev.length) return prev;
+      suspendedRef.current = { pathname, stack: prev };
+      return [];
+    });
+  }, [pathname]);
+
   return (
     <SheetContext.Provider
-      value={{ close, getContext, getId, isOpen, open, someOpen }}
+      value={{ close, getContext, getId, isOpen, open, someOpen, suspend }}
     >
       {children}
     </SheetContext.Provider>

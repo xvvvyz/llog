@@ -13,7 +13,8 @@ export default function Index() {
 
   const params = useLocalSearchParams<{
     commentId?: string;
-    defaultIndex: string;
+    defaultIndex?: string;
+    id?: string;
     recordId: string;
   }>();
 
@@ -33,13 +34,31 @@ export default function Index() {
   );
 
   const isLoading = params.commentId ? comment.isLoading : record.isLoading;
-  const defaultIndex = params.defaultIndex ? Number(params.defaultIndex) : 0;
+
+  const defaultIndex = useMemo(() => {
+    if (params.id) {
+      const idx = visualMedia.findIndex((m) => m.id === params.id);
+      if (idx !== -1) return idx;
+    }
+
+    return params.defaultIndex ? Number(params.defaultIndex) : 0;
+  }, [params.id, params.defaultIndex, visualMedia]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') router.back();
+      if (event.key === 'Escape') {
+        event.stopImmediatePropagation();
+
+        const onKeyUp = (e: KeyboardEvent) => {
+          if (e.key === 'Escape') e.stopImmediatePropagation();
+          document.removeEventListener('keyup', onKeyUp, true);
+        };
+
+        document.addEventListener('keyup', onKeyUp, true);
+        router.back();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -50,7 +69,8 @@ export default function Index() {
     return <Loading />;
   }
 
-  if (!visualMedia.length || isNaN(defaultIndex)) {
+  if (!visualMedia.length) {
+    if (params.id) return <Loading />;
     return <Redirect href={`/record/${params.recordId}`} />;
   }
 

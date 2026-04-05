@@ -74,6 +74,7 @@ export const RecordOrComment = ({
       toggleReaction({
         emoji,
         existingReactionId: existingReaction?.id,
+        logId,
         profileId: profile.id,
         teamId: ui.activeTeamId,
         recordId,
@@ -206,6 +207,7 @@ export const RecordOrComment = ({
               <EmojiPicker
                 color={accentColor}
                 commentId={commentId}
+                logId={logId}
                 reactions={record.reactions}
                 recordId={recordId}
               />
@@ -214,6 +216,7 @@ export const RecordOrComment = ({
                   <Reactions
                     color={accentColor}
                     commentId={commentId}
+                    logId={logId}
                     reactions={record.reactions}
                     recordId={recordId}
                   />
@@ -290,7 +293,7 @@ export const RecordOrComment = ({
           <AudioPlaylist clips={audioMedia} />
         </View>
       )}
-      <View className="-mt-1 flex-row justify-between gap-3 px-4 pb-3">
+      <View className="-mt-1 flex-row justify-between gap-3 px-3 pb-3">
         <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
           <EmojiPicker
             color={accentColor}
@@ -348,7 +351,6 @@ const TruncatedText = ({
 
   useEffect(() => {
     if (!numberOfLines || expanded) return;
-
     const node = textRef.current as unknown as HTMLElement | null;
     if (!node) return;
 
