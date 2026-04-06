@@ -21,6 +21,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   comment_posted: 'Replied',
   reaction_added: 'Reacted',
   member_joined: 'Joined',
+  member_left: 'Left',
 };
 
 export const ActivityItem = ({
@@ -79,35 +80,42 @@ export const ActivityItem = ({
         <View className="flex-row items-start gap-3 p-4 pb-0">
           <Avatar avatar={actor?.image?.uri} id={actor?.id} />
           <View className="flex-1">
-            <ActivityName group={group} />
+            <View className="flex-row items-baseline justify-between gap-3">
+              <ActivityName group={group} />
+              <View className="min-w-24 flex-1 flex-row items-baseline justify-end gap-1">
+                <Text
+                  className="shrink-0 text-xs leading-5 text-muted-foreground"
+                  numberOfLines={1}
+                >
+                  {group.type === 'member_joined'
+                    ? 'Joined the team'
+                    : group.type === 'member_left'
+                      ? 'Left the team'
+                      : category + (log ? ' in' : '')}
+                </Text>
+                {log &&
+                  group.type !== 'member_joined' &&
+                  group.type !== 'member_left' && (
+                    <View className="shrink flex-row items-center gap-1">
+                      <View
+                        className="size-2.5 shrink-0 rounded-[2px]"
+                        style={{
+                          backgroundColor: logColor?.default ?? undefined,
+                        }}
+                      />
+                      <Text
+                        className="shrink text-xs leading-5 text-muted-foreground"
+                        numberOfLines={1}
+                      >
+                        {log.name}
+                      </Text>
+                    </View>
+                  )}
+              </View>
+            </View>
             <Text className="text-sm leading-5 text-muted-foreground">
               {formatDate(group.latestDate)}
             </Text>
-          </View>
-          <View className="flex-row items-baseline gap-1">
-            <Text
-              className="text-xs leading-5 text-muted-foreground"
-              numberOfLines={1}
-            >
-              {category}
-              {log && ' in'}
-            </Text>
-            {log && (
-              <View className="flex-row items-center gap-1">
-                <View
-                  className="size-2.5 rounded-[2px]"
-                  style={{
-                    backgroundColor: logColor?.default ?? undefined,
-                  }}
-                />
-                <Text
-                  className="text-xs leading-5 text-muted-foreground"
-                  numberOfLines={1}
-                >
-                  {log.name}
-                </Text>
-              </View>
-            )}
           </View>
         </View>
         {showQuotedRecord && (
@@ -335,7 +343,11 @@ const ActivityName = ({ group }: { group: GroupedActivity }) => {
     );
   }
 
-  return <Text className="font-medium leading-5">{actor?.name}</Text>;
+  return (
+    <Text className="font-medium leading-5" numberOfLines={1}>
+      {actor?.name}
+    </Text>
+  );
 };
 
 const ActivityContent = ({
@@ -391,13 +403,7 @@ const ActivityContent = ({
     }
 
     case 'member_joined': {
-      const teamName = first?.team?.name;
-
-      return (
-        <Text className="px-4 text-muted-foreground">
-          {teamName ? `joined ${teamName}` : 'joined the team'}
-        </Text>
-      );
+      return null;
     }
 
     default: {

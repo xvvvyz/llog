@@ -1,3 +1,4 @@
+import { Role } from '@/enums/roles';
 import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { Color } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
@@ -15,9 +16,24 @@ export const createLog = async ({
   const teamId = await getActiveTeamId();
   if (!teamId) return;
 
-  return db.transact(
-    db.tx.logs[id ?? generateId()]
+  const { data } = await db.queryOnce({
+    roles: {
+      $: { where: { team: teamId } },
+      user: { profile: { $: { fields: ['id'] } } },
+    },
+  });
+
+  const profileIds = data.roles
+    .filter((r) => r.role === Role.Owner || r.role === Role.Admin)
+    .map((r) => r.user?.profile?.id)
+    .filter(Boolean) as string[];
+
+  const logId = id ?? generateId();
+
+  return db.transact([
+    db.tx.logs[logId]
       .update({ color: color as number, name, teamId })
-      .link({ team: teamId })
-  );
+      .link({ team: teamId }),
+    ...profileIds.map((pid) => db.tx.logs[logId].link({ profiles: pid })),
+  ]);
 };

@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { nanoid } from 'nanoid';
 import { z } from 'zod/v4';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
@@ -25,69 +26,80 @@ const memberJoinedActivity = (
       ]
     : [];
 
+const removeMember = async (
+  db: Db,
+  roleId: string,
+  profileId: string,
+  teamId: string
+) => {
+  const [{ activities }, { logs }] = await Promise.all([
+    db.query({
+      activities: {
+        $: {
+          where: { type: 'member_joined', actor: profileId, team: teamId },
+        },
+      },
+    }),
+    db.query({
+      logs: {
+        $: { where: { team: teamId } },
+        profiles: { $: { where: { id: profileId } } },
+      },
+    }),
+  ]);
+
+  const memberLogs = logs.filter((l) => l.profiles.length > 0);
+
+  await db.transact([
+    db.tx.roles[roleId].delete(),
+    ...activities.map((a) => db.tx.activities[a.id].delete()),
+    ...memberLogs.map((l) => db.tx.profiles[profileId].unlink({ logs: l.id })),
+    db.tx.activities[id()]
+      .update({
+        type: 'member_left',
+        date: new Date().toISOString(),
+        teamId,
+      })
+      .link({ actor: profileId, team: teamId }),
+  ]);
+};
+
+const generateToken = () => nanoid(8);
+
 app.post(
-  '/:teamId/invites',
-  db({ asUser: true }),
+  '/:teamId/invite-links',
+  db(),
   zValidator(
     'json',
     z.object({
-      email: z.string().email(),
-      role: z.enum([Role.Owner, Role.Admin, Role.Recorder]),
+      role: z.enum([Role.Admin, Role.Recorder]),
+      logIds: z.array(z.string()).optional().default([]),
+      expiresAt: z.number().optional(),
     })
   ),
   async (c) => {
+    const authToken = c.req.header('Authorization')?.split(' ')[1] ?? '';
+    const user = await c.var.db.auth.verifyToken(authToken);
     const { teamId } = c.req.param();
-    const { email: rawEmail, role } = c.req.valid('json');
-    const email = rawEmail.toLowerCase();
+    const { role, logIds, expiresAt } = c.req.valid('json');
 
-    const [{ roles: callerRoles }, { invites: existingInvites }, { profiles }] =
-      await Promise.all([
-        c.var.db.query({
-          roles: {
-            $: {
-              where: {
-                team: teamId,
-                userId: c.var.user.id,
-              },
-            },
-          },
-        }),
-        c.var.db.query({
-          invites: {
-            $: { where: { email, team: teamId } },
-          },
-        }),
-        c.var.db.query({
-          profiles: {
-            $: { where: { user: c.var.user.id }, fields: ['id'] },
-          },
-        }),
-      ]);
+    const [{ roles: callerRoles }, { profiles }] = await Promise.all([
+      c.var.db.query({
+        roles: {
+          $: { where: { team: teamId, userId: user.id } },
+        },
+      }),
+      c.var.db.query({
+        profiles: {
+          $: { where: { user: user.id }, fields: ['id'] },
+        },
+      }),
+    ]);
 
     const callerRole = callerRoles[0]?.role;
 
     if (callerRole !== Role.Owner && callerRole !== Role.Admin) {
       throw new HTTPException(403, { message: 'Forbidden' });
-    }
-
-    if (existingInvites.length) {
-      throw new HTTPException(400, { message: 'Invite already exists' });
-    }
-
-    const { $users: users } = await c.var.db.query({
-      $users: {
-        $: { where: { email } },
-        profile: {},
-        roles: { $: { where: { team: teamId } } },
-      },
-    });
-
-    const targetUser = users[0];
-
-    if (targetUser) {
-      if (targetUser.roles?.length) {
-        throw new HTTPException(400, { message: 'User is already a member' });
-      }
     }
 
     const creatorProfileId = profiles[0]?.id;
@@ -96,162 +108,202 @@ app.post(
       throw new HTTPException(400, { message: 'Profile not found' });
     }
 
-    await c.var.db.transact(
-      c.var.db.tx.invites[id()]
-        .update({ email, role, teamId })
-        .link({ team: teamId, creator: creatorProfileId })
-    );
+    const token = generateToken();
+    const linkId = id();
 
-    return c.json({ status: 'invited' });
+    const linkTx = c.var.db.tx.inviteLinks[linkId]
+      .update({ token, role, teamId, expiresAt })
+      .link({
+        team: teamId,
+        creator: creatorProfileId,
+        ...(logIds.length ? { logs: logIds } : {}),
+      });
+
+    await c.var.db.transact(linkTx);
+    return c.json({ token });
   }
 );
 
-app.get('/my-invites', db(), async (c) => {
-  const token = c.req.header('Authorization')?.split(' ')[1] ?? '';
-  const user = await c.var.db.auth.verifyToken(token);
-  const email = user.email?.toLowerCase();
+app.get('/invite-links/:token', db(), async (c) => {
+  const { token } = c.req.param();
 
-  if (!email) {
-    return c.json({ invites: [] });
-  }
-
-  const { invites } = await c.var.db.query({
-    invites: {
-      $: { where: { email } },
-      team: {},
+  const { inviteLinks } = await c.var.db.query({
+    inviteLinks: {
+      $: { where: { token } },
+      team: { $: { fields: ['name'] } },
+      logs: { $: { fields: ['name'] } },
     },
   });
 
-  return c.json({ invites });
+  const link = inviteLinks[0];
+
+  if (!link) {
+    throw new HTTPException(404, { message: 'Invite link not found' });
+  }
+
+  const now = Date.now();
+
+  if (link.expiresAt && link.expiresAt < now) {
+    return c.json({ isValid: false, reason: 'expired' });
+  }
+
+  return c.json({
+    isValid: true,
+    teamName: link.team?.name,
+    role: link.role,
+    logNames: link.logs?.map((l) => l.name) ?? [],
+  });
 });
 
-app.post('/invites/:inviteId/accept', db(), async (c) => {
-  const token = c.req.header('Authorization')?.split(' ')[1] ?? '';
-  const user = await c.var.db.auth.verifyToken(token);
-  const { inviteId } = c.req.param();
+app.post('/invite-links/:token/redeem', db(), async (c) => {
+  const authToken = c.req.header('Authorization')?.split(' ')[1] ?? '';
+  const user = await c.var.db.auth.verifyToken(authToken);
+  const { token } = c.req.param();
 
-  const { invites } = await c.var.db.query({
-    invites: {
-      $: { where: { id: inviteId } },
+  const { inviteLinks } = await c.var.db.query({
+    inviteLinks: {
+      $: { where: { token } },
       team: { $: { fields: ['id'] } },
+      logs: { $: { fields: ['id'] } },
     },
   });
 
-  const invite = invites[0];
+  const link = inviteLinks[0];
 
-  if (!invite) {
-    throw new HTTPException(404, { message: 'Invite not found' });
+  if (!link) {
+    throw new HTTPException(404, { message: 'Invite link not found' });
   }
 
-  if (user.email?.toLowerCase() !== invite.email.toLowerCase()) {
-    throw new HTTPException(403, { message: 'Forbidden' });
+  const now = Date.now();
+
+  if (link.expiresAt && link.expiresAt < now) {
+    throw new HTTPException(400, { message: 'Invite link has expired' });
   }
 
-  const teamId = invite.team?.id;
+  const teamId = link.team?.id;
 
   if (!teamId) {
-    throw new HTTPException(400, { message: 'Invalid invite' });
+    throw new HTTPException(400, { message: 'Invalid invite link' });
   }
 
-  const { profiles } = await c.var.db.query({
-    profiles: { $: { where: { user: user.id }, fields: ['id'] } },
-  });
-
-  const actorId = profiles[0]?.id;
-
-  await c.var.db.transact([
-    c.var.db.tx.roles[id()]
-      .update({
-        key: `${invite.role}_${user.id}_${teamId}`,
-        role: invite.role,
-        teamId,
-        userId: user.id,
-      })
-      .link({ team: teamId, user: user.id }),
-    c.var.db.tx.invites[inviteId].delete(),
-    ...memberJoinedActivity(c.var.db, actorId, teamId),
-  ]);
-
-  return c.json({ status: 'joined', teamId });
-});
-
-app.post('/invites/:inviteId/decline', db(), async (c) => {
-  const token = c.req.header('Authorization')?.split(' ')[1] ?? '';
-  const user = await c.var.db.auth.verifyToken(token);
-  const { inviteId } = c.req.param();
-
-  const { invites } = await c.var.db.query({
-    invites: {
-      $: { where: { id: inviteId } },
-    },
-  });
-
-  const invite = invites[0];
-
-  if (!invite) {
-    throw new HTTPException(404, { message: 'Invite not found' });
-  }
-
-  if (user.email?.toLowerCase() !== invite.email.toLowerCase()) {
-    throw new HTTPException(403, { message: 'Forbidden' });
-  }
-
-  await c.var.db.transact(c.var.db.tx.invites[inviteId].delete());
-
-  return c.json({ status: 'declined' });
-});
-
-app.post('/resolve-invites', db(), async (c) => {
-  const token = c.req.header('Authorization')?.split(' ')[1] ?? '';
-  const user = await c.var.db.auth.verifyToken(token);
-  const email = user.email?.toLowerCase();
-
-  if (!email) {
-    return c.json({ joined: [] });
-  }
-
-  const [{ invites }, { profiles }] = await Promise.all([
+  const [{ roles: existingRoles }, { profiles }] = await Promise.all([
     c.var.db.query({
-      invites: {
-        $: { where: { email } },
-        team: { $: { fields: ['id'] } },
-      },
+      roles: { $: { where: { team: teamId, userId: user.id } } },
     }),
     c.var.db.query({
       profiles: { $: { where: { user: user.id }, fields: ['id'] } },
     }),
   ]);
 
-  if (!invites.length) {
-    return c.json({ joined: [] });
-  }
-
   const actorId = profiles[0]?.id;
+  const logIds = link.logs?.map((l) => l.id) ?? [];
 
-  const txns = invites.flatMap((invite) => {
-    const teamId = invite.team?.id;
-    if (!teamId) return [];
+  if (existingRoles.length) {
+    if (actorId && logIds.length) {
+      await c.var.db.transact(
+        logIds.map((logId) =>
+          c.var.db.tx.profiles[actorId].link({ logs: logId })
+        )
+      );
+    }
 
-    return [
-      c.var.db.tx.roles[id()]
-        .update({
-          key: `${invite.role}_${user.id}_${teamId}`,
-          role: invite.role,
-          teamId,
-          userId: user.id,
-        })
-        .link({ team: teamId, user: user.id }),
-      c.var.db.tx.invites[invite.id].delete(),
-      ...memberJoinedActivity(c.var.db, actorId, teamId),
-    ];
-  });
-
-  if (txns.length) {
-    await c.var.db.transact(txns);
+    return c.json({ status: 'logs_added', teamId });
   }
 
-  const joined = invites.map((inv) => inv.team?.id).filter(Boolean);
-  return c.json({ joined });
+  await c.var.db.transact([
+    c.var.db.tx.roles[id()]
+      .update({
+        key: `${link.role}_${user.id}_${teamId}`,
+        role: link.role,
+        teamId,
+        userId: user.id,
+      })
+      .link({ team: teamId, user: user.id }),
+    ...(actorId && logIds.length
+      ? logIds.map((logId) =>
+          c.var.db.tx.profiles[actorId].link({ logs: logId })
+        )
+      : []),
+    ...memberJoinedActivity(c.var.db, actorId, teamId),
+  ]);
+
+  return c.json({ status: 'joined', teamId });
+});
+
+app.delete('/:teamId/invite-links/:linkId', db({ asUser: true }), async (c) => {
+  const { linkId } = c.req.param();
+  await c.var.db.transact(c.var.db.tx.inviteLinks[linkId].delete());
+  return c.json({ status: 'deleted' });
+});
+
+app.post('/:teamId/leave', db(), async (c) => {
+  const authToken = c.req.header('Authorization')?.split(' ')[1] ?? '';
+  const user = await c.var.db.auth.verifyToken(authToken);
+  const { teamId } = c.req.param();
+
+  const [{ roles }, { profiles }] = await Promise.all([
+    c.var.db.query({
+      roles: { $: { where: { team: teamId, userId: user.id } } },
+    }),
+    c.var.db.query({
+      profiles: { $: { where: { user: user.id }, fields: ['id'] } },
+    }),
+  ]);
+
+  const role = roles[0];
+  const profileId = profiles[0]?.id;
+
+  if (!role || !profileId) {
+    throw new HTTPException(400, { message: 'Not a team member' });
+  }
+
+  if (role.role === Role.Owner) {
+    throw new HTTPException(400, { message: 'Owner cannot leave the team' });
+  }
+
+  await removeMember(c.var.db, role.id, profileId, teamId);
+  return c.json({ status: 'left' });
+});
+
+app.delete('/:teamId/members/:roleId', db(), async (c) => {
+  const authToken = c.req.header('Authorization')?.split(' ')[1] ?? '';
+  const user = await c.var.db.auth.verifyToken(authToken);
+  const { teamId, roleId } = c.req.param();
+
+  const [{ roles: callerRoles }, { roles: targetRoles }] = await Promise.all([
+    c.var.db.query({
+      roles: { $: { where: { team: teamId, userId: user.id } } },
+    }),
+    c.var.db.query({
+      roles: {
+        $: { where: { id: roleId, team: teamId } },
+        user: { profile: { $: { fields: ['id'] } } },
+      },
+    }),
+  ]);
+
+  const callerRole = callerRoles[0]?.role;
+  const targetRole = targetRoles[0];
+
+  if (!callerRole || !targetRole) {
+    throw new HTTPException(400, { message: 'Invalid request' });
+  }
+
+  const canRemove =
+    callerRole === Role.Owner ||
+    (callerRole === Role.Admin && targetRole.role === Role.Recorder);
+
+  if (!canRemove) {
+    throw new HTTPException(403, { message: 'Forbidden' });
+  }
+
+  const profileId = targetRole.user?.profile?.id;
+  if (!profileId) {
+    throw new HTTPException(400, { message: 'Profile not found' });
+  }
+
+  await removeMember(c.var.db, roleId, profileId, teamId);
+  return c.json({ status: 'removed' });
 });
 
 export default app;

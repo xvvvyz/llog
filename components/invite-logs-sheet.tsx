@@ -1,0 +1,168 @@
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Sheet } from '@/components/ui/sheet';
+import { Text } from '@/components/ui/text';
+import { useSheetManager } from '@/context/sheet-manager';
+import { Role } from '@/enums/roles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useCopy } from '@/hooks/use-copy';
+import { createInviteLink } from '@/mutations/create-invite-link';
+import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
+import { useUi } from '@/queries/use-ui';
+import { SPECTRUM } from '@/theme/spectrum';
+import { db } from '@/utilities/db';
+import { getInviteUrl } from '@/utilities/invite-url';
+import { useCallback, useRef, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+
+export const InviteLogsSheet = () => {
+  const sheetManager = useSheetManager();
+  const action = sheetManager.getId('invite-logs') as 'copy' | 'qr' | undefined;
+  const { activeTeamId } = useUi();
+  const colorScheme = useColorScheme();
+  const { inviteLinks } = useTeamInviteLinks();
+  const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const { copy, copied } = useCopy();
+  const dismissTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const { data } = db.useQuery(
+    activeTeamId
+      ? {
+          logs: {
+            $: {
+              order: { name: 'asc' },
+              where: { team: activeTeamId },
+            },
+          },
+        }
+      : null
+  );
+
+  const logs = data?.logs ?? [];
+
+  const toggleLog = useCallback((logId: string) => {
+    setSelectedLogIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(logId)) next.delete(logId);
+      else next.add(logId);
+      return next;
+    });
+  }, []);
+
+  const findMatchingLink = useCallback(
+    (logIds: string[]) => {
+      const sorted = [...logIds].sort();
+
+      return inviteLinks.find((link) => {
+        if (link.role !== Role.Recorder) return false;
+        const linkLogIds = [...(link.logs?.map((l) => l.id) ?? [])].sort();
+        if (linkLogIds.length !== sorted.length) return false;
+        return linkLogIds.every((id, i) => id === sorted[i]);
+      });
+    },
+    [inviteLinks]
+  );
+
+  const handleConfirm = useCallback(async () => {
+    if (!activeTeamId || selectedLogIds.size === 0) return;
+    setIsLoading(true);
+
+    try {
+      const logIds = [...selectedLogIds];
+      const existing = findMatchingLink(logIds);
+
+      const token = existing
+        ? existing.token
+        : (
+            await createInviteLink({
+              teamId: activeTeamId,
+              role: Role.Recorder,
+              logIds,
+            })
+          ).token;
+
+      const url = getInviteUrl(token);
+
+      if (action === 'qr') {
+        sheetManager.close('invite-logs');
+        setTimeout(() => sheetManager.open('invite-qr', url), 300);
+      } else {
+        await copy(url);
+
+        dismissTimer.current = setTimeout(() => {
+          setSelectedLogIds(new Set());
+          sheetManager.close('invite-logs');
+        }, 1500);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    activeTeamId,
+    selectedLogIds,
+    findMatchingLink,
+    action,
+    sheetManager,
+    copy,
+  ]);
+
+  const handleDismiss = useCallback(() => {
+    clearTimeout(dismissTimer.current);
+    sheetManager.close('invite-logs');
+    setSelectedLogIds(new Set());
+  }, [sheetManager]);
+
+  return (
+    <Sheet
+      onDismiss={handleDismiss}
+      open={sheetManager.isOpen('invite-logs')}
+      portalName="invite-logs"
+    >
+      <ScrollView
+        contentContainerClassName="w-full p-8 sm:mx-auto sm:max-w-sm"
+        keyboardShouldPersistTaps="always"
+      >
+        {logs.map((log) => {
+          const isSelected = selectedLogIds.has(log.id);
+          const color = SPECTRUM[colorScheme][log.color ?? 11];
+
+          return (
+            <View
+              className="flex-row items-center justify-between py-1.5"
+              key={log.id}
+            >
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="size-8 rounded-xl"
+                  style={{ backgroundColor: color.default }}
+                />
+                <Text numberOfLines={1}>{log.name}</Text>
+              </View>
+              <Checkbox
+                checked={isSelected}
+                className="size-8 border-0"
+                onCheckedChange={() => toggleLog(log.id)}
+              />
+            </View>
+          );
+        })}
+        <Button
+          disabled={selectedLogIds.size === 0 || isLoading}
+          onPress={handleConfirm}
+          wrapperClassName="mt-4"
+        >
+          <Text>
+            {copied
+              ? 'Copied!'
+              : isLoading
+                ? 'Generating…'
+                : action === 'qr'
+                  ? 'Show QR code'
+                  : 'Copy link'}
+          </Text>
+        </Button>
+      </ScrollView>
+    </Sheet>
+  );
+};

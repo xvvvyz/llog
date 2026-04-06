@@ -1,3 +1,4 @@
+import { TeamSwitcher } from '@/components/team-switcher';
 import { Avatar } from '@/components/ui/avatar';
 import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
@@ -7,32 +8,38 @@ import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { Role } from '@/enums/roles';
-import { cancelInvite } from '@/mutations/cancel-invite';
-import { removeMember } from '@/mutations/remove-member';
-import { updateInvite } from '@/mutations/update-invite';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useCopy } from '@/hooks/use-copy';
+import { createInviteLink } from '@/mutations/create-invite-link';
 import { updateRole } from '@/mutations/update-role';
 import { updateTeam } from '@/mutations/update-team';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeam } from '@/queries/use-team';
-import { useTeamInvites } from '@/queries/use-team-invites';
+import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
 import { useTeamMembers } from '@/queries/use-team-members';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
+import { UI } from '@/theme/ui';
 import { db } from '@/utilities/db';
+import { getInviteUrl } from '@/utilities/invite-url';
 import {
-  CaretDown,
   Check,
+  Copy,
+  DotsThreeVertical,
+  LinkBreak,
+  QrCode,
   SignOut,
+  SquaresFour,
   Trash,
   UserMinus,
-  UserPlus,
-  X,
 } from 'phosphor-react-native';
-import { ScrollView, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
@@ -41,21 +48,96 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function Team() {
+  const [copiedRole, setCopiedRole] = useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const auth = db.useAuth();
+  const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
-  const { activeTeamId } = useUi();
   const team = useTeam();
-  const { teams } = useTeams();
+  const { activeTeamId } = useUi();
+  const { canManage, isOwner } = useMyRole();
+  const { copy } = useCopy();
+  const { inviteLinks } = useTeamInviteLinks();
   const { members } = useTeamMembers();
-  const { invites } = useTeamInvites();
-  const myRole = useMyRole();
-  const { canManage, isOwner } = myRole;
+  useTeams();
 
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
 
+  const getOrCreateAdminLink = useCallback(async () => {
+    const existing = inviteLinks.find((l) => l.role === Role.Admin);
+    if (existing) return existing.token;
+    if (!activeTeamId) return null;
+
+    const { token } = await createInviteLink({
+      teamId: activeTeamId,
+      role: Role.Admin,
+    });
+
+    return token;
+  }, [inviteLinks, activeTeamId]);
+
+  const handleCopyLink = useCallback(
+    async (role: string) => {
+      if (role === Role.Recorder) {
+        sheetManager.open('invite-logs', 'copy');
+        return;
+      }
+
+      setLoadingAction(`copy-${role}`);
+
+      try {
+        const token = await getOrCreateAdminLink();
+
+        if (token) {
+          await copy(getInviteUrl(token));
+          setCopiedRole(role);
+          setTimeout(() => setCopiedRole(null), 2000);
+        }
+      } finally {
+        setLoadingAction(null);
+      }
+    },
+    [getOrCreateAdminLink, sheetManager, copy]
+  );
+
+  const handleShowQr = useCallback(
+    async (role: string) => {
+      if (role === Role.Recorder) {
+        sheetManager.open('invite-logs', 'qr');
+        return;
+      }
+
+      setLoadingAction(`qr-${role}`);
+
+      try {
+        const token = await getOrCreateAdminLink();
+        if (token) sheetManager.open('invite-qr', getInviteUrl(token));
+      } finally {
+        setLoadingAction(null);
+      }
+    },
+    [getOrCreateAdminLink, sheetManager]
+  );
+
+  const handleDelete = useCallback(
+    (role: string) => {
+      sheetManager.open('invite-delete', role);
+    },
+    [sheetManager]
+  );
+
+  if (team.isLoading) {
+    return (
+      <Page>
+        <Header left={<BackButton />} title={<TeamSwitcher hideSettings />} />
+        <Loading />
+      </Page>
+    );
+  }
+
   return (
     <Page>
-      <Header left={<BackButton />} title={team.name} />
+      <Header left={<BackButton />} title={<TeamSwitcher hideSettings />} />
       <ScrollView contentContainerClassName="items-center justify-center flex-1 p-3">
         <Card className="w-full max-w-xs overflow-hidden p-0">
           <View className="pb-2">
@@ -63,7 +145,7 @@ export default function Team() {
               <View className="flex-row items-center justify-between border-b border-border pt-2">
                 <Label className="shrink-0 p-0">Team name</Label>
                 <Input
-                  editable={isOwner}
+                  editable={canManage}
                   maxLength={32}
                   className="min-w-0 shrink rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(name) => updateTeam({ id: team.id, name })}
@@ -71,42 +153,102 @@ export default function Team() {
                 />
               </View>
             </View>
-            <View className="px-4">
-              <View className="pb-2 pt-6">
-                {members.map((member) => {
-                  const profile = member.user?.profile;
-                  const isSelf = member.userId === auth.user?.id;
+            {canManage &&
+              [Role.Admin, Role.Recorder].map((role) => (
+                <View key={role} className="px-4">
+                  <View className="flex-row items-center justify-between pt-1.5">
+                    <Text className="font-normal text-muted-foreground">
+                      {ROLE_LABELS[role]} invite link
+                    </Text>
+                    <View className="-mr-[7px] flex-row items-center gap-1">
+                      <Button
+                        className="size-8"
+                        onPress={() => handleCopyLink(role)}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        {loadingAction === `copy-${role}` ? (
+                          <ActivityIndicator
+                            size={16}
+                            color={UI[colorScheme].mutedForeground}
+                          />
+                        ) : (
+                          <Icon
+                            className="text-placeholder"
+                            icon={copiedRole === role ? Check : Copy}
+                          />
+                        )}
+                      </Button>
+                      <Button
+                        className="size-8"
+                        onPress={() => handleShowQr(role)}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        {loadingAction === `qr-${role}` ? (
+                          <ActivityIndicator
+                            size={16}
+                            color={UI[colorScheme].mutedForeground}
+                          />
+                        ) : (
+                          <Icon className="text-placeholder" icon={QrCode} />
+                        )}
+                      </Button>
+                      {inviteLinks.some((l) => l.role === role) && (
+                        <Button
+                          className="size-8"
+                          onPress={() => handleDelete(role)}
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <Icon className="text-placeholder" icon={LinkBreak} />
+                        </Button>
+                      )}
+                    </View>
+                  </View>
+                  <Text className="-mt-1 pb-3 text-xs text-placeholder">
+                    {role === Role.Admin
+                      ? 'Can manage team and logs'
+                      : 'Can record in selected logs'}
+                  </Text>
+                  <View className="border-b border-border" />
+                </View>
+              ))}
+            <ScrollView
+              className="px-4"
+              style={{ maxHeight: 224 }}
+              contentContainerClassName="py-2"
+            >
+              {members.map((member) => {
+                const profile = member.user?.profile;
+                const isSelf = member.userId === auth.user?.id;
 
-                  const isLastOwner =
-                    member.role === Role.Owner && ownerCount <= 1;
+                const isLastOwner =
+                  member.role === Role.Owner && ownerCount <= 1;
 
-                  return (
-                    <View
-                      className="flex-row items-center justify-between py-2.5"
-                      key={member.id}
-                    >
-                      <View className="flex-1 flex-row items-center gap-3">
-                        <Avatar
-                          avatar={profile?.image?.uri}
-                          id={profile?.id}
-                          size={36}
-                        />
-                        <View className="flex-1">
-                          <Text className="text-sm" numberOfLines={1}>
-                            {profile?.name ?? 'Unknown'}
-                            {isSelf ? (
-                              <Text className="text-sm text-placeholder">
-                                {' '}
-                                (you)
-                              </Text>
-                            ) : null}
-                          </Text>
-                          <Text className="text-xs text-placeholder">
-                            {ROLE_LABELS[member.role] ?? member.role}
-                          </Text>
-                        </View>
+                return (
+                  <View
+                    className="flex-row items-center justify-between py-2.5"
+                    key={member.id}
+                  >
+                    <View className="flex-1 flex-row items-center gap-3">
+                      <Avatar
+                        avatar={profile?.image?.uri}
+                        id={profile?.id}
+                        size={36}
+                      />
+                      <View className="flex-1">
+                        <Text className="text-sm" numberOfLines={1}>
+                          {profile?.name}
+                        </Text>
+                        <Text className="text-xs text-placeholder">
+                          {ROLE_LABELS[member.role] ?? member.role}
+                        </Text>
                       </View>
-                      {isOwner && !isSelf && (
+                    </View>
+                    {canManage &&
+                      !isSelf &&
+                      (isOwner || member.role === Role.Recorder) && (
                         <Menu.Root>
                           <Menu.Trigger asChild>
                             <Button
@@ -117,33 +259,61 @@ export default function Team() {
                             >
                               <Icon
                                 className="text-placeholder"
-                                icon={CaretDown}
+                                icon={DotsThreeVertical}
                               />
                             </Button>
                           </Menu.Trigger>
                           <Menu.Content align="end">
-                            {[Role.Admin, Role.Recorder].map((r) => (
-                              <Menu.Item
-                                className="justify-between"
-                                key={r}
-                                onPress={() =>
-                                  updateRole({
-                                    id: member.id,
-                                    role: r,
-                                    teamId: activeTeamId!,
-                                    userId: member.userId,
-                                  })
-                                }
-                              >
-                                <Text>{ROLE_LABELS[r]}</Text>
-                                {member.role === r && (
-                                  <Icon className="-mr-1" icon={Check} />
-                                )}
-                              </Menu.Item>
-                            ))}
+                            {isOwner &&
+                              [Role.Admin, Role.Recorder].map((r) => (
+                                <Menu.Item
+                                  className="justify-between"
+                                  key={r}
+                                  onPress={() => {
+                                    updateRole({
+                                      id: member.id,
+                                      role: r,
+                                      teamId: activeTeamId!,
+                                      userId: member.userId,
+                                    });
+
+                                    if (r === Role.Recorder) {
+                                      sheetManager.open(
+                                        'member-logs',
+                                        profile?.id
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <Text className="flex-1">
+                                    {ROLE_LABELS[r]}
+                                  </Text>
+                                  {member.role === r && (
+                                    <Icon className="-mr-1" icon={Check} />
+                                  )}
+                                </Menu.Item>
+                              ))}
+                            {member.role === Role.Recorder && (
+                              <>
+                                {isOwner && <Menu.Separator />}
+                                <Menu.Item
+                                  onPress={() =>
+                                    sheetManager.open(
+                                      'member-logs',
+                                      profile?.id
+                                    )
+                                  }
+                                >
+                                  <Icon icon={SquaresFour} />
+                                  <Text>Access</Text>
+                                </Menu.Item>
+                              </>
+                            )}
                             <Menu.Separator />
                             <Menu.Item
-                              onPress={() => removeMember({ id: member.id })}
+                              onPress={() =>
+                                sheetManager.open('member-remove', member.id)
+                              }
                             >
                               <Icon
                                 className="text-destructive"
@@ -154,38 +324,7 @@ export default function Team() {
                           </Menu.Content>
                         </Menu.Root>
                       )}
-                      {isSelf && !isLastOwner && teams.length > 1 && (
-                        <Button
-                          className="size-8"
-                          variant="ghost"
-                          size="icon"
-                          onPress={() => sheetManager.open('team-leave')}
-                          wrapperClassName="-mr-[7px]"
-                        >
-                          <Icon className="text-placeholder" icon={SignOut} />
-                        </Button>
-                      )}
-                    </View>
-                  );
-                })}
-                {canManage &&
-                  invites.map((invite) => (
-                    <View
-                      className="flex-row items-center justify-between py-2.5"
-                      key={invite.id}
-                    >
-                      <View className="flex-1">
-                        <Text
-                          className="text-sm text-placeholder"
-                          numberOfLines={1}
-                        >
-                          {invite.email}
-                        </Text>
-                        <Text className="text-xs text-placeholder">
-                          {ROLE_LABELS[invite.role] ?? invite.role} &middot;
-                          Invite pending
-                        </Text>
-                      </View>
+                    {isSelf && !isLastOwner && (
                       <Menu.Root>
                         <Menu.Trigger asChild>
                           <Button
@@ -196,67 +335,40 @@ export default function Team() {
                           >
                             <Icon
                               className="text-placeholder"
-                              icon={CaretDown}
+                              icon={DotsThreeVertical}
                             />
                           </Button>
                         </Menu.Trigger>
                         <Menu.Content align="end">
-                          {[Role.Admin, Role.Recorder].map((r) => (
-                            <Menu.Item
-                              className="justify-between"
-                              key={r}
-                              onPress={() =>
-                                updateInvite({ id: invite.id, role: r })
-                              }
-                            >
-                              <Text>{ROLE_LABELS[r]}</Text>
-                              {invite.role === r && (
-                                <Icon className="-mr-1" icon={Check} />
-                              )}
-                            </Menu.Item>
-                          ))}
-                          <Menu.Separator />
                           <Menu.Item
-                            onPress={() => cancelInvite({ id: invite.id })}
+                            onPress={() => sheetManager.open('team-leave')}
                           >
-                            <Icon className="text-destructive" icon={X} />
-                            <Text className="text-destructive">
-                              Cancel invite
-                            </Text>
+                            <Icon className="text-destructive" icon={SignOut} />
+                            <Text className="text-destructive">Leave team</Text>
                           </Menu.Item>
                         </Menu.Content>
                       </Menu.Root>
-                    </View>
-                  ))}
-              </View>
-            </View>
+                    )}
+                  </View>
+                );
+              })}
+            </ScrollView>
             <View>
-              {canManage && (
-                <Button
-                  className="justify-between rounded-none"
-                  onPress={() => sheetManager.open('invite-member')}
-                  variant="ghost"
-                  wrapperClassName="rounded-none"
-                >
-                  <Text className="font-normal">Invite team member</Text>
-                  <Icon className="-mr-0.5 text-placeholder" icon={UserPlus} />
-                </Button>
-              )}
-              {isOwner && teams.length > 1 && (
-                <View className="my-2 border-t border-border" />
-              )}
-              {isOwner && teams.length > 1 && (
-                <Button
-                  className="justify-between rounded-none"
-                  onPress={() => sheetManager.open('team-delete')}
-                  variant="ghost"
-                  wrapperClassName="rounded-none"
-                >
-                  <Text className="font-normal text-destructive">
-                    Delete team
-                  </Text>
-                  <Icon className="-mr-0.5 text-destructive" icon={Trash} />
-                </Button>
+              {isOwner && (
+                <>
+                  <View className="my-2 border-t border-border" />
+                  <Button
+                    className="justify-between rounded-none"
+                    onPress={() => sheetManager.open('team-delete')}
+                    variant="ghost"
+                    wrapperClassName="rounded-none"
+                  >
+                    <Text className="font-normal text-destructive">
+                      Delete team
+                    </Text>
+                    <Icon className="-mr-0.5 text-destructive" icon={Trash} />
+                  </Button>
+                </>
               )}
             </View>
           </View>

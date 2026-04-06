@@ -16,14 +16,8 @@ export default function SignIn() {
   const [isTransitioning, startTransition] = useTransition();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const auth = db.useAuth();
-
-  if (auth.user) {
-    return <Redirect href="/" />;
-  }
-
-  if (auth.isLoading) {
-    return <Loading />;
-  }
+  if (auth.user) return <Redirect href="/" />;
+  if (auth.isLoading) return <Loading />;
 
   if (step === 'email') {
     const handleSubmit = () =>
@@ -74,7 +68,7 @@ export default function SignIn() {
       if (!code) return;
 
       try {
-        await db.auth.signInWithMagicCode({ email, code });
+        await db.auth.signInWithMagicCode({ email, code: code.trim() });
       } catch {
         alert({ message: 'Invalid code', title: 'Error' });
         return;

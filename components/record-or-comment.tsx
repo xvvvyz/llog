@@ -161,15 +161,18 @@ export const RecordOrComment = ({
           <View className="flex-1">
             <View className="flex-row items-start justify-between gap-2">
               <View className="flex-1 flex-row items-baseline gap-2">
-                <Text className="font-medium leading-5">
+                <Text
+                  className="shrink font-medium leading-5"
+                  numberOfLines={1}
+                >
                   {record.author?.name}
                 </Text>
-                <Text className="text-sm leading-5 text-muted-foreground">
+                <Text className="shrink-0 text-sm leading-5 text-muted-foreground">
                   {formatDate(record.date)}
                 </Text>
               </View>
               <RecordOrCommentDropdownMenu
-                className="-mb-3"
+                className="-mb-3 -mr-1.5 -mt-1.5"
                 accentColor={accentColor}
                 authorId={record.author?.id}
                 commentId={commentId}
@@ -237,12 +240,14 @@ export const RecordOrComment = ({
       <View className="flex-row items-start gap-3 p-4 pb-0">
         <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
         <View className="flex-1">
-          <Text className="font-medium leading-5">{record.author?.name}</Text>
+          <Text className="font-medium leading-5" numberOfLines={1}>
+            {record.author?.name}
+          </Text>
           <Text className="text-sm leading-5 text-muted-foreground">
             {formatDate(record.date)}
           </Text>
         </View>
-        <View className="-mr-1 -mt-1 flex-row items-center gap-1.5">
+        <View className="-mr-1.5 -mt-1.5 flex-row items-center gap-1.5">
           {'isPinned' in record && record.isPinned && (
             <Button
               className="size-8 rounded-lg"
@@ -298,6 +303,7 @@ export const RecordOrComment = ({
           <EmojiPicker
             color={accentColor}
             commentId={commentId}
+            logId={logId}
             reactions={record.reactions}
             recordId={recordId}
           />
@@ -306,6 +312,7 @@ export const RecordOrComment = ({
               <Reactions
                 color={accentColor}
                 commentId={commentId}
+                logId={logId}
                 reactions={record.reactions}
                 recordId={recordId}
               />
@@ -354,7 +361,6 @@ const TruncatedText = ({
     const node = textRef.current as unknown as HTMLElement | null;
     if (!node) return;
 
-    // scrollHeight > clientHeight means text is clipped by numberOfLines
     if (node.scrollHeight > node.clientHeight) {
       setTruncated(true);
     }

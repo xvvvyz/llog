@@ -21,6 +21,7 @@ export const useLogs = ({ query }: { query?: string } = {}) => {
               },
             },
             logTags: { $: { fields: ['id'] } },
+            profiles: { image: {} },
           },
         }
       : null
@@ -28,6 +29,5 @@ export const useLogs = ({ query }: { query?: string } = {}) => {
 
   const logs = data?.logs ?? prevDataRef.current;
   if (data?.logs) prevDataRef.current = data.logs;
-
   return { data: logs, isLoading };
 };

@@ -1,5 +1,11 @@
-import { db } from '@/utilities/db';
+import { api } from '@/utilities/api';
 
-export const removeMember = async ({ id }: { id: string }) => {
-  return db.transact(db.tx.roles[id].delete());
+export const removeMember = async ({
+  teamId,
+  roleId,
+}: {
+  teamId: string;
+  roleId: string;
+}) => {
+  await api(`/teams/${teamId}/members/${roleId}`, { method: 'DELETE' });
 };

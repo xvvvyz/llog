@@ -8,6 +8,7 @@ export const useLog = ({ id }: { id?: string }) => {
           logs: {
             $: { where: { id: id } },
             logTags: { $: { fields: ['id'] } },
+            profiles: { image: {} },
           },
         }
       : null
@@ -20,5 +21,10 @@ export const useLog = ({ id }: { id?: string }) => {
     [log?.logTags]
   );
 
-  return { ...log, isLoading, logTagIdsSet };
+  const profileIdsSet = useMemo(
+    () => new Set(log?.profiles?.map((profile) => profile.id)),
+    [log?.profiles]
+  );
+
+  return { ...log, isLoading, logTagIdsSet, profileIdsSet };
 };

@@ -31,10 +31,11 @@ const schema = i.schema({
       type: i.string(),
       uri: i.string(),
     }),
-    invites: i.entity({
-      email: i.string().indexed(),
+    inviteLinks: i.entity({
+      token: i.string().unique().indexed(),
       role: i.string(),
       teamId: i.string().indexed(),
+      expiresAt: i.number().optional(),
     }),
     logTags: i.entity({
       name: i.string().indexed(),
@@ -154,23 +155,35 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
-    teamsInvites: {
+    teamsInviteLinks: {
       forward: {
         on: 'teams',
         has: 'many',
-        label: 'invites',
+        label: 'inviteLinks',
       },
       reverse: {
-        on: 'invites',
+        on: 'inviteLinks',
         has: 'one',
         label: 'team',
         required: true,
         onDelete: 'cascade',
       },
     },
-    invitesCreators: {
+    inviteLinksLogs: {
       forward: {
-        on: 'invites',
+        on: 'inviteLinks',
+        has: 'many',
+        label: 'logs',
+      },
+      reverse: {
+        on: 'logs',
+        has: 'many',
+        label: 'inviteLinks',
+      },
+    },
+    inviteLinksCreators: {
+      forward: {
+        on: 'inviteLinks',
         has: 'one',
         label: 'creator',
         required: true,
@@ -178,7 +191,7 @@ const schema = i.schema({
       reverse: {
         on: 'profiles',
         has: 'many',
-        label: 'invites',
+        label: 'inviteLinks',
       },
     },
     commentsAuthors: {
@@ -229,6 +242,18 @@ const schema = i.schema({
       },
       reverse: {
         on: 'logTags',
+        has: 'many',
+        label: 'logs',
+      },
+    },
+    logsProfiles: {
+      forward: {
+        on: 'logs',
+        has: 'many',
+        label: 'profiles',
+      },
+      reverse: {
+        on: 'profiles',
         has: 'many',
         label: 'logs',
       },

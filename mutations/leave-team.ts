@@ -1,19 +1,18 @@
 import { switchTeam } from '@/mutations/switch-team';
-import { db } from '@/utilities/db';
+import { api } from '@/utilities/api';
 
 export const leaveTeam = async ({
-  roleId,
+  teamId,
   teams,
   activeTeamId,
   uiId,
 }: {
-  roleId: string;
+  teamId: string;
   teams: { id: string }[];
   activeTeamId?: string;
   uiId?: string;
 }) => {
   const nextTeam = teams.find((t) => t.id !== activeTeamId);
-  if (!nextTeam) return;
-  await switchTeam({ teamId: nextTeam.id, uiId });
-  return db.transact(db.tx.roles[roleId].delete());
+  if (nextTeam) await switchTeam({ teamId: nextTeam.id, uiId });
+  await api(`/teams/${teamId}/leave`, { method: 'POST' });
 };

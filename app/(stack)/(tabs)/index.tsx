@@ -40,10 +40,7 @@ export default function Index() {
   const logs = useLogs({ query });
   const hasLoadedRef = useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
-
-  if (sheetManager.someOpen()) {
-    return renderCacheRef.current;
-  }
+  if (sheetManager.someOpen()) return renderCacheRef.current;
 
   renderCacheRef.current = (
     <Page>
@@ -80,7 +77,7 @@ export default function Index() {
       {logs.isLoading && !hasLoadedRef.current ? (
         <Loading />
       ) : isEmpty ? (
-        <LogListEmptyState />
+        <LogListEmptyState canManage={canManage} />
       ) : (
         <List
           ListHeaderComponent={
@@ -115,6 +112,7 @@ export default function Index() {
                 color={color.default}
                 id={item.id}
                 name={item.name}
+                profiles={item.profiles ?? []}
                 tags={logTags.data.filter((tag) => itemLogTagIds.has(tag.id))}
               />
             );

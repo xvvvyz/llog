@@ -1,4 +1,5 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -13,12 +14,14 @@ export const LogListItem = ({
   color,
   id,
   name,
+  profiles,
   tags,
 }: {
   className?: string;
   color: string;
   id: string;
   name: string;
+  profiles: { id: string; name: string; image?: { uri: string } }[];
   tags: LogTag[];
 }) => {
   return (
@@ -36,7 +39,7 @@ export const LogListItem = ({
           variant="ghost"
           wrapperClassName="rounded-2xl"
         >
-          <View className="max-h-11 flex-row flex-wrap gap-1 overflow-hidden pr-10">
+          <View className="-ml-1.5 -mt-1.5 max-h-11 flex-row flex-wrap gap-0.5 overflow-hidden pr-10">
             {tags.map((tag) => (
               <View
                 key={tag.id}
@@ -48,13 +51,34 @@ export const LogListItem = ({
               </View>
             ))}
           </View>
-          <Text className="-mb-1 leading-snug text-white" numberOfLines={1}>
-            {name}
-          </Text>
+          <View className="w-full flex-row items-end justify-between gap-3">
+            <Text
+              className="-mb-1 flex-1 leading-snug text-white"
+              numberOfLines={1}
+            >
+              {name}
+            </Text>
+            {profiles.length > 0 && (
+              <View className="-mb-1 -mr-1 flex-row">
+                {profiles.map((profile, i) => (
+                  <View
+                    key={profile.id}
+                    style={i > 0 ? { marginLeft: -10 } : undefined}
+                  >
+                    <Avatar
+                      avatar={profile.image?.uri}
+                      id={profile.id}
+                      size={22}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         </Button>
       </Link>
       <View className="absolute right-1.5 top-1.5">
-        <LogDropdownMenu contentClassName="mr-1.5" id={id}>
+        <LogDropdownMenu contentClassName="my-0 -mr-1.5" id={id}>
           <View
             className="size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20"
             style={{ borderCurve: 'continuous' }}

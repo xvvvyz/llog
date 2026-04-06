@@ -3,8 +3,6 @@ import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { leaveTeam } from '@/mutations/leave-team';
-import { useMyRole } from '@/queries/use-my-role';
-import { useTeam } from '@/queries/use-team';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { router } from 'expo-router';
@@ -12,10 +10,8 @@ import { View } from 'react-native';
 
 export const TeamLeaveSheet = () => {
   const sheetManager = useSheetManager();
-  const team = useTeam();
   const { teams } = useTeams();
   const ui = useUi();
-  const myRole = useMyRole();
 
   return (
     <Sheet
@@ -24,16 +20,14 @@ export const TeamLeaveSheet = () => {
       portalName="team-leave"
     >
       <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">
-          Leave &quot;{team.name}&quot;?
-        </Text>
+        <Text className="text-center text-2xl">Leave team?</Text>
         <Button
           onPress={async () => {
             sheetManager.close('team-leave');
-            if (!myRole.id || teams.length <= 1) return;
+            if (!ui.activeTeamId) return;
 
             await leaveTeam({
-              roleId: myRole.id,
+              teamId: ui.activeTeamId,
               teams,
               activeTeamId: ui.activeTeamId,
               uiId: ui.id,

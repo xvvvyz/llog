@@ -6,27 +6,35 @@ import { Text } from '@/components/ui/text';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useActivities } from '@/queries/use-activities';
-import { useMyInvites } from '@/queries/use-my-invites';
 import { useProfile } from '@/queries/use-profile';
+import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
-import { Redirect, Tabs } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Redirect, router, Tabs } from 'expo-router';
 import { Bell, MagnifyingGlass, SquaresFour } from 'phosphor-react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const NEEDS_RECORD = new Set([
+  'record_published',
+  'comment_posted',
+  'reaction_added',
+]);
+
 export default function Layout() {
+  const [checkedPending, setCheckedPending] = useState(false);
   const auth = db.useAuth();
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const { activities } = useActivities();
-  const { invites, isLoading: isLoadingInvites } = useMyInvites();
   const profile = useProfile();
   const ui = useUi();
+  const { activities } = useActivities();
+  const { teams, isLoading: teamsLoading } = useTeams();
 
   const unreadCount = useMemo(() => {
     if (!profile.id) return 0;
@@ -34,10 +42,24 @@ export default function Layout() {
     return activities.filter(
       (a) =>
         a.actor?.id !== profile.id &&
+        (!NEEDS_RECORD.has(a.type) || a.record) &&
         (!ui.activityLastReadDate ||
           (a.date as unknown as string) > ui.activityLastReadDate)
     ).length;
   }, [activities, profile.id, ui.activityLastReadDate]);
+
+  useEffect(() => {
+    if (!auth.user || profile.isLoading || !profile.id) return;
+
+    AsyncStorage.getItem('pendingInviteToken').then((token) => {
+      if (token) {
+        AsyncStorage.removeItem('pendingInviteToken');
+        router.replace(`/invite/${token}`);
+      } else {
+        setCheckedPending(true);
+      }
+    });
+  }, [auth.user, profile.isLoading, profile.id]);
 
   if (!auth.isLoading && !auth.user) {
     return <Redirect href="/sign-in" />;
@@ -47,12 +69,12 @@ export default function Layout() {
     return <Redirect href="/onboarding" />;
   }
 
-  if (profile.isLoading || isLoadingInvites) {
-    return <Loading />;
+  if (!teamsLoading && profile.id && teams.length === 0) {
+    return <Redirect href="/new-team" />;
   }
 
-  if (invites.length) {
-    return <Redirect href="/invites" />;
+  if (profile.isLoading || !checkedPending) {
+    return <Loading />;
   }
 
   return (

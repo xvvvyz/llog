@@ -13,7 +13,9 @@ import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
 import { useRef } from 'react';
 import { View } from 'react-native';
 
-export const TeamSwitcher = () => {
+export const TeamSwitcher = ({
+  hideSettings,
+}: { hideSettings?: boolean } = {}) => {
   const breakpoints = useBreakpoints();
   const ui = useUi();
   const { teams } = useTeams();
@@ -51,12 +53,17 @@ export const TeamSwitcher = () => {
           </View>
           <Text>New team</Text>
         </Menu.Item>
-        <Menu.Item onPress={() => router.push('/team')}>
-          <View className="w-5 items-center">
-            <Icon className="text-placeholder" icon={GearSix} />
-          </View>
-          <Text>Team settings</Text>
-        </Menu.Item>
+        {!hideSettings && (
+          <>
+            <Menu.Separator />
+            <Menu.Item onPress={() => router.push('/team')}>
+              <View className="w-5 items-center">
+                <Icon className="text-placeholder" icon={GearSix} />
+              </View>
+              <Text>Team settings</Text>
+            </Menu.Item>
+          </>
+        )}
       </Menu.Content>
     </Menu.Root>
   );

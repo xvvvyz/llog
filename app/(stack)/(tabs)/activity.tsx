@@ -36,7 +36,7 @@ export default function Activity() {
         latestActivityDate &&
         latestActivityDate !== ui.activityLastReadDate
       ) {
-        markActivitiesRead({ uiId: ui.id });
+        markActivitiesRead({ uiId: ui.id, date: latestActivityDate });
       }
     }, [latestActivityDate, ui.activityLastReadDate, ui.id])
   );

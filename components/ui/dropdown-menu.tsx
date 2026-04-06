@@ -173,6 +173,8 @@ SortItem.displayName = 'SortItem';
 
 const Separator = () => <View className="my-2 border-t border-border" />;
 
+const useContext = DropdownMenuPrimitive.useRootContext;
+
 export {
   CheckboxItem,
   Content,
@@ -182,4 +184,5 @@ export {
   Separator,
   SortItem,
   Trigger,
+  useContext,
 };

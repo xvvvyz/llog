@@ -18,9 +18,7 @@ export const TagDeleteSheet = () => {
       portalName="tag-delete"
     >
       <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">
-          Delete &ldquo;{logTag.name}&rdquo; tag?
-        </Text>
+        <Text className="text-center text-2xl">Delete tag?</Text>
         <Button
           onPress={() => {
             sheetManager.close('tag-delete');

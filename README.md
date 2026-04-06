@@ -13,6 +13,7 @@
    ```bash
    # .env.development
 
+   EXPO_PUBLIC_APP_URL=http://localhost:8081
    EXPO_PUBLIC_INSTANT_APP_ID=<YOUR_ID>
    EXPO_PUBLIC_API_URL=http://localhost:8787/api/v1
    ```
@@ -20,6 +21,7 @@
    ```bash
    # .dev.vars.development
 
+   ENV=development
    INSTANT_APP_ADMIN_TOKEN=<YOUR_TOKEN>
    INSTANT_APP_ID=<YOUR_ID>
    ```
