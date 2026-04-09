@@ -21,7 +21,6 @@
    ```bash
    # .dev.vars.development
 
-   ENV=development
    INSTANT_APP_ADMIN_TOKEN=<YOUR_TOKEN>
    INSTANT_APP_ID=<YOUR_ID>
    ```
