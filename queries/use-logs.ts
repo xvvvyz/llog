@@ -14,9 +14,6 @@ export const useLogs = ({ query }: { query?: string } = {}) => {
               order: { [ui.logsSortBy]: ui.logsSortDirection },
               where: {
                 team: ui.activeTeamId,
-                ...(!!ui.logsFilterByTagIdsArray.length && {
-                  logTags: { $in: ui.logsFilterByTagIdsArray },
-                }),
                 ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },

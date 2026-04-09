@@ -74,16 +74,9 @@ export default function Search() {
               {(!!logs.data.length || !!logTags.data.length) && (
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
-                    <Button
-                      size="icon"
-                      variant={hasFilters ? 'default' : 'secondary'}
-                    >
+                    <Button size="icon" variant="secondary">
                       <Icon
-                        className={
-                          hasFilters
-                            ? 'text-primary-foreground'
-                            : 'text-secondary-foreground'
-                        }
+                        className="text-secondary-foreground"
                         icon={Funnel}
                       />
                     </Button>

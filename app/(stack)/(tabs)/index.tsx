@@ -28,6 +28,7 @@ import { View } from 'react-native';
 
 export default function Index() {
   const [rawQuery, setRawQuery] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
@@ -60,10 +61,23 @@ export default function Index() {
   }, [logs.data]);
 
   const filteredLogs = useMemo(() => {
-    if (!query) return logs.data;
-    const matchIds = new Set(miniSearch.search(query).map((r) => r.id));
-    return logs.data.filter((log) => matchIds.has(log.id));
-  }, [query, logs.data, miniSearch]);
+    let result = logs.data;
+
+    if (query) {
+      const matchIds = new Set(miniSearch.search(query).map((r) => r.id));
+      result = result.filter((log) => matchIds.has(log.id));
+    }
+
+    if (selectedTagIds.length) {
+      const tagIdSet = new Set(selectedTagIds);
+
+      result = result.filter((log) =>
+        log.logTags.some((tag: { id: string }) => tagIdSet.has(tag.id))
+      );
+    }
+
+    return result;
+  }, [query, selectedTagIds, logs.data, miniSearch]);
 
   const hasLoadedRef = useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
@@ -80,7 +94,9 @@ export default function Index() {
                 className={cn(isEmpty && 'md:hidden')}
                 logTags={logTags.data}
                 query={rawQuery}
+                selectedTagIds={selectedTagIds}
                 setQuery={setRawQuery}
+                setSelectedTagIds={setSelectedTagIds}
               />
             )}
             {canManage && (
@@ -113,7 +129,9 @@ export default function Index() {
                 className="p-1.5 pt-4 md:p-2"
                 logTags={logTags.data}
                 query={rawQuery}
+                selectedTagIds={selectedTagIds}
                 setQuery={setRawQuery}
+                setSelectedTagIds={setSelectedTagIds}
               />
             ) : null
           }

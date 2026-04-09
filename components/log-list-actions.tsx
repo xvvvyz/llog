@@ -4,7 +4,6 @@ import { Icon } from '@/components/ui/icon';
 import { SearchInput } from '@/components/ui/search-input';
 import { Text } from '@/components/ui/text';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { toggleUiLogTag } from '@/mutations/toggle-ui-log-tag';
 import { updateUiLogsSort } from '@/mutations/update-ui-logs-sort';
 import { useUi } from '@/queries/use-ui';
 import { LogTag } from '@/types/log-tag';
@@ -26,15 +25,30 @@ export const LogListActions = ({
   className,
   logTags,
   query,
+  selectedTagIds,
   setQuery,
+  setSelectedTagIds,
 }: {
   className?: string;
   logTags: LogTag[];
   query: string;
+  selectedTagIds: string[];
   setQuery: (query: string) => void;
+  setSelectedTagIds: (ids: string[]) => void;
 }) => {
   const breakpoints = useBreakpoints();
   const ui = useUi();
+
+  const tagIdSet = new Set(selectedTagIds);
+  const hasFilters = selectedTagIds.length > 0;
+
+  const toggleTagId = (id: string) => {
+    setSelectedTagIds(
+      tagIdSet.has(id)
+        ? selectedTagIds.filter((t) => t !== id)
+        : [...selectedTagIds, id]
+    );
+  };
 
   return (
     <View className={cn('flex-row gap-3', className)}>
@@ -52,21 +66,24 @@ export const LogListActions = ({
             </Button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content align="end" className="min-w-44">
+            <DropdownMenu.Label>Tags</DropdownMenu.Label>
             {logTags.map((tag) => (
               <DropdownMenu.CheckboxItem
-                checked={ui.logsFilterByTagIdsSet.has(tag.id)}
+                checked={tagIdSet.has(tag.id)}
                 key={tag.id}
-                onCheckedChange={() =>
-                  toggleUiLogTag({
-                    isSelected: ui.logsFilterByTagIdsSet.has(tag.id),
-                    tagId: tag.id,
-                    uiId: ui.id,
-                  })
-                }
+                onCheckedChange={() => toggleTagId(tag.id)}
               >
                 <Text>{tag.name}</Text>
               </DropdownMenu.CheckboxItem>
             ))}
+            {hasFilters && (
+              <>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Item onPress={() => setSelectedTagIds([])}>
+                  <Text className="text-destructive">Clear filters</Text>
+                </DropdownMenu.Item>
+              </>
+            )}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       )}
@@ -111,17 +128,6 @@ export const LogListActions = ({
           </DropdownMenu.SortItem>
         </DropdownMenu.Content>
       </DropdownMenu.Root>
-      {/* <Button
-        className="size-10"
-        size="icon"
-        variant="secondary"
-      >
-        <Icon
-          className="text-secondary-foreground"
-          icon={Group}
-         
-        />
-      </Button> */}
     </View>
   );
 };

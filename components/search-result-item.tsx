@@ -161,19 +161,25 @@ export const SearchResultItem = ({
                 </Text>
               )}
               {result.logName && (
-                <View className="flex-row items-center gap-1">
-                  {logColor && (
-                    <View
-                      className="size-2.5 shrink-0 rounded-[2px]"
-                      style={{ backgroundColor: logColor.default }}
-                    />
-                  )}
+                <View className="min-w-24 flex-1 flex-row items-baseline justify-end gap-1">
                   <Text
-                    className="shrink text-xs text-muted-foreground"
+                    className="shrink-0 text-xs text-muted-foreground"
                     numberOfLines={1}
                   >
-                    {result.logName}
+                    {result.type === 'comment' ? 'Comment in' : 'Record in'}
                   </Text>
+                  <View className="shrink flex-row items-center gap-1">
+                    <View
+                      className="size-2.5 shrink-0 rounded-[2px]"
+                      style={{ backgroundColor: logColor?.default }}
+                    />
+                    <Text
+                      className="shrink text-xs text-muted-foreground"
+                      numberOfLines={1}
+                    >
+                      {result.logName}
+                    </Text>
+                  </View>
                 </View>
               )}
             </View>

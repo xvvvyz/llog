@@ -84,7 +84,7 @@ export const ActivityItem = ({
               <ActivityName group={group} />
               <View className="min-w-24 flex-1 flex-row items-baseline justify-end gap-1">
                 <Text
-                  className="shrink-0 text-xs leading-5 text-muted-foreground"
+                  className="shrink-0 text-xs text-muted-foreground"
                   numberOfLines={1}
                 >
                   {group.type === 'member_joined'
@@ -104,7 +104,7 @@ export const ActivityItem = ({
                         }}
                       />
                       <Text
-                        className="shrink text-xs leading-5 text-muted-foreground"
+                        className="shrink text-xs text-muted-foreground"
                         numberOfLines={1}
                       >
                         {log.name}

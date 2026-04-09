@@ -203,18 +203,6 @@ export const useSearch = ({
       return true;
     });
 
-    const typeOrder: Record<string, number> = {
-      log: 0,
-      record: 1,
-      comment: 2,
-    };
-
-    filtered.sort((a, b) => {
-      const ta = typeOrder[a.type] ?? 3;
-      const tb = typeOrder[b.type] ?? 3;
-      return ta !== tb ? ta - tb : b.score - a.score;
-    });
-
     return filtered.map((r) => {
       const d = r as unknown as SearchDocument & {
         score: number;
