@@ -17,9 +17,9 @@ import { Play } from 'phosphor-react-native';
 import { Pressable, ScrollView, View } from 'react-native';
 
 const CATEGORY_LABELS: Record<string, string> = {
-  record_published: 'Posted',
-  comment_posted: 'Replied',
-  reaction_added: 'Reacted',
+  record_published: 'Record',
+  comment_posted: 'Reply',
+  reaction_added: 'Emote',
   member_joined: 'Joined',
   member_left: 'Left',
 };
@@ -37,6 +37,7 @@ export const ActivityItem = ({
   const actor = first.actor;
   const log = first.log;
   const record = first.record;
+  const team = first.team;
   const logColor = log?.color != null ? SPECTRUM[colorScheme][log.color] : null;
   const category = CATEGORY_LABELS[group.type] ?? '';
 
@@ -78,19 +79,19 @@ export const ActivityItem = ({
     <Pressable onPress={handlePress}>
       <Card className={cn('gap-4', !mediaIsLast && 'pb-4', className)}>
         <View className="flex-row items-start gap-3 p-4 pb-0">
-          <Avatar avatar={actor?.image?.uri} id={actor?.id} />
-          <View className="flex-1">
+          <Avatar avatar={actor?.image?.uri} id={actor?.id} size={34} />
+          <View className="-mt-0.5 flex-1">
             <View className="flex-row items-baseline justify-between gap-3">
               <ActivityName group={group} />
-              <View className="min-w-24 flex-1 flex-row items-baseline justify-end gap-1">
+              <View className="min-w-32 flex-1 flex-row items-baseline justify-end gap-1">
                 <Text
                   className="shrink-0 text-xs text-muted-foreground"
                   numberOfLines={1}
                 >
                   {group.type === 'member_joined'
-                    ? 'Joined the team'
+                    ? `Joined${team?.name ? '' : ' the team'}`
                     : group.type === 'member_left'
-                      ? 'Left the team'
+                      ? `Left${team?.name ? '' : ' the team'}`
                       : category + (log ? ' in' : '')}
                 </Text>
                 {log &&
@@ -111,9 +112,19 @@ export const ActivityItem = ({
                       </Text>
                     </View>
                   )}
+                {(group.type === 'member_joined' ||
+                  group.type === 'member_left') &&
+                  team?.name && (
+                    <Text
+                      className="shrink text-xs text-muted-foreground"
+                      numberOfLines={1}
+                    >
+                      {team.name}
+                    </Text>
+                  )}
               </View>
             </View>
-            <Text className="text-sm leading-5 text-muted-foreground">
+            <Text className="text-xs text-muted-foreground">
               {formatDate(group.latestDate)}
             </Text>
           </View>
@@ -332,8 +343,8 @@ const ActivityName = ({ group }: { group: GroupedActivity }) => {
     const othersCount = uniqueActors.length - 1;
 
     return (
-      <Text className="leading-5" numberOfLines={1}>
-        <Text className="font-medium leading-5">{actor?.name}</Text>
+      <Text className="shrink text-sm leading-5" numberOfLines={1}>
+        <Text className="text-sm font-medium leading-5">{actor?.name}</Text>
         {othersCount > 0 && (
           <Text className="text-muted-foreground">{` +${othersCount}`}</Text>
         )}
@@ -342,7 +353,7 @@ const ActivityName = ({ group }: { group: GroupedActivity }) => {
   }
 
   return (
-    <Text className="font-medium leading-5" numberOfLines={1}>
+    <Text className="shrink text-sm font-medium leading-5" numberOfLines={1}>
       {actor?.name}
     </Text>
   );

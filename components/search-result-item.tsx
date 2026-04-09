@@ -156,17 +156,17 @@ export const SearchResultItem = ({
           <View className="-mt-0.5 flex-1">
             <View className="flex-row items-baseline justify-between gap-2">
               {result.author && (
-                <Text className="text-sm font-medium" numberOfLines={1}>
+                <Text className="shrink text-sm font-medium" numberOfLines={1}>
                   {result.author.name}
                 </Text>
               )}
               {result.logName && (
-                <View className="min-w-24 flex-1 flex-row items-baseline justify-end gap-1">
+                <View className="min-w-32 flex-1 flex-row items-baseline justify-end gap-1">
                   <Text
                     className="shrink-0 text-xs text-muted-foreground"
                     numberOfLines={1}
                   >
-                    {result.type === 'comment' ? 'Comment in' : 'Record in'}
+                    {result.type === 'comment' ? 'Reply in' : 'Record in'}
                   </Text>
                   <View className="shrink flex-row items-center gap-1">
                     <View

@@ -235,10 +235,10 @@ export default function Team() {
                       <Avatar
                         avatar={profile?.image?.uri}
                         id={profile?.id}
-                        size={36}
+                        size={34}
                       />
                       <View className="flex-1">
-                        <Text className="text-sm" numberOfLines={1}>
+                        <Text className="text-sm font-medium" numberOfLines={1}>
                           {profile?.name}
                         </Text>
                         <Text className="text-xs text-placeholder">
