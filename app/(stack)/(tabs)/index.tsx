@@ -21,6 +21,7 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { cn } from '@/utilities/cn';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
+import MiniSearch from 'minisearch';
 import { Plus } from 'phosphor-react-native';
 import { ReactElement, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -37,7 +38,33 @@ export default function Index() {
   const sheetManager = useSheetManager();
 
   const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
-  const logs = useLogs({ query });
+  const logs = useLogs();
+
+  const miniSearch = useMemo(() => {
+    const ms = new MiniSearch({
+      fields: ['name', 'people'],
+      storeFields: ['id'],
+      searchOptions: { fuzzy: 0.2, prefix: true, boost: { name: 2 } },
+    });
+
+    ms.addAll(
+      logs.data.map((log) => ({
+        id: log.id,
+        name: log.name,
+        people:
+          log.profiles?.map((p: { name: string }) => p.name).join(' ') ?? '',
+      }))
+    );
+
+    return ms;
+  }, [logs.data]);
+
+  const filteredLogs = useMemo(() => {
+    if (!query) return logs.data;
+    const matchIds = new Set(miniSearch.search(query).map((r) => r.id));
+    return logs.data.filter((log) => matchIds.has(log.id));
+  }, [query, logs.data, miniSearch]);
+
   const hasLoadedRef = useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
   if (sheetManager.someOpen()) return renderCacheRef.current;
@@ -91,7 +118,7 @@ export default function Index() {
             ) : null
           }
           contentContainerClassName="p-2.5 pt-0 md:p-6"
-          data={logs.data}
+          data={filteredLogs}
           estimatedItemSize={112}
           key={`grid-${columns}`}
           keyExtractor={(item) => item.id}

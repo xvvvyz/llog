@@ -1,5 +1,5 @@
 import { Icon } from '@/components/ui/icon';
-import { TextContext } from '@/components/ui/text';
+import { Text, TextContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
 import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
@@ -171,6 +171,22 @@ const SortItem = <T extends string>({
 
 SortItem.displayName = 'SortItem';
 
+const Label = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => (
+  <TextContext.Provider value="text-popover-foreground">
+    <View className={cn('px-4 pb-1 pt-2', className)}>
+      <Text className="text-xs text-muted-foreground">{children}</Text>
+    </View>
+  </TextContext.Provider>
+);
+
+Label.displayName = 'Label';
+
 const Separator = () => <View className="my-2 border-t border-border" />;
 
 const useContext = DropdownMenuPrimitive.useRootContext;
@@ -179,6 +195,7 @@ export {
   CheckboxItem,
   Content,
   Item,
+  Label,
   // RadioItem,
   Root,
   Separator,

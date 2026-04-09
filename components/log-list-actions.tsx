@@ -17,7 +17,6 @@ import {
   Palette,
   SortAscending,
   SortDescending,
-  Tag,
   TextAa,
 } from 'phosphor-react-native';
 
@@ -65,7 +64,6 @@ export const LogListActions = ({
                   })
                 }
               >
-                <Icon className="text-placeholder" icon={Tag} />
                 <Text>{tag.name}</Text>
               </DropdownMenu.CheckboxItem>
             ))}

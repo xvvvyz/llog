@@ -335,9 +335,7 @@ const ActivityName = ({ group }: { group: GroupedActivity }) => {
       <Text className="leading-5" numberOfLines={1}>
         <Text className="font-medium leading-5">{actor?.name}</Text>
         {othersCount > 0 && (
-          <Text className="text-muted-foreground">
-            {` and ${othersCount} other${othersCount > 1 ? 's' : ''}`}
-          </Text>
+          <Text className="text-muted-foreground">{` +${othersCount}`}</Text>
         )}
       </Text>
     );

@@ -98,21 +98,21 @@ export default function InviteLink() {
             ? `Join ${linkInfo.teamName}`
             : 'Invalid invite link'}
         </Text>
-        {linkInfo?.isValid
-          ? linkInfo.logNames &&
-            linkInfo.logNames.length > 0 && (
-              <Text className="mb-1.5 mt-5 text-center text-sm text-placeholder">
-                You{'\u2019'}ve been invited to record in{' '}
-                {formatLogNames(linkInfo.logNames)}.
-              </Text>
-            )
-          : (
+        {linkInfo?.isValid ? (
+          linkInfo.logNames &&
+          linkInfo.logNames.length > 0 && (
             <Text className="mb-1.5 mt-5 text-center text-sm text-placeholder">
-              {linkInfo?.reason === 'expired'
-                ? 'This invite link has expired.'
-                : 'This invite link is no longer valid.'}
+              You{'\u2019'}ve been invited to record in{' '}
+              {formatLogNames(linkInfo.logNames)}.
             </Text>
-          )}
+          )
+        ) : (
+          <Text className="mb-1.5 mt-5 text-center text-sm text-placeholder">
+            {linkInfo?.reason === 'expired'
+              ? 'This invite link has expired.'
+              : 'This invite link is no longer valid.'}
+          </Text>
+        )}
         <Button
           disabled={isRedeeming}
           onPress={

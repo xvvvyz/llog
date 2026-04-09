@@ -61,6 +61,7 @@
     "expo-system-ui": "^55.0.13",
     "expo-video": "^55.0.13",
     "hono": "^4.12.10",
+    "minisearch": "^7.2.0",
     "nanoid": "^5.1.7",
     "nativewind": "^4.2.3",
     "phosphor-react-native": "^3.0.4",
