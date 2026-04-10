@@ -13,7 +13,6 @@ import { useGridColumns as useBreakpointColumns } from '@/hooks/use-breakpoint-c
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { createLog } from '@/mutations/create-log';
-import { useHasNoLogs } from '@/queries/use-has-no-logs';
 import { useLogTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
 import { useMyRole } from '@/queries/use-my-role';
@@ -32,7 +31,6 @@ export default function Index() {
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
-  const isEmpty = useHasNoLogs();
   const logTags = useLogTags();
   const { canManage } = useMyRole();
   const renderCacheRef = useRef<ReactElement | null>(null);
@@ -40,6 +38,7 @@ export default function Index() {
 
   const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs();
+  const isEmpty = !logs.isLoading && logs.data.length === 0;
 
   const miniSearch = useMemo(() => {
     const ms = new MiniSearch({

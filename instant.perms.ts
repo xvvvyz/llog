@@ -34,7 +34,7 @@ const rules = {
     bind: ['isTeammate', "data.id in data.ref('ui.team.roles.user.id')"],
     allow: {
       view: 'auth.id == data.id || isTeammate',
-      create: 'false',
+      create: 'true',
       delete: 'false',
       update: 'false',
     },
@@ -62,7 +62,7 @@ const rules = {
     allow: {
       view: '(!isDraft && isTeamMember && (canManage || isLogMember)) || isAuthor',
       create: 'isAuthor && isTeamMember && (canManage || isLogMember)',
-      update: '(isAuthor || canManage) && isValidText',
+      update: 'isAuthor && isValidText',
       delete: 'isAuthor || canManage',
       link: {
         reactions: 'auth.id != null',
@@ -231,7 +231,7 @@ const rules = {
       view: '(!isDraft && isTeamMember && (canManage || isLogMember)) || isAuthor',
       create:
         'isAuthor && isTeamMember && (canManage || isLogMember) && isValidText',
-      update: '(isAuthor || canManage) && isValidText',
+      update: 'isAuthor && isValidText',
       delete: 'isAuthor || canManage',
       link: {
         comments: 'auth.id != null',

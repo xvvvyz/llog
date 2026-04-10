@@ -54,18 +54,20 @@ export const RecordOrCommentDropdownMenu = ({
           </Button>
         </Menu.Trigger>
         <Menu.Content align="end">
-          <Menu.Item
-            onPress={() => {
-              if (commentId) {
-                sheetManager.open('comment-create', commentId, recordId);
-              } else {
-                sheetManager.open('record-create', recordId, 'edit');
-              }
-            }}
-          >
-            <Icon className="text-placeholder" icon={NotePencil} />
-            <Text>Edit</Text>
-          </Menu.Item>
+          {isAuthor && (
+            <Menu.Item
+              onPress={() => {
+                if (commentId) {
+                  sheetManager.open('comment-create', commentId, recordId);
+                } else {
+                  sheetManager.open('record-create', recordId, 'edit');
+                }
+              }}
+            >
+              <Icon className="text-placeholder" icon={NotePencil} />
+              <Text>Edit</Text>
+            </Menu.Item>
+          )}
           {!commentId && canManage && (
             <Menu.Item
               onPress={() =>
