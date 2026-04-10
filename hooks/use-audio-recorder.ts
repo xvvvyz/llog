@@ -92,7 +92,7 @@ export const useAudioRecorderHook = () => {
   }, []);
 
   useEffect(() => {
-    async () => {
+    (async () => {
       try {
         const result = await navigator.permissions?.query({
           name: 'microphone' as PermissionName,
@@ -102,7 +102,7 @@ export const useAudioRecorderHook = () => {
       } catch {
         // noop
       }
-    };
+    })();
   }, []);
 
   useEffect(() => {
@@ -124,33 +124,29 @@ export const useAudioRecorderHook = () => {
     };
   }, [stopLevelTracking, stopTimer]);
 
-  const requestPermission = useCallback(async () => {
-    try {
-      await recorder.prepareToRecordAsync();
-      setHasPermission(true);
-      return true;
-    } catch {
-      setHasPermission(false);
-      return false;
-    }
-  }, [recorder]);
-
   const record = useCallback(async () => {
-    try {
-      setUri(null);
-      await recorder.prepareToRecordAsync();
-      recorder.record();
+    setUri(null);
 
-      const stream = (recorder as unknown as { stream: MediaStream | null })
-        .stream;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        await recorder.prepareToRecordAsync();
+        recorder.record();
 
-      if (stream) startLevelTracking(stream);
-      setHasPermission(true);
-      setIsRecording(true);
-      startTimer();
-    } catch {
-      setHasPermission(false);
+        const stream = (recorder as unknown as { stream: MediaStream | null })
+          .stream;
+
+        if (stream) startLevelTracking(stream);
+        setHasPermission(true);
+        setIsRecording(true);
+        startTimer();
+        return;
+      } catch {
+        // First attempt may fail while OS permission prompt is resolving.
+        // Retry once before giving up.
+      }
     }
+
+    setHasPermission(false);
   }, [recorder, startLevelTracking, startTimer]);
 
   const stop = useCallback(async () => {
@@ -173,7 +169,6 @@ export const useAudioRecorderHook = () => {
     isRecording,
     level,
     record,
-    requestPermission,
     reset,
     stop,
     uri,
