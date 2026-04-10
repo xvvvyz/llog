@@ -8,9 +8,10 @@ export const useAudioRecorderHook = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [uri, setUri] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [level, setLevel] = useState(0);
   const startTime = useRef(0);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(
     undefined
   );
@@ -90,22 +91,31 @@ export const useAudioRecorderHook = () => {
     setLevel(0);
   }, []);
 
-  // check if permission is already granted
   useEffect(() => {
-    navigator.permissions
-      ?.query({ name: 'microphone' as PermissionName })
-      .then((result) => {
+    async () => {
+      try {
+        const result = await navigator.permissions?.query({
+          name: 'microphone' as PermissionName,
+        });
+
         if (result.state === 'granted') setHasPermission(true);
-      });
+      } catch {
+        // noop
+      }
+    };
   }, []);
 
   useEffect(() => {
     if (isRecording && duration >= MAX_DURATION) {
-      recorder.stop();
-      stopTimer();
-      setIsRecording(false);
+      (async () => {
+        stopLevelTracking();
+        stopTimer();
+        setIsRecording(false);
+        await recorder.stop();
+        setUri(recorder.uri);
+      })();
     }
-  }, [duration, isRecording, recorder, stopTimer]);
+  }, [duration, isRecording, recorder, stopLevelTracking, stopTimer]);
 
   useEffect(() => {
     return () => {
@@ -131,11 +141,11 @@ export const useAudioRecorderHook = () => {
       await recorder.prepareToRecordAsync();
       recorder.record();
 
-      // access the stream from the recorder to track audio levels
       const stream = (recorder as unknown as { stream: MediaStream | null })
         .stream;
 
       if (stream) startLevelTracking(stream);
+      setHasPermission(true);
       setIsRecording(true);
       startTimer();
     } catch {
@@ -145,9 +155,9 @@ export const useAudioRecorderHook = () => {
 
   const stop = useCallback(async () => {
     stopLevelTracking();
-    await recorder.stop();
     stopTimer();
     setIsRecording(false);
+    await recorder.stop();
     setUri(recorder.uri);
     return recorder.uri;
   }, [recorder, stopLevelTracking, stopTimer]);

@@ -53,7 +53,7 @@ export const RecordAudioSheet = () => {
 
     if (
       !isClosingRef.current &&
-      recorder.hasPermission &&
+      recorder.hasPermission !== false &&
       !recorder.isRecording &&
       !recorder.uri
     ) {
@@ -84,8 +84,7 @@ export const RecordAudioSheet = () => {
   }, [close, recorder]);
 
   const handleGrantPermission = useCallback(async () => {
-    const granted = await recorder.requestPermission();
-    if (granted) recorder.record();
+    await recorder.requestPermission();
   }, [recorder]);
 
   const upload = useCallback(async () => {
@@ -125,7 +124,7 @@ export const RecordAudioSheet = () => {
 
   return (
     <Sheet onDismiss={handleCancel} open={isOpen} portalName="record-audio">
-      {!recorder.hasPermission ? (
+      {recorder.hasPermission === false ? (
         <View className="mx-auto w-full max-w-md p-8">
           <Icon
             className="-mb-2 self-center text-primary"
@@ -135,7 +134,12 @@ export const RecordAudioSheet = () => {
           <Text className="mt-8 text-center text-muted-foreground">
             Allow microphone access{'\n'}to record audio.
           </Text>
-          <Button onPress={handleGrantPermission} wrapperClassName="mt-12">
+          <Button
+            className="text-white web:hover:opacity-90"
+            onPress={handleGrantPermission}
+            style={{ backgroundColor: logColor.default }}
+            wrapperClassName="mt-12"
+          >
             <Text>Continue</Text>
           </Button>
           <Button
