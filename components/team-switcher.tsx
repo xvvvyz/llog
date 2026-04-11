@@ -8,6 +8,7 @@ import { createTeam } from '@/mutations/create-team';
 import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
+import { cn } from '@/utilities/cn';
 import { router } from 'expo-router';
 import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
 import { useRef } from 'react';
@@ -20,17 +21,27 @@ export const TeamSwitcher = ({
   const ui = useUi();
   const { teams } = useTeams();
   const activeTeam = teams.find((t) => t.id === ui.activeTeamId);
+  const lastAvatarRef = useRef(activeTeam?.image?.uri);
+  const lastIdRef = useRef(activeTeam?.id);
   const lastNameRef = useRef(activeTeam?.name);
+  if (activeTeam?.image?.uri) lastAvatarRef.current = activeTeam.image.uri;
+  if (activeTeam?.id) lastIdRef.current = activeTeam.id;
   if (activeTeam?.name) lastNameRef.current = activeTeam.name;
 
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
         <Button className="h-auto gap-1 py-3 md:self-start" variant="link">
+          <Avatar
+            avatar={activeTeam?.image?.uri ?? lastAvatarRef.current}
+            className={cn('shrink-0', breakpoints.md ? 'mr-3' : 'mr-1')}
+            id={activeTeam?.id ?? lastIdRef.current}
+            size={breakpoints.md ? 20 : 16}
+          />
           <Text className="web:md:text-xl">
             {activeTeam?.name ?? lastNameRef.current}
           </Text>
-          <Icon className="-mr-0.5 text-placeholder" icon={CaretDown} />
+          <Icon className="text-placeholder" icon={CaretDown} />
         </Button>
       </Menu.Trigger>
       <Menu.Content align={breakpoints.md ? 'start' : 'center'}>
@@ -40,7 +51,7 @@ export const TeamSwitcher = ({
             key={t.id}
             onPress={() => switchTeam({ teamId: t.id, uiId: ui.id })}
           >
-            <Avatar id={t.id} size={20} />
+            <Avatar avatar={t.image?.uri} id={t.id} size={20} />
             <Text className="flex-1">{t.name}</Text>
             {t.id === ui.activeTeamId && (
               <Icon className="-mr-1" icon={Check} />

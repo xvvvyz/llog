@@ -116,7 +116,12 @@ export const ActivityItem = ({
                   group.type === 'member_left') &&
                   team?.name && (
                     <View className="shrink flex-row items-center gap-1">
-                      <Avatar className="shrink-0" id={team.id} size={10} />
+                      <Avatar
+                        avatar={team.image?.uri}
+                        className="shrink-0"
+                        id={team.id}
+                        size={10}
+                      />
                       <Text
                         className="shrink text-xs text-muted-foreground"
                         numberOfLines={1}

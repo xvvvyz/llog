@@ -271,6 +271,19 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
+    teamsMedia: {
+      forward: {
+        on: 'teams',
+        has: 'one',
+        label: 'image',
+      },
+      reverse: {
+        on: 'media',
+        has: 'one',
+        label: 'team',
+        onDelete: 'cascade',
+      },
+    },
     profilesUsers: {
       forward: {
         on: 'profiles',

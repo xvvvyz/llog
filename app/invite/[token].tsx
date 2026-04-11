@@ -9,13 +9,15 @@ import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
 import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
+import {
+  PENDING_INVITE_AUTO_JOIN_KEY,
+  PENDING_INVITE_KEY,
+} from '@/utilities/invite-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, WarningCircle } from 'phosphor-react-native';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-
-const PENDING_INVITE_KEY = 'pendingInviteToken';
 
 interface Member {
   id: string;
@@ -48,6 +50,8 @@ export default function InviteLink() {
   const [linkInfo, setLinkInfo] = useState<LinkInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRedeeming, setIsRedeeming] = useState(false);
+  const [shouldResumeAcceptedInvite, setShouldResumeAcceptedInvite] =
+    useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -59,14 +63,37 @@ export default function InviteLink() {
       .finally(() => setIsLoading(false));
   }, [token]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!token || !auth.user) {
+      setShouldResumeAcceptedInvite(false);
+      return;
+    }
+
+    AsyncStorage.getItem(PENDING_INVITE_AUTO_JOIN_KEY).then((pendingToken) => {
+      if (!cancelled) {
+        setShouldResumeAcceptedInvite(pendingToken === token);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.user, token]);
+
   const handleJoin = useCallback(async () => {
     if (!token) return;
-
     setIsRedeeming(true);
 
     try {
       const { teamId } = await redeemInviteLink({ token });
-      await AsyncStorage.removeItem(PENDING_INVITE_KEY);
+
+      await AsyncStorage.multiRemove([
+        PENDING_INVITE_KEY,
+        PENDING_INVITE_AUTO_JOIN_KEY,
+      ]);
+
       await switchTeam({ teamId });
 
       router.replace('/');
@@ -82,7 +109,12 @@ export default function InviteLink() {
 
   const handleSignIn = useCallback(async () => {
     if (!token) return;
-    await AsyncStorage.setItem(PENDING_INVITE_KEY, token);
+
+    await AsyncStorage.multiSet([
+      [PENDING_INVITE_KEY, token],
+      [PENDING_INVITE_AUTO_JOIN_KEY, token],
+    ]);
+
     router.replace('/sign-in');
   }, [token]);
 
@@ -96,12 +128,10 @@ export default function InviteLink() {
     !auth.isLoading &&
     !teamsLoading &&
     !!linkInfo?.isValid &&
-    isExistingTeamMember;
+    (isExistingTeamMember || shouldResumeAcceptedInvite);
 
   useEffect(() => {
-    if (shouldAutoJoin) {
-      handleJoin();
-    }
+    if (shouldAutoJoin) handleJoin();
   }, [shouldAutoJoin, handleJoin]);
 
   if (!token) {

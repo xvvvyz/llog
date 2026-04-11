@@ -21,7 +21,7 @@ export const useActivities = () => {
               image: {},
               logs: { $: { fields: ['id'] } },
             },
-            team: {},
+            team: { image: {} },
             record: { media: {} },
             comment: { media: {} },
             log: {},

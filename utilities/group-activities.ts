@@ -11,7 +11,7 @@ export type ActivityWithRelations = Activity & {
   comment?: Comment & { media?: Media[] };
   log?: Log;
   record?: RecordType & { media?: Media[] };
-  team?: Team;
+  team?: Team & { image?: Media };
 };
 
 export type GroupedActivity = {

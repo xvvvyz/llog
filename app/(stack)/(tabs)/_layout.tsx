@@ -12,6 +12,7 @@ import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
+import { PENDING_INVITE_KEY } from '@/utilities/invite-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, Tabs } from 'expo-router';
 import { Bell, MagnifyingGlass, SquaresFour } from 'phosphor-react-native';
@@ -51,14 +52,26 @@ export default function Layout() {
   useEffect(() => {
     if (!auth.user || profile.isLoading || !profile.id) return;
 
-    AsyncStorage.getItem('pendingInviteToken').then((token) => {
+    let cancelled = false;
+
+    const checkPendingInvite = async () => {
+      const token = await AsyncStorage.getItem(PENDING_INVITE_KEY);
+      if (cancelled) return;
+
       if (token) {
-        AsyncStorage.removeItem('pendingInviteToken');
-        router.replace(`/invite/${token}`);
-      } else {
-        setCheckedPending(true);
+        await AsyncStorage.removeItem(PENDING_INVITE_KEY);
+        if (!cancelled) router.replace(`/invite/${token}`);
+        return;
       }
-    });
+
+      setCheckedPending(true);
+    };
+
+    checkPendingInvite();
+
+    return () => {
+      cancelled = true;
+    };
   }, [auth.user, profile.isLoading, profile.id]);
 
   if (!auth.isLoading && !auth.user) {

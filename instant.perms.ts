@@ -73,9 +73,13 @@ const rules = {
   media: {
     bind: [
       'hasOneLink',
-      "size(data.ref('record.id')) + size(data.ref('comment.id')) + size(data.ref('profile.id')) == 1",
+      "size(data.ref('record.id')) + size(data.ref('comment.id')) + size(data.ref('profile.id')) + size(data.ref('team.id')) == 1",
       'isProfileOwner',
       "auth.id in data.ref('profile.user.id')",
+      'isTeamImageManager',
+      `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`,
+      'isTeamMember',
+      "auth.id in data.ref('team.roles.user.id')",
       'isRecordAuthor',
       "auth.id in data.ref('record.author.user.id')",
       'isCommentAuthor',
@@ -100,11 +104,11 @@ const rules = {
       "auth.id in data.ref('profile.user.roles.team.roles.user.id')",
     ],
     allow: {
-      view: 'isProfileOwner || isTeammate || canViewRecordMedia || canViewCommentMedia',
+      view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordMedia || canViewCommentMedia',
       create:
-        'hasOneLink && (isProfileOwner || canViewRecordMedia || canViewCommentMedia)',
+        'hasOneLink && (isProfileOwner || isTeamImageManager || canViewRecordMedia || canViewCommentMedia)',
       delete:
-        'isProfileOwner || isRecordAuthor || isCommentAuthor || canManageRecord || canManageComment',
+        'isProfileOwner || isTeamImageManager || isRecordAuthor || isCommentAuthor || canManageRecord || canManageComment',
     },
   },
   inviteLinks: {
@@ -265,8 +269,7 @@ const rules = {
       view: 'isTeamMember',
       create:
         '(isFirstRole || isTeamOwner || isTeamAdmin) && isValidRole && isValidUserId && isValidTeamId && isValidKey',
-      update:
-        'isTeamOwner && isValidRole && isValidUserId && isValidTeamId && isValidKey',
+      update: `(isTeamOwner || (isTeamAdmin && !isRoleOwner && ((data.role == '${Role.Member}' && newData.role == '${Role.Admin}') || (data.role == '${Role.Admin}' && newData.role == '${Role.Member}')))) && isValidRole && isValidUserId && isValidTeamId && isValidKey`,
       delete: `isRoleOwner || isTeamOwner || (isTeamAdmin && data.role == '${Role.Member}')`,
     },
   },

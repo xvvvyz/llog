@@ -1,3 +1,4 @@
+import { Role } from '@/enums/roles';
 import { db, type Db } from '@/middleware/db';
 import { fileLike } from '@/schemas/file-like';
 import { zValidator } from '@hono/zod-validator';
@@ -25,8 +26,8 @@ app.get('/:key{.+}', async (c) => {
 
   if (file.etag) {
     c.header('ETag', file.etag);
-
     const ifNoneMatch = c.req.header('If-None-Match');
+
     if (ifNoneMatch === file.etag) {
       return c.body(null, 304);
     }
@@ -55,6 +56,16 @@ app.get('/:key{.+}', async (c) => {
 const queryProfileWithImage = (userId: string) => ({
   profiles: {
     $: { fields: ['id'] as ['id'], where: { user: userId } },
+    image: {},
+  },
+});
+
+const queryTeamWithImageAndRole = (teamId: string, userId: string) => ({
+  roles: {
+    $: { where: { team: teamId, userId } },
+  },
+  teams: {
+    $: { fields: ['id'] as ['id'], where: { id: teamId } },
     image: {},
   },
 });
@@ -106,6 +117,82 @@ app.delete('/me/avatar', db({ asUser: true }), async (c) => {
   if (profile.image) {
     await c.var.db.transact(c.var.db.tx.media[profile.image.id].delete());
     await c.env.R2.delete(profile.image.uri as string);
+  }
+
+  return c.json({ success: true });
+});
+
+app.put(
+  '/teams/:teamId/avatar',
+  db({ asUser: true }),
+  zValidator('form', z.object({ file: fileLike })),
+  async (c) => {
+    const { teamId } = c.req.param();
+    const { file } = c.req.valid('form');
+
+    if (!file.type.startsWith('image/')) {
+      throw new HTTPException(400, { message: 'Invalid file format' });
+    }
+
+    const result = await c.var.db.query(
+      queryTeamWithImageAndRole(teamId, c.var.user.id)
+    );
+
+    const team = result.teams?.[0];
+    const callerRole = result.roles?.[0]?.role;
+
+    if (!team?.id) {
+      throw new HTTPException(404, { message: 'Team not found' });
+    }
+
+    if (callerRole !== Role.Owner && callerRole !== Role.Admin) {
+      throw new HTTPException(403, { message: 'Forbidden' });
+    }
+
+    if (team.image) {
+      await c.env.R2.delete(team.image.uri as string);
+      await c.var.db.transact(c.var.db.tx.media[team.image.id].delete());
+    }
+
+    const mediaId = id();
+
+    const upload = await c.env.R2.put(
+      `teams/${teamId}/media/${mediaId}`,
+      file as File,
+      { httpMetadata: { contentType: file.type } }
+    );
+
+    await c.var.db.transact(
+      c.var.db.tx.media[mediaId]
+        .update({ teamId, type: 'image', uri: upload.key })
+        .link({ team: teamId })
+    );
+
+    return c.json({ success: true });
+  }
+);
+
+app.delete('/teams/:teamId/avatar', db({ asUser: true }), async (c) => {
+  const { teamId } = c.req.param();
+
+  const result = await c.var.db.query(
+    queryTeamWithImageAndRole(teamId, c.var.user.id)
+  );
+
+  const team = result.teams?.[0];
+  const callerRole = result.roles?.[0]?.role;
+
+  if (!team?.id) {
+    throw new HTTPException(404, { message: 'Team not found' });
+  }
+
+  if (callerRole !== Role.Owner && callerRole !== Role.Admin) {
+    throw new HTTPException(403, { message: 'Forbidden' });
+  }
+
+  if (team.image) {
+    await c.var.db.transact(c.var.db.tx.media[team.image.id].delete());
+    await c.env.R2.delete(team.image.uri as string);
   }
 
   return c.json({ success: true });
@@ -172,7 +259,6 @@ const uploadMedia = async ({
       : 'image';
 
   const key = `${keyPrefix}/media/${mediaId}`;
-
   let previewUri: string | undefined;
 
   if (type === 'video') {

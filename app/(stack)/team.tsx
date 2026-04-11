@@ -16,8 +16,10 @@ import { Role } from '@/enums/roles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { createInviteLink } from '@/mutations/create-invite-link';
+import { deleteTeamImage } from '@/mutations/delete-team-image';
 import { updateRole } from '@/mutations/update-role';
 import { updateTeam } from '@/mutations/update-team';
+import { uploadTeamImage } from '@/mutations/upload-team-image';
 import { useLogs } from '@/queries/use-logs';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeam } from '@/queries/use-team';
@@ -28,6 +30,7 @@ import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
 import { db } from '@/utilities/db';
 import { getInviteUrl } from '@/utilities/invite-url';
+import { launchImageLibraryAsync } from 'expo-image-picker';
 import {
   Check,
   Copy,
@@ -37,9 +40,10 @@ import {
   SignOut,
   SquaresFour,
   Trash,
+  UploadSimple,
   UserMinus,
 } from 'phosphor-react-native';
-import { useCallback, useState } from 'react';
+import { type ComponentRef, useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -51,12 +55,13 @@ const ROLE_LABELS: Record<string, string> = {
 export default function Team() {
   const [copiedRole, setCopiedRole] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const nameInputRef = useRef<ComponentRef<typeof Input>>(null);
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const team = useTeam();
   const { activeTeamId } = useUi();
-  const { canManage, isOwner } = useMyRole();
+  const { canManage, isAdmin, isOwner } = useMyRole();
   const { copy } = useCopy();
   const { inviteLinks } = useTeamInviteLinks();
   const logs = useLogs();
@@ -64,6 +69,19 @@ export default function Team() {
   useTeams();
 
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
+
+  const handleUploadTeamImage = useCallback(async () => {
+    if (!activeTeamId) return;
+
+    const picker = await launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      exif: false,
+    });
+
+    if (picker.canceled) return;
+    await uploadTeamImage(picker.assets[0], activeTeamId);
+  }, [activeTeamId]);
 
   const getOrCreateAdminLink = useCallback(async () => {
     const existing = inviteLinks.find((l) => l.role === Role.Admin);
@@ -144,13 +162,56 @@ export default function Team() {
         <Card className="w-full max-w-xs overflow-hidden p-0">
           <View className="pb-2">
             <View className="px-4">
-              <View className="flex-row items-center justify-between border-b border-border pt-2">
-                <Label className="shrink-0 p-0">Team name</Label>
+              {canManage ? (
+                <Menu.Root>
+                  <Menu.Trigger asChild>
+                    <Button
+                      className="items-end justify-between rounded-none border-b border-border px-0 pb-3 pt-3"
+                      variant="link"
+                    >
+                      <Label className="shrink-0 p-0">Avatar</Label>
+                      <Avatar avatar={team.image?.uri} id={team.id} size={34} />
+                    </Button>
+                  </Menu.Trigger>
+                  <Menu.Content align="end">
+                    <Menu.Item onPress={handleUploadTeamImage}>
+                      <Icon className="text-placeholder" icon={UploadSimple} />
+                      <Text>Upload</Text>
+                    </Menu.Item>
+                    {team.image && (
+                      <>
+                        <Menu.Separator />
+                        <Menu.Item
+                          onPress={() => deleteTeamImage(activeTeamId)}
+                        >
+                          <Icon className="text-destructive" icon={Trash} />
+                          <Text className="text-destructive">Remove</Text>
+                        </Menu.Item>
+                      </>
+                    )}
+                  </Menu.Content>
+                </Menu.Root>
+              ) : (
+                <View className="flex-row items-end justify-between border-b border-border pb-3 pt-3">
+                  <Label className="shrink-0 p-0">Avatar</Label>
+                  <Avatar avatar={team.image?.uri} id={team.id} size={34} />
+                </View>
+              )}
+            </View>
+            <View className="px-4">
+              <View className="flex-row items-center justify-between border-b border-border">
+                <Label
+                  className="shrink-0 p-0"
+                  onPress={() => nameInputRef.current?.focus()}
+                >
+                  Name
+                </Label>
                 <Input
                   editable={canManage}
                   maxLength={32}
                   className="min-w-0 shrink rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(name) => updateTeam({ id: team.id, name })}
+                  ref={nameInputRef}
                   value={team.name}
                 />
               </View>
@@ -231,6 +292,20 @@ export default function Team() {
 
                 const isLastOwner =
                   member.role === Role.Owner && ownerCount <= 1;
+                const canShowMemberMenu =
+                  canManage &&
+                  !isSelf &&
+                  (isOwner || member.role !== Role.Owner);
+                const canChangeToAdmin =
+                  isOwner || (isAdmin && member.role === Role.Member);
+                const canChangeToMember =
+                  isOwner ||
+                  (isAdmin &&
+                    (member.role === Role.Admin ||
+                      member.role === Role.Member));
+                const canViewLogs = member.role === Role.Member;
+                const canRemoveMember =
+                  isOwner || (isAdmin && member.role !== Role.Owner);
 
                 return (
                   <View
@@ -252,84 +327,87 @@ export default function Team() {
                         </Text>
                       </View>
                     </View>
-                    {canManage &&
-                      !isSelf &&
-                      (isOwner || member.role === Role.Member) && (
-                        <Menu.Root>
-                          <Menu.Trigger asChild>
-                            <Button
-                              className="size-8"
-                              variant="ghost"
-                              size="icon"
-                              wrapperClassName="-mr-[7px]"
-                            >
-                              <Icon
-                                className="text-placeholder"
-                                icon={DotsThreeVertical}
-                              />
-                            </Button>
-                          </Menu.Trigger>
-                          <Menu.Content align="end">
-                            {isOwner &&
-                              [Role.Admin, Role.Member].map((r) => (
-                                <Menu.Item
-                                  className="justify-between"
-                                  key={r}
-                                  onPress={() => {
+                    {canShowMemberMenu && (
+                      <Menu.Root>
+                        <Menu.Trigger asChild>
+                          <Button
+                            className="size-8"
+                            variant="ghost"
+                            size="icon"
+                            wrapperClassName="-mr-[7px]"
+                          >
+                            <Icon
+                              className="text-placeholder"
+                              icon={DotsThreeVertical}
+                            />
+                          </Button>
+                        </Menu.Trigger>
+                        <Menu.Content align="end">
+                          {[Role.Admin, Role.Member].map((r) => {
+                            const isDisabled =
+                              (r === Role.Admin && !canChangeToAdmin) ||
+                              (r === Role.Member && !canChangeToMember);
+
+                            return (
+                              <Menu.Item
+                                className="justify-between"
+                                disabled={isDisabled}
+                                key={r}
+                                onPress={() => {
+                                  if (member.role !== r) {
                                     updateRole({
                                       id: member.id,
                                       role: r,
                                       teamId: activeTeamId!,
                                       userId: member.userId,
                                     });
+                                  }
 
-                                    if (r === Role.Member) {
-                                      sheetManager.open(
-                                        'member-logs',
-                                        profile?.id
-                                      );
-                                    }
-                                  }}
-                                >
-                                  <Text className="flex-1">
-                                    {ROLE_LABELS[r]}
-                                  </Text>
-                                  {member.role === r && (
-                                    <Icon className="-mr-1" icon={Check} />
-                                  )}
-                                </Menu.Item>
-                              ))}
-                            {member.role === Role.Member && (
-                              <>
-                                {isOwner && <Menu.Separator />}
-                                <Menu.Item
-                                  onPress={() =>
+                                  if (r === Role.Member) {
                                     sheetManager.open(
                                       'member-logs',
                                       profile?.id
-                                    )
+                                    );
                                   }
-                                >
-                                  <Icon icon={SquaresFour} />
-                                  <Text>Access</Text>
-                                </Menu.Item>
-                              </>
-                            )}
-                            <Menu.Separator />
-                            <Menu.Item
-                              onPress={() =>
-                                sheetManager.open('member-remove', member.id)
-                              }
-                            >
-                              <Icon
-                                className="text-destructive"
-                                icon={UserMinus}
-                              />
-                              <Text className="text-destructive">Remove</Text>
-                            </Menu.Item>
-                          </Menu.Content>
-                        </Menu.Root>
-                      )}
+                                }}
+                              >
+                                <Text className="flex-1">{ROLE_LABELS[r]}</Text>
+                                {member.role === r && (
+                                  <Icon className="-mr-1" icon={Check} />
+                                )}
+                              </Menu.Item>
+                            );
+                          })}
+                          {canViewLogs && (
+                            <>
+                              <Menu.Separator />
+                              <Menu.Item
+                                onPress={() =>
+                                  sheetManager.open('member-logs', profile?.id)
+                                }
+                              >
+                                <Icon icon={SquaresFour} />
+                                <Text>Logs</Text>
+                              </Menu.Item>
+                            </>
+                          )}
+                          <Menu.Separator />
+                          <Menu.Item
+                            className={canRemoveMember ? '' : 'opacity-50'}
+                            disabled={!canRemoveMember}
+                            onPress={() =>
+                              sheetManager.open('member-remove', member.id)
+                            }
+                          >
+                            <Icon
+                              className="text-destructive"
+                              icon={UserMinus}
+                            />
+                            <Text className="text-destructive">Remove</Text>
+                          </Menu.Item>
+                        </Menu.Content>
+                      </Menu.Root>
+                    )}
                     {isSelf && !isLastOwner && (
                       <Menu.Root>
                         <Menu.Trigger asChild>
@@ -350,7 +428,7 @@ export default function Team() {
                             onPress={() => sheetManager.open('team-leave')}
                           >
                             <Icon className="text-destructive" icon={SignOut} />
-                            <Text className="text-destructive">Leave team</Text>
+                            <Text className="text-destructive">Leave</Text>
                           </Menu.Item>
                         </Menu.Content>
                       </Menu.Root>

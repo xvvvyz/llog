@@ -18,11 +18,12 @@ import { db } from '@/utilities/db';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
 import { SignOut, Trash, UploadSimple } from 'phosphor-react-native';
-import { useCallback, useState } from 'react';
+import { type ComponentRef, useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 export default function Account() {
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const nameInputRef = useRef<ComponentRef<typeof Input>>(null);
   const auth = db.useAuth();
   const profile = useProfile();
   const ui = useUi();
@@ -74,13 +75,19 @@ export default function Account() {
           <View className="pb-2">
             <View className="px-4">
               <View className="flex-row items-center justify-between border-b border-border">
-                <Label className="p-0">Name</Label>
+                <Label
+                  className="p-0"
+                  onPress={() => nameInputRef.current?.focus()}
+                >
+                  Name
+                </Label>
                 <Input
                   maxLength={32}
                   className="rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(text) =>
                     updateProfile({ id: profile.id, name: text })
                   }
+                  ref={nameInputRef}
                   value={profile.name}
                 />
               </View>

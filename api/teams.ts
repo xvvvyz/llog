@@ -26,6 +26,9 @@ const memberJoinedActivity = (
       ]
     : [];
 
+const isManagedRole = (role?: string) =>
+  role === Role.Owner || role === Role.Admin;
+
 const removeMember = async (
   db: Db,
   roleId: string,
@@ -215,18 +218,57 @@ app.post('/invite-links/:token/redeem', db(), async (c) => {
   ]);
 
   const actorId = profiles[0]?.id;
+  const existingRole = existingRoles[0];
   const logIds = link.logs?.map((l) => l.id) ?? [];
 
-  if (existingRoles.length) {
-    if (actorId && logIds.length) {
-      await c.var.db.transact(
-        logIds.map((logId) =>
+  const desiredRole =
+    existingRole?.role === Role.Owner
+      ? Role.Owner
+      : link.role === Role.Admin
+        ? Role.Admin
+        : existingRole?.role;
+
+  const targetLogIds =
+    actorId && isManagedRole(desiredRole)
+      ? (
+          await c.var.db.query({
+            logs: {
+              $: { where: { team: teamId }, fields: ['id'] },
+            },
+          })
+        ).logs.map((log) => log.id)
+      : logIds;
+
+  if (existingRole) {
+    const tx: any[] = [];
+
+    if (desiredRole && desiredRole !== existingRole.role) {
+      tx.push(
+        c.var.db.tx.roles[existingRole.id].update({
+          key: `${desiredRole}_${user.id}_${teamId}`,
+          role: desiredRole,
+          teamId,
+          userId: user.id,
+        })
+      );
+    }
+
+    if (actorId && targetLogIds.length) {
+      tx.push(
+        ...targetLogIds.map((logId) =>
           c.var.db.tx.profiles[actorId].link({ logs: logId })
         )
       );
     }
 
-    return c.json({ status: 'logs_added', teamId });
+    if (tx.length) {
+      await c.var.db.transact(tx);
+    }
+
+    return c.json({
+      status: desiredRole !== existingRole.role ? 'role_updated' : 'logs_added',
+      teamId,
+    });
   }
 
   await c.var.db.transact([
@@ -238,8 +280,8 @@ app.post('/invite-links/:token/redeem', db(), async (c) => {
         userId: user.id,
       })
       .link({ team: teamId, user: user.id }),
-    ...(actorId && logIds.length
-      ? logIds.map((logId) =>
+    ...(actorId && targetLogIds.length
+      ? targetLogIds.map((logId) =>
           c.var.db.tx.profiles[actorId].link({ logs: logId })
         )
       : []),
@@ -310,7 +352,7 @@ app.delete('/:teamId/members/:roleId', db(), async (c) => {
 
   const canRemove =
     callerRole === Role.Owner ||
-    (callerRole === Role.Admin && targetRole.role === Role.Member);
+    (callerRole === Role.Admin && targetRole.role !== Role.Owner);
 
   if (!canRemove) {
     throw new HTTPException(403, { message: 'Forbidden' });

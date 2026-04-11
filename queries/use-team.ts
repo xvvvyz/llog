@@ -9,12 +9,12 @@ export const useTeam = () => {
       ? {
           teams: {
             $: { where: { id: activeTeamId } },
+            image: {},
           },
         }
       : null
   );
 
   const team = data?.teams?.[0];
-
   return { ...team, isLoading };
 };
