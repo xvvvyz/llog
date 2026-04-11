@@ -5,7 +5,7 @@ import { useSheetManager } from '@/context/sheet-manager';
 import { Role } from '@/enums/roles';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
 import { db } from '@/utilities/db';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const InviteDeleteSheet = () => {
@@ -13,6 +13,11 @@ export const InviteDeleteSheet = () => {
   const role = sheetManager.getId('invite-delete');
   const { inviteLinks } = useTeamInviteLinks();
   const [isLoading, setIsLoading] = useState(false);
+  const open = sheetManager.isOpen('invite-delete');
+
+  useEffect(() => {
+    if (open) setIsLoading(false);
+  }, [open]);
 
   const label =
     role === Role.Admin
@@ -32,7 +37,7 @@ export const InviteDeleteSheet = () => {
       }
 
       sheetManager.close('invite-delete');
-    } finally {
+    } catch {
       setIsLoading(false);
     }
   }, [inviteLinks, role, sheetManager]);
@@ -40,7 +45,7 @@ export const InviteDeleteSheet = () => {
   return (
     <Sheet
       onDismiss={() => sheetManager.close('invite-delete')}
-      open={sheetManager.isOpen('invite-delete')}
+      open={open}
       portalName="invite-delete"
     >
       <View className="mx-auto w-full max-w-md p-8">

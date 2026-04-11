@@ -53,17 +53,24 @@ export const LogListItem = ({
           </View>
           <View className="w-full flex-row items-end justify-between gap-3">
             <Text
-              className="-mb-1 flex-1 leading-snug text-white"
+              className="-mb-[5px] flex-1 leading-snug text-white"
               numberOfLines={1}
             >
               {name}
             </Text>
             {profiles.length > 0 && (
-              <View className="-mb-1 -mr-1 flex-row">
+              <View
+                className="flex-row"
+                style={{ marginBottom: -5, marginRight: -5 }}
+              >
                 {profiles.map((profile, i) => (
                   <View
                     key={profile.id}
-                    style={i > 0 ? { marginLeft: -10 } : undefined}
+                    className="rounded-full"
+                    style={[
+                      { width: 22, height: 22 },
+                      i > 0 ? { marginLeft: -10 } : undefined,
+                    ]}
                   >
                     <Avatar
                       avatar={profile.image?.uri}
@@ -78,7 +85,7 @@ export const LogListItem = ({
         </Button>
       </Link>
       <View className="absolute right-1.5 top-1.5">
-        <LogDropdownMenu contentClassName="my-0 -mr-1.5" id={id}>
+        <LogDropdownMenu contentClassName="my-0 mr-2.5" id={id}>
           <View
             className="size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20"
             style={{ borderCurve: 'continuous' }}

@@ -7,7 +7,7 @@ import { Record as RecordType } from '@/types/record';
 import { Team } from '@/types/team';
 
 export type ActivityWithRelations = Activity & {
-  actor?: Profile & { image?: Media };
+  actor?: Profile & { image?: Media; logs?: Pick<Log, 'id'>[] };
   comment?: Comment & { media?: Media[] };
   log?: Log;
   record?: RecordType & { media?: Media[] };

@@ -18,6 +18,7 @@ import { useCopy } from '@/hooks/use-copy';
 import { createInviteLink } from '@/mutations/create-invite-link';
 import { updateRole } from '@/mutations/update-role';
 import { updateTeam } from '@/mutations/update-team';
+import { useLogs } from '@/queries/use-logs';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeam } from '@/queries/use-team';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
@@ -44,7 +45,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
   [Role.Admin]: 'Admin',
-  [Role.Recorder]: 'Recorder',
+  [Role.Member]: 'Member',
 };
 
 export default function Team() {
@@ -58,6 +59,7 @@ export default function Team() {
   const { canManage, isOwner } = useMyRole();
   const { copy } = useCopy();
   const { inviteLinks } = useTeamInviteLinks();
+  const logs = useLogs();
   const { members } = useTeamMembers();
   useTeams();
 
@@ -78,7 +80,7 @@ export default function Team() {
 
   const handleCopyLink = useCallback(
     async (role: string) => {
-      if (role === Role.Recorder) {
+      if (role === Role.Member) {
         sheetManager.open('invite-logs', 'copy');
         return;
       }
@@ -102,7 +104,7 @@ export default function Team() {
 
   const handleShowQr = useCallback(
     async (role: string) => {
-      if (role === Role.Recorder) {
+      if (role === Role.Member) {
         sheetManager.open('invite-logs', 'qr');
         return;
       }
@@ -154,69 +156,73 @@ export default function Team() {
               </View>
             </View>
             {canManage &&
-              [Role.Admin, Role.Recorder].map((role) => (
-                <View key={role} className="px-4">
-                  <View className="flex-row items-center justify-between pt-1.5">
-                    <Text className="font-normal text-muted-foreground">
-                      {ROLE_LABELS[role]} invite link
-                    </Text>
-                    <View className="-mr-[7px] flex-row items-center gap-1">
-                      <Button
-                        className="size-8"
-                        onPress={() => handleCopyLink(role)}
-                        size="icon"
-                        variant="ghost"
-                      >
-                        {loadingAction === `copy-${role}` ? (
-                          <ActivityIndicator
-                            size={16}
-                            color={UI[colorScheme].mutedForeground}
-                          />
-                        ) : (
-                          <Icon
-                            className="text-placeholder"
-                            icon={copiedRole === role ? Check : Copy}
-                          />
-                        )}
-                      </Button>
-                      <Button
-                        className="size-8"
-                        onPress={() => handleShowQr(role)}
-                        size="icon"
-                        variant="ghost"
-                      >
-                        {loadingAction === `qr-${role}` ? (
-                          <ActivityIndicator
-                            size={16}
-                            color={UI[colorScheme].mutedForeground}
-                          />
-                        ) : (
-                          <Icon className="text-placeholder" icon={QrCode} />
-                        )}
-                      </Button>
-                      {inviteLinks.some((l) => l.role === role) && (
+              [Role.Admin, Role.Member]
+                .filter((role) => role === Role.Admin || logs.data.length > 0)
+                .map((role) => (
+                  <View key={role} className="px-4">
+                    <View className="flex-row items-center justify-between pt-1.5">
+                      <Text className="font-normal text-muted-foreground">
+                        {ROLE_LABELS[role]} invite link
+                      </Text>
+                      <View className="-mr-[7px] flex-row items-center gap-1">
                         <Button
                           className="size-8"
-                          onPress={() => handleDelete(role)}
+                          onPress={() => handleCopyLink(role)}
                           size="icon"
                           variant="ghost"
                         >
-                          <Icon className="text-placeholder" icon={LinkBreak} />
+                          {loadingAction === `copy-${role}` ? (
+                            <ActivityIndicator
+                              size={16}
+                              color={UI[colorScheme].mutedForeground}
+                            />
+                          ) : (
+                            <Icon
+                              className="text-placeholder"
+                              icon={copiedRole === role ? Check : Copy}
+                            />
+                          )}
                         </Button>
-                      )}
+                        <Button
+                          className="size-8"
+                          onPress={() => handleShowQr(role)}
+                          size="icon"
+                          variant="ghost"
+                        >
+                          {loadingAction === `qr-${role}` ? (
+                            <ActivityIndicator
+                              size={16}
+                              color={UI[colorScheme].mutedForeground}
+                            />
+                          ) : (
+                            <Icon className="text-placeholder" icon={QrCode} />
+                          )}
+                        </Button>
+                        {inviteLinks.some((l) => l.role === role) && (
+                          <Button
+                            className="size-8"
+                            onPress={() => handleDelete(role)}
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <Icon
+                              className="text-placeholder"
+                              icon={LinkBreak}
+                            />
+                          </Button>
+                        )}
+                      </View>
                     </View>
+                    <Text className="-mt-1 pb-3 text-xs text-placeholder">
+                      {role === Role.Admin
+                        ? 'Can manage team and logs'
+                        : 'Can access selected logs'}
+                    </Text>
+                    <View className="border-b border-border" />
                   </View>
-                  <Text className="-mt-1 pb-3 text-xs text-placeholder">
-                    {role === Role.Admin
-                      ? 'Can manage team and logs'
-                      : 'Can record in selected logs'}
-                  </Text>
-                  <View className="border-b border-border" />
-                </View>
-              ))}
+                ))}
             <ScrollView
-              className="px-4"
-              style={{ maxHeight: 224 }}
+              className="max-h-72 px-4"
               contentContainerClassName="py-2"
             >
               {members.map((member) => {
@@ -248,7 +254,7 @@ export default function Team() {
                     </View>
                     {canManage &&
                       !isSelf &&
-                      (isOwner || member.role === Role.Recorder) && (
+                      (isOwner || member.role === Role.Member) && (
                         <Menu.Root>
                           <Menu.Trigger asChild>
                             <Button
@@ -265,7 +271,7 @@ export default function Team() {
                           </Menu.Trigger>
                           <Menu.Content align="end">
                             {isOwner &&
-                              [Role.Admin, Role.Recorder].map((r) => (
+                              [Role.Admin, Role.Member].map((r) => (
                                 <Menu.Item
                                   className="justify-between"
                                   key={r}
@@ -277,7 +283,7 @@ export default function Team() {
                                       userId: member.userId,
                                     });
 
-                                    if (r === Role.Recorder) {
+                                    if (r === Role.Member) {
                                       sheetManager.open(
                                         'member-logs',
                                         profile?.id
@@ -293,7 +299,7 @@ export default function Team() {
                                   )}
                                 </Menu.Item>
                               ))}
-                            {member.role === Role.Recorder && (
+                            {member.role === Role.Member && (
                               <>
                                 {isOwner && <Menu.Separator />}
                                 <Menu.Item
@@ -356,7 +362,7 @@ export default function Team() {
             <View>
               {isOwner && (
                 <>
-                  <View className="my-2 border-t border-border" />
+                  <View className="mb-2 border-t border-border" />
                   <Button
                     className="justify-between rounded-none"
                     onPress={() => sheetManager.open('team-delete')}

@@ -243,7 +243,7 @@ const rules = {
   roles: {
     bind: [
       'isValidRole',
-      `newData.role in ['${Role.Owner}', '${Role.Admin}', '${Role.Recorder}']`,
+      `newData.role in ['${Role.Owner}', '${Role.Admin}', '${Role.Member}']`,
       'isValidUserId',
       "newData.userId in data.ref('user.id')",
       'isValidTeamId',
@@ -267,7 +267,7 @@ const rules = {
         '(isFirstRole || isTeamOwner || isTeamAdmin) && isValidRole && isValidUserId && isValidTeamId && isValidKey',
       update:
         'isTeamOwner && isValidRole && isValidUserId && isValidTeamId && isValidKey',
-      delete: `isRoleOwner || isTeamOwner || (isTeamAdmin && data.role == '${Role.Recorder}')`,
+      delete: `isRoleOwner || isTeamOwner || (isTeamAdmin && data.role == '${Role.Member}')`,
     },
   },
   teams: {

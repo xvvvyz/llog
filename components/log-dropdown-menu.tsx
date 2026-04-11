@@ -23,7 +23,7 @@ import {
   Users,
 } from 'phosphor-react-native';
 import { ReactNode, useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, ViewStyle } from 'react-native';
+import { ActivityIndicator, View, ViewStyle } from 'react-native';
 
 const InviteItems = ({ id }: { id?: string }) => {
   const colorScheme = useColorScheme();
@@ -36,7 +36,7 @@ const InviteItems = ({ id }: { id?: string }) => {
     if (!activeTeamId || !id) return null;
 
     const existing = inviteLinks.find((link) => {
-      if (link.role !== Role.Recorder) return false;
+      if (link.role !== Role.Member) return false;
       const logIds = link.logs?.map((l) => l.id) ?? [];
       return logIds.length === 1 && logIds[0] === id;
     });
@@ -45,7 +45,7 @@ const InviteItems = ({ id }: { id?: string }) => {
 
     const { token } = await createInviteLink({
       teamId: activeTeamId,
-      role: Role.Recorder,
+      role: Role.Member,
       logIds: [id],
     });
 
@@ -88,31 +88,33 @@ const InviteItems = ({ id }: { id?: string }) => {
     <>
       <Menu.Item closeOnPress={false} onPress={handleCopyLink}>
         {loadingAction === 'copy' ? (
-          <ActivityIndicator
-            size={16}
-            color={UI[colorScheme].mutedForeground}
-          />
+          <View className="size-5 items-center justify-center">
+            <ActivityIndicator
+              size={16}
+              color={UI[colorScheme].mutedForeground}
+            />
+          </View>
         ) : (
           <Icon className="text-placeholder" icon={copied ? Check : Copy} />
         )}
-        <Text>
-          {copied
-            ? 'Copied!'
-            : loadingAction === 'copy'
-              ? 'Generating…'
-              : 'Copy invite link'}
+        <Text className={loadingAction === 'copy' ? 'text-placeholder' : ''}>
+          {copied ? 'Copied!' : 'Invite link'}
         </Text>
       </Menu.Item>
       <Menu.Item closeOnPress={false} onPress={handleShowQr}>
         {loadingAction === 'qr' ? (
-          <ActivityIndicator
-            size={16}
-            color={UI[colorScheme].mutedForeground}
-          />
+          <View className="size-5 items-center justify-center">
+            <ActivityIndicator
+              size={16}
+              color={UI[colorScheme].mutedForeground}
+            />
+          </View>
         ) : (
           <Icon className="text-placeholder" icon={QrCode} />
         )}
-        <Text>{loadingAction === 'qr' ? 'Generating…' : 'Show invite QR'}</Text>
+        <Text className={loadingAction === 'qr' ? 'text-placeholder' : ''}>
+          Invite QR
+        </Text>
       </Menu.Item>
     </>
   );
@@ -135,8 +137,8 @@ export const LogDropdownMenu = ({
   const sheetManager = useSheetManager();
   const { members } = useTeamMembers();
 
-  const hasRecorders = useMemo(
-    () => members.some((m) => m.role === Role.Recorder),
+  const hasMembers = useMemo(
+    () => members.some((m) => m.role === Role.Member),
     [members]
   );
 
@@ -161,20 +163,20 @@ export const LogDropdownMenu = ({
       >
         <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
           <Icon className="text-placeholder" icon={NotePencil} />
-          <Text>Edit</Text>
+          <Text>Details</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
           <Icon className="text-placeholder" icon={Tag} />
           <Text>Tags</Text>
         </Menu.Item>
-        {hasRecorders && (
-          <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
-            <Icon className="text-placeholder" icon={Users} />
-            <Text>Recorders</Text>
-          </Menu.Item>
-        )}
         <Menu.Separator />
         <InviteItems id={id} />
+        {hasMembers && (
+          <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
+            <Icon className="text-placeholder" icon={Users} />
+            <Text>Members</Text>
+          </Menu.Item>
+        )}
         <Menu.Separator />
         <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
           <Icon className="text-destructive" icon={Trash} />

@@ -17,6 +17,7 @@ export const LogListEmptyState = ({ canManage }: { canManage?: boolean }) => {
             Track anything in your world.
           </Text>
           <Button
+            wrapperClassName="mt-4"
             onPress={() => {
               const logId = id();
               createLog({ color: 7, id: logId, name: 'Log' });

@@ -3,17 +3,22 @@ import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { deleteComment } from '@/mutations/delete-comment';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const CommentDeleteSheet = () => {
   const [isPending, setIsPending] = useState(false);
   const sheetManager = useSheetManager();
+  const open = sheetManager.isOpen('comment-delete');
+
+  useEffect(() => {
+    if (open) setIsPending(false);
+  }, [open]);
 
   return (
     <Sheet
       onDismiss={() => sheetManager.close('comment-delete')}
-      open={sheetManager.isOpen('comment-delete')}
+      open={open}
       portalName="comment-delete"
     >
       <View className="mx-auto w-full max-w-md p-8">
@@ -29,7 +34,6 @@ export const CommentDeleteSheet = () => {
             });
 
             sheetManager.close('comment-delete');
-            setIsPending(false);
           }}
           variant="destructive"
           wrapperClassName="mt-12"

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utilities/cn';
-import { MagnifyingGlass, X } from 'phosphor-react-native';
+import { IconProps, MagnifyingGlass, X } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
@@ -10,7 +10,9 @@ import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
 export const SearchInput = forwardRef<
   ComponentRef<typeof Input>,
   ComponentPropsWithoutRef<typeof Input> & {
+    actionIcon?: React.ComponentType<IconProps>;
     className?: string;
+    onActionPress?: () => void;
     placeholder?: string;
     query: string;
     setQuery: (query: string) => void;
@@ -19,7 +21,9 @@ export const SearchInput = forwardRef<
 >(
   (
     {
+      actionIcon,
       className,
+      onActionPress,
       placeholder = 'Search',
       query,
       setQuery,
@@ -44,12 +48,16 @@ export const SearchInput = forwardRef<
         {!!query.length && (
           <Button
             className="size-8"
-            onPress={() => setQuery('')}
+            onPress={onActionPress ?? (() => setQuery(''))}
             size="icon"
             variant="ghost"
             wrapperClassName="rounded-full absolute right-1 top-1/2 -translate-y-1/2"
           >
-            <Icon className="text-muted-foreground" icon={X} size={20} />
+            <Icon
+              className="text-muted-foreground"
+              icon={actionIcon ?? X}
+              size={20}
+            />
           </Button>
         )}
       </View>

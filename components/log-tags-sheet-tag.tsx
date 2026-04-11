@@ -32,7 +32,7 @@ export const LogTagsSheetTag = ({
   return (
     <View
       className={cn(
-        'w-40 flex-row items-center rounded-full border border-border-secondary bg-input',
+        'h-10 w-40 flex-row items-center rounded-full border border-border-secondary bg-input',
         className
       )}
       style={{ borderCurve: 'continuous' }}

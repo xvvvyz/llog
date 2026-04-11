@@ -32,27 +32,17 @@ const removeMember = async (
   profileId: string,
   teamId: string
 ) => {
-  const [{ activities }, { logs }] = await Promise.all([
-    db.query({
-      activities: {
-        $: {
-          where: { type: 'member_joined', actor: profileId, team: teamId },
-        },
-      },
-    }),
-    db.query({
-      logs: {
-        $: { where: { team: teamId } },
-        profiles: { $: { where: { id: profileId } } },
-      },
-    }),
-  ]);
+  const { logs } = await db.query({
+    logs: {
+      $: { where: { team: teamId } },
+      profiles: { $: { where: { id: profileId } } },
+    },
+  });
 
   const memberLogs = logs.filter((l) => l.profiles.length > 0);
 
   await db.transact([
     db.tx.roles[roleId].delete(),
-    ...activities.map((a) => db.tx.activities[a.id].delete()),
     ...memberLogs.map((l) => db.tx.profiles[profileId].unlink({ logs: l.id })),
     db.tx.activities[id()]
       .update({
@@ -72,7 +62,7 @@ app.post(
   zValidator(
     'json',
     z.object({
-      role: z.enum([Role.Admin, Role.Recorder]),
+      role: z.enum([Role.Admin, Role.Member]),
       logIds: z.array(z.string()).optional().default([]),
       expiresAt: z.number().optional(),
     })
@@ -130,8 +120,16 @@ app.get('/invite-links/:token', db(), async (c) => {
   const { inviteLinks } = await c.var.db.query({
     inviteLinks: {
       $: { where: { token } },
-      team: { $: { fields: ['name'] } },
-      logs: { $: { fields: ['name'] } },
+      team: {
+        $: { fields: ['name'] },
+        roles: {
+          user: { profile: { image: {} } },
+        },
+      },
+      logs: {
+        $: { fields: ['name'] },
+        profiles: { image: {} },
+      },
     },
   });
 
@@ -147,11 +145,32 @@ app.get('/invite-links/:token', db(), async (c) => {
     return c.json({ isValid: false, reason: 'expired' });
   }
 
+  const adminMembers = (link.team?.roles ?? [])
+    .filter((r) => r.role === Role.Owner || r.role === Role.Admin)
+    .map((r) => r.user?.profile)
+    .filter(Boolean)
+    .map((p) => ({ id: p!.id, name: p!.name, image: p!.image?.uri }));
+
+  const logMembers = (link.logs ?? []).flatMap((l) =>
+    (l.profiles ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      image: p.image?.uri,
+    }))
+  );
+
+  const members =
+    link.role === Role.Member ? [...adminMembers, ...logMembers] : adminMembers;
+
+  const uniqueMembers = [...new Map(members.map((m) => [m.id, m])).values()];
+
   return c.json({
     isValid: true,
+    teamId: link.team?.id,
     teamName: link.team?.name,
     role: link.role,
     logNames: link.logs?.map((l) => l.name) ?? [],
+    members: uniqueMembers,
   });
 });
 
@@ -291,7 +310,7 @@ app.delete('/:teamId/members/:roleId', db(), async (c) => {
 
   const canRemove =
     callerRole === Role.Owner ||
-    (callerRole === Role.Admin && targetRole.role === Role.Recorder);
+    (callerRole === Role.Admin && targetRole.role === Role.Member);
 
   if (!canRemove) {
     throw new HTTPException(403, { message: 'Forbidden' });

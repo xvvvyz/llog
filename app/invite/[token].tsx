@@ -1,36 +1,50 @@
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { redeemInviteLink } from '@/mutations/redeem-invite-link';
 import { switchTeam } from '@/mutations/switch-team';
+import { useTeams } from '@/queries/use-teams';
 import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowRight, WarningCircle } from 'phosphor-react-native';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 const PENDING_INVITE_KEY = 'pendingInviteToken';
 
+interface Member {
+  id: string;
+  name?: string;
+  image?: string;
+}
+
 interface LinkInfo {
   isValid: boolean;
+  teamId?: string;
   teamName?: string;
   role?: string;
   logNames?: string[];
+  members?: Member[];
   reason?: string;
 }
 
-const formatLogNames = (names: string[]) => {
-  if (names.length === 0) return '';
-  if (names.length === 1) return names[0];
-  if (names.length === 2) return `${names[0]} and ${names[1]}`;
-  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
-};
+const renderLogNames = (names: string[]) =>
+  names.map((name, i) => (
+    <Fragment key={`${name}-${i}`}>
+      {i > 0 ? (i === names.length - 1 ? ' and ' : ', ') : null}
+      <Text className="font-medium text-foreground">{name}</Text>
+    </Fragment>
+  ));
 
 export default function InviteLink() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const auth = db.useAuth();
+  const { teams, isLoading: teamsLoading } = useTeams();
   const [linkInfo, setLinkInfo] = useState<LinkInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRedeeming, setIsRedeeming] = useState(false);
@@ -72,17 +86,34 @@ export default function InviteLink() {
     router.replace('/sign-in');
   }, [token]);
 
+  const isExistingTeamMember =
+    !!auth.user &&
+    !!linkInfo?.teamId &&
+    teams.some((team) => team.id === linkInfo.teamId);
+
+  const shouldAutoJoin =
+    !isLoading &&
+    !auth.isLoading &&
+    !teamsLoading &&
+    !!linkInfo?.isValid &&
+    isExistingTeamMember;
+
   useEffect(() => {
-    if (!isLoading && !auth.isLoading && linkInfo?.isValid && auth.user) {
+    if (shouldAutoJoin) {
       handleJoin();
     }
-  }, [isLoading, auth.isLoading, linkInfo?.isValid, auth.user, handleJoin]);
+  }, [shouldAutoJoin, handleJoin]);
 
   if (!token) {
     return <Redirect href="/" />;
   }
 
-  if (isLoading || auth.isLoading || (auth.user && linkInfo?.isValid)) {
+  if (
+    isLoading ||
+    auth.isLoading ||
+    (auth.user && linkInfo?.isValid && teamsLoading) ||
+    shouldAutoJoin
+  ) {
     return (
       <Page>
         <Loading />
@@ -92,27 +123,59 @@ export default function InviteLink() {
 
   return (
     <Page className="items-center justify-center p-6">
-      <View className="w-full max-w-xs items-center px-4">
-        <Text className="text-center text-lg font-medium">
-          {linkInfo?.isValid
-            ? `Join ${linkInfo.teamName}`
-            : 'Invalid invite link'}
-        </Text>
-        {linkInfo?.isValid ? (
-          linkInfo.logNames &&
-          linkInfo.logNames.length > 0 && (
-            <Text className="mb-1.5 mt-5 text-center text-sm text-placeholder">
-              You{'\u2019'}ve been invited to record in{' '}
-              {formatLogNames(linkInfo.logNames)}.
-            </Text>
-          )
+      <View className="flex-1 items-center justify-center gap-8 px-3 py-8">
+        {linkInfo?.isValid &&
+        linkInfo.members &&
+        linkInfo.members.length > 0 ? (
+          <View className="flex-row items-center">
+            {linkInfo.members.slice(0, 4).map((member, i) => (
+              <View
+                key={member.id}
+                className="items-center justify-center rounded-full border-2 border-background"
+                style={[
+                  { width: 68, height: 68 },
+                  i > 0 ? { marginLeft: -22 } : undefined,
+                ]}
+              >
+                <Avatar avatar={member.image} id={member.id} size={64} />
+              </View>
+            ))}
+            {linkInfo.members.length > 4 && (
+              <Text className="ml-3 text-sm font-medium">
+                +{linkInfo.members.length - 4}
+              </Text>
+            )}
+          </View>
         ) : (
-          <Text className="mb-1.5 mt-5 text-center text-sm text-placeholder">
-            {linkInfo?.reason === 'expired'
+          <Icon className="text-destructive" icon={WarningCircle} size={64} />
+        )}
+        <Text className="mt-2 text-center text-muted-foreground">
+          {linkInfo?.isValid
+            ? linkInfo.logNames && linkInfo.logNames.length > 0
+              ? `You\u2019ve been invited to join the `
+              : 'You\u2019ve been invited to join '
+            : linkInfo?.reason === 'expired'
               ? 'This invite link has expired.'
               : 'This invite link is no longer valid.'}
-          </Text>
-        )}
+          {linkInfo?.isValid &&
+            linkInfo.logNames &&
+            linkInfo.logNames.length > 0 &&
+            renderLogNames(linkInfo.logNames)}
+          {linkInfo?.isValid &&
+          linkInfo.logNames &&
+          linkInfo.logNames.length > 0
+            ? ` log${linkInfo.logNames.length > 1 ? 's' : ''}.`
+            : null}
+          {linkInfo?.isValid &&
+            !(linkInfo.logNames && linkInfo.logNames.length > 0) && (
+              <>
+                <Text className="font-medium text-foreground">
+                  {linkInfo.teamName}
+                </Text>
+                .
+              </>
+            )}
+        </Text>
         <Button
           disabled={isRedeeming}
           onPress={
@@ -122,17 +185,24 @@ export default function InviteLink() {
                 : handleSignIn
               : () => router.replace('/')
           }
-          className="px-2.5"
-          size="xs"
-          wrapperClassName="mt-6"
+          variant={linkInfo?.isValid ? 'default' : 'secondary'}
+          wrapperClassName="mt-4"
         >
           {isRedeeming ? (
             <>
               <ActivityIndicator color="white" />
               <Text>Joining{'\u2026'}</Text>
             </>
+          ) : linkInfo?.isValid ? (
+            <>
+              <Text>Let{'\u2019'}s go</Text>
+              <Icon icon={ArrowRight} className="-mr-0.5 text-white" />
+            </>
           ) : (
-            <Text>{linkInfo?.isValid ? 'Accept invitation' : 'Go home'}</Text>
+            <>
+              <Text>Oh well</Text>
+              <Icon icon={ArrowRight} className="-mr-0.5" />
+            </>
           )}
         </Button>
       </View>

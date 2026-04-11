@@ -6,6 +6,7 @@ export const onboardUser = async ({ name }: { name: string }) => {
   const auth = await db.getAuth();
   if (!auth) return;
   const teamId = generateId();
+  const now = new Date().toISOString();
 
   return db.transact([
     db.tx.profiles[generateId()].update({ name }).link({ user: auth.id }),
@@ -18,6 +19,8 @@ export const onboardUser = async ({ name }: { name: string }) => {
         userId: auth.id,
       })
       .link({ team: teamId, user: auth.id }),
-    db.tx.ui[generateId()].update({}).link({ team: teamId, user: auth.id }),
+    db.tx.ui[generateId()]
+      .update({ activityLastReadDate: now })
+      .link({ team: teamId, user: auth.id }),
   ]);
 };

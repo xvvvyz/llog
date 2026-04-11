@@ -59,12 +59,12 @@ export const MemberLogsSheet = () => {
 
           return (
             <View
-              className="flex-row items-center justify-between py-1.5"
+              className="flex-row items-center justify-between py-2.5"
               key={log.id}
             >
               <View className="flex-row items-center gap-3">
                 <View
-                  className="size-8 rounded-xl"
+                  className="size-4 rounded-md"
                   style={{ backgroundColor: color.default }}
                 />
                 <Text numberOfLines={1}>{log.name}</Text>

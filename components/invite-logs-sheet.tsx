@@ -12,8 +12,8 @@ import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
 import { getInviteUrl } from '@/utilities/invite-url';
-import { useCallback, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 export const InviteLogsSheet = () => {
   const sheetManager = useSheetManager();
@@ -25,6 +25,14 @@ export const InviteLogsSheet = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { copy, copied } = useCopy();
   const dismissTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const open = sheetManager.isOpen('invite-logs');
+
+  useEffect(() => {
+    if (open) {
+      setSelectedLogIds(new Set());
+      setIsLoading(false);
+    }
+  }, [open]);
 
   const { data } = db.useQuery(
     activeTeamId
@@ -55,7 +63,7 @@ export const InviteLogsSheet = () => {
       const sorted = [...logIds].sort();
 
       return inviteLinks.find((link) => {
-        if (link.role !== Role.Recorder) return false;
+        if (link.role !== Role.Member) return false;
         const linkLogIds = [...(link.logs?.map((l) => l.id) ?? [])].sort();
         if (linkLogIds.length !== sorted.length) return false;
         return linkLogIds.every((id, i) => id === sorted[i]);
@@ -77,7 +85,7 @@ export const InviteLogsSheet = () => {
         : (
             await createInviteLink({
               teamId: activeTeamId,
-              role: Role.Recorder,
+              role: Role.Member,
               logIds,
             })
           ).token;
@@ -87,15 +95,17 @@ export const InviteLogsSheet = () => {
       if (action === 'qr') {
         sheetManager.close('invite-logs');
         setTimeout(() => sheetManager.open('invite-qr', url), 300);
-      } else {
-        await copy(url);
-
-        dismissTimer.current = setTimeout(() => {
-          setSelectedLogIds(new Set());
-          sheetManager.close('invite-logs');
-        }, 1500);
+        return;
       }
-    } finally {
+
+      await copy(url);
+      setIsLoading(false);
+
+      dismissTimer.current = setTimeout(() => {
+        setSelectedLogIds(new Set());
+        sheetManager.close('invite-logs');
+      }, 1500);
+    } catch {
       setIsLoading(false);
     }
   }, [
@@ -110,15 +120,10 @@ export const InviteLogsSheet = () => {
   const handleDismiss = useCallback(() => {
     clearTimeout(dismissTimer.current);
     sheetManager.close('invite-logs');
-    setSelectedLogIds(new Set());
   }, [sheetManager]);
 
   return (
-    <Sheet
-      onDismiss={handleDismiss}
-      open={sheetManager.isOpen('invite-logs')}
-      portalName="invite-logs"
-    >
+    <Sheet onDismiss={handleDismiss} open={open} portalName="invite-logs">
       <ScrollView
         contentContainerClassName="w-full p-8 sm:mx-auto sm:max-w-sm"
         keyboardShouldPersistTaps="always"
@@ -129,12 +134,12 @@ export const InviteLogsSheet = () => {
 
           return (
             <View
-              className="flex-row items-center justify-between py-1.5"
+              className="flex-row items-center justify-between py-2.5"
               key={log.id}
             >
               <View className="flex-row items-center gap-3">
                 <View
-                  className="size-8 rounded-xl"
+                  className="size-4 rounded-md"
                   style={{ backgroundColor: color.default }}
                 />
                 <Text numberOfLines={1}>{log.name}</Text>
@@ -152,15 +157,17 @@ export const InviteLogsSheet = () => {
           onPress={handleConfirm}
           wrapperClassName="mt-4"
         >
-          <Text>
-            {copied
-              ? 'Copied!'
-              : isLoading
-                ? 'Generating…'
+          {isLoading ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Text>
+              {copied
+                ? 'Copied!'
                 : action === 'qr'
                   ? 'Show QR code'
                   : 'Copy link'}
-          </Text>
+            </Text>
+          )}
         </Button>
       </ScrollView>
     </Sheet>

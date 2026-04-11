@@ -4,17 +4,22 @@ import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { deleteLog } from '@/mutations/delete-log';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const LogDeleteSheet = () => {
   const [isPending, setIsPending] = useState(false);
   const sheetManager = useSheetManager();
+  const open = sheetManager.isOpen('log-delete');
+
+  useEffect(() => {
+    if (open) setIsPending(false);
+  }, [open]);
 
   return (
     <Sheet
       onDismiss={() => sheetManager.close('log-delete')}
-      open={sheetManager.isOpen('log-delete')}
+      open={open}
       portalName="log-delete"
     >
       <View className="mx-auto w-full max-w-md p-8">
@@ -26,7 +31,6 @@ export const LogDeleteSheet = () => {
             await deleteLog({ id: sheetManager.getId('log-delete') });
             sheetManager.close('log-delete');
             router.dismissTo('/');
-            setIsPending(false);
           }}
           variant="destructive"
           wrapperClassName="mt-12"

@@ -4,17 +4,22 @@ import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { deleteRecord } from '@/mutations/delete-record';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const RecordDeleteSheet = () => {
   const [isPending, setIsPending] = useState(false);
   const sheetManager = useSheetManager();
+  const open = sheetManager.isOpen('record-delete');
+
+  useEffect(() => {
+    if (open) setIsPending(false);
+  }, [open]);
 
   return (
     <Sheet
       onDismiss={() => sheetManager.close('record-delete')}
-      open={sheetManager.isOpen('record-delete')}
+      open={open}
       portalName="record-delete"
     >
       <View className="mx-auto w-full max-w-md p-8">
@@ -30,8 +35,6 @@ export const RecordDeleteSheet = () => {
             if (context === 'detail') {
               router.back();
             }
-
-            setIsPending(false);
           }}
           variant="destructive"
           wrapperClassName="mt-12"

@@ -2,7 +2,7 @@ import { Button, ButtonProps } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/utilities/cn';
 import { Check, Plus } from 'phosphor-react-native';
-import { startTransition, useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useState } from 'react';
 
 export const Checkbox = ({
   checked,
@@ -16,7 +16,12 @@ export const Checkbox = ({
   onCheckedChange: (checked: boolean) => void;
 }) => {
   const [opChecked, setOpChecked] = useState(checked);
-  useEffect(() => setOpChecked(checked), [checked]);
+  const [prevChecked, setPrevChecked] = useState(checked);
+
+  if (checked !== prevChecked) {
+    setPrevChecked(checked);
+    setOpChecked(checked);
+  }
 
   const handleChange = useCallback(() => {
     setOpChecked(!checked);

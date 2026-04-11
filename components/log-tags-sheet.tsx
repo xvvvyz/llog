@@ -13,7 +13,7 @@ import { useHasNoLogTags } from '@/queries/use-has-no-log-tags';
 import { useLog } from '@/queries/use-log';
 import { useLogTags } from '@/queries/use-log-tags';
 import { cn } from '@/utilities/cn';
-import { Tag } from 'phosphor-react-native';
+import { Plus, Tag } from 'phosphor-react-native';
 import { ComponentRef, useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -111,6 +111,7 @@ export const LogTagsSheet = () => {
                   variant="secondary"
                   wrapperClassName="rounded-full"
                 >
+                  <Icon className="text-placeholder" icon={Plus} />
                   <Text numberOfLines={1}>
                     Create tag &ldquo;{rawQuery}&rdquo;
                   </Text>
@@ -122,7 +123,11 @@ export const LogTagsSheet = () => {
       </ScrollView>
       <View className="w-full p-8 pt-0 sm:mx-auto sm:max-w-sm md:pt-0">
         <SearchInput
+          actionIcon={!logTags.queryExistingTagId && query ? Plus : undefined}
           maxLength={16}
+          onActionPress={
+            !logTags.queryExistingTagId && query ? handleCreateTag : undefined
+          }
           onSubmitEditing={handleCreateTag}
           placeholder="Type in a tag"
           query={rawQuery}

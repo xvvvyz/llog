@@ -83,7 +83,7 @@ export const ActivityItem = ({
           <View className="-mt-0.5 flex-1">
             <View className="flex-row items-baseline justify-between gap-3">
               <ActivityName group={group} />
-              <View className="min-w-32 flex-1 flex-row items-baseline justify-end gap-1">
+              <View className="min-w-32 flex-1 flex-row items-center justify-end gap-1">
                 <Text
                   className="shrink-0 text-xs text-muted-foreground"
                   numberOfLines={1}
@@ -115,12 +115,15 @@ export const ActivityItem = ({
                 {(group.type === 'member_joined' ||
                   group.type === 'member_left') &&
                   team?.name && (
-                    <Text
-                      className="shrink text-xs text-muted-foreground"
-                      numberOfLines={1}
-                    >
-                      {team.name}
-                    </Text>
+                    <View className="shrink flex-row items-center gap-1">
+                      <Avatar className="shrink-0" id={team.id} size={10} />
+                      <Text
+                        className="shrink text-xs text-muted-foreground"
+                        numberOfLines={1}
+                      >
+                        {team.name}
+                      </Text>
+                    </View>
                   )}
               </View>
             </View>

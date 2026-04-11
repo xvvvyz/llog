@@ -105,7 +105,7 @@ export default function Index() {
           wrapperClassName="flex-1"
         />
       )}
-      {hideOnScrollDown.isVisible && (
+      {hideOnScrollDown.isVisible && records.data.length > 0 && (
         <Animated.View
           className="absolute bottom-8 right-8 md:hidden"
           entering={animation(FadeInUp)}

@@ -4,15 +4,16 @@ import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/context/sheet-manager';
 import { Role } from '@/enums/roles';
+import { useLogColor } from '@/hooks/use-log-color';
 import { toggleLogMember } from '@/mutations/toggle-log-member';
 import { useLog } from '@/queries/use-log';
 import { useTeamMembers } from '@/queries/use-team-members';
-
 import { ScrollView, View } from 'react-native';
 
 export const LogMembersSheet = () => {
   const sheetManager = useSheetManager();
   const log = useLog({ id: sheetManager.getId('log-members') });
+  const logColor = useLogColor({ id: log.id });
   const { members, isLoading: membersLoading } = useTeamMembers();
   const isLoading = log.isLoading || membersLoading;
 
@@ -38,7 +39,7 @@ export const LogMembersSheet = () => {
 
             return (
               <View
-                className="flex-row items-center justify-between py-1.5"
+                className="flex-row items-center justify-between py-2.5"
                 key={member.id}
               >
                 <View className="flex-row items-center gap-3">
@@ -51,6 +52,7 @@ export const LogMembersSheet = () => {
                 </View>
                 <Checkbox
                   checked={isSelected}
+                  checkedColor={logColor.default}
                   className="size-8 border-0"
                   onCheckedChange={() =>
                     toggleLogMember({

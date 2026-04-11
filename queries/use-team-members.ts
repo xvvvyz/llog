@@ -1,4 +1,3 @@
-import { Role } from '@/enums/roles';
 import { useMyRole } from '@/queries/use-my-role';
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
@@ -36,7 +35,7 @@ export const useTeamMembers = () => {
     );
 
     return members.filter((member) => {
-      if (member.role === Role.Owner || member.role === Role.Admin) return true;
+      if (member.role === 'owner' || member.role === 'admin') return true;
 
       const memberLogIds =
         member.user?.profile?.logs?.map((l: { id: string }) => l.id) ?? [];
