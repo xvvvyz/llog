@@ -4,7 +4,6 @@ import { Icon } from '@/components/ui/icon';
 import { REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
-import { useUi } from '@/queries/use-ui';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { cn } from '@/utilities/cn';
@@ -15,17 +14,18 @@ export const EmojiPicker = ({
   color,
   logId,
   recordId,
+  teamId,
   commentId,
   reactions,
 }: {
   color?: string;
   logId?: string;
   recordId: string;
+  teamId?: string;
   commentId?: string;
   reactions?: (Reaction & { author?: Pick<Profile, 'id'> })[];
 }) => {
   const profile = useProfile();
-  const ui = useUi();
 
   const userReactions = useMemo(() => {
     const map = new Map<string, string>();
@@ -60,17 +60,19 @@ export const EmojiPicker = ({
             <Menu.Item
               key={emoji}
               className="size-10 min-w-0 justify-center rounded-xl pl-0 pr-0"
-              onPress={() =>
+              onPress={() => {
+                if (!teamId) return;
+
                 toggleReaction({
                   emoji,
                   existingReactionId,
                   logId,
                   profileId: profile.id,
-                  teamId: ui.activeTeamId,
+                  teamId,
                   recordId,
                   commentId,
-                })
-              }
+                });
+              }}
             >
               <Icon
                 className={cn(

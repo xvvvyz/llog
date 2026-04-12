@@ -9,7 +9,7 @@ export const createRecordDraft = async ({
 }: {
   logId?: string;
   profileId?: string;
-  teamId?: string;
+  teamId: string;
 }) => {
   if (!logId) return;
   const resolved = await resolveProfileAndTeam(profileId, teamId);

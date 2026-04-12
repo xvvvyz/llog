@@ -28,12 +28,17 @@ export const CommentDeleteSheet = () => {
           onPress={async () => {
             setIsPending(true);
 
-            await deleteComment({
-              id: sheetManager.getId('comment-delete'),
-              recordId: sheetManager.getContext('comment-delete'),
-            });
+            try {
+              await deleteComment({
+                id: sheetManager.getId('comment-delete'),
+                recordId: sheetManager.getContext('comment-delete'),
+              });
 
-            sheetManager.close('comment-delete');
+              sheetManager.close('comment-delete');
+            } catch (error) {
+              setIsPending(false);
+              throw error;
+            }
           }}
           variant="destructive"
           wrapperClassName="mt-12"

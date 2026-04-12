@@ -51,7 +51,6 @@ export default function Layout() {
 
   useEffect(() => {
     if (!auth.user || profile.isLoading || !profile.id) return;
-
     let cancelled = false;
 
     const checkPendingInvite = async () => {
@@ -82,12 +81,12 @@ export default function Layout() {
     return <Redirect href="/onboarding" />;
   }
 
-  if (!teamsLoading && profile.id && teams.length === 0) {
-    return <Redirect href="/new-team" />;
+  if (profile.isLoading || teamsLoading || !checkedPending) {
+    return <Loading />;
   }
 
-  if (profile.isLoading || !checkedPending) {
-    return <Loading />;
+  if (profile.id && teams.length === 0) {
+    return <Redirect href="/new-team" />;
   }
 
   return (

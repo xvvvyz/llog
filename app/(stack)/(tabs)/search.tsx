@@ -11,6 +11,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSearch } from '@/hooks/use-search';
 import { useLogTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
+import { useTeams } from '@/queries/use-teams';
 import { SPECTRUM } from '@/theme/spectrum';
 import { SearchResult } from '@/types/search';
 import { cn } from '@/utilities/cn';
@@ -23,8 +24,10 @@ export default function Search() {
   const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const colorScheme = useColorScheme();
-  const logs = useLogs();
-  const logTags = useLogTags();
+  const { teams } = useTeams();
+  const teamIds = useMemo(() => teams.map((team) => team.id), [teams]);
+  const logs = useLogs({ teamIds });
+  const logTags = useLogTags({ teamIds });
 
   const { results } = useSearch({
     query,
@@ -87,6 +90,7 @@ export default function Search() {
                         <DropdownMenu.Label>Logs</DropdownMenu.Label>
                         {logs.data.map((log) => {
                           const color = SPECTRUM[colorScheme][log.color];
+
                           return (
                             <DropdownMenu.CheckboxItem
                               checked={logIdSet.has(log.id)}

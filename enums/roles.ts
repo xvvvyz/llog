@@ -3,3 +3,6 @@ export enum Role {
   Owner = 'owner',
   Member = 'member',
 }
+
+export const isManagedRole = (role?: string) =>
+  role === Role.Owner || role === Role.Admin;

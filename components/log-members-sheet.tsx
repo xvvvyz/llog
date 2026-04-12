@@ -14,8 +14,11 @@ export const LogMembersSheet = () => {
   const sheetManager = useSheetManager();
   const log = useLog({ id: sheetManager.getId('log-members') });
   const logColor = useLogColor({ id: log.id });
-  const { members, isLoading: membersLoading } = useTeamMembers();
   const isLoading = log.isLoading || membersLoading;
+
+  const { members, isLoading: membersLoading } = useTeamMembers({
+    teamId: log.teamId,
+  });
 
   return (
     <Sheet

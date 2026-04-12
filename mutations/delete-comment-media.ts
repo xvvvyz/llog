@@ -1,5 +1,4 @@
-import { api } from '@/utilities/api';
-import { db } from '@/utilities/db';
+import { apiOrThrow } from '@/utilities/api';
 
 export const deleteCommentMedia = async ({
   commentId,
@@ -11,10 +10,10 @@ export const deleteCommentMedia = async ({
   recordId?: string;
 }) => {
   if (!commentId || !mediaId || !recordId) return;
-  db.transact(db.tx.media[mediaId].delete());
 
-  await api(
+  await apiOrThrow(
     `/files/records/${recordId}/comments/${commentId}/media/${mediaId}`,
-    { method: 'DELETE' }
+    { method: 'DELETE' },
+    'Failed to delete comment media'
   );
 };

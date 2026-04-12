@@ -29,11 +29,13 @@ export const RecordDeleteSheet = () => {
           onPress={async () => {
             setIsPending(true);
             const context = sheetManager.getContext('record-delete');
-            await deleteRecord({ id: sheetManager.getId('record-delete') });
-            sheetManager.close('record-delete');
-
-            if (context === 'detail') {
-              router.back();
+            try {
+              await deleteRecord({ id: sheetManager.getId('record-delete') });
+              sheetManager.close('record-delete');
+              if (context === 'detail') router.back();
+            } catch (error) {
+              setIsPending(false);
+              throw error;
             }
           }}
           variant="destructive"

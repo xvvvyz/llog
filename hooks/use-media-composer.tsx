@@ -8,7 +8,7 @@ import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { UI } from '@/theme/ui';
 import { Media } from '@/types/media';
 import { clipboardToAssets } from '@/utilities/clipboard-to-assets';
-import { fileUriToSrc } from '@/utilities/file-uri-to-src';
+import { fileUriToSrc, useFileAccessToken } from '@/utilities/file-uri-to-src';
 import { id } from '@instantdb/react-native';
 import { Image as ImagePrimitive } from 'expo-image';
 import { ImagePickerAsset, launchImageLibraryAsync } from 'expo-image-picker';
@@ -64,6 +64,7 @@ export const useMediaComposer = ({
   const { suspend } = useSheetManager();
   const colorScheme = useColorScheme();
   const foregroundColor = UI[colorScheme].foreground;
+  const fileAccessToken = useFileAccessToken();
   const [isDeleteTransitioning, startDeleteTransition] = useTransition();
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const { audioMedia, visualMedia } = useFilteredMedia(media);
@@ -294,7 +295,8 @@ export const useMediaComposer = ({
                       source={fileUriToSrc(
                         item.type === 'video'
                           ? (item as Media).previewUri!
-                          : item.uri
+                          : item.uri,
+                        fileAccessToken
                       )}
                       style={{ height: 64, width: 64 }}
                     />

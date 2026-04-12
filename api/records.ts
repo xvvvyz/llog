@@ -1,7 +1,7 @@
-import schema from '@/instant.schema';
-import { db } from '@/middleware/db';
-import { init } from '@instantdb/admin';
+import { isManagedRole } from '@/enums/roles';
+import { createAdminDb, db } from '@/middleware/db';
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -11,11 +11,7 @@ const deleteActivities = async (
 ) => {
   if (!activities.length) return;
 
-  const adminDb = init({
-    adminToken: env.INSTANT_APP_ADMIN_TOKEN,
-    appId: env.INSTANT_APP_ID,
-    schema,
-  });
+  const adminDb = createAdminDb(env);
 
   await adminDb.transact(
     activities.map((a) => adminDb.tx.activities[a.id].delete())
@@ -28,15 +24,36 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
   const { records } = await c.var.db.query({
     records: {
       $: { where: { id: recordId } },
+      author: { user: { $: { fields: ['id'] } } },
+      log: {
+        team: {
+          roles: {
+            $: {
+              fields: ['role'] as ['role'],
+              where: { userId: c.var.user.id },
+            },
+          },
+        },
+      },
       media: {},
-      comments: { media: {} },
+      comments: { media: {}, activities: {} },
       activities: {},
     },
   });
 
   const record = records[0];
   if (!record) return c.json({ success: true });
+  const callerRole = record.log?.team?.roles?.[0]?.role;
+
+  const canDelete =
+    record.author?.user?.id === c.var.user.id || isManagedRole(callerRole);
+
+  if (!canDelete) {
+    throw new HTTPException(403, { message: 'Forbidden' });
+  }
+
   const r2Keys: string[] = [];
+  const activities = [...(record.activities ?? [])];
 
   for (const item of record.media ?? []) {
     r2Keys.push(item.uri as string);
@@ -44,15 +61,19 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
   }
 
   for (const comment of record.comments ?? []) {
+    activities.push(...(comment.activities ?? []));
+
     for (const item of comment.media ?? []) {
       r2Keys.push(item.uri as string);
       if (item.previewUri) r2Keys.push(item.previewUri as string);
     }
   }
 
+  await c.var.db.transact(c.var.db.tx.records[recordId].delete());
+
   await Promise.all([
     r2Keys.length ? c.env.R2.delete(r2Keys) : undefined,
-    deleteActivities(c.env, record.activities ?? []),
+    deleteActivities(c.env, activities),
   ]);
 
   return c.json({ success: true });
@@ -62,11 +83,25 @@ app.delete(
   '/:recordId/comments/:commentId',
   db({ asUser: true }),
   async (c) => {
-    const { commentId } = c.req.param();
+    const { commentId, recordId } = c.req.param();
 
     const { comments } = await c.var.db.query({
       comments: {
         $: { where: { id: commentId } },
+        author: { user: { $: { fields: ['id'] } } },
+        record: {
+          $: { fields: ['id'] as ['id'] },
+          log: {
+            team: {
+              roles: {
+                $: {
+                  fields: ['role'] as ['role'],
+                  where: { userId: c.var.user.id },
+                },
+              },
+            },
+          },
+        },
         media: {},
         activities: {},
       },
@@ -74,6 +109,15 @@ app.delete(
 
     const comment = comments[0];
     if (!comment) return c.json({ success: true });
+    const callerRole = comment.record?.log?.team?.roles?.[0]?.role;
+
+    const canDelete =
+      comment.record?.id === recordId &&
+      (comment.author?.user?.id === c.var.user.id || isManagedRole(callerRole));
+
+    if (!canDelete) {
+      throw new HTTPException(403, { message: 'Forbidden' });
+    }
 
     const r2Keys: string[] = [];
 
@@ -81,6 +125,8 @@ app.delete(
       r2Keys.push(item.uri as string);
       if (item.previewUri) r2Keys.push(item.previewUri as string);
     }
+
+    await c.var.db.transact(c.var.db.tx.comments[commentId].delete());
 
     await Promise.all([
       r2Keys.length ? c.env.R2.delete(r2Keys) : undefined,

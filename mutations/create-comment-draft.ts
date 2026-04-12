@@ -10,7 +10,7 @@ export const createCommentDraft = async ({
   commentId: string;
   recordId?: string;
   profileId?: string;
-  teamId?: string;
+  teamId: string;
 }) => {
   if (!recordId) return;
 

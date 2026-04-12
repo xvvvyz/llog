@@ -1,4 +1,4 @@
-import { useUi } from '@/queries/use-ui';
+import { useTeams } from '@/queries/use-teams';
 import { SearchMediaItem, SearchProfile, SearchResult } from '@/types/search';
 import { db } from '@/utilities/db';
 import MiniSearch from 'minisearch';
@@ -32,14 +32,15 @@ export const useSearch = ({
   logIds?: string[];
   tagIds?: string[];
 }) => {
-  const ui = useUi();
+  const { teams } = useTeams();
+  const teamIds = useMemo(() => teams.map((team) => team.id), [teams]);
 
   const { data, isLoading } = db.useQuery(
-    ui.activeTeamId
+    teamIds.length
       ? {
           records: {
             $: {
-              where: { teamId: ui.activeTeamId, isDraft: false },
+              where: { teamId: { $in: teamIds }, isDraft: false },
             },
             author: { image: {} },
             log: { logTags: { $: { fields: ['id'] } } },
@@ -47,7 +48,7 @@ export const useSearch = ({
           },
           comments: {
             $: {
-              where: { teamId: ui.activeTeamId, isDraft: false },
+              where: { teamId: { $in: teamIds }, isDraft: false },
             },
             author: { image: {} },
             record: {
@@ -57,7 +58,7 @@ export const useSearch = ({
           },
           logs: {
             $: {
-              where: { team: ui.activeTeamId },
+              where: { teamId: { $in: teamIds } },
             },
             logTags: { $: { fields: ['id'] } },
             profiles: { image: {} },

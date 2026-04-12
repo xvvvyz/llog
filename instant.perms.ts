@@ -46,10 +46,12 @@ const rules = {
   },
   comments: {
     bind: [
-      'isValidText',
+      'isValidNewText',
       'newData.text == null || size(newData.text) <= 10240',
       'isAuthor',
       "data.ref('author.user.id') == auth.ref('$user.id')",
+      'isRecordAuthor',
+      "data.ref('record.author.user.id') == auth.ref('$user.id')",
       'isDraft',
       'data.isDraft == true',
       'isTeamMember',
@@ -58,12 +60,16 @@ const rules = {
       "auth.id in data.ref('record.log.profiles.user.id')",
       'canManage',
       `${isOwner} data.ref('record.log.team.roles.key') || ${isAdmin} data.ref('record.log.team.roles.key')`,
+      'canDeleteOwn',
+      'isAuthor && isTeamMember',
+      'canDeleteFromOwnRecord',
+      'isRecordAuthor && isTeamMember',
     ],
     allow: {
-      view: '(!isDraft && isTeamMember && (canManage || isLogMember)) || isAuthor',
+      view: 'isTeamMember && ((!isDraft && (canManage || isLogMember)) || isAuthor)',
       create: 'isAuthor && isTeamMember && (canManage || isLogMember)',
-      update: 'isAuthor && isValidText',
-      delete: 'isAuthor || canManage',
+      update: 'isAuthor && isTeamMember && isValidNewText',
+      delete: 'canDeleteOwn || canDeleteFromOwnRecord || canManage',
       link: {
         reactions: 'auth.id != null',
         activities: 'auth.id != null',
@@ -84,6 +90,8 @@ const rules = {
       "auth.id in data.ref('record.author.user.id')",
       'isCommentAuthor',
       "auth.id in data.ref('comment.author.user.id')",
+      'isCommentRecordAuthor',
+      "auth.id in data.ref('comment.record.author.user.id')",
       'isRecordTeamMember',
       "auth.id in data.ref('record.log.team.roles.user.id')",
       'isCommentTeamMember',
@@ -108,7 +116,7 @@ const rules = {
       create:
         'hasOneLink && (isProfileOwner || isTeamImageManager || canViewRecordMedia || canViewCommentMedia)',
       delete:
-        'isProfileOwner || isTeamImageManager || isRecordAuthor || isCommentAuthor || canManageRecord || canManageComment',
+        'isProfileOwner || isTeamImageManager || (isRecordAuthor && isRecordTeamMember) || (isCommentAuthor && isCommentTeamMember) || (isCommentRecordAuthor && isCommentTeamMember) || canManageRecord || canManageComment',
     },
   },
   inviteLinks: {
@@ -193,6 +201,12 @@ const rules = {
     bind: [
       'isAuthor',
       "data.ref('author.user.id') == auth.ref('$user.id')",
+      'isRecordAuthor',
+      "auth.id in data.ref('record.author.user.id')",
+      'isCommentAuthor',
+      "auth.id in data.ref('comment.author.user.id')",
+      'isCommentRecordAuthor',
+      "auth.id in data.ref('comment.record.author.user.id')",
       'isRecordTeamMember',
       "auth.id in data.ref('record.log.team.roles.user.id')",
       'isCommentTeamMember',
@@ -213,12 +227,13 @@ const rules = {
     allow: {
       view: 'canViewRecord || canViewComment',
       create: 'isAuthor && (canViewRecord || canViewComment)',
-      delete: 'isAuthor || canManageRecord || canManageComment',
+      delete:
+        'isAuthor || (isRecordAuthor && isRecordTeamMember) || (isCommentAuthor && isCommentTeamMember) || (isCommentRecordAuthor && isCommentTeamMember) || canManageRecord || canManageComment',
     },
   },
   records: {
     bind: [
-      'isValidText',
+      'isValidNewText',
       'newData.text == null || size(newData.text) <= 10240',
       'isAuthor',
       "data.ref('author.user.id') == auth.ref('$user.id')",
@@ -230,13 +245,15 @@ const rules = {
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
       `${isOwner} data.ref('log.team.roles.key') || ${isAdmin} data.ref('log.team.roles.key')`,
+      'canDeleteOwn',
+      'isAuthor && isTeamMember',
     ],
     allow: {
-      view: '(!isDraft && isTeamMember && (canManage || isLogMember)) || isAuthor',
+      view: 'isTeamMember && ((!isDraft && (canManage || isLogMember)) || isAuthor)',
       create:
-        'isAuthor && isTeamMember && (canManage || isLogMember) && isValidText',
-      update: 'isAuthor && isValidText',
-      delete: 'isAuthor || canManage',
+        'isAuthor && isTeamMember && (canManage || isLogMember) && isValidNewText',
+      update: 'isAuthor && isTeamMember && isValidNewText',
+      delete: 'canDeleteOwn || canManage',
       link: {
         comments: 'auth.id != null',
         reactions: 'auth.id != null',

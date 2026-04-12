@@ -7,10 +7,10 @@ import { Role } from '@/enums/roles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { createInviteLink } from '@/mutations/create-invite-link';
+import { useLog } from '@/queries/use-log';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
 import { useTeamMembers } from '@/queries/use-team-members';
-import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
 import { getInviteUrl } from '@/utilities/invite-url';
 import {
@@ -28,12 +28,12 @@ import { ActivityIndicator, View, ViewStyle } from 'react-native';
 const InviteItems = ({ id }: { id?: string }) => {
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
-  const { activeTeamId } = useUi();
-  const { inviteLinks } = useTeamInviteLinks();
+  const log = useLog({ id });
+  const { inviteLinks } = useTeamInviteLinks({ teamId: log.teamId });
   const { onOpenChange } = Menu.useContext();
 
   const getOrCreateLink = useCallback(async () => {
-    if (!activeTeamId || !id) return null;
+    if (!log.teamId || !id) return null;
 
     const existing = inviteLinks.find((link) => {
       if (link.role !== Role.Member) return false;
@@ -44,13 +44,13 @@ const InviteItems = ({ id }: { id?: string }) => {
     if (existing) return existing.token;
 
     const { token } = await createInviteLink({
-      teamId: activeTeamId,
+      teamId: log.teamId,
       role: Role.Member,
       logIds: [id],
     });
 
     return token;
-  }, [activeTeamId, id, inviteLinks]);
+  }, [log.teamId, id, inviteLinks]);
 
   const { copy, copied } = useCopy();
 
@@ -133,9 +133,10 @@ export const LogDropdownMenu = ({
   id?: string;
   triggerWrapperClassName?: string;
 }) => {
-  const { canManage } = useMyRole();
+  const log = useLog({ id });
+  const { canManage } = useMyRole({ teamId: log.teamId });
   const sheetManager = useSheetManager();
-  const { members } = useTeamMembers();
+  const { members } = useTeamMembers({ teamId: log.teamId });
 
   const hasMembers = useMemo(
     () => members.some((m) => m.role === Role.Member),

@@ -1,12 +1,12 @@
 import { createRecordDraft } from '@/mutations/create-record-draft';
+import { useLog } from '@/queries/use-log';
 import { useProfile } from '@/queries/use-profile';
-import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import { useEffect } from 'react';
 
 export const useRecordDraft = ({ logId }: { logId?: string }) => {
   const profile = useProfile();
-  const ui = useUi();
+  const log = useLog({ id: logId });
 
   const { data, isLoading } = db.useQuery(
     logId && profile.id
@@ -23,14 +23,14 @@ export const useRecordDraft = ({ logId }: { logId?: string }) => {
   const record = data?.records?.[0];
 
   useEffect(() => {
-    if (isLoading || record) return;
+    if (isLoading || log.isLoading || record || !log.teamId) return;
 
     createRecordDraft({
       logId,
       profileId: profile.id,
-      teamId: ui.activeTeamId,
+      teamId: log.teamId,
     });
-  }, [isLoading, logId, record, profile.id, ui.activeTeamId]);
+  }, [isLoading, log.isLoading, log.teamId, logId, record, profile.id]);
 
   const media = record?.media ?? [];
   return { ...record, media, isLoading };

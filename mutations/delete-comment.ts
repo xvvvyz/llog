@@ -1,5 +1,4 @@
-import { api } from '@/utilities/api';
-import { db } from '@/utilities/db';
+import { apiOrThrow } from '@/utilities/api';
 
 export const deleteComment = async ({
   id,
@@ -9,6 +8,9 @@ export const deleteComment = async ({
   recordId?: string;
 }) => {
   if (!id || !recordId) return;
-  await api(`/records/${recordId}/comments/${id}`, { method: 'DELETE' });
-  return db.transact(db.tx.comments[id].delete());
+  return apiOrThrow(
+    `/records/${recordId}/comments/${id}`,
+    { method: 'DELETE' },
+    'Failed to delete comment'
+  );
 };

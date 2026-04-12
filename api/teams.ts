@@ -1,4 +1,4 @@
-import { Role } from '@/enums/roles';
+import { Role, isManagedRole } from '@/enums/roles';
 import { Db, db } from '@/middleware/db';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -25,9 +25,6 @@ const memberJoinedActivity = (
           .link({ actor: actorId, team: teamId }),
       ]
     : [];
-
-const isManagedRole = (role?: string) =>
-  role === Role.Owner || role === Role.Admin;
 
 const removeMember = async (
   db: Db,
@@ -91,7 +88,7 @@ app.post(
 
     const callerRole = callerRoles[0]?.role;
 
-    if (callerRole !== Role.Owner && callerRole !== Role.Admin) {
+    if (!isManagedRole(callerRole)) {
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
@@ -149,7 +146,7 @@ app.get('/invite-links/:token', db(), async (c) => {
   }
 
   const adminMembers = (link.team?.roles ?? [])
-    .filter((r) => r.role === Role.Owner || r.role === Role.Admin)
+    .filter((r) => isManagedRole(r.role))
     .map((r) => r.user?.profile)
     .filter(Boolean)
     .map((p) => ({ id: p!.id, name: p!.name, image: p!.image?.uri }));

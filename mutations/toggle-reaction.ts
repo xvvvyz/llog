@@ -15,7 +15,7 @@ export const toggleReaction = async ({
   existingReactionId?: string;
   logId?: string;
   profileId?: string;
-  teamId?: string;
+  teamId: string;
   recordId: string;
   commentId?: string;
 }) => {

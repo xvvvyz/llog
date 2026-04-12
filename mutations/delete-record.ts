@@ -1,8 +1,11 @@
-import { api } from '@/utilities/api';
-import { db } from '@/utilities/db';
+import { apiOrThrow } from '@/utilities/api';
 
 export const deleteRecord = async ({ id }: { id?: string }) => {
   if (!id) return;
-  await api(`/records/${id}`, { method: 'DELETE' });
-  return db.transact(db.tx.records[id].delete());
+
+  return apiOrThrow(
+    `/records/${id}`,
+    { method: 'DELETE' },
+    'Failed to delete record'
+  );
 };

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
-import { fileUriToSrc } from '@/utilities/file-uri-to-src';
+import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
 import { Pause, Play } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -52,10 +52,10 @@ function useWebAudioPlayer(uri: string) {
   const [loaded, setLoaded] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
+  const src = useFileUriToSrc(uri);
 
   useEffect(() => {
     let cancelled = false;
-    const src = fileUriToSrc(uri);
     const ctx = new AudioContext();
     ctxRef.current = ctx;
 
@@ -132,7 +132,7 @@ function useWebAudioPlayer(uri: string) {
         blobUrlRef.current = null;
       }
     };
-  }, [uri]);
+  }, [src]);
 
   const stopSource = useCallback(() => {
     if (sourceRef.current) {

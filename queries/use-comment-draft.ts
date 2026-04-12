@@ -1,13 +1,13 @@
 import { createCommentDraft } from '@/mutations/create-comment-draft';
 import { useProfile } from '@/queries/use-profile';
-import { useUi } from '@/queries/use-ui';
+import { useRecord } from '@/queries/use-record';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 import { useEffect, useRef } from 'react';
 
 export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
   const profile = useProfile();
-  const ui = useUi();
+  const record = useRecord({ id: recordId });
   const commentIdRef = useRef(id());
 
   const { data, isLoading } = db.useQuery(
@@ -26,16 +26,23 @@ export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
   const comment = data?.comments?.[0];
 
   useEffect(() => {
-    if (isLoading || comment) return;
+    if (isLoading || record.isLoading || comment || !record.teamId) return;
     commentIdRef.current = id();
 
     createCommentDraft({
       commentId: commentIdRef.current,
       recordId,
       profileId: profile.id,
-      teamId: ui.activeTeamId,
+      teamId: record.teamId,
     });
-  }, [isLoading, recordId, comment, profile.id, ui.activeTeamId]);
+  }, [
+    isLoading,
+    record.isLoading,
+    record.teamId,
+    recordId,
+    comment,
+    profile.id,
+  ]);
 
   const media = comment?.media ?? [];
   return { ...comment, media, isLoading };

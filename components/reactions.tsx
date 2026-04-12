@@ -4,7 +4,6 @@ import { Text } from '@/components/ui/text';
 import { Emoji, REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
-import { useUi } from '@/queries/use-ui';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { animation } from '@/utilities/animation';
@@ -17,16 +16,17 @@ export const Reactions = ({
   logId,
   reactions,
   recordId,
+  teamId,
   commentId,
 }: {
   color?: string;
   logId?: string;
   reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
   recordId: string;
+  teamId?: string;
   commentId?: string;
 }) => {
   const profile = useProfile();
-  const ui = useUi();
 
   const grouped = useMemo(() => {
     const map = new Map<
@@ -78,17 +78,19 @@ export const Reactions = ({
               size="xs"
               variant="ghost"
               wrapperClassName="rounded-lg"
-              onPress={() =>
+              onPress={() => {
+                if (!teamId) return;
+
                 toggleReaction({
                   emoji,
                   existingReactionId: userReactionId,
                   logId,
                   profileId: profile.id,
-                  teamId: ui.activeTeamId,
+                  teamId,
                   recordId,
                   commentId,
-                })
-              }
+                });
+              }}
             >
               <Icon
                 className={cn(

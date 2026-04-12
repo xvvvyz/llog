@@ -2,6 +2,8 @@ import { SheetManagerProvider } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
+import { db } from '@/utilities/db';
+import { setFileAccessToken } from '@/utilities/file-access-token';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
@@ -36,11 +38,32 @@ configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
 
 export default function Layout() {
+  const auth = db.useAuth();
   const colorScheme = useColorScheme();
+  const userId = auth.user?.id;
 
   useEffect(() => {
     setBackgroundColorAsync(UI[colorScheme].background);
   }, [colorScheme]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!userId) {
+      setFileAccessToken(null);
+      return;
+    }
+
+    db.getAuth().then((resolvedAuth) => {
+      if (!cancelled) {
+        setFileAccessToken(resolvedAuth?.refresh_token ?? null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   return (
     <Fragment>

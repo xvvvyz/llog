@@ -57,7 +57,7 @@ export const RecordOrComment = ({
   const colorScheme = useColorScheme();
   const logColor = useLogColor({ id: logId });
   const accentColor = logColor?.[colorScheme === 'dark' ? 'lighter' : 'darker'];
-  const { canManage } = useMyRole();
+  const { canManage } = useMyRole({ teamId: record.teamId });
   const recordId = recordIdProp ?? record.id ?? '';
   const profile = useProfile();
   const ui = useUi();
@@ -65,6 +65,7 @@ export const RecordOrComment = ({
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
+      if (!record.teamId) return;
       const emoji = ui.doubleTapEmoji;
 
       const existingReaction = record.reactions?.find(
@@ -76,7 +77,7 @@ export const RecordOrComment = ({
         existingReactionId: existingReaction?.id,
         logId,
         profileId: profile.id,
-        teamId: ui.activeTeamId,
+        teamId: record.teamId,
         recordId,
         commentId,
       });
@@ -179,6 +180,7 @@ export const RecordOrComment = ({
                 isDetail
                 isPinned={'isPinned' in record ? !!record.isPinned : undefined}
                 recordId={recordId}
+                teamId={record.teamId}
               />
             </View>
             {!!record.text && (
@@ -213,6 +215,7 @@ export const RecordOrComment = ({
                 logId={logId}
                 reactions={record.reactions}
                 recordId={recordId}
+                teamId={record.teamId}
               />
               {!!record.reactions?.length && (
                 <View className="flex-row items-center gap-2">
@@ -222,6 +225,7 @@ export const RecordOrComment = ({
                     logId={logId}
                     reactions={record.reactions}
                     recordId={recordId}
+                    teamId={record.teamId}
                   />
                 </View>
               )}
@@ -270,6 +274,7 @@ export const RecordOrComment = ({
             authorId={record.author?.id}
             isPinned={'isPinned' in record ? !!record.isPinned : undefined}
             recordId={recordId}
+            teamId={record.teamId}
           />
         </View>
       </View>
@@ -306,6 +311,7 @@ export const RecordOrComment = ({
             logId={logId}
             reactions={record.reactions}
             recordId={recordId}
+            teamId={record.teamId}
           />
           {!!record.reactions?.length && (
             <View className="flex-row items-center gap-2">
@@ -315,6 +321,7 @@ export const RecordOrComment = ({
                 logId={logId}
                 reactions={record.reactions}
                 recordId={recordId}
+                teamId={record.teamId}
               />
             </View>
           )}

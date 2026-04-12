@@ -23,6 +23,7 @@ export const RecordOrCommentDropdownMenu = ({
   isDetail,
   isPinned,
   recordId,
+  teamId,
 }: {
   accentColor?: string;
   authorId?: string;
@@ -31,13 +32,12 @@ export const RecordOrCommentDropdownMenu = ({
   isDetail?: boolean;
   isPinned?: boolean;
   recordId: string;
+  teamId?: string;
 }) => {
-  const { canManage } = useMyRole();
+  const { canManage } = useMyRole({ teamId });
   const profile = useProfile();
   const sheetManager = useSheetManager();
-
   const isAuthor = !!profile.id && profile.id === authorId;
-
   if (!isAuthor && !canManage) return null;
 
   return (

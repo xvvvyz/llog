@@ -283,7 +283,7 @@ export default function Team() {
                   </View>
                 ))}
             <ScrollView
-              className="max-h-72 px-4"
+              className="max-h-60 px-4"
               contentContainerClassName="py-2"
             >
               {members.map((member) => {
@@ -292,18 +292,23 @@ export default function Team() {
 
                 const isLastOwner =
                   member.role === Role.Owner && ownerCount <= 1;
+
                 const canShowMemberMenu =
                   canManage &&
                   !isSelf &&
                   (isOwner || member.role !== Role.Owner);
+
                 const canChangeToAdmin =
                   isOwner || (isAdmin && member.role === Role.Member);
+
                 const canChangeToMember =
                   isOwner ||
                   (isAdmin &&
                     (member.role === Role.Admin ||
                       member.role === Role.Member));
+
                 const canViewLogs = member.role === Role.Member;
+
                 const canRemoveMember =
                   isOwner || (isAdmin && member.role !== Role.Owner);
 

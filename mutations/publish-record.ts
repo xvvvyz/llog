@@ -13,6 +13,17 @@ export const publishRecord = async ({
   teamId?: string;
 }) => {
   if (!recordId) return;
+
+  const { data } = await db.queryOnce({
+    records: {
+      $: { where: { id: recordId }, fields: ['text'] },
+      media: { $: { fields: ['id'] } },
+    },
+  });
+
+  const record = data.records?.[0];
+  const hasContent = !!record?.text?.trim() || !!record?.media?.length;
+  if (!hasContent) return;
   const now = new Date().toISOString();
 
   if (logId && profileId && teamId) {

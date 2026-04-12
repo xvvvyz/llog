@@ -1,5 +1,5 @@
 import { cn } from '@/utilities/cn';
-import { fileUriToSrc } from '@/utilities/file-uri-to-src';
+import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import {
   ImageContentFit,
   Image as ImagePrimitive,
@@ -33,7 +33,8 @@ export const Image = ({
   width?: number;
   wrapperClassName?: string;
 }) => {
-  const image = useImage(fileUriToSrc(uri));
+  const src = useFileUriToSrc(uri);
+  const image = useImage(src);
 
   if (!fill && image && (!height || !width)) {
     const aspectRatio = image.width / image.height;

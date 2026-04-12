@@ -5,6 +5,13 @@ import { HTTPException } from 'hono/http-exception';
 
 export type Db = ReturnType<typeof init<typeof schema>>;
 
+export const createAdminDb = (env: CloudflareEnv) =>
+  init({
+    adminToken: env.INSTANT_APP_ADMIN_TOKEN,
+    appId: env.INSTANT_APP_ID,
+    schema,
+  });
+
 interface DbMiddlewareOptions {
   asUser?: boolean;
 }
@@ -12,18 +19,14 @@ interface DbMiddlewareOptions {
 interface DbMiddleware<T extends DbMiddlewareOptions> {
   Bindings: CloudflareEnv;
   Variables: {
-    db: ReturnType<typeof init<typeof schema>>;
+    db: Db;
     user: T['asUser'] extends true ? User : undefined;
   };
 }
 
 export const db = <T extends DbMiddlewareOptions>({ asUser }: T = {} as T) =>
   createMiddleware<DbMiddleware<T>>(async (c, next) => {
-    const db = init({
-      adminToken: c.env.INSTANT_APP_ADMIN_TOKEN,
-      appId: c.env.INSTANT_APP_ID,
-      schema,
-    });
+    const db = createAdminDb(c.env);
 
     if (asUser) {
       try {

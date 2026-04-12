@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
-import { fileUriToSrc } from '@/utilities/file-uri-to-src';
+import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Pause, Play } from 'phosphor-react-native';
@@ -31,7 +31,8 @@ export const AudioPlayer = ({
   duration?: number;
   uri: string;
 }) => {
-  const player = useAudioPlayer(fileUriToSrc(uri), { updateInterval: 50 });
+  const src = useFileUriToSrc(uri);
+  const player = useAudioPlayer(src, { updateInterval: 50 });
   const status = useAudioPlayerStatus(player);
   const trackWidth = useSharedValue(0);
   const progressFraction = useSharedValue(0);
@@ -61,6 +62,7 @@ export const AudioPlayer = ({
       duration: remaining,
       easing: Easing.linear,
     });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps -- progressFraction and isScrubbing are shared values written to, not read
   }, [
     status.currentTime,
@@ -91,10 +93,7 @@ export const AudioPlayer = ({
   const commitSeek = async (seconds: number) => {
     await player.seekTo(seconds);
     isScrubbing.value = false;
-
-    if (wasPlayingBeforeScrub.current) {
-      player.play();
-    }
+    if (wasPlayingBeforeScrub.current) player.play();
   };
 
   const scrubTo = (x: number) => {

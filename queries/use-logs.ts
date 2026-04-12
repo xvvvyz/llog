@@ -1,19 +1,27 @@
+import { useResolvedTeamIds } from '@/queries/use-resolved-team-ids';
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import { useRef } from 'react';
 
-export const useLogs = ({ query }: { query?: string } = {}) => {
+export const useLogs = ({
+  query,
+  teamIds,
+}: {
+  query?: string;
+  teamIds?: string[];
+} = {}) => {
   const ui = useUi();
   const prevDataRef = useRef<any[]>([]);
+  const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(
-    ui.activeTeamId
+    resolvedTeamIds.length
       ? {
           logs: {
             $: {
               order: { [ui.logsSortBy]: ui.logsSortDirection },
               where: {
-                team: ui.activeTeamId,
+                teamId: { $in: resolvedTeamIds },
                 ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },

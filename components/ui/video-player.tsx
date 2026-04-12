@@ -1,4 +1,4 @@
-import { fileUriToSrc } from '@/utilities/file-uri-to-src';
+import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -30,7 +30,7 @@ export const VideoPlayer = ({
   onPlayingChange?: (isPlaying: boolean) => void;
   uri: string;
 }) => {
-  const source = fileUriToSrc(uri);
+  const source = useFileUriToSrc(uri);
   const videoViewRef = useRef<VideoView>(null);
   const [isBuffering, setIsBuffering] = useState(true);
 

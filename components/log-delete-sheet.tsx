@@ -28,9 +28,15 @@ export const LogDeleteSheet = () => {
           disabled={isPending}
           onPress={async () => {
             setIsPending(true);
-            await deleteLog({ id: sheetManager.getId('log-delete') });
-            sheetManager.close('log-delete');
-            router.dismissTo('/');
+
+            try {
+              await deleteLog({ id: sheetManager.getId('log-delete') });
+              sheetManager.close('log-delete');
+              router.dismissTo('/');
+            } catch (error) {
+              setIsPending(false);
+              throw error;
+            }
           }}
           variant="destructive"
           wrapperClassName="mt-12"

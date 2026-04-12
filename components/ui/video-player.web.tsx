@@ -1,4 +1,4 @@
-import { fileUriToSrc } from '@/utilities/file-uri-to-src';
+import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 
@@ -28,7 +28,7 @@ export const VideoPlayer = ({
   onPlayingChange?: (isPlaying: boolean) => void;
   uri: string;
 }) => {
-  const src = fileUriToSrc(uri);
+  const src = useFileUriToSrc(uri);
   const ref = useRef<HTMLVideoElement>(null);
 
   const [size, setSize] = useState<{ width: number; height: number } | null>(

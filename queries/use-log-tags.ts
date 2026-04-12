@@ -1,17 +1,23 @@
-import { useUi } from '@/queries/use-ui';
+import { useResolvedTeamIds } from '@/queries/use-resolved-team-ids';
 import { db } from '@/utilities/db';
 import { useMemo } from 'react';
 
-export const useLogTags = ({ query }: { query?: string } = {}) => {
-  const ui = useUi();
+export const useLogTags = ({
+  query,
+  teamIds,
+}: {
+  query?: string;
+  teamIds?: string[];
+} = {}) => {
+  const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(
-    ui.activeTeamId
+    resolvedTeamIds.length
       ? {
           logTags: {
             $: {
               where: {
-                team: ui.activeTeamId,
+                teamId: { $in: resolvedTeamIds },
                 ...(query && {
                   name: { $ilike: `%${query}%` },
                 }),

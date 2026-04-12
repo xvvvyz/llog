@@ -10,16 +10,17 @@ const ROLE_SORT_ORDER: Record<string, number> = {
   [Role.Member]: 2,
 };
 
-export const useTeamMembers = () => {
+export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
   const auth = db.useAuth();
   const { activeTeamId } = useUi();
-  const myRole = useMyRole();
+  const resolvedTeamId = teamId ?? activeTeamId;
+  const myRole = useMyRole({ teamId: resolvedTeamId });
 
   const { data, isLoading } = db.useQuery(
-    activeTeamId
+    resolvedTeamId
       ? {
           roles: {
-            $: { where: { team: activeTeamId } },
+            $: { where: { team: resolvedTeamId } },
             user: {
               profile: {
                 image: {},
@@ -41,10 +42,8 @@ export const useTeamMembers = () => {
           (ROLE_SORT_ORDER[b.role] ?? Number.MAX_SAFE_INTEGER);
 
         if (roleOrder !== 0) return roleOrder;
-
         const aName = a.user?.profile?.name?.trim() ?? '';
         const bName = b.user?.profile?.name?.trim() ?? '';
-
         return aName.localeCompare(bName, undefined, { sensitivity: 'base' });
       }),
     [members]

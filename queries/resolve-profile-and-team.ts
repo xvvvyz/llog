@@ -1,4 +1,3 @@
-import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { getProfile } from '@/queries/get-profile';
 
 export const resolveProfileAndTeam = async (
@@ -6,19 +5,12 @@ export const resolveProfileAndTeam = async (
   teamId?: string
 ) => {
   let resolvedProfileId = profileId;
-  let resolvedTeamId = teamId;
 
-  if (!resolvedProfileId || !resolvedTeamId) {
-    const [profile, activeTeamId] = await Promise.all([
-      resolvedProfileId ? null : getProfile(),
-      resolvedTeamId ? null : getActiveTeamId(),
-    ]);
-
-    resolvedProfileId = resolvedProfileId ?? profile?.id;
-    resolvedTeamId = resolvedTeamId ?? activeTeamId ?? undefined;
+  if (!resolvedProfileId) {
+    const profile = await getProfile();
+    resolvedProfileId = profile?.id;
   }
 
-  if (!resolvedProfileId || !resolvedTeamId) return null;
-
-  return { profileId: resolvedProfileId, teamId: resolvedTeamId };
+  if (!resolvedProfileId || !teamId) return null;
+  return { profileId: resolvedProfileId, teamId };
 };

@@ -9,9 +9,9 @@ import { deleteRecordMedia } from '@/mutations/delete-record-media';
 import { publishRecord } from '@/mutations/publish-record';
 import { updateRecordDraft } from '@/mutations/update-record-draft';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
+import { useLog } from '@/queries/use-log';
 import { useProfile } from '@/queries/use-profile';
 import { useRecordDraft } from '@/queries/use-record-draft';
-import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import { useCallback } from 'react';
 import { View } from 'react-native';
@@ -27,8 +27,8 @@ export const RecordCreateSheet = () => {
   const editRecordId = isEdit ? sheetId : undefined;
 
   const profile = useProfile();
-  const ui = useUi();
   const draft = useRecordDraft({ logId });
+  const log = useLog({ id: logId });
 
   const { data: editData } = db.useQuery(
     editRecordId
@@ -45,7 +45,9 @@ export const RecordCreateSheet = () => {
   const editRecord = editData?.records?.[0];
   const record = isEdit ? editRecord : draft;
   const recordLogId = isEdit ? editRecord?.log?.id : logId;
+  const teamId = isEdit ? editRecord?.teamId : log.teamId;
   const logColor = useLogColor({ id: recordLogId });
+  const hasContent = !!record?.text?.trim() || !!record?.media?.length;
 
   const handleUploadMedia = useCallback(
     async (
@@ -106,16 +108,16 @@ export const RecordCreateSheet = () => {
           {toolbar}
           <Button
             className="text-white web:hover:opacity-90"
-            disabled={isBusy}
+            disabled={isBusy || (!isEdit && !hasContent)}
             onPress={() => {
               if (isEdit) {
                 sheetManager.close('record-create');
-              } else {
+              } else if (hasContent) {
                 publishRecord({
                   id: record?.id,
                   logId: recordLogId,
                   profileId: profile.id,
-                  teamId: ui.activeTeamId,
+                  teamId,
                 });
                 sheetManager.close('record-create');
               }

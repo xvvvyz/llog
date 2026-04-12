@@ -1,21 +1,32 @@
+import {
+  buildFileUrl,
+  isProtectedUri,
+  resolveFileAccessToken,
+  useFileAccessToken,
+} from '@/utilities/file-access-token';
+import { useMemo } from 'react';
+
+export { useFileAccessToken } from '@/utilities/file-access-token';
+
 const blobCache = new Map<string, string>();
 const pending = new Map<string, Promise<string>>();
 
-const toUrl = (uri: string) =>
-  uri.startsWith('https://') || uri.startsWith('data:image/')
-    ? uri
-    : `${process.env.EXPO_PUBLIC_API_URL}/files/${uri}`;
-
-export const fileUriToSrc = (uri: string) => {
-  const url = toUrl(uri);
+export const fileUriToSrc = (uri: string, token?: string | null) => {
+  const url = buildFileUrl(uri, token);
   return blobCache.get(url) ?? url;
 };
 
-export const preloadMedia = (uri: string): Promise<string> => {
-  const url = toUrl(uri);
+export const useFileUriToSrc = (uri: string) => {
+  const token = useFileAccessToken();
+  const tokenForUrl = isProtectedUri(uri) ? token : null;
+  return useMemo(() => fileUriToSrc(uri, tokenForUrl), [uri, tokenForUrl]);
+};
+
+export const preloadMedia = async (uri: string) => {
+  const url = buildFileUrl(uri, await resolveFileAccessToken());
 
   const cached = blobCache.get(url);
-  if (cached) return Promise.resolve(cached);
+  if (cached) return cached;
 
   const inflight = pending.get(url);
   if (inflight) return inflight;

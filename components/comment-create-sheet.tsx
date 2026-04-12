@@ -12,7 +12,6 @@ import { uploadCommentMedia } from '@/mutations/upload-comment-media';
 import { useCommentDraft } from '@/queries/use-comment-draft';
 import { useProfile } from '@/queries/use-profile';
 import { useRecord } from '@/queries/use-record';
-import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
@@ -29,7 +28,6 @@ export const CommentCreateSheet = () => {
   const editCommentId = isEdit ? sheetId : undefined;
 
   const profile = useProfile();
-  const ui = useUi();
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
   const draft = useCommentDraft({ recordId: isEdit ? undefined : recordId });
@@ -107,7 +105,7 @@ export const CommentCreateSheet = () => {
         logId: record.log?.id,
         profileId: profile.id,
         recordId,
-        teamId: ui.activeTeamId,
+        teamId: record.teamId,
       });
     }
 
@@ -119,10 +117,10 @@ export const CommentCreateSheet = () => {
     isEdit,
     profile.id,
     record.log?.id,
+    record.teamId,
     recordId,
     sheetManager,
     text,
-    ui.activeTeamId,
   ]);
 
   return (

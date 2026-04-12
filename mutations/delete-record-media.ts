@@ -1,5 +1,4 @@
-import { api } from '@/utilities/api';
-import { db } from '@/utilities/db';
+import { apiOrThrow } from '@/utilities/api';
 
 export const deleteRecordMedia = async ({
   mediaId,
@@ -9,9 +8,10 @@ export const deleteRecordMedia = async ({
   recordId?: string;
 }) => {
   if (!mediaId || !recordId) return;
-  db.transact(db.tx.media[mediaId].delete());
 
-  await api(`/files/records/${recordId}/media/${mediaId}`, {
-    method: 'DELETE',
-  });
+  await apiOrThrow(
+    `/files/records/${recordId}/media/${mediaId}`,
+    { method: 'DELETE' },
+    'Failed to delete record media'
+  );
 };

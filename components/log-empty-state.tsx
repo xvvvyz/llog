@@ -7,9 +7,10 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { useLogColor } from '@/hooks/use-log-color';
 import { createInviteLink } from '@/mutations/create-invite-link';
+import { useLog } from '@/queries/use-log';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
-import { useUi } from '@/queries/use-ui';
+import { useTeamMembers } from '@/queries/use-team-members';
 import { UI } from '@/theme/ui';
 import { getInviteUrl } from '@/utilities/invite-url';
 import {
@@ -24,20 +25,22 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const LogEmptyState = ({ logId }: { logId: string }) => {
-  const { canManage } = useMyRole();
+  const log = useLog({ id: logId });
+  const { canManage } = useMyRole({ teamId: log.teamId });
   const colorScheme = useColorScheme();
   const logColor = useLogColor({ id: logId });
   const sheetManager = useSheetManager();
-  const { activeTeamId } = useUi();
-  const { inviteLinks } = useTeamInviteLinks();
+  const { members } = useTeamMembers({ teamId: log.teamId });
+  const { inviteLinks } = useTeamInviteLinks({ teamId: log.teamId });
   const { copy, copied } = useCopy();
+  const hasMembers = members.some((member) => member.role === Role.Member);
 
   const [loadingAction, setLoadingAction] = useState<'copy' | 'qr' | null>(
     null
   );
 
   const getOrCreateLink = useCallback(async () => {
-    if (!activeTeamId) return null;
+    if (!log.teamId) return null;
 
     const existing = inviteLinks.find((link) => {
       if (link.role !== Role.Member) return false;
@@ -48,13 +51,13 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
     if (existing) return existing.token;
 
     const { token } = await createInviteLink({
-      teamId: activeTeamId,
+      teamId: log.teamId,
       role: Role.Member,
       logIds: [logId],
     });
 
     return token;
-  }, [activeTeamId, logId, inviteLinks]);
+  }, [log.teamId, logId, inviteLinks]);
 
   const handleCopyLink = useCallback(async () => {
     setLoadingAction('copy');
@@ -131,15 +134,17 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
               <Icon className="-mr-0.5" icon={QrCode} />
             )}
           </Button>
-          <Button
-            className="justify-between"
-            onPress={() => sheetManager.open('log-members', logId)}
-            size="xs"
-            variant="secondary"
-          >
-            <Text>Manage members</Text>
-            <Icon className="-mr-0.5" icon={Users} />
-          </Button>
+          {hasMembers && (
+            <Button
+              className="justify-between"
+              onPress={() => sheetManager.open('log-members', logId)}
+              size="xs"
+              variant="secondary"
+            >
+              <Text>Manage members</Text>
+              <Icon className="-mr-0.5" icon={Users} />
+            </Button>
+          )}
         </>
       )}
       <Button
