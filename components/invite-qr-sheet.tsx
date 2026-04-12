@@ -1,5 +1,5 @@
 import { Sheet } from '@/components/ui/sheet';
-import { useSheetManager } from '@/context/sheet-manager';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useCallback } from 'react';
 import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';

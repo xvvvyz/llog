@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { Emoji, REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
+import { Emoji, REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { animation } from '@/utilities/animation';

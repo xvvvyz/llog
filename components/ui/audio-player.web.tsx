@@ -4,7 +4,8 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
-import { Pause, Play } from 'phosphor-react-native';
+import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
+import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 

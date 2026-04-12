@@ -14,7 +14,7 @@ import {
   groupActivities,
 } from '@/utilities/group-activities';
 import { useFocusEffect } from 'expo-router';
-import { Sparkle } from 'phosphor-react-native';
+import { Sparkle } from 'phosphor-react-native/lib/module/icons/Sparkle';
 import { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { deleteComment } from '@/mutations/delete-comment';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';

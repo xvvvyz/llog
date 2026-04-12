@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
-import { REACTION_EMOJIS, REACTION_ICONS } from '@/enums/emojis';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
+import { REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { cn } from '@/utilities/cn';
-import { SmileySticker } from 'phosphor-react-native';
+import { SmileySticker } from 'phosphor-react-native/lib/module/icons/SmileySticker';
 import { useMemo } from 'react';
 
 export const EmojiPicker = ({

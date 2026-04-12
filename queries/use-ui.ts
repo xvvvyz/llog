@@ -1,6 +1,6 @@
 import { SortBy } from '@/components/log-list-actions';
 import { SortDirection } from '@/components/ui/dropdown-menu';
-import { Emoji, REACTION_EMOJIS } from '@/enums/emojis';
+import { Emoji, REACTION_EMOJIS } from '@/types/emoji';
 import { db } from '@/utilities/db';
 
 export const useUi = () => {

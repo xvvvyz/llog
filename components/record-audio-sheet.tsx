@@ -1,14 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
-import { useAudioRecorderHook } from '@/hooks/use-audio-recorder';
+import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 import { useLogColor } from '@/hooks/use-log-color';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { uploadCommentMedia } from '@/mutations/upload-comment-media';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
 import { useRecord } from '@/queries/use-record';
 import { formatTime } from '@/utilities/format-time';
-import { Microphone } from 'phosphor-react-native';
+import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
 import { useCallback, useEffect, useMemo, useRef, useTransition } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -25,7 +25,7 @@ const parseAudioContext = (context?: string): AudioContext => {
 export const RecordAudioSheet = () => {
   const [isUploading, startUploadTransition] = useTransition();
   const sheetManager = useSheetManager();
-  const recorder = useAudioRecorderHook();
+  const recorder = useAudioRecorder();
 
   const draftId = sheetManager.getId('record-audio');
   const rawContext = sheetManager.getContext('record-audio');

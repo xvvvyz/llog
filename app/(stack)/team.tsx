@@ -11,10 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
-import { Role } from '@/enums/roles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { createInviteLink } from '@/mutations/create-invite-link';
 import { deleteTeamImage } from '@/mutations/delete-team-image';
 import { updateRole } from '@/mutations/update-role';
@@ -28,22 +27,34 @@ import { useTeamMembers } from '@/queries/use-team-members';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
+import { Role } from '@/types/role';
 import { db } from '@/utilities/db';
 import { getInviteUrl } from '@/utilities/invite-url';
-import { launchImageLibraryAsync } from 'expo-image-picker';
 import {
-  Check,
-  Copy,
-  DotsThreeVertical,
-  LinkBreak,
-  QrCode,
-  SignOut,
-  SquaresFour,
-  Trash,
-  UploadSimple,
-  UserMinus,
-} from 'phosphor-react-native';
-import { type ComponentRef, useCallback, useRef, useState } from 'react';
+  canChangeTeamMemberRole,
+  canOpenTeamMemberMenu,
+  canRemoveTeamMember,
+  isMemberRole,
+} from '@/utilities/permissions';
+import { launchImageLibraryAsync } from 'expo-image-picker';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
+import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
+import { LinkBreak } from 'phosphor-react-native/lib/module/icons/LinkBreak';
+import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
+import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
+import { SquaresFour } from 'phosphor-react-native/lib/module/icons/SquaresFour';
+import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
+import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
+import { UserMinus } from 'phosphor-react-native/lib/module/icons/UserMinus';
+import {
+  type ComponentRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -52,16 +63,149 @@ const ROLE_LABELS: Record<string, string> = {
   [Role.Member]: 'Member',
 };
 
+const ASSIGNABLE_ROLES = [Role.Admin, Role.Member] as const;
+type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+const TeamMemberMenuContent = ({
+  activeTeamId,
+  canChangeToAdmin,
+  canChangeToMember,
+  canRemoveMember,
+  canViewLogs,
+  memberId,
+  memberRole,
+  onOpenMemberLogs,
+  onOpenMemberLogsAfterDemotion,
+}: {
+  activeTeamId?: string;
+  canChangeToAdmin: boolean;
+  canChangeToMember: boolean;
+  canRemoveMember: boolean;
+  canViewLogs: boolean;
+  memberId: string;
+  memberRole: string;
+  onOpenMemberLogs: (memberId: string) => void;
+  onOpenMemberLogsAfterDemotion: (memberId: string) => void;
+}) => {
+  const colorScheme = useColorScheme();
+  const sheetManager = useSheetManager();
+  const { onOpenChange } = Menu.useContext();
+  const [loadingRole, setLoadingRole] = useState<AssignableRole | null>(null);
+
+  const handleRolePress = useCallback(
+    async (nextRole: AssignableRole) => {
+      if (loadingRole === nextRole) return;
+
+      if (memberRole === nextRole) {
+        if (nextRole === Role.Member) {
+          onOpenChange(false);
+          onOpenMemberLogs(memberId);
+        }
+
+        return;
+      }
+
+      if (!activeTeamId) return;
+      setLoadingRole(nextRole);
+
+      try {
+        await updateRole({
+          roleId: memberId,
+          role: nextRole,
+          teamId: activeTeamId,
+        });
+
+        if (nextRole === Role.Member) {
+          onOpenChange(false);
+          onOpenMemberLogsAfterDemotion(memberId);
+        }
+      } finally {
+        setLoadingRole(null);
+      }
+    },
+    [
+      activeTeamId,
+      loadingRole,
+      memberId,
+      memberRole,
+      onOpenChange,
+      onOpenMemberLogs,
+      onOpenMemberLogsAfterDemotion,
+    ]
+  );
+
+  return (
+    <>
+      {ASSIGNABLE_ROLES.map((r) => {
+        const isDisabled =
+          (r === Role.Admin && !canChangeToAdmin) ||
+          (r === Role.Member && !canChangeToMember);
+
+        return (
+          <Menu.Item
+            closeOnPress={false}
+            disabled={isDisabled || !!loadingRole}
+            key={r}
+            onPress={() => handleRolePress(r)}
+          >
+            <View className="size-5 items-center justify-center">
+              {loadingRole === r ? (
+                <ActivityIndicator
+                  size={16}
+                  color={UI[colorScheme].mutedForeground}
+                />
+              ) : (
+                memberRole === r && <Icon className="-mr-1" icon={Check} />
+              )}
+            </View>
+            <Text className={loadingRole === r ? 'text-placeholder' : ''}>
+              {ROLE_LABELS[r]}
+            </Text>
+          </Menu.Item>
+        );
+      })}
+      {canViewLogs && (
+        <>
+          <Menu.Separator />
+          <Menu.Item
+            className={loadingRole ? 'opacity-50' : ''}
+            disabled={!!loadingRole}
+            onPress={() => onOpenMemberLogs(memberId)}
+          >
+            <Icon icon={SquaresFour} />
+            <Text>Logs</Text>
+          </Menu.Item>
+        </>
+      )}
+      <Menu.Separator />
+      <Menu.Item
+        className={!canRemoveMember || loadingRole ? 'opacity-50' : ''}
+        disabled={!canRemoveMember || !!loadingRole}
+        onPress={() => sheetManager.open('member-remove', memberId)}
+      >
+        <Icon className="text-destructive" icon={UserMinus} />
+        <Text className="text-destructive">Remove</Text>
+      </Menu.Item>
+    </>
+  );
+};
+
 export default function Team() {
   const [copiedRole, setCopiedRole] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
+  const [pendingMemberLogsRoleId, setPendingMemberLogsRoleId] = useState<
+    string | null
+  >(null);
+
   const nameInputRef = useRef<ComponentRef<typeof Input>>(null);
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const team = useTeam();
   const { activeTeamId } = useUi();
-  const { canManage, isAdmin, isOwner } = useMyRole();
+  const myRole = useMyRole();
+  const { canDeleteTeam, canManage } = myRole;
   const { copy } = useCopy();
   const { inviteLinks } = useTeamInviteLinks();
   const logs = useLogs();
@@ -69,6 +213,38 @@ export default function Team() {
   useTeams();
 
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
+
+  const activeTeamLogIds = useMemo(
+    () => new Set(logs.data.map((log) => log.id)),
+    [logs.data]
+  );
+
+  useEffect(() => {
+    if (!pendingMemberLogsRoleId) return;
+    const member = members.find((m) => m.id === pendingMemberLogsRoleId);
+
+    if (!member || member.role !== Role.Member) return;
+
+    const hasActiveTeamLogs =
+      member.user?.profile?.logs?.some((log) => activeTeamLogIds.has(log.id)) ??
+      false;
+
+    if (hasActiveTeamLogs) return;
+    sheetManager.open('member-logs', pendingMemberLogsRoleId);
+    setPendingMemberLogsRoleId(null);
+  }, [activeTeamLogIds, members, pendingMemberLogsRoleId, sheetManager]);
+
+  const handleOpenMemberLogs = useCallback(
+    (memberId: string) => {
+      setPendingMemberLogsRoleId(null);
+      sheetManager.open('member-logs', memberId);
+    },
+    [sheetManager]
+  );
+
+  const handleOpenMemberLogsAfterDemotion = useCallback((memberId: string) => {
+    setPendingMemberLogsRoleId(memberId);
+  }, []);
 
   const handleUploadTeamImage = useCallback(async () => {
     if (!activeTeamId) return;
@@ -293,24 +469,33 @@ export default function Team() {
                 const isLastOwner =
                   member.role === Role.Owner && ownerCount <= 1;
 
-                const canShowMemberMenu =
-                  canManage &&
-                  !isSelf &&
-                  (isOwner || member.role !== Role.Owner);
+                const canShowMemberMenu = canOpenTeamMemberMenu({
+                  actorRole: myRole.role,
+                  isSelf,
+                  targetRole: member.role,
+                });
 
-                const canChangeToAdmin =
-                  isOwner || (isAdmin && member.role === Role.Member);
+                const canChangeToAdmin = canChangeTeamMemberRole({
+                  actorRole: myRole.role,
+                  isSelf,
+                  nextRole: Role.Admin,
+                  targetRole: member.role,
+                });
 
-                const canChangeToMember =
-                  isOwner ||
-                  (isAdmin &&
-                    (member.role === Role.Admin ||
-                      member.role === Role.Member));
+                const canChangeToMember = canChangeTeamMemberRole({
+                  actorRole: myRole.role,
+                  isSelf,
+                  nextRole: Role.Member,
+                  targetRole: member.role,
+                });
 
-                const canViewLogs = member.role === Role.Member;
+                const canViewLogs = isMemberRole(member.role);
 
-                const canRemoveMember =
-                  isOwner || (isAdmin && member.role !== Role.Owner);
+                const canRemoveMember = canRemoveTeamMember({
+                  actorRole: myRole.role,
+                  isSelf,
+                  targetRole: member.role,
+                });
 
                 return (
                   <View
@@ -348,68 +533,19 @@ export default function Team() {
                           </Button>
                         </Menu.Trigger>
                         <Menu.Content align="end">
-                          {[Role.Admin, Role.Member].map((r) => {
-                            const isDisabled =
-                              (r === Role.Admin && !canChangeToAdmin) ||
-                              (r === Role.Member && !canChangeToMember);
-
-                            return (
-                              <Menu.Item
-                                className="justify-between"
-                                disabled={isDisabled}
-                                key={r}
-                                onPress={() => {
-                                  if (member.role !== r) {
-                                    updateRole({
-                                      id: member.id,
-                                      role: r,
-                                      teamId: activeTeamId!,
-                                      userId: member.userId,
-                                    });
-                                  }
-
-                                  if (r === Role.Member) {
-                                    sheetManager.open(
-                                      'member-logs',
-                                      profile?.id
-                                    );
-                                  }
-                                }}
-                              >
-                                <Text className="flex-1">{ROLE_LABELS[r]}</Text>
-                                {member.role === r && (
-                                  <Icon className="-mr-1" icon={Check} />
-                                )}
-                              </Menu.Item>
-                            );
-                          })}
-                          {canViewLogs && (
-                            <>
-                              <Menu.Separator />
-                              <Menu.Item
-                                onPress={() =>
-                                  sheetManager.open('member-logs', profile?.id)
-                                }
-                              >
-                                <Icon icon={SquaresFour} />
-                                <Text>Logs</Text>
-                              </Menu.Item>
-                            </>
-                          )}
-                          <Menu.Separator />
-                          <Menu.Item
-                            className={canRemoveMember ? '' : 'opacity-50'}
-                            disabled={!canRemoveMember}
-                            onPress={() =>
-                              sheetManager.open('member-remove', member.id)
+                          <TeamMemberMenuContent
+                            activeTeamId={activeTeamId}
+                            canChangeToAdmin={canChangeToAdmin}
+                            canChangeToMember={canChangeToMember}
+                            canRemoveMember={canRemoveMember}
+                            canViewLogs={canViewLogs}
+                            memberId={member.id}
+                            memberRole={member.role}
+                            onOpenMemberLogs={handleOpenMemberLogs}
+                            onOpenMemberLogsAfterDemotion={
+                              handleOpenMemberLogsAfterDemotion
                             }
-                          >
-                            <Icon
-                              className="text-destructive"
-                              icon={UserMinus}
-                            />
-                            <Text className="text-destructive">Remove</Text>
-                          </Menu.Item>
+                          />
                         </Menu.Content>
                       </Menu.Root>
                     )}
@@ -443,7 +579,7 @@ export default function Team() {
               })}
             </ScrollView>
             <View>
-              {isOwner && (
+              {canDeleteTeam && (
                 <>
                   <View className="mb-2 border-t border-border" />
                   <Button

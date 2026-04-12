@@ -2,22 +2,48 @@ import { Avatar } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
-import { Role } from '@/enums/roles';
 import { useLogColor } from '@/hooks/use-log-color';
+import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { toggleLogMember } from '@/mutations/toggle-log-member';
 import { useLog } from '@/queries/use-log';
 import { useTeamMembers } from '@/queries/use-team-members';
+import { isMemberRole } from '@/utilities/permissions';
+import { useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
 
 export const LogMembersSheet = () => {
   const sheetManager = useSheetManager();
   const log = useLog({ id: sheetManager.getId('log-members') });
   const logColor = useLogColor({ id: log.id });
-  const isLoading = log.isLoading || membersLoading;
 
   const { members, isLoading: membersLoading } = useTeamMembers({
     teamId: log.teamId,
+  });
+
+  const isLoading = log.isLoading || membersLoading;
+
+  const { getSelected, setSelected } = useOptimisticSelection({
+    onChange: useCallback(
+      (profileId: string, selected: boolean) => {
+        const member = members.find((teamMember) => {
+          const memberProfileId = teamMember.user?.profile?.id;
+          return memberProfileId === profileId;
+        });
+
+        if (!member) return Promise.resolve();
+
+        return toggleLogMember({
+          roleId: member.id,
+          selected,
+          logId: log.id,
+          teamId: log.teamId,
+        });
+      },
+      [log.id, log.teamId, members]
+    ),
+    scopeKey: log.id,
+    selectedIds: log.profileIdsSet,
   });
 
   return (
@@ -32,13 +58,11 @@ export const LogMembersSheet = () => {
         keyboardShouldPersistTaps="always"
       >
         {members
-          .filter(
-            (member) => member.role !== Role.Owner && member.role !== Role.Admin
-          )
+          .filter((member) => isMemberRole(member.role))
           .map((member) => {
             const profile = member.user?.profile;
             if (!profile) return null;
-            const isSelected = log.profileIdsSet.has(profile.id);
+            const isSelected = getSelected(profile.id);
 
             return (
               <View
@@ -57,12 +81,8 @@ export const LogMembersSheet = () => {
                   checked={isSelected}
                   checkedColor={logColor.default}
                   className="size-8 border-0"
-                  onCheckedChange={() =>
-                    toggleLogMember({
-                      profileId: profile.id,
-                      isSelected,
-                      logId: log.id,
-                    })
+                  onCheckedChange={(selected) =>
+                    setSelected(profile.id, selected)
                   }
                 />
               </View>

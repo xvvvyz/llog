@@ -1,15 +1,21 @@
-import { db } from '@/utilities/db';
+import { apiOrThrow } from '@/utilities/api';
 
 export const toggleLogMember = async ({
-  profileId,
-  isSelected,
+  roleId,
+  selected,
   logId,
+  teamId,
 }: {
-  profileId: string;
-  isSelected: boolean;
+  roleId: string;
+  selected: boolean;
   logId?: string;
+  teamId?: string;
 }) => {
-  if (!logId) return;
-  const action = isSelected ? 'unlink' : 'link';
-  return db.transact(db.tx.logs[logId][action]({ profiles: profileId }));
+  if (!logId || !teamId) return;
+
+  await apiOrThrow(`/teams/${teamId}/logs/${logId}/members/${roleId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ selected }),
+    headers: { 'Content-Type': 'application/json' },
+  });
 };

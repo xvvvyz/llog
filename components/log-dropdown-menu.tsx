@@ -2,26 +2,25 @@ import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
-import { Role } from '@/enums/roles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { createInviteLink } from '@/mutations/create-invite-link';
 import { useLog } from '@/queries/use-log';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
 import { useTeamMembers } from '@/queries/use-team-members';
 import { UI } from '@/theme/ui';
+import { Role } from '@/types/role';
 import { getInviteUrl } from '@/utilities/invite-url';
-import {
-  Check,
-  Copy,
-  NotePencil,
-  QrCode,
-  Tag,
-  Trash,
-  Users,
-} from 'phosphor-react-native';
+import { isMemberRole } from '@/utilities/permissions';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
+import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
+import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
+import { Tag } from 'phosphor-react-native/lib/module/icons/Tag';
+import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
+import { Users } from 'phosphor-react-native/lib/module/icons/Users';
 import { ReactNode, useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, View, ViewStyle } from 'react-native';
 
@@ -139,7 +138,7 @@ export const LogDropdownMenu = ({
   const { members } = useTeamMembers({ teamId: log.teamId });
 
   const hasMembers = useMemo(
-    () => members.some((m) => m.role === Role.Member),
+    () => members.some((m) => isMemberRole(m.role)),
     [members]
   );
 

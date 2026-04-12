@@ -1,7 +1,7 @@
 import { TextContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import { cssInterop } from 'nativewind';
-import { IconProps as PhosphorIconProps } from 'phosphor-react-native';
+import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 import React, { ComponentType, useContext, useMemo } from 'react';
 
 interface IconProps extends PhosphorIconProps {

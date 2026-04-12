@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utilities/cn';
-import { IconProps, MagnifyingGlass, X } from 'phosphor-react-native';
+import type { IconProps } from 'phosphor-react-native';
+import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
+import { X } from 'phosphor-react-native/lib/module/icons/X';
 import { View } from 'react-native';
 
 import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';

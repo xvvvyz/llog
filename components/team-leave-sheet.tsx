@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { leaveTeam } from '@/mutations/leave-team';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';

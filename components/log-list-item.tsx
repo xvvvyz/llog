@@ -6,7 +6,7 @@ import { Text } from '@/components/ui/text';
 import { LogTag } from '@/types/log-tag';
 import { cn } from '@/utilities/cn';
 import { Link } from 'expo-router';
-import { DotsThree } from 'phosphor-react-native';
+import { DotsThree } from 'phosphor-react-native/lib/module/icons/DotsThree';
 import { View } from 'react-native';
 
 export const LogListItem = ({

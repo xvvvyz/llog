@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
-import { Role } from '@/enums/roles';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
+import { Role } from '@/types/role';
 import { db } from '@/utilities/db';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';

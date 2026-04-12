@@ -5,7 +5,8 @@ import { cn } from '@/utilities/cn';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { Pause, Play } from 'phosphor-react-native';
+import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
+import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';
 import {

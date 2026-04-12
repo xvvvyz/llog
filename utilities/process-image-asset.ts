@@ -1,4 +1,4 @@
-import { ImageSize } from '@/enums/image-size';
+import { ImageSize } from '@/types/image-size';
 import { assetToFileLike } from '@/utilities/asset-to-file-like';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { ImagePickerAsset } from 'expo-image-picker';

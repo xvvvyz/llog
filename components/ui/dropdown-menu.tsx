@@ -4,7 +4,9 @@ import { useRippleColor } from '@/hooks/use-ripple-color';
 import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
-import { Check, SortAscending, SortDescending } from 'phosphor-react-native';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { SortAscending } from 'phosphor-react-native/lib/module/icons/SortAscending';
+import { SortDescending } from 'phosphor-react-native/lib/module/icons/SortDescending';
 import { View } from 'react-native';
 
 import Animated, {

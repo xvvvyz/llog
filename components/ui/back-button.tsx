@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { router } from 'expo-router';
-import { ArrowLeft, CaretLeft } from 'phosphor-react-native';
+import { ArrowLeft } from 'phosphor-react-native/lib/module/icons/ArrowLeft';
+import { CaretLeft } from 'phosphor-react-native/lib/module/icons/CaretLeft';
 import { Platform } from 'react-native';
 
 export const BackButton = () => {

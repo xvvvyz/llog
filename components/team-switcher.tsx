@@ -10,7 +10,10 @@ import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { cn } from '@/utilities/cn';
 import { router } from 'expo-router';
-import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
+import { CaretDown } from 'phosphor-react-native/lib/module/icons/CaretDown';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { GearSix } from 'phosphor-react-native/lib/module/icons/GearSix';
+import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { useRef } from 'react';
 import { View } from 'react-native';
 

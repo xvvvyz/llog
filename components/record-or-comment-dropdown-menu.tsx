@@ -2,17 +2,16 @@ import { Button } from '@/components/ui/button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { toggleRecordPin } from '@/mutations/toggle-record-pin';
 import { useMyRole } from '@/queries/use-my-role';
 import { useProfile } from '@/queries/use-profile';
 import { cn } from '@/utilities/cn';
-import {
-  DotsThreeVertical,
-  NotePencil,
-  PushPin,
-  Trash,
-} from 'phosphor-react-native';
+import { canDeleteOwnOrManagedResource } from '@/utilities/permissions';
+import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
+import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
+import { PushPin } from 'phosphor-react-native/lib/module/icons/PushPin';
+import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { View } from 'react-native';
 
 export const RecordOrCommentDropdownMenu = ({
@@ -34,11 +33,17 @@ export const RecordOrCommentDropdownMenu = ({
   recordId: string;
   teamId?: string;
 }) => {
-  const { canManage } = useMyRole({ teamId });
+  const myRole = useMyRole({ teamId });
   const profile = useProfile();
   const sheetManager = useSheetManager();
   const isAuthor = !!profile.id && profile.id === authorId;
-  if (!isAuthor && !canManage) return null;
+
+  const canDelete = canDeleteOwnOrManagedResource({
+    actorRole: myRole.role,
+    isAuthor,
+  });
+
+  if (!canDelete) return null;
 
   return (
     <View className={className}>
@@ -68,7 +73,7 @@ export const RecordOrCommentDropdownMenu = ({
               <Text>Edit</Text>
             </Menu.Item>
           )}
-          {!commentId && canManage && (
+          {!commentId && myRole.canPinRecords && (
             <Menu.Item
               onPress={() =>
                 toggleRecordPin({ id: recordId, isPinned: !isPinned })

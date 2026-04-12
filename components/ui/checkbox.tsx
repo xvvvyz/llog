@@ -1,8 +1,9 @@
 import { Button, ButtonProps } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/utilities/cn';
-import { Check, Plus } from 'phosphor-react-native';
-import { startTransition, useCallback, useState } from 'react';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { useCallback } from 'react';
 
 export const Checkbox = ({
   checked,
@@ -15,33 +16,24 @@ export const Checkbox = ({
   checkedColor?: string;
   onCheckedChange: (checked: boolean) => void;
 }) => {
-  const [opChecked, setOpChecked] = useState(checked);
-  const [prevChecked, setPrevChecked] = useState(checked);
-
-  if (checked !== prevChecked) {
-    setPrevChecked(checked);
-    setOpChecked(checked);
-  }
-
   const handleChange = useCallback(() => {
-    setOpChecked(!checked);
-    startTransition(() => onCheckedChange(!checked));
-  }, [onCheckedChange, checked]);
+    onCheckedChange(!checked);
+  }, [checked, onCheckedChange]);
 
   return (
     <Button
-      aria-checked={opChecked}
-      className={cn(opChecked && 'bg-primary', className)}
+      aria-checked={checked}
+      className={cn(checked && 'bg-primary', className)}
       onPress={handleChange}
       role="checkbox"
       size="icon"
-      style={{ backgroundColor: opChecked ? checkedColor : undefined }}
+      style={{ backgroundColor: checked ? checkedColor : undefined }}
       variant="secondary"
       {...rest}
     >
       <Icon
-        className={cn(opChecked && 'text-primary-foreground')}
-        icon={opChecked ? Check : Plus}
+        className={cn(checked && 'text-primary-foreground')}
+        icon={checked ? Check : Plus}
         size={20}
       />
     </Button>

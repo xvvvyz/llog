@@ -15,7 +15,8 @@ import {
 } from '@/utilities/invite-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { ArrowRight, WarningCircle } from 'phosphor-react-native';
+import { ArrowRight } from 'phosphor-react-native/lib/module/icons/ArrowRight';
+import { WarningCircle } from 'phosphor-react-native/lib/module/icons/WarningCircle';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -50,6 +51,7 @@ export default function InviteLink() {
   const [linkInfo, setLinkInfo] = useState<LinkInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRedeeming, setIsRedeeming] = useState(false);
+
   const [shouldResumeAcceptedInvite, setShouldResumeAcceptedInvite] =
     useState(false);
 
@@ -95,7 +97,6 @@ export default function InviteLink() {
       ]);
 
       await switchTeam({ teamId });
-
       router.replace('/');
     } catch (e) {
       alert({

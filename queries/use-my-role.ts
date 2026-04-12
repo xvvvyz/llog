@@ -1,6 +1,6 @@
-import { Role } from '@/enums/roles';
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
+import { getTeamPermissionFlags } from '@/utilities/permissions';
 
 export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
   const auth = db.useAuth();
@@ -23,8 +23,10 @@ export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
   );
 
   const role = data?.roles?.[0];
-  const isOwner = role?.role === Role.Owner;
-  const isAdmin = role?.role === Role.Admin;
-  const canManage = isOwner || isAdmin;
-  return { ...role, canManage, isAdmin, isLoading, isOwner };
+
+  return {
+    ...role,
+    ...getTeamPermissionFlags(role?.role),
+    isLoading,
+  };
 };

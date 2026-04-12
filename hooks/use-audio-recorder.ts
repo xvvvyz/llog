@@ -1,10 +1,13 @@
-import { RecordingPresets, useAudioRecorder } from 'expo-audio';
+import {
+  RecordingPresets,
+  useAudioRecorder as useExpoAudioRecorder,
+} from 'expo-audio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const MAX_DURATION = 300;
 
-export const useAudioRecorderHook = () => {
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+export const useAudioRecorder = () => {
+  const recorder = useExpoAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [uri, setUri] = useState<string | null>(null);

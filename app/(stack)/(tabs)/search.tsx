@@ -15,7 +15,8 @@ import { useTeams } from '@/queries/use-teams';
 import { SPECTRUM } from '@/theme/spectrum';
 import { SearchResult } from '@/types/search';
 import { cn } from '@/utilities/cn';
-import { Funnel, MagnifyingGlass } from 'phosphor-react-native';
+import { Funnel } from 'phosphor-react-native/lib/module/icons/Funnel';
+import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 

@@ -1,5 +1,5 @@
-import { Role } from '@/enums/roles';
 import { getUi } from '@/queries/get-ui';
+import { Role } from '@/types/role';
 import { db } from '@/utilities/db';
 import { id as generateId } from '@instantdb/react-native';
 

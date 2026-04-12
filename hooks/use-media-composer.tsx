@@ -2,9 +2,9 @@ import { AudioPlayer } from '@/components/ui/audio-player';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { UI } from '@/theme/ui';
 import { Media } from '@/types/media';
 import { clipboardToAssets } from '@/utilities/clipboard-to-assets';
@@ -13,7 +13,9 @@ import { id } from '@instantdb/react-native';
 import { Image as ImagePrimitive } from 'expo-image';
 import { ImagePickerAsset, launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
-import { Microphone, Plus, X } from 'phosphor-react-native';
+import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
+import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { X } from 'phosphor-react-native/lib/module/icons/X';
 import {
   useCallback,
   useEffect,

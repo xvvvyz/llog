@@ -1,25 +1,17 @@
-import { isManagedRole } from '@/enums/roles';
-import { createAdminDb, db } from '@/middleware/db';
+import { db } from '@/api/middleware/db';
+import { deleteActivities } from '@/api/shared/delete-activities';
+import { canManageTeam } from '@/utilities/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-const deleteActivities = async (
-  env: CloudflareEnv,
-  activities: { id: string }[]
-) => {
-  if (!activities.length) return;
+app.delete('/', db({ asUser: true }), async (c) => {
+  const logId = c.req.param('logId');
 
-  const adminDb = createAdminDb(env);
-
-  await adminDb.transact(
-    activities.map((activity) => adminDb.tx.activities[activity.id].delete())
-  );
-};
-
-app.delete('/:logId', db({ asUser: true }), async (c) => {
-  const { logId } = c.req.param();
+  if (!logId) {
+    throw new HTTPException(400, { message: 'Invalid request' });
+  }
 
   const { logs } = await c.var.db.query({
     logs: {
@@ -49,7 +41,7 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
 
   const callerRole = log.team?.roles?.[0]?.role;
 
-  if (!isManagedRole(callerRole)) {
+  if (!canManageTeam(callerRole)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 

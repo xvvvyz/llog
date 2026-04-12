@@ -11,13 +11,11 @@ import { Media } from '@/types/media';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { preloadMedia } from '@/utilities/file-uri-to-src';
-import {
-  CornersOut,
-  Pause,
-  Play,
-  SpeakerHigh,
-  SpeakerSlash,
-} from 'phosphor-react-native';
+import { CornersOut } from 'phosphor-react-native/lib/module/icons/CornersOut';
+import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
+import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import { SpeakerHigh } from 'phosphor-react-native/lib/module/icons/SpeakerHigh';
+import { SpeakerSlash } from 'phosphor-react-native/lib/module/icons/SpeakerSlash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';

@@ -8,16 +8,13 @@ import { updateUiLogsSort } from '@/mutations/update-ui-logs-sort';
 import { useUi } from '@/queries/use-ui';
 import { LogTag } from '@/types/log-tag';
 import { cn } from '@/utilities/cn';
+import { Calendar } from 'phosphor-react-native/lib/module/icons/Calendar';
+import { Funnel } from 'phosphor-react-native/lib/module/icons/Funnel';
+import { Palette } from 'phosphor-react-native/lib/module/icons/Palette';
+import { SortAscending } from 'phosphor-react-native/lib/module/icons/SortAscending';
+import { SortDescending } from 'phosphor-react-native/lib/module/icons/SortDescending';
+import { TextAa } from 'phosphor-react-native/lib/module/icons/TextAa';
 import { View } from 'react-native';
-
-import {
-  Calendar,
-  Funnel,
-  Palette,
-  SortAscending,
-  SortDescending,
-  TextAa,
-} from 'phosphor-react-native';
 
 export type SortBy = 'serverCreatedAt' | 'name' | 'color';
 

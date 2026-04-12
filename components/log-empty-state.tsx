@@ -1,26 +1,25 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
-import { Role } from '@/enums/roles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { useLogColor } from '@/hooks/use-log-color';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { createInviteLink } from '@/mutations/create-invite-link';
 import { useLog } from '@/queries/use-log';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
 import { useTeamMembers } from '@/queries/use-team-members';
 import { UI } from '@/theme/ui';
+import { Role } from '@/types/role';
 import { getInviteUrl } from '@/utilities/invite-url';
-import {
-  Check,
-  Copy,
-  NotePencil,
-  Plus,
-  QrCode,
-  Users,
-} from 'phosphor-react-native';
+import { isMemberRole } from '@/utilities/permissions';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
+import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
+import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
+import { Users } from 'phosphor-react-native/lib/module/icons/Users';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -33,7 +32,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
   const { members } = useTeamMembers({ teamId: log.teamId });
   const { inviteLinks } = useTeamInviteLinks({ teamId: log.teamId });
   const { copy, copied } = useCopy();
-  const hasMembers = members.some((member) => member.role === Role.Member);
+  const hasMembers = members.some((member) => isMemberRole(member.role));
 
   const [loadingAction, setLoadingAction] = useState<'copy' | 'qr' | null>(
     null

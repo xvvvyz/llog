@@ -1,8 +1,8 @@
 import files from '@/api/files';
 import logs from '@/api/logs';
+import { headers } from '@/api/middleware/headers';
 import records from '@/api/records';
 import teams from '@/api/teams';
-import { headers } from '@/middleware/headers';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 

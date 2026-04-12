@@ -1,6 +1,11 @@
 {
   "compilerOptions": {
-    "paths": { "@/*": ["./*"] },
+    "paths": {
+      "@/*": ["./*"],
+      "phosphor-react-native/lib/module/icons/*": [
+        "./node_modules/phosphor-react-native/lib/typescript/icons/*"
+      ]
+    },
     "strict": true
   },
   "extends": "expo/tsconfig.base",

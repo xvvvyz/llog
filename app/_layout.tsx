@@ -1,5 +1,5 @@
-import { SheetManagerProvider } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
 import { db } from '@/utilities/db';

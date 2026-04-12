@@ -1,7 +1,7 @@
-import { Role } from '@/enums/roles';
 import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { Color } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
+import { isManagedRole } from '@/utilities/permissions';
 import { id as generateId } from '@instantdb/react-native';
 
 export const createLog = async ({
@@ -24,7 +24,7 @@ export const createLog = async ({
   });
 
   const profileIds = data.roles
-    .filter((r) => r.role === Role.Owner || r.role === Role.Admin)
+    .filter((r) => isManagedRole(r.role))
     .map((r) => r.user?.profile?.id)
     .filter(Boolean) as string[];
 

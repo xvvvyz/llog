@@ -2,12 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { createTeam } from '@/mutations/create-team';
 import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
-import { Check, Plus } from 'phosphor-react-native';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { View } from 'react-native';
 
 export const TeamSwitchSheet = () => {

@@ -1,23 +1,24 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { toggleLogMember } from '@/mutations/toggle-log-member';
 import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
 
 export const MemberLogsSheet = () => {
   const sheetManager = useSheetManager();
-  const profileId = sheetManager.getId('member-logs');
+  const roleId = sheetManager.getId('member-logs');
   const { activeTeamId } = useUi();
   const colorScheme = useColorScheme();
 
   const { data, isLoading } = db.useQuery(
-    activeTeamId
+    activeTeamId && roleId
       ? {
           logs: {
             $: {
@@ -26,11 +27,20 @@ export const MemberLogsSheet = () => {
             },
             profiles: { $: { fields: ['id'] } },
           },
+          roles: {
+            $: { where: { id: roleId, team: activeTeamId } },
+            user: {
+              profile: {
+                $: { fields: ['id'] },
+              },
+            },
+          },
         }
       : null
   );
 
   const logs = useMemo(() => data?.logs ?? [], [data?.logs]);
+  const profileId = data?.roles?.[0]?.user?.profile?.id;
 
   const profileLogIds = useMemo(
     () =>
@@ -41,6 +51,23 @@ export const MemberLogsSheet = () => {
       ),
     [logs, profileId]
   );
+  const { getSelected, setSelected } = useOptimisticSelection({
+    onChange: useCallback(
+      (logId: string, selected: boolean) => {
+        if (!roleId) return Promise.resolve();
+
+        return toggleLogMember({
+          roleId,
+          selected,
+          logId,
+          teamId: activeTeamId,
+        });
+      },
+      [activeTeamId, roleId]
+    ),
+    scopeKey: `${activeTeamId ?? ''}:${roleId ?? ''}`,
+    selectedIds: profileLogIds,
+  });
 
   return (
     <Sheet
@@ -54,7 +81,7 @@ export const MemberLogsSheet = () => {
         keyboardShouldPersistTaps="always"
       >
         {logs.map((log) => {
-          const isSelected = profileLogIds.has(log.id);
+          const isSelected = getSelected(log.id);
           const color = SPECTRUM[colorScheme][log.color ?? 11];
 
           return (
@@ -72,13 +99,7 @@ export const MemberLogsSheet = () => {
               <Checkbox
                 checked={isSelected}
                 className="size-8 border-0"
-                onCheckedChange={() =>
-                  toggleLogMember({
-                    profileId: profileId!,
-                    isSelected,
-                    logId: log.id,
-                  })
-                }
+                onCheckedChange={(selected) => setSelected(log.id, selected)}
               />
             </View>
           );

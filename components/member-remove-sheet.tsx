@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
-import { useSheetManager } from '@/context/sheet-manager';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { removeMember } from '@/mutations/remove-member';
 import { useTeam } from '@/queries/use-team';
 import { useCallback, useState } from 'react';

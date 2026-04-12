@@ -2,7 +2,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import * as RadioGroupPrimitive from '@rn-primitives/radio-group';
-import { Check } from 'phosphor-react-native';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
 import { createContext, useContext } from 'react';
 import { View } from 'react-native';
 

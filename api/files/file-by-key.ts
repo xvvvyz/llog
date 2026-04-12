@@ -1,0 +1,65 @@
+import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { getFileScope, requirePrivateFileAccess } from './shared';
+
+const app = new Hono<{ Bindings: CloudflareEnv }>();
+
+app.get('/:key{.+}', async (c) => {
+  const key = c.req.param('key');
+  const scope = getFileScope(key);
+
+  if (scope === 'unknown') {
+    throw new HTTPException(404, { message: 'File not found' });
+  }
+
+  if (scope === 'private') {
+    await requirePrivateFileAccess(c, key);
+    c.header('Cache-Control', 'private, no-store');
+    c.header('Vary', 'Authorization');
+  } else {
+    c.header('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+
+  const rangeHeader = c.req.header('Range');
+
+  const file = await c.env.R2.get(
+    key,
+    rangeHeader ? { range: c.req.raw.headers } : undefined
+  );
+
+  if (!file) {
+    throw new HTTPException(404, { message: 'File not found' });
+  }
+
+  c.header('Accept-Ranges', 'bytes');
+
+  if (file.etag) {
+    c.header('ETag', file.etag);
+    const ifNoneMatch = c.req.header('If-None-Match');
+
+    if (ifNoneMatch === file.etag) {
+      return c.body(null, 304);
+    }
+  }
+
+  if (file.httpMetadata?.contentType) {
+    c.header('Content-Type', file.httpMetadata.contentType);
+  }
+
+  if ('range' in file && file.range) {
+    const range = file.range as { offset: number; length: number };
+    c.header('Content-Length', range.length.toString());
+
+    c.header(
+      'Content-Range',
+      `bytes ${range.offset}-${range.offset + range.length - 1}/${file.size}`
+    );
+
+    return c.body(file.body, 206);
+  }
+
+  c.header('Content-Length', file.size.toString());
+  return c.body(file.body);
+});
+
+export default app;

@@ -25,7 +25,9 @@ import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { type TextRef } from '@rn-primitives/types';
 import { Link, router } from 'expo-router';
-import { ChatCircleDots, Play, PushPin } from 'phosphor-react-native';
+import { ChatCircleDots } from 'phosphor-react-native/lib/module/icons/ChatCircleDots';
+import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import { PushPin } from 'phosphor-react-native/lib/module/icons/PushPin';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -57,7 +59,7 @@ export const RecordOrComment = ({
   const colorScheme = useColorScheme();
   const logColor = useLogColor({ id: logId });
   const accentColor = logColor?.[colorScheme === 'dark' ? 'lighter' : 'darker'];
-  const { canManage } = useMyRole({ teamId: record.teamId });
+  const myRole = useMyRole({ teamId: record.teamId });
   const recordId = recordIdProp ?? record.id ?? '';
   const profile = useProfile();
   const ui = useUi();
@@ -255,7 +257,7 @@ export const RecordOrComment = ({
           {'isPinned' in record && record.isPinned && (
             <Button
               className="size-8 rounded-lg"
-              disabled={!canManage}
+              disabled={!myRole.canPinRecords}
               onPress={() => toggleRecordPin({ id: recordId, isPinned: false })}
               size="icon"
               variant="ghost"
