@@ -1,6 +1,6 @@
 import { useResolvedTeamIds } from '@/queries/use-resolved-team-ids';
 import { db } from '@/utilities/db';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 export const useLogTags = ({
   query,
@@ -28,13 +28,13 @@ export const useLogTags = ({
       : null
   );
 
-  const logTags = useMemo(
+  const logTags = React.useMemo(
     // https://discord.com/channels/1031957483243188235/1376250736416919567
     () => data?.logTags?.sort((a, b) => a.order - b.order) ?? [],
     [data?.logTags]
   );
 
-  const queryExistingTagId = useMemo(
+  const queryExistingTagId = React.useMemo(
     () =>
       query
         ? logTags.find((tag) => tag.name.toLowerCase() === query.toLowerCase())

@@ -1,8 +1,8 @@
 import { useMyRole } from '@/queries/use-my-role';
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
-import { ROLE_SORT_ORDER, canViewTeamMember } from '@/utilities/permissions';
-import { useMemo } from 'react';
+import * as p from '@/utilities/permissions';
+import * as React from 'react';
 
 export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
   const auth = db.useAuth();
@@ -28,13 +28,13 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
 
   const members = data?.roles ?? [];
 
-  const sortedMembers = useMemo(
+  const sortedMembers = React.useMemo(
     () =>
       [...members].sort((a, b) => {
         const roleOrder =
-          (ROLE_SORT_ORDER[a.role as keyof typeof ROLE_SORT_ORDER] ??
+          (p.ROLE_SORT_ORDER[a.role as keyof typeof p.ROLE_SORT_ORDER] ??
             Number.MAX_SAFE_INTEGER) -
-          (ROLE_SORT_ORDER[b.role as keyof typeof ROLE_SORT_ORDER] ??
+          (p.ROLE_SORT_ORDER[b.role as keyof typeof p.ROLE_SORT_ORDER] ??
             Number.MAX_SAFE_INTEGER);
 
         if (roleOrder !== 0) return roleOrder;
@@ -45,7 +45,7 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
     [members]
   );
 
-  const filteredMembers = useMemo(() => {
+  const filteredMembers = React.useMemo(() => {
     if (myRole.canManage) return sortedMembers;
     const myMember = sortedMembers.find((m) => m.userId === auth.user?.id);
     const myLogIds = myMember?.user?.profile?.logs?.map((l) => l.id) ?? [];
@@ -53,7 +53,7 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
     return sortedMembers.filter((member) => {
       const memberLogIds = member.user?.profile?.logs?.map((l) => l.id) ?? [];
 
-      return canViewTeamMember({
+      return p.canViewTeamMember({
         actorLogIds: myLogIds,
         actorRole: myRole.role,
         targetLogIds: memberLogIds,

@@ -12,22 +12,25 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { Role } from '@/types/role';
 import { db } from '@/utilities/db';
 import { getInviteUrl } from '@/utilities/invite-url';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 export const InviteLogsSheet = () => {
+  const [isLoading, setIsLoading] = React.useState(false);
   const sheetManager = useSheetManager();
   const action = sheetManager.getId('invite-logs') as 'copy' | 'qr' | undefined;
-  const { activeTeamId } = useUi();
   const colorScheme = useColorScheme();
-  const { inviteLinks } = useTeamInviteLinks();
-  const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(false);
-  const { copy, copied } = useCopy();
-  const dismissTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const dismissTimer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
   const open = sheetManager.isOpen('invite-logs');
+  const { activeTeamId } = useUi();
+  const { copy, copied } = useCopy();
+  const { inviteLinks } = useTeamInviteLinks();
 
-  useEffect(() => {
+  const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
+    new Set()
+  );
+
+  React.useEffect(() => {
     if (open) {
       setSelectedLogIds(new Set());
       setIsLoading(false);
@@ -49,7 +52,7 @@ export const InviteLogsSheet = () => {
 
   const logs = data?.logs ?? [];
 
-  const toggleLog = useCallback((logId: string) => {
+  const toggleLog = React.useCallback((logId: string) => {
     setSelectedLogIds((prev) => {
       const next = new Set(prev);
       if (next.has(logId)) next.delete(logId);
@@ -58,7 +61,7 @@ export const InviteLogsSheet = () => {
     });
   }, []);
 
-  const findMatchingLink = useCallback(
+  const findMatchingLink = React.useCallback(
     (logIds: string[]) => {
       const sorted = [...logIds].sort();
 
@@ -72,7 +75,7 @@ export const InviteLogsSheet = () => {
     [inviteLinks]
   );
 
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = React.useCallback(async () => {
     if (!activeTeamId || selectedLogIds.size === 0) return;
     setIsLoading(true);
 
@@ -117,7 +120,7 @@ export const InviteLogsSheet = () => {
     copy,
   ]);
 
-  const handleDismiss = useCallback(() => {
+  const handleDismiss = React.useCallback(() => {
     clearTimeout(dismissTimer.current);
     sheetManager.close('invite-logs');
   }, [sheetManager]);

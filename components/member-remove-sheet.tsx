@@ -4,16 +4,16 @@ import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { removeMember } from '@/mutations/remove-member';
 import { useTeam } from '@/queries/use-team';
-import { useCallback, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const MemberRemoveSheet = () => {
   const sheetManager = useSheetManager();
   const memberId = sheetManager.getId('member-remove');
   const team = useTeam();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleRemove = useCallback(async () => {
+  const handleRemove = React.useCallback(async () => {
     if (!memberId || !team.id) return;
     setIsLoading(true);
 

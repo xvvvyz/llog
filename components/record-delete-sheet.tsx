@@ -4,15 +4,15 @@ import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { deleteRecord } from '@/mutations/delete-record';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const RecordDeleteSheet = () => {
-  const [isPending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = React.useState(false);
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('record-delete');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) setIsPending(false);
   }, [open]);
 

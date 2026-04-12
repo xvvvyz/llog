@@ -1,10 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
-import {
-  VideoPlayer,
-  type VideoPlayerHandle,
-} from '@/components/ui/video-player';
+import * as video from '@/components/ui/video-player';
 import { useWindowDimensions } from '@/hooks/use-window-dimensions';
 import { useUi } from '@/queries/use-ui';
 import { Media } from '@/types/media';
@@ -16,7 +13,7 @@ import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { SpeakerHigh } from 'phosphor-react-native/lib/module/icons/SpeakerHigh';
 import { SpeakerSlash } from 'phosphor-react-native/lib/module/icons/SpeakerSlash';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as React from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -43,25 +40,25 @@ export const Carousel = ({
   onClose?: () => void;
 }) => {
   const insets = useSafeAreaInsets();
-  const ref = useRef<GalleryRefType>(null);
+  const ref = React.useRef<GalleryRefType>(null);
   const windowDimensions = useWindowDimensions();
   const activeIndex = useSharedValue(defaultIndex);
-  const enterFullscreenRef = useRef<(() => void) | null>(null);
-  const videoHandleRef = useRef<VideoPlayerHandle>(null);
+  const enterFullscreenRef = React.useRef<(() => void) | null>(null);
+  const videoHandleRef = React.useRef<video.VideoPlayerHandle>(null);
 
-  const [isActiveVideo, setIsActiveVideo] = useState(
+  const [isActiveVideo, setIsActiveVideo] = React.useState(
     media[defaultIndex]?.type === 'video'
   );
 
   const { id: uiId, videoMuted } = useUi();
-  const [isMuted, setIsMuted] = useState(videoMuted);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [activeIndexState, setActiveIndexState] = useState(defaultIndex);
+  const [isMuted, setIsMuted] = React.useState(videoMuted);
+  const [isPlaying, setIsPlaying] = React.useState(true);
+  const [activeIndexState, setActiveIndexState] = React.useState(defaultIndex);
 
   const contentHeight = windowDimensions.height - insets.top - insets.bottom;
   const contentWidth = windowDimensions.width;
 
-  const preloadFromIndex = useCallback(
+  const preloadFromIndex = React.useCallback(
     (index: number) => {
       const current = media[index];
 
@@ -88,11 +85,11 @@ export const Carousel = ({
     [media]
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     preloadFromIndex(defaultIndex);
   }, [defaultIndex, preloadFromIndex]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isKeyboardNavigationEnabled || Platform.OS !== 'web') return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -109,15 +106,15 @@ export const Carousel = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isKeyboardNavigationEnabled, media.length, activeIndex]);
 
-  const handleFullscreenReady = useCallback((fn: () => void) => {
+  const handleFullscreenReady = React.useCallback((fn: () => void) => {
     enterFullscreenRef.current = fn;
   }, []);
 
-  const handleFullscreen = useCallback(() => {
+  const handleFullscreen = React.useCallback(() => {
     enterFullscreenRef.current?.();
   }, []);
 
-  const handleToggleMute = useCallback(() => {
+  const handleToggleMute = React.useCallback(() => {
     const muted = videoHandleRef.current?.toggleMute();
 
     if (muted != null) {
@@ -126,12 +123,12 @@ export const Carousel = ({
     }
   }, [uiId]);
 
-  const handleTogglePlay = useCallback(() => {
+  const handleTogglePlay = React.useCallback(() => {
     const playing = videoHandleRef.current?.togglePlay();
     if (playing != null) setIsPlaying(playing);
   }, []);
 
-  const renderItem = useCallback(
+  const renderItem = React.useCallback(
     (item: Media, index: number) => {
       const isActive = index === activeIndexState;
       const isAdjacent = Math.abs(index - activeIndexState) <= 2;
@@ -142,7 +139,7 @@ export const Carousel = ({
         >
           {item.type === 'video' ? (
             isAdjacent ? (
-              <VideoPlayer
+              <video.VideoPlayer
                 autoPlay={isActive}
                 handleRef={isActive ? videoHandleRef : undefined}
                 maxHeight={contentHeight}
@@ -299,7 +296,7 @@ const Dots = ({
   const startIndex = useSharedValue(0);
   const lastScrubbed = useSharedValue(-1);
 
-  const pan = useMemo(
+  const pan = React.useMemo(
     () =>
       Gesture.Pan()
         .onStart(() => {

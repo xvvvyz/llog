@@ -20,17 +20,17 @@ import { router } from 'expo-router';
 import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
-import { type ComponentRef, useCallback, useRef, useState } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Account() {
-  const [isSigningOut, setIsSigningOut] = useState(false);
-  const nameInputRef = useRef<ComponentRef<typeof Input>>(null);
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
   const auth = db.useAuth();
   const profile = useProfile();
   const ui = useUi();
 
-  const handleUploadProfileImage = useCallback(async () => {
+  const handleUploadProfileImage = React.useCallback(async () => {
     const picker = await launchImageLibraryAsync({
       allowsEditing: true,
       aspect: [1, 1],

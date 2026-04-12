@@ -1,7 +1,7 @@
 import { cn } from '@/utilities/cn';
 import { LegendList, LegendListProps, LegendListRef } from '@legendapp/list';
 import { cssInterop } from 'nativewind';
-import { RefObject, startTransition, useRef, useState } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 cssInterop(LegendList, { contentContainerClassName: 'contentContainerStyle' });
@@ -14,12 +14,12 @@ export const List = <T,>({
   wrapperClassName,
   ...props
 }: LegendListProps<T> & {
-  listRef?: RefObject<LegendListRef | null>;
+  listRef?: React.RefObject<LegendListRef | null>;
   wrapperClassName?: string;
 }) => {
-  const [isAtTop, setIsAtTop] = useState(true);
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const innerRef = useRef<LegendListRef>(null);
+  const [isAtTop, setIsAtTop] = React.useState(true);
+  const [isAtBottom, setIsAtBottom] = React.useState(true);
+  const innerRef = React.useRef<LegendListRef>(null);
   const ref = listRef ?? innerRef;
 
   return (
@@ -44,7 +44,7 @@ export const List = <T,>({
           onScroll?.(event);
           const { contentOffset } = event.nativeEvent;
 
-          startTransition(() => {
+          React.startTransition(() => {
             setIsAtTop(contentOffset.y < 4);
 
             setIsAtBottom(

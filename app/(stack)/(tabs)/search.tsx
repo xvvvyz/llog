@@ -17,16 +17,16 @@ import { SearchResult } from '@/types/search';
 import { cn } from '@/utilities/cn';
 import { Funnel } from 'phosphor-react-native/lib/module/icons/Funnel';
 import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
-import { useCallback, useMemo, useState } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Search() {
-  const [query, setQuery] = useState('');
-  const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [query, setQuery] = React.useState('');
+  const [selectedLogIds, setSelectedLogIds] = React.useState<string[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
   const colorScheme = useColorScheme();
   const { teams } = useTeams();
-  const teamIds = useMemo(() => teams.map((team) => team.id), [teams]);
+  const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
   const logs = useLogs({ teamIds });
   const logTags = useLogTags({ teamIds });
 
@@ -45,11 +45,19 @@ export default function Search() {
   const toggleLogId = toggle(setSelectedLogIds);
   const toggleTagId = toggle(setSelectedTagIds);
 
-  const logIdSet = useMemo(() => new Set(selectedLogIds), [selectedLogIds]);
-  const tagIdSet = useMemo(() => new Set(selectedTagIds), [selectedTagIds]);
+  const logIdSet = React.useMemo(
+    () => new Set(selectedLogIds),
+    [selectedLogIds]
+  );
+
+  const tagIdSet = React.useMemo(
+    () => new Set(selectedTagIds),
+    [selectedTagIds]
+  );
+
   const hasFilters = selectedLogIds.length > 0 || selectedTagIds.length > 0;
 
-  const renderItem = useCallback(
+  const renderItem = React.useCallback(
     ({ item, index }: { item: SearchResult; index: number }) => (
       <SearchResultItem
         className={cn(

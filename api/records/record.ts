@@ -1,5 +1,5 @@
 import { db } from '@/api/middleware/db';
-import { deleteActivities } from '@/api/shared/delete-activities';
+import { deleteActivities } from '@/utilities/delete-activities';
 import { canDeleteOwnOrManagedResource } from '@/utilities/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';

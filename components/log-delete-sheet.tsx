@@ -4,15 +4,15 @@ import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { deleteLog } from '@/mutations/delete-log';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const LogDeleteSheet = () => {
-  const [isPending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = React.useState(false);
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('log-delete');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) setIsPending(false);
   }, [open]);
 

@@ -1,16 +1,16 @@
 import { Hono } from 'hono';
 import inviteLinks from './invite-links';
 import logMembers from './log-members';
-import teamInviteLinks from './team-invite-links';
-import teamMembers from './team-members';
-import teamMembership from './team-membership';
+import members from './members';
+import membership from './membership';
+import redeem from './redeem';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-app.route('/invite-links', inviteLinks);
-app.route('/:teamId/invite-links', teamInviteLinks);
-app.route('/:teamId/members', teamMembers);
+app.route('/invite-links', redeem);
+app.route('/:teamId/invite-links', inviteLinks);
+app.route('/:teamId/members', members);
 app.route('/:teamId/logs/:logId/members', logMembers);
-app.route('/:teamId', teamMembership);
+app.route('/:teamId', membership);
 
 export default app;

@@ -6,7 +6,7 @@ import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
 import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 function sniffMimeType(bytes: Uint8Array): string {
@@ -41,21 +41,21 @@ function sniffMimeType(bytes: Uint8Array): string {
 }
 
 function useWebAudioPlayer(uri: string) {
-  const ctxRef = useRef<AudioContext | null>(null);
-  const bufferRef = useRef<AudioBuffer | null>(null);
-  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
-  const blobUrlRef = useRef<string | null>(null);
-  const startOffset = useRef(0);
-  const startedAt = useRef(0);
-  const fallbackRef = useRef(false);
+  const ctxRef = React.useRef<AudioContext | null>(null);
+  const bufferRef = React.useRef<AudioBuffer | null>(null);
+  const sourceRef = React.useRef<AudioBufferSourceNode | null>(null);
+  const audioElRef = React.useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = React.useRef<string | null>(null);
+  const startOffset = React.useRef(0);
+  const startedAt = React.useRef(0);
+  const fallbackRef = React.useRef(false);
 
-  const [loaded, setLoaded] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [duration, setDuration] = useState(0);
+  const [loaded, setLoaded] = React.useState(false);
+  const [playing, setPlaying] = React.useState(false);
+  const [duration, setDuration] = React.useState(0);
   const src = useFileUriToSrc(uri);
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false;
     const ctx = new AudioContext();
     ctxRef.current = ctx;
@@ -135,7 +135,7 @@ function useWebAudioPlayer(uri: string) {
     };
   }, [src]);
 
-  const stopSource = useCallback(() => {
+  const stopSource = React.useCallback(() => {
     if (sourceRef.current) {
       sourceRef.current.onended = null;
       sourceRef.current.stop();
@@ -144,7 +144,7 @@ function useWebAudioPlayer(uri: string) {
     }
   }, []);
 
-  const play = useCallback(
+  const play = React.useCallback(
     (fromTime?: number) => {
       if (fallbackRef.current) {
         const audio = audioElRef.current;
@@ -193,7 +193,7 @@ function useWebAudioPlayer(uri: string) {
     [stopSource]
   );
 
-  const pause = useCallback((): number => {
+  const pause = React.useCallback((): number => {
     if (fallbackRef.current) {
       const audio = audioElRef.current;
       if (!audio) return 0;
@@ -211,7 +211,7 @@ function useWebAudioPlayer(uri: string) {
     return startOffset.current;
   }, [stopSource]);
 
-  const getCurrentTime = useCallback(() => {
+  const getCurrentTime = React.useCallback(() => {
     if (fallbackRef.current) {
       return audioElRef.current?.currentTime ?? 0;
     }
@@ -221,7 +221,7 @@ function useWebAudioPlayer(uri: string) {
     return startOffset.current + (ctx.currentTime - startedAt.current);
   }, []);
 
-  return useMemo(
+  return React.useMemo(
     () => ({ loaded, playing, duration, play, pause, getCurrentTime }),
     [loaded, playing, duration, play, pause, getCurrentTime]
   );
@@ -237,15 +237,15 @@ export const AudioPlayer = ({
   uri: string;
 }) => {
   const player = useWebAudioPlayer(uri);
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const scrubbing = useRef(false);
-  const wasPlayingBeforeScrub = useRef(false);
-  const rafRef = useRef<number>(0);
-  const [displayTime, setDisplayTime] = useState(0);
+  const trackRef = React.useRef<HTMLDivElement | null>(null);
+  const scrubbing = React.useRef(false);
+  const wasPlayingBeforeScrub = React.useRef(false);
+  const rafRef = React.useRef<number>(0);
+  const [displayTime, setDisplayTime] = React.useState(0);
   const playerDuration = duration ?? player.duration;
   const progress = playerDuration > 0 ? displayTime / playerDuration : 0;
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!player.playing) {
       if (!scrubbing.current && playerDuration > 0) {
         const t = player.getCurrentTime();
@@ -286,7 +286,7 @@ export const AudioPlayer = ({
     setDisplayTime(t);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
 

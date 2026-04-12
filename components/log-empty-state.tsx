@@ -20,7 +20,7 @@ import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
 import { Users } from 'phosphor-react-native/lib/module/icons/Users';
-import { useCallback, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const LogEmptyState = ({ logId }: { logId: string }) => {
@@ -34,11 +34,11 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
   const { copy, copied } = useCopy();
   const hasMembers = members.some((member) => isMemberRole(member.role));
 
-  const [loadingAction, setLoadingAction] = useState<'copy' | 'qr' | null>(
-    null
-  );
+  const [loadingAction, setLoadingAction] = React.useState<
+    'copy' | 'qr' | null
+  >(null);
 
-  const getOrCreateLink = useCallback(async () => {
+  const getOrCreateLink = React.useCallback(async () => {
     if (!log.teamId) return null;
 
     const existing = inviteLinks.find((link) => {
@@ -58,7 +58,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
     return token;
   }, [log.teamId, logId, inviteLinks]);
 
-  const handleCopyLink = useCallback(async () => {
+  const handleCopyLink = React.useCallback(async () => {
     setLoadingAction('copy');
 
     try {
@@ -69,7 +69,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
     }
   }, [getOrCreateLink, copy]);
 
-  const handleShowQr = useCallback(async () => {
+  const handleShowQr = React.useCallback(async () => {
     setLoadingAction('qr');
 
     try {

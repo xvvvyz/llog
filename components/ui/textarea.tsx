@@ -1,11 +1,11 @@
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utilities/cn';
-import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
+import * as React from 'react';
 import { TextInput } from 'react-native';
 
-const Textarea = forwardRef<
-  ComponentRef<typeof TextInput>,
-  ComponentPropsWithoutRef<typeof TextInput>
+const Textarea = React.forwardRef<
+  React.ComponentRef<typeof TextInput>,
+  React.ComponentPropsWithoutRef<typeof TextInput>
 >(({ className, value, ...props }, ref) => (
   <Input
     className={cn('h-auto py-2.5', className)}

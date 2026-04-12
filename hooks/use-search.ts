@@ -2,7 +2,7 @@ import { useTeams } from '@/queries/use-teams';
 import { SearchMediaItem, SearchProfile, SearchResult } from '@/types/search';
 import { db } from '@/utilities/db';
 import MiniSearch from 'minisearch';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 type SearchDocument = {
   id: string;
@@ -33,7 +33,7 @@ export const useSearch = ({
   tagIds?: string[];
 }) => {
   const { teams } = useTeams();
-  const teamIds = useMemo(() => teams.map((team) => team.id), [teams]);
+  const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
 
   const { data, isLoading } = db.useQuery(
     teamIds.length
@@ -67,7 +67,7 @@ export const useSearch = ({
       : null
   );
 
-  const documents = useMemo(() => {
+  const documents = React.useMemo(() => {
     if (!data) return [];
     const docs: SearchDocument[] = [];
 
@@ -153,7 +153,7 @@ export const useSearch = ({
     return docs;
   }, [data]);
 
-  const miniSearch = useMemo(() => {
+  const miniSearch = React.useMemo(() => {
     const ms = new MiniSearch<SearchDocument>({
       fields: ['text', 'name', 'people'],
       storeFields: [
@@ -182,7 +182,7 @@ export const useSearch = ({
     return ms;
   }, [documents]);
 
-  const results = useMemo((): SearchResult[] => {
+  const results = React.useMemo((): SearchResult[] => {
     const trimmed = query.trim();
     if (!trimmed) return [];
 

@@ -8,7 +8,7 @@ import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
-import { useMemo } from 'react';
+import * as React from 'react';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 
 export const Reactions = ({
@@ -28,7 +28,7 @@ export const Reactions = ({
 }) => {
   const profile = useProfile();
 
-  const grouped = useMemo(() => {
+  const grouped = React.useMemo(() => {
     const map = new Map<
       string,
       { count: number; userReacted: boolean; userReactionId?: string }

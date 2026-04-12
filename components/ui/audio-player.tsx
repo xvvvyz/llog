@@ -7,7 +7,7 @@ import { formatTime } from '@/utilities/format-time';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
-import { useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';
 import {
   Gesture,
@@ -38,11 +38,11 @@ export const AudioPlayer = ({
   const trackWidth = useSharedValue(0);
   const progressFraction = useSharedValue(0);
   const isScrubbing = useSharedValue(false);
-  const wasPlayingBeforeScrub = useRef(false);
-  const [displayTime, setDisplayTime] = useState(0);
+  const wasPlayingBeforeScrub = React.useRef(false);
+  const [displayTime, setDisplayTime] = React.useState(0);
   const playerDuration = duration ?? status.duration;
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isScrubbing.value || playerDuration <= 0) return;
 
     if (status.didJustFinish) {

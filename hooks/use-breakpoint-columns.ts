@@ -1,10 +1,10 @@
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 export const useGridColumns = (columns: number[]) => {
   const breakpoints = useBreakpoints();
 
-  return useMemo(() => {
+  return React.useMemo(() => {
     if (breakpoints['2xl'] && columns[6]) return columns[6];
     if (breakpoints.xl && columns[5]) return columns[5];
     if (breakpoints.lg && columns[4]) return columns[4];

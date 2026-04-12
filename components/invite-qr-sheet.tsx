@@ -1,6 +1,6 @@
 import { Sheet } from '@/components/ui/sheet';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { useCallback } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
@@ -8,7 +8,7 @@ export const InviteQrSheet = () => {
   const sheetManager = useSheetManager();
   const url = sheetManager.getId('invite-qr');
 
-  const handleDismiss = useCallback(() => {
+  const handleDismiss = React.useCallback(() => {
     sheetManager.close('invite-qr');
   }, [sheetManager]);
 

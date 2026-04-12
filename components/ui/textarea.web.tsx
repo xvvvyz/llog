@@ -1,19 +1,11 @@
 import { cn } from '@/utilities/cn';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import {
-  ComponentPropsWithoutRef,
-  ComponentRef,
-  forwardRef,
-  startTransition,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import * as React from 'react';
 
-export const Textarea = forwardRef<
-  ComponentRef<typeof TextareaAutosize>,
-  Omit<ComponentPropsWithoutRef<typeof TextareaAutosize>, 'onChange'> & {
+export const Textarea = React.forwardRef<
+  React.ComponentRef<typeof TextareaAutosize>,
+  Omit<React.ComponentPropsWithoutRef<typeof TextareaAutosize>, 'onChange'> & {
     numberOfLines?: number;
     onChangeText?: (text: string) => void;
     onSubmitEditing?: () => void;
@@ -34,17 +26,19 @@ export const Textarea = forwardRef<
     },
     ref
   ) => {
-    const [localValue, setLocalValue] = useState(value ?? defaultValue ?? '');
+    const [localValue, setLocalValue] = React.useState(
+      value ?? defaultValue ?? ''
+    );
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (value !== undefined) setLocalValue(value);
     }, [value]);
 
-    const handleChange = useCallback(
+    const handleChange = React.useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const text = e.target.value;
         setLocalValue(text);
-        if (onChangeText) startTransition(() => onChangeText(text));
+        if (onChangeText) React.startTransition(() => onChangeText(text));
       },
       [onChangeText]
     );

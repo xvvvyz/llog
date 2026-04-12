@@ -5,13 +5,12 @@ import { cn } from '@/utilities/cn';
 import type { IconProps } from 'phosphor-react-native';
 import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
 import { X } from 'phosphor-react-native/lib/module/icons/X';
+import * as React from 'react';
 import { View } from 'react-native';
 
-import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from 'react';
-
-export const SearchInput = forwardRef<
-  ComponentRef<typeof Input>,
-  ComponentPropsWithoutRef<typeof Input> & {
+export const SearchInput = React.forwardRef<
+  React.ComponentRef<typeof Input>,
+  React.ComponentPropsWithoutRef<typeof Input> & {
     actionIcon?: React.ComponentType<IconProps>;
     className?: string;
     onActionPress?: () => void;

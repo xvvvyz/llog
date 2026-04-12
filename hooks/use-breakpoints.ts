@@ -1,6 +1,6 @@
 import { useWindowDimensions } from '@/hooks/use-window-dimensions';
 import tailwindConfig from '@/tailwind.config.js';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 const breakpoints = Object.entries(
   tailwindConfig.theme?.extend?.screens ?? {}
@@ -12,7 +12,7 @@ const breakpoints = Object.entries(
 export const useBreakpoints = () => {
   const { width } = useWindowDimensions();
 
-  return useMemo(
+  return React.useMemo(
     () => ({
       '2xs': width >= breakpoints['2xs'],
       xs: width >= breakpoints.xs,

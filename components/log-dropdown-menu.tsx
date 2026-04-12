@@ -21,7 +21,7 @@ import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
 import { Tag } from 'phosphor-react-native/lib/module/icons/Tag';
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { Users } from 'phosphor-react-native/lib/module/icons/Users';
-import { ReactNode, useCallback, useMemo, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View, ViewStyle } from 'react-native';
 
 const InviteItems = ({ id }: { id?: string }) => {
@@ -31,7 +31,7 @@ const InviteItems = ({ id }: { id?: string }) => {
   const { inviteLinks } = useTeamInviteLinks({ teamId: log.teamId });
   const { onOpenChange } = Menu.useContext();
 
-  const getOrCreateLink = useCallback(async () => {
+  const getOrCreateLink = React.useCallback(async () => {
     if (!log.teamId || !id) return null;
 
     const existing = inviteLinks.find((link) => {
@@ -53,11 +53,11 @@ const InviteItems = ({ id }: { id?: string }) => {
 
   const { copy, copied } = useCopy();
 
-  const [loadingAction, setLoadingAction] = useState<'copy' | 'qr' | null>(
-    null
-  );
+  const [loadingAction, setLoadingAction] = React.useState<
+    'copy' | 'qr' | null
+  >(null);
 
-  const handleCopyLink = useCallback(async () => {
+  const handleCopyLink = React.useCallback(async () => {
     setLoadingAction('copy');
 
     try {
@@ -68,7 +68,7 @@ const InviteItems = ({ id }: { id?: string }) => {
     }
   }, [getOrCreateLink, copy]);
 
-  const handleShowQr = useCallback(async () => {
+  const handleShowQr = React.useCallback(async () => {
     setLoadingAction('qr');
 
     try {
@@ -126,7 +126,7 @@ export const LogDropdownMenu = ({
   id,
   triggerWrapperClassName,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   contentClassName?: string;
   contentStyle?: ViewStyle;
   id?: string;
@@ -137,7 +137,7 @@ export const LogDropdownMenu = ({
   const sheetManager = useSheetManager();
   const { members } = useTeamMembers({ teamId: log.teamId });
 
-  const hasMembers = useMemo(
+  const hasMembers = React.useMemo(
     () => members.some((m) => isMemberRole(m.role)),
     [members]
   );

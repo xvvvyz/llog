@@ -1,6 +1,6 @@
 import { cn } from '@/utilities/cn';
 import { LegendListProps } from '@legendapp/list';
-import { ComponentType, ReactElement } from 'react';
+import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 
 export const List = <T,>({
@@ -16,7 +16,7 @@ export const List = <T,>({
   };
 
   const renderItem = restProps.renderItem as
-    | ((info: { item: T; index: number }) => ReactElement | null)
+    | ((info: { item: T; index: number }) => React.ReactElement | null)
     | undefined;
 
   const keyExtractor = restProps.keyExtractor as
@@ -24,7 +24,7 @@ export const List = <T,>({
     | undefined;
 
   const ItemSeparator = restProps.ItemSeparatorComponent as
-    | ComponentType
+    | React.ComponentType
     | undefined;
 
   return (

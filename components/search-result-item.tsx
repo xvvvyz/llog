@@ -6,7 +6,7 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { SearchResult } from '@/types/search';
 import { formatDate } from '@/utilities/time';
 import { router } from 'expo-router';
-import { ReactNode } from 'react';
+import * as React from 'react';
 import { Pressable, View } from 'react-native';
 
 const HighlightedText = ({
@@ -43,7 +43,7 @@ const HighlightedText = ({
   }
 
   const parts = displayText.split(pattern);
-  const children: ReactNode[] = [];
+  const children: React.ReactNode[] = [];
 
   if (prefix) {
     children.push(

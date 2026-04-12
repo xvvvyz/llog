@@ -1,12 +1,12 @@
 import { useTeams } from '@/queries/use-teams';
 import { db } from '@/utilities/db';
 import { canManageTeam } from '@/utilities/permissions';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 export const useActivities = () => {
   const auth = db.useAuth();
   const { teams } = useTeams();
-  const teamIds = useMemo(() => teams.map((t) => t.id), [teams]);
+  const teamIds = React.useMemo(() => teams.map((t) => t.id), [teams]);
 
   const { data, isLoading } = db.useQuery(
     auth.user && teamIds.length
@@ -33,7 +33,7 @@ export const useActivities = () => {
       : null
   );
 
-  const manageableTeamIds = useMemo(
+  const manageableTeamIds = React.useMemo(
     () =>
       new Set(
         (data?.roles ?? [])
@@ -43,7 +43,7 @@ export const useActivities = () => {
     [data?.roles]
   );
 
-  const activities = useMemo(
+  const activities = React.useMemo(
     () =>
       (data?.activities ?? []).filter((activity) => {
         if (

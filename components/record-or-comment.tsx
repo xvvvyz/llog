@@ -1,6 +1,7 @@
 import { EmojiPicker } from '@/components/emoji-picker';
 import { Reactions } from '@/components/reactions';
 import { RecordOrCommentDropdownMenu } from '@/components/record-or-comment-dropdown-menu';
+import { TruncatedText } from '@/components/truncated-text';
 import { AudioPlaylist } from '@/components/ui/audio-player';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -23,12 +24,11 @@ import { Reaction } from '@/types/reaction';
 import { Record as RecordType } from '@/types/record';
 import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
-import { type TextRef } from '@rn-primitives/types';
 import { Link, router } from 'expo-router';
 import { ChatCircleDots } from 'phosphor-react-native/lib/module/icons/ChatCircleDots';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { PushPin } from 'phosphor-react-native/lib/module/icons/PushPin';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
@@ -89,7 +89,7 @@ export const RecordOrComment = ({
 
   const { audioMedia, visualMedia } = useFilteredMedia(record.media || []);
 
-  const idIndexMap = useMemo(
+  const idIndexMap = React.useMemo(
     () =>
       visualMedia.reduce(
         (acc, item, index) => {
@@ -101,7 +101,7 @@ export const RecordOrComment = ({
     [visualMedia]
   );
 
-  const renderMediaThumb = useCallback(
+  const renderMediaThumb = React.useCallback(
     (item: Media) => {
       return (
         <Pressable
@@ -347,53 +347,5 @@ export const RecordOrComment = ({
         )}
       </View>
     </Card>
-  );
-};
-
-const TruncatedText = ({
-  className,
-  color,
-  numberOfLines,
-  text,
-}: {
-  className?: string;
-  color?: string;
-  numberOfLines?: number;
-  text: string;
-}) => {
-  const [expanded, setExpanded] = useState(false);
-  const [truncated, setTruncated] = useState(false);
-  const textRef = useRef<TextRef>(null);
-
-  useEffect(() => {
-    if (!numberOfLines || expanded) return;
-    const node = textRef.current as unknown as HTMLElement | null;
-    if (!node) return;
-
-    if (node.scrollHeight > node.clientHeight) {
-      setTruncated(true);
-    }
-  }, [numberOfLines, expanded, text]);
-
-  return (
-    <View>
-      <Text
-        ref={textRef}
-        className={className}
-        numberOfLines={expanded ? undefined : numberOfLines}
-      >
-        {text}
-      </Text>
-      {truncated && !expanded && (
-        <Pressable className="px-4" onPress={() => setExpanded(true)}>
-          <Text
-            className={cn(!color && 'text-primary', 'hover:underline')}
-            style={color ? { color } : undefined}
-          >
-            Show more
-          </Text>
-        </Pressable>
-      )}
-    </View>
   );
 };

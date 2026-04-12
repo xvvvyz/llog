@@ -1,6 +1,6 @@
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useEffect, useImperativeHandle, useRef, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export interface VideoPlayerHandle {
@@ -31,8 +31,8 @@ export const VideoPlayer = ({
   uri: string;
 }) => {
   const source = useFileUriToSrc(uri);
-  const videoViewRef = useRef<VideoView>(null);
-  const [isBuffering, setIsBuffering] = useState(true);
+  const videoViewRef = React.useRef<VideoView>(null);
+  const [isBuffering, setIsBuffering] = React.useState(true);
 
   const player = useVideoPlayer(source, (player) => {
     player.loop = true;
@@ -40,7 +40,7 @@ export const VideoPlayer = ({
     if (autoPlay) player.play();
   });
 
-  useImperativeHandle(handleRef, () => ({
+  React.useImperativeHandle(handleRef, () => ({
     play: () => player.play(),
     toggleMute: () => {
       player.muted = !player.muted;
@@ -57,7 +57,7 @@ export const VideoPlayer = ({
     },
   }));
 
-  useEffect(() => {
+  React.useEffect(() => {
     const statusSub = player.addListener('statusChange', ({ status }) => {
       setIsBuffering(status === 'loading');
     });
@@ -74,7 +74,7 @@ export const VideoPlayer = ({
     };
   }, [player, onPlayingChange]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!onFullscreenReady) return;
     onFullscreenReady(() => videoViewRef.current?.enterFullscreen());
   }, [onFullscreenReady]);

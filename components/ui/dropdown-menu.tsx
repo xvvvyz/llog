@@ -16,20 +16,13 @@ import Animated, {
   FadeOutUp,
 } from 'react-native-reanimated';
 
-import {
-  forwardRef,
-  ReactNode,
-  startTransition,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import * as React from 'react';
 
 const Root = DropdownMenuPrimitive.Root;
 
 const Trigger = DropdownMenuPrimitive.Trigger;
 
-const Content = forwardRef<
+const Content = React.forwardRef<
   DropdownMenuPrimitive.ContentRef,
   DropdownMenuPrimitive.ContentProps
 >(({ children, className, ...props }, ref) => {
@@ -51,7 +44,7 @@ const Content = forwardRef<
             exiting={animation(FadeOutUp)}
             style={{ borderCurve: 'continuous' }}
           >
-            {children as ReactNode}
+            {children as React.ReactNode}
           </Animated.View>
         </DropdownMenuPrimitive.Content>
       </DropdownMenuPrimitive.Overlay>
@@ -61,7 +54,7 @@ const Content = forwardRef<
 
 Content.displayName = DropdownMenuPrimitive.Content.displayName;
 
-const Item = forwardRef<
+const Item = React.forwardRef<
   DropdownMenuPrimitive.ItemRef,
   DropdownMenuPrimitive.ItemProps
 >(({ className, ...props }, ref) => (
@@ -90,13 +83,13 @@ const CheckboxItem = ({
   children?: React.ReactNode;
   ref?: React.RefObject<DropdownMenuPrimitive.CheckboxItemRef>;
 }) => {
-  const [opChecked, setOpChecked] = useState(checked);
-  useEffect(() => setOpChecked(checked), [checked]);
+  const [opChecked, setOpChecked] = React.useState(checked);
+  React.useEffect(() => setOpChecked(checked), [checked]);
 
-  const handleCheckedChange = useCallback(
+  const handleCheckedChange = React.useCallback(
     (checked: boolean) => {
       setOpChecked(checked);
-      startTransition(() => onCheckedChange?.(checked));
+      React.startTransition(() => onCheckedChange?.(checked));
     },
     [onCheckedChange]
   );
@@ -136,24 +129,27 @@ const SortItem = <T extends string>({
   value,
   ...props
 }: DropdownMenuPrimitive.ItemProps & {
-  children: ReactNode;
+  children: React.ReactNode;
   sortBy: T;
   sortDirection: SortDirection;
   onSort: (sort: [T, SortDirection]) => void;
   value: T;
 }) => {
-  const [opSort, setOpSort] = useState([sortBy, sortDirection]);
-  useEffect(() => setOpSort([sortBy, sortDirection]), [sortBy, sortDirection]);
+  const [opSort, setOpSort] = React.useState([sortBy, sortDirection]);
+  React.useEffect(
+    () => setOpSort([sortBy, sortDirection]),
+    [sortBy, sortDirection]
+  );
   const isActive = opSort[0] === value;
 
-  const handleSort = useCallback(() => {
+  const handleSort = React.useCallback(() => {
     const newSort: [T, SortDirection] = [
       value,
       isActive ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc',
     ];
 
     setOpSort(newSort);
-    startTransition(() => onSort(newSort));
+    React.startTransition(() => onSort(newSort));
   }, [isActive, onSort, sortDirection, value]);
 
   return (
@@ -177,7 +173,7 @@ const Label = ({
   children,
   className,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
 }) => (
   <TextContext.Provider value="text-popover-foreground">

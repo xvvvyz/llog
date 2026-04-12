@@ -3,7 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { cn } from '@/utilities/cn';
 import { Check } from 'phosphor-react-native/lib/module/icons/Check';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
-import { useCallback } from 'react';
+import * as React from 'react';
 
 export const Checkbox = ({
   checked,
@@ -16,7 +16,7 @@ export const Checkbox = ({
   checkedColor?: string;
   onCheckedChange: (checked: boolean) => void;
 }) => {
-  const handleChange = useCallback(() => {
+  const handleChange = React.useCallback(() => {
     onCheckedChange(!checked);
   }, [checked, onCheckedChange]);
 

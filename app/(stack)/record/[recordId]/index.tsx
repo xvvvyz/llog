@@ -16,7 +16,7 @@ import { cn } from '@/utilities/cn';
 import { textToTitle } from '@/utilities/text-to-title';
 import { useLocalSearchParams } from 'expo-router';
 import { ArrowBendUpLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendUpLeft';
-import { ReactElement, useMemo, useRef } from 'react';
+import * as React from 'react';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,13 +24,13 @@ export default function Index() {
   const hideOnScrollDown = useHideOnScrollDown();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ recordId: string }>();
-  const renderCacheRef = useRef<ReactElement | null>(null);
+  const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const sheetManager = useSheetManager();
 
   const record = useRecord({ id: params.recordId });
   const logColor = useLogColor({ id: record.log?.id });
 
-  const data = useMemo(
+  const data = React.useMemo(
     () => [{ ...record, comments: undefined }, ...record.comments],
     [record]
   );

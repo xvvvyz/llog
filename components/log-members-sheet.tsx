@@ -9,7 +9,7 @@ import { toggleLogMember } from '@/mutations/toggle-log-member';
 import { useLog } from '@/queries/use-log';
 import { useTeamMembers } from '@/queries/use-team-members';
 import { isMemberRole } from '@/utilities/permissions';
-import { useCallback } from 'react';
+import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 
 export const LogMembersSheet = () => {
@@ -24,7 +24,7 @@ export const LogMembersSheet = () => {
   const isLoading = log.isLoading || membersLoading;
 
   const { getSelected, setSelected } = useOptimisticSelection({
-    onChange: useCallback(
+    onChange: React.useCallback(
       (profileId: string, selected: boolean) => {
         const member = members.find((teamMember) => {
           const memberProfileId = teamMember.user?.profile?.id;

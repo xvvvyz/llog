@@ -2,24 +2,27 @@ import {
   RecordingPresets,
   useAudioRecorder as useExpoAudioRecorder,
 } from 'expo-audio';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 
 const MAX_DURATION = 300;
 
 export const useAudioRecorder = () => {
+  const [duration, setDuration] = React.useState(0);
+  const [isRecording, setIsRecording] = React.useState(false);
+  const [level, setLevel] = React.useState(0);
+  const [uri, setUri] = React.useState<string | null>(null);
   const recorder = useExpoAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const [isRecording, setIsRecording] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [uri, setUri] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [level, setLevel] = useState(0);
-  const startTime = useRef(0);
+  const startTime = React.useRef(0);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(
+  const [hasPermission, setHasPermission] = React.useState<boolean | null>(
+    null
+  );
+
+  const timerRef = React.useRef<ReturnType<typeof setInterval> | undefined>(
     undefined
   );
 
-  const analyserRef = useRef<{
+  const analyserRef = React.useRef<{
     ctx: AudioContext;
     source: MediaStreamAudioSourceNode;
     analyser: AnalyserNode;
@@ -27,7 +30,7 @@ export const useAudioRecorder = () => {
     raf: number;
   } | null>(null);
 
-  const startTimer = useCallback(() => {
+  const startTimer = React.useCallback(() => {
     startTime.current = Date.now();
     setDuration(0);
 
@@ -37,14 +40,14 @@ export const useAudioRecorder = () => {
     }, 500);
   }, []);
 
-  const stopTimer = useCallback(() => {
+  const stopTimer = React.useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = undefined;
     }
   }, []);
 
-  const startLevelTracking = useCallback((stream: MediaStream) => {
+  const startLevelTracking = React.useCallback((stream: MediaStream) => {
     if (typeof AudioContext === 'undefined') return;
     const ctx = new AudioContext();
     const source = ctx.createMediaStreamSource(stream);
@@ -82,7 +85,7 @@ export const useAudioRecorder = () => {
     };
   }, []);
 
-  const stopLevelTracking = useCallback(() => {
+  const stopLevelTracking = React.useCallback(() => {
     if (analyserRef.current) {
       cancelAnimationFrame(analyserRef.current.raf);
       analyserRef.current.source.disconnect();
@@ -94,7 +97,7 @@ export const useAudioRecorder = () => {
     setLevel(0);
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     (async () => {
       try {
         const result = await navigator.permissions?.query({
@@ -108,7 +111,7 @@ export const useAudioRecorder = () => {
     })();
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isRecording && duration >= MAX_DURATION) {
       (async () => {
         stopLevelTracking();
@@ -120,14 +123,14 @@ export const useAudioRecorder = () => {
     }
   }, [duration, isRecording, recorder, stopLevelTracking, stopTimer]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       stopTimer();
       stopLevelTracking();
     };
   }, [stopLevelTracking, stopTimer]);
 
-  const record = useCallback(async () => {
+  const record = React.useCallback(async () => {
     setUri(null);
 
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -152,7 +155,7 @@ export const useAudioRecorder = () => {
     setHasPermission(false);
   }, [recorder, startLevelTracking, startTimer]);
 
-  const stop = useCallback(async () => {
+  const stop = React.useCallback(async () => {
     stopLevelTracking();
     stopTimer();
     setIsRecording(false);
@@ -161,7 +164,7 @@ export const useAudioRecorder = () => {
     return recorder.uri;
   }, [recorder, stopLevelTracking, stopTimer]);
 
-  const reset = useCallback(() => {
+  const reset = React.useCallback(() => {
     setDuration(0);
     setUri(null);
   }, []);

@@ -1,10 +1,10 @@
 import { useUi } from '@/queries/use-ui';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 export const useResolvedTeamIds = (teamIds?: string[]) => {
   const ui = useUi();
 
-  return useMemo(() => {
+  return React.useMemo(() => {
     if (teamIds) return teamIds;
     if (ui.activeTeamId) return [ui.activeTeamId];
     return [];

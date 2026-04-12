@@ -1,13 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
+import * as React from 'react';
 import { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 
 export const useHideOnScrollDown = () => {
-  const [isVisible, setIsVisible] = useState(true);
-  const scrollAccumulated = useRef(0);
-  const scrollDirection = useRef<'up' | 'down'>('down');
-  const scrollOffsetLast = useRef(0);
+  const [isVisible, setIsVisible] = React.useState(true);
+  const scrollAccumulated = React.useRef(0);
+  const scrollDirection = React.useRef<'up' | 'down'>('down');
+  const scrollOffsetLast = React.useRef(0);
 
-  const onScroll = useCallback(
+  const onScroll = React.useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const scrollOffsetCurrent = event.nativeEvent.contentOffset.y;
       const scrollDelta = scrollOffsetCurrent - scrollOffsetLast.current;

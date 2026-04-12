@@ -4,7 +4,7 @@ import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { useCommentMedia, useRecordMedia } from '@/queries/use-record-media';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import * as React from 'react';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,7 +25,7 @@ export default function Index() {
   const comment = useCommentMedia({ id: params.commentId });
   const allMedia = params.commentId ? comment.media : record.media;
 
-  const visualMedia = useMemo(
+  const visualMedia = React.useMemo(
     () =>
       allMedia
         .filter((m) => m.type === 'image' || m.type === 'video')
@@ -35,7 +35,7 @@ export default function Index() {
 
   const isLoading = params.commentId ? comment.isLoading : record.isLoading;
 
-  const defaultIndex = useMemo(() => {
+  const defaultIndex = React.useMemo(() => {
     if (params.id) {
       const idx = visualMedia.findIndex((m) => m.id === params.id);
       if (idx !== -1) return idx;
@@ -44,7 +44,7 @@ export default function Index() {
     return params.defaultIndex ? Number(params.defaultIndex) : 0;
   }, [params.id, params.defaultIndex, visualMedia]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (Platform.OS !== 'web') return;
 
     const handleKeyDown = (event: KeyboardEvent) => {

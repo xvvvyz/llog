@@ -3,12 +3,12 @@ import { useProfile } from '@/queries/use-profile';
 import { useRecord } from '@/queries/use-record';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
-import { useEffect, useRef } from 'react';
+import * as React from 'react';
 
 export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
   const profile = useProfile();
   const record = useRecord({ id: recordId });
-  const commentIdRef = useRef(id());
+  const commentIdRef = React.useRef(id());
 
   const { data, isLoading } = db.useQuery(
     recordId && profile.id
@@ -25,7 +25,7 @@ export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
 
   const comment = data?.comments?.[0];
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isLoading || record.isLoading || comment || !record.teamId) return;
     commentIdRef.current = id();
 

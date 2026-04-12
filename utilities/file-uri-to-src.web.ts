@@ -1,10 +1,5 @@
-import {
-  buildFileUrl,
-  isProtectedUri,
-  resolveFileAccessToken,
-  useFileAccessToken,
-} from '@/utilities/file-access-token';
-import { useMemo } from 'react';
+import * as fileAccess from '@/utilities/file-access-token';
+import * as React from 'react';
 
 export { useFileAccessToken } from '@/utilities/file-access-token';
 
@@ -12,18 +7,24 @@ const blobCache = new Map<string, string>();
 const pending = new Map<string, Promise<string>>();
 
 export const fileUriToSrc = (uri: string, token?: string | null) => {
-  const url = buildFileUrl(uri, token);
+  const url = fileAccess.buildFileUrl(uri, token);
   return blobCache.get(url) ?? url;
 };
 
 export const useFileUriToSrc = (uri: string) => {
-  const token = useFileAccessToken();
-  const tokenForUrl = isProtectedUri(uri) ? token : null;
-  return useMemo(() => fileUriToSrc(uri, tokenForUrl), [uri, tokenForUrl]);
+  const token = fileAccess.useFileAccessToken();
+  const tokenForUrl = fileAccess.isProtectedUri(uri) ? token : null;
+  return React.useMemo(
+    () => fileUriToSrc(uri, tokenForUrl),
+    [uri, tokenForUrl]
+  );
 };
 
 export const preloadMedia = async (uri: string) => {
-  const url = buildFileUrl(uri, await resolveFileAccessToken());
+  const url = fileAccess.buildFileUrl(
+    uri,
+    await fileAccess.resolveFileAccessToken()
+  );
 
   const cached = blobCache.get(url);
   if (cached) return cached;

@@ -17,11 +17,11 @@ import { TeamDeleteSheet } from '@/components/team-delete-sheet';
 import { TeamLeaveSheet } from '@/components/team-leave-sheet';
 import { TeamSwitchSheet } from '@/components/team-switch-sheet';
 import { Stack } from 'expo-router';
-import { Fragment } from 'react';
+import * as React from 'react';
 
 export default function Layout() {
   return (
-    <Fragment>
+    <React.Fragment>
       <Stack screenOptions={{ headerShown: false }} />
       <CommentCreateSheet />
       <CommentDeleteSheet />
@@ -41,6 +41,6 @@ export default function Layout() {
       <TeamDeleteSheet />
       <TeamLeaveSheet />
       <TeamSwitchSheet />
-    </Fragment>
+    </React.Fragment>
   );
 }

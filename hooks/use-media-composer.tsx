@@ -16,13 +16,7 @@ import { router } from 'expo-router';
 import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { X } from 'phosphor-react-native/lib/module/icons/X';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition,
-} from 'react';
+import * as React from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -67,11 +61,14 @@ export const useMediaComposer = ({
   const colorScheme = useColorScheme();
   const foregroundColor = UI[colorScheme].foreground;
   const fileAccessToken = useFileAccessToken();
-  const [isDeleteTransitioning, startDeleteTransition] = useTransition();
-  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const [isDeleteTransitioning, startDeleteTransition] = React.useTransition();
   const { audioMedia, visualMedia } = useFilteredMedia(media);
 
-  useEffect(() => {
+  const [pendingUploads, setPendingUploads] = React.useState<PendingUpload[]>(
+    []
+  );
+
+  React.useEffect(() => {
     if (Platform.OS !== 'web' || !isOpen) return;
 
     const handler = async (e: ClipboardEvent) => {
@@ -86,7 +83,7 @@ export const useMediaComposer = ({
     return () => document.removeEventListener('paste', handler);
   }, [isOpen, onUploadMedia]);
 
-  const uploadAssets = useCallback(
+  const uploadAssets = React.useCallback(
     (assets: ImagePickerAsset[]) => {
       const mediaIds = assets.map(() => id());
       const baseOrder = media.length;
@@ -142,7 +139,7 @@ export const useMediaComposer = ({
     [onUploadMedia]
   );
 
-  const handleUploadMedia = useCallback(async () => {
+  const handleUploadMedia = React.useCallback(async () => {
     const picker = await launchImageLibraryAsync({
       allowsMultipleSelection: true,
       exif: false,
@@ -154,12 +151,12 @@ export const useMediaComposer = ({
     uploadAssets(picker.assets);
   }, [uploadAssets]);
 
-  const handleDeleteMedia = useCallback(
+  const handleDeleteMedia = React.useCallback(
     (mediaId: string) => startDeleteTransition(() => onDeleteMedia(mediaId)),
     [onDeleteMedia, startDeleteTransition]
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     setPendingUploads((prev) => {
       if (!prev.length) return prev;
       const mediaIds = new Set(visualMedia.map((m) => m.id));
@@ -168,17 +165,17 @@ export const useMediaComposer = ({
     });
   }, [visualMedia]);
 
-  const pendingIdSet = useMemo(
+  const pendingIdSet = React.useMemo(
     () => new Set(pendingUploads.map((p) => p.id)),
     [pendingUploads]
   );
 
-  const realMediaById = useMemo(
+  const realMediaById = React.useMemo(
     () => new Map(visualMedia.map((m) => [m.id, m])),
     [visualMedia]
   );
 
-  const allVisual = useMemo(
+  const allVisual = React.useMemo(
     () =>
       [
         ...visualMedia

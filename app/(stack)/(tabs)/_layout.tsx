@@ -18,7 +18,7 @@ import { Redirect, router, Tabs } from 'expo-router';
 import { Bell } from 'phosphor-react-native/lib/module/icons/Bell';
 import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
 import { SquaresFour } from 'phosphor-react-native/lib/module/icons/SquaresFour';
-import { useEffect, useMemo, useState } from 'react';
+import * as React from 'react';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,7 +29,7 @@ const NEEDS_RECORD = new Set([
 ]);
 
 export default function Layout() {
-  const [checkedPending, setCheckedPending] = useState(false);
+  const [checkedPending, setCheckedPending] = React.useState(false);
   const auth = db.useAuth();
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
@@ -39,7 +39,7 @@ export default function Layout() {
   const { activities } = useActivities();
   const { teams, isLoading: teamsLoading } = useTeams();
 
-  const unreadCount = useMemo(() => {
+  const unreadCount = React.useMemo(() => {
     if (!profile.id) return 0;
 
     return activities.filter(
@@ -51,7 +51,7 @@ export default function Layout() {
     ).length;
   }, [activities, profile.id, ui.activityLastReadDate]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!auth.user || profile.isLoading || !profile.id) return;
     let cancelled = false;
 

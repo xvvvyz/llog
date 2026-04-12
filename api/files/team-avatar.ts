@@ -6,19 +6,23 @@ import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
-import {
-  MAX_BYTES_BY_KIND,
-  queryTeamWithImageAndRole,
-  requireUploadedFile,
-  uploadLimit,
-  validateUpload,
-} from './shared';
+import * as upload from './upload';
+
+const queryTeamWithImageAndRole = (teamId: string, userId: string) => ({
+  roles: {
+    $: { where: { team: teamId, userId } },
+  },
+  teams: {
+    $: { fields: ['id'] as ['id'], where: { id: teamId } },
+    image: {},
+  },
+});
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.put(
   '/',
-  uploadLimit(MAX_BYTES_BY_KIND.image),
+  upload.uploadLimit(upload.MAX_BYTES_BY_KIND.image),
   db({ asUser: true }),
   zValidator('form', z.object({ file: fileLike })),
   async (c) => {
@@ -28,8 +32,8 @@ app.put(
       throw new HTTPException(400, { message: 'Team not found' });
     }
 
-    const upload = requireUploadedFile(c.req.valid('form').file);
-    validateUpload(upload, ['image']);
+    const file = upload.requireUploadedFile(c.req.valid('form').file);
+    upload.validateUpload(file, ['image']);
 
     const result = await c.var.db.query(
       queryTeamWithImageAndRole(teamId, c.var.user.id)
@@ -55,10 +59,8 @@ app.put(
 
     const stored = await c.env.R2.put(
       `teams/${teamId}/media/${mediaId}`,
-      upload,
-      {
-        httpMetadata: { contentType: upload.type },
-      }
+      file,
+      { httpMetadata: { contentType: file.type } }
     );
 
     await c.var.db.transact(

@@ -9,13 +9,10 @@ import { useActivities } from '@/queries/use-activities';
 import { useProfile } from '@/queries/use-profile';
 import { useUi } from '@/queries/use-ui';
 import { cn } from '@/utilities/cn';
-import {
-  type GroupedActivity,
-  groupActivities,
-} from '@/utilities/group-activities';
+import * as ga from '@/utilities/group-activities';
 import { useFocusEffect } from 'expo-router';
 import { Sparkle } from 'phosphor-react-native/lib/module/icons/Sparkle';
-import { useCallback, useMemo } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Activity() {
@@ -23,15 +20,15 @@ export default function Activity() {
   const profile = useProfile();
   const ui = useUi();
 
-  const grouped = useMemo(
-    () => groupActivities(activities, profile.id),
+  const grouped = React.useMemo(
+    () => ga.groupActivities(activities, profile.id),
     [activities, profile.id]
   );
 
   const latestActivityDate = grouped[0]?.latestDate;
 
   useFocusEffect(
-    useCallback(() => {
+    React.useCallback(() => {
       if (
         latestActivityDate &&
         latestActivityDate !== ui.activityLastReadDate
@@ -41,8 +38,8 @@ export default function Activity() {
     }, [latestActivityDate, ui.activityLastReadDate, ui.id])
   );
 
-  const renderItem = useCallback(
-    ({ item, index }: { item: GroupedActivity; index: number }) => (
+  const renderItem = React.useCallback(
+    ({ item, index }: { item: ga.GroupedActivity; index: number }) => (
       <ActivityItem
         className={cn(
           'mt-4',

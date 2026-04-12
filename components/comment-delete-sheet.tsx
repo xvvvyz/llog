@@ -3,15 +3,15 @@ import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { deleteComment } from '@/mutations/delete-comment';
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const CommentDeleteSheet = () => {
-  const [isPending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = React.useState(false);
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('comment-delete');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) setIsPending(false);
   }, [open]);
 

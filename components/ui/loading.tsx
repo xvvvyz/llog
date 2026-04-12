@@ -1,12 +1,12 @@
 import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const Loading = ({ className }: { className?: string }) => {
-  const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+  const [showTimeoutMessage, setShowTimeoutMessage] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(() => setShowTimeoutMessage(true), 5000);
     return () => clearTimeout(timer);
   }, []);

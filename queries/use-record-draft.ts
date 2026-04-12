@@ -2,7 +2,7 @@ import { createRecordDraft } from '@/mutations/create-record-draft';
 import { useLog } from '@/queries/use-log';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/db';
-import { useEffect } from 'react';
+import * as React from 'react';
 
 export const useRecordDraft = ({ logId }: { logId?: string }) => {
   const profile = useProfile();
@@ -22,7 +22,7 @@ export const useRecordDraft = ({ logId }: { logId?: string }) => {
 
   const record = data?.records?.[0];
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isLoading || log.isLoading || record || !log.teamId) return;
 
     createRecordDraft({

@@ -9,7 +9,7 @@ import { updateLogTag } from '@/mutations/update-log-tag';
 import { cn } from '@/utilities/cn';
 import { DotsSixVertical } from 'phosphor-react-native/lib/module/icons/DotsSixVertical';
 import { X } from 'phosphor-react-native/lib/module/icons/X';
-import { useState } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 import Sortable from 'react-native-sortables';
 
@@ -26,7 +26,9 @@ export const LogTagsSheetTag = ({
   logId?: string;
   name: string;
 }) => {
-  const [isDeleteButtonVisible, setIsDeleteButtonVisible] = useState(false);
+  const [isDeleteButtonVisible, setIsDeleteButtonVisible] =
+    React.useState(false);
+
   const logColor = useLogColor({ id: logId });
   const sheetManager = useSheetManager();
 

@@ -8,12 +8,12 @@ import { onboardUser } from '@/mutations/onboard-user';
 import { useProfile } from '@/queries/use-profile';
 import { db } from '@/utilities/db';
 import { Redirect } from 'expo-router';
-import React, { useState, useTransition } from 'react';
+import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 export default function Onboarding() {
-  const [isTransitioning, startTransition] = useTransition();
-  const [rawName, setRawName] = useState('');
+  const [isTransitioning, startTransition] = React.useTransition();
+  const [rawName, setRawName] = React.useState('');
   const auth = db.useAuth();
   const profile = useProfile();
 

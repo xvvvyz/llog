@@ -1,16 +1,7 @@
 import { cn } from '@/utilities/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
 import { TextInput } from 'react-native';
-
-import {
-  ComponentPropsWithoutRef,
-  ComponentRef,
-  forwardRef,
-  startTransition,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
 
 const inputVariants = cva(
   'text-base native:leading-5 border border-border-secondary placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-none',
@@ -28,21 +19,23 @@ const inputVariants = cva(
   }
 );
 
-const Input = forwardRef<
-  ComponentRef<typeof TextInput>,
-  ComponentPropsWithoutRef<typeof TextInput> &
+const Input = React.forwardRef<
+  React.ComponentRef<typeof TextInput>,
+  React.ComponentPropsWithoutRef<typeof TextInput> &
     VariantProps<typeof inputVariants>
 >(({ className, size, value, onChangeText, defaultValue, ...props }, ref) => {
-  const [localValue, setLocalValue] = useState(value ?? defaultValue ?? '');
+  const [localValue, setLocalValue] = React.useState(
+    value ?? defaultValue ?? ''
+  );
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (value !== undefined) setLocalValue(value);
   }, [value]);
 
-  const handleChangeText = useCallback(
+  const handleChangeText = React.useCallback(
     (text: string) => {
       setLocalValue(text);
-      if (onChangeText) startTransition(() => onChangeText(text));
+      if (onChangeText) React.startTransition(() => onChangeText(text));
     },
     [onChangeText]
   );

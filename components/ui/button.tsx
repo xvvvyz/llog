@@ -2,7 +2,7 @@ import { TextContext } from '@/components/ui/text';
 import { useRippleColor } from '@/hooks/use-ripple-color';
 import { cn } from '@/utilities/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { type ComponentRef, forwardRef } from 'react';
+import * as React from 'react';
 import { Pressable, View } from 'react-native';
 
 const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
@@ -92,7 +92,10 @@ type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
     wrapperClassName?: string;
   };
 
-const Button = forwardRef<ComponentRef<typeof Pressable>, ButtonProps>(
+const Button = React.forwardRef<
+  React.ComponentRef<typeof Pressable>,
+  ButtonProps
+>(
   (
     { className, disabled, ripple, size, variant, wrapperClassName, ...props },
     ref

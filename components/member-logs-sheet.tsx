@@ -8,7 +8,7 @@ import { toggleLogMember } from '@/mutations/toggle-log-member';
 import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
 import { db } from '@/utilities/db';
-import { useCallback, useMemo } from 'react';
+import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 
 export const MemberLogsSheet = () => {
@@ -39,10 +39,10 @@ export const MemberLogsSheet = () => {
       : null
   );
 
-  const logs = useMemo(() => data?.logs ?? [], [data?.logs]);
+  const logs = React.useMemo(() => data?.logs ?? [], [data?.logs]);
   const profileId = data?.roles?.[0]?.user?.profile?.id;
 
-  const profileLogIds = useMemo(
+  const profileLogIds = React.useMemo(
     () =>
       new Set(
         logs
@@ -51,8 +51,9 @@ export const MemberLogsSheet = () => {
       ),
     [logs, profileId]
   );
+
   const { getSelected, setSelected } = useOptimisticSelection({
-    onChange: useCallback(
+    onChange: React.useCallback(
       (logId: string, selected: boolean) => {
         if (!roleId) return Promise.resolve();
 

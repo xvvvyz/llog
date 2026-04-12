@@ -20,7 +20,7 @@ import { cn } from '@/utilities/cn';
 import { useLocalSearchParams } from 'expo-router';
 import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
-import { ReactElement, useRef } from 'react';
+import * as React from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,7 +30,7 @@ export default function Index() {
   const hideOnScrollDown = useHideOnScrollDown();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ logId: string }>();
-  const renderCacheRef = useRef<ReactElement | null>(null);
+  const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const sheetManager = useSheetManager();
 
   const log = useLog({ id: params.logId });

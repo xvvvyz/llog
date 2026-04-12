@@ -2,7 +2,7 @@ import { auth, db } from '@/api/middleware/db';
 import { Role } from '@/types/role';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { removeMember } from './shared';
+import { removeMember } from './helpers';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

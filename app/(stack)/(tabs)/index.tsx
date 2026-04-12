@@ -22,25 +22,25 @@ import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import MiniSearch from 'minisearch';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
-import { ReactElement, useMemo, useRef, useState } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Index() {
-  const [rawQuery, setRawQuery] = useState('');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [rawQuery, setRawQuery] = React.useState('');
+  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
   const logTags = useLogTags();
   const { canManage } = useMyRole();
-  const renderCacheRef = useRef<ReactElement | null>(null);
+  const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const sheetManager = useSheetManager();
 
-  const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
+  const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs();
   const isEmpty = !logs.isLoading && logs.data.length === 0;
 
-  const miniSearch = useMemo(() => {
+  const miniSearch = React.useMemo(() => {
     const ms = new MiniSearch({
       fields: ['name', 'people'],
       storeFields: ['id'],
@@ -59,7 +59,7 @@ export default function Index() {
     return ms;
   }, [logs.data]);
 
-  const filteredLogs = useMemo(() => {
+  const filteredLogs = React.useMemo(() => {
     let result = logs.data;
 
     if (query) {
@@ -78,7 +78,7 @@ export default function Index() {
     return result;
   }, [query, selectedTagIds, logs.data, miniSearch]);
 
-  const hasLoadedRef = useRef(false);
+  const hasLoadedRef = React.useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
   if (sheetManager.someOpen()) return renderCacheRef.current;
 

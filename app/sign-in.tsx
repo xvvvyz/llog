@@ -7,14 +7,14 @@ import { Text } from '@/components/ui/text';
 import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
 import { Redirect, router } from 'expo-router';
-import { useState, useTransition } from 'react';
+import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 export default function SignIn() {
-  const [code, setCode] = useState('');
-  const [email, setEmail] = useState('');
-  const [isTransitioning, startTransition] = useTransition();
-  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [code, setCode] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [isTransitioning, startTransition] = React.useTransition();
+  const [step, setStep] = React.useState<'email' | 'code'>('email');
   const auth = db.useAuth();
   if (auth.user) return <Redirect href="/" />;
   if (auth.isLoading) return <Loading />;

@@ -13,7 +13,7 @@ import { useLog } from '@/queries/use-log';
 import { useProfile } from '@/queries/use-profile';
 import { useRecordDraft } from '@/queries/use-record-draft';
 import { db } from '@/utilities/db';
-import { useCallback } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 export const RecordCreateSheet = () => {
@@ -49,7 +49,7 @@ export const RecordCreateSheet = () => {
   const logColor = useLogColor({ id: recordLogId });
   const hasContent = !!record?.text?.trim() || !!record?.media?.length;
 
-  const handleUploadMedia = useCallback(
+  const handleUploadMedia = React.useCallback(
     async (
       asset: import('expo-image-picker').ImagePickerAsset,
       onProgress: (progress: number) => void,
@@ -67,7 +67,7 @@ export const RecordCreateSheet = () => {
     [record?.id]
   );
 
-  const handleDeleteMedia = useCallback(
+  const handleDeleteMedia = React.useCallback(
     async (mediaId: string) => {
       await deleteRecordMedia({ mediaId, recordId: record?.id });
     },

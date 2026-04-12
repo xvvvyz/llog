@@ -11,7 +11,7 @@ import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
 import { setBackgroundColorAsync } from 'expo-system-ui';
 import { cssInterop } from 'nativewind';
-import { Fragment, useEffect } from 'react';
+import * as React from 'react';
 import { LogBox, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
@@ -42,11 +42,11 @@ export default function Layout() {
   const colorScheme = useColorScheme();
   const userId = auth.user?.id;
 
-  useEffect(() => {
+  React.useEffect(() => {
     setBackgroundColorAsync(UI[colorScheme].background);
   }, [colorScheme]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false;
 
     if (!userId) {
@@ -66,7 +66,7 @@ export default function Layout() {
   }, [userId]);
 
   return (
-    <Fragment>
+    <React.Fragment>
       {Platform.OS === 'web' && (
         <Head>
           <title>llog</title>
@@ -99,6 +99,6 @@ export default function Layout() {
           </SheetManagerProvider>
         </GestureHandlerRootView>
       </ThemeProvider>
-    </Fragment>
+    </React.Fragment>
   );
 }

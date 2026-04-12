@@ -9,7 +9,7 @@ import { uploadRecordMedia } from '@/mutations/upload-record-media';
 import { useRecord } from '@/queries/use-record';
 import { formatTime } from '@/utilities/format-time';
 import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
-import { useCallback, useEffect, useMemo, useRef, useTransition } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 type AudioContext = { type: 'record' } | { type: 'comment'; recordId: string };
@@ -23,20 +23,20 @@ const parseAudioContext = (context?: string): AudioContext => {
 };
 
 export const RecordAudioSheet = () => {
-  const [isUploading, startUploadTransition] = useTransition();
+  const [isUploading, startUploadTransition] = React.useTransition();
   const sheetManager = useSheetManager();
   const recorder = useAudioRecorder();
 
   const draftId = sheetManager.getId('record-audio');
   const rawContext = sheetManager.getContext('record-audio');
 
-  const audioContext = useMemo(
+  const audioContext = React.useMemo(
     () => parseAudioContext(rawContext),
     [rawContext]
   );
 
   const isOpen = sheetManager.isOpen('record-audio');
-  const isClosingRef = useRef(false);
+  const isClosingRef = React.useRef(false);
 
   const record = useRecord({
     id: audioContext.type === 'comment' ? audioContext.recordId : draftId,
@@ -44,7 +44,7 @@ export const RecordAudioSheet = () => {
 
   const logColor = useLogColor({ id: record.log?.id });
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isOpen) {
       isClosingRef.current = false;
       return;
@@ -67,28 +67,24 @@ export const RecordAudioSheet = () => {
     recorder.record,
   ]);
 
-  const close = useCallback(() => {
+  const close = React.useCallback(() => {
     sheetManager.close('record-audio');
   }, [sheetManager]);
 
-  const handleCancel = useCallback(async () => {
+  const handleCancel = React.useCallback(async () => {
     isClosingRef.current = true;
-
-    if (recorder.isRecording) {
-      await recorder.stop();
-    }
-
+    if (recorder.isRecording) await recorder.stop();
     recorder.reset();
     close();
   }, [close, recorder]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen && recorder.hasPermission === false) {
       close();
     }
   }, [isOpen, recorder.hasPermission, close]);
 
-  const upload = useCallback(
+  const upload = React.useCallback(
     async (uri: string) => {
       if (!draftId) return;
       const duration = recorder.duration;
@@ -113,7 +109,7 @@ export const RecordAudioSheet = () => {
     [audioContext, draftId, recorder]
   );
 
-  const handleSave = useCallback(async () => {
+  const handleSave = React.useCallback(async () => {
     isClosingRef.current = true;
     let uri = recorder.uri;
 

@@ -1,5 +1,5 @@
 import { db } from '@/utilities/db';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 export const useTeams = () => {
   const auth = db.useAuth();
@@ -17,7 +17,7 @@ export const useTeams = () => {
       : null
   );
 
-  const teams = useMemo(() => {
+  const teams = React.useMemo(() => {
     const seen = new Set<string>();
     return (
       data?.roles

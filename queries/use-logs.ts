@@ -1,7 +1,7 @@
 import { useResolvedTeamIds } from '@/queries/use-resolved-team-ids';
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
-import { useRef } from 'react';
+import * as React from 'react';
 
 export const useLogs = ({
   query,
@@ -11,7 +11,7 @@ export const useLogs = ({
   teamIds?: string[];
 } = {}) => {
   const ui = useUi();
-  const prevDataRef = useRef<any[]>([]);
+  const prevDataRef = React.useRef<any[]>([]);
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(

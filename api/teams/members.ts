@@ -1,15 +1,11 @@
 import { auth, db } from '@/api/middleware/db';
 import { Role } from '@/types/role';
-import {
-  canChangeTeamMemberRole,
-  canRemoveTeamMember,
-  isManagedRole,
-} from '@/utilities/permissions';
+import * as p from '@/utilities/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
-import { removeMember } from './shared';
+import { removeMember } from './helpers';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -53,7 +49,7 @@ app.patch(
     }
 
     if (
-      !canChangeTeamMemberRole({
+      !p.canChangeTeamMemberRole({
         actorRole,
         isSelf: targetRole.userId === user.id,
         nextRole,
@@ -77,7 +73,7 @@ app.patch(
     if (profileId && targetRole.role !== nextRole) {
       const logIds = logs.map((log) => log.id);
 
-      if (isManagedRole(nextRole) && !isManagedRole(targetRole.role)) {
+      if (p.isManagedRole(nextRole) && !p.isManagedRole(targetRole.role)) {
         tx.push(
           ...logIds.map((logId) =>
             c.var.db.tx.logs[logId].link({ profiles: profileId })
@@ -85,7 +81,7 @@ app.patch(
         );
       }
 
-      if (!isManagedRole(nextRole) && isManagedRole(targetRole.role)) {
+      if (!p.isManagedRole(nextRole) && p.isManagedRole(targetRole.role)) {
         tx.push(
           ...logIds.map((logId) =>
             c.var.db.tx.logs[logId].unlink({ profiles: profileId })
@@ -128,7 +124,7 @@ app.delete('/:roleId', db(), auth(), async (c) => {
   }
 
   if (
-    !canRemoveTeamMember({
+    !p.canRemoveTeamMember({
       actorRole: callerRole,
       isSelf: targetRole.userId === user.id,
       targetRole: targetRole.role,

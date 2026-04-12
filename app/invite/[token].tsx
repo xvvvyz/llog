@@ -9,15 +9,12 @@ import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
 import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
-import {
-  PENDING_INVITE_AUTO_JOIN_KEY,
-  PENDING_INVITE_KEY,
-} from '@/utilities/invite-storage';
+import * as storage from '@/utilities/invite-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight } from 'phosphor-react-native/lib/module/icons/ArrowRight';
 import { WarningCircle } from 'phosphor-react-native/lib/module/icons/WarningCircle';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 interface Member {
@@ -38,24 +35,24 @@ interface LinkInfo {
 
 const renderLogNames = (names: string[]) =>
   names.map((name, i) => (
-    <Fragment key={`${name}-${i}`}>
+    <React.Fragment key={`${name}-${i}`}>
       {i > 0 ? (i === names.length - 1 ? ' and ' : ', ') : null}
       <Text className="font-medium text-foreground">{name}</Text>
-    </Fragment>
+    </React.Fragment>
   ));
 
 export default function InviteLink() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const auth = db.useAuth();
   const { teams, isLoading: teamsLoading } = useTeams();
-  const [linkInfo, setLinkInfo] = useState<LinkInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [linkInfo, setLinkInfo] = React.useState<LinkInfo | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isRedeeming, setIsRedeeming] = React.useState(false);
 
   const [shouldResumeAcceptedInvite, setShouldResumeAcceptedInvite] =
-    useState(false);
+    React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!token) return;
 
     fetch(`${process.env.EXPO_PUBLIC_API_URL}/teams/invite-links/${token}`)
@@ -65,7 +62,7 @@ export default function InviteLink() {
       .finally(() => setIsLoading(false));
   }, [token]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false;
 
     if (!token || !auth.user) {
@@ -73,18 +70,20 @@ export default function InviteLink() {
       return;
     }
 
-    AsyncStorage.getItem(PENDING_INVITE_AUTO_JOIN_KEY).then((pendingToken) => {
-      if (!cancelled) {
-        setShouldResumeAcceptedInvite(pendingToken === token);
+    AsyncStorage.getItem(storage.PENDING_INVITE_AUTO_JOIN_KEY).then(
+      (pendingToken) => {
+        if (!cancelled) {
+          setShouldResumeAcceptedInvite(pendingToken === token);
+        }
       }
-    });
+    );
 
     return () => {
       cancelled = true;
     };
   }, [auth.user, token]);
 
-  const handleJoin = useCallback(async () => {
+  const handleJoin = React.useCallback(async () => {
     if (!token) return;
     setIsRedeeming(true);
 
@@ -92,8 +91,8 @@ export default function InviteLink() {
       const { teamId } = await redeemInviteLink({ token });
 
       await AsyncStorage.multiRemove([
-        PENDING_INVITE_KEY,
-        PENDING_INVITE_AUTO_JOIN_KEY,
+        storage.PENDING_INVITE_KEY,
+        storage.PENDING_INVITE_AUTO_JOIN_KEY,
       ]);
 
       await switchTeam({ teamId });
@@ -108,12 +107,12 @@ export default function InviteLink() {
     }
   }, [token]);
 
-  const handleSignIn = useCallback(async () => {
+  const handleSignIn = React.useCallback(async () => {
     if (!token) return;
 
     await AsyncStorage.multiSet([
-      [PENDING_INVITE_KEY, token],
-      [PENDING_INVITE_AUTO_JOIN_KEY, token],
+      [storage.PENDING_INVITE_KEY, token],
+      [storage.PENDING_INVITE_AUTO_JOIN_KEY, token],
     ]);
 
     router.replace('/sign-in');
@@ -131,7 +130,7 @@ export default function InviteLink() {
     !!linkInfo?.isValid &&
     (isExistingTeamMember || shouldResumeAcceptedInvite);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (shouldAutoJoin) handleJoin();
   }, [shouldAutoJoin, handleJoin]);
 

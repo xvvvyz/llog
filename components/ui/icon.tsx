@@ -2,19 +2,19 @@ import { TextContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import { cssInterop } from 'nativewind';
 import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
-import React, { ComponentType, useContext, useMemo } from 'react';
+import * as React from 'react';
 
 interface IconProps extends PhosphorIconProps {
   className?: string;
-  icon: ComponentType<PhosphorIconProps>;
+  icon: React.ComponentType<PhosphorIconProps>;
 }
 
 const interopCache = new WeakMap<
-  ComponentType<PhosphorIconProps>,
-  ComponentType<PhosphorIconProps & { className?: string }>
+  React.ComponentType<PhosphorIconProps>,
+  React.ComponentType<PhosphorIconProps & { className?: string }>
 >();
 
-const getInteropIcon = (icon: ComponentType<PhosphorIconProps>) => {
+const getInteropIcon = (icon: React.ComponentType<PhosphorIconProps>) => {
   let wrapped = interopCache.get(icon);
 
   if (!wrapped) {
@@ -27,6 +27,7 @@ const getInteropIcon = (icon: ComponentType<PhosphorIconProps>) => {
         >,
       },
     });
+
     interopCache.set(icon, wrapped);
   }
 
@@ -34,8 +35,8 @@ const getInteropIcon = (icon: ComponentType<PhosphorIconProps>) => {
 };
 
 export const Icon = ({ icon, className, size = 20, ...props }: IconProps) => {
-  const textClass = useContext(TextContext);
-  const InteropIcon = useMemo(() => getInteropIcon(icon), [icon]);
+  const textClass = React.useContext(TextContext);
+  const InteropIcon = React.useMemo(() => getInteropIcon(icon), [icon]);
 
   return (
     <InteropIcon

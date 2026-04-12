@@ -1,6 +1,5 @@
 import { type Db } from '@/api/middleware/db';
 import { id } from '@instantdb/admin';
-import { nanoid } from 'nanoid';
 
 export const memberJoinedActivity = (
   db: Db,
@@ -48,5 +47,3 @@ export const removeMember = async (
       .link({ actor: profileId, team: teamId }),
   ]);
 };
-
-export const generateToken = () => nanoid(8);

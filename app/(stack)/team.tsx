@@ -30,12 +30,7 @@ import { UI } from '@/theme/ui';
 import { Role } from '@/types/role';
 import { db } from '@/utilities/db';
 import { getInviteUrl } from '@/utilities/invite-url';
-import {
-  canChangeTeamMemberRole,
-  canOpenTeamMemberMenu,
-  canRemoveTeamMember,
-  isMemberRole,
-} from '@/utilities/permissions';
+import * as p from '@/utilities/permissions';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { Check } from 'phosphor-react-native/lib/module/icons/Check';
 import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
@@ -47,14 +42,7 @@ import { SquaresFour } from 'phosphor-react-native/lib/module/icons/SquaresFour'
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
 import { UserMinus } from 'phosphor-react-native/lib/module/icons/UserMinus';
-import {
-  type ComponentRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import * as React from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -90,9 +78,11 @@ const TeamMemberMenuContent = ({
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const { onOpenChange } = Menu.useContext();
-  const [loadingRole, setLoadingRole] = useState<AssignableRole | null>(null);
+  const [loadingRole, setLoadingRole] = React.useState<AssignableRole | null>(
+    null
+  );
 
-  const handleRolePress = useCallback(
+  const handleRolePress = React.useCallback(
     async (nextRole: AssignableRole) => {
       if (loadingRole === nextRole) return;
 
@@ -191,14 +181,14 @@ const TeamMemberMenuContent = ({
 };
 
 export default function Team() {
-  const [copiedRole, setCopiedRole] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [copiedRole, setCopiedRole] = React.useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
 
-  const [pendingMemberLogsRoleId, setPendingMemberLogsRoleId] = useState<
+  const [pendingMemberLogsRoleId, setPendingMemberLogsRoleId] = React.useState<
     string | null
   >(null);
 
-  const nameInputRef = useRef<ComponentRef<typeof Input>>(null);
+  const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
@@ -214,12 +204,12 @@ export default function Team() {
 
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
 
-  const activeTeamLogIds = useMemo(
+  const activeTeamLogIds = React.useMemo(
     () => new Set(logs.data.map((log) => log.id)),
     [logs.data]
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!pendingMemberLogsRoleId) return;
     const member = members.find((m) => m.id === pendingMemberLogsRoleId);
 
@@ -234,7 +224,7 @@ export default function Team() {
     setPendingMemberLogsRoleId(null);
   }, [activeTeamLogIds, members, pendingMemberLogsRoleId, sheetManager]);
 
-  const handleOpenMemberLogs = useCallback(
+  const handleOpenMemberLogs = React.useCallback(
     (memberId: string) => {
       setPendingMemberLogsRoleId(null);
       sheetManager.open('member-logs', memberId);
@@ -242,11 +232,14 @@ export default function Team() {
     [sheetManager]
   );
 
-  const handleOpenMemberLogsAfterDemotion = useCallback((memberId: string) => {
-    setPendingMemberLogsRoleId(memberId);
-  }, []);
+  const handleOpenMemberLogsAfterDemotion = React.useCallback(
+    (memberId: string) => {
+      setPendingMemberLogsRoleId(memberId);
+    },
+    []
+  );
 
-  const handleUploadTeamImage = useCallback(async () => {
+  const handleUploadTeamImage = React.useCallback(async () => {
     if (!activeTeamId) return;
 
     const picker = await launchImageLibraryAsync({
@@ -259,7 +252,7 @@ export default function Team() {
     await uploadTeamImage(picker.assets[0], activeTeamId);
   }, [activeTeamId]);
 
-  const getOrCreateAdminLink = useCallback(async () => {
+  const getOrCreateAdminLink = React.useCallback(async () => {
     const existing = inviteLinks.find((l) => l.role === Role.Admin);
     if (existing) return existing.token;
     if (!activeTeamId) return null;
@@ -272,7 +265,7 @@ export default function Team() {
     return token;
   }, [inviteLinks, activeTeamId]);
 
-  const handleCopyLink = useCallback(
+  const handleCopyLink = React.useCallback(
     async (role: string) => {
       if (role === Role.Member) {
         sheetManager.open('invite-logs', 'copy');
@@ -296,7 +289,7 @@ export default function Team() {
     [getOrCreateAdminLink, sheetManager, copy]
   );
 
-  const handleShowQr = useCallback(
+  const handleShowQr = React.useCallback(
     async (role: string) => {
       if (role === Role.Member) {
         sheetManager.open('invite-logs', 'qr');
@@ -315,7 +308,7 @@ export default function Team() {
     [getOrCreateAdminLink, sheetManager]
   );
 
-  const handleDelete = useCallback(
+  const handleDelete = React.useCallback(
     (role: string) => {
       sheetManager.open('invite-delete', role);
     },
@@ -469,29 +462,29 @@ export default function Team() {
                 const isLastOwner =
                   member.role === Role.Owner && ownerCount <= 1;
 
-                const canShowMemberMenu = canOpenTeamMemberMenu({
+                const canShowMemberMenu = p.canOpenTeamMemberMenu({
                   actorRole: myRole.role,
                   isSelf,
                   targetRole: member.role,
                 });
 
-                const canChangeToAdmin = canChangeTeamMemberRole({
+                const canChangeToAdmin = p.canChangeTeamMemberRole({
                   actorRole: myRole.role,
                   isSelf,
                   nextRole: Role.Admin,
                   targetRole: member.role,
                 });
 
-                const canChangeToMember = canChangeTeamMemberRole({
+                const canChangeToMember = p.canChangeTeamMemberRole({
                   actorRole: myRole.role,
                   isSelf,
                   nextRole: Role.Member,
                   targetRole: member.role,
                 });
 
-                const canViewLogs = isMemberRole(member.role);
+                const canViewLogs = p.isMemberRole(member.role);
 
-                const canRemoveMember = canRemoveTeamMember({
+                const canRemoveMember = p.canRemoveTeamMember({
                   actorRole: myRole.role,
                   isSelf,
                   targetRole: member.role,

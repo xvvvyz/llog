@@ -1,13 +1,11 @@
-import { createAdminDb, type Db } from '@/api/middleware/db';
+import { type Db } from '@/api/middleware/db';
 import { fileLike } from '@/types/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
-import type { Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
-type AppContext = Context<{ Bindings: CloudflareEnv }>;
 type MediaKind = 'image' | 'audio' | 'video';
 
 export const MAX_BYTES_BY_KIND: Record<MediaKind, number> = {
@@ -33,63 +31,6 @@ const getMediaKind = (file: File) => {
   return null;
 };
 
-const getAuthToken = (c: AppContext) =>
-  c.req.query('token') ?? c.req.header('Authorization')?.split(' ')[1] ?? '';
-
-export const getFileScope = (key: string) => {
-  if (key.startsWith('profiles/') || key.startsWith('teams/')) {
-    return 'public';
-  }
-
-  if (key.startsWith('records/') || key.startsWith('comments/')) {
-    return 'private';
-  }
-
-  return 'unknown';
-};
-
-const getMediaByKey = async (dbClient: Db, key: string) => {
-  const uriResult = await dbClient.query({
-    media: {
-      $: { fields: ['id'] as ['id'], where: { uri: key } },
-    },
-  });
-
-  if (uriResult.media?.[0]?.id) {
-    return uriResult.media[0];
-  }
-
-  const previewResult = await dbClient.query({
-    media: {
-      $: { fields: ['id'] as ['id'], where: { previewUri: key } },
-    },
-  });
-
-  return previewResult.media?.[0];
-};
-
-export const requirePrivateFileAccess = async (c: AppContext, key: string) => {
-  const token = getAuthToken(c);
-
-  if (!token) {
-    throw new HTTPException(401, { message: 'Unauthorized' });
-  }
-
-  const adminDb = createAdminDb(c.env);
-
-  try {
-    await adminDb.auth.verifyToken(token);
-  } catch {
-    throw new HTTPException(401, { message: 'Unauthorized' });
-  }
-
-  const media = await getMediaByKey(adminDb.asUser({ token }), key);
-
-  if (!media?.id) {
-    throw new HTTPException(404, { message: 'File not found' });
-  }
-};
-
 export const requireUploadedFile = (file: z.infer<typeof fileLike>) => {
   if (!(file instanceof File)) {
     throw new HTTPException(400, { message: 'Invalid upload' });
@@ -111,23 +52,6 @@ export const validateUpload = (file: File, allowed: MediaKind[]) => {
 
   return kind;
 };
-
-export const queryProfileWithImage = (userId: string) => ({
-  profiles: {
-    $: { fields: ['id'] as ['id'], where: { user: userId } },
-    image: {},
-  },
-});
-
-export const queryTeamWithImageAndRole = (teamId: string, userId: string) => ({
-  roles: {
-    $: { where: { team: teamId, userId } },
-  },
-  teams: {
-    $: { fields: ['id'] as ['id'], where: { id: teamId } },
-    image: {},
-  },
-});
 
 export const uploadMedia = async ({
   db: dbClient,

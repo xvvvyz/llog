@@ -13,11 +13,11 @@ import { useCommentDraft } from '@/queries/use-comment-draft';
 import { useProfile } from '@/queries/use-profile';
 import { useRecord } from '@/queries/use-record';
 import { db } from '@/utilities/db';
-import { useCallback, useEffect, useState } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 export const CommentCreateSheet = () => {
-  const [text, setText] = useState('');
+  const [text, setText] = React.useState('');
   const sheetManager = useSheetManager();
 
   const editRecordId = sheetManager.getContext('comment-create');
@@ -50,13 +50,13 @@ export const CommentCreateSheet = () => {
   const isOpen = sheetManager.isOpen('comment-create');
   const hasContent = !!text.trim() || !!(comment?.media ?? []).length;
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isEdit && editComment?.text && isOpen) {
       setText(editComment.text);
     }
   }, [isEdit, editComment?.text, isOpen]);
 
-  const handleUploadMedia = useCallback(
+  const handleUploadMedia = React.useCallback(
     async (
       asset: import('expo-image-picker').ImagePickerAsset,
       onProgress: (progress: number) => void,
@@ -75,7 +75,7 @@ export const CommentCreateSheet = () => {
     [commentId, recordId]
   );
 
-  const handleDeleteMedia = useCallback(
+  const handleDeleteMedia = React.useCallback(
     async (mediaId: string) => {
       await deleteCommentMedia({ commentId, mediaId, recordId });
     },
@@ -93,7 +93,7 @@ export const CommentCreateSheet = () => {
     recordId,
   });
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = React.useCallback(() => {
     if (!hasContent || !commentId) return;
 
     if (isEdit) {

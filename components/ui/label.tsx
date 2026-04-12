@@ -1,8 +1,11 @@
 import { cn } from '@/utilities/cn';
 import * as LabelPrimitive from '@rn-primitives/label';
-import { forwardRef } from 'react';
+import * as React from 'react';
 
-const Label = forwardRef<LabelPrimitive.TextRef, LabelPrimitive.TextProps>(
+const Label = React.forwardRef<
+  LabelPrimitive.TextRef,
+  LabelPrimitive.TextProps
+>(
   (
     { className, onPress, onLongPress, onPressIn, onPressOut, ...props },
     ref

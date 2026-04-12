@@ -3,10 +3,10 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import * as RadioGroupPrimitive from '@rn-primitives/radio-group';
 import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { createContext, useContext } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
-const ValueContext = createContext<string | undefined>(undefined);
+const ValueContext = React.createContext<string | undefined>(undefined);
 
 export const Root = ({
   children,
@@ -30,7 +30,7 @@ export const Item = ({
   label: string;
   value: string;
 }) => {
-  const selected = useContext(ValueContext) === value;
+  const selected = React.useContext(ValueContext) === value;
 
   return (
     <RadioGroupPrimitive.Item

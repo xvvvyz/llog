@@ -1,5 +1,5 @@
 import { db } from '@/utilities/db';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 export const useRecords = ({ logId }: { logId?: string }) => {
   const { data, isLoading } = db.useQuery(
@@ -23,7 +23,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
 
   const records = data?.records ?? [];
 
-  const sorted = useMemo(
+  const sorted = React.useMemo(
     () =>
       records.toSorted((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;

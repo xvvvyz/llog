@@ -2,7 +2,7 @@ import { Loading } from '@/components/ui/loading';
 import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { Portal } from '@rn-primitives/portal';
-import { ReactNode } from 'react';
+import * as React from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -29,7 +29,7 @@ export const Sheet = ({
   open,
   portalName,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
   detached?: boolean;
   loading?: boolean;

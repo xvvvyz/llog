@@ -5,17 +5,17 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
 import { Role } from '@/types/role';
 import { db } from '@/utilities/db';
-import { useCallback, useEffect, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export const InviteDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const role = sheetManager.getId('invite-delete');
   const { inviteLinks } = useTeamInviteLinks();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const open = sheetManager.isOpen('invite-delete');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) setIsLoading(false);
   }, [open]);
 
@@ -24,7 +24,7 @@ export const InviteDeleteSheet = () => {
       ? 'Invalidate invite link?'
       : 'Invalidate invite links?';
 
-  const handleInvalidate = useCallback(async () => {
+  const handleInvalidate = React.useCallback(async () => {
     setIsLoading(true);
 
     try {

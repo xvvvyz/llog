@@ -14,7 +14,7 @@ import { CaretDown } from 'phosphor-react-native/lib/module/icons/CaretDown';
 import { Check } from 'phosphor-react-native/lib/module/icons/Check';
 import { GearSix } from 'phosphor-react-native/lib/module/icons/GearSix';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
-import { useRef } from 'react';
+import * as React from 'react';
 import { View } from 'react-native';
 
 export const TeamSwitcher = ({
@@ -24,9 +24,9 @@ export const TeamSwitcher = ({
   const ui = useUi();
   const { teams } = useTeams();
   const activeTeam = teams.find((t) => t.id === ui.activeTeamId);
-  const lastAvatarRef = useRef(activeTeam?.image?.uri);
-  const lastIdRef = useRef(activeTeam?.id);
-  const lastNameRef = useRef(activeTeam?.name);
+  const lastAvatarRef = React.useRef(activeTeam?.image?.uri);
+  const lastIdRef = React.useRef(activeTeam?.id);
+  const lastNameRef = React.useRef(activeTeam?.name);
   if (activeTeam?.image?.uri) lastAvatarRef.current = activeTeam.image.uri;
   if (activeTeam?.id) lastIdRef.current = activeTeam.id;
   if (activeTeam?.name) lastNameRef.current = activeTeam.name;

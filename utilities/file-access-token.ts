@@ -1,5 +1,5 @@
 import { db } from '@/utilities/db';
-import { useSyncExternalStore } from 'react';
+import * as React from 'react';
 
 let fileAccessToken: string | null = null;
 const listeners = new Set<() => void>();
@@ -21,7 +21,7 @@ const subscribe = (listener: () => void) => {
 };
 
 export const useFileAccessToken = () =>
-  useSyncExternalStore(subscribe, getFileAccessToken, getFileAccessToken);
+  React.useSyncExternalStore(subscribe, getFileAccessToken, getFileAccessToken);
 
 export const isAbsoluteUri = (uri: string) =>
   uri.startsWith('https://') || uri.startsWith('data:image/');

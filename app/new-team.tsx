@@ -8,12 +8,12 @@ import { createTeam } from '@/mutations/create-team';
 import { useTeams } from '@/queries/use-teams';
 import { db } from '@/utilities/db';
 import { Redirect } from 'expo-router';
-import { useState, useTransition } from 'react';
+import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 export default function NewTeam() {
-  const [isTransitioning, startTransition] = useTransition();
-  const [rawName, setRawName] = useState('');
+  const [isTransitioning, startTransition] = React.useTransition();
+  const [rawName, setRawName] = React.useState('');
   const auth = db.useAuth();
   const { teams, isLoading } = useTeams();
 

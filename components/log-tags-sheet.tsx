@@ -15,19 +15,22 @@ import { useLogTags } from '@/queries/use-log-tags';
 import { cn } from '@/utilities/cn';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { Tag } from 'phosphor-react-native/lib/module/icons/Tag';
-import { ComponentRef, useCallback, useMemo, useRef, useState } from 'react';
+import * as React from 'react';
 import { ScrollView, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable from 'react-native-sortables';
 
 export const LogTagsSheet = () => {
-  const [rawQuery, setRawQuery] = useState('');
+  const [rawQuery, setRawQuery] = React.useState('');
   const isEmpty = useHasNoLogTags();
-  const searchInputRef = useRef<ComponentRef<typeof SearchInput>>(null);
+
+  const searchInputRef =
+    React.useRef<React.ComponentRef<typeof SearchInput>>(null);
+
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const sheetManager = useSheetManager();
 
-  const query = useMemo(() => rawQuery?.trim(), [rawQuery]);
+  const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
 
   const log = useLog({ id: sheetManager.getId('log-tags') });
   const logColor = useLogColor({ id: log.id });
@@ -35,7 +38,7 @@ export const LogTagsSheet = () => {
 
   const isLoading = log.isLoading || (!query && logTags.isLoading);
 
-  const handleCreateTag = useCallback(() => {
+  const handleCreateTag = React.useCallback(() => {
     if (!query) return;
 
     if (logTags.queryExistingTagId) {

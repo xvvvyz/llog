@@ -1,5 +1,5 @@
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
-import { useEffect, useImperativeHandle, useRef, useState } from 'react';
+import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 export interface VideoPlayerHandle {
@@ -29,15 +29,16 @@ export const VideoPlayer = ({
   uri: string;
 }) => {
   const src = useFileUriToSrc(uri);
-  const ref = useRef<HTMLVideoElement>(null);
+  const ref = React.useRef<HTMLVideoElement>(null);
 
-  const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null
-  );
+  const [size, setSize] = React.useState<{
+    width: number;
+    height: number;
+  } | null>(null);
 
-  const [isBuffering, setIsBuffering] = useState(true);
+  const [isBuffering, setIsBuffering] = React.useState(true);
 
-  useImperativeHandle(handleRef, () => ({
+  React.useImperativeHandle(handleRef, () => ({
     play: () => {
       ref.current?.play().catch(() => {});
     },
@@ -61,7 +62,7 @@ export const VideoPlayer = ({
     },
   }));
 
-  useEffect(() => {
+  React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
 
@@ -83,7 +84,7 @@ export const VideoPlayer = ({
     return () => video.removeEventListener('loadedmetadata', onMetadata);
   }, [maxWidth, maxHeight]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
 
@@ -109,7 +110,7 @@ export const VideoPlayer = ({
     };
   }, [onPlayingChange]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
 
@@ -122,13 +123,13 @@ export const VideoPlayer = ({
     return () => video.removeEventListener('ended', onEnded);
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (autoPlay && size && ref.current) {
       ref.current.play().catch(() => {});
     }
   }, [autoPlay, size]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const video = ref.current;
     if (!video || !onFullscreenReady) return;
 

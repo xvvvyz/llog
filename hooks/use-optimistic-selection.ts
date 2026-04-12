@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 
 type PendingSelection = {
   requestId: number;
@@ -14,17 +14,17 @@ export const useOptimisticSelection = ({
   scopeKey?: string | null;
   selectedIds: ReadonlySet<string>;
 }) => {
-  const nextRequestIdRef = useRef(0);
+  const nextRequestIdRef = React.useRef(0);
 
-  const [pendingSelections, setPendingSelections] = useState<
+  const [pendingSelections, setPendingSelections] = React.useState<
     Record<string, PendingSelection>
   >({});
 
-  useEffect(() => {
+  React.useEffect(() => {
     setPendingSelections({});
   }, [scopeKey]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setPendingSelections((current) => {
       let didChange = false;
       const next = { ...current };
@@ -40,12 +40,12 @@ export const useOptimisticSelection = ({
     });
   }, [selectedIds]);
 
-  const getSelected = useCallback(
+  const getSelected = React.useCallback(
     (id: string) => pendingSelections[id]?.selected ?? selectedIds.has(id),
     [pendingSelections, selectedIds]
   );
 
-  const setSelected = useCallback(
+  const setSelected = React.useCallback(
     async (id: string, selected: boolean) => {
       const requestId = ++nextRequestIdRef.current;
 

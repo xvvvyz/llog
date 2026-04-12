@@ -8,7 +8,7 @@ import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { cn } from '@/utilities/cn';
 import { SmileySticker } from 'phosphor-react-native/lib/module/icons/SmileySticker';
-import { useMemo } from 'react';
+import * as React from 'react';
 
 export const EmojiPicker = ({
   color,
@@ -27,7 +27,7 @@ export const EmojiPicker = ({
 }) => {
   const profile = useProfile();
 
-  const userReactions = useMemo(() => {
+  const userReactions = React.useMemo(() => {
     const map = new Map<string, string>();
 
     for (const reaction of reactions ?? []) {
