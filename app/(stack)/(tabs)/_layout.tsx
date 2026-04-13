@@ -142,32 +142,8 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
-        name="search"
-        options={{
-          tabBarButton: ({ children, onPress, ...props }) => (
-            <TabButton
-              aria-selected={props['aria-selected']}
-              href="/search"
-              onPress={onPress}
-            >
-              {children}
-            </TabButton>
-          ),
-          tabBarIcon: ({ focused }) => (
-            <Icon
-              className={cn('text-placeholder', focused && 'text-foreground')}
-              icon={MagnifyingGlass}
-              size={24}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="activity"
         options={{
-          tabBarItemStyle: breakpoints.md
-            ? { marginTop: 'auto', marginBottom: 8 }
-            : undefined,
           tabBarButton: ({ children, onPress, ...props }) => (
             <TabButton
               aria-selected={props['aria-selected']}
@@ -205,8 +181,32 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
+        name="search"
+        options={{
+          tabBarButton: ({ children, onPress, ...props }) => (
+            <TabButton
+              aria-selected={props['aria-selected']}
+              href="/search"
+              onPress={onPress}
+            >
+              {children}
+            </TabButton>
+          ),
+          tabBarIcon: ({ focused }) => (
+            <Icon
+              className={cn('text-placeholder', focused && 'text-foreground')}
+              icon={MagnifyingGlass}
+              size={24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="account"
         options={{
+          tabBarItemStyle: breakpoints.md
+            ? { marginTop: 'auto', marginBottom: 8 }
+            : undefined,
           tabBarButton: ({ children, onPress, ...props }) => (
             <TabButton
               aria-selected={props['aria-selected']}

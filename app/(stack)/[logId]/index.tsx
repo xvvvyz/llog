@@ -36,6 +36,7 @@ export default function Index() {
   const log = useLog({ id: params.logId });
   const logColor = useLogColor({ id: params.logId });
   const records = useRecords({ logId: params.logId });
+  const hasRecords = records.data.length > 0;
 
   if (sheetManager.someOpen()) {
     return renderCacheRef.current;
@@ -47,16 +48,18 @@ export default function Index() {
         left={<BackButton />}
         right={
           <View className="flex-row items-center">
-            <Button
-              className="hidden md:flex"
-              onPress={() => sheetManager.open('record-create', params.logId)}
-              size="xs"
-              style={{ backgroundColor: logColor.default }}
-              variant="secondary"
-            >
-              <Icon className="-ml-0.5 text-white" icon={Plus} />
-              <Text className="text-white">Record</Text>
-            </Button>
+            {hasRecords && (
+              <Button
+                className="hidden md:flex"
+                onPress={() => sheetManager.open('record-create', params.logId)}
+                size="xs"
+                style={{ backgroundColor: logColor.default }}
+                variant="secondary"
+              >
+                <Icon className="-ml-0.5 text-white" icon={Plus} />
+                <Text className="text-white">Record</Text>
+              </Button>
+            )}
             <LogDropdownMenu
               contentClassName="mt-2"
               contentStyle={{
@@ -80,7 +83,7 @@ export default function Index() {
       />
       {records.isLoading ? (
         <Loading />
-      ) : !records.data.length ? (
+      ) : !hasRecords ? (
         <LogEmptyState logId={params.logId} />
       ) : (
         <List
@@ -106,7 +109,7 @@ export default function Index() {
           wrapperClassName="flex-1"
         />
       )}
-      {hideOnScrollDown.isVisible && records.data.length > 0 && (
+      {hideOnScrollDown.isVisible && hasRecords && (
         <Animated.View
           className="absolute bottom-8 right-8 md:hidden"
           entering={animation(FadeInUp)}

@@ -153,7 +153,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
         style={{ backgroundColor: logColor.default }}
       >
         <Icon className="-ml-0.5 text-white" icon={Plus} />
-        <Text className="text-white">Record something</Text>
+        <Text className="text-white">Record</Text>
       </Button>
     </View>
   );
