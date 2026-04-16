@@ -14,10 +14,12 @@ assets/icon.png
 assets/favicon.png
 
 public/apple-startup/
+public/index.html
 public/apple-touch-icon*.png
 public/favicon-32.png
 public/favicon.ico
 public/favicon.svg
+public/badge-72.png
 public/icon-*.png
 
 expo-env.d.ts

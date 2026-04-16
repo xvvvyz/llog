@@ -17,13 +17,13 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'llog', {
-      badge: '/icon-192.png',
-      body: payload.body || '',
+    self.registration.showNotification(payload.title ?? 'llog', {
+      badge: '/badge-72.png',
+      body: payload.body ?? '',
       data: {
         recordId: payload.recordId,
         type: payload.type,
-        url: payload.url || '/',
+        url: payload.url ?? '/',
       },
       icon: '/icon-192.png',
       tag: payload.tag,
@@ -34,7 +34,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const url = new URL(event.notification.data?.url || '/', self.location.origin)
+  const url = new URL(event.notification.data?.url ?? '/', self.location.origin)
     .href;
 
   event.waitUntil(

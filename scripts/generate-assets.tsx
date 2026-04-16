@@ -139,6 +139,24 @@ for (const output of iconOutputs) {
   await Bun.write(output.path, await renderPng(output));
 }
 
+// Badge — monochrome (white squares, transparent background) for use in notification status bar
+await Bun.write(
+  join(process.cwd(), 'public', 'badge-72.png'),
+  new Resvg(
+    renderToStaticMarkup(
+      React.createElement(LogoSvg, {
+        backgroundColor: 'transparent',
+        colors: ['white', 'white', 'white', 'white'],
+        paddingRatio: 0,
+        radiusRatio: ICON_RADIUS,
+        size: 72,
+      })
+    )
+  )
+    .render()
+    .asPng()
+);
+
 // SVG favicon — clip rounds outer corners to match inner squares; used by Chrome/Firefox/Edge.
 // Generated at 512 for a high-resolution coordinate space; no explicit width/height so it scales freely.
 const faviconSvg = renderSvg({

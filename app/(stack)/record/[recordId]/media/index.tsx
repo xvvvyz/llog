@@ -2,11 +2,11 @@ import { BackButton } from '@/components/ui/back-button';
 import { Carousel } from '@/components/ui/carousel';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useCommentMedia, useRecordMedia } from '@/queries/use-record-media';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Index() {
   const insets = useSafeAreaInsets();

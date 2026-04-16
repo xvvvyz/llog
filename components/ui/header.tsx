@@ -1,8 +1,8 @@
 import { Text } from '@/components/ui/text';
 import { useHeaderHeight } from '@/hooks/use-header-height';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { cn } from '@/utilities/cn';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const Header = ({
   className,

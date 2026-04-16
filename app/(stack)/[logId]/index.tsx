@@ -12,6 +12,7 @@ import { Text } from '@/components/ui/text';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useHideOnScrollDown } from '@/hooks/use-hide-on-scroll-down';
 import { useLogColor } from '@/hooks/use-log-color';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useLog } from '@/queries/use-log';
 import { useRecords } from '@/queries/use-records';
@@ -23,7 +24,6 @@ import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Index() {
   const headerHeight = useHeaderHeight();

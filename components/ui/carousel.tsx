@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
 import * as video from '@/components/ui/video-player';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useWindowDimensions } from '@/hooks/use-window-dimensions';
 import { useUi } from '@/queries/use-ui';
 import { Media } from '@/types/media';
@@ -23,7 +24,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gallery, type GalleryRefType } from 'react-native-zoom-toolkit';
 
 export const Carousel = ({

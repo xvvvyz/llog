@@ -1,4 +1,5 @@
 import { Loading } from '@/components/ui/loading';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { Portal } from '@rn-primitives/portal';
@@ -10,8 +11,6 @@ import {
   Pressable,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import Animated, {
   FadeIn,
   FadeInDown,

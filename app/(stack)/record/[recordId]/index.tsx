@@ -9,6 +9,7 @@ import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { useHideOnScrollDown } from '@/hooks/use-hide-on-scroll-down';
 import { useLogColor } from '@/hooks/use-log-color';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useRecord } from '@/queries/use-record';
 import { animation } from '@/utilities/animation';
@@ -17,8 +18,8 @@ import { textToTitle } from '@/utilities/text-to-title';
 import { useLocalSearchParams } from 'expo-router';
 import { ArrowBendUpLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendUpLeft';
 import * as React from 'react';
+import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Index() {
   const hideOnScrollDown = useHideOnScrollDown();
@@ -62,29 +63,30 @@ export default function Index() {
       {record.isLoading ? (
         <Loading />
       ) : (
-        <List
-          contentContainerClassName="mx-auto w-full max-w-lg border border-border-secondary rounded-4xl my-4 bg-card md:my-8"
-          contentContainerStyle={{ paddingBottom: insets.bottom }}
-          data={data}
-          estimatedItemSize={100}
-          keyExtractor={(item) => item.id ?? ''}
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="always"
-          maintainScrollAtEnd
-          onScroll={hideOnScrollDown.onScroll}
-          maintainVisibleContentPosition
-          renderItem={({ index, item }) => (
-            <RecordOrComment
-              className={cn(index === 0 && 'border-t-0')}
-              commentId={index > 0 ? item.id : undefined}
-              logId={record.log?.id}
-              record={item}
-              recordId={params.recordId}
-              variant="compact"
-            />
-          )}
-          wrapperClassName="flex-1"
-        />
+        <View className="flex-1" style={{ paddingBottom: insets.bottom }}>
+          <List
+            contentContainerClassName="mx-auto w-full max-w-lg border border-border-secondary rounded-4xl my-4 bg-card md:my-8"
+            data={data}
+            estimatedItemSize={100}
+            keyExtractor={(item) => item.id ?? ''}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="always"
+            maintainScrollAtEnd
+            onScroll={hideOnScrollDown.onScroll}
+            maintainVisibleContentPosition
+            renderItem={({ index, item }) => (
+              <RecordOrComment
+                className={cn(index === 0 && 'border-t-0')}
+                commentId={index > 0 ? item.id : undefined}
+                logId={record.log?.id}
+                record={item}
+                recordId={params.recordId}
+                variant="compact"
+              />
+            )}
+            wrapperClassName="flex-1"
+          />
+        </View>
       )}
       {hideOnScrollDown.isVisible && (
         <Animated.View

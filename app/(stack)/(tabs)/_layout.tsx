@@ -5,6 +5,7 @@ import { TabButton } from '@/components/ui/tab-button';
 import { Text } from '@/components/ui/text';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useActivities } from '@/queries/use-activities';
 import { useProfile } from '@/queries/use-profile';
 import { useTeams } from '@/queries/use-teams';
@@ -13,7 +14,6 @@ import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { PENDING_INVITE_KEY } from '@/utilities/invite-storage';
-import { isPwa } from '@/utilities/pwa';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, Tabs } from 'expo-router';
 import { Bell } from 'phosphor-react-native/lib/module/icons/Bell';
@@ -21,7 +21,6 @@ import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/Magnifyi
 import { SquaresFour } from 'phosphor-react-native/lib/module/icons/SquaresFour';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const NEEDS_RECORD = new Set([
   'record_published',
@@ -111,10 +110,7 @@ export default function Layout() {
           elevation: 0,
           height: breakpoints.md
             ? undefined
-            : Platform.select({
-                default: 50 + insets.bottom,
-                web: isPwa() ? 40 : 56,
-              }),
+            : Platform.select({ default: 50, web: 56 })! + insets.bottom,
           marginTop: 0,
           minWidth: 0,
           paddingBottom: breakpoints.md ? 8 : 0,
