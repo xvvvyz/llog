@@ -10,13 +10,13 @@ import { publishComment } from '@/mutations/publish-comment';
 import { updateComment } from '@/mutations/update-comment';
 import { uploadCommentMedia } from '@/mutations/upload-comment-media';
 import { useCommentDraft } from '@/queries/use-comment-draft';
-import { useProfile } from '@/queries/use-profile';
 import { useRecord } from '@/queries/use-record';
 import { db } from '@/utilities/db';
 import * as React from 'react';
 import { View } from 'react-native';
 
 export const CommentCreateSheet = () => {
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [text, setText] = React.useState('');
   const sheetManager = useSheetManager();
 
@@ -27,7 +27,6 @@ export const CommentCreateSheet = () => {
   const recordId = isEdit ? editRecordId : sheetId;
   const editCommentId = isEdit ? sheetId : undefined;
 
-  const profile = useProfile();
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
   const draft = useCommentDraft({ recordId: isEdit ? undefined : recordId });
@@ -93,35 +92,28 @@ export const CommentCreateSheet = () => {
     recordId,
   });
 
-  const handleSubmit = React.useCallback(() => {
+  const handleSubmit = React.useCallback(async () => {
     if (!hasContent || !commentId) return;
 
-    if (isEdit) {
-      updateComment({ id: commentId, text: text.trim() });
-    } else {
-      publishComment({
-        id: commentId,
-        text: text.trim(),
-        logId: record.log?.id,
-        profileId: profile.id,
-        recordId,
-        teamId: record.teamId,
-      });
-    }
+    setIsSubmitting(true);
 
-    sheetManager.close('comment-create');
-    setText('');
-  }, [
-    commentId,
-    hasContent,
-    isEdit,
-    profile.id,
-    record.log?.id,
-    record.teamId,
-    recordId,
-    sheetManager,
-    text,
-  ]);
+    try {
+      if (isEdit) {
+        await updateComment({ id: commentId, text: text.trim() });
+      } else {
+        await publishComment({
+          id: commentId,
+          text: text.trim(),
+          recordId,
+        });
+      }
+
+      sheetManager.close('comment-create');
+      setText('');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [commentId, hasContent, isEdit, recordId, sheetManager, text]);
 
   return (
     <Sheet
@@ -150,13 +142,15 @@ export const CommentCreateSheet = () => {
         <View className="flex-row justify-end gap-3">
           {toolbar}
           <Button
-            disabled={isBusy || !hasContent}
+            disabled={isBusy || isSubmitting || !hasContent}
             onPress={handleSubmit}
             size="xs"
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"
           >
-            <Text className="text-white">{isEdit ? 'Done' : 'Reply'}</Text>
+            <Text className="text-white">
+              {isSubmitting ? 'Saving…' : isEdit ? 'Done' : 'Reply'}
+            </Text>
           </Button>
         </View>
       </View>

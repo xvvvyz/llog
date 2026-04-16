@@ -1,6 +1,6 @@
 import { db } from '@/api/middleware/db';
 import { deleteActivities } from '@/utilities/delete-activities';
-import { canManageTeam } from '@/utilities/permissions';
+import * as p from '@/utilities/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
@@ -41,7 +41,7 @@ app.delete('/', db({ asUser: true }), async (c) => {
 
   const callerRole = log.team?.roles?.[0]?.role;
 
-  if (!canManageTeam(callerRole)) {
+  if (!p.canManageTeam(callerRole)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 

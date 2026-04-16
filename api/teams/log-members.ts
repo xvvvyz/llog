@@ -1,5 +1,5 @@
 import { auth, db } from '@/api/middleware/db';
-import { canManageLogMember } from '@/utilities/permissions';
+import * as p from '@/utilities/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -48,7 +48,7 @@ app.put(
     }
 
     if (
-      !canManageLogMember({
+      !p.canManageLogMember({
         actorRole,
         targetRole: targetRole.role,
       })

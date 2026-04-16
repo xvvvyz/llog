@@ -50,6 +50,11 @@ const schema = i.schema({
     profiles: i.entity({
       name: i.string(),
     }),
+    pushSubscriptions: i.entity({
+      endpoint: i.string().unique().indexed(),
+      lastSeenAt: i.date().optional(),
+      subscription: i.any(),
+    }),
     reactions: i.entity({
       emoji: i.string().indexed(),
       teamId: i.string().indexed(),
@@ -296,6 +301,20 @@ const schema = i.schema({
         on: '$users',
         has: 'one',
         label: 'profile',
+      },
+    },
+    pushSubscriptionsUsers: {
+      forward: {
+        on: 'pushSubscriptions',
+        has: 'one',
+        label: 'user',
+        required: true,
+        onDelete: 'cascade',
+      },
+      reverse: {
+        on: '$users',
+        has: 'many',
+        label: 'pushSubscriptions',
       },
     },
     reactionsAuthors: {

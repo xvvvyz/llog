@@ -197,6 +197,15 @@ const rules = {
       },
     },
   },
+  pushSubscriptions: {
+    bind: ['isOwner', "data.ref('user.id') == auth.ref('$user.id')"],
+    allow: {
+      view: 'isOwner',
+      create: 'isOwner',
+      update: 'isOwner',
+      delete: 'isOwner',
+    },
+  },
   reactions: {
     bind: [
       'isAuthor',

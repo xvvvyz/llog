@@ -19,6 +19,7 @@ export type SheetNames = readonly [
   'team-delete',
   'team-leave',
   'team-switch',
+  'web-push-ios-setup',
 ];
 
 export type SheetName = SheetNames[number];

@@ -16,6 +16,7 @@
    EXPO_PUBLIC_APP_URL=http://localhost:8081
    EXPO_PUBLIC_INSTANT_APP_ID=<YOUR_ID>
    EXPO_PUBLIC_API_URL=http://localhost:8787/api/v1
+   EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<YOUR_PUBLIC_VAPID_KEY>
    ```
 
    ```bash
@@ -23,6 +24,14 @@
 
    INSTANT_APP_ADMIN_TOKEN=<YOUR_TOKEN>
    INSTANT_APP_ID=<YOUR_ID>
+   MAILTO_CONTACT=mailto:<YOUR_EMAIL>
+   WEB_PUSH_VAPID_PRIVATE_KEY=<YOUR_PRIVATE_VAPID_JWK_JSON>
+   ```
+
+   Generate a keypair with:
+
+   ```bash
+   bun run generate:vapid
    ```
 
 3. Generate types

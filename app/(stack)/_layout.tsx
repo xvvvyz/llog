@@ -16,6 +16,7 @@ import { TagDeleteSheet } from '@/components/tag-delete-sheet';
 import { TeamDeleteSheet } from '@/components/team-delete-sheet';
 import { TeamLeaveSheet } from '@/components/team-leave-sheet';
 import { TeamSwitchSheet } from '@/components/team-switch-sheet';
+import { WebPushIosSetupSheet } from '@/components/web-push-ios-setup-sheet';
 import { Stack } from 'expo-router';
 import * as React from 'react';
 
@@ -41,6 +42,7 @@ export default function Layout() {
       <TeamDeleteSheet />
       <TeamLeaveSheet />
       <TeamSwitchSheet />
+      <WebPushIosSetupSheet />
     </React.Fragment>
   );
 }

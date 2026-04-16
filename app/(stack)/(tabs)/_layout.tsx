@@ -13,6 +13,7 @@ import { UI } from '@/theme/ui';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { PENDING_INVITE_KEY } from '@/utilities/invite-storage';
+import { isPwa } from '@/utilities/pwa';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, Tabs } from 'expo-router';
 import { Bell } from 'phosphor-react-native/lib/module/icons/Bell';
@@ -110,7 +111,10 @@ export default function Layout() {
           elevation: 0,
           height: breakpoints.md
             ? undefined
-            : Platform.select({ default: 50, web: 56 }) + insets.bottom,
+            : Platform.select({
+                default: 50 + insets.bottom,
+                web: isPwa() ? 40 : 56,
+              }),
           marginTop: 0,
           minWidth: 0,
           paddingBottom: breakpoints.md ? 8 : 0,
@@ -220,7 +224,7 @@ export default function Layout() {
             <Avatar
               avatar={profile.image?.uri}
               id={profile.id}
-              size={breakpoints.md ? 36 : 28}
+              size={breakpoints.md ? 36 : 24}
             />
           ),
         }}

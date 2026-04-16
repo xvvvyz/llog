@@ -9,26 +9,22 @@ import { deleteRecordMedia } from '@/mutations/delete-record-media';
 import { publishRecord } from '@/mutations/publish-record';
 import { updateRecordDraft } from '@/mutations/update-record-draft';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
-import { useLog } from '@/queries/use-log';
-import { useProfile } from '@/queries/use-profile';
 import { useRecordDraft } from '@/queries/use-record-draft';
 import { db } from '@/utilities/db';
 import * as React from 'react';
 import { View } from 'react-native';
 
 export const RecordCreateSheet = () => {
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const sheetManager = useSheetManager();
-
   const isEdit = sheetManager.getContext('record-create') === 'edit';
-  const sheetId = sheetManager.getId('record-create');
   const isOpen = sheetManager.isOpen('record-create');
+  const sheetId = sheetManager.getId('record-create');
 
   const logId = isEdit ? undefined : sheetId;
   const editRecordId = isEdit ? sheetId : undefined;
 
-  const profile = useProfile();
   const draft = useRecordDraft({ logId });
-  const log = useLog({ id: logId });
 
   const { data: editData } = db.useQuery(
     editRecordId
@@ -45,7 +41,6 @@ export const RecordCreateSheet = () => {
   const editRecord = editData?.records?.[0];
   const record = isEdit ? editRecord : draft;
   const recordLogId = isEdit ? editRecord?.log?.id : logId;
-  const teamId = isEdit ? editRecord?.teamId : log.teamId;
   const logColor = useLogColor({ id: recordLogId });
   const hasContent = !!record?.text?.trim() || !!record?.media?.length;
 
@@ -108,24 +103,24 @@ export const RecordCreateSheet = () => {
           {toolbar}
           <Button
             className="text-white web:hover:opacity-90"
-            disabled={isBusy || (!isEdit && !hasContent)}
-            onPress={() => {
+            disabled={isBusy || isSubmitting || (!isEdit && !hasContent)}
+            onPress={async () => {
               if (isEdit) {
                 sheetManager.close('record-create');
               } else if (hasContent) {
-                publishRecord({
-                  id: record?.id,
-                  logId: recordLogId,
-                  profileId: profile.id,
-                  teamId,
-                });
-                sheetManager.close('record-create');
+                try {
+                  setIsSubmitting(true);
+                  await publishRecord({ id: record?.id });
+                  sheetManager.close('record-create');
+                } finally {
+                  setIsSubmitting(false);
+                }
               }
             }}
             size="xs"
             style={{ backgroundColor: logColor.default }}
           >
-            <Text>{isEdit ? 'Done' : 'Record'}</Text>
+            <Text>{isSubmitting ? 'Saving…' : isEdit ? 'Done' : 'Record'}</Text>
           </Button>
         </View>
       </View>

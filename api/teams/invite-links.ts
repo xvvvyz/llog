@@ -1,6 +1,6 @@
 import { auth, db } from '@/api/middleware/db';
 import { Role } from '@/types/role';
-import { canManageTeam } from '@/utilities/permissions';
+import * as p from '@/utilities/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
@@ -47,7 +47,7 @@ app.post(
 
     const callerRole = callerRoles[0]?.role;
 
-    if (!canManageTeam(callerRole)) {
+    if (!p.canManageTeam(callerRole)) {
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 

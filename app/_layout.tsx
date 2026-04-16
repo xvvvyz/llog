@@ -4,6 +4,7 @@ import '@/theme/global.css';
 import { UI } from '@/theme/ui';
 import { db } from '@/utilities/db';
 import { setFileAccessToken } from '@/utilities/file-access-token';
+import * as wp from '@/utilities/web-push';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
@@ -65,17 +66,27 @@ export default function Layout() {
     };
   }, [userId]);
 
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    wp.registerWebPushServiceWorker().catch((error) => {
+      console.error('Failed to register service worker', error);
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || !userId) return;
+
+    wp.syncWebPushSubscription().catch((error) => {
+      console.error('Failed to sync web push subscription', error);
+    });
+  }, [userId]);
+
   return (
     <React.Fragment>
       {Platform.OS === 'web' && (
         <Head>
-          <title>llog</title>
-          <meta name="color-scheme" content="light dark" />
-          <meta name="description" content="Track anything in your world." />
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1, shrink-to-fit=no, interactive-widget=resizes-content, user-scalable=no"
-          />
+          <meta name="theme-color" content={UI[colorScheme].background} />
         </Head>
       )}
       <ThemeProvider

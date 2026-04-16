@@ -1,3 +1,4 @@
+import { renderLinkifiedText } from '@/components/linkified-text';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { REACTION_ICONS } from '@/types/emoji';
@@ -18,16 +19,16 @@ export const ActivityItemContent = ({
   switch (type) {
     case 'record_published': {
       return first?.record?.text ? (
-        <Text className="px-4" numberOfLines={2}>
-          {first.record.text}
+        <Text className="-my-1 px-4" numberOfLines={2}>
+          {renderLinkifiedText({ text: first.record.text })}
         </Text>
       ) : null;
     }
 
     case 'comment_posted': {
       return commentText ? (
-        <Text className="px-4" numberOfLines={2}>
-          {commentText}
+        <Text className="-my-1 px-4" numberOfLines={2}>
+          {renderLinkifiedText({ text: commentText })}
         </Text>
       ) : null;
     }
@@ -42,7 +43,7 @@ export const ActivityItemContent = ({
         .filter(Boolean);
 
       return reactionIcons.length > 0 ? (
-        <View className="flex-row gap-1 px-4">
+        <View className="-my-0.5 flex-row gap-1 px-4">
           {reactionIcons.map((icon, i) => (
             <Icon
               key={emojis[i]}

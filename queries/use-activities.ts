@@ -1,6 +1,6 @@
 import { useTeams } from '@/queries/use-teams';
 import { db } from '@/utilities/db';
-import { canManageTeam } from '@/utilities/permissions';
+import * as p from '@/utilities/permissions';
 import * as React from 'react';
 
 export const useActivities = () => {
@@ -37,7 +37,7 @@ export const useActivities = () => {
     () =>
       new Set(
         (data?.roles ?? [])
-          .filter((role) => canManageTeam(role.role))
+          .filter((role) => p.canManageTeam(role.role))
           .map((role) => role.teamId)
       ),
     [data?.roles]

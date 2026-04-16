@@ -1,6 +1,6 @@
 import { db } from '@/api/middleware/db';
 import { fileLike } from '@/types/file-like';
-import { canManageTeam } from '@/utilities/permissions';
+import * as p from '@/utilities/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
@@ -46,7 +46,7 @@ app.put(
       throw new HTTPException(404, { message: 'Team not found' });
     }
 
-    if (!canManageTeam(callerRole)) {
+    if (!p.canManageTeam(callerRole)) {
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
@@ -91,7 +91,7 @@ app.delete('/', db({ asUser: true }), async (c) => {
     throw new HTTPException(404, { message: 'Team not found' });
   }
 
-  if (!canManageTeam(callerRole)) {
+  if (!p.canManageTeam(callerRole)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 

@@ -7,27 +7,44 @@ import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Page } from '@/components/ui/page';
+import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { deleteProfileImage } from '@/mutations/delete-profile-image';
 import { updateProfile } from '@/mutations/update-profile';
 import { uploadProfileImage } from '@/mutations/upload-profile-image';
 import { useProfile } from '@/queries/use-profile';
 import { useUi } from '@/queries/use-ui';
 import { REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
+import { alert } from '@/utilities/alert';
 import { db } from '@/utilities/db';
+import * as wp from '@/utilities/web-push';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
 import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
 import * as React from 'react';
-import { View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 export default function Account() {
+  const [isPushPending, setIsPushPending] = React.useState(false);
   const [isSigningOut, setIsSigningOut] = React.useState(false);
-  const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
+
+  const [pendingPushState, setPendingPushState] =
+    React.useState<wp.WebPushState | null>(null);
+
+  const [pushState, setPushState] = React.useState<wp.WebPushState>({
+    status: 'unsupported',
+  });
+
+  const [pushSupport, setPushSupport] =
+    React.useState<wp.WebPushSupportState>('unsupported');
+
   const auth = db.useAuth();
+  const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
   const profile = useProfile();
+  const sheetManager = useSheetManager();
   const ui = useUi();
 
   const handleUploadProfileImage = React.useCallback(async () => {
@@ -41,40 +58,145 @@ export default function Account() {
     await uploadProfileImage(picker.assets[0]);
   }, []);
 
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    setPushSupport(wp.getWebPushSupportState());
+  }, []);
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || !auth.user) return;
+    let cancelled = false;
+
+    wp.syncWebPushSubscription()
+      .then((state) => {
+        if (!cancelled) setPushState(state);
+      })
+      .catch(async (error) => {
+        console.error('Failed to refresh web push state', error);
+        const state = await wp.getWebPushState();
+        if (!cancelled) setPushState(state);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.user]);
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || !auth.user) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+      wp.getWebPushState().then(setPushState).catch(console.error);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [auth.user]);
+
+  const effectivePushState = pendingPushState ?? pushState;
+  const pushEnabled = effectivePushState.status === 'enabled';
+
+  const isPushToggleDisabled =
+    isPushPending ||
+    pushState.status === 'blocked' ||
+    (!auth.user && pushSupport !== 'ios-home-screen-required') ||
+    (effectivePushState.status === 'unsupported' &&
+      pushSupport !== 'ios-home-screen-required');
+
+  const handleTogglePush = React.useCallback(async () => {
+    if (Platform.OS !== 'web') return;
+
+    if (pushSupport === 'ios-home-screen-required') {
+      sheetManager.open('web-push-ios-setup');
+      return;
+    }
+
+    if (
+      pushState.status === 'unsupported' ||
+      pushState.status === 'blocked' ||
+      !auth.user
+    ) {
+      return;
+    }
+
+    const optimisticState =
+      pushState.status === 'enabled'
+        ? ({
+            status: 'disabled',
+          } satisfies wp.WebPushState)
+        : ({
+            endpoint: pushState.endpoint,
+            status: 'enabled',
+          } satisfies wp.WebPushState);
+
+    setPendingPushState(optimisticState);
+    setIsPushPending(true);
+
+    try {
+      const nextState =
+        pushState.status === 'enabled'
+          ? await wp.disableWebPush()
+          : await wp.enableWebPush();
+
+      setPushState(nextState);
+      setPendingPushState(null);
+    } catch (error) {
+      setPendingPushState(null);
+
+      alert({
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update notifications',
+        title: 'Error',
+      });
+    } finally {
+      setIsPushPending(false);
+    }
+  }, [auth.user, pushState, pushSupport, sheetManager]);
+
   return (
     <Page>
       <Header title="Account" />
       <View className="flex-1 items-center justify-center p-3">
         <Card className="w-full max-w-xs overflow-hidden p-0">
-          <View className="items-center justify-center py-8">
-            <Menu.Root>
-              <Menu.Trigger asChild>
-                <Button variant="link">
-                  <Avatar
-                    avatar={profile.image?.uri}
-                    id={profile.id}
-                    size={156}
-                  />
-                </Button>
-              </Menu.Trigger>
-              <Menu.Content align="center" className="mt-3">
-                <Menu.Item onPress={handleUploadProfileImage}>
-                  <Icon className="text-placeholder" icon={UploadSimple} />
-                  <Text>Upload</Text>
-                </Menu.Item>
-                {profile.image && (
-                  <>
-                    <Menu.Separator />
-                    <Menu.Item onPress={deleteProfileImage}>
-                      <Icon className="text-destructive" icon={Trash} />
-                      <Text className="text-destructive">Remove</Text>
-                    </Menu.Item>
-                  </>
-                )}
-              </Menu.Content>
-            </Menu.Root>
-          </View>
           <View className="pb-2">
+            <View className="px-4">
+              <Menu.Root>
+                <Menu.Trigger asChild>
+                  <Button
+                    className="items-end justify-between rounded-none border-b border-border px-0 pb-3 pt-3"
+                    variant="link"
+                  >
+                    <Label className="shrink-0 p-0">Avatar</Label>
+                    <Avatar
+                      avatar={profile.image?.uri}
+                      id={profile.id}
+                      size={34}
+                    />
+                  </Button>
+                </Menu.Trigger>
+                <Menu.Content align="end">
+                  <Menu.Item onPress={handleUploadProfileImage}>
+                    <Icon className="text-placeholder" icon={UploadSimple} />
+                    <Text>Upload</Text>
+                  </Menu.Item>
+                  {profile.image && (
+                    <>
+                      <Menu.Separator />
+                      <Menu.Item onPress={deleteProfileImage}>
+                        <Icon className="text-destructive" icon={Trash} />
+                        <Text className="text-destructive">Remove</Text>
+                      </Menu.Item>
+                    </>
+                  )}
+                </Menu.Content>
+              </Menu.Root>
+            </View>
             <View className="px-4">
               <View className="flex-row items-center justify-between border-b border-border">
                 <Label
@@ -105,6 +227,37 @@ export default function Account() {
                 />
               </View>
             </View>
+            {Platform.OS === 'web' && (
+              <View className="px-4">
+                <Pressable
+                  accessibilityRole="switch"
+                  accessibilityState={{
+                    checked: pushEnabled,
+                    disabled: isPushToggleDisabled,
+                  }}
+                  className="flex-row items-center justify-between gap-4 border-b border-border py-3"
+                  disabled={isPushToggleDisabled}
+                  onPress={handleTogglePush}
+                >
+                  <View className="flex-1">
+                    <Text className="font-normal text-muted-foreground">
+                      Web notifications
+                    </Text>
+                    <Text className="text-xs text-placeholder">
+                      {pushState.status === 'blocked'
+                        ? 'Blocked in browser or device settings'
+                        : 'Receive new record & reply alerts'}
+                    </Text>
+                  </View>
+                  <Switch
+                    checked={pushEnabled}
+                    className="pointer-events-none"
+                    disabled={isPushToggleDisabled}
+                    onCheckedChange={handleTogglePush}
+                  />
+                </Pressable>
+              </View>
+            )}
             <Menu.Root>
               <Menu.Trigger asChild>
                 <Button
@@ -146,16 +299,30 @@ export default function Account() {
                 ))}
               </Menu.Content>
             </Menu.Root>
+            <View className="my-2 border-t border-border" />
             <Button
               className="justify-between rounded-none"
               disabled={isSigningOut}
               onPress={async () => {
                 setIsSigningOut(true);
-                await db.auth.signOut();
-                router.navigate('/sign-in');
+                try {
+                  if (Platform.OS === 'web') {
+                    await wp.detachWebPushSubscription().catch((error) => {
+                      console.error(
+                        'Failed to detach web push subscription during sign out',
+                        error
+                      );
+                    });
+                  }
+
+                  await db.auth.signOut();
+                  router.navigate('/sign-in');
+                } finally {
+                  setIsSigningOut(false);
+                }
               }}
               variant="ghost"
-              wrapperClassName="rounded-none pt-4"
+              wrapperClassName="rounded-none"
             >
               <Text className="font-normal">Sign out</Text>
               <Icon className="-mr-0.5 text-placeholder" icon={SignOut} />

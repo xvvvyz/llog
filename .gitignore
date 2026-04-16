@@ -10,5 +10,15 @@ android/
 ios/
 web/
 
+assets/icon.png
+assets/favicon.png
+
+public/apple-startup/
+public/apple-touch-icon*.png
+public/favicon-32.png
+public/favicon.ico
+public/favicon.svg
+public/icon-*.png
+
 expo-env.d.ts
 worker-configuration.d.ts

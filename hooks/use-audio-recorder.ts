@@ -1,5 +1,6 @@
 import {
   RecordingPresets,
+  requestRecordingPermissionsAsync,
   useAudioRecorder as useExpoAudioRecorder,
 } from 'expo-audio';
 import * as React from 'react';
@@ -17,6 +18,8 @@ export const useAudioRecorder = () => {
   const [hasPermission, setHasPermission] = React.useState<boolean | null>(
     null
   );
+
+  const isRecordingRef = React.useRef(false);
 
   const timerRef = React.useRef<ReturnType<typeof setInterval> | undefined>(
     undefined
@@ -114,6 +117,7 @@ export const useAudioRecorder = () => {
   React.useEffect(() => {
     if (isRecording && duration >= MAX_DURATION) {
       (async () => {
+        isRecordingRef.current = false;
         stopLevelTracking();
         stopTimer();
         setIsRecording(false);
@@ -131,31 +135,36 @@ export const useAudioRecorder = () => {
   }, [stopLevelTracking, stopTimer]);
 
   const record = React.useCallback(async () => {
+    if (isRecordingRef.current) return;
+    isRecordingRef.current = true;
     setUri(null);
+    const permission = await requestRecordingPermissionsAsync();
 
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        await recorder.prepareToRecordAsync();
-        recorder.record();
-
-        const stream = (recorder as unknown as { stream: MediaStream | null })
-          .stream;
-
-        if (stream) startLevelTracking(stream);
-        setHasPermission(true);
-        setIsRecording(true);
-        startTimer();
-        return;
-      } catch {
-        // First attempt may fail while OS permission prompt is resolving.
-        // Retry once before giving up.
-      }
+    if (!permission.granted) {
+      isRecordingRef.current = false;
+      setHasPermission(false);
+      return;
     }
 
-    setHasPermission(false);
+    try {
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+
+      const stream = (recorder as unknown as { stream: MediaStream | null })
+        .stream;
+
+      if (stream) startLevelTracking(stream);
+      setHasPermission(true);
+      setIsRecording(true);
+      startTimer();
+    } catch {
+      isRecordingRef.current = false;
+      setHasPermission(false);
+    }
   }, [recorder, startLevelTracking, startTimer]);
 
   const stop = React.useCallback(async () => {
+    isRecordingRef.current = false;
     stopLevelTracking();
     stopTimer();
     setIsRecording(false);
