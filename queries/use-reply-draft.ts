@@ -1,19 +1,19 @@
-import { createCommentDraft } from '@/mutations/create-comment-draft';
+import { createReplyDraft } from '@/mutations/create-reply-draft';
 import { useProfile } from '@/queries/use-profile';
 import { useRecord } from '@/queries/use-record';
 import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 import * as React from 'react';
 
-export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
+export const useReplyDraft = ({ recordId }: { recordId?: string }) => {
   const profile = useProfile();
   const record = useRecord({ id: recordId });
-  const commentIdRef = React.useRef(id());
+  const replyIdRef = React.useRef(id());
 
   const { data, isLoading } = db.useQuery(
     recordId && profile.id
       ? {
-          comments: {
+          replies: {
             $: {
               where: { author: profile.id, record: recordId, isDraft: true },
             },
@@ -23,27 +23,20 @@ export const useCommentDraft = ({ recordId }: { recordId?: string }) => {
       : null
   );
 
-  const comment = data?.comments?.[0];
+  const reply = data?.replies?.[0];
 
   React.useEffect(() => {
-    if (isLoading || record.isLoading || comment || !record.teamId) return;
-    commentIdRef.current = id();
+    if (isLoading || record.isLoading || reply || !record.teamId) return;
+    replyIdRef.current = id();
 
-    createCommentDraft({
-      commentId: commentIdRef.current,
+    createReplyDraft({
+      replyId: replyIdRef.current,
       recordId,
       profileId: profile.id,
       teamId: record.teamId,
     });
-  }, [
-    isLoading,
-    record.isLoading,
-    record.teamId,
-    recordId,
-    comment,
-    profile.id,
-  ]);
+  }, [isLoading, record.isLoading, record.teamId, recordId, reply, profile.id]);
 
-  const media = comment?.media ?? [];
-  return { ...comment, media, isLoading };
+  const media = reply?.media ?? [];
+  return { ...reply, media, isLoading };
 };

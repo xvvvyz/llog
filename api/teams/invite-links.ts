@@ -60,7 +60,7 @@ app.post(
     const token = nanoid(8);
     const linkId = id();
 
-    const linkTx = c.var.db.tx.inviteLinks[linkId]
+    const linkTx = c.var.db.tx.invites[linkId]
       .update({ token, role, teamId, expiresAt })
       .link({
         team: teamId,
@@ -75,7 +75,7 @@ app.post(
 
 app.delete('/:linkId', db({ asUser: true }), async (c) => {
   const { linkId } = c.req.param();
-  await c.var.db.transact(c.var.db.tx.inviteLinks[linkId].delete());
+  await c.var.db.transact(c.var.db.tx.invites[linkId].delete());
   return c.json({ status: 'deleted' });
 });
 

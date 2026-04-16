@@ -1,13 +1,13 @@
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 
-export const useHasNoLogTags = () => {
+export const useHasNoTags = () => {
   const ui = useUi();
 
   const { data, isLoading } = db.useQuery(
     ui.activeTeamId
       ? {
-          logTags: {
+          tags: {
             $: {
               fields: ['id'],
 
@@ -22,5 +22,5 @@ export const useHasNoLogTags = () => {
       : null
   );
 
-  return !isLoading && !data?.logTags?.length;
+  return !isLoading && !data?.tags?.length;
 };

@@ -15,14 +15,14 @@ export const EmojiPicker = ({
   logId,
   recordId,
   teamId,
-  commentId,
+  replyId,
   reactions,
 }: {
   color?: string;
   logId?: string;
   recordId: string;
   teamId?: string;
-  commentId?: string;
+  replyId?: string;
   reactions?: (Reaction & { author?: Pick<Profile, 'id'> })[];
 }) => {
   const profile = useProfile();
@@ -70,7 +70,7 @@ export const EmojiPicker = ({
                   profileId: profile.id,
                   teamId,
                   recordId,
-                  commentId,
+                  replyId,
                 });
               }}
             >

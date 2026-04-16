@@ -1,4 +1,4 @@
-export type SearchResultType = 'record' | 'comment' | 'log';
+export type SearchResultType = 'record' | 'reply' | 'log';
 
 export type SearchMediaItem = {
   id: string;

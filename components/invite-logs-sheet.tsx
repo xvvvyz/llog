@@ -6,7 +6,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { createInviteLink } from '@/mutations/create-invite-link';
-import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
+import { useTeamInvites } from '@/queries/use-team-invite-links';
 import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Role } from '@/types/role';
@@ -24,7 +24,7 @@ export const InviteLogsSheet = () => {
   const open = sheetManager.isOpen('invite-logs');
   const { activeTeamId } = useUi();
   const { copy, copied } = useCopy();
-  const { inviteLinks } = useTeamInviteLinks();
+  const { invites } = useTeamInvites();
 
   const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
     new Set()
@@ -65,14 +65,14 @@ export const InviteLogsSheet = () => {
     (logIds: string[]) => {
       const sorted = [...logIds].sort();
 
-      return inviteLinks.find((link) => {
+      return invites.find((link) => {
         if (link.role !== Role.Member) return false;
         const linkLogIds = [...(link.logs?.map((l) => l.id) ?? [])].sort();
         if (linkLogIds.length !== sorted.length) return false;
         return linkLogIds.every((id, i) => id === sorted[i]);
       });
     },
-    [inviteLinks]
+    [invites]
   );
 
   const handleConfirm = React.useCallback(async () => {

@@ -17,11 +17,11 @@ export const useRecordMedia = ({ id }: { id?: string }) => {
   return { ...record, media, isLoading };
 };
 
-export const useCommentMedia = ({ id }: { id?: string }) => {
+export const useReplyMedia = ({ id }: { id?: string }) => {
   const { data, isLoading } = db.useQuery(
     id
       ? {
-          comments: {
+          replies: {
             $: { fields: ['id'], where: { id } },
             media: {},
           },
@@ -29,7 +29,7 @@ export const useCommentMedia = ({ id }: { id?: string }) => {
       : null
   );
 
-  const comment = data?.comments?.[0];
-  const media = comment?.media ?? [];
-  return { ...comment, media, isLoading };
+  const reply = data?.replies?.[0];
+  const media = reply?.media ?? [];
+  return { ...reply, media, isLoading };
 };

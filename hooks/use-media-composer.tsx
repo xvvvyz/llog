@@ -34,7 +34,7 @@ interface PendingUpload {
 }
 
 interface UseMediaComposerOptions {
-  commentId?: string;
+  replyId?: string;
   isOpen: boolean;
   media: Media[];
   onDeleteMedia: (mediaId: string) => Promise<void>;
@@ -49,7 +49,7 @@ interface UseMediaComposerOptions {
 }
 
 export const useMediaComposer = ({
-  commentId,
+  replyId,
   isOpen,
   media,
   onDeleteMedia,
@@ -236,7 +236,7 @@ export const useMediaComposer = ({
                         pathname: '/record/[recordId]/media',
                         params: {
                           recordId,
-                          ...(commentId && { commentId }),
+                          ...(replyId && { replyId }),
                           id: item.id,
                         },
                       });

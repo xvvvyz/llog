@@ -70,7 +70,7 @@ export const uploadMedia = async ({
   duration?: number;
   file: z.infer<typeof fileLike>;
   keyPrefix: string;
-  linkField: 'comment' | 'record';
+  linkField: 'reply' | 'record';
   linkId: string;
   media: MediaBinding;
   mediaId?: string;

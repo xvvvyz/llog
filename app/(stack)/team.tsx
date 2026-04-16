@@ -22,7 +22,7 @@ import { uploadTeamImage } from '@/mutations/upload-team-image';
 import { useLogs } from '@/queries/use-logs';
 import { useMyRole } from '@/queries/use-my-role';
 import { useTeam } from '@/queries/use-team';
-import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
+import { useTeamInvites } from '@/queries/use-team-invite-links';
 import { useTeamMembers } from '@/queries/use-team-members';
 import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
@@ -197,7 +197,7 @@ export default function Team() {
   const myRole = useMyRole();
   const { canDeleteTeam, canManage } = myRole;
   const { copy } = useCopy();
-  const { inviteLinks } = useTeamInviteLinks();
+  const { invites } = useTeamInvites();
   const logs = useLogs();
   const { members } = useTeamMembers();
   useTeams();
@@ -253,7 +253,7 @@ export default function Team() {
   }, [activeTeamId]);
 
   const getOrCreateAdminLink = React.useCallback(async () => {
-    const existing = inviteLinks.find((l) => l.role === Role.Admin);
+    const existing = invites.find((l) => l.role === Role.Admin);
     if (existing) return existing.token;
     if (!activeTeamId) return null;
 
@@ -263,7 +263,7 @@ export default function Team() {
     });
 
     return token;
-  }, [inviteLinks, activeTeamId]);
+  }, [invites, activeTeamId]);
 
   const handleCopyLink = React.useCallback(
     async (role: string) => {
@@ -428,7 +428,7 @@ export default function Team() {
                             <Icon className="text-placeholder" icon={QrCode} />
                           )}
                         </Button>
-                        {inviteLinks.some((l) => l.role === role) && (
+                        {invites.some((l) => l.role === role) && (
                           <Button
                             className="size-8"
                             onPress={() => handleDelete(role)}

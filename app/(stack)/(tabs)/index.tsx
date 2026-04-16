@@ -13,7 +13,7 @@ import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { createLog } from '@/mutations/create-log';
-import { useLogTags } from '@/queries/use-log-tags';
+import { useTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
 import { useMyRole } from '@/queries/use-my-role';
 import { SPECTRUM } from '@/theme/spectrum';
@@ -31,7 +31,7 @@ export default function Index() {
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
-  const logTags = useLogTags();
+  const tags = useTags();
   const { canManage } = useMyRole();
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const sheetManager = useSheetManager();
@@ -71,7 +71,7 @@ export default function Index() {
       const tagIdSet = new Set(selectedTagIds);
 
       result = result.filter((log) =>
-        log.logTags.some((tag: { id: string }) => tagIdSet.has(tag.id))
+        log.tags.some((tag: { id: string }) => tagIdSet.has(tag.id))
       );
     }
 
@@ -91,7 +91,7 @@ export default function Index() {
             {breakpoints.md && !isEmpty && (
               <LogListActions
                 className={cn(isEmpty && 'md:hidden')}
-                logTags={logTags.data}
+                tags={tags.data}
                 query={rawQuery}
                 selectedTagIds={selectedTagIds}
                 setQuery={setRawQuery}
@@ -126,7 +126,7 @@ export default function Index() {
             !breakpoints.md && !isEmpty ? (
               <LogListActions
                 className="p-1.5 pt-4 md:p-2"
-                logTags={logTags.data}
+                tags={tags.data}
                 query={rawQuery}
                 selectedTagIds={selectedTagIds}
                 setQuery={setRawQuery}
@@ -146,8 +146,8 @@ export default function Index() {
             const color =
               SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
 
-            const itemLogTagIds = new Set(
-              item.logTags.map((tag: { id: string }) => tag.id)
+            const itemTagIds = new Set(
+              item.tags.map((tag: { id: string }) => tag.id)
             );
 
             return (
@@ -157,7 +157,7 @@ export default function Index() {
                 id={item.id}
                 name={item.name}
                 profiles={item.profiles ?? []}
-                tags={logTags.data.filter((tag) => itemLogTagIds.has(tag.id))}
+                tags={tags.data.filter((tag) => itemTagIds.has(tag.id))}
               />
             );
           }}

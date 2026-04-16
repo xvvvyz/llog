@@ -2,13 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { deleteLogTag } from '@/mutations/delete-log-tag';
-import { useLogTag } from '@/queries/use-log-tag';
+import { deleteTag } from '@/mutations/delete-log-tag';
+import { useTag } from '@/queries/use-log-tag';
 import { View } from 'react-native';
 
 export const TagDeleteSheet = () => {
   const sheetManager = useSheetManager();
-  const logTag = useLogTag({ id: sheetManager.getId('tag-delete') });
+  const logTag = useTag({ id: sheetManager.getId('tag-delete') });
 
   return (
     <Sheet
@@ -22,7 +22,7 @@ export const TagDeleteSheet = () => {
         <Button
           onPress={() => {
             sheetManager.close('tag-delete');
-            deleteLogTag({ id: logTag.id });
+            deleteTag({ id: logTag.id });
           }}
           variant="destructive"
           wrapperClassName="mt-12"

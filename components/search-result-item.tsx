@@ -96,7 +96,7 @@ export const SearchResultItem = ({
       case 'record':
         router.push(`/record/${result.id}`);
         break;
-      case 'comment':
+      case 'reply':
         if (result.recordId) router.push(`/record/${result.recordId}`);
         break;
     }
@@ -166,7 +166,7 @@ export const SearchResultItem = ({
                     className="shrink-0 text-xs text-muted-foreground"
                     numberOfLines={1}
                   >
-                    {result.type === 'comment' ? 'Reply in' : 'Record in'}
+                    {result.type === 'reply' ? 'Reply in' : 'Record in'}
                   </Text>
                   <View className="shrink flex-row items-center gap-1">
                     <View

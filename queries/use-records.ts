@@ -11,7 +11,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
               where: { log: logId, isDraft: false },
             },
             author: { image: {} },
-            comments: {
+            replies: {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
             media: {},

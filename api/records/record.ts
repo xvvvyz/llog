@@ -28,7 +28,7 @@ app.post('/publish', db(), auth(), async (c) => {
         profiles: {
           user: {
             $: { fields: ['id'] as ['id'] },
-            pushSubscriptions: {
+            subscriptions: {
               $: {
                 fields: ['id', 'endpoint', 'subscription'] as [
                   'id',
@@ -46,7 +46,7 @@ app.post('/publish', db(), auth(), async (c) => {
             },
             user: {
               $: { fields: ['id'] as ['id'] },
-              pushSubscriptions: {
+              subscriptions: {
                 $: {
                   fields: ['id', 'endpoint', 'subscription'] as [
                     'id',
@@ -151,7 +151,7 @@ app.delete('/', db({ asUser: true }), async (c) => {
         },
       },
       media: {},
-      comments: { media: {}, activities: {} },
+      replies: { media: {}, activities: {} },
       activities: {},
     },
   });
@@ -177,10 +177,10 @@ app.delete('/', db({ asUser: true }), async (c) => {
     if (item.previewUri) r2Keys.push(item.previewUri as string);
   }
 
-  for (const comment of record.comments ?? []) {
-    activities.push(...(comment.activities ?? []));
+  for (const reply of record.replies ?? []) {
+    activities.push(...(reply.activities ?? []));
 
-    for (const item of comment.media ?? []) {
+    for (const item of reply.media ?? []) {
       r2Keys.push(item.uri as string);
       if (item.previewUri) r2Keys.push(item.previewUri as string);
     }

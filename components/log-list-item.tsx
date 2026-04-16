@@ -3,7 +3,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { LogTag } from '@/types/log-tag';
+import { Tag } from '@/types/log-tag';
 import { cn } from '@/utilities/cn';
 import { Link } from 'expo-router';
 import { DotsThree } from 'phosphor-react-native/lib/module/icons/DotsThree';
@@ -22,7 +22,7 @@ export const LogListItem = ({
   id: string;
   name: string;
   profiles: { id: string; name: string; image?: { uri: string } }[];
-  tags: LogTag[];
+  tags: Tag[];
 }) => {
   return (
     <View

@@ -27,7 +27,7 @@ export const isAbsoluteUri = (uri: string) =>
   uri.startsWith('https://') || uri.startsWith('data:image/');
 
 export const isProtectedUri = (uri: string) =>
-  uri.startsWith('records/') || uri.startsWith('comments/');
+  uri.startsWith('records/') || uri.startsWith('replies/');
 
 const appendToken = (url: string, token?: string | null) =>
   token ? `${url}?token=${encodeURIComponent(token)}` : url;

@@ -4,8 +4,8 @@ import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { toggleLogTag } from '@/mutations/toggle-log-tag';
-import { updateLogTag } from '@/mutations/update-log-tag';
+import { toggleTag } from '@/mutations/toggle-log-tag';
+import { updateTag } from '@/mutations/update-log-tag';
 import { cn } from '@/utilities/cn';
 import { DotsSixVertical } from 'phosphor-react-native/lib/module/icons/DotsSixVertical';
 import { X } from 'phosphor-react-native/lib/module/icons/X';
@@ -44,7 +44,7 @@ export const LogTagsSheetTag = ({
         checked={isSelected}
         checkedColor={logColor.default}
         className="size-10 border-0"
-        onCheckedChange={() => toggleLogTag({ id, isSelected, logId })}
+        onCheckedChange={() => toggleTag({ id, isSelected, logId })}
         wrapperClassName="rounded-full"
       />
       <View className="group relative flex-1">
@@ -53,7 +53,7 @@ export const LogTagsSheetTag = ({
           defaultValue={name}
           maxLength={16}
           onBlur={() => setTimeout(() => setIsDeleteButtonVisible(false), 200)}
-          onChangeText={(name) => updateLogTag({ id: id, name })}
+          onChangeText={(name) => updateTag({ id: id, name })}
           onFocus={() => setIsDeleteButtonVisible(true)}
           placeholder="Tag"
           size="sm"

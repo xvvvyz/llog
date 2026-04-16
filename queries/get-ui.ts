@@ -7,7 +7,7 @@ export const getUi = async () => {
   const { data } = await db.queryOnce({
     ui: {
       $: { where: { user: auth.id } },
-      logTags: { $: { fields: ['id'] } },
+      tags: { $: { fields: ['id'] } },
       team: {},
     },
   });

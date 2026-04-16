@@ -6,7 +6,7 @@ import * as React from 'react';
 
 type SearchDocument = {
   id: string;
-  type: 'record' | 'comment' | 'log';
+  type: 'record' | 'reply' | 'log';
   text: string;
   name: string;
   date?: string | number;
@@ -43,16 +43,16 @@ export const useSearch = ({
               where: { teamId: { $in: teamIds }, isDraft: false },
             },
             author: { image: {} },
-            log: { logTags: { $: { fields: ['id'] } } },
+            log: { tags: { $: { fields: ['id'] } } },
             media: {},
           },
-          comments: {
+          replies: {
             $: {
               where: { teamId: { $in: teamIds }, isDraft: false },
             },
             author: { image: {} },
             record: {
-              log: { logTags: { $: { fields: ['id'] } } },
+              log: { tags: { $: { fields: ['id'] } } },
             },
             media: {},
           },
@@ -60,7 +60,7 @@ export const useSearch = ({
             $: {
               where: { teamId: { $in: teamIds } },
             },
-            logTags: { $: { fields: ['id'] } },
+            tags: { $: { fields: ['id'] } },
             profiles: { image: {} },
           },
         }
@@ -88,7 +88,7 @@ export const useSearch = ({
               uri: p.image?.uri,
             }))
           : undefined,
-        tagIds: log.logTags?.map((t) => t.id),
+        tagIds: log.tags?.map((t) => t.id),
       });
     }
 
@@ -117,36 +117,36 @@ export const useSearch = ({
               previewUri: m.previewUri,
             }))
           : undefined,
-        tagIds: record.log?.logTags?.map((t) => t.id),
+        tagIds: record.log?.tags?.map((t) => t.id),
       });
     }
 
-    for (const comment of data.comments ?? []) {
-      if (!comment.text) continue;
+    for (const reply of data.replies ?? []) {
+      if (!reply.text) continue;
 
       docs.push({
-        id: `comment:${comment.id}`,
-        type: 'comment',
-        text: comment.text,
+        id: `reply:${reply.id}`,
+        type: 'reply',
+        text: reply.text,
         name: '',
-        date: comment.date,
-        logId: comment.record?.log?.id,
-        logName: comment.record?.log?.name,
-        logColor: comment.record?.log?.color,
-        recordId: comment.record?.id,
-        people: comment.author?.name ?? '',
-        authorId: comment.author?.id,
-        authorName: comment.author?.name,
-        authorImage: comment.author?.image?.uri,
-        media: comment.media?.length
-          ? comment.media.map((m) => ({
+        date: reply.date,
+        logId: reply.record?.log?.id,
+        logName: reply.record?.log?.name,
+        logColor: reply.record?.log?.color,
+        recordId: reply.record?.id,
+        people: reply.author?.name ?? '',
+        authorId: reply.author?.id,
+        authorName: reply.author?.name,
+        authorImage: reply.author?.image?.uri,
+        media: reply.media?.length
+          ? reply.media.map((m) => ({
               id: m.id,
               type: m.type,
               uri: m.uri,
               previewUri: m.previewUri,
             }))
           : undefined,
-        tagIds: comment.record?.log?.logTags?.map((t) => t.id),
+        tagIds: reply.record?.log?.tags?.map((t) => t.id),
       });
     }
 

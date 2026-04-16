@@ -1,14 +1,14 @@
 import { Activity } from '@/types/activity';
-import { Comment } from '@/types/comment';
 import { Log } from '@/types/log';
 import { Media } from '@/types/media';
 import { Profile } from '@/types/profile';
 import { Record as RecordType } from '@/types/record';
+import { Reply } from '@/types/reply';
 import { Team } from '@/types/team';
 
 export type ActivityWithRelations = Activity & {
   actor?: Profile & { image?: Media; logs?: Pick<Log, 'id'>[] };
-  comment?: Comment & { media?: Media[] };
+  reply?: Reply & { media?: Media[] };
   log?: Log;
   record?: RecordType & { media?: Media[] };
   team?: Team & { image?: Media };
@@ -27,7 +27,7 @@ export const groupActivities = (
 ): GroupedActivity[] => {
   const NEEDS_RECORD = new Set([
     'record_published',
-    'comment_posted',
+    'reply_posted',
     'reaction_added',
   ]);
 
@@ -42,11 +42,11 @@ export const groupActivities = (
   for (const activity of filtered) {
     if (activity.type === 'reaction_added') {
       const lastGroup = groups[groups.length - 1];
-      const targetId = activity.comment?.id ?? activity.record?.id;
+      const targetId = activity.reply?.id ?? activity.record?.id;
 
       const lastTargetId =
         lastGroup?.type === 'reaction_added'
-          ? (lastGroup.activities[0]?.comment?.id ??
+          ? (lastGroup.activities[0]?.reply?.id ??
             lastGroup.activities[0]?.record?.id)
           : undefined;
 

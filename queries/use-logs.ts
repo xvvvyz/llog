@@ -25,7 +25,7 @@ export const useLogs = ({
                 ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },
-            logTags: { $: { fields: ['id'] } },
+            tags: { $: { fields: ['id'] } },
             profiles: { image: {} },
           },
         }

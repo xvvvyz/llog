@@ -10,11 +10,11 @@ import { Pressable, View } from 'react-native';
 export const ActivityItemMedia = ({
   media,
   recordId,
-  commentId,
+  replyId,
 }: {
   media?: Media[];
   recordId?: string;
-  commentId?: string;
+  replyId?: string;
 }) => {
   const { audioMedia, visualMedia } = useFilteredMedia(media || []);
   if (!visualMedia.length && !audioMedia.length) return null;
@@ -29,7 +29,7 @@ export const ActivityItemMedia = ({
           pathname: `/record/[recordId]/media`,
           params: {
             recordId,
-            ...(commentId && { commentId }),
+            ...(replyId && { replyId }),
             defaultIndex: String(visualMedia.indexOf(item)),
           },
         })

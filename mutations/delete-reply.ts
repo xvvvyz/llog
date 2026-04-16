@@ -1,6 +1,6 @@
 import { apiOrThrow } from '@/utilities/api';
 
-export const deleteComment = async ({
+export const deleteReply = async ({
   id,
   recordId,
 }: {
@@ -9,8 +9,8 @@ export const deleteComment = async ({
 }) => {
   if (!id || !recordId) return;
   return apiOrThrow(
-    `/records/${recordId}/comments/${id}`,
+    `/records/${recordId}/replies/${id}`,
     { method: 'DELETE' },
-    'Failed to delete comment'
+    'Failed to delete reply'
   );
 };

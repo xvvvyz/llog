@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
+import { useTeamInvites } from '@/queries/use-team-invite-links';
 import { Role } from '@/types/role';
 import { db } from '@/utilities/db';
 import * as React from 'react';
@@ -11,7 +11,7 @@ import { ActivityIndicator, View } from 'react-native';
 export const InviteDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const role = sheetManager.getId('invite-delete');
-  const { inviteLinks } = useTeamInviteLinks();
+  const { invites } = useTeamInvites();
   const [isLoading, setIsLoading] = React.useState(false);
   const open = sheetManager.isOpen('invite-delete');
 
@@ -28,19 +28,17 @@ export const InviteDeleteSheet = () => {
     setIsLoading(true);
 
     try {
-      const toDelete = inviteLinks.filter((l) => l.role === role);
+      const toDelete = invites.filter((l) => l.role === role);
 
       if (toDelete.length) {
-        await db.transact(
-          toDelete.map((l) => db.tx.inviteLinks[l.id].delete())
-        );
+        await db.transact(toDelete.map((l) => db.tx.invites[l.id].delete()));
       }
 
       sheetManager.close('invite-delete');
     } catch {
       setIsLoading(false);
     }
-  }, [inviteLinks, role, sheetManager]);
+  }, [invites, role, sheetManager]);
 
   return (
     <Sheet

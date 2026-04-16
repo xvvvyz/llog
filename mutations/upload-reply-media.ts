@@ -3,10 +3,10 @@ import { apiUpload } from '@/utilities/api-upload';
 import { prepareMediaFormData } from '@/utilities/prepare-media-form-data';
 import { ImagePickerAsset } from 'expo-image-picker';
 
-export const uploadCommentMedia = async ({
+export const uploadReplyMedia = async ({
   asset,
   audioUri,
-  commentId,
+  replyId,
   duration,
   mediaId,
   onProgress,
@@ -15,14 +15,14 @@ export const uploadCommentMedia = async ({
 }: {
   asset?: ImagePickerAsset;
   audioUri?: string;
-  commentId?: string;
+  replyId?: string;
   duration?: number;
   mediaId?: string;
   onProgress?: (progress: number) => void;
   order?: number;
   recordId?: string;
 }) => {
-  if (!commentId || !recordId) return;
+  if (!replyId || !recordId) return;
 
   const body = await prepareMediaFormData({
     asset,
@@ -35,12 +35,12 @@ export const uploadCommentMedia = async ({
 
   if (onProgress) {
     await apiUpload(
-      `/files/records/${recordId}/comments/${commentId}/media`,
+      `/files/records/${recordId}/replies/${replyId}/media`,
       body,
       onProgress
     );
   } else {
-    await api(`/files/records/${recordId}/comments/${commentId}/media`, {
+    await api(`/files/records/${recordId}/replies/${replyId}/media`, {
       body,
       method: 'PUT',
     });

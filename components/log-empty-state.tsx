@@ -8,7 +8,7 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { createInviteLink } from '@/mutations/create-invite-link';
 import { useLog } from '@/queries/use-log';
 import { useMyRole } from '@/queries/use-my-role';
-import { useTeamInviteLinks } from '@/queries/use-team-invite-links';
+import { useTeamInvites } from '@/queries/use-team-invite-links';
 import { useTeamMembers } from '@/queries/use-team-members';
 import { UI } from '@/theme/ui';
 import { Role } from '@/types/role';
@@ -30,7 +30,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
   const logColor = useLogColor({ id: logId });
   const sheetManager = useSheetManager();
   const { members } = useTeamMembers({ teamId: log.teamId });
-  const { inviteLinks } = useTeamInviteLinks({ teamId: log.teamId });
+  const { invites } = useTeamInvites({ teamId: log.teamId });
   const { copy, copied } = useCopy();
   const hasMembers = members.some((member) => isMemberRole(member.role));
 
@@ -41,7 +41,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
   const getOrCreateLink = React.useCallback(async () => {
     if (!log.teamId) return null;
 
-    const existing = inviteLinks.find((link) => {
+    const existing = invites.find((link) => {
       if (link.role !== Role.Member) return false;
       const logIds = link.logs?.map((l) => l.id) ?? [];
       return logIds.length === 1 && logIds[0] === logId;
@@ -56,7 +56,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
     });
 
     return token;
-  }, [log.teamId, logId, inviteLinks]);
+  }, [log.teamId, logId, invites]);
 
   const handleCopyLink = React.useCallback(async () => {
     setLoadingAction('copy');

@@ -24,7 +24,7 @@ import { Platform, View } from 'react-native';
 
 const NEEDS_RECORD = new Set([
   'record_published',
-  'comment_posted',
+  'reply_posted',
   'reaction_added',
 ]);
 

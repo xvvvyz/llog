@@ -1,6 +1,6 @@
 import { db } from '@/utilities/db';
 
-export const toggleLogTag = async ({
+export const toggleTag = async ({
   id,
   isSelected,
   logId,
@@ -11,5 +11,5 @@ export const toggleLogTag = async ({
 }) => {
   if (!logId) return;
   const action = isSelected ? 'unlink' : 'link';
-  return db.transact(db.tx.logTags[id][action]({ logs: logId }));
+  return db.transact(db.tx.tags[id][action]({ logs: logId }));
 };

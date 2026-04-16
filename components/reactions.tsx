@@ -17,14 +17,14 @@ export const Reactions = ({
   reactions,
   recordId,
   teamId,
-  commentId,
+  replyId,
 }: {
   color?: string;
   logId?: string;
   reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
   recordId: string;
   teamId?: string;
-  commentId?: string;
+  replyId?: string;
 }) => {
   const profile = useProfile();
 
@@ -88,7 +88,7 @@ export const Reactions = ({
                   profileId: profile.id,
                   teamId,
                   recordId,
-                  commentId,
+                  replyId,
                 });
               }}
             >

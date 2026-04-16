@@ -1,6 +1,6 @@
 import { EmojiPicker } from '@/components/emoji-picker';
 import { Reactions } from '@/components/reactions';
-import { RecordOrCommentDropdownMenu } from '@/components/record-or-comment-dropdown-menu';
+import { RecordOrReplyDropdownMenu } from '@/components/record-or-reply-dropdown-menu';
 import { TruncatedText } from '@/components/truncated-text';
 import { AudioPlaylist } from '@/components/ui/audio-player';
 import { Avatar } from '@/components/ui/avatar';
@@ -17,11 +17,11 @@ import { toggleRecordPin } from '@/mutations/toggle-record-pin';
 import { useMyRole } from '@/queries/use-my-role';
 import { useProfile } from '@/queries/use-profile';
 import { useUi } from '@/queries/use-ui';
-import { Comment } from '@/types/comment';
 import { Media } from '@/types/media';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { Record as RecordType } from '@/types/record';
+import { Reply } from '@/types/reply';
 import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { Link, router } from 'expo-router';
@@ -32,9 +32,9 @@ import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-export const RecordOrComment = ({
+export const RecordOrReply = ({
   className,
-  commentId,
+  replyId,
   logId,
   numberOfLines,
   record,
@@ -42,13 +42,13 @@ export const RecordOrComment = ({
   variant,
 }: {
   className?: string;
-  commentId?: string;
+  replyId?: string;
   logId?: string;
   numberOfLines?: number;
   record: Partial<
-    (RecordType | Comment) & {
+    (RecordType | Reply) & {
       author: Profile & { image?: Media };
-      comments: Pick<Comment, 'id'>[];
+      replies: Pick<Reply, 'id'>[];
       media: Media[];
       reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
     }
@@ -81,7 +81,7 @@ export const RecordOrComment = ({
         profileId: profile.id,
         teamId: record.teamId,
         recordId,
-        commentId,
+        replyId,
       });
     })
     .runOnJS(true)
@@ -112,7 +112,7 @@ export const RecordOrComment = ({
               pathname: `/record/[recordId]/media`,
               params: {
                 recordId: recordId || record.id!,
-                ...(commentId && { commentId }),
+                ...(replyId && { replyId }),
                 defaultIndex: String(idIndexMap[item.id]),
               },
             })
@@ -148,7 +148,7 @@ export const RecordOrComment = ({
         </Pressable>
       );
     },
-    [commentId, idIndexMap, record.id, recordId]
+    [replyId, idIndexMap, record.id, recordId]
   );
 
   if (variant === 'compact') {
@@ -174,11 +174,11 @@ export const RecordOrComment = ({
                   {formatDate(record.date)}
                 </Text>
               </View>
-              <RecordOrCommentDropdownMenu
+              <RecordOrReplyDropdownMenu
                 className="-mb-3 -mr-1.5 -mt-1.5"
                 accentColor={accentColor}
                 authorId={record.author?.id}
-                commentId={commentId}
+                replyId={replyId}
                 isDetail
                 isPinned={'isPinned' in record ? !!record.isPinned : undefined}
                 recordId={recordId}
@@ -213,7 +213,7 @@ export const RecordOrComment = ({
             <View className="mt-3 flex-row items-center gap-1.5">
               <EmojiPicker
                 color={accentColor}
-                commentId={commentId}
+                replyId={replyId}
                 logId={logId}
                 reactions={record.reactions}
                 recordId={recordId}
@@ -223,7 +223,7 @@ export const RecordOrComment = ({
                 <View className="flex-row items-center gap-2">
                   <Reactions
                     color={accentColor}
-                    commentId={commentId}
+                    replyId={replyId}
                     logId={logId}
                     reactions={record.reactions}
                     recordId={recordId}
@@ -271,7 +271,7 @@ export const RecordOrComment = ({
               />
             </Button>
           )}
-          <RecordOrCommentDropdownMenu
+          <RecordOrReplyDropdownMenu
             accentColor={accentColor}
             authorId={record.author?.id}
             isPinned={'isPinned' in record ? !!record.isPinned : undefined}
@@ -309,7 +309,7 @@ export const RecordOrComment = ({
         <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
           <EmojiPicker
             color={accentColor}
-            commentId={commentId}
+            replyId={replyId}
             logId={logId}
             reactions={record.reactions}
             recordId={recordId}
@@ -319,7 +319,7 @@ export const RecordOrComment = ({
             <View className="flex-row items-center gap-2">
               <Reactions
                 color={accentColor}
-                commentId={commentId}
+                replyId={replyId}
                 logId={logId}
                 reactions={record.reactions}
                 recordId={recordId}
@@ -331,12 +331,12 @@ export const RecordOrComment = ({
             <View className="min-h-7 flex-1" />
           </GestureDetector>
         </View>
-        {!!record.comments && (
-          <Link asChild href={`/record/${record.id}?focus=comment`}>
+        {!!record.replies && (
+          <Link asChild href={`/record/${record.id}?focus=reply`}>
             <Button size="xs" variant="ghost">
               <Text className="text-sm font-normal text-muted-foreground">
-                {record.comments.length} repl
-                {record.comments.length === 1 ? 'y' : 'ies'}
+                {record.replies.length} repl
+                {record.replies.length === 1 ? 'y' : 'ies'}
               </Text>
               <Icon
                 className="-mr-0.5 text-muted-foreground"

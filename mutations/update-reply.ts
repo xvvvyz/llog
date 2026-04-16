@@ -1,6 +1,6 @@
 import { db } from '@/utilities/db';
 
-export const updateComment = async ({
+export const updateReply = async ({
   id,
   text,
 }: {
@@ -8,5 +8,5 @@ export const updateComment = async ({
   text: string;
 }) => {
   if (!id) return;
-  return db.transact(db.tx.comments[id].update({ text }));
+  return db.transact(db.tx.replies[id].update({ text }));
 };

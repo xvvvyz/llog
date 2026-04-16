@@ -9,7 +9,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Text } from '@/components/ui/text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSearch } from '@/hooks/use-search';
-import { useLogTags } from '@/queries/use-log-tags';
+import { useTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
 import { useTeams } from '@/queries/use-teams';
 import { SPECTRUM } from '@/theme/spectrum';
@@ -28,7 +28,7 @@ export default function Search() {
   const { teams } = useTeams();
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
   const logs = useLogs({ teamIds });
-  const logTags = useLogTags({ teamIds });
+  const tags = useTags({ teamIds });
 
   const { results } = useSearch({
     query,
@@ -83,7 +83,7 @@ export default function Search() {
                 setQuery={setQuery}
                 wrapperClassName="flex-1"
               />
-              {(!!logs.data.length || !!logTags.data.length) && (
+              {(!!logs.data.length || !!tags.data.length) && (
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
                     <Button size="icon" variant="secondary">
@@ -118,11 +118,11 @@ export default function Search() {
                         })}
                       </>
                     )}
-                    {!!logTags.data.length && (
+                    {!!tags.data.length && (
                       <>
                         {!!logs.data.length && <DropdownMenu.Separator />}
                         <DropdownMenu.Label>Tags</DropdownMenu.Label>
-                        {logTags.data.map((tag) => (
+                        {tags.data.map((tag) => (
                           <DropdownMenu.CheckboxItem
                             checked={tagIdSet.has(tag.id)}
                             key={tag.id}

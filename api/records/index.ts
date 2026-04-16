@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import comments from './comments';
 import record from './record';
+import replies from './replies';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.route('/:recordId', record);
-app.route('/:recordId/comments', comments);
+app.route('/:recordId/replies', replies);
 
 export default app;

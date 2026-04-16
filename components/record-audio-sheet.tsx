@@ -4,19 +4,19 @@ import { Text } from '@/components/ui/text';
 import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { uploadCommentMedia } from '@/mutations/upload-comment-media';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
+import { uploadReplyMedia } from '@/mutations/upload-reply-media';
 import { useRecord } from '@/queries/use-record';
 import { formatTime } from '@/utilities/format-time';
 import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
 import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-type AudioContext = { type: 'record' } | { type: 'comment'; recordId: string };
+type AudioContext = { type: 'record' } | { type: 'reply'; recordId: string };
 
 const parseAudioContext = (context?: string): AudioContext => {
-  if (context?.startsWith('comment:')) {
-    return { type: 'comment', recordId: context.slice(8) };
+  if (context?.startsWith('reply:')) {
+    return { type: 'reply', recordId: context.slice(6) };
   }
 
   return { type: 'record' };
@@ -39,7 +39,7 @@ export const RecordAudioSheet = () => {
   const isClosingRef = React.useRef(false);
 
   const record = useRecord({
-    id: audioContext.type === 'comment' ? audioContext.recordId : draftId,
+    id: audioContext.type === 'reply' ? audioContext.recordId : draftId,
   });
 
   const logColor = useLogColor({ id: record.log?.id });
@@ -89,10 +89,10 @@ export const RecordAudioSheet = () => {
       if (!draftId) return;
       const duration = recorder.duration;
 
-      if (audioContext.type === 'comment') {
-        await uploadCommentMedia({
+      if (audioContext.type === 'reply') {
+        await uploadReplyMedia({
           audioUri: uri,
-          commentId: draftId,
+          replyId: draftId,
           duration,
           recordId: audioContext.recordId,
         });

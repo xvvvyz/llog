@@ -23,7 +23,7 @@ export const useActivities = () => {
             },
             team: { image: {} },
             record: { media: {} },
-            comment: { media: {} },
+            reply: { media: {} },
             log: {},
           },
           roles: {

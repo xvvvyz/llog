@@ -1,6 +1,6 @@
 import { db } from '@/utilities/db';
 
-export const addLogTagToLog = async ({
+export const addTagToLog = async ({
   logId,
   tagId,
 }: {
@@ -8,5 +8,5 @@ export const addLogTagToLog = async ({
   tagId: string;
 }) => {
   if (!logId) return;
-  return db.transact(db.tx.logs[logId].link({ logTags: tagId }));
+  return db.transact(db.tx.logs[logId].link({ tags: tagId }));
 };

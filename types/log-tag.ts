@@ -1,4 +1,4 @@
 import schema from '@/instant.schema';
 import { InstaQLEntity } from '@instantdb/react-native';
 
-export type LogTag = InstaQLEntity<typeof schema, 'logTags'>;
+export type Tag = InstaQLEntity<typeof schema, 'tags'>;

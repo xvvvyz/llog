@@ -9,7 +9,7 @@ export const getFileScope = (key: string) => {
     return 'public';
   }
 
-  if (key.startsWith('records/') || key.startsWith('comments/')) {
+  if (key.startsWith('records/') || key.startsWith('replies/')) {
     return 'private';
   }
 

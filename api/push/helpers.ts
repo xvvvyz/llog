@@ -13,7 +13,7 @@ type StoredPushSubscription = {
 
 type RecipientUser = {
   id?: string;
-  pushSubscriptions?: StoredPushSubscription[];
+  subscriptions?: StoredPushSubscription[];
 };
 
 type RecipientRole = {
@@ -69,7 +69,7 @@ const collectSubscriptions = (users: RecipientUser[]) => {
     if (!user.id || seenUserIds.has(user.id)) continue;
     seenUserIds.add(user.id);
 
-    for (const subscription of user.pushSubscriptions ?? []) {
+    for (const subscription of user.subscriptions ?? []) {
       if (!subscription.endpoint || seenEndpoints.has(subscription.endpoint)) {
         continue;
       }
@@ -131,24 +131,24 @@ export const buildRecordNotification = ({
   url: `/activity`,
 });
 
-export const buildCommentNotification = ({
+export const buildReplyNotification = ({
   authorName,
-  commentId,
+  replyId,
   logName,
   recordId,
   text,
 }: {
   authorName?: string | null;
-  commentId: string;
+  replyId: string;
   logName?: string | null;
   recordId: string;
   text?: string | null;
 }) => ({
   body: trimBody(text),
   recordId,
-  tag: `comment:${commentId}`,
+  tag: `reply:${replyId}`,
   title: `${authorName || 'Someone'} replied in ${logName || 'llog'}`,
-  type: 'comment_posted' as const,
+  type: 'reply_posted' as const,
   url: `/activity`,
 });
 
@@ -157,17 +157,17 @@ export const upsertPushSubscription = async (
   userId: string,
   subscription: z.infer<typeof pushSubscriptionSchema>
 ) => {
-  const { pushSubscriptions } = await db.query({
-    pushSubscriptions: {
+  const { subscriptions } = await db.query({
+    subscriptions: {
       $: { where: { endpoint: subscription.endpoint } },
     },
   });
 
-  const existingId = pushSubscriptions[0]?.id;
+  const existingId = subscriptions[0]?.id;
   const subscriptionId = existingId ?? crypto.randomUUID();
 
   await db.transact(
-    db.tx.pushSubscriptions[subscriptionId]
+    db.tx.subscriptions[subscriptionId]
       .update({
         endpoint: subscription.endpoint,
         lastSeenAt: new Date().toISOString(),
@@ -180,8 +180,8 @@ export const upsertPushSubscription = async (
 };
 
 export const listUserPushSubscriptions = async (db: Db, userId: string) => {
-  const { pushSubscriptions } = await db.query({
-    pushSubscriptions: {
+  const { subscriptions } = await db.query({
+    subscriptions: {
       $: {
         fields: ['id', 'endpoint', 'lastSeenAt'] as [
           'id',
@@ -193,7 +193,7 @@ export const listUserPushSubscriptions = async (db: Db, userId: string) => {
     },
   });
 
-  return pushSubscriptions;
+  return subscriptions;
 };
 
 export const deletePushSubscriptionByEndpoint = async (
@@ -201,19 +201,19 @@ export const deletePushSubscriptionByEndpoint = async (
   userId: string,
   endpoint: string
 ) => {
-  const { pushSubscriptions } = await db.query({
-    pushSubscriptions: {
+  const { subscriptions } = await db.query({
+    subscriptions: {
       $: { where: { endpoint } },
       user: { $: { fields: ['id'] as ['id'] } },
     },
   });
 
-  const target = pushSubscriptions.find(
+  const target = subscriptions.find(
     (subscription) => subscription.user?.id === userId
   );
 
   if (!target) return;
-  await db.transact(db.tx.pushSubscriptions[target.id].delete());
+  await db.transact(db.tx.subscriptions[target.id].delete());
 };
 
 const deletePushSubscriptionsById = async (
@@ -225,7 +225,7 @@ const deletePushSubscriptionsById = async (
 
   await adminDb.transact(
     subscriptionIds.map((subscriptionId) =>
-      adminDb.tx.pushSubscriptions[subscriptionId].delete()
+      adminDb.tx.subscriptions[subscriptionId].delete()
     )
   );
 };
@@ -238,7 +238,7 @@ export const sendPushNotifications = async (
     recordId: string;
     tag: string;
     title: string;
-    type: 'comment_posted' | 'record_published';
+    type: 'reply_posted' | 'record_published';
     url: string;
   }
 ) => {

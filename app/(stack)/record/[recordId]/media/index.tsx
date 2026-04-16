@@ -3,7 +3,7 @@ import { Carousel } from '@/components/ui/carousel';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
-import { useCommentMedia, useRecordMedia } from '@/queries/use-record-media';
+import { useRecordMedia, useReplyMedia } from '@/queries/use-record-media';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -12,18 +12,18 @@ export default function Index() {
   const insets = useSafeAreaInsets();
 
   const params = useLocalSearchParams<{
-    commentId?: string;
+    replyId?: string;
     defaultIndex?: string;
     id?: string;
     recordId: string;
   }>();
 
   const record = useRecordMedia({
-    id: params.commentId ? undefined : params.recordId,
+    id: params.replyId ? undefined : params.recordId,
   });
 
-  const comment = useCommentMedia({ id: params.commentId });
-  const allMedia = params.commentId ? comment.media : record.media;
+  const reply = useReplyMedia({ id: params.replyId });
+  const allMedia = params.replyId ? reply.media : record.media;
 
   const visualMedia = React.useMemo(
     () =>
@@ -33,7 +33,7 @@ export default function Index() {
     [allMedia]
   );
 
-  const isLoading = params.commentId ? comment.isLoading : record.isLoading;
+  const isLoading = params.replyId ? reply.isLoading : record.isLoading;
 
   const defaultIndex = React.useMemo(() => {
     if (params.id) {

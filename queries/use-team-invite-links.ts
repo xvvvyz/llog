@@ -1,14 +1,14 @@
 import { useUi } from '@/queries/use-ui';
 import { db } from '@/utilities/db';
 
-export const useTeamInviteLinks = ({ teamId }: { teamId?: string } = {}) => {
+export const useTeamInvites = ({ teamId }: { teamId?: string } = {}) => {
   const { activeTeamId } = useUi();
   const resolvedTeamId = teamId ?? activeTeamId;
 
   const { data, isLoading } = db.useQuery(
     resolvedTeamId
       ? {
-          inviteLinks: {
+          invites: {
             $: { where: { team: resolvedTeamId } },
             creator: {},
             logs: { $: { fields: ['id'] } },
@@ -17,5 +17,5 @@ export const useTeamInviteLinks = ({ teamId }: { teamId?: string } = {}) => {
       : null
   );
 
-  return { inviteLinks: data?.inviteLinks ?? [], isLoading };
+  return { invites: data?.invites ?? [], isLoading };
 };

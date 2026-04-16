@@ -14,7 +14,7 @@ export const ActivityItemContent = ({
 }) => {
   const { type, activities } = group;
   const first = activities[0];
-  const commentText = first?.comment?.text;
+  const replyText = first?.reply?.text;
 
   switch (type) {
     case 'record_published': {
@@ -25,10 +25,10 @@ export const ActivityItemContent = ({
       ) : null;
     }
 
-    case 'comment_posted': {
-      return commentText ? (
+    case 'reply_posted': {
+      return replyText ? (
         <Text className="-my-1 px-4" numberOfLines={2}>
-          {renderLinkifiedText({ text: commentText })}
+          {renderLinkifiedText({ text: replyText })}
         </Text>
       ) : null;
     }

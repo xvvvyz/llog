@@ -2,14 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { deleteComment } from '@/mutations/delete-comment';
+import { deleteReply } from '@/mutations/delete-reply';
 import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-export const CommentDeleteSheet = () => {
+export const ReplyDeleteSheet = () => {
   const [isPending, setIsPending] = React.useState(false);
   const sheetManager = useSheetManager();
-  const open = sheetManager.isOpen('comment-delete');
+  const open = sheetManager.isOpen('reply-delete');
 
   React.useEffect(() => {
     if (open) setIsPending(false);
@@ -17,9 +17,9 @@ export const CommentDeleteSheet = () => {
 
   return (
     <Sheet
-      onDismiss={() => sheetManager.close('comment-delete')}
+      onDismiss={() => sheetManager.close('reply-delete')}
       open={open}
-      portalName="comment-delete"
+      portalName="reply-delete"
     >
       <View className="mx-auto w-full max-w-md p-8">
         <Text className="text-center text-2xl">Delete reply?</Text>
@@ -29,12 +29,12 @@ export const CommentDeleteSheet = () => {
             setIsPending(true);
 
             try {
-              await deleteComment({
-                id: sheetManager.getId('comment-delete'),
-                recordId: sheetManager.getContext('comment-delete'),
+              await deleteReply({
+                id: sheetManager.getId('reply-delete'),
+                recordId: sheetManager.getContext('reply-delete'),
               });
 
-              sheetManager.close('comment-delete');
+              sheetManager.close('reply-delete');
             } catch (error) {
               setIsPending(false);
               throw error;
@@ -51,7 +51,7 @@ export const CommentDeleteSheet = () => {
         </Button>
         <Button
           disabled={isPending}
-          onPress={() => sheetManager.close('comment-delete')}
+          onPress={() => sheetManager.close('reply-delete')}
           variant="secondary"
           wrapperClassName="mt-3"
         >

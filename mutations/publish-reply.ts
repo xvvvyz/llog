@@ -1,7 +1,7 @@
 import { apiOrThrow } from '@/utilities/api';
 
-export const publishComment = async ({
-  id: commentId,
+export const publishReply = async ({
+  id: replyId,
   text,
   recordId,
 }: {
@@ -9,15 +9,15 @@ export const publishComment = async ({
   text: string;
   recordId?: string;
 }) => {
-  if (!commentId || !recordId) return;
+  if (!replyId || !recordId) return;
 
   return apiOrThrow(
-    `/records/${recordId}/comments/${commentId}/publish`,
+    `/records/${recordId}/replies/${replyId}/publish`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     },
-    'Failed to publish comment'
+    'Failed to publish reply'
   );
 };

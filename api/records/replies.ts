@@ -11,7 +11,7 @@ import { z } from 'zod/v4';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.post(
-  '/:commentId/publish',
+  '/:replyId/publish',
   db(),
   auth(),
   zValidator(
@@ -22,18 +22,18 @@ app.post(
   ),
   async (c) => {
     const user = c.var.user!;
-    const commentId = c.req.param('commentId');
+    const replyId = c.req.param('replyId');
     const recordId = c.req.param('recordId');
 
-    if (!commentId || !recordId) {
+    if (!replyId || !recordId) {
       throw new HTTPException(400, { message: 'Invalid request' });
     }
 
     const { text } = c.req.valid('json');
 
-    const { comments } = await c.var.db.query({
-      comments: {
-        $: { where: { id: commentId } },
+    const { replies } = await c.var.db.query({
+      replies: {
+        $: { where: { id: replyId } },
         author: {
           $: { fields: ['id', 'name'] as ['id', 'name'] },
           user: { $: { fields: ['id'] as ['id'] } },
@@ -46,7 +46,7 @@ app.post(
             profiles: {
               user: {
                 $: { fields: ['id'] as ['id'] },
-                pushSubscriptions: {
+                subscriptions: {
                   $: {
                     fields: ['id', 'endpoint', 'subscription'] as [
                       'id',
@@ -64,7 +64,7 @@ app.post(
                 },
                 user: {
                   $: { fields: ['id'] as ['id'] },
-                  pushSubscriptions: {
+                  subscriptions: {
                     $: {
                       fields: ['id', 'endpoint', 'subscription'] as [
                         'id',
@@ -81,19 +81,19 @@ app.post(
       },
     });
 
-    const comment = comments[0];
+    const reply = replies[0];
 
-    if (!comment || comment.record?.id !== recordId) {
-      throw new HTTPException(404, { message: 'Comment not found' });
+    if (!reply || reply.record?.id !== recordId) {
+      throw new HTTPException(404, { message: 'Reply not found' });
     }
 
-    const actorRole = comment.record?.log?.team?.roles?.find(
+    const actorRole = reply.record?.log?.team?.roles?.find(
       (role) => role.userId === user.id
     )?.role;
 
-    const isAuthor = comment.author?.user?.id === user.id;
+    const isAuthor = reply.author?.user?.id === user.id;
 
-    const isLogMember = !!comment.record?.log?.profiles?.some(
+    const isLogMember = !!reply.record?.log?.profiles?.some(
       (profile) => profile.user?.id === user.id
     );
 
@@ -101,42 +101,42 @@ app.post(
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
-    if (!comment.isDraft) {
-      throw new HTTPException(409, { message: 'Comment already published' });
+    if (!reply.isDraft) {
+      throw new HTTPException(409, { message: 'Reply already published' });
     }
 
     const trimmedText = text.trim();
-    const hasContent = !!trimmedText || !!comment.media?.length;
+    const hasContent = !!trimmedText || !!reply.media?.length;
 
     if (
       !hasContent ||
-      !comment.author?.id ||
-      !comment.record?.log?.id ||
-      !comment.teamId
+      !reply.author?.id ||
+      !reply.record?.log?.id ||
+      !reply.teamId
     ) {
-      throw new HTTPException(400, { message: 'Invalid comment draft' });
+      throw new HTTPException(400, { message: 'Invalid reply draft' });
     }
 
     const now = new Date().toISOString();
 
     await c.var.db.transact([
-      c.var.db.tx.comments[commentId].update({
+      c.var.db.tx.replies[replyId].update({
         date: now,
         isDraft: false,
         text: trimmedText,
       }),
       c.var.db.tx.activities[id()]
         .update({
-          type: 'comment_posted',
+          type: 'reply_posted',
           date: now,
-          teamId: comment.teamId,
+          teamId: reply.teamId,
         })
         .link({
-          actor: comment.author.id,
-          team: comment.teamId,
+          actor: reply.author.id,
+          team: reply.teamId,
           record: recordId,
-          comment: commentId,
-          log: comment.record.log.id,
+          reply: replyId,
+          log: reply.record.log.id,
         }),
     ]);
 
@@ -144,13 +144,13 @@ app.post(
       c.env,
       push.collectRecipientSubscriptions({
         actorUserId: user.id,
-        logProfiles: comment.record.log.profiles,
-        roles: comment.record.log.team?.roles,
+        logProfiles: reply.record.log.profiles,
+        roles: reply.record.log.team?.roles,
       }),
-      push.buildCommentNotification({
-        authorName: comment.author.name,
-        commentId,
-        logName: comment.record.log.name,
+      push.buildReplyNotification({
+        authorName: reply.author.name,
+        replyId,
+        logName: reply.record.log.name,
         recordId,
         text: trimmedText,
       })
@@ -160,17 +160,17 @@ app.post(
   }
 );
 
-app.delete('/:commentId', db({ asUser: true }), async (c) => {
-  const commentId = c.req.param('commentId');
+app.delete('/:replyId', db({ asUser: true }), async (c) => {
+  const replyId = c.req.param('replyId');
   const recordId = c.req.param('recordId');
 
-  if (!commentId || !recordId) {
+  if (!replyId || !recordId) {
     throw new HTTPException(400, { message: 'Invalid request' });
   }
 
-  const { comments } = await c.var.db.query({
-    comments: {
-      $: { where: { id: commentId } },
+  const { replies } = await c.var.db.query({
+    replies: {
+      $: { where: { id: replyId } },
       author: { user: { $: { fields: ['id'] } } },
       record: {
         $: { fields: ['id'] as ['id'] },
@@ -190,15 +190,15 @@ app.delete('/:commentId', db({ asUser: true }), async (c) => {
     },
   });
 
-  const comment = comments[0];
-  if (!comment) return c.json({ success: true });
-  const callerRole = comment.record?.log?.team?.roles?.[0]?.role;
+  const reply = replies[0];
+  if (!reply) return c.json({ success: true });
+  const callerRole = reply.record?.log?.team?.roles?.[0]?.role;
 
   const canDelete =
-    comment.record?.id === recordId &&
+    reply.record?.id === recordId &&
     p.canDeleteOwnOrManagedResource({
       actorRole: callerRole,
-      isAuthor: comment.author?.user?.id === c.var.user.id,
+      isAuthor: reply.author?.user?.id === c.var.user.id,
     });
 
   if (!canDelete) {
@@ -207,16 +207,16 @@ app.delete('/:commentId', db({ asUser: true }), async (c) => {
 
   const r2Keys: string[] = [];
 
-  for (const item of comment.media ?? []) {
+  for (const item of reply.media ?? []) {
     r2Keys.push(item.uri as string);
     if (item.previewUri) r2Keys.push(item.previewUri as string);
   }
 
-  await c.var.db.transact(c.var.db.tx.comments[commentId].delete());
+  await c.var.db.transact(c.var.db.tx.replies[replyId].delete());
 
   await Promise.all([
     r2Keys.length ? c.env.R2.delete(r2Keys) : undefined,
-    deleteActivities(c.env, comment.activities ?? []),
+    deleteActivities(c.env, reply.activities ?? []),
   ]);
 
   return c.json({ success: true });

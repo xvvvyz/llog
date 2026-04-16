@@ -1,6 +1,6 @@
 import { LogDropdownMenu } from '@/components/log-dropdown-menu';
 import { LogEmptyState } from '@/components/log-empty-state';
-import { RecordOrComment } from '@/components/record-or-comment';
+import { RecordOrReply } from '@/components/record-or-reply';
 import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
@@ -95,7 +95,7 @@ export default function Index() {
           keyboardShouldPersistTaps="always"
           onScroll={hideOnScrollDown.onScroll}
           renderItem={({ index, item }) => (
-            <RecordOrComment
+            <RecordOrReply
               className={cn(
                 'mt-4',
                 index === 0 && 'md:mt-8',

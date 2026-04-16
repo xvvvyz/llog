@@ -3,7 +3,7 @@ export type WebPushNotificationPayload = {
   recordId: string;
   tag: string;
   title: string;
-  type: 'comment_posted' | 'record_published';
+  type: 'reply_posted' | 'record_published';
   url: string;
 };
 

@@ -1,13 +1,13 @@
 import { resolveProfileAndTeam } from '@/queries/resolve-profile-and-team';
 import { db } from '@/utilities/db';
 
-export const createCommentDraft = async ({
-  commentId,
+export const createReplyDraft = async ({
+  replyId,
   recordId,
   profileId,
   teamId,
 }: {
-  commentId: string;
+  replyId: string;
   recordId?: string;
   profileId?: string;
   teamId: string;
@@ -18,7 +18,7 @@ export const createCommentDraft = async ({
   if (!resolved) return;
 
   return db.transact(
-    db.tx.comments[commentId]
+    db.tx.replies[replyId]
       .update({
         date: new Date().toISOString(),
         isDraft: true,

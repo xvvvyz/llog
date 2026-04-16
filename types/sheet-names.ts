@@ -1,6 +1,6 @@
 export type SheetNames = readonly [
-  'comment-create',
-  'comment-delete',
+  'reply-create',
+  'reply-delete',
   'invite-delete',
   'member-remove',
   'invite-logs',

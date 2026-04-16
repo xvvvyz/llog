@@ -12,35 +12,35 @@ app.put(
   db({ asUser: true }),
   upload.mediaValidator,
   async (c) => {
-    const commentId = c.req.param('commentId');
+    const replyId = c.req.param('replyId');
     const recordId = c.req.param('recordId');
 
-    if (!commentId || !recordId) {
-      throw new HTTPException(400, { message: 'Comment not found' });
+    if (!replyId || !recordId) {
+      throw new HTTPException(400, { message: 'Reply not found' });
     }
 
     const { duration, file, mediaId, order } = c.req.valid('form');
 
-    const { comments } = await c.var.db.query({
-      comments: {
+    const { replies } = await c.var.db.query({
+      replies: {
         $: {
           fields: ['id'] as ['id'],
-          where: { id: commentId, record: recordId },
+          where: { id: replyId, record: recordId },
         },
       },
     });
 
-    if (!comments[0]?.id) {
-      throw new HTTPException(400, { message: 'Comment not found' });
+    if (!replies[0]?.id) {
+      throw new HTTPException(400, { message: 'Reply not found' });
     }
 
     await upload.uploadMedia({
       db: c.var.db,
       duration,
       file,
-      keyPrefix: `comments/${commentId}`,
-      linkField: 'comment',
-      linkId: commentId,
+      keyPrefix: `replies/${replyId}`,
+      linkField: 'reply',
+      linkId: replyId,
       media: c.env.MEDIA,
       mediaId,
       order,
@@ -53,18 +53,18 @@ app.put(
 );
 
 app.delete('/:mediaId', db({ asUser: true }), async (c) => {
-  const commentId = c.req.param('commentId');
+  const replyId = c.req.param('replyId');
   const mediaId = c.req.param('mediaId');
   const recordId = c.req.param('recordId');
 
-  if (!commentId || !mediaId || !recordId) {
+  if (!replyId || !mediaId || !recordId) {
     throw new HTTPException(400, { message: 'Invalid request' });
   }
 
   const { media } = await c.var.db.query({
     media: {
       $: { where: { id: mediaId } },
-      comment: {
+      reply: {
         $: { fields: ['id'] as ['id'] },
         author: { user: { $: { fields: ['id'] } } },
         record: {
@@ -85,14 +85,14 @@ app.delete('/:mediaId', db({ asUser: true }), async (c) => {
   });
 
   const item = media[0];
-  const callerRole = item?.comment?.record?.log?.team?.roles?.[0]?.role;
+  const callerRole = item?.reply?.record?.log?.team?.roles?.[0]?.role;
 
   const canDelete =
-    item?.comment?.id === commentId &&
-    item?.comment?.record?.id === recordId &&
+    item?.reply?.id === replyId &&
+    item?.reply?.record?.id === recordId &&
     p.canDeleteOwnOrManagedResource({
       actorRole: callerRole,
-      isAuthor: item?.comment?.author?.user?.id === c.var.user.id,
+      isAuthor: item?.reply?.author?.user?.id === c.var.user.id,
     });
 
   if (!item?.id || !canDelete) {

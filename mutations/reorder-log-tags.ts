@@ -2,17 +2,17 @@ import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { db } from '@/utilities/db';
 import { SortableFlexDragEndParams } from 'react-native-sortables';
 
-export const reorderLogTags = async ({ order }: SortableFlexDragEndParams) => {
+export const reorderTags = async ({ order }: SortableFlexDragEndParams) => {
   const teamId = await getActiveTeamId();
   if (!teamId) return;
 
   const { data } = await db.queryOnce({
-    logTags: { $: { order: { order: 'asc' }, where: { team: teamId } } },
+    tags: { $: { order: { order: 'asc' }, where: { team: teamId } } },
   });
 
   return db.transact(
-    order(data.logTags).map((tag, index) =>
-      db.tx.logTags[tag.id].update({ order: index })
+    order(data.tags).map((tag, index) =>
+      db.tx.tags[tag.id].update({ order: index })
     )
   );
 };

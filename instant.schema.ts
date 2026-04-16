@@ -17,7 +17,7 @@ const schema = i.schema({
       teamId: i.string().indexed(),
       emoji: i.string().optional(),
     }),
-    comments: i.entity({
+    replies: i.entity({
       date: i.date().indexed(),
       isDraft: i.boolean().optional().indexed(),
       teamId: i.string().indexed(),
@@ -31,13 +31,13 @@ const schema = i.schema({
       type: i.string(),
       uri: i.string(),
     }),
-    inviteLinks: i.entity({
+    invites: i.entity({
       token: i.string().unique().indexed(),
       role: i.string(),
       teamId: i.string().indexed(),
       expiresAt: i.number().optional(),
     }),
-    logTags: i.entity({
+    tags: i.entity({
       name: i.string().indexed(),
       order: i.number().indexed(),
       teamId: i.string().indexed(),
@@ -50,7 +50,7 @@ const schema = i.schema({
     profiles: i.entity({
       name: i.string(),
     }),
-    pushSubscriptions: i.entity({
+    subscriptions: i.entity({
       endpoint: i.string().unique().indexed(),
       lastSeenAt: i.date().optional(),
       subscription: i.any(),
@@ -97,14 +97,14 @@ const schema = i.schema({
         label: 'actorActivities',
       },
     },
-    activitiesComments: {
+    activitiesReplies: {
       forward: {
         on: 'activities',
         has: 'one',
-        label: 'comment',
+        label: 'reply',
       },
       reverse: {
-        on: 'comments',
+        on: 'replies',
         has: 'many',
         label: 'activities',
       },
@@ -147,48 +147,48 @@ const schema = i.schema({
         label: 'activities',
       },
     },
-    commentsReactions: {
+    repliesReactions: {
       forward: {
-        on: 'comments',
+        on: 'replies',
         has: 'many',
         label: 'reactions',
       },
       reverse: {
         on: 'reactions',
         has: 'one',
-        label: 'comment',
+        label: 'reply',
         onDelete: 'cascade',
       },
     },
-    teamsInviteLinks: {
+    teamsInvites: {
       forward: {
         on: 'teams',
         has: 'many',
-        label: 'inviteLinks',
+        label: 'invites',
       },
       reverse: {
-        on: 'inviteLinks',
+        on: 'invites',
         has: 'one',
         label: 'team',
         required: true,
         onDelete: 'cascade',
       },
     },
-    inviteLinksLogs: {
+    invitesLogs: {
       forward: {
-        on: 'inviteLinks',
+        on: 'invites',
         has: 'many',
         label: 'logs',
       },
       reverse: {
         on: 'logs',
         has: 'many',
-        label: 'inviteLinks',
+        label: 'invites',
       },
     },
-    inviteLinksCreators: {
+    invitesCreators: {
       forward: {
-        on: 'inviteLinks',
+        on: 'invites',
         has: 'one',
         label: 'creator',
         required: true,
@@ -196,12 +196,12 @@ const schema = i.schema({
       reverse: {
         on: 'profiles',
         has: 'many',
-        label: 'inviteLinks',
+        label: 'invites',
       },
     },
-    commentsAuthors: {
+    repliesAuthors: {
       forward: {
-        on: 'comments',
+        on: 'replies',
         has: 'one',
         label: 'author',
         required: true,
@@ -209,19 +209,19 @@ const schema = i.schema({
       reverse: {
         on: 'profiles',
         has: 'many',
-        label: 'comments',
+        label: 'replies',
       },
     },
-    commentsMedia: {
+    repliesMedia: {
       forward: {
-        on: 'comments',
+        on: 'replies',
         has: 'many',
         label: 'media',
       },
       reverse: {
         on: 'media',
         has: 'one',
-        label: 'comment',
+        label: 'reply',
         onDelete: 'cascade',
       },
     },
@@ -239,14 +239,14 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
-    logsLogTags: {
+    logsTags: {
       forward: {
         on: 'logs',
         has: 'many',
-        label: 'logTags',
+        label: 'tags',
       },
       reverse: {
-        on: 'logTags',
+        on: 'tags',
         has: 'many',
         label: 'logs',
       },
@@ -303,9 +303,9 @@ const schema = i.schema({
         label: 'profile',
       },
     },
-    pushSubscriptionsUsers: {
+    subscriptionsUsers: {
       forward: {
-        on: 'pushSubscriptions',
+        on: 'subscriptions',
         has: 'one',
         label: 'user',
         required: true,
@@ -314,7 +314,7 @@ const schema = i.schema({
       reverse: {
         on: '$users',
         has: 'many',
-        label: 'pushSubscriptions',
+        label: 'subscriptions',
       },
     },
     reactionsAuthors: {
@@ -356,14 +356,14 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
-    recordsComments: {
+    recordsReplies: {
       forward: {
         on: 'records',
         has: 'many',
-        label: 'comments',
+        label: 'replies',
       },
       reverse: {
-        on: 'comments',
+        on: 'replies',
         has: 'one',
         label: 'record',
         required: true,
@@ -425,28 +425,28 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
-    teamsLogTags: {
+    teamsTags: {
       forward: {
         on: 'teams',
         has: 'many',
-        label: 'logTags',
+        label: 'tags',
       },
       reverse: {
-        on: 'logTags',
+        on: 'tags',
         has: 'one',
         label: 'team',
         required: true,
         onDelete: 'cascade',
       },
     },
-    uiLogTags: {
+    uiTags: {
       forward: {
         on: 'ui',
         has: 'many',
-        label: 'logTags',
+        label: 'tags',
       },
       reverse: {
-        on: 'logTags',
+        on: 'tags',
         has: 'many',
         label: 'ui',
       },

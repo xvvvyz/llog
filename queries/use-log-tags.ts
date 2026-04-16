@@ -2,7 +2,7 @@ import { useResolvedTeamIds } from '@/queries/use-resolved-team-ids';
 import { db } from '@/utilities/db';
 import * as React from 'react';
 
-export const useLogTags = ({
+export const useTags = ({
   query,
   teamIds,
 }: {
@@ -14,7 +14,7 @@ export const useLogTags = ({
   const { data, isLoading } = db.useQuery(
     resolvedTeamIds.length
       ? {
-          logTags: {
+          tags: {
             $: {
               where: {
                 teamId: { $in: resolvedTeamIds },
@@ -28,20 +28,19 @@ export const useLogTags = ({
       : null
   );
 
-  const logTags = React.useMemo(
+  const tags = React.useMemo(
     // https://discord.com/channels/1031957483243188235/1376250736416919567
-    () => data?.logTags?.sort((a, b) => a.order - b.order) ?? [],
-    [data?.logTags]
+    () => data?.tags?.sort((a, b) => a.order - b.order) ?? [],
+    [data?.tags]
   );
 
   const queryExistingTagId = React.useMemo(
     () =>
       query
-        ? logTags.find((tag) => tag.name.toLowerCase() === query.toLowerCase())
-            ?.id
+        ? tags.find((tag) => tag.name.toLowerCase() === query.toLowerCase())?.id
         : undefined,
-    [logTags, query]
+    [tags, query]
   );
 
-  return { data: logTags, isLoading, queryExistingTagId };
+  return { data: tags, isLoading, queryExistingTagId };
 };

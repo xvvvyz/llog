@@ -15,7 +15,7 @@ import { Pressable, View } from 'react-native';
 
 const CATEGORY_LABELS: Record<string, string> = {
   record_published: 'Record',
-  comment_posted: 'Reply',
+  reply_posted: 'Reply',
   reaction_added: 'Emote',
   member_joined: 'Joined',
   member_left: 'Left',
@@ -46,18 +46,18 @@ export const ActivityItem = ({
   const mediaSource =
     group.type === 'record_published'
       ? first.record?.media
-      : group.type === 'comment_posted'
-        ? first.comment?.media
+      : group.type === 'reply_posted'
+        ? first.reply?.media
         : undefined;
 
   const mediaProps =
     group.type === 'record_published'
       ? { media: mediaSource, recordId: first.record?.id }
-      : group.type === 'comment_posted'
+      : group.type === 'reply_posted'
         ? {
             media: mediaSource,
             recordId: first.record?.id,
-            commentId: first.comment?.id,
+            replyId: first.reply?.id,
           }
         : null;
 
@@ -69,7 +69,7 @@ export const ActivityItem = ({
   const mediaIsLast = hasVisualMedia && !hasAudioMedia;
 
   const showQuotedRecord =
-    (group.type === 'comment_posted' || group.type === 'reaction_added') &&
+    (group.type === 'reply_posted' || group.type === 'reaction_added') &&
     record;
 
   return (

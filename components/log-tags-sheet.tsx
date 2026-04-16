@@ -6,12 +6,12 @@ import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { addLogTagToLog } from '@/mutations/add-log-tag-to-log';
-import { createLogTag } from '@/mutations/create-log-tag';
-import { reorderLogTags } from '@/mutations/reorder-log-tags';
-import { useHasNoLogTags } from '@/queries/use-has-no-log-tags';
+import { addTagToLog } from '@/mutations/add-log-tag-to-log';
+import { createTag } from '@/mutations/create-log-tag';
+import { reorderTags } from '@/mutations/reorder-log-tags';
+import { useHasNoTags } from '@/queries/use-has-no-log-tags';
 import { useLog } from '@/queries/use-log';
-import { useLogTags } from '@/queries/use-log-tags';
+import { useTags } from '@/queries/use-log-tags';
 import { cn } from '@/utilities/cn';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { Tag } from 'phosphor-react-native/lib/module/icons/Tag';
@@ -22,7 +22,7 @@ import Sortable from 'react-native-sortables';
 
 export const LogTagsSheet = () => {
   const [rawQuery, setRawQuery] = React.useState('');
-  const isEmpty = useHasNoLogTags();
+  const isEmpty = useHasNoTags();
 
   const searchInputRef =
     React.useRef<React.ComponentRef<typeof SearchInput>>(null);
@@ -34,27 +34,27 @@ export const LogTagsSheet = () => {
 
   const log = useLog({ id: sheetManager.getId('log-tags') });
   const logColor = useLogColor({ id: log.id });
-  const logTags = useLogTags({ query });
+  const tags = useTags({ query });
 
-  const isLoading = log.isLoading || (!query && logTags.isLoading);
+  const isLoading = log.isLoading || (!query && tags.isLoading);
 
   const handleCreateTag = React.useCallback(() => {
     if (!query) return;
 
-    if (logTags.queryExistingTagId) {
-      addLogTagToLog({
+    if (tags.queryExistingTagId) {
+      addTagToLog({
         logId: log.id,
-        tagId: logTags.queryExistingTagId,
+        tagId: tags.queryExistingTagId,
       });
     } else {
-      createLogTag({
+      createTag({
         logId: log.id,
         name: query,
       });
     }
 
     setRawQuery('');
-  }, [query, log.id, logTags.queryExistingTagId]);
+  }, [query, log.id, tags.queryExistingTagId]);
 
   return (
     <Sheet
@@ -94,20 +94,20 @@ export const LogTagsSheet = () => {
               gap={12}
               itemEntering={null}
               itemExiting={null}
-              onDragEnd={reorderLogTags}
+              onDragEnd={reorderTags}
               scrollableRef={scrollViewRef}
               sortEnabled={!rawQuery}
             >
-              {logTags.data.map((tag) => (
+              {tags.data.map((tag) => (
                 <LogTagsSheetTag
                   id={tag.id}
-                  isSelected={log.logTagIdsSet.has(tag.id)}
+                  isSelected={log.tagIdsSet.has(tag.id)}
                   key={tag.id}
                   logId={log.id}
                   name={tag.name}
                 />
               ))}
-              {!!rawQuery && !logTags.queryExistingTagId && (
+              {!!rawQuery && !tags.queryExistingTagId && (
                 <Button
                   className="rounded-full"
                   onPress={handleCreateTag}
@@ -127,10 +127,10 @@ export const LogTagsSheet = () => {
       </ScrollView>
       <View className="w-full p-8 pt-0 sm:mx-auto sm:max-w-sm md:pt-0">
         <SearchInput
-          actionIcon={!logTags.queryExistingTagId && query ? Plus : undefined}
+          actionIcon={!tags.queryExistingTagId && query ? Plus : undefined}
           maxLength={16}
           onActionPress={
-            !logTags.queryExistingTagId && query ? handleCreateTag : undefined
+            !tags.queryExistingTagId && query ? handleCreateTag : undefined
           }
           onSubmitEditing={handleCreateTag}
           placeholder="Type in a tag"

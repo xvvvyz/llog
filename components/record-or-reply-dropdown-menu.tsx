@@ -14,11 +14,11 @@ import { PushPin } from 'phosphor-react-native/lib/module/icons/PushPin';
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { View } from 'react-native';
 
-export const RecordOrCommentDropdownMenu = ({
+export const RecordOrReplyDropdownMenu = ({
   accentColor,
   authorId,
   className,
-  commentId,
+  replyId,
   isDetail,
   isPinned,
   recordId,
@@ -27,7 +27,7 @@ export const RecordOrCommentDropdownMenu = ({
   accentColor?: string;
   authorId?: string;
   className?: string;
-  commentId?: string;
+  replyId?: string;
   isDetail?: boolean;
   isPinned?: boolean;
   recordId: string;
@@ -62,8 +62,8 @@ export const RecordOrCommentDropdownMenu = ({
           {isAuthor && (
             <Menu.Item
               onPress={() => {
-                if (commentId) {
-                  sheetManager.open('comment-create', commentId, recordId);
+                if (replyId) {
+                  sheetManager.open('reply-create', replyId, recordId);
                 } else {
                   sheetManager.open('record-create', recordId, 'edit');
                 }
@@ -73,7 +73,7 @@ export const RecordOrCommentDropdownMenu = ({
               <Text>Edit</Text>
             </Menu.Item>
           )}
-          {!commentId && myRole.canPinRecords && (
+          {!replyId && myRole.canPinRecords && (
             <Menu.Item
               onPress={() =>
                 toggleRecordPin({ id: recordId, isPinned: !isPinned })
@@ -93,8 +93,8 @@ export const RecordOrCommentDropdownMenu = ({
           <Menu.Separator />
           <Menu.Item
             onPress={() => {
-              if (commentId) {
-                sheetManager.open('comment-delete', commentId, recordId);
+              if (replyId) {
+                sheetManager.open('reply-delete', replyId, recordId);
               } else {
                 sheetManager.open(
                   'record-delete',

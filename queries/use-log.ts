@@ -7,7 +7,7 @@ export const useLog = ({ id }: { id?: string }) => {
       ? {
           logs: {
             $: { where: { id: id } },
-            logTags: { $: { fields: ['id'] } },
+            tags: { $: { fields: ['id'] } },
             profiles: { image: {} },
           },
         }
@@ -16,9 +16,9 @@ export const useLog = ({ id }: { id?: string }) => {
 
   const log = data?.logs?.[0];
 
-  const logTagIdsSet = React.useMemo(
-    () => new Set(log?.logTags?.map((tag) => tag.id)),
-    [log?.logTags]
+  const tagIdsSet = React.useMemo(
+    () => new Set(log?.tags?.map((tag) => tag.id)),
+    [log?.tags]
   );
 
   const profileIdsSet = React.useMemo(
@@ -26,5 +26,5 @@ export const useLog = ({ id }: { id?: string }) => {
     [log?.profiles]
   );
 
-  return { ...log, isLoading, logTagIdsSet, profileIdsSet };
+  return { ...log, isLoading, tagIdsSet, profileIdsSet };
 };

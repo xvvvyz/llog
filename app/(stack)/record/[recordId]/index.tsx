@@ -1,4 +1,4 @@
-import { RecordOrComment } from '@/components/record-or-comment';
+import { RecordOrReply } from '@/components/record-or-reply';
 import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
@@ -32,7 +32,7 @@ export default function Index() {
   const logColor = useLogColor({ id: record.log?.id });
 
   const data = React.useMemo(
-    () => [{ ...record, comments: undefined }, ...record.comments],
+    () => [{ ...record, replies: undefined }, ...record.replies],
     [record]
   );
 
@@ -47,7 +47,7 @@ export default function Index() {
         right={
           <Button
             className="hidden md:flex"
-            onPress={() => sheetManager.open('comment-create', params.recordId)}
+            onPress={() => sheetManager.open('reply-create', params.recordId)}
             size="xs"
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"
@@ -75,9 +75,9 @@ export default function Index() {
             onScroll={hideOnScrollDown.onScroll}
             maintainVisibleContentPosition
             renderItem={({ index, item }) => (
-              <RecordOrComment
+              <RecordOrReply
                 className={cn(index === 0 && 'border-t-0')}
-                commentId={index > 0 ? item.id : undefined}
+                replyId={index > 0 ? item.id : undefined}
                 logId={record.log?.id}
                 record={item}
                 recordId={params.recordId}
@@ -97,7 +97,7 @@ export default function Index() {
         >
           <Button
             className="size-14 rounded-full"
-            onPress={() => sheetManager.open('comment-create', params.recordId)}
+            onPress={() => sheetManager.open('reply-create', params.recordId)}
             size="icon"
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"

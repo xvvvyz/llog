@@ -11,8 +11,8 @@ const app = new Hono<{ Bindings: CloudflareEnv }>();
 app.get('/:token', db(), async (c) => {
   const { token } = c.req.param();
 
-  const { inviteLinks } = await c.var.db.query({
-    inviteLinks: {
+  const { invites } = await c.var.db.query({
+    invites: {
       $: { where: { token } },
       team: {
         $: { fields: ['name'] },
@@ -27,7 +27,7 @@ app.get('/:token', db(), async (c) => {
     },
   });
 
-  const link = inviteLinks[0];
+  const link = invites[0];
 
   if (!link) {
     throw new HTTPException(404, { message: 'Invite link not found' });
@@ -78,15 +78,15 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
   const user = c.var.user!;
   const { token } = c.req.param();
 
-  const { inviteLinks } = await c.var.db.query({
-    inviteLinks: {
+  const { invites } = await c.var.db.query({
+    invites: {
       $: { where: { token } },
       team: { $: { fields: ['id'] } },
       logs: { $: { fields: ['id'] } },
     },
   });
 
-  const link = inviteLinks[0];
+  const link = invites[0];
 
   if (!link) {
     throw new HTTPException(404, { message: 'Invite link not found' });

@@ -5,55 +5,55 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useMediaComposer } from '@/hooks/use-media-composer';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { deleteCommentMedia } from '@/mutations/delete-comment-media';
-import { publishComment } from '@/mutations/publish-comment';
-import { updateComment } from '@/mutations/update-comment';
-import { uploadCommentMedia } from '@/mutations/upload-comment-media';
-import { useCommentDraft } from '@/queries/use-comment-draft';
+import { deleteReplyMedia } from '@/mutations/delete-reply-media';
+import { publishReply } from '@/mutations/publish-reply';
+import { updateReply } from '@/mutations/update-reply';
+import { uploadReplyMedia } from '@/mutations/upload-reply-media';
 import { useRecord } from '@/queries/use-record';
+import { useReplyDraft } from '@/queries/use-reply-draft';
 import { db } from '@/utilities/db';
 import * as React from 'react';
 import { View } from 'react-native';
 
-export const CommentCreateSheet = () => {
+export const ReplyCreateSheet = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [text, setText] = React.useState('');
   const sheetManager = useSheetManager();
 
-  const editRecordId = sheetManager.getContext('comment-create');
+  const editRecordId = sheetManager.getContext('reply-create');
   const isEdit = !!editRecordId;
-  const sheetId = sheetManager.getId('comment-create');
+  const sheetId = sheetManager.getId('reply-create');
 
   const recordId = isEdit ? editRecordId : sheetId;
-  const editCommentId = isEdit ? sheetId : undefined;
+  const editReplyId = isEdit ? sheetId : undefined;
 
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
-  const draft = useCommentDraft({ recordId: isEdit ? undefined : recordId });
+  const draft = useReplyDraft({ recordId: isEdit ? undefined : recordId });
 
   const { data: editData } = db.useQuery(
-    editCommentId
+    editReplyId
       ? {
-          comments: {
-            $: { where: { id: editCommentId } },
+          replies: {
+            $: { where: { id: editReplyId } },
             media: {},
           },
         }
       : null
   );
 
-  const editComment = editData?.comments?.[0];
-  const comment = isEdit ? editComment : draft;
-  const commentId = comment?.id;
+  const editReply = editData?.replies?.[0];
+  const reply = isEdit ? editReply : draft;
+  const replyId = reply?.id;
 
-  const isOpen = sheetManager.isOpen('comment-create');
-  const hasContent = !!text.trim() || !!(comment?.media ?? []).length;
+  const isOpen = sheetManager.isOpen('reply-create');
+  const hasContent = !!text.trim() || !!(reply?.media ?? []).length;
 
   React.useEffect(() => {
-    if (isEdit && editComment?.text && isOpen) {
-      setText(editComment.text);
+    if (isEdit && editReply?.text && isOpen) {
+      setText(editReply.text);
     }
-  }, [isEdit, editComment?.text, isOpen]);
+  }, [isEdit, editReply?.text, isOpen]);
 
   const handleUploadMedia = React.useCallback(
     async (
@@ -62,69 +62,69 @@ export const CommentCreateSheet = () => {
       mediaId: string,
       order: number
     ) => {
-      await uploadCommentMedia({
+      await uploadReplyMedia({
         asset,
-        commentId,
+        replyId,
         mediaId,
         onProgress,
         order,
         recordId,
       });
     },
-    [commentId, recordId]
+    [replyId, recordId]
   );
 
   const handleDeleteMedia = React.useCallback(
     async (mediaId: string) => {
-      await deleteCommentMedia({ commentId, mediaId, recordId });
+      await deleteReplyMedia({ replyId, mediaId, recordId });
     },
-    [commentId, recordId]
+    [replyId, recordId]
   );
 
   const { isBusy, mediaPreview, toolbar } = useMediaComposer({
-    commentId,
+    replyId,
     isOpen,
-    media: comment?.media ?? [],
+    media: reply?.media ?? [],
     onDeleteMedia: handleDeleteMedia,
     onOpenAudio: () =>
-      sheetManager.open('record-audio', commentId, `comment:${recordId}`),
+      sheetManager.open('record-audio', replyId, `reply:${recordId}`),
     onUploadMedia: handleUploadMedia,
     recordId,
   });
 
   const handleSubmit = React.useCallback(async () => {
-    if (!hasContent || !commentId) return;
+    if (!hasContent || !replyId) return;
 
     setIsSubmitting(true);
 
     try {
       if (isEdit) {
-        await updateComment({ id: commentId, text: text.trim() });
+        await updateReply({ id: replyId, text: text.trim() });
       } else {
-        await publishComment({
-          id: commentId,
+        await publishReply({
+          id: replyId,
           text: text.trim(),
           recordId,
         });
       }
 
-      sheetManager.close('comment-create');
+      sheetManager.close('reply-create');
       setText('');
     } finally {
       setIsSubmitting(false);
     }
-  }, [commentId, hasContent, isEdit, recordId, sheetManager, text]);
+  }, [replyId, hasContent, isEdit, recordId, sheetManager, text]);
 
   return (
     <Sheet
       className="rounded-t-2xl xs:rounded-t-4xl"
-      loading={isEdit ? !editComment : !!recordId && !draft.id}
+      loading={isEdit ? !editReply : !!recordId && !draft.id}
       onDismiss={() => {
-        sheetManager.close('comment-create');
+        sheetManager.close('reply-create');
         setText('');
       }}
-      open={sheetManager.isOpen('comment-create')}
-      portalName="comment-create"
+      open={sheetManager.isOpen('reply-create')}
+      portalName="reply-create"
     >
       <View className="mx-auto w-full max-w-lg gap-3 p-4 pb-8 sm:pt-8">
         <View className="max-h-[40dvh] rounded-xl border border-border-secondary bg-input md:max-h-[60dvh]">

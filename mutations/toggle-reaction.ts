@@ -9,7 +9,7 @@ export const toggleReaction = async ({
   profileId,
   teamId,
   recordId,
-  commentId,
+  replyId,
 }: {
   emoji: string;
   existingReactionId?: string;
@@ -17,7 +17,7 @@ export const toggleReaction = async ({
   profileId?: string;
   teamId: string;
   recordId: string;
-  commentId?: string;
+  replyId?: string;
 }) => {
   if (existingReactionId) {
     return db.transact(db.tx.reactions[existingReactionId].delete());
@@ -26,12 +26,12 @@ export const toggleReaction = async ({
   const resolved = await resolveProfileAndTeam(profileId, teamId);
   if (!resolved) return;
 
-  const reactionLink: { author: string; record?: string; comment?: string } = {
+  const reactionLink: { author: string; record?: string; reply?: string } = {
     author: resolved.profileId,
   };
 
-  if (commentId) {
-    reactionLink.comment = commentId;
+  if (replyId) {
+    reactionLink.reply = replyId;
   } else {
     reactionLink.record = recordId;
   }
@@ -44,7 +44,7 @@ export const toggleReaction = async ({
       log: logId,
     };
 
-    if (commentId) activityLink.comment = commentId;
+    if (replyId) activityLink.reply = replyId;
 
     return db.transact([
       db.tx.reactions[id()]
