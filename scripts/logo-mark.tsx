@@ -319,12 +319,206 @@ export const LogoSvg = ({
   );
 };
 
+const PILL_WIDTH_RATIOS = [0.8, 0.67, 0.74, 0.61] as const;
+
+const APP_ICON_BG = 'hsl(0 0% 100%)';
+
+const getSquirclePillPath = ({
+  exponent = 4.5,
+  height,
+  segments = 96,
+  width,
+  x,
+  y,
+}: {
+  exponent?: number;
+  height: number;
+  segments?: number;
+  width: number;
+  x: number;
+  y: number;
+}): string => {
+  const r = height / 2;
+  const cx1 = x + width - r;
+  const cx2 = x + r;
+  const cy = y + r;
+
+  const squirclePoint = (cx: number, angle: number) => {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const scale =
+      1 /
+      Math.pow(
+        Math.pow(Math.abs(cos), exponent) + Math.pow(Math.abs(sin), exponent),
+        1 / exponent
+      );
+
+    return { x: cx + r * cos * scale, y: cy + r * sin * scale };
+  };
+
+  const points: { x: number; y: number }[] = [];
+
+  for (let i = 0; i <= segments; i++) {
+    points.push(squirclePoint(cx1, -Math.PI / 2 + (Math.PI * i) / segments));
+  }
+
+  for (let i = 0; i <= segments; i++) {
+    points.push(squirclePoint(cx2, Math.PI / 2 + (Math.PI * i) / segments));
+  }
+
+  const [first, ...rest] = points;
+  return `M ${first!.x} ${first!.y} ${rest.map((p) => `L ${p.x} ${p.y}`).join(' ')} Z`;
+};
+
+const PILL_COLORS = [
+  SPECTRUM.light[6].lighter, // cyan
+  SPECTRUM.light[7].lighter, // blue
+  SPECTRUM.light[8].lighter, // lavender
+  SPECTRUM.light[9].lighter, // purple
+] as const;
+
+const PILL_DOT_COLORS = [
+  SPECTRUM.light[6].default,
+  SPECTRUM.light[7].default,
+  SPECTRUM.light[8].default,
+  SPECTRUM.light[9].default,
+] as const;
+
+const PILL_COLORS_DARK = [
+  SPECTRUM.dark[6].lighter,
+  SPECTRUM.dark[7].lighter,
+  SPECTRUM.dark[8].lighter,
+  SPECTRUM.dark[9].lighter,
+] as const;
+
+const PILL_DOT_COLORS_DARK = [
+  SPECTRUM.dark[6].default,
+  SPECTRUM.dark[7].default,
+  SPECTRUM.dark[8].default,
+  SPECTRUM.dark[9].default,
+] as const;
+
 export const AppIcon = ({
+  backgroundColor = APP_ICON_BG,
+  clip = false,
   colorScheme = 'light',
-  ...props
-}: Parameters<typeof LogoSvg>[0]) =>
-  React.createElement(LogoSvg, {
-    ...props,
-    colorScheme,
-    colors: colorScheme === 'dark' ? ICON_COLORS_DARK : ICON_COLORS,
-  });
+  colors,
+  cropToContent = false,
+  size,
+}: {
+  backgroundColor?: string;
+  clip?: boolean;
+  colorScheme?: 'light' | 'dark';
+  colors?: readonly string[];
+  cropToContent?: boolean;
+  paddingRatio?: number;
+  radiusRatio?: number;
+  size: number;
+}) => {
+  const resolvedColors =
+    colors ?? (colorScheme === 'dark' ? PILL_COLORS_DARK : PILL_COLORS);
+
+  const resolvedDotColors =
+    colorScheme === 'dark' ? PILL_DOT_COLORS_DARK : PILL_DOT_COLORS;
+
+  const contentWidth = size * 0.72;
+  const longestPillWidth = contentWidth * PILL_WIDTH_RATIOS[0];
+  const squareSide = longestPillWidth;
+  const gap = squareSide / 15; // 4 bars + 3 gaps, bars = 3× gap → 15 units total
+  const pillHeight = gap * 3;
+  const startY = (size - squareSide) / 2;
+  const leftX = (size - longestPillWidth) / 2;
+
+  const clipId = 'icon-clip';
+  const continuousExponent = 4.5;
+
+  const outerClipPath = clip
+    ? getContinuousRoundedSquarePath({
+        exponent: continuousExponent,
+        size,
+        x: 0,
+        y: 0,
+      })
+    : null;
+
+  const innerElements = [
+    React.createElement('rect', {
+      fill: backgroundColor,
+      height: size,
+      key: 'bg',
+      shapeRendering: 'geometricPrecision',
+      stroke: 'none',
+      width: size,
+      x: 0,
+      y: 0,
+    }),
+    ...resolvedColors.flatMap((color, i) => {
+      const y = startY + i * (pillHeight + gap);
+
+      return [
+        React.createElement('path', {
+          d: getSquirclePillPath({
+            exponent: 2.35,
+            height: pillHeight,
+            width: contentWidth * PILL_WIDTH_RATIOS[i]!,
+            x: leftX,
+            y,
+          }),
+          fill: color,
+          key: `bar-${i}`,
+          shapeRendering: 'geometricPrecision',
+          stroke: 'none',
+        }),
+        React.createElement('path', {
+          d: getContinuousRoundedSquarePath({
+            exponent: 2.35,
+            size: pillHeight,
+            x: leftX,
+            y,
+          }),
+          fill: resolvedDotColors[i],
+          key: `dot-${i}`,
+          shapeRendering: 'geometricPrecision',
+          stroke: 'none',
+        }),
+      ];
+    }),
+  ];
+
+  const cropPad = size * 0.02;
+  const cropSide = squareSide + cropPad * 2;
+  const cropOrigin = (size - cropSide) / 2;
+
+  const viewBox = cropToContent
+    ? `${cropOrigin} ${cropOrigin} ${cropSide} ${cropSide}`
+    : `0 0 ${size} ${size}`;
+
+  return React.createElement(
+    'svg',
+    { fill: 'none', viewBox, xmlns: 'http://www.w3.org/2000/svg' },
+    outerClipPath
+      ? React.createElement(
+          React.Fragment,
+          null,
+          React.createElement(
+            'defs',
+            null,
+            React.createElement(
+              'clipPath',
+              { id: clipId },
+              React.createElement('path', {
+                d: outerClipPath,
+                shapeRendering: 'geometricPrecision',
+              })
+            )
+          ),
+          React.createElement(
+            'g',
+            { clipPath: `url(#${clipId})` },
+            ...innerElements
+          )
+        )
+      : innerElements
+  );
+};

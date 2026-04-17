@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import satori from 'satori';
 import { UI } from '../theme/ui';
 import * as appleStartup from '../utilities/apple-startup-images';
-import { AppIcon, LogoSvg } from './logo-mark';
+import { AppIcon } from './logo-mark';
 
 const buildIco = (
   images: Array<{ data: Uint8Array; size: number }>
@@ -139,19 +139,19 @@ for (const output of iconOutputs) {
   await Bun.write(output.path, await renderPng(output));
 }
 
-// Badge — monochrome (white squares, transparent background) for use in notification status bar
+// Badge — monochrome (white pills, transparent background) for use in notification status bar
 await Bun.write(
   join(process.cwd(), 'public', 'badge-72.png'),
   new Resvg(
     renderToStaticMarkup(
-      React.createElement(LogoSvg, {
+      React.createElement(AppIcon, {
         backgroundColor: 'transparent',
         colors: ['white', 'white', 'white', 'white'],
-        paddingRatio: 0,
-        radiusRatio: ICON_RADIUS,
+        cropToContent: true,
         size: 72,
       })
-    )
+    ),
+    { fitTo: { mode: 'width', value: 72 } }
   )
     .render()
     .asPng()
@@ -213,13 +213,12 @@ const renderStartupImage = async ({
   width: number;
 }) => {
   const palette = UI[theme];
-  const markSize = Math.min(Math.round(Math.min(width, height) * 0.18), 360);
+  const markSize = Math.min(Math.round(Math.min(width, height) * 0.3), 480);
 
   const markSvg = renderToStaticMarkup(
-    React.createElement(LogoSvg, {
+    React.createElement(AppIcon, {
       backgroundColor: 'transparent',
       colorScheme: theme,
-      paddingRatio: 0,
       size: markSize,
     })
   );
