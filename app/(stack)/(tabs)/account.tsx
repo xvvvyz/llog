@@ -267,12 +267,13 @@ export default function Account() {
                 >
                   <Text className="font-normal">Double tap reaction</Text>
                   <Icon
-                    className="-mr-0.5"
+                    className="-mr-0.5 text-primary"
                     icon={REACTION_ICONS[ui.doubleTapEmoji]}
+                    weight="fill"
                   />
                 </Button>
               </Menu.Trigger>
-              <Menu.Content align="center" className="flex-row px-1 py-1">
+              <Menu.Content align="end" className="flex-row px-1 py-1">
                 {REACTION_EMOJIS.map((emoji) => (
                   <Menu.Item
                     key={emoji}

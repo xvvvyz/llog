@@ -7,22 +7,18 @@ import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
-import { useHideOnScrollDown } from '@/hooks/use-hide-on-scroll-down';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useRecord } from '@/queries/use-record';
-import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { textToTitle } from '@/utilities/text-to-title';
 import { useLocalSearchParams } from 'expo-router';
-import { ArrowBendUpLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendUpLeft';
+import { ArrowBendDownLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendDownLeft';
 import * as React from 'react';
 import { View } from 'react-native';
-import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 
 export default function Index() {
-  const hideOnScrollDown = useHideOnScrollDown();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ recordId: string }>();
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
@@ -52,7 +48,7 @@ export default function Index() {
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"
           >
-            <Icon className="-ml-0.5 text-white" icon={ArrowBendUpLeft} />
+            <Icon className="-ml-0.5 text-white" icon={ArrowBendDownLeft} />
             <Text className="text-white">Reply</Text>
           </Button>
         }
@@ -63,7 +59,7 @@ export default function Index() {
       {record.isLoading ? (
         <Loading />
       ) : (
-        <View className="flex-1" style={{ paddingBottom: insets.bottom }}>
+        <View className="flex-1" style={{ paddingBottom: insets.bottom + 104 }}>
           <List
             contentContainerClassName="mx-auto w-full max-w-lg border border-border-secondary rounded-4xl my-4 bg-card md:my-8"
             data={data}
@@ -72,7 +68,6 @@ export default function Index() {
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="always"
             maintainScrollAtEnd
-            onScroll={hideOnScrollDown.onScroll}
             maintainVisibleContentPosition
             renderItem={({ index, item }) => (
               <RecordOrReply
@@ -88,25 +83,21 @@ export default function Index() {
           />
         </View>
       )}
-      {hideOnScrollDown.isVisible && (
-        <Animated.View
-          className="absolute bottom-8 right-8 md:hidden"
-          entering={animation(FadeInUp)}
-          exiting={animation(FadeOutUp)}
-          style={{ marginBottom: insets.bottom }}
+      <View
+        className="absolute bottom-8 right-8 md:hidden"
+        style={{ marginBottom: insets.bottom }}
+      >
+        <Button
+          className="size-14 rounded-full"
+          onPress={() => sheetManager.open('reply-create', params.recordId)}
+          size="icon"
+          style={{ backgroundColor: logColor?.default }}
+          variant="secondary"
+          wrapperClassName="rounded-full"
         >
-          <Button
-            className="size-14 rounded-full"
-            onPress={() => sheetManager.open('reply-create', params.recordId)}
-            size="icon"
-            style={{ backgroundColor: logColor?.default }}
-            variant="secondary"
-            wrapperClassName="rounded-full"
-          >
-            <Icon className="text-white" icon={ArrowBendUpLeft} />
-          </Button>
-        </Animated.View>
-      )}
+          <Icon className="text-white" icon={ArrowBendDownLeft} />
+        </Button>
+      </View>
     </Page>
   );
 

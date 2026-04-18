@@ -39,6 +39,15 @@ export const EmojiPicker = ({
     return map;
   }, [reactions, profile.id]);
 
+  const usedEmojis = React.useMemo(
+    () => new Set((reactions ?? []).map((r) => r.emoji)),
+    [reactions]
+  );
+
+  if (REACTION_EMOJIS.every((emoji) => usedEmojis.has(emoji))) {
+    return null;
+  }
+
   return (
     <Menu.Root>
       <Menu.Trigger asChild>

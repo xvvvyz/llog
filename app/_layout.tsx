@@ -106,10 +106,10 @@ export default function Layout() {
         <GestureHandlerRootView className="flex-1">
           <SheetManagerProvider>
             <Slot />
-            <PortalHost />
           </SheetManagerProvider>
         </GestureHandlerRootView>
       </ThemeProvider>
+      <PortalHost />
     </React.Fragment>
   );
 }

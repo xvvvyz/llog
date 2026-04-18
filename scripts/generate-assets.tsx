@@ -146,8 +146,9 @@ await Bun.write(
     renderToStaticMarkup(
       React.createElement(AppIcon, {
         backgroundColor: 'transparent',
-        colors: ['white', 'white', 'white', 'white'],
+        colors: ['white', 'white', 'white'],
         cropToContent: true,
+        dotColors: ['white', 'white', 'white'],
         size: 72,
       })
     ),

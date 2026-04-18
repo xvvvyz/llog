@@ -319,7 +319,7 @@ export const LogoSvg = ({
   );
 };
 
-const PILL_WIDTH_RATIOS = [0.8, 0.67, 0.74, 0.61] as const;
+const PILL_WIDTH_RATIOS = [0.8, 0.68, 0.56] as const;
 
 const APP_ICON_BG = 'hsl(0 0% 100%)';
 
@@ -375,28 +375,24 @@ const PILL_COLORS = [
   SPECTRUM.light[6].lighter, // cyan
   SPECTRUM.light[7].lighter, // blue
   SPECTRUM.light[8].lighter, // lavender
-  SPECTRUM.light[9].lighter, // purple
 ] as const;
 
 const PILL_DOT_COLORS = [
   SPECTRUM.light[6].default,
   SPECTRUM.light[7].default,
   SPECTRUM.light[8].default,
-  SPECTRUM.light[9].default,
 ] as const;
 
 const PILL_COLORS_DARK = [
   SPECTRUM.dark[6].lighter,
   SPECTRUM.dark[7].lighter,
   SPECTRUM.dark[8].lighter,
-  SPECTRUM.dark[9].lighter,
 ] as const;
 
 const PILL_DOT_COLORS_DARK = [
   SPECTRUM.dark[6].default,
   SPECTRUM.dark[7].default,
   SPECTRUM.dark[8].default,
-  SPECTRUM.dark[9].default,
 ] as const;
 
 export const AppIcon = ({
@@ -405,6 +401,7 @@ export const AppIcon = ({
   colorScheme = 'light',
   colors,
   cropToContent = false,
+  dotColors,
   size,
 }: {
   backgroundColor?: string;
@@ -412,6 +409,7 @@ export const AppIcon = ({
   colorScheme?: 'light' | 'dark';
   colors?: readonly string[];
   cropToContent?: boolean;
+  dotColors?: readonly string[];
   paddingRatio?: number;
   radiusRatio?: number;
   size: number;
@@ -420,12 +418,13 @@ export const AppIcon = ({
     colors ?? (colorScheme === 'dark' ? PILL_COLORS_DARK : PILL_COLORS);
 
   const resolvedDotColors =
-    colorScheme === 'dark' ? PILL_DOT_COLORS_DARK : PILL_DOT_COLORS;
+    dotColors ??
+    (colorScheme === 'dark' ? PILL_DOT_COLORS_DARK : PILL_DOT_COLORS);
 
   const contentWidth = size * 0.72;
   const longestPillWidth = contentWidth * PILL_WIDTH_RATIOS[0];
   const squareSide = longestPillWidth;
-  const gap = squareSide / 15; // 4 bars + 3 gaps, bars = 3× gap → 15 units total
+  const gap = squareSide / 11; // 3 bars + 2 gaps, bars = 3× gap → 11 units total
   const pillHeight = gap * 3;
   const startY = (size - squareSide) / 2;
   const leftX = (size - longestPillWidth) / 2;

@@ -14,7 +14,7 @@ app.get('/:key{.+}', async (c) => {
 
   if (scope === 'private') {
     await requirePrivateFileAccess(c, key);
-    c.header('Cache-Control', 'private, no-store');
+    c.header('Cache-Control', 'private, max-age=31536000, immutable');
     c.header('Vary', 'Authorization');
   } else {
     c.header('Cache-Control', 'public, max-age=31536000, immutable');

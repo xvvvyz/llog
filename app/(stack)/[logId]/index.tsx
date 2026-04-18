@@ -10,24 +10,20 @@ import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { Text } from '@/components/ui/text';
 import { useHeaderHeight } from '@/hooks/use-header-height';
-import { useHideOnScrollDown } from '@/hooks/use-hide-on-scroll-down';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useLog } from '@/queries/use-log';
 import { useRecords } from '@/queries/use-records';
-import { animation } from '@/utilities/animation';
 import { cn } from '@/utilities/cn';
 import { useLocalSearchParams } from 'expo-router';
 import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
-import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 
 export default function Index() {
   const headerHeight = useHeaderHeight();
-  const hideOnScrollDown = useHideOnScrollDown();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ logId: string }>();
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
@@ -88,12 +84,11 @@ export default function Index() {
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
-          contentContainerStyle={{ paddingBottom: insets.bottom }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
           data={records.data}
           keyExtractor={(record) => record.id}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
-          onScroll={hideOnScrollDown.onScroll}
           renderItem={({ index, item }) => (
             <RecordOrReply
               className={cn(
@@ -109,11 +104,9 @@ export default function Index() {
           wrapperClassName="flex-1"
         />
       )}
-      {hideOnScrollDown.isVisible && hasRecords && (
-        <Animated.View
+      {hasRecords && (
+        <View
           className="absolute bottom-8 right-8 md:hidden"
-          entering={animation(FadeInUp)}
-          exiting={animation(FadeOutUp)}
           style={{ marginBottom: insets.bottom }}
         >
           <Button
@@ -126,7 +119,7 @@ export default function Index() {
           >
             <Icon className="text-white" icon={Plus} />
           </Button>
-        </Animated.View>
+        </View>
       )}
     </Page>
   );
