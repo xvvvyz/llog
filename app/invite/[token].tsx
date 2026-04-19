@@ -55,11 +55,33 @@ export default function InviteLink() {
   React.useEffect(() => {
     if (!token) return;
 
-    fetch(`${process.env.EXPO_PUBLIC_API_URL}/teams/invite-links/${token}`)
-      .then((res) => res.json())
-      .then((data) => setLinkInfo(data))
-      .catch(() => setLinkInfo({ isValid: false, reason: 'error' }))
-      .finally(() => setIsLoading(false));
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/teams/invite-links/${token}`
+        );
+
+        const data = await response.json();
+
+        if (!cancelled) {
+          setLinkInfo(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setLinkInfo({ isValid: false, reason: 'error' });
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   React.useEffect(() => {
@@ -70,13 +92,15 @@ export default function InviteLink() {
       return;
     }
 
-    AsyncStorage.getItem(storage.PENDING_INVITE_AUTO_JOIN_KEY).then(
-      (pendingToken) => {
-        if (!cancelled) {
-          setShouldResumeAcceptedInvite(pendingToken === token);
-        }
+    void (async () => {
+      const pendingToken = await AsyncStorage.getItem(
+        storage.PENDING_INVITE_AUTO_JOIN_KEY
+      );
+
+      if (!cancelled) {
+        setShouldResumeAcceptedInvite(pendingToken === token);
       }
-    );
+    })();
 
     return () => {
       cancelled = true;

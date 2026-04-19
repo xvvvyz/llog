@@ -13,9 +13,10 @@
    ```bash
    # .env.development
 
-   EXPO_PUBLIC_APP_URL=http://localhost:8081
+   CLOUDFLARED_TOKEN=<YOUR_CLOUADFLARED_TOKEN>
+   EXPO_PUBLIC_API_URL=<YOUR_URL>/api/v1
+   EXPO_PUBLIC_APP_URL=<YOUR_URL>
    EXPO_PUBLIC_INSTANT_APP_ID=<YOUR_ID>
-   EXPO_PUBLIC_API_URL=http://localhost:8787/api/v1
    EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<YOUR_PUBLIC_VAPID_KEY>
    ```
 
@@ -50,5 +51,6 @@
 5. Start the dev server
 
    ```bash
+   bun dev:tunnel
    bun dev
    ```

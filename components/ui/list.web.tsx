@@ -28,13 +28,7 @@ export const List = <T,>({
     | undefined;
 
   return (
-    <View
-      className={cn(
-        !horizontal &&
-          'flex-1 border-y border-b-transparent border-t-transparent',
-        wrapperClassName
-      )}
-    >
+    <View className={cn(!horizontal && 'flex-1', wrapperClassName)}>
       <ScrollView
         horizontal={horizontal}
         keyboardDismissMode={restProps.keyboardDismissMode}

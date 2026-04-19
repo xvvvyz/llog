@@ -33,6 +33,33 @@ import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
+const DoubleTapReactionZone = ({
+  className,
+  onDoubleTap,
+}: {
+  className?: string;
+  onDoubleTap: () => void;
+}) => {
+  const gesture = React.useMemo(
+    () =>
+      Gesture.Tap()
+        .numberOfTaps(2)
+        .maxDelay(260)
+        .maxDistance(12)
+        .onEnd(() => {
+          onDoubleTap();
+        })
+        .runOnJS(true),
+    [onDoubleTap]
+  );
+
+  return (
+    <GestureDetector gesture={gesture} touchAction="pan-y">
+      <View className={cn('min-h-8 flex-1 self-stretch', className)} />
+    </GestureDetector>
+  );
+};
+
 export const RecordOrReply = ({
   className,
   replyId,
@@ -66,31 +93,34 @@ export const RecordOrReply = ({
   const sheetManager = useSheetManager();
   const ui = useUi();
 
-  const doubleTap = Gesture.Tap()
-    .numberOfTaps(2)
-    .maxDelay(300)
-    .maxDistance(12)
-    .onEnd(() => {
-      if (!record.teamId) return;
-      const emoji = ui.doubleTapEmoji;
-
-      const existingReaction = record.reactions?.find(
-        (r) => r.emoji === emoji && r.author?.id === profile.id
-      );
-
-      toggleReaction({
-        emoji,
-        existingReactionId: existingReaction?.id,
-        logId,
-        profileId: profile.id,
-        teamId: record.teamId,
-        recordId,
-        replyId,
-      });
-    })
-    .runOnJS(true);
-
   const { audioMedia, visualMedia } = useFilteredMedia(record.media || []);
+
+  const handleDoubleTapReaction = React.useCallback(() => {
+    if (!record.teamId) return;
+
+    const emoji = ui.doubleTapEmoji;
+    const existingReaction = record.reactions?.find(
+      (r) => r.emoji === emoji && r.author?.id === profile.id
+    );
+
+    toggleReaction({
+      emoji,
+      existingReactionId: existingReaction?.id,
+      logId,
+      profileId: profile.id,
+      teamId: record.teamId,
+      recordId,
+      replyId,
+    });
+  }, [
+    logId,
+    profile.id,
+    record.reactions,
+    record.teamId,
+    recordId,
+    replyId,
+    ui.doubleTapEmoji,
+  ]);
 
   const idIndexMap = React.useMemo(
     () =>
@@ -140,7 +170,7 @@ export const RecordOrReply = ({
                 }}
               >
                 <Icon
-                  className="ml-0.5 text-white"
+                  className="text-white"
                   icon={Play}
                   size={20}
                   weight="fill"
@@ -156,67 +186,65 @@ export const RecordOrReply = ({
 
   if (variant === 'compact') {
     return (
-      <GestureDetector gesture={doubleTap} touchAction="pan-y">
-        <View
-          className={cn(
-            'border-t border-border-secondary px-4 pb-3 pt-4',
-            className
-          )}
-        >
-          <View className="flex-row gap-3">
-            <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
-            <View className="flex-1">
-              <View className="flex-row items-start justify-between gap-2">
-                <View className="flex-1 flex-row items-baseline gap-2">
-                  <Text
-                    className="shrink font-medium leading-5"
-                    numberOfLines={1}
-                  >
-                    {record.author?.name}
-                  </Text>
-                  <Text className="shrink-0 text-sm leading-5 text-muted-foreground">
-                    {formatDate(record.date)}
-                  </Text>
-                </View>
-                <RecordOrReplyDropdownMenu
-                  className="-mb-3 -mr-1.5 -mt-1.5"
-                  accentColor={accentColor}
-                  authorId={record.author?.id}
-                  replyId={replyId}
-                  isDetail
-                  isPinned={
-                    'isPinned' in record ? !!record.isPinned : undefined
-                  }
-                  recordId={recordId}
-                  teamId={record.teamId}
-                />
+      <View
+        className={cn(
+          'border-t border-border-secondary px-4 pb-3 pt-4',
+          className
+        )}
+      >
+        <View className="flex-row gap-3">
+          <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
+          <View className="flex-1">
+            <View className="flex-row items-start justify-between gap-2">
+              <View className="flex-1 flex-row items-baseline gap-2">
+                <Text
+                  className="shrink font-medium leading-5"
+                  numberOfLines={1}
+                >
+                  {record.author?.name}
+                </Text>
+                <Text className="shrink-0 text-sm leading-5 text-muted-foreground">
+                  {formatDate(record.date)}
+                </Text>
               </View>
-              {!!record.text && (
-                <TruncatedText
-                  className="select-text"
-                  color={accentColor}
-                  numberOfLines={numberOfLines}
-                  text={record.text}
-                />
-              )}
-              {!!visualMedia.length && (
-                <View className="mt-4 gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+              <RecordOrReplyDropdownMenu
+                className="-mb-3 -mr-1.5 -mt-1.5"
+                accentColor={accentColor}
+                authorId={record.author?.id}
+                replyId={replyId}
+                isDetail
+                isPinned={'isPinned' in record ? !!record.isPinned : undefined}
+                recordId={recordId}
+                teamId={record.teamId}
+              />
+            </View>
+            {!!record.text && (
+              <TruncatedText
+                className="select-text"
+                color={accentColor}
+                numberOfLines={numberOfLines}
+                text={record.text}
+              />
+            )}
+            {!!visualMedia.length && (
+              <View className="mt-4 gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+                <View className="flex-1 flex-row gap-0.5">
+                  {visualMedia.slice(0, 3).map(renderMediaThumb)}
+                </View>
+                {visualMedia.length > 3 && (
                   <View className="flex-1 flex-row gap-0.5">
-                    {visualMedia.slice(0, 3).map(renderMediaThumb)}
+                    {visualMedia.slice(3, 6).map(renderMediaThumb)}
                   </View>
-                  {visualMedia.length > 3 && (
-                    <View className="flex-1 flex-row gap-0.5">
-                      {visualMedia.slice(3, 6).map(renderMediaThumb)}
-                    </View>
-                  )}
-                </View>
-              )}
-              {audioMedia.length > 0 && (
-                <View className="mt-4 gap-2">
-                  <AudioPlaylist clips={audioMedia} />
-                </View>
-              )}
-              <View className="mt-3 flex-row items-center gap-1.5">
+                )}
+              </View>
+            )}
+            {audioMedia.length > 0 && (
+              <View className="mt-4 gap-2">
+                <AudioPlaylist clips={audioMedia} />
+              </View>
+            )}
+            <View className="mt-3 flex-row items-stretch gap-1.5">
+              <View className="flex-row flex-wrap items-center gap-1.5 self-center">
                 <EmojiPicker
                   color={accentColor}
                   replyId={replyId}
@@ -238,130 +266,134 @@ export const RecordOrReply = ({
                   </View>
                 )}
               </View>
+              <DoubleTapReactionZone
+                className="-mb-3 -mt-3 pb-3 pt-3"
+                onDoubleTap={handleDoubleTapReaction}
+              />
             </View>
           </View>
         </View>
-      </GestureDetector>
+      </View>
     );
   }
 
   return (
-    <GestureDetector gesture={doubleTap} touchAction="pan-y">
-      <Card className={cn('gap-4', className)}>
-        <View className="flex-row items-start gap-3 p-4 pb-0">
-          <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
-          <View className="flex-1">
-            <Text className="font-medium leading-5" numberOfLines={1}>
-              {record.author?.name}
-            </Text>
-            <Text className="text-sm leading-5 text-muted-foreground">
-              {formatDate(record.date)}
-            </Text>
-          </View>
-          <View className="-mr-1.5 -mt-1.5 flex-row items-center gap-1.5">
-            {'isPinned' in record && record.isPinned && (
-              <Button
-                className="size-8 rounded-lg"
-                disabled={!myRole.canPinRecords}
-                onPress={() =>
-                  toggleRecordPin({ id: recordId, isPinned: false })
-                }
-                size="icon"
-                variant="ghost"
-                wrapperClassName="rounded-lg opacity-100"
-              >
-                <Icon
-                  icon={PushPin}
-                  size={16}
-                  style={accentColor ? { color: accentColor } : undefined}
-                  weight="fill"
-                />
-              </Button>
-            )}
-            <RecordOrReplyDropdownMenu
-              accentColor={accentColor}
-              authorId={record.author?.id}
-              isPinned={'isPinned' in record ? !!record.isPinned : undefined}
-              recordId={recordId}
-              teamId={record.teamId}
-            />
-          </View>
+    <Card className={cn('gap-4', className)}>
+      <View className="flex-row items-start gap-3 p-4 pb-0">
+        <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
+        <View className="flex-1">
+          <Text className="font-medium leading-5" numberOfLines={1}>
+            {record.author?.name}
+          </Text>
+          <Text className="text-sm leading-5 text-muted-foreground">
+            {formatDate(record.date)}
+          </Text>
         </View>
-        {!!record.text && (
-          <TruncatedText
-            className="select-text px-4"
-            color={accentColor}
-            numberOfLines={numberOfLines}
-            text={record.text}
+        <View className="-mr-1.5 -mt-1.5 flex-row items-center gap-1.5">
+          {'isPinned' in record && record.isPinned && (
+            <Button
+              className="size-8 rounded-lg"
+              disabled={!myRole.canPinRecords}
+              onPress={() => toggleRecordPin({ id: recordId, isPinned: false })}
+              size="icon"
+              variant="ghost"
+              wrapperClassName="rounded-lg opacity-100"
+            >
+              <Icon
+                icon={PushPin}
+                size={16}
+                style={accentColor ? { color: accentColor } : undefined}
+                weight="fill"
+              />
+            </Button>
+          )}
+          <RecordOrReplyDropdownMenu
+            accentColor={accentColor}
+            authorId={record.author?.id}
+            isPinned={'isPinned' in record ? !!record.isPinned : undefined}
+            recordId={recordId}
+            teamId={record.teamId}
           />
-        )}
-        {!!visualMedia.length && (
-          <View className="gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+        </View>
+      </View>
+      {!!record.text && (
+        <TruncatedText
+          className="select-text px-4"
+          color={accentColor}
+          numberOfLines={numberOfLines}
+          text={record.text}
+        />
+      )}
+      {!!visualMedia.length && (
+        <View className="gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+          <View className="flex-1 flex-row gap-0.5">
+            {visualMedia.slice(0, 3).map(renderMediaThumb)}
+          </View>
+          {visualMedia.length > 3 && (
             <View className="flex-1 flex-row gap-0.5">
-              {visualMedia.slice(0, 3).map(renderMediaThumb)}
-            </View>
-            {visualMedia.length > 3 && (
-              <View className="flex-1 flex-row gap-0.5">
-                {visualMedia.slice(3, 6).map(renderMediaThumb)}
-              </View>
-            )}
-          </View>
-        )}
-        {audioMedia.length > 0 && (
-          <View className="gap-2 px-4">
-            <AudioPlaylist clips={audioMedia} />
-          </View>
-        )}
-        <View className="-mt-1 flex-row items-start justify-between gap-3 px-3 pb-3">
-          <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
-            <EmojiPicker
-              color={accentColor}
-              replyId={replyId}
-              logId={logId}
-              reactions={record.reactions}
-              recordId={recordId}
-              teamId={record.teamId}
-            />
-            {!!record.reactions?.length && (
-              <View className="flex-row items-center gap-2">
-                <Reactions
-                  color={accentColor}
-                  replyId={replyId}
-                  logId={logId}
-                  reactions={record.reactions}
-                  recordId={recordId}
-                  teamId={record.teamId}
-                />
-              </View>
-            )}
-          </View>
-          {!!record.replies && (
-            <View className="flex-row items-center gap-1.5">
-              {record.replies.length > 0 && (
-                <Link asChild href={`/record/${record.id}?focus=reply`}>
-                  <Button size="xs" variant="ghost">
-                    <Text className="text-sm font-normal text-muted-foreground">
-                      {record.replies.length} repl
-                      {record.replies.length === 1 ? 'y' : 'ies'}
-                    </Text>
-                  </Button>
-                </Link>
-              )}
-              <Button
-                className="w-8 px-0"
-                onPress={() => sheetManager.open('reply-create', record.id)}
-                size="xs"
-                variant="ghost"
-              >
-                <Icon
-                  className="text-muted-foreground"
-                  icon={ArrowBendDownLeft}
-                />
-              </Button>
+              {visualMedia.slice(3, 6).map(renderMediaThumb)}
             </View>
           )}
         </View>
-      </Card>
-    </GestureDetector>
+      )}
+      {audioMedia.length > 0 && (
+        <View className="gap-2 px-4">
+          <AudioPlaylist clips={audioMedia} />
+        </View>
+      )}
+      <View className="-mt-1 flex-row items-stretch gap-3 px-3 pb-3">
+        <View className="flex-row flex-wrap items-center gap-1.5 self-center">
+          <EmojiPicker
+            color={accentColor}
+            replyId={replyId}
+            logId={logId}
+            reactions={record.reactions}
+            recordId={recordId}
+            teamId={record.teamId}
+          />
+          {!!record.reactions?.length && (
+            <View className="flex-row items-center gap-2">
+              <Reactions
+                color={accentColor}
+                replyId={replyId}
+                logId={logId}
+                reactions={record.reactions}
+                recordId={recordId}
+                teamId={record.teamId}
+              />
+            </View>
+          )}
+        </View>
+        <DoubleTapReactionZone
+          className="-mb-3 -mt-3 pb-3 pt-3"
+          onDoubleTap={handleDoubleTapReaction}
+        />
+        {!!record.replies && (
+          <View className="flex-row items-center gap-1.5 self-center">
+            {record.replies.length > 0 && (
+              <Link asChild href={`/record/${record.id}?focus=reply`}>
+                <Button size="xs" variant="ghost">
+                  <Text className="text-sm font-normal text-muted-foreground">
+                    {record.replies.length} repl
+                    {record.replies.length === 1 ? 'y' : 'ies'}
+                  </Text>
+                </Button>
+              </Link>
+            )}
+            <Button
+              className="w-8 px-0"
+              onPress={() => sheetManager.open('reply-create', record.id)}
+              size="xs"
+              variant="ghost"
+            >
+              <Icon
+                className="text-muted-foreground"
+                icon={ArrowBendDownLeft}
+              />
+            </Button>
+          </View>
+        )}
+      </View>
+    </Card>
   );
 };

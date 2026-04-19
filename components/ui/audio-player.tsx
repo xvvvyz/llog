@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useExclusiveMediaPlayback } from '@/hooks/use-exclusive-media-playback';
 import { cn } from '@/utilities/cn';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
@@ -14,14 +16,7 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-import Animated, {
-  Easing,
-  cancelAnimation,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { runOnJS, useSharedValue } from 'react-native-reanimated';
 
 export const AudioPlayer = ({
   compact,
@@ -33,89 +28,105 @@ export const AudioPlayer = ({
   uri: string;
 }) => {
   const src = useFileUriToSrc(uri);
+  const colorScheme = useColorScheme();
   const player = useAudioPlayer(src, { updateInterval: 50 });
   const status = useAudioPlayerStatus(player);
   const trackWidth = useSharedValue(0);
-  const progressFraction = useSharedValue(0);
-  const isScrubbing = useSharedValue(false);
   const wasPlayingBeforeScrub = React.useRef(false);
+  const isScrubbingRef = React.useRef(false);
   const [displayTime, setDisplayTime] = React.useState(0);
-  const playerDuration = duration ?? status.duration;
+
+  const pausePlayback = React.useCallback(() => {
+    player.pause();
+  }, [player]);
+
+  const { claimPlayback, releasePlayback } =
+    useExclusiveMediaPlayback(pausePlayback);
+
+  const playerDuration = Math.max(duration ?? status.duration, 0);
+
+  const progress =
+    playerDuration > 0
+      ? Math.max(0, Math.min(displayTime / playerDuration, 1))
+      : 0;
+
+  const trackColor =
+    colorScheme === 'dark'
+      ? 'rgba(255, 255, 255, 0.10)'
+      : 'rgba(0, 0, 0, 0.12)';
+
+  const fillColor =
+    colorScheme === 'dark'
+      ? 'rgba(255, 255, 255, 0.80)'
+      : 'rgba(0, 0, 0, 0.70)';
 
   React.useEffect(() => {
-    if (isScrubbing.value || playerDuration <= 0) return;
+    if (isScrubbingRef.current) return;
+
+    if (playerDuration <= 0) {
+      setDisplayTime(0);
+      return;
+    }
 
     if (status.didJustFinish) {
-      cancelAnimation(progressFraction);
-      progressFraction.value = 1;
       setDisplayTime(playerDuration);
       return;
     }
 
-    if (!status.playing) return;
-    const fraction = Math.min(status.currentTime / playerDuration, 1);
-    setDisplayTime(status.currentTime);
-    cancelAnimation(progressFraction);
-    progressFraction.value = fraction;
-    const remaining = (1 - fraction) * playerDuration * 1000;
+    setDisplayTime(Math.min(status.currentTime, playerDuration));
+  }, [playerDuration, status.currentTime, status.didJustFinish]);
 
-    progressFraction.value = withTiming(1, {
-      duration: remaining,
-      easing: Easing.linear,
-    });
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- progressFraction and isScrubbing are shared values written to, not read
-  }, [
-    status.currentTime,
-    status.playing,
-    status.didJustFinish,
-    playerDuration,
-  ]);
+  React.useEffect(() => {
+    if (!status.playing) {
+      releasePlayback();
+    }
+  }, [releasePlayback, status.playing]);
 
   const handlePlay = async () => {
-    cancelAnimation(progressFraction);
-
     if (status.didJustFinish || displayTime >= playerDuration) {
-      progressFraction.value = 0;
       setDisplayTime(0);
       await player.seekTo(0);
     } else {
       await player.seekTo(displayTime);
     }
 
+    await claimPlayback();
     player.play();
   };
 
   const startScrub = () => {
+    isScrubbingRef.current = true;
     wasPlayingBeforeScrub.current = status.playing;
     if (status.playing) player.pause();
   };
 
   const commitSeek = async (seconds: number) => {
+    setDisplayTime(seconds);
     await player.seekTo(seconds);
-    isScrubbing.value = false;
-    if (wasPlayingBeforeScrub.current) player.play();
+    isScrubbingRef.current = false;
+
+    if (wasPlayingBeforeScrub.current) {
+      await claimPlayback();
+      player.play();
+    }
   };
 
   const scrubTo = (x: number) => {
     'worklet';
+    if (trackWidth.value <= 0 || playerDuration <= 0) return;
     const fraction = Math.max(0, Math.min(x / trackWidth.value, 1));
-    cancelAnimation(progressFraction);
-    progressFraction.value = fraction;
     runOnJS(setDisplayTime)(fraction * playerDuration);
   };
 
   const finishScrub = (x: number) => {
     'worklet';
+    if (trackWidth.value <= 0 || playerDuration <= 0) return;
     const fraction = Math.max(0, Math.min(x / trackWidth.value, 1));
-    cancelAnimation(progressFraction);
-    progressFraction.value = fraction;
     runOnJS(commitSeek)(fraction * playerDuration);
   };
 
   const tap = Gesture.Tap().onEnd((e) => {
     'worklet';
-    isScrubbing.value = true;
     runOnJS(startScrub)();
     scrubTo(e.x);
     finishScrub(e.x);
@@ -124,7 +135,6 @@ export const AudioPlayer = ({
   const pan = Gesture.Pan()
     .onStart((e) => {
       'worklet';
-      isScrubbing.value = true;
       runOnJS(startScrub)();
       scrubTo(e.x);
     })
@@ -139,10 +149,6 @@ export const AudioPlayer = ({
 
   const gesture = Gesture.Race(pan, tap);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: `${Math.min(progressFraction.value * 100, 100)}%`,
-  }));
-
   const onTrackLayout = (e: LayoutChangeEvent) => {
     trackWidth.value = e.nativeEvent.layout.width;
   };
@@ -151,7 +157,7 @@ export const AudioPlayer = ({
     <View className="flex-row items-center">
       <Button
         className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
-        onPress={() => (status.playing ? player.pause() : handlePlay())}
+        onPress={() => (status.playing ? player.pause() : void handlePlay())}
         size="icon"
         variant="secondary"
       >
@@ -163,12 +169,16 @@ export const AudioPlayer = ({
             className={cn('flex-1 justify-center', compact ? 'h-6' : 'h-8')}
           >
             <View
-              className="h-1 overflow-hidden rounded-full bg-border"
+              className="relative h-1 overflow-hidden rounded-full"
               onLayout={onTrackLayout}
+              style={{ backgroundColor: trackColor }}
             >
-              <Animated.View
-                className="h-1 rounded-full bg-foreground"
-                style={animatedStyle}
+              <View
+                className="absolute bottom-0 left-0 top-0 rounded-full"
+                style={{
+                  width: `${progress * 100}%`,
+                  backgroundColor: fillColor,
+                }}
               />
             </View>
           </Animated.View>

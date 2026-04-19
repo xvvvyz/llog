@@ -32,18 +32,19 @@ export const preloadMedia = async (uri: string) => {
   const inflight = pending.get(url);
   if (inflight) return inflight;
 
-  const promise = fetch(url)
-    .then((res) => res.blob())
-    .then((blob) => {
+  const promise = (async () => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       blobCache.set(url, blobUrl);
       pending.delete(url);
       return blobUrl;
-    })
-    .catch(() => {
+    } catch {
       pending.delete(url);
       return url;
-    });
+    }
+  })();
 
   pending.set(url, promise);
   return promise;

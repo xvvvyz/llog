@@ -38,26 +38,28 @@ self.addEventListener('notificationclick', (event) => {
     .href;
 
   event.waitUntil(
-    self.clients
-      .matchAll({ includeUncontrolled: true, type: 'window' })
-      .then(async (clients) => {
-        const [client] = clients;
+    (async () => {
+      const clients = await self.clients.matchAll({
+        includeUncontrolled: true,
+        type: 'window',
+      });
+      const [client] = clients;
 
-        if (client) {
-          if ('focus' in client) {
-            await client.focus();
-          }
-
-          if ('navigate' in client) {
-            await client.navigate(url);
-          }
-
-          return;
+      if (client) {
+        if ('focus' in client) {
+          await client.focus();
         }
 
-        if (self.clients.openWindow) {
-          await self.clients.openWindow(url);
+        if ('navigate' in client) {
+          await client.navigate(url);
         }
-      })
+
+        return;
+      }
+
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(url);
+      }
+    })()
   );
 });

@@ -25,7 +25,12 @@ import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
 import * as React from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Keyboard, Platform, Pressable, View } from 'react-native';
+
+const NOTIFICATION_PERMISSION_ALERT = {
+  message: 'Allow access to send notifications.',
+  title: 'Notifications',
+} as const;
 
 export default function Account() {
   const [isPushPending, setIsPushPending] = React.useState(false);
@@ -47,6 +52,10 @@ export default function Account() {
   const sheetManager = useSheetManager();
   const ui = useUi();
 
+  const handleSubmitName = React.useCallback(() => {
+    nameInputRef.current?.blur();
+  }, []);
+
   const handleUploadProfileImage = React.useCallback(async () => {
     const picker = await launchImageLibraryAsync({
       allowsEditing: true,
@@ -67,15 +76,17 @@ export default function Account() {
     if (Platform.OS !== 'web' || !auth.user) return;
     let cancelled = false;
 
-    wp.syncWebPushSubscription()
-      .then((state) => {
+    void (async () => {
+      try {
+        const state = await wp.syncWebPushSubscription();
+
         if (!cancelled) setPushState(state);
-      })
-      .catch(async (error) => {
+      } catch (error) {
         console.error('Failed to refresh web push state', error);
         const state = await wp.getWebPushState();
         if (!cancelled) setPushState(state);
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -85,9 +96,14 @@ export default function Account() {
   React.useEffect(() => {
     if (Platform.OS !== 'web' || !auth.user) return;
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState !== 'visible') return;
-      wp.getWebPushState().then(setPushState).catch(console.error);
+
+      try {
+        setPushState(await wp.getWebPushState());
+      } catch (error) {
+        console.error(error);
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -142,6 +158,10 @@ export default function Account() {
           ? await wp.disableWebPush()
           : await wp.enableWebPush();
 
+      if (nextState.status === 'blocked') {
+        alert(NOTIFICATION_PERMISSION_ALERT);
+      }
+
       setPushState(nextState);
       setPendingPushState(null);
     } catch (error) {
@@ -163,6 +183,7 @@ export default function Account() {
     <Page>
       <Header title="Account" />
       <View className="flex-1 items-center justify-center p-3">
+        <Pressable className="absolute inset-0" onPress={Keyboard.dismiss} />
         <Card className="w-full max-w-xs overflow-hidden p-0">
           <View className="pb-2">
             <View className="px-4">
@@ -206,12 +227,15 @@ export default function Account() {
                   Name
                 </Label>
                 <Input
+                  blurOnSubmit
                   maxLength={32}
                   className="rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(text) =>
                     updateProfile({ id: profile.id, name: text })
                   }
+                  onSubmitEditing={handleSubmitName}
                   ref={nameInputRef}
+                  submitBehavior="blurAndSubmit"
                   value={profile.name}
                 />
               </View>
@@ -308,12 +332,14 @@ export default function Account() {
                 setIsSigningOut(true);
                 try {
                   if (Platform.OS === 'web') {
-                    await wp.detachWebPushSubscription().catch((error) => {
+                    try {
+                      await wp.detachWebPushSubscription();
+                    } catch (error) {
                       console.error(
                         'Failed to detach web push subscription during sign out',
                         error
                       );
-                    });
+                    }
                   }
 
                   await db.auth.signOut();

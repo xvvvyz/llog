@@ -15,7 +15,7 @@ import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { SpeakerHigh } from 'phosphor-react-native/lib/module/icons/SpeakerHigh';
 import { SpeakerSlash } from 'phosphor-react-native/lib/module/icons/SpeakerSlash';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -24,7 +24,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { Gallery, type GalleryRefType } from 'react-native-zoom-toolkit';
 
 export const Carousel = ({
   className,
@@ -40,10 +39,12 @@ export const Carousel = ({
   onClose?: () => void;
 }) => {
   const insets = useSafeAreaInsets();
-  const ref = React.useRef<GalleryRefType>(null);
+  const scrollRef = React.useRef<ScrollView>(null);
   const windowDimensions = useWindowDimensions();
   const activeIndex = useSharedValue(defaultIndex);
   const enterFullscreenRef = React.useRef<(() => void) | null>(null);
+  const hasAppliedInitialScroll = React.useRef(false);
+  const previousContentWidthRef = React.useRef(0);
   const videoHandleRef = React.useRef<video.VideoPlayerHandle>(null);
 
   const [isActiveVideo, setIsActiveVideo] = React.useState(
@@ -59,52 +60,77 @@ export const Carousel = ({
   const contentWidth = windowDimensions.width;
 
   const preloadFromIndex = React.useCallback(
-    (index: number) => {
-      const current = media[index];
-
-      if (current && current.type !== 'video') {
-        preloadMedia(current.uri).then(() => {
-          const adjacent = [index - 1, index + 1, index - 2, index + 2];
-
-          const uris = adjacent
-            .filter((i) => media[i] && media[i].type !== 'video')
-            .map((i) => media[i]!.uri);
-
-          uris.forEach((u) => preloadMedia(u));
-        });
-      } else {
-        const adjacent = [index - 1, index + 1, index - 2, index + 2];
-
+    async (index: number) => {
+      const adjacent = [index - 1, index + 1, index - 2, index + 2];
+      const preloadAdjacent = () => {
         const uris = adjacent
           .filter((i) => media[i] && media[i].type !== 'video')
           .map((i) => media[i]!.uri);
 
-        uris.forEach((u) => preloadMedia(u));
+        uris.forEach((uri) => {
+          void preloadMedia(uri);
+        });
+      };
+
+      const current = media[index];
+
+      if (current && current.type !== 'video') {
+        await preloadMedia(current.uri);
+        preloadAdjacent();
+      } else {
+        preloadAdjacent();
       }
     },
     [media]
   );
 
   React.useEffect(() => {
-    preloadFromIndex(defaultIndex);
+    void preloadFromIndex(defaultIndex);
   }, [defaultIndex, preloadFromIndex]);
+
+  const setPage = React.useCallback(
+    (index: number) => {
+      scrollRef.current?.scrollTo({ x: index * contentWidth, animated: true });
+    },
+    [contentWidth]
+  );
+
+  React.useEffect(() => {
+    if (contentWidth === 0) return;
+
+    const previousContentWidth = previousContentWidthRef.current;
+    const hasWidthChanged =
+      hasAppliedInitialScroll.current &&
+      previousContentWidth !== 0 &&
+      previousContentWidth !== contentWidth;
+
+    previousContentWidthRef.current = contentWidth;
+
+    if (!hasAppliedInitialScroll.current || hasWidthChanged) {
+      hasAppliedInitialScroll.current = true;
+      const targetIndex = hasWidthChanged ? activeIndexState : defaultIndex;
+
+      scrollRef.current?.scrollTo({
+        x: targetIndex * contentWidth,
+        animated: false,
+      });
+    }
+  }, [activeIndexState, contentWidth, defaultIndex]);
 
   React.useEffect(() => {
     if (!isKeyboardNavigationEnabled || Platform.OS !== 'web') return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft') {
-        ref.current?.setIndex(Math.max(0, activeIndex.value - 1));
+        setPage(Math.max(0, activeIndex.value - 1));
       } else if (event.key === 'ArrowRight') {
-        ref.current?.setIndex(
-          Math.min(media.length - 1, activeIndex.value + 1)
-        );
+        setPage(Math.min(media.length - 1, activeIndex.value + 1));
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isKeyboardNavigationEnabled, media.length, activeIndex]);
+  }, [isKeyboardNavigationEnabled, media.length, activeIndex, setPage]);
 
   const handleFullscreenReady = React.useCallback((fn: () => void) => {
     enterFullscreenRef.current = fn;
@@ -128,88 +154,101 @@ export const Carousel = ({
     if (playing != null) setIsPlaying(playing);
   }, []);
 
-  const renderItem = React.useCallback(
-    (item: Media, index: number) => {
-      const isActive = index === activeIndexState;
-      const isAdjacent = Math.abs(index - activeIndexState) <= 2;
+  const handleIndexChange = React.useCallback(
+    (index: number) => {
+      if (media[activeIndex.value]?.type === 'video') {
+        const handle = videoHandleRef.current;
+        if (handle && isPlaying) handle.togglePlay();
+      }
 
-      return (
-        <View
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-        >
-          {item.type === 'video' ? (
-            isAdjacent ? (
-              <video.VideoPlayer
-                autoPlay={isActive}
-                handleRef={isActive ? videoHandleRef : undefined}
-                maxHeight={contentHeight}
-                maxWidth={contentWidth}
-                muted={isMuted}
-                onFullscreenReady={isActive ? handleFullscreenReady : undefined}
-                onPlayingChange={isActive ? setIsPlaying : undefined}
-                uri={item.uri}
-              />
-            ) : null
-          ) : (
-            <Image
-              maxHeight={contentHeight}
-              maxWidth={contentWidth}
-              uri={item.uri}
-            />
-          )}
-        </View>
-      );
+      activeIndex.value = index;
+      setActiveIndexState(index);
+      void preloadFromIndex(index);
+      const item = media[index];
+      const isVideo = item?.type === 'video';
+      setIsActiveVideo(isVideo);
+
+      if (isVideo) {
+        setIsPlaying(true);
+      } else {
+        enterFullscreenRef.current = null;
+      }
     },
-    [
-      activeIndexState,
-      contentHeight,
-      contentWidth,
-      handleFullscreenReady,
-      isMuted,
-    ]
+    [activeIndex, isPlaying, media, preloadFromIndex]
+  );
+
+  const lastReportedIndex = React.useRef(defaultIndex);
+
+  const handleScroll = React.useCallback(
+    (e: { nativeEvent: { contentOffset: { x: number } } }) => {
+      if (contentWidth === 0) return;
+      const page = Math.round(e.nativeEvent.contentOffset.x / contentWidth);
+
+      if (
+        page !== lastReportedIndex.current &&
+        page >= 0 &&
+        page < media.length
+      ) {
+        lastReportedIndex.current = page;
+        handleIndexChange(page);
+      }
+    },
+    [contentWidth, media.length, handleIndexChange]
   );
 
   return (
     <View className={cn('relative flex-1', className)}>
-      <Gallery
-        data={media}
-        initialIndex={defaultIndex}
-        keyExtractor={(item) => item.id}
-        maxScale={3}
-        onTap={() => {
-          if (media[activeIndex.value]?.type === 'video') {
-            handleTogglePlay();
-          }
-        }}
-        onIndexChange={(index) => {
-          if (media[activeIndex.value]?.type === 'video') {
-            const handle = videoHandleRef.current;
-            if (handle && isPlaying) handle.togglePlay();
-          }
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="items-center"
+        horizontal
+        pagingEnabled
+        ref={scrollRef}
+        scrollEventThrottle={16}
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+      >
+        {media.map((item, index) => {
+          const isActive = index === activeIndexState;
+          const isAdjacent = Math.abs(index - activeIndexState) <= 2;
 
-          activeIndex.value = index;
-          setActiveIndexState(index);
-          preloadFromIndex(index);
-          const item = media[index];
-          const isVideo = item?.type === 'video';
-          setIsActiveVideo(isVideo);
-
-          if (isVideo) {
-            setIsPlaying(true);
-          } else {
-            enterFullscreenRef.current = null;
-          }
-        }}
-        onSwipe={(direction) => {
-          if ((direction === 'up' || direction === 'down') && onClose) {
-            onClose();
-          }
-        }}
-        ref={ref}
-        renderItem={renderItem}
-        tapOnEdgeToItem={false}
-        zoomEnabled={media.length > 0 && !isActiveVideo}
-      />
+          return (
+            <View
+              className="items-center justify-center"
+              key={item.id}
+              style={{ width: contentWidth, height: contentHeight }}
+            >
+              {item.type === 'video' ? (
+                isAdjacent ? (
+                  <Pressable
+                    className="w-full flex-1 items-center justify-center"
+                    onPress={isActive ? handleTogglePlay : undefined}
+                  >
+                    <video.VideoPlayer
+                      autoPlay={isActive}
+                      handleRef={isActive ? videoHandleRef : undefined}
+                      maxHeight={contentHeight}
+                      maxWidth={contentWidth}
+                      muted={isMuted}
+                      onFullscreenReady={
+                        isActive ? handleFullscreenReady : undefined
+                      }
+                      onPlayingChange={isActive ? setIsPlaying : undefined}
+                      uri={item.uri}
+                    />
+                  </Pressable>
+                ) : null
+              ) : (
+                <Image
+                  maxHeight={contentHeight}
+                  maxWidth={contentWidth}
+                  uri={item.uri}
+                />
+              )}
+            </View>
+          );
+        })}
+      </ScrollView>
       {isActiveVideo && (
         <View
           className="absolute right-4 top-1 z-10 md:top-3"
@@ -253,7 +292,7 @@ export const Carousel = ({
           <Dots
             activeIndex={activeIndex}
             count={media.length}
-            onPress={(i) => ref.current?.setIndex(i)}
+            onPress={setPage}
           />
         )}
         <View className="size-11 items-center justify-center">
@@ -276,6 +315,8 @@ export const Carousel = ({
     </View>
   );
 };
+
+const AnimatedDotView = Animated.createAnimatedComponent(View);
 
 const MAX_DOTS = 5;
 const DOT_SIZE = 8;
@@ -316,27 +357,14 @@ const Dots = ({
             runOnJS(onPress)(target);
           }
         }),
-    [activeIndex.value, count, lastScrubbed, onPress, startIndex]
+    [activeIndex, count, lastScrubbed, onPress, startIndex]
   );
 
   return (
     <GestureDetector gesture={pan}>
-      <View
-        style={{
-          flex: 1,
-          height: 44,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <View
-          style={{
-            width: containerWidth,
-            height: DOT_SIZE,
-            overflow: 'hidden',
-          }}
-        >
-          <Animated.View style={{ flexDirection: 'row', gap: DOT_GAP }}>
+      <View className="h-11 flex-1 items-center justify-center">
+        <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
+          <Animated.View className="flex-row" style={{ gap: DOT_GAP }}>
             {Array.from({ length: count }, (_, i) => (
               <Dot activeIndex={activeIndex} count={count} index={i} key={i} />
             ))}
@@ -380,9 +408,8 @@ const Dot = ({
   });
 
   return (
-    <Animated.View
-      className="h-2 w-2 rounded-full bg-foreground shadow-xl"
-      style={style}
-    />
+    <AnimatedDotView style={[{ width: DOT_SIZE, height: DOT_SIZE }, style]}>
+      <View className="h-full w-full rounded-full bg-foreground shadow-xl" />
+    </AnimatedDotView>
   );
 };

@@ -1,3 +1,4 @@
+import { cors } from 'hono/cors';
 import { createMiddleware } from 'hono/factory';
 import { secureHeaders } from 'hono/secure-headers';
 
@@ -10,5 +11,5 @@ export const headers = () =>
           xFrameOptions: 'DENY',
           xXssProtection: undefined,
         })(c, next)
-      : next()
+      : cors({ origin: '*' })(c, next)
   );

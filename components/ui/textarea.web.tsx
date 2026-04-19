@@ -47,7 +47,7 @@ export const Textarea = React.forwardRef<
       <TextareaAutosize
         autoFocus={autoFocus}
         className={cn(
-          'native:placeholder:text-placeholder w-full resize-none rounded-xl border border-border-secondary bg-input px-4 py-2.5 text-foreground focus-visible:outline-none web:placeholder:text-placeholder',
+          'native:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border border-border-secondary bg-input px-4 py-2.5 text-foreground focus-visible:outline-none web:placeholder:text-placeholder',
           className
         )}
         maxLength={maxLength}

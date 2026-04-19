@@ -6,9 +6,16 @@ export const redeemInviteLink = async ({ token }: { token: string }) => {
   });
 
   if (!res?.ok) {
-    const body = await res?.json().catch(() => null);
+    let body: { message?: string } | null = null;
+
+    try {
+      body = await res?.json();
+    } catch {
+      body = null;
+    }
+
     throw new Error(body?.message ?? 'Failed to redeem invite link');
   }
 
-  return res.json() as Promise<{ status: string; teamId: string }>;
+  return (await res.json()) as { status: string; teamId: string };
 };

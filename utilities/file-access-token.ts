@@ -23,8 +23,7 @@ const subscribe = (listener: () => void) => {
 export const useFileAccessToken = () =>
   React.useSyncExternalStore(subscribe, getFileAccessToken, getFileAccessToken);
 
-export const isAbsoluteUri = (uri: string) =>
-  uri.startsWith('https://') || uri.startsWith('data:image/');
+export const isAbsoluteUri = (uri: string) => /^[a-z][a-z\d+.-]*:/i.test(uri);
 
 export const isProtectedUri = (uri: string) =>
   uri.startsWith('records/') || uri.startsWith('replies/');

@@ -1,3 +1,4 @@
+import { useExclusiveMediaPlayback } from '@/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import * as React from 'react';
@@ -11,6 +12,7 @@ export interface VideoPlayerHandle {
 
 export const VideoPlayer = ({
   autoPlay,
+  contentFit = 'contain',
   handleRef,
   maxHeight,
   maxWidth,
@@ -21,6 +23,7 @@ export const VideoPlayer = ({
   uri,
 }: {
   autoPlay?: boolean;
+  contentFit?: 'contain' | 'cover';
   handleRef?: React.Ref<VideoPlayerHandle>;
   maxHeight?: number;
   maxWidth?: number;
@@ -37,11 +40,24 @@ export const VideoPlayer = ({
   const player = useVideoPlayer(source, (player) => {
     player.loop = true;
     player.muted = muted;
-    if (autoPlay) player.play();
   });
 
+  const pausePlayback = React.useCallback(() => {
+    player.pause();
+  }, [player]);
+
+  const { claimPlayback, releasePlayback } =
+    useExclusiveMediaPlayback(pausePlayback);
+
+  const startPlayback = React.useCallback(async () => {
+    await claimPlayback();
+    player.play();
+  }, [claimPlayback, player]);
+
   React.useImperativeHandle(handleRef, () => ({
-    play: () => player.play(),
+    play: () => {
+      void startPlayback();
+    },
     toggleMute: () => {
       player.muted = !player.muted;
       return player.muted;
@@ -51,7 +67,7 @@ export const VideoPlayer = ({
         player.pause();
         return false;
       } else {
-        player.play();
+        void startPlayback();
         return true;
       }
     },
@@ -62,17 +78,26 @@ export const VideoPlayer = ({
       setIsBuffering(status === 'loading');
     });
 
-    const playingSub = onPlayingChange
-      ? player.addListener('playingChange', ({ isPlaying }) => {
-          onPlayingChange(isPlaying);
-        })
-      : null;
+    const playingSub = player.addListener('playingChange', ({ isPlaying }) => {
+      if (isPlaying) {
+        void claimPlayback();
+      } else {
+        releasePlayback();
+      }
+
+      onPlayingChange?.(isPlaying);
+    });
 
     return () => {
       statusSub.remove();
-      playingSub?.remove();
+      playingSub.remove();
     };
-  }, [player, onPlayingChange]);
+  }, [claimPlayback, onPlayingChange, player, releasePlayback]);
+
+  React.useEffect(() => {
+    if (!autoPlay) return;
+    void startPlayback();
+  }, [autoPlay, startPlayback]);
 
   React.useEffect(() => {
     if (!onFullscreenReady) return;
@@ -82,7 +107,7 @@ export const VideoPlayer = ({
   return (
     <View style={{ width: maxWidth, height: maxHeight }}>
       <VideoView
-        contentFit="contain"
+        contentFit={contentFit}
         nativeControls={nativeControls}
         player={player}
         ref={videoViewRef}

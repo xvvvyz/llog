@@ -42,7 +42,6 @@ export const RecordCreateSheet = () => {
   const record = isEdit ? editRecord : draft;
   const recordLogId = isEdit ? editRecord?.log?.id : logId;
   const logColor = useLogColor({ id: recordLogId });
-  const hasContent = !!record?.text?.trim() || !!record?.media?.length;
 
   const handleUploadMedia = React.useCallback(
     async (
@@ -69,7 +68,7 @@ export const RecordCreateSheet = () => {
     [record?.id]
   );
 
-  const { isBusy, mediaPreview, toolbar } = useMediaComposer({
+  const { isBusy, mediaCount, mediaPreview, toolbar } = useMediaComposer({
     isOpen,
     media: record?.media ?? [],
     onDeleteMedia: handleDeleteMedia,
@@ -77,6 +76,8 @@ export const RecordCreateSheet = () => {
     onUploadMedia: handleUploadMedia,
     recordId: record?.id,
   });
+
+  const hasContent = !!record?.text?.trim() || mediaCount > 0;
 
   return (
     <Sheet
@@ -92,9 +93,10 @@ export const RecordCreateSheet = () => {
             autoFocus
             className="border-0 bg-transparent"
             maxLength={10240}
-            numberOfLines={16}
+            numberOfLines={8}
             onChangeText={(text) => updateRecordDraft({ id: record?.id, text })}
             placeholder="What's happening?"
+            style={{ maxHeight: 180, minHeight: 120 }}
             value={record?.text ?? ''}
           />
           {mediaPreview}

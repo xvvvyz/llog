@@ -22,7 +22,13 @@ export const apiOrThrow = async (
   const response = await api(path, options);
   if (response?.ok) return response;
   if (!response) throw new Error(fallbackMessage);
-  const body = await response.text().catch(() => '');
+  let body = '';
+
+  try {
+    body = await response.text();
+  } catch {
+    body = '';
+  }
 
   if (body) {
     try {

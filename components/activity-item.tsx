@@ -14,9 +14,9 @@ import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 const CATEGORY_LABELS: Record<string, string> = {
-  record_published: 'Record',
-  reply_posted: 'Reply',
-  reaction_added: 'Emote',
+  record_published: 'Recorded',
+  reply_posted: 'Replied',
+  reaction_added: 'Emoted',
   member_joined: 'Joined',
   member_left: 'Left',
 };

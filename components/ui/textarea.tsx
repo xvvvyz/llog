@@ -13,6 +13,7 @@ const Textarea = React.forwardRef<
     multiline
     ref={ref}
     returnKeyType="default"
+    scrollEnabled
     submitBehavior="newline"
     textAlignVertical="top"
     value={value}

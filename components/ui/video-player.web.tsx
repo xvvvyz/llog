@@ -1,3 +1,4 @@
+import { useExclusiveMediaPlayback } from '@/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
@@ -10,6 +11,7 @@ export interface VideoPlayerHandle {
 
 export const VideoPlayer = ({
   autoPlay,
+  contentFit = 'contain',
   handleRef,
   maxHeight,
   maxWidth,
@@ -19,6 +21,7 @@ export const VideoPlayer = ({
   uri,
 }: {
   autoPlay?: boolean;
+  contentFit?: 'contain' | 'cover';
   handleRef?: React.Ref<VideoPlayerHandle>;
   maxHeight?: number;
   maxWidth?: number;
@@ -31,6 +34,13 @@ export const VideoPlayer = ({
   const src = useFileUriToSrc(uri);
   const ref = React.useRef<HTMLVideoElement>(null);
 
+  const pausePlayback = React.useCallback(() => {
+    ref.current?.pause();
+  }, []);
+
+  const { claimPlayback, releasePlayback } =
+    useExclusiveMediaPlayback(pausePlayback);
+
   const [size, setSize] = React.useState<{
     width: number;
     height: number;
@@ -38,9 +48,21 @@ export const VideoPlayer = ({
 
   const [isBuffering, setIsBuffering] = React.useState(true);
 
+  const play = React.useCallback(async () => {
+    const video = ref.current;
+    if (!video) return;
+
+    try {
+      await claimPlayback();
+      await video.play();
+    } catch {
+      releasePlayback();
+    }
+  }, [claimPlayback, releasePlayback]);
+
   React.useImperativeHandle(handleRef, () => ({
     play: () => {
-      ref.current?.play().catch(() => {});
+      void play();
     },
     toggleMute: () => {
       const video = ref.current;
@@ -53,7 +75,7 @@ export const VideoPlayer = ({
       if (!video) return false;
 
       if (video.paused) {
-        video.play().catch(() => {});
+        void play();
         return true;
       } else {
         video.pause();
@@ -63,6 +85,11 @@ export const VideoPlayer = ({
   }));
 
   React.useEffect(() => {
+    if (contentFit === 'cover') {
+      setSize(null);
+      return;
+    }
+
     const video = ref.current;
     if (!video) return;
 
@@ -82,7 +109,7 @@ export const VideoPlayer = ({
     if (video.readyState >= 1) onMetadata();
 
     return () => video.removeEventListener('loadedmetadata', onMetadata);
-  }, [maxWidth, maxHeight]);
+  }, [contentFit, maxWidth, maxHeight]);
 
   React.useEffect(() => {
     const video = ref.current;
@@ -96,27 +123,40 @@ export const VideoPlayer = ({
     video.addEventListener('playing', onPlaying);
     video.addEventListener('canplay', onCanPlay);
 
-    const onPlay = onPlayingChange ? () => onPlayingChange(true) : null;
-    const onPause = onPlayingChange ? () => onPlayingChange(false) : null;
-    if (onPlay) video.addEventListener('play', onPlay);
-    if (onPause) video.addEventListener('pause', onPause);
+    const onPlay = async () => {
+      await claimPlayback();
+      onPlayingChange?.(true);
+    };
+
+    const onPause = () => {
+      releasePlayback();
+      onPlayingChange?.(false);
+    };
+
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
 
     return () => {
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('canplay', onCanPlay);
-      if (onPlay) video.removeEventListener('play', onPlay);
-      if (onPause) video.removeEventListener('pause', onPause);
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
     };
-  }, [onPlayingChange]);
+  }, [claimPlayback, onPlayingChange, releasePlayback]);
 
   React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
 
-    const onEnded = () => {
+    const onEnded = async () => {
       video.currentTime = 0;
-      video.play().catch(() => {});
+
+      try {
+        await video.play();
+      } catch {
+        // noop
+      }
     };
 
     video.addEventListener('ended', onEnded);
@@ -124,10 +164,10 @@ export const VideoPlayer = ({
   }, []);
 
   React.useEffect(() => {
-    if (autoPlay && size && ref.current) {
-      ref.current.play().catch(() => {});
+    if (autoPlay && (contentFit === 'cover' || size) && ref.current) {
+      void play();
     }
-  }, [autoPlay, size]);
+  }, [autoPlay, contentFit, play, size]);
 
   React.useEffect(() => {
     const video = ref.current;
@@ -183,9 +223,16 @@ export const VideoPlayer = ({
         preload="metadata"
         src={src}
         style={
-          size
-            ? { display: 'block', width: size.width, height: size.height }
-            : { position: 'absolute', width: 0, height: 0, opacity: 0 }
+          contentFit === 'cover'
+            ? {
+                display: 'block',
+                width: maxWidth,
+                height: maxHeight,
+                objectFit: 'cover',
+              }
+            : size
+              ? { display: 'block', width: size.width, height: size.height }
+              : { position: 'absolute', width: 0, height: 0, opacity: 0 }
         }
       />
       {isBuffering && (

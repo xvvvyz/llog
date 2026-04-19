@@ -1,16 +1,39 @@
+import { alert } from '@/utilities/alert';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
+  setAudioModeAsync,
   useAudioRecorder as useExpoAudioRecorder,
 } from 'expo-audio';
 import * as React from 'react';
+import { Platform } from 'react-native';
 
 const MAX_DURATION = 300;
+
+const MICROPHONE_PERMISSION_ALERT = {
+  message: 'Allow access to record audio.',
+  title: 'Microphone',
+} as const;
+
+const isMicrophonePermissionError = (error: unknown) => {
+  if (!error || typeof error !== 'object') return false;
+
+  const name = 'name' in error ? String(error.name) : '';
+  const message = 'message' in error ? String(error.message).toLowerCase() : '';
+
+  return (
+    name === 'NotAllowedError' ||
+    name === 'PermissionDeniedError' ||
+    message.includes('permission') ||
+    message.includes('denied') ||
+    message.includes('not allowed')
+  );
+};
 
 export const useAudioRecorder = () => {
   const [duration, setDuration] = React.useState(0);
   const [isRecording, setIsRecording] = React.useState(false);
-  const [level, setLevel] = React.useState(0);
+  const [startError, setStartError] = React.useState<string | null>(null);
   const [uri, setUri] = React.useState<string | null>(null);
   const recorder = useExpoAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const startTime = React.useRef(0);
@@ -20,18 +43,11 @@ export const useAudioRecorder = () => {
   );
 
   const isRecordingRef = React.useRef(false);
+  const startRequestIdRef = React.useRef(0);
 
   const timerRef = React.useRef<ReturnType<typeof setInterval> | undefined>(
     undefined
   );
-
-  const analyserRef = React.useRef<{
-    ctx: AudioContext;
-    source: MediaStreamAudioSourceNode;
-    analyser: AnalyserNode;
-    buffer: Float32Array;
-    raf: number;
-  } | null>(null);
 
   const startTimer = React.useCallback(() => {
     startTime.current = Date.now();
@@ -50,55 +66,96 @@ export const useAudioRecorder = () => {
     }
   }, []);
 
-  const startLevelTracking = React.useCallback((stream: MediaStream) => {
-    if (typeof AudioContext === 'undefined') return;
-    const ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(stream);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
-    const buffer = new Float32Array(analyser.frequencyBinCount);
-    let frameCount = 0;
+  const resetAudioMode = React.useCallback(async () => {
+    try {
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+      });
+    } catch {
+      // noop
+    }
+  }, []);
 
-    const tick = () => {
-      if (!analyserRef.current) return;
-      frameCount++;
+  const getWebRecorder = React.useCallback(() => {
+    if (Platform.OS !== 'web') return null;
 
-      if (frameCount % 4 === 0) {
-        analyser.getFloatTimeDomainData(buffer);
-        let sum = 0;
+    return recorder as unknown as {
+      analyser?: AnalyserNode | null;
+      analyserBuffer?: Float32Array | null;
+      analyserSource?: MediaStreamAudioSourceNode | null;
+      clearTimeouts?: () => void;
+      handleDeviceChange?: (() => void) | null;
+      mediaRecorder?: MediaRecorder | null;
+      mediaRecorderIsRecording?: boolean;
+      stream?: MediaStream | null;
+    };
+  }, [recorder]);
 
-        for (let i = 0; i < buffer.length; i++) {
-          sum += buffer[i] * buffer[i];
-        }
+  const releasePreparedRecorder = React.useCallback(() => {
+    const webRecorder = getWebRecorder();
+    if (!webRecorder) return;
 
-        const rms = Math.sqrt(sum / buffer.length);
-        setLevel(Math.min(1, rms * 4));
+    try {
+      webRecorder.clearTimeouts?.();
+
+      webRecorder.mediaRecorder?.stream
+        ?.getTracks()
+        .forEach((track) => track.stop());
+
+      webRecorder.stream?.getTracks().forEach((track) => track.stop());
+
+      if (webRecorder.handleDeviceChange) {
+        navigator.mediaDevices?.removeEventListener(
+          'devicechange',
+          webRecorder.handleDeviceChange
+        );
+
+        webRecorder.handleDeviceChange = null;
       }
 
-      analyserRef.current.raf = requestAnimationFrame(tick);
-    };
+      webRecorder.analyserSource?.disconnect();
+      webRecorder.analyserSource = null;
+      webRecorder.analyser?.disconnect();
+      webRecorder.analyser = null;
+      webRecorder.analyserBuffer = null;
+      webRecorder.mediaRecorder = null;
+      webRecorder.mediaRecorderIsRecording = false;
+      webRecorder.stream = null;
+    } catch {
+      // noop
+    }
+  }, [getWebRecorder]);
 
-    analyserRef.current = {
-      ctx,
-      source,
-      analyser,
-      buffer,
-      raf: requestAnimationFrame(tick),
-    };
-  }, []);
+  const getRecordingUri = React.useCallback(() => {
+    try {
+      return recorder.uri ?? recorder.getStatus().url ?? null;
+    } catch {
+      return recorder.uri ?? null;
+    }
+  }, [recorder]);
 
-  const stopLevelTracking = React.useCallback(() => {
-    if (analyserRef.current) {
-      cancelAnimationFrame(analyserRef.current.raf);
-      analyserRef.current.source.disconnect();
-      analyserRef.current.analyser.disconnect();
-      analyserRef.current.ctx.close();
-      analyserRef.current = null;
+  const abortPendingStart = React.useCallback(async () => {
+    stopTimer();
+    setIsRecording(false);
+
+    if (Platform.OS === 'web') {
+      releasePreparedRecorder();
+      return;
     }
 
-    setLevel(0);
-  }, []);
+    try {
+      const status = recorder.getStatus();
+
+      if (status.canRecord || status.isRecording) {
+        await recorder.stop();
+      }
+    } catch {
+      // noop
+    } finally {
+      await resetAudioMode();
+    }
+  }, [recorder, releasePreparedRecorder, resetAudioMode, stopTimer]);
 
   React.useEffect(() => {
     (async () => {
@@ -114,77 +171,169 @@ export const useAudioRecorder = () => {
     })();
   }, []);
 
+  const showMicrophonePermissionAlert = React.useCallback(() => {
+    alert(MICROPHONE_PERMISSION_ALERT);
+  }, []);
+
   React.useEffect(() => {
     if (isRecording && duration >= MAX_DURATION) {
-      (async () => {
+      void (async () => {
         isRecordingRef.current = false;
-        stopLevelTracking();
         stopTimer();
         setIsRecording(false);
-        await recorder.stop();
-        setUri(recorder.uri);
+
+        try {
+          await recorder.stop();
+        } finally {
+          setUri(getRecordingUri());
+          await resetAudioMode();
+        }
       })();
     }
-  }, [duration, isRecording, recorder, stopLevelTracking, stopTimer]);
+  }, [
+    duration,
+    getRecordingUri,
+    isRecording,
+    recorder,
+    resetAudioMode,
+    stopTimer,
+  ]);
 
   React.useEffect(() => {
     return () => {
       stopTimer();
-      stopLevelTracking();
     };
-  }, [stopLevelTracking, stopTimer]);
+  }, [stopTimer]);
 
   const record = React.useCallback(async () => {
     if (isRecordingRef.current) return;
-    isRecordingRef.current = true;
-    setUri(null);
-    const permission = await requestRecordingPermissionsAsync();
 
-    if (!permission.granted) {
-      isRecordingRef.current = false;
-      setHasPermission(false);
-      return;
-    }
+    const requestId = ++startRequestIdRef.current;
+    isRecordingRef.current = true;
+    setStartError(null);
+    setUri(null);
 
     try {
+      if (Platform.OS !== 'web') {
+        const permission = await requestRecordingPermissionsAsync();
+
+        if (!permission.granted) {
+          isRecordingRef.current = false;
+          setHasPermission(false);
+          showMicrophonePermissionAlert();
+          return;
+        }
+
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+        });
+      }
+
       await recorder.prepareToRecordAsync();
+
+      if (requestId !== startRequestIdRef.current || !isRecordingRef.current) {
+        isRecordingRef.current = false;
+        await abortPendingStart();
+        return;
+      }
+
+      if (Platform.OS === 'web' && !getWebRecorder()?.mediaRecorder) {
+        throw new Error(
+          'Microphone access did not finish initializing. Please try again.'
+        );
+      }
+
       recorder.record();
 
-      const stream = (recorder as unknown as { stream: MediaStream | null })
-        .stream;
+      if (requestId !== startRequestIdRef.current || !isRecordingRef.current) {
+        isRecordingRef.current = false;
+        await abortPendingStart();
+        return;
+      }
 
-      if (stream) startLevelTracking(stream);
       setHasPermission(true);
+      setStartError(null);
       setIsRecording(true);
       startTimer();
-    } catch {
+    } catch (error) {
+      const wasCancelled =
+        requestId !== startRequestIdRef.current || !isRecordingRef.current;
+      const permissionDenied = isMicrophonePermissionError(error);
+
       isRecordingRef.current = false;
-      setHasPermission(false);
+
+      if (wasCancelled) {
+        await abortPendingStart();
+        return;
+      }
+
+      setHasPermission((prev) => (permissionDenied ? false : prev));
+      setStartError(
+        permissionDenied
+          ? null
+          : error instanceof Error
+            ? error.message
+            : 'Unable to start recording. Please try again.'
+      );
+
+      if (permissionDenied) {
+        showMicrophonePermissionAlert();
+      }
+
+      if (Platform.OS !== 'web') {
+        await resetAudioMode();
+      }
+
+      releasePreparedRecorder();
     }
-  }, [recorder, startLevelTracking, startTimer]);
+  }, [
+    abortPendingStart,
+    getWebRecorder,
+    recorder,
+    resetAudioMode,
+    releasePreparedRecorder,
+    showMicrophonePermissionAlert,
+    startTimer,
+  ]);
 
   const stop = React.useCallback(async () => {
+    startRequestIdRef.current += 1;
     isRecordingRef.current = false;
-    stopLevelTracking();
+    setStartError(null);
     stopTimer();
     setIsRecording(false);
-    await recorder.stop();
-    setUri(recorder.uri);
-    return recorder.uri;
-  }, [recorder, stopLevelTracking, stopTimer]);
+
+    try {
+      await recorder.stop();
+    } finally {
+      const nextUri = getRecordingUri();
+      setUri(nextUri);
+      await resetAudioMode();
+    }
+
+    return getRecordingUri();
+  }, [getRecordingUri, recorder, resetAudioMode, stopTimer]);
 
   const reset = React.useCallback(() => {
+    startRequestIdRef.current += 1;
+    isRecordingRef.current = false;
+    setStartError(null);
+    stopTimer();
+    releasePreparedRecorder();
+    setIsRecording(false);
+    setHasPermission(null);
     setDuration(0);
     setUri(null);
-  }, []);
+  }, [releasePreparedRecorder, stopTimer]);
 
   return {
     duration,
     hasPermission,
     isRecording,
-    level,
     record,
     reset,
+    startError,
     stop,
     uri,
   };

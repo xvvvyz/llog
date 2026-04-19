@@ -1,3 +1,17 @@
+diff --git a/dist/runtime/native/native-interop.js b/dist/runtime/native/native-interop.js
+index 254b7ba65bd7e77982db73d793b157b15272f434..40e6a0e304466d40299d2e387c78bc49f78b43fc 100644
+--- a/dist/runtime/native/native-interop.js
++++ b/dist/runtime/native/native-interop.js
+@@ -638,6 +638,9 @@ function collectInlineRules(state, refs, target, effect, normal, important) {
+         }
+     }
+     else if (target) {
++        if (target.viewDescriptors) {
++            return;
++        }
+         const styles = (0, styles_1.getOpaqueStyles)(target, effect);
+         for (const style of styles) {
+             if (!style) {
 diff --git a/dist/runtime/web/color-scheme.js b/dist/runtime/web/color-scheme.js
 index c8fb1d2d9eb59204349cf80aeb56cbc281e81771..b80b72fe6a7d5fd9cbaeea85e5c943be6f36f9d0 100644
 --- a/dist/runtime/web/color-scheme.js

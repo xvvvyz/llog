@@ -280,7 +280,13 @@ export const sendPushNotifications = async (
         }
 
         if (!response.ok) {
-          const responseBody = await response.text().catch(() => '');
+          let responseBody = '';
+
+          try {
+            responseBody = await response.text();
+          } catch {
+            responseBody = '';
+          }
 
           console.error('Failed to deliver web push notification', {
             endpoint: subscription.endpoint,

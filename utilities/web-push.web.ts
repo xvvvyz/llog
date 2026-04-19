@@ -95,13 +95,15 @@ export const registerWebPushServiceWorker = async () => {
   if (!hasServiceWorkerSupport()) return null;
 
   if (!registrationPromise) {
-    registrationPromise = navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
-      .then(async () => navigator.serviceWorker.ready)
-      .catch((error) => {
+    registrationPromise = (async () => {
+      try {
+        await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        return await navigator.serviceWorker.ready;
+      } catch (error) {
         registrationPromise = null;
         throw error;
-      });
+      }
+    })();
   }
 
   return registrationPromise;

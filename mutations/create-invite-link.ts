@@ -18,9 +18,16 @@ export const createInviteLink = async ({
   });
 
   if (!res?.ok) {
-    const body = await res?.json().catch(() => null);
+    let body: { message?: string } | null = null;
+
+    try {
+      body = await res?.json();
+    } catch {
+      body = null;
+    }
+
     throw new Error(body?.message ?? 'Failed to create invite link');
   }
 
-  return res.json() as Promise<{ token: string }>;
+  return (await res.json()) as { token: string };
 };

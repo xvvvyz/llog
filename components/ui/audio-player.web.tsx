@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useExclusiveMediaPlayback } from '@/hooks/use-exclusive-media-playback';
 import { cn } from '@/utilities/cn';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
@@ -9,221 +10,114 @@ import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import * as React from 'react';
 import { View } from 'react-native';
 
-function sniffMimeType(bytes: Uint8Array): string {
-  if (
-    bytes[0] === 0x1a &&
-    bytes[1] === 0x45 &&
-    bytes[2] === 0xdf &&
-    bytes[3] === 0xa3
-  ) {
-    return 'audio/webm';
-  }
-
-  if (
-    bytes[0] === 0x4f &&
-    bytes[1] === 0x67 &&
-    bytes[2] === 0x67 &&
-    bytes[3] === 0x53
-  ) {
-    return 'audio/ogg';
-  }
-
-  if (
-    bytes[4] === 0x66 &&
-    bytes[5] === 0x74 &&
-    bytes[6] === 0x79 &&
-    bytes[7] === 0x70
-  ) {
-    return 'audio/mp4';
-  }
-
-  return 'audio/mp4';
-}
-
 function useWebAudioPlayer(uri: string) {
-  const ctxRef = React.useRef<AudioContext | null>(null);
-  const bufferRef = React.useRef<AudioBuffer | null>(null);
-  const sourceRef = React.useRef<AudioBufferSourceNode | null>(null);
-  const audioElRef = React.useRef<HTMLAudioElement | null>(null);
-  const blobUrlRef = React.useRef<string | null>(null);
-  const startOffset = React.useRef(0);
-  const startedAt = React.useRef(0);
-  const fallbackRef = React.useRef(false);
-
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const [playing, setPlaying] = React.useState(false);
   const [duration, setDuration] = React.useState(0);
   const src = useFileUriToSrc(uri);
 
   React.useEffect(() => {
-    let cancelled = false;
-    const ctx = new AudioContext();
-    ctxRef.current = ctx;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    fetch(src)
-      .then((res) => {
-        if (!res.ok) throw new Error(`${res.status}`);
-        return res.arrayBuffer();
-      })
-      .then((data) => {
-        if (cancelled) return;
-        const bytes = new Uint8Array(data);
-        const mime = sniffMimeType(bytes);
-        const blob = new Blob([bytes], { type: mime });
-        const blobUrl = URL.createObjectURL(blob);
-        blobUrlRef.current = blobUrl;
+    const syncDuration = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+      }
+    };
 
-        return ctx
-          .decodeAudioData(data)
-          .then((buffer) => {
-            if (cancelled) return;
-            bufferRef.current = buffer;
-            setDuration(buffer.duration);
-            setLoaded(true);
-          })
-          .catch(() => {
-            if (cancelled) return;
-            fallbackRef.current = true;
-            const audio = new Audio();
-            audioElRef.current = audio;
-            audio.preload = 'auto';
-            audio.addEventListener('ended', () => setPlaying(false));
+    const onLoadedMetadata = () => {
+      syncDuration();
+      setLoaded(true);
+    };
 
-            audio.addEventListener(
-              'canplaythrough',
-              () => {
-                if (cancelled) return;
+    const onCanPlay = () => {
+      syncDuration();
+      setLoaded(true);
+    };
 
-                if (Number.isFinite(audio.duration)) {
-                  setDuration(audio.duration);
-                }
+    const onDurationChange = () => syncDuration();
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => setPlaying(false);
 
-                setLoaded(true);
-              },
-              { once: true }
-            );
+    const onError = () => {
+      setLoaded(false);
+      setPlaying(false);
+    };
 
-            audio.addEventListener('durationchange', () => {
-              if (Number.isFinite(audio.duration)) setDuration(audio.duration);
-            });
+    setLoaded(false);
+    setPlaying(false);
+    setDuration(0);
 
-            audio.src = blobUrl;
-          });
-      })
-      .catch(() => {});
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('canplay', onCanPlay);
+    audio.addEventListener('durationchange', onDurationChange);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+
+    audio.load();
+
+    if (audio.readyState >= 1) {
+      syncDuration();
+      setLoaded(true);
+    }
 
     return () => {
-      cancelled = true;
-      sourceRef.current?.stop();
-      sourceRef.current?.disconnect();
-      sourceRef.current = null;
-      ctx.close();
-      ctxRef.current = null;
-      bufferRef.current = null;
-
-      if (audioElRef.current) {
-        audioElRef.current.pause();
-        audioElRef.current.removeAttribute('src');
-        audioElRef.current.load();
-        audioElRef.current = null;
-      }
-
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
+      audio.pause();
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('canplay', onCanPlay);
+      audio.removeEventListener('durationchange', onDurationChange);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
     };
   }, [src]);
 
-  const stopSource = React.useCallback(() => {
-    if (sourceRef.current) {
-      sourceRef.current.onended = null;
-      sourceRef.current.stop();
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
+  const play = React.useCallback(async (fromTime?: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (fromTime != null && Number.isFinite(fromTime)) {
+      audio.currentTime = fromTime;
+    }
+
+    try {
+      await audio.play();
+    } catch {
+      setPlaying(false);
     }
   }, []);
 
-  const play = React.useCallback(
-    (fromTime?: number) => {
-      if (fallbackRef.current) {
-        const audio = audioElRef.current;
-        if (!audio) return;
-
-        if (fromTime != null && Number.isFinite(fromTime)) {
-          audio.currentTime = fromTime;
-        }
-
-        audio.play().catch(() => {});
-        setPlaying(true);
-        return;
-      }
-
-      const ctx = ctxRef.current;
-      const buffer = bufferRef.current;
-      if (!ctx || !buffer) return;
-
-      stopSource();
-
-      const offset = Math.max(
-        0,
-        Math.min(fromTime ?? startOffset.current, buffer.duration)
-      );
-
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(ctx.destination);
-
-      source.onended = () => {
-        const elapsed = ctx.currentTime - startedAt.current;
-
-        if (elapsed >= buffer.duration - offset - 0.1) {
-          setPlaying(false);
-          startOffset.current = buffer.duration;
-        }
-      };
-
-      source.start(0, offset);
-      sourceRef.current = source;
-      startedAt.current = ctx.currentTime;
-      startOffset.current = offset;
-      setPlaying(true);
-      if (ctx.state === 'suspended') ctx.resume();
-    },
-    [stopSource]
-  );
-
   const pause = React.useCallback((): number => {
-    if (fallbackRef.current) {
-      const audio = audioElRef.current;
-      if (!audio) return 0;
-      audio.pause();
-      setPlaying(false);
-      return audio.currentTime;
-    }
-
-    const ctx = ctxRef.current;
-    if (!ctx || !sourceRef.current) return startOffset.current;
-    startOffset.current += ctx.currentTime - startedAt.current;
-    stopSource();
-    startedAt.current = 0;
+    const audio = audioRef.current;
+    if (!audio) return 0;
+    const currentTime = audio.currentTime;
+    audio.pause();
     setPlaying(false);
-    return startOffset.current;
-  }, [stopSource]);
+    return currentTime;
+  }, []);
 
   const getCurrentTime = React.useCallback(() => {
-    if (fallbackRef.current) {
-      return audioElRef.current?.currentTime ?? 0;
-    }
-
-    const ctx = ctxRef.current;
-    if (!ctx || !sourceRef.current) return startOffset.current;
-    return startOffset.current + (ctx.currentTime - startedAt.current);
+    return audioRef.current?.currentTime ?? 0;
   }, []);
 
   return React.useMemo(
-    () => ({ loaded, playing, duration, play, pause, getCurrentTime }),
-    [loaded, playing, duration, play, pause, getCurrentTime]
+    () => ({
+      audioRef,
+      loaded,
+      playing,
+      duration,
+      src,
+      play,
+      pause,
+      getCurrentTime,
+    }),
+    [loaded, playing, duration, src, play, pause, getCurrentTime]
   );
 }
 
@@ -242,8 +136,21 @@ export const AudioPlayer = ({
   const wasPlayingBeforeScrub = React.useRef(false);
   const rafRef = React.useRef<number>(0);
   const [displayTime, setDisplayTime] = React.useState(0);
+
+  const pause = React.useCallback(() => {
+    const time = player.pause();
+    setDisplayTime(time);
+  }, [player]);
+
+  const { claimPlayback, releasePlayback } = useExclusiveMediaPlayback(pause);
   const playerDuration = duration ?? player.duration;
   const progress = playerDuration > 0 ? displayTime / playerDuration : 0;
+
+  React.useEffect(() => {
+    if (!player.playing) {
+      releasePlayback();
+    }
+  }, [player.playing, releasePlayback]);
 
   React.useEffect(() => {
     if (!player.playing) {
@@ -272,18 +179,23 @@ export const AudioPlayer = ({
     return () => cancelAnimationFrame(rafRef.current);
   }, [player, player.playing, playerDuration, player.getCurrentTime]);
 
-  const play = () => {
-    if (!player.loaded) return;
-    player.play(displayTime >= playerDuration ? 0 : displayTime);
+  const play = React.useCallback(
+    async (fromTime: number) => {
+      if (!player.loaded) return;
 
-    if (displayTime >= playerDuration) {
+      await claimPlayback();
+      await player.play(fromTime);
+    },
+    [claimPlayback, player]
+  );
+
+  const handlePlay = () => {
+    const fromTime = displayTime >= playerDuration ? 0 : displayTime;
+    void play(fromTime);
+
+    if (fromTime === 0) {
       setDisplayTime(0);
     }
-  };
-
-  const pause = () => {
-    const t = player.pause();
-    setDisplayTime(t);
   };
 
   React.useEffect(() => {
@@ -323,7 +235,7 @@ export const AudioPlayer = ({
       if (wasPlayingBeforeScrub.current) {
         const width = track.getBoundingClientRect().width;
         const fraction = getX(e) / width;
-        player.play(fraction * playerDuration);
+        void play(fraction * playerDuration);
       }
     };
 
@@ -336,14 +248,15 @@ export const AudioPlayer = ({
       track.removeEventListener('pointermove', onMove);
       track.removeEventListener('pointerup', onUp);
     };
-  }, [playerDuration, player]);
+  }, [play, player, playerDuration]);
 
   return (
     <View className="flex-row items-center">
+      <audio ref={player.audioRef} preload="metadata" src={player.src} />
       <Button
         className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
         disabled={!player.loaded}
-        onPress={() => (player.playing ? pause() : play())}
+        onPress={() => (player.playing ? pause() : handlePlay())}
         size="icon"
         variant="secondary"
       >

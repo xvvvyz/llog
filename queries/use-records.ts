@@ -25,7 +25,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
 
   const sorted = React.useMemo(
     () =>
-      records.toSorted((a, b) => {
+      [...records].sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
         return 0;

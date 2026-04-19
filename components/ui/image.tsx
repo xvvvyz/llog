@@ -68,15 +68,27 @@ export const Image = ({
       className={cn('overflow-hidden bg-border', wrapperClassName)}
       style={
         fill
-          ? { borderCurve: 'continuous', flex: 1 }
+          ? { borderCurve: 'continuous', flex: 1, position: 'relative' }
           : { borderCurve: 'continuous', height, width }
       }
     >
       <ImagePrimitive
         className={className}
         contentFit={fill ? 'cover' : contentFit}
+        contentPosition="center"
         source={image}
-        style={fill ? { flex: 1, ...style } : { height, width, ...style }}
+        style={
+          fill
+            ? {
+                bottom: 0,
+                left: 0,
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                ...style,
+              }
+            : { height, width, ...style }
+        }
       />
     </View>
   );

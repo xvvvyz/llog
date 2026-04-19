@@ -88,7 +88,7 @@ export const ActivityItemQuotedRecord = ({
                       }}
                     >
                       <Icon
-                        className="ml-0.5 text-white"
+                        className="text-white"
                         icon={Play}
                         size={12}
                         weight="fill"

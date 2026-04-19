@@ -140,7 +140,7 @@ export default function Index() {
           key={`grid-${columns}`}
           keyExtractor={(item) => item.id}
           keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="always"
+          keyboardShouldPersistTaps="handled"
           numColumns={columns}
           renderItem={({ item }) => {
             const color =

@@ -1,6 +1,8 @@
 import { assetToFileLike } from '@/utilities/asset-to-file-like';
+import { normalizeAudioForUpload } from '@/utilities/normalize-audio-for-upload';
 import { processImageAsset } from '@/utilities/process-image-asset';
 import { ImagePickerAsset } from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 export const prepareMediaFormData = async ({
   asset,
@@ -18,15 +20,17 @@ export const prepareMediaFormData = async ({
   const body = new FormData();
 
   if (audioUri) {
-    const response = await fetch(audioUri);
-    const blob = await response.blob();
-    const mimeType = blob.type || 'audio/mp4';
-    const ext = mimeType.includes('webm') ? '.webm' : '.m4a';
-
-    body.append(
-      'file',
-      new File([blob], `recording${ext}`, { type: mimeType })
-    );
+    if (Platform.OS === 'web') {
+      const response = await fetch(audioUri);
+      const blob = await response.blob();
+      body.append('file', await normalizeAudioForUpload(blob));
+    } else {
+      body.append('file', {
+        uri: audioUri,
+        type: 'audio/mp4',
+        name: 'recording.m4a',
+      } as unknown as File);
+    }
 
     if (duration != null) {
       body.append('duration', String(duration));

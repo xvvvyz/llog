@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useAudioRecorder } from '@/hooks/use-audio-recorder';
@@ -7,6 +8,7 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
 import { uploadReplyMedia } from '@/mutations/upload-reply-media';
 import { useRecord } from '@/queries/use-record';
+import { cn } from '@/utilities/cn';
 import { formatTime } from '@/utilities/format-time';
 import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
 import * as React from 'react';
@@ -23,7 +25,7 @@ const parseAudioContext = (context?: string): AudioContext => {
 };
 
 export const RecordAudioSheet = () => {
-  const [isUploading, startUploadTransition] = React.useTransition();
+  const [isUploading, setIsUploading] = React.useState(false);
   const sheetManager = useSheetManager();
   const recorder = useAudioRecorder();
 
@@ -37,12 +39,19 @@ export const RecordAudioSheet = () => {
 
   const isOpen = sheetManager.isOpen('record-audio');
   const isClosingRef = React.useRef(false);
-
+  const {
+    duration,
+    hasPermission,
+    isRecording,
+    record: startRecording,
+    startError,
+    uri,
+  } = recorder;
   const record = useRecord({
     id: audioContext.type === 'reply' ? audioContext.recordId : draftId,
   });
-
   const logColor = useLogColor({ id: record.log?.id });
+  const isMicActive = isRecording && !isUploading;
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -52,19 +61,22 @@ export const RecordAudioSheet = () => {
 
     if (
       !isClosingRef.current &&
-      recorder.hasPermission !== false &&
-      !recorder.isRecording &&
-      !recorder.uri
+      hasPermission !== false &&
+      duration === 0 &&
+      !startError &&
+      !isRecording &&
+      !uri
     ) {
-      recorder.record();
+      void startRecording();
     }
   }, [
+    duration,
+    hasPermission,
     isOpen,
-    recorder,
-    recorder.hasPermission,
-    recorder.isRecording,
-    recorder.uri,
-    recorder.record,
+    isRecording,
+    startError,
+    startRecording,
+    uri,
   ]);
 
   const close = React.useCallback(() => {
@@ -72,17 +84,25 @@ export const RecordAudioSheet = () => {
   }, [sheetManager]);
 
   const handleCancel = React.useCallback(async () => {
-    isClosingRef.current = true;
-    if (recorder.isRecording) await recorder.stop();
-    recorder.reset();
-    close();
-  }, [close, recorder]);
+    if (isUploading) return;
 
-  React.useEffect(() => {
-    if (isOpen && recorder.hasPermission === false) {
+    isClosingRef.current = true;
+
+    try {
+      if (recorder.isRecording) await recorder.stop();
+    } finally {
+      recorder.reset();
       close();
     }
-  }, [isOpen, recorder.hasPermission, close]);
+  }, [close, isUploading, recorder]);
+
+  React.useEffect(() => {
+    if (isOpen && hasPermission === false) {
+      isClosingRef.current = true;
+      recorder.reset();
+      close();
+    }
+  }, [close, hasPermission, isOpen, recorder]);
 
   const upload = React.useCallback(
     async (uri: string) => {
@@ -110,40 +130,61 @@ export const RecordAudioSheet = () => {
   );
 
   const handleSave = React.useCallback(async () => {
+    if (isUploading) return;
+
     isClosingRef.current = true;
-    let uri = recorder.uri;
+    setIsUploading(true);
 
-    if (recorder.isRecording) {
-      uri = await recorder.stop();
-    }
+    try {
+      let uri = recorder.uri;
 
-    if (!uri) return;
+      if (recorder.isRecording) {
+        uri = await recorder.stop();
+      }
 
-    startUploadTransition(async () => {
+      if (!uri) {
+        isClosingRef.current = false;
+        return;
+      }
+
       await upload(uri);
       close();
-    });
-  }, [close, recorder, startUploadTransition, upload]);
+    } catch {
+      isClosingRef.current = false;
+    } finally {
+      setIsUploading(false);
+    }
+  }, [close, isUploading, recorder, upload]);
 
   return (
     <Sheet onDismiss={handleCancel} open={isOpen} portalName="record-audio">
       <View className="mx-auto w-full max-w-sm gap-12 p-8">
         <View className="items-center gap-4">
-          <View className="items-center justify-center">
-            <View
-              className="absolute rounded-full bg-red-500/10"
-              style={{
-                width: 64 + recorder.level * 32,
-                height: 64 + recorder.level * 32,
-              }}
+          <View
+            className={cn(
+              'size-16 items-center justify-center rounded-full border',
+              isMicActive
+                ? 'border-destructive/20 bg-destructive/10'
+                : 'border-border-secondary bg-secondary'
+            )}
+          >
+            <Icon
+              className={
+                isMicActive ? 'text-destructive' : 'text-muted-foreground'
+              }
+              icon={Microphone}
+              size={28}
+              weight="fill"
             />
-            <View className="size-16 items-center justify-center rounded-full bg-red-500/10">
-              <Microphone size={28} color="#ef4444" weight="fill" />
-            </View>
           </View>
           <Text className="text-2xl font-medium tabular-nums">
-            {formatTime(recorder.duration)}
+            {formatTime(duration)}
           </Text>
+          {startError ? (
+            <Text className="text-center text-sm text-muted-foreground">
+              {startError}
+            </Text>
+          ) : null}
         </View>
         <View className="gap-3">
           <Button

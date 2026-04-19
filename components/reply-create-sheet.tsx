@@ -47,7 +47,6 @@ export const ReplyCreateSheet = () => {
   const replyId = reply?.id;
 
   const isOpen = sheetManager.isOpen('reply-create');
-  const hasContent = !!text.trim() || !!(reply?.media ?? []).length;
 
   React.useEffect(() => {
     if (isEdit && editReply?.text && isOpen) {
@@ -81,7 +80,7 @@ export const ReplyCreateSheet = () => {
     [replyId, recordId]
   );
 
-  const { isBusy, mediaPreview, toolbar } = useMediaComposer({
+  const { isBusy, mediaCount, mediaPreview, toolbar } = useMediaComposer({
     replyId,
     isOpen,
     media: reply?.media ?? [],
@@ -91,6 +90,8 @@ export const ReplyCreateSheet = () => {
     onUploadMedia: handleUploadMedia,
     recordId,
   });
+
+  const hasContent = !!text.trim() || mediaCount > 0;
 
   const handleSubmit = React.useCallback(async () => {
     if (!hasContent || !replyId) return;
@@ -132,9 +133,10 @@ export const ReplyCreateSheet = () => {
             autoFocus
             className="border-0 bg-transparent"
             maxLength={10240}
-            numberOfLines={16}
+            numberOfLines={8}
             onChangeText={setText}
             placeholder="Add a reply"
+            style={{ maxHeight: 180, minHeight: 120 }}
             value={text}
           />
           {mediaPreview}

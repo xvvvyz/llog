@@ -17,44 +17,15 @@ export const List = <T,>({
   listRef?: React.RefObject<LegendListRef | null>;
   wrapperClassName?: string;
 }) => {
-  const [isAtTop, setIsAtTop] = React.useState(true);
-  const [isAtBottom, setIsAtBottom] = React.useState(true);
   const innerRef = React.useRef<LegendListRef>(null);
   const ref = listRef ?? innerRef;
 
   return (
-    <View
-      className={cn(
-        !horizontal && 'border-y border-b-transparent border-t-transparent',
-        !isAtTop && !horizontal && 'border-t-border',
-        !isAtBottom && !horizontal && 'border-b-border',
-        wrapperClassName
-      )}
-    >
+    <View className={cn(!horizontal && 'flex-1', wrapperClassName)}>
       <LegendList<T>
         horizontal={horizontal}
-        onLoad={(event) => {
-          onLoad?.(event);
-          if (!ref.current) return;
-          const { isAtEnd, isAtStart } = ref.current.getState();
-          setIsAtBottom(isAtEnd);
-          setIsAtTop(isAtStart);
-        }}
-        onScroll={(event) => {
-          onScroll?.(event);
-          const { contentOffset } = event.nativeEvent;
-
-          React.startTransition(() => {
-            setIsAtTop(contentOffset.y < 4);
-
-            setIsAtBottom(
-              contentOffset.y >
-                event.nativeEvent.contentSize.height -
-                  event.nativeEvent.layoutMeasurement.height -
-                  4
-            );
-          });
-        }}
+        onLoad={onLoad}
+        onScroll={onScroll}
         recycleItems
         ref={ref}
         {...props}

@@ -53,12 +53,7 @@ export const ActivityItemMedia = ({
               backgroundColor: 'rgba(0,0,0,0.5)',
             }}
           >
-            <Icon
-              className="ml-0.5 text-white"
-              icon={Play}
-              size={20}
-              weight="fill"
-            />
+            <Icon className="text-white" icon={Play} size={20} weight="fill" />
           </View>
         </View>
       )}

@@ -7,8 +7,10 @@ export const alert = ({
   message: string;
   title: string;
 }) => {
-  Platform.select({
-    default: NativeAlert.alert(title, message),
-    web: window.alert(message),
-  });
+  if (Platform.OS === 'web') {
+    window.alert(message);
+    return;
+  }
+
+  NativeAlert.alert(title, message);
 };
