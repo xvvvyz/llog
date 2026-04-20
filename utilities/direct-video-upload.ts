@@ -4,11 +4,9 @@ import { PickedMediaAsset } from '@/utilities/picked-media';
 
 const uploadToStreamUrl = async ({
   asset,
-  onProgress,
   uploadURL,
 }: {
   asset: PickedMediaAsset;
-  onProgress?: (progress: number) => void;
   uploadURL: string;
 }) => {
   const xhr = new XMLHttpRequest();
@@ -18,14 +16,6 @@ const uploadToStreamUrl = async ({
 
   return new Promise<void>((resolve, reject) => {
     xhr.open('POST', uploadURL);
-
-    if (onProgress) {
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          onProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      };
-    }
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -43,13 +33,11 @@ const uploadToStreamUrl = async ({
 export const directVideoUpload = async ({
   asset,
   mediaId,
-  onProgress,
   order,
   path,
 }: {
   asset: PickedMediaAsset;
   mediaId?: string;
-  onProgress?: (progress: number) => void;
   order?: number;
   path: string;
 }) => {
@@ -72,7 +60,6 @@ export const directVideoUpload = async ({
   try {
     await uploadToStreamUrl({
       asset,
-      onProgress,
       uploadURL,
     });
   } catch (error) {

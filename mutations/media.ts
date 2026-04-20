@@ -1,4 +1,4 @@
-import { api, apiOrThrow } from '@/utilities/api';
+import { apiOrThrow } from '@/utilities/api';
 import { apiUpload } from '@/utilities/api-upload';
 import { directVideoUpload } from '@/utilities/direct-video-upload';
 import { PickedMediaAsset } from '@/utilities/picked-media';
@@ -9,7 +9,6 @@ type UploadMediaArgs = {
   audioUri?: string;
   duration?: number;
   mediaId?: string;
-  onProgress?: (progress: number) => void;
   order?: number;
   path: string;
 };
@@ -19,7 +18,6 @@ export const uploadMedia = async ({
   audioUri,
   duration,
   mediaId,
-  onProgress,
   order,
   path,
 }: UploadMediaArgs) => {
@@ -27,7 +25,6 @@ export const uploadMedia = async ({
     await directVideoUpload({
       asset,
       mediaId,
-      onProgress,
       order,
       path,
     });
@@ -44,12 +41,7 @@ export const uploadMedia = async ({
   });
 
   if (!body) return;
-
-  if (onProgress) {
-    await apiUpload(path, body, onProgress);
-  } else {
-    await api(path, { body, method: 'PUT' });
-  }
+  await apiUpload(path, body);
 };
 
 export const deleteMedia = async ({

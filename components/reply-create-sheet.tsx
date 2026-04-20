@@ -57,17 +57,11 @@ export const ReplyCreateSheet = () => {
   }, [isEdit, editReply?.text, isOpen]);
 
   const handleUploadMedia = React.useCallback(
-    async (
-      asset: PickedMediaAsset,
-      onProgress: (progress: number) => void,
-      mediaId: string,
-      order: number
-    ) => {
+    async (asset: PickedMediaAsset, mediaId: string, order: number) => {
       await uploadReplyMedia({
         asset,
         replyId,
         mediaId,
-        onProgress,
         order,
         recordId,
       });

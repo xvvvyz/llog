@@ -44,7 +44,6 @@ interface PendingUpload {
   height?: number;
   id: string;
   order: number;
-  progress: number;
   type: pickedMedia.PickedMediaAsset['type'];
   uri: string;
   width?: number;
@@ -65,7 +64,6 @@ interface VisualPreviewItem {
   localUri?: string;
   order?: number;
   pending: boolean;
-  progress: number;
   type: 'image' | 'video';
   uri: string;
   width?: number;
@@ -82,7 +80,6 @@ interface UseMediaComposerOptions {
   onOpenAudio: () => void;
   onUploadMedia: (
     asset: pickedMedia.PickedMediaAsset,
-    onProgress: (progress: number) => void,
     mediaId: string,
     order: number
   ) => Promise<void>;
@@ -318,7 +315,6 @@ export const useMediaComposer = ({
           height: asset.height,
           id: mediaIds[i],
           order: baseOrder + i,
-          progress: 0,
           type: asset.type,
           uri: asset.uri,
           width: asset.width,
@@ -347,16 +343,7 @@ export const useMediaComposer = ({
       const run = async (items: typeof queue) => {
         for (const { asset, mediaId, order } of items) {
           try {
-            await onUploadMedia(
-              asset,
-              (progress) => {
-                setPendingUploads((prev) =>
-                  prev.map((p) => (p.id === mediaId ? { ...p, progress } : p))
-                );
-              },
-              mediaId,
-              order
-            );
+            await onUploadMedia(asset, mediaId, order);
           } catch {
             setPendingUploads((prev) => prev.filter((p) => p.id !== mediaId));
             removeLocalPreviewUri(mediaId);
@@ -610,7 +597,6 @@ export const useMediaComposer = ({
           .map((item) => ({
             ...item,
             pending: false,
-            progress: 100,
             localUri: localPreviewUris[item.id],
             type: toVisualMediaType(item.type),
           })),
@@ -625,7 +611,6 @@ export const useMediaComposer = ({
                 height: p.height,
                 order: p.order,
                 pending: false,
-                progress: 100,
                 localUri: localPreviewUris[p.id] ?? p.uri,
                 type: toVisualMediaType(real.type),
                 width: p.width,
@@ -638,7 +623,6 @@ export const useMediaComposer = ({
               uri: p.uri,
               type: p.type,
               pending: true,
-              progress: p.progress,
               localUri: localPreviewUris[p.id] ?? p.uri,
               width: p.width,
             };
@@ -717,28 +701,11 @@ export const useMediaComposer = ({
                           wrapperClassName="bg-card"
                         />
                       )}
-                      {item.progress > 0 && (
-                        <View
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                            bottom: 0,
-                            position: 'absolute',
-                            right: 0,
-                            top: 0,
-                            width: `${100 - item.progress}%`,
-                            zIndex: 3,
-                          }}
-                        />
-                      )}
                       <View className="absolute inset-0 z-[4] items-center justify-center">
-                        {item.progress > 0 && item.progress < 100 ? (
-                          <Text className="text-white">{item.progress}</Text>
-                        ) : (
-                          <Spinner
-                            size="small"
-                            style={{ transform: [{ scale: 0.8 }] }}
-                          />
-                        )}
+                        <Spinner
+                          size="small"
+                          style={{ transform: [{ scale: 0.8 }] }}
+                        />
                       </View>
                     </View>
                   ) : (
@@ -793,14 +760,7 @@ export const useMediaComposer = ({
                 </Text>
               </View>
               <View className="w-8 items-center justify-center">
-                {clip.progress > 0 && clip.progress < 100 ? (
-                  <Text className="text-muted-foreground">{clip.progress}</Text>
-                ) : (
-                  <Spinner
-                    size="small"
-                    style={{ transform: [{ scale: 0.8 }] }}
-                  />
-                )}
+                <Spinner size="small" style={{ transform: [{ scale: 0.8 }] }} />
               </View>
             </View>
           ))}

@@ -46,16 +46,10 @@ export const RecordCreateSheet = () => {
   const logColor = useLogColor({ id: recordLogId });
 
   const handleUploadMedia = React.useCallback(
-    async (
-      asset: PickedMediaAsset,
-      onProgress: (progress: number) => void,
-      mediaId: string,
-      order: number
-    ) => {
+    async (asset: PickedMediaAsset, mediaId: string, order: number) => {
       await uploadRecordMedia({
         asset,
         mediaId,
-        onProgress,
         order,
         recordId: record?.id,
       });

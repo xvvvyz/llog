@@ -6,7 +6,6 @@ export const uploadRecordMedia = async ({
   audioUri,
   duration,
   mediaId,
-  onProgress,
   order,
   recordId,
 }: {
@@ -14,7 +13,6 @@ export const uploadRecordMedia = async ({
   audioUri?: string;
   duration?: number;
   mediaId?: string;
-  onProgress?: (progress: number) => void;
   order?: number;
   recordId?: string;
 }) => {
@@ -25,7 +23,6 @@ export const uploadRecordMedia = async ({
     audioUri,
     duration,
     mediaId,
-    onProgress,
     order,
     path: `/files/records/${recordId}/media`,
   });
