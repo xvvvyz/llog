@@ -188,7 +188,7 @@ export const RecordAudioSheet = () => {
         </View>
         <View className="gap-3">
           <Button
-            className="web:hover:opacity-90 text-white"
+            className="web:hover:opacity-90 text-white active:opacity-90"
             disabled={isUploading || (!recorder.isRecording && !recorder.uri)}
             onPress={handleSave}
             style={{ backgroundColor: logColor.default }}

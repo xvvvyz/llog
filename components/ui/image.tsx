@@ -1,11 +1,8 @@
 import { cn } from '@/utilities/cn';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
-import {
-  ImageContentFit,
-  Image as ImagePrimitive,
-  ImageStyle,
-} from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { Image as ExpoImage, ImageContentFit, ImageStyle } from 'expo-image';
+import { StyleProp, StyleSheet, View } from 'react-native';
+import { useResolveClassNames } from 'uniwind';
 
 export const Image = ({
   className,
@@ -25,13 +22,14 @@ export const Image = ({
   height?: number;
   maxHeight?: number;
   maxWidth?: number;
-  style?: ImageStyle;
+  style?: StyleProp<ImageStyle>;
   uri?: string | null;
   width?: number;
   wrapperClassName?: string;
 }) => {
   const src = useFileUriToSrc(uri);
   const source = src ? { uri: src } : undefined;
+  const resolvedClassName = useResolveClassNames(className ?? '');
 
   if (!fill && width && height && (maxWidth || maxHeight)) {
     const aspectRatio = width / height;
@@ -60,15 +58,14 @@ export const Image = ({
           : { borderCurve: 'continuous', height, width }
       }
     >
-      <ImagePrimitive
-        className={className}
+      <ExpoImage
         contentFit={contentFit ?? (fill ? 'cover' : undefined)}
         contentPosition="center"
         source={source}
         style={
           fill
-            ? [StyleSheet.absoluteFillObject, style]
-            : { height, width, ...style }
+            ? [resolvedClassName, StyleSheet.absoluteFillObject, style]
+            : [resolvedClassName, { height, width }, style]
         }
       />
     </View>

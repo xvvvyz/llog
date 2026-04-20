@@ -394,54 +394,34 @@ export const VideoPlayer = ({
 
   return (
     <div
-      style={{
-        overflow: 'hidden',
-        position: 'relative',
-        width: maxWidth,
-        height: maxHeight,
-      }}
+      className="relative overflow-hidden"
+      style={{ width: maxWidth, height: maxHeight }}
     >
       <video
+        className="absolute inset-0 block h-full w-full"
         ref={ref}
         muted={muted}
         poster={poster ?? undefined}
         playsInline
         preload="metadata"
         style={{
-          display: 'block',
-          height: '100%',
           opacity: showThumbnail ? 0 : 1,
           objectFit: contentFit,
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
         }}
       />
       {showThumbnail && (
         <img
           alt=""
           aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full"
           src={poster ?? undefined}
           style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
             objectFit: contentFit,
-            pointerEvents: 'none',
           }}
         />
       )}
       {isBuffering && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <div className="absolute inset-0 flex items-center justify-center">
           <ActivityIndicator color="white" />
         </div>
       )}

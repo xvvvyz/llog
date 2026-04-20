@@ -75,7 +75,7 @@ export const ActivityItem = ({
   const content = (
     <Card className={cn('gap-4', !mediaIsLast && 'pb-4', className)}>
       <View className="flex-row items-start gap-3 p-4 pb-0">
-        <Avatar avatar={actor?.image?.uri} id={actor?.id} size={34} />
+        <Avatar avatar={actor?.image?.uri} id={actor?.id} size={38} />
         <View className="flex-1">
           <View className="flex-row items-baseline justify-between gap-3">
             <ActivityItemName group={group} />

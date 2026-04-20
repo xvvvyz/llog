@@ -269,31 +269,15 @@ export const AudioPlayer = ({
         <Icon icon={player.playing ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
       <div
+        className="flex flex-1 cursor-pointer touch-none items-center"
         ref={trackRef}
-        style={{
-          flex: 1,
-          height: compact ? 24 : 32,
-          display: 'flex',
-          alignItems: 'center',
-          cursor: 'pointer',
-          touchAction: 'none',
-        }}
+        style={{ height: compact ? 24 : 32 }}
       >
-        <div
-          style={{
-            width: '100%',
-            height: 4,
-            borderRadius: 9999,
-            backgroundColor: 'hsl(var(--border))',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="bg-border h-1 w-full overflow-hidden rounded-full">
           <div
+            className="bg-foreground h-full rounded-full"
             style={{
               width: `${Math.min(progress * 100, 100)}%`,
-              height: '100%',
-              borderRadius: 9999,
-              backgroundColor: 'hsl(var(--foreground))',
             }}
           />
         </div>

@@ -62,7 +62,7 @@ export default function Index() {
         left={<BackButton />}
         right={
           <Button
-            className="hidden md:flex"
+            className="web:hover:opacity-90 hidden active:opacity-90 md:flex"
             onPress={() => sheetManager.open('reply-create', params.recordId)}
             size="xs"
             style={{ backgroundColor: logColor?.default }}
@@ -109,7 +109,7 @@ export default function Index() {
         style={{ marginBottom: insets.bottom }}
       >
         <Button
-          className="size-14 rounded-full"
+          className="web:hover:opacity-90 size-14 rounded-full active:opacity-90"
           onPress={() => sheetManager.open('reply-create', params.recordId)}
           size="icon"
           style={{ backgroundColor: logColor?.default }}

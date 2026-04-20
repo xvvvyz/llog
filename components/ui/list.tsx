@@ -1,14 +1,14 @@
 import { cn } from '@/utilities/cn';
-import { styledInterop } from '@/utilities/styled-interop';
 import { LegendList, LegendListProps, LegendListRef } from '@legendapp/list';
 import * as React from 'react';
 import { View } from 'react-native';
+import { withUniwind } from 'uniwind';
 
-const StyledLegendList = styledInterop(
-  LegendList,
-  { contentContainerClassName: 'contentContainerStyle' },
-  { passThrough: true }
-);
+const StyledLegendList = withUniwind(LegendList, {
+  contentContainerStyle: {
+    fromClassName: 'contentContainerClassName',
+  },
+}) as typeof LegendList;
 
 export type ListHandle = {
   scrollToEnd: (options?: { animated?: boolean; viewOffset?: number }) => void;

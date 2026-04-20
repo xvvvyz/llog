@@ -149,6 +149,7 @@ export const ReplyCreateSheet = () => {
         <View className="flex-row justify-end gap-3">
           {toolbar}
           <Button
+            className="web:hover:opacity-90 active:opacity-90"
             disabled={isBusy || isSubmitting || !hasContent}
             onPress={handleSubmit}
             size="xs"

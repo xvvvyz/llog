@@ -105,7 +105,7 @@ export const RecordCreateSheet = () => {
         <View className="flex-row justify-end gap-3">
           {toolbar}
           <Button
-            className="web:hover:opacity-90 text-white"
+            className="web:hover:opacity-90 text-white active:opacity-90"
             disabled={isBusy || isSubmitting || (!isEdit && !hasContent)}
             onPress={async () => {
               if (isEdit) {

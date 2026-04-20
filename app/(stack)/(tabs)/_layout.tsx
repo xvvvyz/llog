@@ -161,16 +161,7 @@ export default function Layout() {
                 size={24}
               />
               {unreadCount > 0 && (
-                <View
-                  className="bg-primary absolute items-center justify-center rounded-full"
-                  style={{
-                    right: -6,
-                    top: -4,
-                    minWidth: 16,
-                    height: 16,
-                    paddingHorizontal: 4,
-                  }}
-                >
+                <View className="bg-primary absolute -top-1 -right-1.5 h-4 min-w-4 items-center justify-center rounded-full px-1">
                   <Text className="text-primary-foreground text-[10px] leading-none font-bold">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>

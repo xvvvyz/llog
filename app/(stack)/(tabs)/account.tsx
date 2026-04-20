@@ -264,7 +264,7 @@ export default function Account() {
                 >
                   <View className="flex-1">
                     <Text className="text-muted-foreground font-normal">
-                      Web notifications
+                      Notifications
                     </Text>
                     <Text className="text-placeholder pb-0.5 text-xs">
                       {pushState.status === 'blocked'

@@ -10,7 +10,6 @@ import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { preloadMedia } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
-import { styledInterop } from '@/utilities/styled-interop';
 import { CornersOut } from 'phosphor-react-native/lib/module/icons/CornersOut';
 import { SpeakerHigh } from 'phosphor-react-native/lib/module/icons/SpeakerHigh';
 import { SpeakerSlash } from 'phosphor-react-native/lib/module/icons/SpeakerSlash';
@@ -35,10 +34,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-
-const StyledAnimatedView = styledInterop(Animated.View, {
-  className: 'style',
-});
 
 export const Carousel = ({
   className,
@@ -519,35 +514,27 @@ const VideoScrubber = ({
 
   return (
     <View className="flex-row items-center">
-      <Text
-        className="min-w-[40px] text-xs"
-        style={{ color: 'rgba(255, 255, 255, 0.78)' }}
-      >
+      <Text className="min-w-[40px] text-xs text-[rgba(255,255,255,0.78)]">
         {formatTime(currentTime)}
       </Text>
       <GestureHandlerRootView className="flex-1 self-stretch">
         <GestureDetector gesture={Gesture.Race(pan, tap)}>
-          <StyledAnimatedView className="h-8 flex-1 justify-center">
+          <Animated.View className="h-8 flex-1 justify-center">
             <View
-              className="relative h-1 overflow-hidden rounded-full"
+              className="relative h-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.22)]"
               onLayout={handleTrackLayout}
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.22)' }}
             >
               <View
-                className="absolute top-0 bottom-0 left-0 rounded-full"
+                className="absolute top-0 bottom-0 left-0 rounded-full bg-[rgba(255,255,255,0.96)]"
                 style={{
                   width: `${progress * 100}%`,
-                  backgroundColor: 'rgba(255, 255, 255, 0.96)',
                 }}
               />
             </View>
-          </StyledAnimatedView>
+          </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
-      <Text
-        className="min-w-[40px] text-right text-xs"
-        style={{ color: 'rgba(255, 255, 255, 0.78)' }}
-      >
+      <Text className="min-w-[40px] text-right text-xs text-[rgba(255,255,255,0.78)]">
         {formatTime(duration)}
       </Text>
     </View>
@@ -574,11 +561,11 @@ const Dots = ({
   return (
     <View className="h-11 flex-1 items-center justify-center">
       <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
-        <StyledAnimatedView className="flex-row" style={{ gap: DOT_GAP }}>
+        <Animated.View className="flex-row" style={{ gap: DOT_GAP }}>
           {Array.from({ length: count }, (_, i) => (
             <Dot activeIndex={activeIndex} count={count} index={i} key={i} />
           ))}
-        </StyledAnimatedView>
+        </Animated.View>
       </View>
     </View>
   );

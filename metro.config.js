@@ -1,8 +1,8 @@
-const metro = require('expo/metro-config');
-const nativeWind = require('nativewind/metro');
+const { getDefaultConfig } = require('expo/metro-config');
 const reanimated = require('react-native-reanimated/metro-config');
+const { withUniwindConfig } = require('uniwind/metro');
 
-const expoConfig = metro.getDefaultConfig(__dirname);
+const expoConfig = getDefaultConfig(__dirname);
 
 expoConfig.transformer.getTransformOptions = () => ({
   transform: { experimentalImportSupport: true, inlineRequires: true },
@@ -12,9 +12,11 @@ expoConfig.transformer.minifierConfig = {
   compress: { drop_console: true },
 };
 
-const withNativeWindConfig = nativeWind.withNativeWind(expoConfig);
-
 const withReanimatedConfig =
-  reanimated.wrapWithReanimatedMetroConfig(withNativeWindConfig);
+  reanimated.wrapWithReanimatedMetroConfig(expoConfig);
 
-module.exports = withReanimatedConfig;
+module.exports = withUniwindConfig(withReanimatedConfig, {
+  cssEntryFile: './theme/global.css',
+  dtsFile: './uniwind-types.d.ts',
+  polyfills: { rem: 17 },
+});

@@ -2,37 +2,63 @@ import { TextContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
 import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 import * as React from 'react';
-import { styled } from 'react-native-css';
+import {
+  StyleSheet,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import { useResolveClassNames } from 'uniwind';
 
 interface IconProps extends PhosphorIconProps {
   className?: string;
   icon: React.ComponentType<PhosphorIconProps>;
 }
 
-const interopCache = new WeakMap<
-  React.ComponentType<PhosphorIconProps>,
-  React.ComponentType<PhosphorIconProps & { className?: string }>
->();
+type IconResolvedStyle = ViewStyle & TextStyle & { color?: string };
 
-const getInteropIcon = (icon: React.ComponentType<PhosphorIconProps>) => {
-  let wrapped = interopCache.get(icon);
+function stripColor(style?: IconResolvedStyle) {
+  if (!style) return undefined;
+  const { color: _color, ...rest } = style;
+  return rest;
+}
 
-  if (!wrapped) {
-    wrapped = styled(icon, { className: 'style' });
-    interopCache.set(icon, wrapped);
-  }
-
-  return wrapped;
-};
-
-export const Icon = ({ icon, className, size = 20, ...props }: IconProps) => {
+export const Icon = ({
+  color,
+  icon: IconPrimitive,
+  className,
+  size = 20,
+  style,
+  ...props
+}: IconProps) => {
   const textClass = React.useContext(TextContext);
-  const InteropIcon = React.useMemo(() => getInteropIcon(icon), [icon]);
+
+  const resolvedClassStyle = StyleSheet.flatten(
+    useResolveClassNames(cn('shrink-0', textClass, className))
+  ) as IconResolvedStyle | undefined;
+
+  const resolvedPropStyle = StyleSheet.flatten(
+    style as StyleProp<ViewStyle | TextStyle>
+  ) as IconResolvedStyle | undefined;
+
+  const resolvedColor =
+    color ??
+    (typeof resolvedPropStyle?.color === 'string'
+      ? resolvedPropStyle.color
+      : typeof resolvedClassStyle?.color === 'string'
+        ? resolvedClassStyle.color
+        : undefined);
+
+  const resolvedStyle = [
+    stripColor(resolvedClassStyle),
+    stripColor(resolvedPropStyle),
+  ];
 
   return (
-    <InteropIcon
-      className={cn('shrink-0', textClass, className)}
+    <IconPrimitive
+      color={resolvedColor}
       size={size}
+      style={resolvedStyle}
       {...props}
     />
   );

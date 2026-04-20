@@ -147,7 +147,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
         </>
       )}
       <Button
-        className="mt-3 text-white"
+        className="web:hover:opacity-90 mt-3 text-white active:opacity-90"
         onPress={() => sheetManager.open('record-create', logId)}
         size="xs"
         style={{ backgroundColor: logColor.default }}

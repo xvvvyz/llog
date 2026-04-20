@@ -4,7 +4,7 @@ import * as React from 'react';
 import { TextInput } from 'react-native';
 
 const inputVariants = cva(
-  'text-base native:leading-5 border border-border-secondary placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden',
+  'text-base native:leading-5 border border-border-secondary web:placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden',
   {
     defaultVariants: {
       size: 'default',
@@ -53,6 +53,7 @@ const Input = React.forwardRef<
       )}
       lineBreakModeIOS="clip"
       onChangeText={handleChangeText}
+      placeholderTextColorClassName="accent-placeholder"
       ref={ref}
       returnKeyType="done"
       style={{ borderCurve: 'continuous' }}

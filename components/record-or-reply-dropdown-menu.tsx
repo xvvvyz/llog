@@ -42,6 +42,9 @@ export const RecordOrReplyDropdownMenu = ({
     actorRole: myRole.role,
     isAuthor,
   });
+  const canEdit = isAuthor;
+  const canPin = !replyId && myRole.canPinRecords;
+  const hasActionsAboveDelete = canEdit || canPin;
 
   if (!canDelete) return null;
 
@@ -59,7 +62,7 @@ export const RecordOrReplyDropdownMenu = ({
           </Button>
         </Menu.Trigger>
         <Menu.Content align="end">
-          {isAuthor && (
+          {canEdit && (
             <Menu.Item
               onPress={() => {
                 if (replyId) {
@@ -73,7 +76,7 @@ export const RecordOrReplyDropdownMenu = ({
               <Text>Edit</Text>
             </Menu.Item>
           )}
-          {!replyId && myRole.canPinRecords && (
+          {canPin && (
             <Menu.Item
               onPress={() =>
                 toggleRecordPin({ id: recordId, isPinned: !isPinned })
@@ -90,7 +93,7 @@ export const RecordOrReplyDropdownMenu = ({
               <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
             </Menu.Item>
           )}
-          <Menu.Separator />
+          {hasActionsAboveDelete && <Menu.Separator />}
           <Menu.Item
             onPress={() => {
               if (replyId) {
