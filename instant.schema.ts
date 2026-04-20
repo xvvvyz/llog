@@ -35,7 +35,6 @@ const schema = i.schema({
       token: i.string().unique().indexed(),
       role: i.string(),
       teamId: i.string().indexed(),
-      expiresAt: i.number().optional(),
     }),
     tags: i.entity({
       name: i.string().indexed(),

@@ -4,15 +4,13 @@ export const createInviteLink = async ({
   teamId,
   role,
   logIds,
-  expiresAt,
 }: {
   teamId: string;
   role: string;
   logIds?: string[];
-  expiresAt?: number;
 }) => {
   const res = await api(`/teams/${teamId}/invite-links`, {
-    body: JSON.stringify({ role, logIds, expiresAt }),
+    body: JSON.stringify({ role, logIds }),
     headers: { 'Content-Type': 'application/json' },
     method: 'POST',
   });

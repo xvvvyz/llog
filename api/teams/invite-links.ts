@@ -19,7 +19,6 @@ app.post(
     z.object({
       role: z.enum([Role.Admin, Role.Member]),
       logIds: z.array(z.string()).optional().default([]),
-      expiresAt: z.number().optional(),
     })
   ),
   async (c) => {
@@ -30,7 +29,7 @@ app.post(
       throw new HTTPException(400, { message: 'Invalid request' });
     }
 
-    const { role, logIds, expiresAt } = c.req.valid('json');
+    const { role, logIds } = c.req.valid('json');
 
     const [{ roles: callerRoles }, { profiles }] = await Promise.all([
       c.var.db.query({
@@ -61,7 +60,7 @@ app.post(
     const linkId = id();
 
     const linkTx = c.var.db.tx.invites[linkId]
-      .update({ token, role, teamId, expiresAt })
+      .update({ token, role, teamId })
       .link({
         team: teamId,
         creator: creatorProfileId,

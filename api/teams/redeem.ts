@@ -33,12 +33,6 @@ app.get('/:token', db(), async (c) => {
     throw new HTTPException(404, { message: 'Invite link not found' });
   }
 
-  const now = Date.now();
-
-  if (link.expiresAt && link.expiresAt < now) {
-    return c.json({ isValid: false, reason: 'expired' });
-  }
-
   const adminMembers = (link.team?.roles ?? [])
     .filter((role) => p.isManagedRole(role.role))
     .map((role) => role.user?.profile)
@@ -90,12 +84,6 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
 
   if (!link) {
     throw new HTTPException(404, { message: 'Invite link not found' });
-  }
-
-  const now = Date.now();
-
-  if (link.expiresAt && link.expiresAt < now) {
-    throw new HTTPException(400, { message: 'Invite link has expired' });
   }
 
   const teamId = link.team?.id;

@@ -30,7 +30,6 @@ interface LinkInfo {
   role?: string;
   logNames?: string[];
   members?: Member[];
-  reason?: string;
 }
 
 const renderLogNames = (names: string[]) =>
@@ -70,7 +69,7 @@ export default function InviteLink() {
         }
       } catch {
         if (!cancelled) {
-          setLinkInfo({ isValid: false, reason: 'error' });
+          setLinkInfo({ isValid: false });
         }
       } finally {
         if (!cancelled) {
@@ -208,9 +207,7 @@ export default function InviteLink() {
             ? linkInfo.logNames && linkInfo.logNames.length > 0
               ? `You\u2019ve been invited to join the `
               : 'You\u2019ve been invited to join '
-            : linkInfo?.reason === 'expired'
-              ? 'This invite link has expired.'
-              : 'This invite link is no longer valid.'}
+            : 'This invite link is no longer valid.'}
           {linkInfo?.isValid &&
             linkInfo.logNames &&
             linkInfo.logNames.length > 0 &&
