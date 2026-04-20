@@ -45,6 +45,9 @@ export const WebPushIosSetupSheet = () => {
       text: 'Open from Home Screen',
     },
     {
+      text: 'Sign in to your account',
+    },
+    {
       text: 'Enable web notifications',
     },
   ];
