@@ -3,6 +3,7 @@ import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
+import type { ListHandle } from '@/components/ui/list';
 import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
@@ -12,6 +13,7 @@ import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useRecord } from '@/queries/use-record';
 import { cn } from '@/utilities/cn';
+import * as scroll from '@/utilities/post-submit-scroll';
 import { textToTitle } from '@/utilities/text-to-title';
 import { useLocalSearchParams } from 'expo-router';
 import { ArrowBendDownLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendDownLeft';
@@ -22,15 +24,33 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ recordId: string }>();
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
+  const listRef = React.useRef<ListHandle>(null);
   const sheetManager = useSheetManager();
 
   const record = useRecord({ id: params.recordId });
   const logColor = useLogColor({ id: record.log?.id });
 
+  const pendingScroll = scroll.usePostSubmitScroll({
+    id: params.recordId,
+    scope: 'record',
+  });
+
   const data = React.useMemo(
     () => [{ ...record, replies: undefined }, ...record.replies],
     [record]
   );
+
+  React.useEffect(() => {
+    if (pendingScroll !== 'end' || record.isLoading) return;
+
+    const frame = requestAnimationFrame(() => {
+      if (!listRef.current) return;
+      listRef.current.scrollToEnd({ animated: true });
+      scroll.clearPostSubmitScroll({ id: params.recordId, scope: 'record' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [data.length, params.recordId, pendingScroll, record.isLoading]);
 
   if (sheetManager.someOpen()) {
     return renderCacheRef.current;
@@ -67,6 +87,7 @@ export default function Index() {
             keyExtractor={(item) => item.id ?? ''}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="always"
+            listRef={listRef}
             maintainScrollAtEnd
             maintainVisibleContentPosition
             renderItem={({ index, item }) => (
@@ -84,7 +105,7 @@ export default function Index() {
         </View>
       )}
       <View
-        className="absolute bottom-8 right-8 md:hidden"
+        className="absolute right-8 bottom-8 md:hidden"
         style={{ marginBottom: insets.bottom }}
       >
         <Button

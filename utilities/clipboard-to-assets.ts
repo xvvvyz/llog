@@ -1,4 +1,4 @@
-import { ImagePickerAsset } from 'expo-image-picker';
+import { PickedMediaAsset } from '@/utilities/picked-media';
 
 export const clipboardToAssets = (items: DataTransferItemList) => {
   const files: File[] = [];
@@ -15,14 +15,17 @@ export const clipboardToAssets = (items: DataTransferItemList) => {
   return Promise.all(
     files.map(
       (file) =>
-        new Promise<ImagePickerAsset>((resolve) => {
+        new Promise<PickedMediaAsset | null>((resolve) => {
           const url = URL.createObjectURL(file);
           const img = new window.Image();
 
           img.onload = () => {
             resolve({
+              file,
+              fileName: file.name,
               height: img.naturalHeight,
               mimeType: file.type,
+              type: 'image',
               uri: url,
               width: img.naturalWidth,
             });
@@ -30,11 +33,13 @@ export const clipboardToAssets = (items: DataTransferItemList) => {
 
           img.onerror = () => {
             URL.revokeObjectURL(url);
-            resolve(null as unknown as ImagePickerAsset);
+            resolve(null);
           };
 
           img.src = url;
         })
     )
+  ).then((assets) =>
+    assets.filter((asset): asset is PickedMediaAsset => !!asset)
   );
 };

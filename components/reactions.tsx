@@ -3,7 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { toggleReaction } from '@/mutations/toggle-reaction';
 import { useProfile } from '@/queries/use-profile';
-import { Emoji, REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
+import { REACTION_EMOJIS, REACTION_ICONS, isEmoji } from '@/types/emoji';
 import { Profile } from '@/types/profile';
 import { Reaction } from '@/types/reaction';
 import { animation } from '@/utilities/animation';
@@ -58,12 +58,11 @@ export const Reactions = ({
   return (
     <>
       {Array.from(grouped.entries())
-        .sort(([a], [b]) => {
-          return (
-            REACTION_EMOJIS.indexOf(a as Emoji) -
-            REACTION_EMOJIS.indexOf(b as Emoji)
-          );
-        })
+        .sort(
+          ([a], [b]) =>
+            REACTION_EMOJIS.indexOf(isEmoji(a) ? a : '❤️') -
+            REACTION_EMOJIS.indexOf(isEmoji(b) ? b : '❤️')
+        )
         .map(([emoji, { count, userReacted, userReactionId }]) => (
           <Animated.View
             key={emoji}
@@ -98,7 +97,9 @@ export const Reactions = ({
                   userReacted && !color && 'text-primary',
                   !userReacted && 'text-muted-foreground'
                 )}
-                icon={REACTION_ICONS[emoji as keyof typeof REACTION_ICONS]}
+                icon={
+                  isEmoji(emoji) ? REACTION_ICONS[emoji] : REACTION_ICONS['❤️']
+                }
                 style={userReacted && color ? { color } : undefined}
                 weight={userReacted ? 'fill' : 'regular'}
               />

@@ -77,7 +77,7 @@ export default function Index() {
   return (
     <Page>
       <View
-        className="absolute left-4 top-1 z-10 rounded-full md:left-8 md:top-3"
+        className="absolute top-1 left-4 z-10 rounded-full md:top-3 md:left-8"
         style={{ marginTop: insets.top + 1 }}
       >
         <BackButton />
@@ -86,7 +86,6 @@ export default function Index() {
         defaultIndex={defaultIndex}
         media={visualMedia}
         isKeyboardNavigationEnabled={visualMedia.length > 1}
-        onClose={() => router.back()}
       />
     </Page>
   );

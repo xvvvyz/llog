@@ -18,7 +18,11 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 export const InviteLogsSheet = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const sheetManager = useSheetManager();
-  const action = sheetManager.getId('invite-logs') as 'copy' | 'qr' | undefined;
+  const actionId = sheetManager.getId('invite-logs');
+
+  const action =
+    actionId === 'copy' || actionId === 'qr' ? actionId : undefined;
+
   const colorScheme = useColorScheme();
   const dismissTimer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
   const open = sheetManager.isOpen('invite-logs');

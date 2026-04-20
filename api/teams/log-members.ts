@@ -8,7 +8,7 @@ import { z } from 'zod/v4';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.put(
-  '/:roleId',
+  '/:teamId/logs/:logId/members/:roleId',
   db(),
   auth(),
   zValidator('json', z.object({ selected: z.boolean() })),

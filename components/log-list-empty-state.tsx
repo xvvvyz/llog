@@ -14,7 +14,7 @@ export const LogListEmptyState = ({ canManage }: { canManage?: boolean }) => {
       <Icon className="text-primary" icon={Globe} size={64} />
       {canManage && (
         <>
-          <Text className="text-center text-muted-foreground">
+          <Text className="text-muted-foreground text-center">
             Track anything in your world.
           </Text>
           <Button

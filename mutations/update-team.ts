@@ -4,9 +4,8 @@ export const updateTeam = async ({
   id,
   name,
 }: {
-  id?: string;
+  id: string;
   name: string;
 }) => {
-  if (!id) return;
   return db.transact(db.tx.teams[id].update({ name }));
 };

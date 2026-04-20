@@ -38,7 +38,7 @@ export const TeamSwitchSheet = () => {
             >
               <Text className="font-normal">{t.name}</Text>
               {t.id === ui.activeTeamId && (
-                <Icon className="-mr-1 text-placeholder" icon={Check} />
+                <Icon className="text-placeholder -mr-1" icon={Check} />
               )}
             </Button>
           ))}

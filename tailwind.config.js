@@ -1,15 +1,9 @@
-const { hairlineWidth } = require('nativewind/theme');
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   plugins: [require('tailwindcss-animate')],
-  presets: [require('nativewind/preset')],
   theme: {
     extend: {
-      borderWidth: {
-        hairline: hairlineWidth(),
-      },
       colors: {
         border: {
           DEFAULT: 'hsl(var(--border))',

@@ -181,14 +181,14 @@ export const RecordAudioSheet = () => {
             {formatTime(duration)}
           </Text>
           {startError ? (
-            <Text className="text-center text-sm text-muted-foreground">
+            <Text className="text-muted-foreground text-center text-sm">
               {startError}
             </Text>
           ) : null}
         </View>
         <View className="gap-3">
           <Button
-            className="text-white web:hover:opacity-90"
+            className="web:hover:opacity-90 text-white"
             disabled={isUploading || (!recorder.isRecording && !recorder.uri)}
             onPress={handleSave}
             style={{ backgroundColor: logColor.default }}

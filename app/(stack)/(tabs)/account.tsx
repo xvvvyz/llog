@@ -79,7 +79,6 @@ export default function Account() {
     void (async () => {
       try {
         const state = await wp.syncWebPushSubscription();
-
         if (!cancelled) setPushState(state);
       } catch (error) {
         console.error('Failed to refresh web push state', error);
@@ -190,7 +189,7 @@ export default function Account() {
               <Menu.Root>
                 <Menu.Trigger asChild>
                   <Button
-                    className="items-end justify-between rounded-none border-b border-border px-0 pb-3 pt-3"
+                    className="border-border items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
                     variant="link"
                   >
                     <Label className="shrink-0 p-0">Avatar</Label>
@@ -219,7 +218,7 @@ export default function Account() {
               </Menu.Root>
             </View>
             <View className="px-4">
-              <View className="flex-row items-center justify-between border-b border-border">
+              <View className="border-border flex-row items-center justify-between border-b">
                 <Label
                   className="p-0"
                   onPress={() => nameInputRef.current?.focus()}
@@ -231,7 +230,7 @@ export default function Account() {
                   maxLength={32}
                   className="rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(text) =>
-                    updateProfile({ id: profile.id, name: text })
+                    updateProfile({ id: profile.id!, name: text })
                   }
                   onSubmitEditing={handleSubmitName}
                   ref={nameInputRef}
@@ -241,7 +240,7 @@ export default function Account() {
               </View>
             </View>
             <View className="px-4">
-              <View className="flex-row items-center justify-between border-b border-border">
+              <View className="border-border flex-row items-center justify-between border-b">
                 <Label className="p-0">Email</Label>
                 <Input
                   editable={false}
@@ -259,15 +258,15 @@ export default function Account() {
                     checked: pushEnabled,
                     disabled: isPushToggleDisabled,
                   }}
-                  className="flex-row items-center justify-between gap-4 border-b border-border py-3"
+                  className="border-border flex-row items-center justify-between gap-4 border-b py-3"
                   disabled={isPushToggleDisabled}
                   onPress={handleTogglePush}
                 >
                   <View className="flex-1">
-                    <Text className="font-normal text-muted-foreground">
+                    <Text className="text-muted-foreground font-normal">
                       Web notifications
                     </Text>
-                    <Text className="text-xs text-placeholder">
+                    <Text className="text-placeholder pb-0.5 text-xs">
                       {pushState.status === 'blocked'
                         ? 'Blocked in browser or device settings'
                         : 'Receive new record & reply alerts'}
@@ -291,7 +290,7 @@ export default function Account() {
                 >
                   <Text className="font-normal">Double tap reaction</Text>
                   <Icon
-                    className="-mr-0.5 text-primary"
+                    className="text-primary -mr-0.5"
                     icon={REACTION_ICONS[ui.doubleTapEmoji]}
                     weight="fill"
                   />
@@ -301,7 +300,7 @@ export default function Account() {
                 {REACTION_EMOJIS.map((emoji) => (
                   <Menu.Item
                     key={emoji}
-                    className="size-10 min-w-0 justify-center rounded-xl pl-0 pr-0"
+                    className="size-10 min-w-0 justify-center rounded-xl pr-0 pl-0"
                     onPress={() =>
                       ui.id &&
                       db.transact(
@@ -324,7 +323,7 @@ export default function Account() {
                 ))}
               </Menu.Content>
             </Menu.Root>
-            <View className="my-2 border-t border-border" />
+            <View className="border-border my-2 border-t" />
             <Button
               className="justify-between rounded-none"
               disabled={isSigningOut}
@@ -352,7 +351,7 @@ export default function Account() {
               wrapperClassName="rounded-none"
             >
               <Text className="font-normal">Sign out</Text>
-              <Icon className="-mr-0.5 text-placeholder" icon={SignOut} />
+              <Icon className="text-placeholder -mr-0.5" icon={SignOut} />
             </Button>
           </View>
         </Card>

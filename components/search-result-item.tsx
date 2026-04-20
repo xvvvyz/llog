@@ -4,6 +4,7 @@ import { Text } from '@/components/ui/text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SPECTRUM } from '@/theme/spectrum';
 import { SearchResult } from '@/types/search';
+import { cn } from '@/utilities/cn';
 import { formatDate } from '@/utilities/time';
 import { router } from 'expo-router';
 import * as React from 'react';
@@ -91,7 +92,7 @@ export const SearchResultItem = ({
   const handlePress = () => {
     switch (result.type) {
       case 'log':
-        router.push(`/${result.logId ?? result.id}`);
+        router.push(`/${result.id}`);
         break;
       case 'record':
         router.push(`/record/${result.id}`);
@@ -123,10 +124,7 @@ export const SearchResultItem = ({
           {!!result.profiles?.length && (
             <View className="flex-row">
               {result.profiles.map((profile, i) => (
-                <View
-                  key={profile.id}
-                  style={i > 0 ? { marginLeft: -10 } : undefined}
-                >
+                <View className={cn(i > 0 && '-ml-[10px]')} key={profile.id}>
                   <Avatar avatar={profile.uri} id={profile.id} size={22} />
                 </View>
               ))}
@@ -163,7 +161,7 @@ export const SearchResultItem = ({
               {result.logName && (
                 <View className="min-w-32 flex-1 flex-row items-baseline justify-end gap-1">
                   <Text
-                    className="shrink-0 text-xs text-muted-foreground"
+                    className="text-muted-foreground shrink-0 text-xs"
                     numberOfLines={1}
                   >
                     {result.type === 'reply' ? 'Reply in' : 'Record in'}
@@ -174,7 +172,7 @@ export const SearchResultItem = ({
                       style={{ backgroundColor: logColor?.default }}
                     />
                     <Text
-                      className="shrink text-xs text-muted-foreground"
+                      className="text-muted-foreground shrink text-xs"
                       numberOfLines={1}
                     >
                       {result.logName}
@@ -184,7 +182,7 @@ export const SearchResultItem = ({
               )}
             </View>
             {result.date && (
-              <Text className="text-xs text-muted-foreground">
+              <Text className="text-muted-foreground text-xs">
                 {formatDate(result.date)}
               </Text>
             )}
@@ -192,7 +190,7 @@ export const SearchResultItem = ({
         </View>
         {!!result.text && (
           <HighlightedText
-            className="text-sm text-muted-foreground"
+            className="text-muted-foreground text-sm"
             highlightClassName="text-sm font-medium text-foreground"
             numberOfLines={2}
             terms={result.terms}

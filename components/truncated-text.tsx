@@ -22,8 +22,18 @@ export const TruncatedText = ({
 
   React.useEffect(() => {
     if (!numberOfLines || expanded) return;
-    const node = textRef.current as unknown as HTMLElement | null;
+    const node = textRef.current;
     if (!node) return;
+
+    if (
+      !('scrollHeight' in node) ||
+      !('clientHeight' in node) ||
+      typeof node.scrollHeight !== 'number' ||
+      typeof node.clientHeight !== 'number'
+    ) {
+      return;
+    }
+
     if (node.scrollHeight > node.clientHeight) setTruncated(true);
   }, [numberOfLines, expanded, text]);
 

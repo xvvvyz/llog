@@ -13,7 +13,7 @@ import { formatDate } from '@/utilities/time';
 import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
-const CATEGORY_LABELS: Record<string, string> = {
+const CATEGORY_LABELS: Record<GroupedActivity['type'], string> = {
   record_published: 'Recorded',
   reply_posted: 'Replied',
   reaction_added: 'Emoted',
@@ -30,13 +30,13 @@ export const ActivityItem = ({
 }) => {
   const colorScheme = useColorScheme();
   const first = group.activities[0];
-  if (!first) return null;
   const actor = first.actor;
   const log = first.log;
   const record = first.record;
   const team = first.team;
   const logColor = log?.color != null ? SPECTRUM[colorScheme][log.color] : null;
-  const category = CATEGORY_LABELS[group.type] ?? '';
+  const category = CATEGORY_LABELS[group.type];
+  const isClickable = Boolean(record?.id);
 
   const handlePress = () => {
     const recordId = record?.id;
@@ -72,81 +72,83 @@ export const ActivityItem = ({
     (group.type === 'reply_posted' || group.type === 'reaction_added') &&
     record;
 
-  return (
-    <Pressable onPress={handlePress}>
-      <Card className={cn('gap-4', !mediaIsLast && 'pb-4', className)}>
-        <View className="flex-row items-start gap-3 p-4 pb-0">
-          <Avatar avatar={actor?.image?.uri} id={actor?.id} size={34} />
-          <View className="-mt-0.5 flex-1">
-            <View className="flex-row items-baseline justify-between gap-3">
-              <ActivityItemName group={group} />
-              <View className="min-w-32 flex-1 flex-row items-center justify-end gap-1">
-                <Text
-                  className="shrink-0 text-xs text-muted-foreground"
-                  numberOfLines={1}
-                >
-                  {group.type === 'member_joined'
-                    ? `Joined${team?.name ? '' : ' the team'}`
-                    : group.type === 'member_left'
-                      ? `Left${team?.name ? '' : ' the team'}`
-                      : category + (log ? ' in' : '')}
-                </Text>
-                {log &&
-                  group.type !== 'member_joined' &&
-                  group.type !== 'member_left' && (
-                    <View className="shrink flex-row items-center gap-1">
-                      <View
-                        className="size-2.5 shrink-0 rounded-[2px]"
-                        style={{
-                          backgroundColor: logColor?.default ?? undefined,
-                        }}
-                      />
-                      <Text
-                        className="shrink text-xs text-muted-foreground"
-                        numberOfLines={1}
-                      >
-                        {log.name}
-                      </Text>
-                    </View>
-                  )}
-                {(group.type === 'member_joined' ||
-                  group.type === 'member_left') &&
-                  team?.name && (
-                    <View className="shrink flex-row items-center gap-1">
-                      <Avatar
-                        avatar={team.image?.uri}
-                        className="shrink-0"
-                        id={team.id}
-                        size={10}
-                      />
-                      <Text
-                        className="shrink text-xs text-muted-foreground"
-                        numberOfLines={1}
-                      >
-                        {team.name}
-                      </Text>
-                    </View>
-                  )}
-              </View>
+  const content = (
+    <Card className={cn('gap-4', !mediaIsLast && 'pb-4', className)}>
+      <View className="flex-row items-start gap-3 p-4 pb-0">
+        <Avatar avatar={actor?.image?.uri} id={actor?.id} size={34} />
+        <View className="flex-1">
+          <View className="flex-row items-baseline justify-between gap-3">
+            <ActivityItemName group={group} />
+            <View className="min-w-32 flex-1 flex-row items-center justify-end gap-1">
+              <Text
+                className="text-muted-foreground shrink-0 text-xs"
+                numberOfLines={1}
+              >
+                {group.type === 'member_joined'
+                  ? `Joined${team?.name ? '' : ' the team'}`
+                  : group.type === 'member_left'
+                    ? `Left${team?.name ? '' : ' the team'}`
+                    : category + (log ? ' in' : '')}
+              </Text>
+              {log &&
+                group.type !== 'member_joined' &&
+                group.type !== 'member_left' && (
+                  <View className="shrink flex-row items-center gap-1">
+                    <View
+                      className="size-2.5 shrink-0 rounded-[2px]"
+                      style={{
+                        backgroundColor: logColor?.default,
+                      }}
+                    />
+                    <Text
+                      className="text-muted-foreground shrink text-xs"
+                      numberOfLines={1}
+                    >
+                      {log.name}
+                    </Text>
+                  </View>
+                )}
+              {(group.type === 'member_joined' ||
+                group.type === 'member_left') &&
+                team?.name && (
+                  <View className="shrink flex-row items-center gap-1">
+                    <Avatar
+                      avatar={team.image?.uri}
+                      className="shrink-0"
+                      id={team.id}
+                      size={10}
+                    />
+                    <Text
+                      className="text-muted-foreground shrink text-xs"
+                      numberOfLines={1}
+                    >
+                      {team.name}
+                    </Text>
+                  </View>
+                )}
             </View>
-            <Text className="text-xs text-muted-foreground">
-              {formatDate(group.latestDate)}
-            </Text>
           </View>
+          <Text className="text-muted-foreground text-xs">
+            {formatDate(group.latestDate)}
+          </Text>
         </View>
-        {showQuotedRecord && (
-          <View className="px-4">
-            <ActivityItemQuotedRecord
-              logColor={logColor}
-              media={record.media}
-              recordId={record.id!}
-              text={record.text}
-            />
-          </View>
-        )}
-        <ActivityItemContent group={group} logColor={logColor} />
-        {mediaProps && <ActivityItemMedia {...mediaProps} />}
-      </Card>
-    </Pressable>
+      </View>
+      {showQuotedRecord && (
+        <View className="px-4">
+          <ActivityItemQuotedRecord
+            logColor={logColor}
+            media={record.media}
+            recordId={record.id!}
+            text={record.text}
+          />
+        </View>
+      )}
+      <ActivityItemContent group={group} logColor={logColor} />
+      {mediaProps && <ActivityItemMedia {...mediaProps} />}
+    </Card>
   );
+
+  if (!isClickable) return content;
+
+  return <Pressable onPress={handlePress}>{content}</Pressable>;
 };

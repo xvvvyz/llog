@@ -1,7 +1,5 @@
-import { api } from '@/utilities/api';
-import { apiUpload } from '@/utilities/api-upload';
-import { prepareMediaFormData } from '@/utilities/prepare-media-form-data';
-import { ImagePickerAsset } from 'expo-image-picker';
+import { PickedMediaAsset } from '@/utilities/picked-media';
+import { uploadMedia } from './media';
 
 export const uploadRecordMedia = async ({
   asset,
@@ -12,7 +10,7 @@ export const uploadRecordMedia = async ({
   order,
   recordId,
 }: {
-  asset?: ImagePickerAsset;
+  asset?: PickedMediaAsset;
   audioUri?: string;
   duration?: number;
   mediaId?: string;
@@ -22,18 +20,13 @@ export const uploadRecordMedia = async ({
 }) => {
   if (!recordId) return;
 
-  const body = await prepareMediaFormData({
+  await uploadMedia({
     asset,
     audioUri,
     duration,
     mediaId,
+    onProgress,
     order,
+    path: `/files/records/${recordId}/media`,
   });
-  if (!body) return;
-
-  if (onProgress) {
-    await apiUpload(`/files/records/${recordId}/media`, body, onProgress);
-  } else {
-    await api(`/files/records/${recordId}/media`, { body, method: 'PUT' });
-  }
 };

@@ -1,3 +1,4 @@
+import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { db } from '@/api/middleware/db';
 import { deleteActivities } from '@/utilities/delete-activities';
 import * as p from '@/utilities/permissions';
@@ -6,7 +7,7 @@ import { HTTPException } from 'hono/http-exception';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-app.delete('/', db({ asUser: true }), async (c) => {
+app.delete('/:logId', db({ asUser: true }), async (c) => {
   const logId = c.req.param('logId');
 
   if (!logId) {
@@ -45,23 +46,25 @@ app.delete('/', db({ asUser: true }), async (c) => {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 
-  const r2Keys: string[] = [];
+  const mediaToDelete: Array<{
+    assetKey?: string | null;
+    uri?: string | null;
+  }> = [];
+
   const activities = [...(log.activities ?? [])];
 
   for (const record of log.records ?? []) {
     activities.push(...(record.activities ?? []));
 
     for (const item of record.media ?? []) {
-      r2Keys.push(item.uri as string);
-      if (item.previewUri) r2Keys.push(item.previewUri as string);
+      mediaToDelete.push(item);
     }
 
     for (const reply of record.replies ?? []) {
       activities.push(...(reply.activities ?? []));
 
       for (const item of reply.media ?? []) {
-        r2Keys.push(item.uri as string);
-        if (item.previewUri) r2Keys.push(item.previewUri as string);
+        mediaToDelete.push(item);
       }
     }
   }
@@ -69,7 +72,7 @@ app.delete('/', db({ asUser: true }), async (c) => {
   await c.var.db.transact(c.var.db.tx.logs[logId].delete());
 
   await Promise.all([
-    r2Keys.length ? c.env.R2.delete(r2Keys) : undefined,
+    mediaToDelete.length ? deleteMediaAssets(c.env, mediaToDelete) : undefined,
     deleteActivities(c.env, activities),
   ]);
 

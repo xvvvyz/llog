@@ -3,6 +3,6 @@ import log from './log';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-app.route('/:logId', log);
+app.route('/', log);
 
 export default app;

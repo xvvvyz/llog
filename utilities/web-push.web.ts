@@ -6,6 +6,10 @@ export type { WebPushState, WebPushSupportState } from '@/types/web-push';
 let registrationPromise: Promise<ServiceWorkerRegistration | null> | null =
   null;
 
+const isStandaloneNavigator = (
+  value: Navigator
+): value is Navigator & { standalone?: boolean } => 'standalone' in value;
+
 const toUint8Array = (value: string) => {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
   const padding = '='.repeat((4 - (normalized.length % 4 || 4)) % 4);
@@ -34,8 +38,8 @@ export const isSafariBrowser = () => {
 
 export const isStandaloneWebApp = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
-  (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-    true;
+  (isStandaloneNavigator(window.navigator) &&
+    window.navigator.standalone === true);
 
 export const getWebPushSupportState = (): WebPushSupportState => {
   if (typeof window === 'undefined') {
@@ -156,7 +160,7 @@ export const syncWebPushSubscription = async (): Promise<WebPushState> => {
 
 export const enableWebPush = async () => {
   if (!isSupported()) {
-    return { status: 'unsupported' } as WebPushState;
+    return { status: 'unsupported' };
   }
 
   const permission = await Notification.requestPermission();

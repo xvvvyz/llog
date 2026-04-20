@@ -5,6 +5,7 @@ import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/ui/header';
 import { Icon } from '@/components/ui/icon';
+import type { ListHandle } from '@/components/ui/list';
 import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
@@ -16,6 +17,7 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useLog } from '@/queries/use-log';
 import { useRecords } from '@/queries/use-records';
 import { cn } from '@/utilities/cn';
+import * as scroll from '@/utilities/post-submit-scroll';
 import { useLocalSearchParams } from 'expo-router';
 import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
@@ -27,12 +29,36 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ logId: string }>();
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
+  const listRef = React.useRef<ListHandle>(null);
   const sheetManager = useSheetManager();
 
   const log = useLog({ id: params.logId });
   const logColor = useLogColor({ id: params.logId });
   const records = useRecords({ logId: params.logId });
   const hasRecords = records.data.length > 0;
+
+  const pendingScroll = scroll.usePostSubmitScroll({
+    id: params.logId,
+    scope: 'log',
+  });
+
+  React.useEffect(() => {
+    if (pendingScroll !== 'top' || records.isLoading || !hasRecords) return;
+
+    const frame = requestAnimationFrame(() => {
+      if (!listRef.current) return;
+      listRef.current.scrollToOffset({ animated: true, offset: 0 });
+      scroll.clearPostSubmitScroll({ id: params.logId, scope: 'log' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [
+    hasRecords,
+    params.logId,
+    pendingScroll,
+    records.data.length,
+    records.isLoading,
+  ]);
 
   if (sheetManager.someOpen()) {
     return renderCacheRef.current;
@@ -89,6 +115,7 @@ export default function Index() {
           keyExtractor={(record) => record.id}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
+          listRef={listRef}
           renderItem={({ index, item }) => (
             <RecordOrReply
               className={cn(
@@ -106,7 +133,7 @@ export default function Index() {
       )}
       {hasRecords && (
         <View
-          className="absolute bottom-8 right-8 md:hidden"
+          className="absolute right-8 bottom-8 md:hidden"
           style={{ marginBottom: insets.bottom }}
         >
           <Button

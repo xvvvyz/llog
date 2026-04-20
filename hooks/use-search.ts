@@ -1,6 +1,7 @@
 import { useTeams } from '@/queries/use-teams';
 import { SearchMediaItem, SearchProfile, SearchResult } from '@/types/search';
 import { db } from '@/utilities/db';
+import type { SearchResult as MiniSearchResult } from 'minisearch';
 import MiniSearch from 'minisearch';
 import * as React from 'react';
 
@@ -22,6 +23,17 @@ type SearchDocument = {
   profiles?: SearchProfile[];
   tagIds?: string[];
 };
+
+const isSearchDocument = (
+  result: MiniSearchResult
+): result is MiniSearchResult & SearchDocument =>
+  typeof result.id !== 'undefined' &&
+  (result.type === 'record' ||
+    result.type === 'reply' ||
+    result.type === 'log') &&
+  typeof result.text === 'string' &&
+  typeof result.name === 'string' &&
+  typeof result.people === 'string';
 
 export const useSearch = ({
   query,
@@ -114,7 +126,6 @@ export const useSearch = ({
               id: m.id,
               type: m.type,
               uri: m.uri,
-              previewUri: m.previewUri,
             }))
           : undefined,
         tagIds: record.log?.tags?.map((t) => t.id),
@@ -143,7 +154,6 @@ export const useSearch = ({
               id: m.id,
               type: m.type,
               uri: m.uri,
-              previewUri: m.previewUri,
             }))
           : undefined,
         tagIds: reply.record?.log?.tags?.map((t) => t.id),
@@ -158,6 +168,7 @@ export const useSearch = ({
       fields: ['text', 'name', 'people'],
       storeFields: [
         'text',
+        'name',
         'type',
         'date',
         'logId',
@@ -167,6 +178,7 @@ export const useSearch = ({
         'authorId',
         'authorName',
         'authorImage',
+        'people',
         'media',
         'profiles',
         'tagIds',
@@ -186,52 +198,48 @@ export const useSearch = ({
     const trimmed = query.trim();
     if (!trimmed) return [];
 
-    const raw = miniSearch.search(trimmed);
+    const raw = miniSearch.search(trimmed).filter(isSearchDocument);
     const logIdSet = logIds?.length ? new Set(logIds) : null;
     const tagIdSet = tagIds?.length ? new Set(tagIds) : null;
 
     const filtered = raw.filter((r) => {
-      const d = r as unknown as SearchDocument;
-
       if (logIdSet) {
-        if (!d.logId || !logIdSet.has(d.logId)) return false;
+        if (!r.logId || !logIdSet.has(r.logId)) return false;
       }
 
       if (tagIdSet) {
-        if (!d.tagIds?.some((t) => tagIdSet.has(t))) return false;
+        if (!r.tagIds?.some((t) => tagIdSet.has(t))) return false;
       }
 
       return true;
     });
 
-    return filtered.map((r) => {
-      const d = r as unknown as SearchDocument & {
-        score: number;
-        terms: string[];
-      };
-
-      const entityId = (r.id as string).split(':')[1];
+    return filtered.map((result) => {
+      const entityId = String(result.id).split(':')[1] ?? '';
 
       return {
         id: entityId,
-        type: d.type,
-        score: d.score,
-        terms: d.terms,
-        text: d.type === 'log' ? (d.logName ?? '') : (d.text ?? ''),
-        date: d.date,
-        logId: d.logId,
-        logName: d.type === 'log' ? undefined : d.logName,
-        logColor: d.logColor,
-        recordId: d.recordId,
-        author: d.authorId
+        type: result.type,
+        score: result.score,
+        terms: result.terms,
+        text:
+          result.type === 'log' ? (result.logName ?? '') : (result.text ?? ''),
+        date: result.date,
+        logId: result.logId,
+        logName: result.type === 'log' ? undefined : result.logName,
+        logColor: result.logColor,
+        recordId: result.recordId,
+        author: result.authorId
           ? {
-              id: d.authorId,
-              name: d.authorName ?? '',
-              image: d.authorImage ? { uri: d.authorImage } : undefined,
+              id: result.authorId,
+              name: result.authorName ?? '',
+              image: result.authorImage
+                ? { uri: result.authorImage }
+                : undefined,
             }
           : undefined,
-        media: d.media,
-        profiles: d.profiles,
+        media: result.media,
+        profiles: result.profiles,
       } satisfies SearchResult;
     });
   }, [query, logIds, tagIds, miniSearch]);

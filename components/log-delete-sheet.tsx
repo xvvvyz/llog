@@ -1,11 +1,8 @@
-import { Button } from '@/components/ui/button';
-import { Sheet } from '@/components/ui/sheet';
-import { Text } from '@/components/ui/text';
+import { DestructiveConfirmSheet } from '@/components/destructive-confirm-sheet';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { deleteLog } from '@/mutations/delete-log';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
 
 export const LogDeleteSheet = () => {
   const [isPending, setIsPending] = React.useState(false);
@@ -17,45 +14,25 @@ export const LogDeleteSheet = () => {
   }, [open]);
 
   return (
-    <Sheet
+    <DestructiveConfirmSheet
+      isPending={isPending}
+      onConfirm={async () => {
+        setIsPending(true);
+        const logId = sheetManager.getId('log-delete')!;
+
+        try {
+          await deleteLog({ id: logId });
+          sheetManager.close('log-delete');
+          router.dismissTo('/');
+        } catch (error) {
+          setIsPending(false);
+          throw error;
+        }
+      }}
       onDismiss={() => sheetManager.close('log-delete')}
       open={open}
       portalName="log-delete"
-    >
-      <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">Delete log?</Text>
-        <Button
-          disabled={isPending}
-          onPress={async () => {
-            setIsPending(true);
-
-            try {
-              await deleteLog({ id: sheetManager.getId('log-delete') });
-              sheetManager.close('log-delete');
-              router.dismissTo('/');
-            } catch (error) {
-              setIsPending(false);
-              throw error;
-            }
-          }}
-          variant="destructive"
-          wrapperClassName="mt-12"
-        >
-          {isPending ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <Text>Delete</Text>
-          )}
-        </Button>
-        <Button
-          disabled={isPending}
-          onPress={() => sheetManager.close('log-delete')}
-          variant="secondary"
-          wrapperClassName="mt-3"
-        >
-          <Text>Cancel</Text>
-        </Button>
-      </View>
-    </Sheet>
+      title="Delete log?"
+    />
   );
 };

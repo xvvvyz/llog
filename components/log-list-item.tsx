@@ -27,7 +27,7 @@ export const LogListItem = ({
   return (
     <View
       className={cn(
-        'w-full web:transition-opacity web:hover:opacity-90',
+        'web:transition-opacity web:hover:opacity-90 w-full',
         className
       )}
     >
@@ -39,7 +39,7 @@ export const LogListItem = ({
           variant="ghost"
           wrapperClassName="rounded-2xl"
         >
-          <View className="-ml-1.5 -mt-1.5 max-h-11 flex-row flex-wrap gap-0.5 overflow-hidden pr-10">
+          <View className="-mt-1.5 -ml-1.5 max-h-11 flex-row flex-wrap gap-0.5 overflow-hidden pr-10">
             {tags.map((tag) => (
               <View
                 key={tag.id}
@@ -59,18 +59,14 @@ export const LogListItem = ({
               {name}
             </Text>
             {profiles.length > 0 && (
-              <View
-                className="flex-row"
-                style={{ marginBottom: -5, marginRight: -5 }}
-              >
+              <View className="-mr-[5px] -mb-[5px] flex-row">
                 {profiles.map((profile, i) => (
                   <View
+                    className={cn(
+                      'size-[22px] rounded-full',
+                      i > 0 && '-ml-[10px]'
+                    )}
                     key={profile.id}
-                    className="rounded-full"
-                    style={[
-                      { width: 22, height: 22 },
-                      i > 0 ? { marginLeft: -10 } : undefined,
-                    ]}
                   >
                     <Avatar
                       avatar={profile.image?.uri}
@@ -84,10 +80,10 @@ export const LogListItem = ({
           </View>
         </Button>
       </Link>
-      <View className="absolute right-1.5 top-1.5">
+      <View className="absolute top-1.5 right-1.5">
         <LogDropdownMenu contentClassName="my-0 mr-2.5" id={id}>
           <View
-            className="size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20"
+            className="web:transition-colors web:group-hover:bg-white/20 size-6 items-center justify-center rounded-lg bg-white/15 group-active:bg-white/20"
             style={{ borderCurve: 'continuous' }}
           >
             <Icon className="text-white" icon={DotsThree} />

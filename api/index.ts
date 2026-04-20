@@ -1,4 +1,5 @@
 import files from '@/api/files';
+import internal from '@/api/internal';
 import logs from '@/api/logs';
 import { headers } from '@/api/middleware/headers';
 import push from '@/api/push';
@@ -12,6 +13,7 @@ const app = new Hono().basePath('/api/v1');
 app.use(headers());
 
 app.route('/files', files);
+app.route('/internal', internal);
 app.route('/logs', logs);
 app.route('/push', push);
 app.route('/records', records);

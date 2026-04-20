@@ -11,6 +11,8 @@ import { updateRecordDraft } from '@/mutations/update-record-draft';
 import { uploadRecordMedia } from '@/mutations/upload-record-media';
 import { useRecordDraft } from '@/queries/use-record-draft';
 import { db } from '@/utilities/db';
+import { PickedMediaAsset } from '@/utilities/picked-media';
+import { requestPostSubmitScroll } from '@/utilities/post-submit-scroll';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -45,7 +47,7 @@ export const RecordCreateSheet = () => {
 
   const handleUploadMedia = React.useCallback(
     async (
-      asset: import('expo-image-picker').ImagePickerAsset,
+      asset: PickedMediaAsset,
       onProgress: (progress: number) => void,
       mediaId: string,
       order: number
@@ -81,22 +83,21 @@ export const RecordCreateSheet = () => {
 
   return (
     <Sheet
-      className="rounded-t-2xl xs:rounded-t-4xl"
+      className="xs:rounded-t-4xl rounded-t-2xl"
       loading={isEdit ? !editRecord : !!logId && draft.log?.id !== logId}
       onDismiss={() => sheetManager.close('record-create')}
       open={sheetManager.isOpen('record-create')}
       portalName="record-create"
     >
       <View className="mx-auto w-full max-w-lg gap-3 p-4 pb-8 sm:pt-8">
-        <View className="max-h-[40dvh] rounded-xl border border-border-secondary bg-input md:max-h-[60dvh]">
+        <View className="border-border-secondary bg-input max-h-[40dvh] rounded-xl border md:max-h-[60dvh]">
           <Textarea
             autoFocus
-            className="border-0 bg-transparent"
+            className="max-h-[180px] min-h-[120px] border-0 bg-transparent"
             maxLength={10240}
             numberOfLines={8}
             onChangeText={(text) => updateRecordDraft({ id: record?.id, text })}
             placeholder="What's happening?"
-            style={{ maxHeight: 180, minHeight: 120 }}
             value={record?.text ?? ''}
           />
           {mediaPreview}
@@ -104,7 +105,7 @@ export const RecordCreateSheet = () => {
         <View className="flex-row justify-end gap-3">
           {toolbar}
           <Button
-            className="text-white web:hover:opacity-90"
+            className="web:hover:opacity-90 text-white"
             disabled={isBusy || isSubmitting || (!isEdit && !hasContent)}
             onPress={async () => {
               if (isEdit) {
@@ -113,6 +114,11 @@ export const RecordCreateSheet = () => {
                 try {
                   setIsSubmitting(true);
                   await publishRecord({ id: record?.id });
+                  requestPostSubmitScroll({
+                    id: recordLogId,
+                    scope: 'log',
+                    target: 'top',
+                  });
                   sheetManager.close('record-create');
                 } finally {
                   setIsSubmitting(false);

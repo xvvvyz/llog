@@ -24,13 +24,14 @@ import { Reaction } from '@/types/reaction';
 import { Record as RecordType } from '@/types/record';
 import { Reply } from '@/types/reply';
 import { cn } from '@/utilities/cn';
+import * as m from '@/utilities/media';
 import { formatDate } from '@/utilities/time';
 import { Link, router } from 'expo-router';
 import { ArrowBendDownLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendDownLeft';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { PushPin } from 'phosphor-react-native/lib/module/icons/PushPin';
 import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const DoubleTapReactionZone = ({
@@ -122,25 +123,25 @@ export const RecordOrReply = ({
     ui.doubleTapEmoji,
   ]);
 
-  const idIndexMap = React.useMemo(
-    () =>
-      visualMedia.reduce(
-        (acc, item, index) => {
-          acc[item.id] = index;
-          return acc;
-        },
-        {} as Record<string, number>
-      ),
-    [visualMedia]
-  );
+  const idIndexMap = React.useMemo(() => {
+    const next: Record<string, number> = {};
+
+    visualMedia.forEach((item, index) => {
+      next[item.id] = index;
+    });
+
+    return next;
+  }, [visualMedia]);
 
   const renderMediaThumb = React.useCallback(
     (item: Media) => {
       return (
         <Pressable
           className="flex-1"
+          disabled={m.isVideoMediaProcessing(item)}
           key={item.id}
           onPress={() =>
+            !m.isVideoMediaProcessing(item) &&
             router.push({
               pathname: `/record/[recordId]/media`,
               params: {
@@ -153,29 +154,23 @@ export const RecordOrReply = ({
         >
           <Image
             fill
-            uri={item.type === 'video' ? item.previewUri! : item.uri}
+            uri={m.getVisualMediaThumbnailUri(item)}
             wrapperClassName="rounded-2xl"
           />
           {item.type === 'video' && (
-            <View
-              className="absolute inset-0 items-center justify-center"
-              pointerEvents="none"
-            >
-              <View
-                className="items-center justify-center rounded-full"
-                style={{
-                  width: 40,
-                  height: 40,
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                }}
-              >
-                <Icon
-                  className="text-white"
-                  icon={Play}
-                  size={20}
-                  weight="fill"
-                />
-              </View>
+            <View className="pointer-events-none absolute inset-0 items-center justify-center">
+              {m.isVideoMediaProcessing(item) ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <View className="size-10 items-center justify-center rounded-full bg-black/50">
+                  <Icon
+                    className="text-white"
+                    icon={Play}
+                    size={20}
+                    weight="fill"
+                  />
+                </View>
+              )}
             </View>
           )}
         </Pressable>
@@ -188,7 +183,7 @@ export const RecordOrReply = ({
     return (
       <View
         className={cn(
-          'border-t border-border-secondary px-4 pb-3 pt-4',
+          'border-border-secondary border-t px-4 pt-4 pb-3',
           className
         )}
       >
@@ -198,17 +193,17 @@ export const RecordOrReply = ({
             <View className="flex-row items-start justify-between gap-2">
               <View className="flex-1 flex-row items-baseline gap-2">
                 <Text
-                  className="shrink font-medium leading-5"
+                  className="shrink leading-5 font-medium"
                   numberOfLines={1}
                 >
                   {record.author?.name}
                 </Text>
-                <Text className="shrink-0 text-sm leading-5 text-muted-foreground">
+                <Text className="text-muted-foreground shrink-0 text-sm leading-5">
                   {formatDate(record.date)}
                 </Text>
               </View>
               <RecordOrReplyDropdownMenu
-                className="-mb-3 -mr-1.5 -mt-1.5"
+                className="-mt-1.5 -mr-1.5 -mb-3"
                 accentColor={accentColor}
                 authorId={record.author?.id}
                 replyId={replyId}
@@ -227,7 +222,7 @@ export const RecordOrReply = ({
               />
             )}
             {!!visualMedia.length && (
-              <View className="mt-4 gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+              <View className="mt-4 aspect-[3/2] gap-0.5">
                 <View className="flex-1 flex-row gap-0.5">
                   {visualMedia.slice(0, 3).map(renderMediaThumb)}
                 </View>
@@ -267,7 +262,7 @@ export const RecordOrReply = ({
                 )}
               </View>
               <DoubleTapReactionZone
-                className="-mb-3 -mt-3 pb-3 pt-3"
+                className="-mt-3 -mb-3 pt-3 pb-3"
                 onDoubleTap={handleDoubleTapReaction}
               />
             </View>
@@ -282,14 +277,14 @@ export const RecordOrReply = ({
       <View className="flex-row items-start gap-3 p-4 pb-0">
         <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
         <View className="flex-1">
-          <Text className="font-medium leading-5" numberOfLines={1}>
+          <Text className="leading-5 font-medium" numberOfLines={1}>
             {record.author?.name}
           </Text>
-          <Text className="text-sm leading-5 text-muted-foreground">
+          <Text className="text-muted-foreground text-sm leading-5">
             {formatDate(record.date)}
           </Text>
         </View>
-        <View className="-mr-1.5 -mt-1.5 flex-row items-center gap-1.5">
+        <View className="-mt-1.5 -mr-1.5 flex-row items-center gap-1.5">
           {'isPinned' in record && record.isPinned && (
             <Button
               className="size-8 rounded-lg"
@@ -318,14 +313,14 @@ export const RecordOrReply = ({
       </View>
       {!!record.text && (
         <TruncatedText
-          className="select-text px-4"
+          className="px-4 select-text"
           color={accentColor}
           numberOfLines={numberOfLines}
           text={record.text}
         />
       )}
       {!!visualMedia.length && (
-        <View className="gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+        <View className="aspect-[3/2] gap-0.5">
           <View className="flex-1 flex-row gap-0.5">
             {visualMedia.slice(0, 3).map(renderMediaThumb)}
           </View>
@@ -365,7 +360,7 @@ export const RecordOrReply = ({
           )}
         </View>
         <DoubleTapReactionZone
-          className="-mb-3 -mt-3 pb-3 pt-3"
+          className="-mt-3 -mb-3 pt-3 pb-3"
           onDoubleTap={handleDoubleTapReaction}
         />
         {!!record.replies && (
@@ -373,7 +368,7 @@ export const RecordOrReply = ({
             {record.replies.length > 0 && (
               <Link asChild href={`/record/${record.id}?focus=reply`}>
                 <Button size="xs" variant="ghost">
-                  <Text className="text-sm font-normal text-muted-foreground">
+                  <Text className="text-muted-foreground text-sm font-normal">
                     {record.replies.length} repl
                     {record.replies.length === 1 ? 'y' : 'ies'}
                   </Text>

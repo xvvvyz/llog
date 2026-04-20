@@ -1,91 +1,64 @@
-import { db } from '@/api/middleware/db';
-import * as p from '@/utilities/permissions';
-import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import * as upload from './upload';
+import { canDeleteMedia, createMediaRoutes } from './media-routes';
+const requireRecordId = (recordId?: string) => {
+  if (!recordId) {
+    throw new HTTPException(400, { message: 'Record not found' });
+  }
 
-const app = new Hono<{ Bindings: CloudflareEnv }>();
+  return recordId;
+};
 
-app.put(
-  '/',
-  upload.uploadLimit(upload.MAX_BYTES_BY_KIND.video),
-  db({ asUser: true }),
-  upload.mediaValidator,
-  async (c) => {
+const app = createMediaRoutes({
+  basePath: '/records/:recordId/media',
+  resolveDeleteTarget: async (c) => {
+    const mediaId = c.req.param('mediaId');
     const recordId = c.req.param('recordId');
 
-    if (!recordId) {
-      throw new HTTPException(400, { message: 'Record not found' });
+    if (!mediaId || !recordId) {
+      throw new HTTPException(400, { message: 'Invalid request' });
     }
 
-    const { duration, file, mediaId, order } = c.req.valid('form');
-
-    await upload.uploadMedia({
-      db: c.var.db,
-      duration,
-      file,
-      keyPrefix: `records/${recordId}`,
-      linkField: 'record',
-      linkId: recordId,
-      media: c.env.MEDIA,
-      mediaId,
-      order,
-      r2: c.env.R2,
-      recordId,
-    });
-
-    return c.json({ success: true });
-  }
-);
-
-app.delete('/:mediaId', db({ asUser: true }), async (c) => {
-  const mediaId = c.req.param('mediaId');
-  const recordId = c.req.param('recordId');
-  if (!mediaId || !recordId) {
-    throw new HTTPException(400, { message: 'Invalid request' });
-  }
-
-  const { media } = await c.var.db.query({
-    media: {
-      $: { where: { id: mediaId } },
-      record: {
-        author: { user: { $: { fields: ['id'] } } },
-        log: {
-          team: {
-            roles: {
-              $: {
-                fields: ['role'] as ['role'],
-                where: { userId: c.var.user.id },
+    const { media } = await c.var.db.query({
+      media: {
+        $: { where: { id: mediaId } },
+        record: {
+          author: { user: { $: { fields: ['id'] } } },
+          log: {
+            team: {
+              roles: {
+                $: {
+                  fields: ['role'] as ['role'],
+                  where: { userId: c.var.user.id },
+                },
               },
             },
           },
         },
       },
-    },
-  });
-
-  const item = media[0];
-  const callerRole = item?.record?.log?.team?.roles?.[0]?.role;
-
-  const canDelete =
-    item?.record?.id === recordId &&
-    p.canDeleteOwnOrManagedResource({
-      actorRole: callerRole,
-      isAuthor: item?.record?.author?.user?.id === c.var.user.id,
     });
 
-  if (!item?.id || !canDelete) {
-    throw new HTTPException(403, { message: 'Forbidden' });
-  }
+    const item = media[0];
 
-  await c.var.db.transact(c.var.db.tx.media[mediaId].delete());
+    return {
+      canDelete:
+        item?.record?.id === recordId &&
+        canDeleteMedia({
+          actorRole: item?.record?.log?.team?.roles?.[0]?.role,
+          isAuthor: item?.record?.author?.user?.id === c.var.user.id,
+        }),
+      item,
+    };
+  },
+  resolveUploadTarget: async (c) => {
+    const recordId = requireRecordId(c.req.param('recordId'));
 
-  await Promise.all([
-    c.env.R2.delete(item.uri as string),
-    item.previewUri ? c.env.R2.delete(item.previewUri as string) : undefined,
-  ]);
-
-  return c.json({ success: true });
+    return {
+      keyPrefix: `records/${recordId}`,
+      linkField: 'record' as const,
+      linkId: recordId,
+      recordId,
+    };
+  },
 });
 
 export default app;

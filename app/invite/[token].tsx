@@ -37,7 +37,7 @@ const renderLogNames = (names: string[]) =>
   names.map((name, i) => (
     <React.Fragment key={`${name}-${i}`}>
       {i > 0 ? (i === names.length - 1 ? ' and ' : ', ') : null}
-      <Text className="font-medium text-foreground">{name}</Text>
+      <Text className="text-foreground font-medium">{name}</Text>
     </React.Fragment>
   ));
 
@@ -185,7 +185,7 @@ export default function InviteLink() {
             {linkInfo.members.slice(0, 4).map((member, i) => (
               <View
                 key={member.id}
-                className="items-center justify-center rounded-full border-2 border-background"
+                className="border-background items-center justify-center rounded-full border-2"
                 style={[
                   { width: 68, height: 68 },
                   i > 0 ? { marginLeft: -22 } : undefined,
@@ -203,7 +203,7 @@ export default function InviteLink() {
         ) : (
           <Icon className="text-destructive" icon={WarningCircle} size={64} />
         )}
-        <Text className="mt-2 text-center text-muted-foreground">
+        <Text className="text-muted-foreground mt-2 text-center">
           {linkInfo?.isValid
             ? linkInfo.logNames && linkInfo.logNames.length > 0
               ? `You\u2019ve been invited to join the `
@@ -223,7 +223,7 @@ export default function InviteLink() {
           {linkInfo?.isValid &&
             !(linkInfo.logNames && linkInfo.logNames.length > 0) && (
               <>
-                <Text className="font-medium text-foreground">
+                <Text className="text-foreground font-medium">
                   {linkInfo.teamName}
                 </Text>
                 .

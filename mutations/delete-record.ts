@@ -1,8 +1,6 @@
 import { apiOrThrow } from '@/utilities/api';
 
-export const deleteRecord = async ({ id }: { id?: string }) => {
-  if (!id) return;
-
+export const deleteRecord = async ({ id }: { id: string }) => {
   return apiOrThrow(
     `/records/${id}`,
     { method: 'DELETE' },

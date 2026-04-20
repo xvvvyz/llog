@@ -4,7 +4,7 @@ import * as React from 'react';
 import { TextInput } from 'react-native';
 
 const inputVariants = cva(
-  'text-base native:leading-5 border border-border-secondary placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-none',
+  'text-base native:leading-5 border border-border-secondary placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden',
   {
     defaultVariants: {
       size: 'default',
@@ -48,7 +48,7 @@ const Input = React.forwardRef<
       blurOnSubmit={false}
       className={cn(
         inputVariants({ size }),
-        props.editable === false && 'opacity-50 web:cursor-not-allowed',
+        props.editable === false && 'web:cursor-not-allowed opacity-50',
         className
       )}
       lineBreakModeIOS="clip"

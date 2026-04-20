@@ -1,8 +1,8 @@
 import { TextContext } from '@/components/ui/text';
 import { cn } from '@/utilities/cn';
-import { cssInterop } from 'nativewind';
 import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 import * as React from 'react';
+import { styled } from 'react-native-css';
 
 interface IconProps extends PhosphorIconProps {
   className?: string;
@@ -18,16 +18,7 @@ const getInteropIcon = (icon: React.ComponentType<PhosphorIconProps>) => {
   let wrapped = interopCache.get(icon);
 
   if (!wrapped) {
-    wrapped = cssInterop(icon, {
-      className: {
-        target: 'style',
-        nativeStyleToProp: { color: true, opacity: true } as Record<
-          string,
-          boolean
-        >,
-      },
-    });
-
+    wrapped = styled(icon, { className: 'style' });
     interopCache.set(icon, wrapped);
   }
 

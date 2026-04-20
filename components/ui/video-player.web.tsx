@@ -1,13 +1,28 @@
 import { useExclusiveMediaPlayback } from '@/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
+import HlsClient, { Events as HlsEvents } from 'hls.js';
 import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 export interface VideoPlayerHandle {
+  pause: () => void;
   play: () => void;
+  seekTo: (seconds: number) => void;
+  setScrubbingEnabled: (enabled: boolean) => void;
   toggleMute: () => boolean;
   togglePlay: () => boolean;
 }
+
+const isHlsClientSupported = () => HlsClient['isSupported']();
+
+const resetVideoSource = (video: HTMLVideoElement) => {
+  video.removeAttribute('src');
+  video.load();
+};
+
+const SCRUB_PREVIEW_SEEK_INTERVAL_MS = 40;
+const SCRUB_PREVIEW_STEP_SECONDS = 0.05;
+const SCRUB_PREVIEW_MIN_DELTA_SECONDS = 0.03;
 
 export const VideoPlayer = ({
   autoPlay,
@@ -18,6 +33,8 @@ export const VideoPlayer = ({
   muted = true,
   onFullscreenReady,
   onPlayingChange,
+  onTimeChange,
+  thumbnailUri,
   uri,
 }: {
   autoPlay?: boolean;
@@ -29,9 +46,12 @@ export const VideoPlayer = ({
   nativeControls?: boolean;
   onFullscreenReady?: (enterFullscreen: () => void) => void;
   onPlayingChange?: (isPlaying: boolean) => void;
+  onTimeChange?: (currentTime: number, duration: number) => void;
+  thumbnailUri?: string | null;
   uri: string;
 }) => {
   const src = useFileUriToSrc(uri);
+  const poster = useFileUriToSrc(thumbnailUri);
   const ref = React.useRef<HTMLVideoElement>(null);
 
   const pausePlayback = React.useCallback(() => {
@@ -41,16 +61,29 @@ export const VideoPlayer = ({
   const { claimPlayback, releasePlayback } =
     useExclusiveMediaPlayback(pausePlayback);
 
-  const [size, setSize] = React.useState<{
-    width: number;
-    height: number;
-  } | null>(null);
-
   const [isBuffering, setIsBuffering] = React.useState(true);
+
+  const [hasRenderedFirstFrame, setHasRenderedFirstFrame] =
+    React.useState(false);
+
+  const rafRef = React.useRef<number>(0);
+  const scrubbingEnabledRef = React.useRef(false);
+  const lastScrubSeekAtRef = React.useRef(0);
+  const lastScrubSeekTargetRef = React.useRef<number | null>(null);
+
+  const showThumbnail =
+    Boolean(poster) && (isBuffering || !hasRenderedFirstFrame);
+
+  React.useEffect(() => {
+    setIsBuffering(Boolean(src));
+    setHasRenderedFirstFrame(false);
+    onTimeChange?.(0, 0);
+  }, [onTimeChange, src]);
 
   const play = React.useCallback(async () => {
     const video = ref.current;
     if (!video) return;
+    if (!src) return;
 
     try {
       await claimPlayback();
@@ -58,11 +91,68 @@ export const VideoPlayer = ({
     } catch {
       releasePlayback();
     }
-  }, [claimPlayback, releasePlayback]);
+  }, [claimPlayback, releasePlayback, src]);
 
   React.useImperativeHandle(handleRef, () => ({
+    pause: () => {
+      ref.current?.pause();
+    },
     play: () => {
       void play();
+    },
+    seekTo: (seconds: number) => {
+      const video = ref.current;
+      if (!video) return;
+
+      if (scrubbingEnabledRef.current) {
+        const now = performance.now();
+
+        const quantizedSeconds =
+          Math.round(seconds / SCRUB_PREVIEW_STEP_SECONDS) *
+          SCRUB_PREVIEW_STEP_SECONDS;
+
+        const currentTime = Number.isFinite(video.currentTime)
+          ? video.currentTime
+          : 0;
+
+        const lastTarget = lastScrubSeekTargetRef.current;
+
+        const isEffectivelyUnchanged =
+          Math.abs(currentTime - quantizedSeconds) <
+            SCRUB_PREVIEW_MIN_DELTA_SECONDS ||
+          (lastTarget != null &&
+            Math.abs(lastTarget - quantizedSeconds) <
+              SCRUB_PREVIEW_MIN_DELTA_SECONDS);
+
+        if (
+          isEffectivelyUnchanged ||
+          now - lastScrubSeekAtRef.current < SCRUB_PREVIEW_SEEK_INTERVAL_MS
+        ) {
+          return;
+        }
+
+        lastScrubSeekAtRef.current = now;
+        lastScrubSeekTargetRef.current = quantizedSeconds;
+
+        if (typeof video.fastSeek === 'function') {
+          video.fastSeek(quantizedSeconds);
+        } else {
+          video.currentTime = quantizedSeconds;
+        }
+      } else {
+        lastScrubSeekTargetRef.current = seconds;
+        video.currentTime = seconds;
+      }
+
+      onTimeChange?.(video.currentTime, video.duration);
+    },
+    setScrubbingEnabled: (enabled: boolean) => {
+      scrubbingEnabledRef.current = enabled;
+
+      if (enabled) {
+        lastScrubSeekAtRef.current = 0;
+        lastScrubSeekTargetRef.current = null;
+      }
     },
     toggleMute: () => {
       const video = ref.current;
@@ -85,43 +175,93 @@ export const VideoPlayer = ({
   }));
 
   React.useEffect(() => {
-    if (contentFit === 'cover') {
-      setSize(null);
-      return;
-    }
-
     const video = ref.current;
     if (!video) return;
 
-    const onMetadata = () => {
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
-      if (!vw || !vh || !maxWidth || !maxHeight) return;
-      const scale = Math.min(maxWidth / vw, maxHeight / vh, 1);
+    if (!src) {
+      resetVideoSource(video);
+      return;
+    }
 
-      setSize({
-        width: Math.round(vw * scale),
-        height: Math.round(vh * scale),
+    const canPlayNativeHls =
+      video.canPlayType('application/vnd.apple.mpegurl') !== '' ||
+      video.canPlayType('application/x-mpegURL') !== '';
+
+    if (!canPlayNativeHls && isHlsClientSupported()) {
+      const hls = new HlsClient();
+
+      const startPlayback = () => {
+        if (!autoPlay) return;
+        void play();
+      };
+
+      hls.on(HlsEvents.MEDIA_ATTACHED, () => {
+        hls.loadSource(src);
       });
+
+      hls.on(HlsEvents.MANIFEST_PARSED, () => {
+        setIsBuffering(false);
+        startPlayback();
+      });
+
+      hls.on(HlsEvents.ERROR, (_, data) => {
+        if (data.fatal) {
+          setIsBuffering(false);
+          releasePlayback();
+        }
+      });
+
+      hls.attachMedia(video);
+
+      return () => {
+        hls.destroy();
+        resetVideoSource(video);
+      };
+    }
+
+    video.src = src;
+    video.load();
+
+    return () => {
+      resetVideoSource(video);
     };
-
-    video.addEventListener('loadedmetadata', onMetadata);
-    if (video.readyState >= 1) onMetadata();
-
-    return () => video.removeEventListener('loadedmetadata', onMetadata);
-  }, [contentFit, maxWidth, maxHeight]);
+  }, [autoPlay, play, releasePlayback, src]);
 
   React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
+    if (!src) return;
 
     const onWaiting = () => setIsBuffering(true);
-    const onPlaying = () => setIsBuffering(false);
+
+    const onPlaying = () => {
+      setIsBuffering(false);
+      setHasRenderedFirstFrame(true);
+    };
+
     const onCanPlay = () => setIsBuffering(false);
+
+    const onLoadedData = () => {
+      setIsBuffering(false);
+      setHasRenderedFirstFrame(true);
+      syncTime();
+    };
+
+    const syncTime = () => {
+      onTimeChange?.(
+        Number.isFinite(video.currentTime) ? video.currentTime : 0,
+        Number.isFinite(video.duration) ? video.duration : 0
+      );
+    };
 
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('playing', onPlaying);
     video.addEventListener('canplay', onCanPlay);
+    video.addEventListener('loadeddata', onLoadedData);
+    video.addEventListener('loadedmetadata', syncTime);
+    video.addEventListener('durationchange', syncTime);
+    video.addEventListener('timeupdate', syncTime);
+    video.addEventListener('seeked', syncTime);
 
     const onPlay = async () => {
       await claimPlayback();
@@ -140,10 +280,53 @@ export const VideoPlayer = ({
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('canplay', onCanPlay);
+      video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('loadedmetadata', syncTime);
+      video.removeEventListener('durationchange', syncTime);
+      video.removeEventListener('timeupdate', syncTime);
+      video.removeEventListener('seeked', syncTime);
       video.removeEventListener('play', onPlay);
       video.removeEventListener('pause', onPause);
     };
-  }, [claimPlayback, onPlayingChange, releasePlayback]);
+  }, [claimPlayback, onPlayingChange, onTimeChange, releasePlayback, src]);
+
+  React.useEffect(() => {
+    const video = ref.current;
+    if (!video || !src) return;
+
+    const tick = () => {
+      onTimeChange?.(
+        Number.isFinite(video.currentTime) ? video.currentTime : 0,
+        Number.isFinite(video.duration) ? video.duration : 0
+      );
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    const start = () => {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    const stop = () => {
+      cancelAnimationFrame(rafRef.current);
+    };
+
+    video.addEventListener('play', start);
+    video.addEventListener('pause', stop);
+    video.addEventListener('ended', stop);
+
+    if (!video.paused) {
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    return () => {
+      stop();
+      video.removeEventListener('play', start);
+      video.removeEventListener('pause', stop);
+      video.removeEventListener('ended', stop);
+    };
+  }, [onTimeChange, src]);
 
   React.useEffect(() => {
     const video = ref.current;
@@ -161,17 +344,17 @@ export const VideoPlayer = ({
 
     video.addEventListener('ended', onEnded);
     return () => video.removeEventListener('ended', onEnded);
-  }, []);
+  }, [src]);
 
   React.useEffect(() => {
-    if (autoPlay && (contentFit === 'cover' || size) && ref.current) {
+    if (src && autoPlay) {
       void play();
     }
-  }, [autoPlay, contentFit, play, size]);
+  }, [autoPlay, play, src]);
 
   React.useEffect(() => {
     const video = ref.current;
-    if (!video || !onFullscreenReady) return;
+    if (!video || !onFullscreenReady || !src) return;
 
     const onFullscreenChange = () => {
       if (!document.fullscreenElement) video.controls = false;
@@ -207,34 +390,48 @@ export const VideoPlayer = ({
         onWebkitFullscreenChange
       );
     };
-  }, [onFullscreenReady]);
+  }, [onFullscreenReady, src]);
 
   return (
     <div
       style={{
+        overflow: 'hidden',
         position: 'relative',
-        ...(size ?? { width: maxWidth, height: maxHeight }),
+        width: maxWidth,
+        height: maxHeight,
       }}
     >
       <video
         ref={ref}
         muted={muted}
+        poster={poster ?? undefined}
         playsInline
         preload="metadata"
-        src={src}
-        style={
-          contentFit === 'cover'
-            ? {
-                display: 'block',
-                width: maxWidth,
-                height: maxHeight,
-                objectFit: 'cover',
-              }
-            : size
-              ? { display: 'block', width: size.width, height: size.height }
-              : { position: 'absolute', width: 0, height: 0, opacity: 0 }
-        }
+        style={{
+          display: 'block',
+          height: '100%',
+          opacity: showThumbnail ? 0 : 1,
+          objectFit: contentFit,
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+        }}
       />
+      {showThumbnail && (
+        <img
+          alt=""
+          aria-hidden
+          src={poster ?? undefined}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: contentFit,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
       {isBuffering && (
         <div
           style={{

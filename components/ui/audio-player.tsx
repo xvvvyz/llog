@@ -83,6 +83,8 @@ export const AudioPlayer = ({
   }, [releasePlayback, status.playing]);
 
   const handlePlay = async () => {
+    if (!src) return;
+
     if (status.didJustFinish || displayTime >= playerDuration) {
       setDisplayTime(0);
       await player.seekTo(0);
@@ -157,6 +159,7 @@ export const AudioPlayer = ({
     <View className="flex-row items-center">
       <Button
         className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
+        disabled={!src}
         onPress={() => (status.playing ? player.pause() : void handlePlay())}
         size="icon"
         variant="secondary"
@@ -174,7 +177,7 @@ export const AudioPlayer = ({
               style={{ backgroundColor: trackColor }}
             >
               <View
-                className="absolute bottom-0 left-0 top-0 rounded-full"
+                className="absolute top-0 bottom-0 left-0 rounded-full"
                 style={{
                   width: `${progress * 100}%`,
                   backgroundColor: fillColor,
@@ -184,7 +187,7 @@ export const AudioPlayer = ({
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
-      <Text className="min-w-[40px] text-right text-xs text-muted-foreground">
+      <Text className="text-muted-foreground min-w-[40px] text-right text-xs">
         {formatTime(status.playing ? displayTime : playerDuration)}
       </Text>
     </View>

@@ -4,7 +4,6 @@ export type SearchMediaItem = {
   id: string;
   type: string;
   uri: string;
-  previewUri?: string;
 };
 
 export type SearchProfile = {

@@ -35,7 +35,7 @@ export const SearchInput = React.forwardRef<
   ) => {
     return (
       <View className={cn('relative', wrapperClassName)}>
-        <View className="absolute left-3 top-1/2 -translate-y-1/2">
+        <View className="absolute top-1/2 left-3 -translate-y-1/2">
           <Icon icon={MagnifyingGlass} className="text-placeholder" size={20} />
         </View>
         <Input

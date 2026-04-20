@@ -68,7 +68,7 @@ export const EmojiPicker = ({
           return (
             <Menu.Item
               key={emoji}
-              className="size-10 min-w-0 justify-center rounded-xl pl-0 pr-0"
+              className="size-10 min-w-0 justify-center rounded-xl pr-0 pl-0"
               onPress={() => {
                 if (!teamId) return;
 

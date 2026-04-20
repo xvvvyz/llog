@@ -1,20 +1,22 @@
 import { AudioPlayer } from '@/components/ui/audio-player';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { Image } from '@/components/ui/image';
+import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { VideoPlayer } from '@/components/ui/video-player';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { UI } from '@/theme/ui';
 import { Media } from '@/types/media';
 import { alert } from '@/utilities/alert';
 import { clipboardToAssets } from '@/utilities/clipboard-to-assets';
-import { fileUriToSrc, useFileAccessToken } from '@/utilities/file-uri-to-src';
+import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
+import * as m from '@/utilities/media';
+import * as pickedMedia from '@/utilities/picked-media';
 import { id } from '@instantdb/react-native';
+import { getDocumentAsync } from 'expo-document-picker';
 import { Image as ImagePrimitive } from 'expo-image';
 import {
-  ImagePickerAsset,
   launchCameraAsync,
   launchImageLibraryAsync,
   requestCameraPermissionsAsync,
@@ -22,41 +24,55 @@ import {
 } from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Camera } from 'phosphor-react-native/lib/module/icons/Camera';
+import { ImageSquare } from 'phosphor-react-native/lib/module/icons/ImageSquare';
 import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
+import { Paperclip } from 'phosphor-react-native/lib/module/icons/Paperclip';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { X } from 'phosphor-react-native/lib/module/icons/X';
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   View,
 } from 'react-native';
 
 interface PendingUpload {
+  fileName?: string;
+  height?: number;
   id: string;
   order: number;
-  uri: string;
-  type: 'image' | 'video';
   progress: number;
+  type: pickedMedia.PickedMediaAsset['type'];
+  uri: string;
+  width?: number;
 }
+
+const isVisualPendingUpload = (
+  item: PendingUpload
+): item is PendingUpload & { type: 'image' | 'video' } =>
+  item.type === 'image' || item.type === 'video';
 
 interface PendingDeletion {
   requestId: number;
 }
 
 interface VisualPreviewItem {
+  height?: number;
   id: string;
   localUri?: string;
   order?: number;
   pending: boolean;
-  previewUri?: string;
   progress: number;
   type: 'image' | 'video';
   uri: string;
+  width?: number;
 }
+
+const toVisualMediaType = (type?: string | null): VisualPreviewItem['type'] =>
+  type === 'video' ? 'video' : 'image';
 
 interface UseMediaComposerOptions {
   replyId?: string;
@@ -65,7 +81,7 @@ interface UseMediaComposerOptions {
   onDeleteMedia: (mediaId: string) => Promise<void>;
   onOpenAudio: () => void;
   onUploadMedia: (
-    asset: ImagePickerAsset,
+    asset: pickedMedia.PickedMediaAsset,
     onProgress: (progress: number) => void,
     mediaId: string,
     order: number
@@ -74,33 +90,91 @@ interface UseMediaComposerOptions {
 }
 
 const SHEET_MEDIA_PREVIEW_SIZE = 64;
+const SHEET_PENDING_VIDEO_OVERFLOW = 16;
 const MAX_AUDIO_ATTACHMENTS = 3;
 
+const PendingVideoPreview = ({
+  autoPlay,
+  height,
+  uri,
+  width,
+}: {
+  autoPlay?: boolean;
+  height?: number;
+  uri: string;
+  width?: number;
+}) => {
+  const src = useFileUriToSrc(uri);
+
+  const coverFrameStyle = React.useMemo(() => {
+    if (!width || !height) {
+      return {
+        height: SHEET_MEDIA_PREVIEW_SIZE + SHEET_PENDING_VIDEO_OVERFLOW,
+        width: SHEET_MEDIA_PREVIEW_SIZE + SHEET_PENDING_VIDEO_OVERFLOW,
+      };
+    }
+
+    const scale = Math.max(
+      SHEET_MEDIA_PREVIEW_SIZE / width,
+      SHEET_MEDIA_PREVIEW_SIZE / height
+    );
+
+    return {
+      height: height * scale + SHEET_PENDING_VIDEO_OVERFLOW,
+      width: width * scale + SHEET_PENDING_VIDEO_OVERFLOW,
+    };
+  }, [height, width]);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View className="bg-card h-full w-full overflow-hidden">
+        <video
+          autoPlay={autoPlay}
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          src={src ?? undefined}
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View className="bg-card h-full w-full items-center justify-center overflow-hidden">
+      <View style={coverFrameStyle}>
+        <VideoPlayer
+          autoPlay={autoPlay}
+          contentFit="cover"
+          maxHeight={coverFrameStyle.height}
+          maxWidth={coverFrameStyle.width}
+          muted
+          uri={uri}
+        />
+      </View>
+    </View>
+  );
+};
+
 const SheetVisualPreviewImage = ({
-  fileAccessToken,
-  foregroundColor,
   item,
   onRemoteReady,
 }: {
-  fileAccessToken: ReturnType<typeof useFileAccessToken>;
-  foregroundColor: string;
   item: VisualPreviewItem;
   onRemoteReady: (mediaId: string) => void;
 }) => {
-  const remoteSrc = React.useMemo(
-    () =>
-      fileUriToSrc(
-        item.type === 'video' ? item.previewUri || item.uri : item.uri,
-        fileAccessToken
-      ),
-    [fileAccessToken, item.previewUri, item.type, item.uri]
-  );
+  const remoteSrc = useFileUriToSrc(m.getVisualMediaThumbnailUri(item));
+  const remoteSource = remoteSrc ? { uri: remoteSrc } : null;
 
   const [isRemoteReady, setIsRemoteReady] = React.useState(false);
   const shouldHoldLocalPreview = item.type === 'image' && !!item.localUri;
   const showRemoteLoadingIndicator = !isRemoteReady && !shouldHoldLocalPreview;
-
-  const imageStyle = { height: '100%', width: '100%' } as const;
 
   React.useEffect(() => {
     setIsRemoteReady(false);
@@ -112,39 +186,31 @@ const SheetVisualPreviewImage = ({
   }, [item.id, onRemoteReady, shouldHoldLocalPreview]);
 
   return (
-    <View className="relative flex-1 bg-card">
+    <View className="bg-card relative flex-1">
       {shouldHoldLocalPreview && (
         <ImagePrimitive
           contentFit="cover"
           contentPosition="center"
           source={{ uri: item.localUri }}
-          style={imageStyle}
+          style={StyleSheet.absoluteFill}
         />
       )}
-      <ImagePrimitive
-        contentFit="cover"
-        contentPosition="center"
-        onDisplay={handleRemoteReady}
-        onLoad={handleRemoteReady}
-        source={{ uri: remoteSrc }}
-        style={{
-          ...imageStyle,
-          opacity: shouldHoldLocalPreview && !isRemoteReady ? 0 : 1,
-        }}
-      />
-      {showRemoteLoadingIndicator && (
-        <View
+      {remoteSource && (
+        <ImagePrimitive
+          contentFit="cover"
+          contentPosition="center"
+          onDisplay={handleRemoteReady}
+          onLoad={handleRemoteReady}
+          source={remoteSource}
           style={{
-            alignItems: 'center',
-            bottom: 0,
-            justifyContent: 'center',
-            left: 0,
-            position: 'absolute',
-            right: 0,
-            top: 0,
+            ...StyleSheet.absoluteFillObject,
+            opacity: shouldHoldLocalPreview && !isRemoteReady ? 0 : 1,
           }}
-        >
-          <ActivityIndicator size="small" color={foregroundColor} />
+        />
+      )}
+      {showRemoteLoadingIndicator && (
+        <View className="absolute inset-0 items-center justify-center">
+          <Spinner size="small" style={{ transform: [{ scale: 0.8 }] }} />
         </View>
       )}
     </View>
@@ -161,15 +227,13 @@ export const useMediaComposer = ({
   recordId,
 }: UseMediaComposerOptions) => {
   const { suspend } = useSheetManager();
-  const colorScheme = useColorScheme();
-  const foregroundColor = UI[colorScheme].foreground;
-  const fileAccessToken = useFileAccessToken();
   const [isDeleteTransitioning, startDeleteTransition] = React.useTransition();
   const nextDeleteRequestIdRef = React.useRef(0);
 
   const [pendingUploads, setPendingUploads] = React.useState<PendingUpload[]>(
     []
   );
+
   const [pendingDeletions, setPendingDeletions] = React.useState<
     Record<string, PendingDeletion>
   >({});
@@ -190,7 +254,14 @@ export const useMediaComposer = ({
   );
 
   const { audioMedia, visualMedia } = useFilteredMedia(visibleMedia);
-  const canAddAudio = audioMedia.length < MAX_AUDIO_ATTACHMENTS;
+
+  const pendingAudioCount = React.useMemo(
+    () => pendingUploads.filter((item) => item.type === 'audio').length,
+    [pendingUploads]
+  );
+
+  const canAddAudio =
+    audioMedia.length + pendingAudioCount < MAX_AUDIO_ATTACHMENTS;
 
   const removeLocalPreviewUri = React.useCallback((mediaId: string) => {
     setLocalPreviewUris((prev) => {
@@ -202,27 +273,66 @@ export const useMediaComposer = ({
   }, []);
 
   const uploadAssets = React.useCallback(
-    (assets: ImagePickerAsset[]) => {
+    (inputAssets: pickedMedia.PickedMediaAsset[]) => {
+      const availableAudioSlots = Math.max(
+        0,
+        MAX_AUDIO_ATTACHMENTS - audioMedia.length - pendingAudioCount
+      );
+
+      let remainingAudioSlots = availableAudioSlots;
+
+      const assets = inputAssets.filter((asset) => {
+        if (asset.type !== 'audio') return true;
+        if (remainingAudioSlots <= 0) return false;
+        remainingAudioSlots -= 1;
+        return true;
+      });
+
+      if (!assets.length) {
+        if (inputAssets.some((asset) => asset.type === 'audio')) {
+          alert({
+            message: `You can attach up to ${MAX_AUDIO_ATTACHMENTS} audio files.`,
+            title: 'Audio limit reached',
+          });
+        }
+
+        return;
+      }
+
+      if (assets.length < inputAssets.length) {
+        alert({
+          message: `Only ${availableAudioSlots} more audio file${
+            availableAudioSlots === 1 ? '' : 's'
+          } could be added.`,
+          title: 'Audio limit reached',
+        });
+      }
+
       const mediaIds = assets.map(() => id());
-      const baseOrder = media.length;
+      const baseOrder = media.length + pendingUploads.length;
 
       setPendingUploads((prev) => [
         ...prev,
         ...assets.map((asset, i) => ({
+          fileName: asset.fileName ?? undefined,
+          height: asset.height,
           id: mediaIds[i],
           order: baseOrder + i,
-          uri: asset.uri,
-          type: (asset.type === 'video' ? 'video' : 'image') as
-            | 'image'
-            | 'video',
           progress: 0,
+          type: asset.type,
+          uri: asset.uri,
+          width: asset.width,
         })),
       ]);
 
       setLocalPreviewUris((prev) => ({
         ...prev,
         ...Object.fromEntries(
-          mediaIds.map((mediaId, i) => [mediaId, assets[i].uri])
+          assets.flatMap((asset, i) =>
+            pickedMedia.isVisualPickedMedia(asset)
+              ? [[mediaIds[i], asset.uri]]
+              : []
+          )
         ),
       }));
 
@@ -262,7 +372,14 @@ export const useMediaComposer = ({
       queue.forEach((item, i) => lanes[i % concurrency].push(item));
       lanes.forEach((lane) => run(lane));
     },
-    [media.length, onUploadMedia, removeLocalPreviewUri]
+    [
+      audioMedia.length,
+      media.length,
+      onUploadMedia,
+      pendingAudioCount,
+      pendingUploads.length,
+      removeLocalPreviewUri,
+    ]
   );
 
   React.useEffect(() => {
@@ -334,8 +451,38 @@ export const useMediaComposer = ({
     });
 
     if (picker.canceled) return;
-    uploadAssets(picker.assets);
+
+    uploadAssets(
+      picker.assets
+        .map((asset) => pickedMedia.normalizeImagePickerAsset(asset))
+        .filter((asset): asset is pickedMedia.PickedMediaAsset => !!asset)
+    );
   }, [ensureMediaLibraryPermission, uploadAssets]);
+
+  const handlePickFiles = React.useCallback(async () => {
+    const picker = await getDocumentAsync({
+      base64: false,
+      copyToCacheDirectory: true,
+      multiple: true,
+      type: pickedMedia.FILE_PICKER_MIME_TYPES,
+    });
+
+    if (picker.canceled) return;
+
+    const assets = (picker.assets ?? [])
+      .map((asset) => pickedMedia.normalizeDocumentPickerAsset(asset))
+      .filter((asset): asset is pickedMedia.PickedMediaAsset => !!asset);
+
+    if (!assets.length) {
+      alert({
+        message: 'Choose an image, video, or audio file.',
+        title: 'Unsupported file',
+      });
+      return;
+    }
+
+    uploadAssets(assets);
+  }, [uploadAssets]);
 
   const handleCaptureMedia = React.useCallback(async () => {
     const [cameraPermission, libraryPermission] = await Promise.all([
@@ -357,13 +504,16 @@ export const useMediaComposer = ({
     });
 
     if (picker.canceled) return;
-    uploadAssets(picker.assets);
+    uploadAssets(
+      picker.assets
+        .map((asset) => pickedMedia.normalizeImagePickerAsset(asset))
+        .filter((asset): asset is pickedMedia.PickedMediaAsset => !!asset)
+    );
   }, [showCapturePermissionAlert, uploadAssets]);
 
   const handleDeleteMedia = React.useCallback(
     (mediaId: string) => {
       const requestId = ++nextDeleteRequestIdRef.current;
-
       removeLocalPreviewUri(mediaId);
 
       setPendingDeletions((current) => ({
@@ -406,17 +556,25 @@ export const useMediaComposer = ({
   React.useEffect(() => {
     setPendingUploads((prev) => {
       if (!prev.length) return prev;
-      const mediaIds = new Set(visualMedia.map((m) => m.id));
+
+      const mediaIds = new Set(
+        visibleMedia
+          .filter((item) => !m.isVideoMediaProcessing(item))
+          .map((item) => item.id)
+      );
+
       const next = prev.filter((p) => !mediaIds.has(p.id));
       return next.length === prev.length ? prev : next;
     });
-  }, [visualMedia]);
+  }, [visibleMedia]);
 
   React.useEffect(() => {
     setLocalPreviewUris((prev) => {
       const activeIds = new Set([
         ...visualMedia.map((item) => item.id),
-        ...pendingUploads.map((item) => item.id),
+        ...pendingUploads
+          .filter((item) => item.type !== 'audio')
+          .map((item) => item.id),
       ]);
 
       let changed = false;
@@ -454,32 +612,47 @@ export const useMediaComposer = ({
             pending: false,
             progress: 100,
             localUri: localPreviewUris[item.id],
-            type: item.type as 'image' | 'video',
+            type: toVisualMediaType(item.type),
           })),
-        ...pendingUploads.map((p) => {
-          const real = realMediaById.get(p.id);
-          if (real)
-            return {
-              ...real,
-              order: p.order,
-              pending: false,
-              progress: 100,
-              localUri: localPreviewUris[p.id] ?? p.uri,
-              type: real.type as 'image' | 'video',
-            };
+        ...pendingUploads
+          .filter((item) => isVisualPendingUpload(item))
+          .map((p) => {
+            const real = realMediaById.get(p.id);
 
-          return {
-            id: p.id,
-            order: p.order,
-            uri: p.uri,
-            type: p.type,
-            pending: true,
-            progress: p.progress,
-            localUri: localPreviewUris[p.id] ?? p.uri,
-          };
-        }),
+            if (real && !m.isVideoMediaProcessing(real))
+              return {
+                ...real,
+                height: p.height,
+                order: p.order,
+                pending: false,
+                progress: 100,
+                localUri: localPreviewUris[p.id] ?? p.uri,
+                type: toVisualMediaType(real.type),
+                width: p.width,
+              };
+
+            return {
+              height: p.height,
+              id: p.id,
+              order: p.order,
+              uri: p.uri,
+              type: p.type,
+              pending: true,
+              progress: p.progress,
+              localUri: localPreviewUris[p.id] ?? p.uri,
+              width: p.width,
+            };
+          }),
       ].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [visualMedia, pendingUploads, pendingIdSet, realMediaById, localPreviewUris]
+  );
+
+  const pendingAudio = React.useMemo(
+    () =>
+      pendingUploads
+        .filter((item) => item.type === 'audio')
+        .sort((a, b) => a.order - b.order),
+    [pendingUploads]
   );
 
   const autoPlayPendingVideoId = React.useMemo(
@@ -497,7 +670,7 @@ export const useMediaComposer = ({
     <>
       {!!allVisual.length && (
         <ScrollView
-          className="shrink-0 border-t border-border-secondary"
+          className="border-border-secondary shrink-0 border-t"
           horizontal
           keyboardShouldPersistTaps="handled"
           showsHorizontalScrollIndicator={false}
@@ -509,8 +682,8 @@ export const useMediaComposer = ({
                 <Pressable
                   className={
                     item.pending
-                      ? 'flex-1 cursor-default overflow-hidden rounded-lg bg-border'
-                      : 'flex-1 overflow-hidden rounded-lg bg-border'
+                      ? 'bg-border flex-1 cursor-default overflow-hidden rounded-lg'
+                      : 'bg-border flex-1 overflow-hidden rounded-lg'
                   }
                   onPress={() => {
                     if (!item.pending && recordId) {
@@ -528,22 +701,20 @@ export const useMediaComposer = ({
                   }}
                 >
                   {item.pending ? (
-                    <View className="flex-1 bg-card">
+                    <View className="bg-card flex-1">
                       {item.type === 'video' ? (
-                        <VideoPlayer
+                        <PendingVideoPreview
                           autoPlay={item.id === autoPlayPendingVideoId}
-                          contentFit="cover"
-                          maxHeight={SHEET_MEDIA_PREVIEW_SIZE}
-                          maxWidth={SHEET_MEDIA_PREVIEW_SIZE}
-                          muted
+                          height={item.height}
                           uri={item.localUri ?? item.uri}
+                          width={item.width}
                         />
                       ) : (
-                        <ImagePrimitive
+                        <Image
+                          fill
                           contentFit="cover"
-                          contentPosition="center"
-                          source={{ uri: item.uri }}
-                          style={{ height: '100%', width: '100%' }}
+                          uri={item.localUri ?? item.uri}
+                          wrapperClassName="bg-card"
                         />
                       )}
                       {item.progress > 0 && (
@@ -559,77 +730,37 @@ export const useMediaComposer = ({
                           }}
                         />
                       )}
-                      <View
-                        style={{
-                          alignItems: 'center',
-                          bottom: 0,
-                          justifyContent: 'center',
-                          left: 0,
-                          position: 'absolute',
-                          right: 0,
-                          top: 0,
-                          zIndex: 4,
-                        }}
-                      >
+                      <View className="absolute inset-0 z-[4] items-center justify-center">
                         {item.progress > 0 && item.progress < 100 ? (
                           <Text className="text-white">{item.progress}</Text>
                         ) : (
-                          <ActivityIndicator
+                          <Spinner
                             size="small"
-                            color={foregroundColor}
+                            style={{ transform: [{ scale: 0.8 }] }}
                           />
                         )}
                       </View>
                     </View>
                   ) : (
                     <SheetVisualPreviewImage
-                      fileAccessToken={fileAccessToken}
-                      foregroundColor={foregroundColor}
                       item={item}
                       onRemoteReady={removeLocalPreviewUri}
                     />
                   )}
                 </Pressable>
-                {item.type === 'video' && !item.pending && (
-                  <View
-                    className="absolute items-center justify-center rounded-full"
-                    pointerEvents="none"
-                    style={{
-                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                      borderCurve: 'continuous',
-                      borderRadius: 999,
-                      bottom: 4,
-                      height: 20,
-                      left: 4,
-                      width: 20,
-                      zIndex: 5,
-                    }}
-                  >
-                    <Icon
-                      className="text-white"
-                      icon={Play}
-                      size={10}
-                      weight="fill"
-                    />
-                  </View>
-                )}
+                {item.type === 'video' &&
+                  !item.pending &&
+                  !m.isVideoMediaProcessing(item) && (
+                    <View className="pointer-events-none absolute bottom-0 left-0 z-10 size-6 items-center justify-center">
+                      <Icon className="text-white" icon={Play} size={12} />
+                    </View>
+                  )}
                 {!item.pending && (
                   <Pressable
-                    className="items-center justify-center rounded-full"
+                    className="absolute top-0 right-0 z-20 size-6 items-center justify-center"
                     onPress={() => handleDeleteMedia(item.id)}
-                    style={{
-                      borderCurve: 'continuous',
-                      borderRadius: 999,
-                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                      height: 20,
-                      position: 'absolute',
-                      right: 4,
-                      top: 4,
-                      width: 20,
-                      zIndex: 6,
-                    }}
                   >
-                    <Icon className="text-white" icon={X} size={10} />
+                    <Icon className="text-white" icon={X} size={12} />
                   </Pressable>
                 )}
               </View>
@@ -637,8 +768,8 @@ export const useMediaComposer = ({
           </View>
         </ScrollView>
       )}
-      {audioMedia.length > 0 && (
-        <View className="gap-2 border-t border-border-secondary p-4">
+      {(audioMedia.length > 0 || pendingAudio.length > 0) && (
+        <View className="border-border-secondary gap-2 border-t p-4">
           {audioMedia.map((clip) => (
             <View className="w-full flex-row items-center gap-2" key={clip.id}>
               <View className="flex-1">
@@ -654,46 +785,94 @@ export const useMediaComposer = ({
               </Button>
             </View>
           ))}
+          {pendingAudio.map((clip) => (
+            <View className="w-full flex-row items-center gap-2" key={clip.id}>
+              <View className="bg-card flex-1 rounded-lg px-3 py-2">
+                <Text numberOfLines={1}>
+                  {clip.fileName?.trim() || 'Audio file'}
+                </Text>
+              </View>
+              <View className="w-8 items-center justify-center">
+                {clip.progress > 0 && clip.progress < 100 ? (
+                  <Text className="text-muted-foreground">{clip.progress}</Text>
+                ) : (
+                  <Spinner
+                    size="small"
+                    style={{ transform: [{ scale: 0.8 }] }}
+                  />
+                )}
+              </View>
+            </View>
+          ))}
         </View>
       )}
     </>
   );
 
-  const toolbar = (
-    <>
-      <Button
-        className="size-8"
-        onPress={handleBrowseMedia}
-        size="icon"
-        variant="secondary"
-      >
-        <Icon icon={Plus} />
-      </Button>
-      {Platform.OS === 'ios' && (
+  const toolbar =
+    Platform.OS === 'web' ? (
+      <>
         <Button
           className="size-8"
-          onPress={handleCaptureMedia}
+          onPress={handlePickFiles}
           size="icon"
           variant="secondary"
         >
-          <Icon icon={Camera} />
+          <Icon icon={Plus} />
         </Button>
-      )}
-      <Button
-        className="size-8"
-        disabled={!canAddAudio}
-        onPress={onOpenAudio}
-        size="icon"
-        variant="secondary"
-      >
-        <Icon icon={Microphone} />
-      </Button>
-    </>
-  );
+        <Button
+          className="size-8"
+          disabled={!canAddAudio}
+          onPress={onOpenAudio}
+          size="icon"
+          variant="secondary"
+        >
+          <Icon icon={Microphone} />
+        </Button>
+      </>
+    ) : (
+      <>
+        <Button
+          className="size-8"
+          onPress={handlePickFiles}
+          size="icon"
+          variant="secondary"
+        >
+          <Icon icon={Paperclip} />
+        </Button>
+        <Button
+          className="size-8"
+          onPress={handleBrowseMedia}
+          size="icon"
+          variant="secondary"
+        >
+          <Icon icon={ImageSquare} />
+        </Button>
+        {Platform.OS === 'ios' && (
+          <Button
+            className="size-8"
+            onPress={handleCaptureMedia}
+            size="icon"
+            variant="secondary"
+          >
+            <Icon icon={Camera} />
+          </Button>
+        )}
+        <Button
+          className="size-8"
+          disabled={!canAddAudio}
+          onPress={onOpenAudio}
+          size="icon"
+          variant="secondary"
+        >
+          <Icon icon={Microphone} />
+        </Button>
+      </>
+    );
 
   return {
     isBusy: pendingUploads.length > 0 || isDeleteTransitioning,
-    mediaCount: audioMedia.length + allVisual.length,
+    mediaCount: audioMedia.length + pendingAudio.length + allVisual.length,
     mediaPreview,
     toolbar,
   };

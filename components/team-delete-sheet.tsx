@@ -33,7 +33,7 @@ export const TeamDeleteSheet = () => {
               await switchTeam({ teamId: nextTeam.id, uiId: ui.id });
             }
 
-            await deleteTeam({ id: team.id });
+            await deleteTeam({ id: team.id! });
             router.replace('/');
           }}
           variant="destructive"

@@ -7,10 +7,10 @@ import teamAvatar from './team-avatar';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
+app.route('/', meAvatar);
+app.route('/', teamAvatar);
+app.route('/', recordMedia);
+app.route('/', replyMedia);
 app.route('/', fileByKey);
-app.route('/me/avatar', meAvatar);
-app.route('/teams/:teamId/avatar', teamAvatar);
-app.route('/records/:recordId/media', recordMedia);
-app.route('/records/:recordId/replies/:replyId/media', replyMedia);
 
 export default app;

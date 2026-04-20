@@ -6,6 +6,8 @@ import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
+import { storeImageDeliveryUrl, uploadImage } from './images';
+import { deleteMediaAssets } from './media-cleanup';
 import * as upload from './upload';
 
 const queryTeamWithImageAndRole = (teamId: string, userId: string) => ({
@@ -21,7 +23,7 @@ const queryTeamWithImageAndRole = (teamId: string, userId: string) => ({
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.put(
-  '/',
+  '/teams/:teamId/avatar',
   upload.uploadLimit(upload.MAX_BYTES_BY_KIND.image),
   db({ asUser: true }),
   zValidator('form', z.object({ file: fileLike })),
@@ -51,21 +53,25 @@ app.put(
     }
 
     if (team.image) {
-      await c.env.R2.delete(team.image.uri as string);
+      await deleteMediaAssets(c.env, [team.image]);
       await c.var.db.transact(c.var.db.tx.media[team.image.id].delete());
     }
 
     const mediaId = id();
 
-    const stored = await c.env.R2.put(
-      `teams/${teamId}/media/${mediaId}`,
+    const stored = await uploadImage({
+      creator: c.var.user.id,
+      env: c.env,
       file,
-      { httpMetadata: { contentType: file.type } }
-    );
+    });
 
     await c.var.db.transact(
       c.var.db.tx.media[mediaId]
-        .update({ teamId, type: 'image', uri: stored.key })
+        .update({
+          assetKey: storeImageDeliveryUrl(stored.deliveryUrl),
+          type: 'image',
+          uri: stored.deliveryUrl,
+        })
         .link({ team: teamId })
     );
 
@@ -73,7 +79,7 @@ app.put(
   }
 );
 
-app.delete('/', db({ asUser: true }), async (c) => {
+app.delete('/teams/:teamId/avatar', db({ asUser: true }), async (c) => {
   const teamId = c.req.param('teamId');
 
   if (!teamId) {
@@ -97,7 +103,7 @@ app.delete('/', db({ asUser: true }), async (c) => {
 
   if (team.image) {
     await c.var.db.transact(c.var.db.tx.media[team.image.id].delete());
-    await c.env.R2.delete(team.image.uri as string);
+    await deleteMediaAssets(c.env, [team.image]);
   }
 
   return c.json({ success: true });

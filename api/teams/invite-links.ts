@@ -11,7 +11,7 @@ import { z } from 'zod/v4';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.post(
-  '/',
+  '/:teamId/invite-links',
   db(),
   auth(),
   zValidator(
@@ -73,7 +73,7 @@ app.post(
   }
 );
 
-app.delete('/:linkId', db({ asUser: true }), async (c) => {
+app.delete('/:teamId/invite-links/:linkId', db({ asUser: true }), async (c) => {
   const { linkId } = c.req.param();
   await c.var.db.transact(c.var.db.tx.invites[linkId].delete());
   return c.json({ status: 'deleted' });

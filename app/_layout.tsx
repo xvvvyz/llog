@@ -3,7 +3,6 @@ import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
 import { db } from '@/utilities/db';
-import { setFileAccessToken } from '@/utilities/file-access-token';
 import * as wp from '@/utilities/web-push';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -11,13 +10,10 @@ import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
 import { setBackgroundColorAsync } from 'expo-system-ui';
-import { cssInterop } from 'nativewind';
 import * as React from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
 
-cssInterop(Animated.View, { className: 'style' });
 configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
 
@@ -29,27 +25,6 @@ export default function Layout() {
   React.useEffect(() => {
     setBackgroundColorAsync(UI[colorScheme].background);
   }, [colorScheme]);
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    if (!userId) {
-      setFileAccessToken(null);
-      return;
-    }
-
-    void (async () => {
-      const resolvedAuth = await db.getAuth();
-
-      if (!cancelled) {
-        setFileAccessToken(resolvedAuth?.refresh_token ?? null);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
 
   React.useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -99,10 +74,10 @@ export default function Layout() {
         <GestureHandlerRootView className="flex-1">
           <SheetManagerProvider>
             <Slot />
+            <PortalHost />
           </SheetManagerProvider>
         </GestureHandlerRootView>
       </ThemeProvider>
-      <PortalHost />
     </React.Fragment>
   );
 }

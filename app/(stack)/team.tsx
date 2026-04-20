@@ -78,6 +78,7 @@ const TeamMemberMenuContent = ({
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const { onOpenChange } = Menu.useContext();
+
   const [loadingRole, setLoadingRole] = React.useState<AssignableRole | null>(
     null
   );
@@ -212,7 +213,6 @@ export default function Team() {
   React.useEffect(() => {
     if (!pendingMemberLogsRoleId) return;
     const member = members.find((m) => m.id === pendingMemberLogsRoleId);
-
     if (!member || member.role !== Role.Member) return;
 
     const hasActiveTeamLogs =
@@ -335,7 +335,7 @@ export default function Team() {
                 <Menu.Root>
                   <Menu.Trigger asChild>
                     <Button
-                      className="items-end justify-between rounded-none border-b border-border px-0 pb-3 pt-3"
+                      className="border-border items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
                       variant="link"
                     >
                       <Label className="shrink-0 p-0">Avatar</Label>
@@ -361,14 +361,14 @@ export default function Team() {
                   </Menu.Content>
                 </Menu.Root>
               ) : (
-                <View className="flex-row items-end justify-between border-b border-border pb-3 pt-3">
+                <View className="border-border flex-row items-end justify-between border-b pt-3 pb-3">
                   <Label className="shrink-0 p-0">Avatar</Label>
                   <Avatar avatar={team.image?.uri} id={team.id} size={34} />
                 </View>
               )}
             </View>
             <View className="px-4">
-              <View className="flex-row items-center justify-between border-b border-border">
+              <View className="border-border flex-row items-center justify-between border-b">
                 <Label
                   className="shrink-0 p-0"
                   onPress={() => nameInputRef.current?.focus()}
@@ -379,7 +379,7 @@ export default function Team() {
                   editable={canManage}
                   maxLength={32}
                   className="min-w-0 shrink rounded-none border-0 bg-transparent pr-0 text-right"
-                  onChangeText={(name) => updateTeam({ id: team.id, name })}
+                  onChangeText={(name) => updateTeam({ id: team.id!, name })}
                   ref={nameInputRef}
                   value={team.name}
                 />
@@ -390,10 +390,17 @@ export default function Team() {
                 .filter((role) => role === Role.Admin || logs.data.length > 0)
                 .map((role) => (
                   <View key={role} className="px-4">
-                    <View className="flex-row items-center justify-between pt-1.5">
-                      <Text className="font-normal text-muted-foreground">
-                        {ROLE_LABELS[role]} invite link
-                      </Text>
+                    <View className="border-border flex-row items-center justify-between gap-4 border-b py-3">
+                      <View className="flex-1">
+                        <Text className="text-muted-foreground font-normal">
+                          {ROLE_LABELS[role]} invite link
+                        </Text>
+                        <Text className="text-placeholder pb-0.5 text-xs">
+                          {role === Role.Admin
+                            ? 'Can manage team and logs'
+                            : 'Can access selected logs'}
+                        </Text>
+                      </View>
                       <View className="-mr-[7px] flex-row items-center gap-1">
                         <Button
                           className="size-8"
@@ -443,12 +450,6 @@ export default function Team() {
                         )}
                       </View>
                     </View>
-                    <Text className="-mt-1 pb-3 text-xs text-placeholder">
-                      {role === Role.Admin
-                        ? 'Can manage team and logs'
-                        : 'Can access selected logs'}
-                    </Text>
-                    <View className="border-b border-border" />
                   </View>
                 ))}
             <ScrollView
@@ -505,7 +506,7 @@ export default function Team() {
                         <Text className="text-sm font-medium" numberOfLines={1}>
                           {profile?.name}
                         </Text>
-                        <Text className="text-xs text-placeholder">
+                        <Text className="text-placeholder text-xs">
                           {ROLE_LABELS[member.role] ?? member.role}
                         </Text>
                       </View>
@@ -574,17 +575,17 @@ export default function Team() {
             <View>
               {canDeleteTeam && (
                 <>
-                  <View className="mb-2 border-t border-border" />
+                  <View className="border-border mb-2 border-t" />
                   <Button
                     className="justify-between rounded-none"
                     onPress={() => sheetManager.open('team-delete')}
                     variant="ghost"
                     wrapperClassName="rounded-none"
                   >
-                    <Text className="font-normal text-destructive">
+                    <Text className="text-destructive font-normal">
                       Delete team
                     </Text>
-                    <Icon className="-mr-0.5 text-destructive" icon={Trash} />
+                    <Icon className="text-destructive -mr-0.5" icon={Trash} />
                   </Button>
                 </>
               )}

@@ -24,10 +24,10 @@ const schema = i.schema({
       text: i.string(),
     }),
     media: i.entity({
+      assetKey: i.string().optional(),
       duration: i.number().optional(),
       order: i.number().optional(),
-      teamId: i.string().optional().indexed(),
-      previewUri: i.string().optional(),
+      thumbnailUri: i.string().optional(),
       type: i.string(),
       uri: i.string(),
     }),

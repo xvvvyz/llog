@@ -4,7 +4,7 @@ import replies from './replies';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-app.route('/:recordId', record);
-app.route('/:recordId/replies', replies);
+app.route('/', record);
+app.route('/', replies);
 
 export default app;

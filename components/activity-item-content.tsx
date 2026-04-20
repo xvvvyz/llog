@@ -1,7 +1,7 @@
 import { renderLinkifiedText } from '@/components/linkified-text';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { REACTION_ICONS } from '@/types/emoji';
+import { REACTION_ICONS, isEmoji } from '@/types/emoji';
 import { GroupedActivity } from '@/utilities/group-activities';
 import { View } from 'react-native';
 
@@ -39,7 +39,8 @@ export const ActivityItemContent = ({
       ];
 
       const reactionIcons = emojis
-        .map((e) => REACTION_ICONS[e as keyof typeof REACTION_ICONS])
+        .filter(isEmoji)
+        .map((emoji) => REACTION_ICONS[emoji])
         .filter(Boolean);
 
       return reactionIcons.length > 0 ? (

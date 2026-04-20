@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { getFileScope, requirePrivateFileAccess } from './auth';
+import { getFileScope } from './media-storage';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -12,20 +12,15 @@ app.get('/:key{.+}', async (c) => {
     throw new HTTPException(404, { message: 'File not found' });
   }
 
-  if (scope === 'private') {
-    await requirePrivateFileAccess(c, key);
-    c.header('Cache-Control', 'private, max-age=31536000, immutable');
-    c.header('Vary', 'Authorization');
-  } else {
-    c.header('Cache-Control', 'public, max-age=31536000, immutable');
-  }
+  c.header('Cache-Control', 'public, max-age=31536000, immutable');
 
   const rangeHeader = c.req.header('Range');
+  const onlyIfHeader = c.req.header('If-None-Match');
 
-  const file = await c.env.R2.get(
-    key,
-    rangeHeader ? { range: c.req.raw.headers } : undefined
-  );
+  const file = await c.env.R2.get(key, {
+    ...(rangeHeader ? { range: c.req.raw.headers } : {}),
+    ...(onlyIfHeader ? { onlyIf: c.req.raw.headers } : {}),
+  });
 
   if (!file) {
     throw new HTTPException(404, { message: 'File not found' });
@@ -35,11 +30,10 @@ app.get('/:key{.+}', async (c) => {
 
   if (file.etag) {
     c.header('ETag', file.etag);
-    const ifNoneMatch = c.req.header('If-None-Match');
+  }
 
-    if (ifNoneMatch === file.etag) {
-      return c.body(null, 304);
-    }
+  if (!('body' in file)) {
+    return c.body(null, 304);
   }
 
   if (file.httpMetadata?.contentType) {

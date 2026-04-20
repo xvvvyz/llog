@@ -1,6 +1,6 @@
-import { SortBy } from '@/components/log-list-actions';
-import { SortDirection } from '@/components/ui/dropdown-menu';
-import { Emoji, REACTION_EMOJIS } from '@/types/emoji';
+import { SortBy, isSortBy } from '@/components/log-list-actions';
+import { SortDirection, isSortDirection } from '@/components/ui/dropdown-menu';
+import { Emoji, isEmoji } from '@/types/emoji';
 import { db } from '@/utilities/db';
 
 export const useUi = () => {
@@ -19,16 +19,28 @@ export const useUi = () => {
 
   const ui = data?.ui?.[0];
 
+  const doubleTapEmoji: Emoji = isEmoji(ui?.doubleTapEmoji)
+    ? ui.doubleTapEmoji
+    : '❤️';
+
+  const logsSortBy: SortBy = isSortBy(ui?.logsSortBy)
+    ? ui.logsSortBy
+    : 'serverCreatedAt';
+
+  const logsSortDirection: SortDirection = isSortDirection(
+    ui?.logsSortDirection
+  )
+    ? ui.logsSortDirection
+    : 'desc';
+
   return {
     activityLastReadDate: ui?.activityLastReadDate,
     activeTeamId: ui?.team?.id,
-    doubleTapEmoji: (REACTION_EMOJIS.includes(ui?.doubleTapEmoji as Emoji)
-      ? ui?.doubleTapEmoji
-      : '❤️') as Emoji,
+    doubleTapEmoji,
     id: ui?.id,
     isLoading,
-    logsSortBy: (ui?.logsSortBy ?? 'serverCreatedAt') as SortBy,
-    logsSortDirection: (ui?.logsSortDirection ?? 'desc') as SortDirection,
+    logsSortBy,
+    logsSortDirection,
     videoMuted: ui?.videoMuted ?? true,
   };
 };

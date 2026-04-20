@@ -21,11 +21,7 @@
       "output": "single",
       "outputDirectory": "web"
     },
-    "plugins": [
-      "expo-router",
-      "expo-image-picker",
-      "./plugins/with-remove-duplicate-libcxx-linker-flag"
-    ],
+    "plugins": ["expo-router", "expo-image-picker", "expo-document-picker"],
     "experiments": {
       "typedRoutes": true
     }

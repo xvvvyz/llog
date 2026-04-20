@@ -18,7 +18,7 @@ import { cn } from '@/utilities/cn';
 import { Funnel } from 'phosphor-react-native/lib/module/icons/Funnel';
 import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
 import * as React from 'react';
-import { Keyboard, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function Search() {
   const [query, setQuery] = React.useState('');
@@ -74,108 +74,106 @@ export default function Search() {
   return (
     <Page>
       <Header title="Search" />
-      <Pressable className="flex-1" onPress={Keyboard.dismiss}>
-        <List
-          ListHeaderComponent={
-            <View className="gap-3 pb-3">
-              <View className="flex-row gap-3">
-                <SearchInput
-                  query={query}
-                  setQuery={setQuery}
-                  wrapperClassName="flex-1"
-                />
-                {(!!logs.data.length || !!tags.data.length) && (
-                  <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                      <Button size="icon" variant="secondary">
-                        <Icon
-                          className="text-secondary-foreground"
-                          icon={Funnel}
-                        />
-                      </Button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Content align="end" className="min-w-48">
-                      {!!logs.data.length && (
-                        <>
-                          <DropdownMenu.Label>Logs</DropdownMenu.Label>
-                          {logs.data.map((log) => {
-                            const color = SPECTRUM[colorScheme][log.color];
+      <List
+        ListHeaderComponent={
+          <View className="gap-3 pb-3">
+            <View className="flex-row gap-3">
+              <SearchInput
+                query={query}
+                setQuery={setQuery}
+                wrapperClassName="flex-1"
+              />
+              {(!!logs.data.length || !!tags.data.length) && (
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button size="icon" variant="secondary">
+                      <Icon
+                        className="text-secondary-foreground"
+                        icon={Funnel}
+                      />
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Content align="end" className="min-w-48">
+                    {!!logs.data.length && (
+                      <>
+                        <DropdownMenu.Label>Logs</DropdownMenu.Label>
+                        {logs.data.map((log) => {
+                          const color = SPECTRUM[colorScheme][log.color];
 
-                            return (
-                              <DropdownMenu.CheckboxItem
-                                checked={logIdSet.has(log.id)}
-                                key={log.id}
-                                onCheckedChange={() => toggleLogId(log.id)}
-                              >
-                                <View
-                                  className="size-3 rounded-[2px]"
-                                  style={{
-                                    backgroundColor: color?.default,
-                                  }}
-                                />
-                                <Text>{log.name}</Text>
-                              </DropdownMenu.CheckboxItem>
-                            );
-                          })}
-                        </>
-                      )}
-                      {!!tags.data.length && (
-                        <>
-                          {!!logs.data.length && <DropdownMenu.Separator />}
-                          <DropdownMenu.Label>Tags</DropdownMenu.Label>
-                          {tags.data.map((tag) => (
+                          return (
                             <DropdownMenu.CheckboxItem
-                              checked={tagIdSet.has(tag.id)}
-                              key={tag.id}
-                              onCheckedChange={() => toggleTagId(tag.id)}
+                              checked={logIdSet.has(log.id)}
+                              key={log.id}
+                              onCheckedChange={() => toggleLogId(log.id)}
                             >
-                              <Text>{tag.name}</Text>
+                              <View
+                                className="size-3 rounded-[2px]"
+                                style={{
+                                  backgroundColor: color?.default,
+                                }}
+                              />
+                              <Text>{log.name}</Text>
                             </DropdownMenu.CheckboxItem>
-                          ))}
-                        </>
-                      )}
-                      {hasFilters && (
-                        <>
-                          <DropdownMenu.Separator />
-                          <DropdownMenu.Item
-                            onPress={() => {
-                              setSelectedLogIds([]);
-                              setSelectedTagIds([]);
-                            }}
+                          );
+                        })}
+                      </>
+                    )}
+                    {!!tags.data.length && (
+                      <>
+                        {!!logs.data.length && <DropdownMenu.Separator />}
+                        <DropdownMenu.Label>Tags</DropdownMenu.Label>
+                        {tags.data.map((tag) => (
+                          <DropdownMenu.CheckboxItem
+                            checked={tagIdSet.has(tag.id)}
+                            key={tag.id}
+                            onCheckedChange={() => toggleTagId(tag.id)}
                           >
-                            <Text className="text-destructive">
-                              Clear filters
-                            </Text>
-                          </DropdownMenu.Item>
-                        </>
-                      )}
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Root>
-                )}
-              </View>
+                            <Text>{tag.name}</Text>
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </>
+                    )}
+                    {hasFilters && (
+                      <>
+                        <DropdownMenu.Separator />
+                        <DropdownMenu.Item
+                          onPress={() => {
+                            setSelectedLogIds([]);
+                            setSelectedTagIds([]);
+                          }}
+                        >
+                          <Text className="text-destructive">
+                            Clear filters
+                          </Text>
+                        </DropdownMenu.Item>
+                      </>
+                    )}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Root>
+              )}
             </View>
-          }
-          contentContainerClassName="mx-auto w-full max-w-lg px-4 pt-4 md:pt-8"
-          data={query.trim() ? results : []}
-          estimatedItemSize={100}
-          keyExtractor={(item) => `${item.type}:${item.id}`}
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={
-            query.trim() ? (
-              <View className="items-center justify-center gap-4 py-16">
-                <Icon
-                  className="text-muted-foreground"
-                  icon={MagnifyingGlass}
-                  size={48}
-                />
-                <Text className="text-muted-foreground">No results found</Text>
-              </View>
-            ) : null
-          }
-          renderItem={renderItem}
-        />
-      </Pressable>
+          </View>
+        }
+        contentContainerClassName="mx-auto w-full max-w-lg px-4 pt-4 md:pt-8"
+        data={query.trim() ? results : []}
+        estimatedItemSize={100}
+        keyExtractor={(item) => `${item.type}:${item.id}`}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          query.trim() ? (
+            <View className="items-center justify-center gap-4 py-16">
+              <Icon
+                className="text-muted-foreground"
+                icon={MagnifyingGlass}
+                size={48}
+              />
+              <Text className="text-muted-foreground">No results found</Text>
+            </View>
+          ) : null
+        }
+        renderItem={renderItem}
+      />
     </Page>
   );
 }

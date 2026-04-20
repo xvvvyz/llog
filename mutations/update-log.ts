@@ -6,9 +6,8 @@ export const updateLog = async ({
   name,
 }: {
   color?: number;
-  id?: string;
+  id: string;
   name?: string;
 }) => {
-  if (!id) return;
   return db.transact(db.tx.logs[id].update({ color, name }));
 };

@@ -58,7 +58,7 @@ export const Sheet = ({
           exiting={animation(FadeOutDown)}
         >
           <Animated.View
-            className="absolute inset-0 bg-background/90"
+            className="bg-background/90 absolute inset-0"
             entering={animation(FadeIn)}
             exiting={animation(FadeOut)}
           >
@@ -70,7 +70,7 @@ export const Sheet = ({
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className={cn(
-              'overflow-hidden rounded-t-4xl border-x border-t border-border-secondary bg-popover',
+              'border-border-secondary bg-popover overflow-hidden rounded-t-4xl border-x border-t',
               detached && 'rounded-4xl border',
               className
             )}
@@ -80,7 +80,7 @@ export const Sheet = ({
             {loading && (
               <Animated.View
                 className={cn(
-                  'absolute inset-0 z-10 rounded-t-4xl bg-popover',
+                  'bg-popover absolute inset-0 z-10 rounded-t-4xl',
                   detached && 'rounded-4xl',
                   loadingClassName
                 )}
@@ -92,7 +92,7 @@ export const Sheet = ({
           </KeyboardAvoidingView>
           {!detached && (
             <View
-              className="border-x border-border bg-popover"
+              className="border-border bg-popover border-x"
               style={{ height: inset.bottom }}
             />
           )}

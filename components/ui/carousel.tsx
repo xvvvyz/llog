@@ -9,14 +9,25 @@ import { Media } from '@/types/media';
 import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { preloadMedia } from '@/utilities/file-uri-to-src';
+import { formatTime } from '@/utilities/format-time';
+import { styledInterop } from '@/utilities/styled-interop';
 import { CornersOut } from 'phosphor-react-native/lib/module/icons/CornersOut';
-import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
-import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import { SpeakerHigh } from 'phosphor-react-native/lib/module/icons/SpeakerHigh';
 import { SpeakerSlash } from 'phosphor-react-native/lib/module/icons/SpeakerSlash';
 import * as React from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import {
+  type LayoutChangeEvent,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
   type SharedValue,
@@ -25,18 +36,20 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+const StyledAnimatedView = styledInterop(Animated.View, {
+  className: 'style',
+});
+
 export const Carousel = ({
   className,
   defaultIndex = 0,
   media,
   isKeyboardNavigationEnabled = false,
-  onClose,
 }: {
   className?: string;
   defaultIndex?: number;
   media: Media[];
   isKeyboardNavigationEnabled?: boolean;
-  onClose?: () => void;
 }) => {
   const insets = useSafeAreaInsets();
   const scrollRef = React.useRef<ScrollView>(null);
@@ -55,6 +68,13 @@ export const Carousel = ({
   const [isMuted, setIsMuted] = React.useState(videoMuted);
   const [isPlaying, setIsPlaying] = React.useState(true);
   const [activeIndexState, setActiveIndexState] = React.useState(defaultIndex);
+  const [videoCurrentTime, setVideoCurrentTime] = React.useState(0);
+  const [videoDuration, setVideoDuration] = React.useState(0);
+  const [isVideoScrubbing, setIsVideoScrubbing] = React.useState(false);
+  const isScrubbingVideoRef = React.useRef(false);
+  const wasPlayingBeforeVideoScrubRef = React.useRef(false);
+  const scrubPreviewFrameRef = React.useRef<number | null>(null);
+  const scrubPreviewTargetRef = React.useRef<number | null>(null);
 
   const contentHeight = windowDimensions.height - insets.top - insets.bottom;
   const contentWidth = windowDimensions.width;
@@ -62,10 +82,14 @@ export const Carousel = ({
   const preloadFromIndex = React.useCallback(
     async (index: number) => {
       const adjacent = [index - 1, index + 1, index - 2, index + 2];
+
+      const getPreviewUri = (item?: Media) =>
+        item?.type === 'video' ? item.thumbnailUri : item?.uri;
+
       const preloadAdjacent = () => {
         const uris = adjacent
-          .filter((i) => media[i] && media[i].type !== 'video')
-          .map((i) => media[i]!.uri);
+          .map((i) => getPreviewUri(media[i]))
+          .filter((uri): uri is string => Boolean(uri));
 
         uris.forEach((uri) => {
           void preloadMedia(uri);
@@ -73,9 +97,10 @@ export const Carousel = ({
       };
 
       const current = media[index];
+      const currentPreviewUri = getPreviewUri(current);
 
-      if (current && current.type !== 'video') {
-        await preloadMedia(current.uri);
+      if (currentPreviewUri) {
+        await preloadMedia(currentPreviewUri);
         preloadAdjacent();
       } else {
         preloadAdjacent();
@@ -88,6 +113,14 @@ export const Carousel = ({
     void preloadFromIndex(defaultIndex);
   }, [defaultIndex, preloadFromIndex]);
 
+  React.useEffect(() => {
+    return () => {
+      if (scrubPreviewFrameRef.current != null) {
+        cancelAnimationFrame(scrubPreviewFrameRef.current);
+      }
+    };
+  }, []);
+
   const setPage = React.useCallback(
     (index: number) => {
       scrollRef.current?.scrollTo({ x: index * contentWidth, animated: true });
@@ -97,8 +130,8 @@ export const Carousel = ({
 
   React.useEffect(() => {
     if (contentWidth === 0) return;
-
     const previousContentWidth = previousContentWidthRef.current;
+
     const hasWidthChanged =
       hasAppliedInitialScroll.current &&
       previousContentWidth !== 0 &&
@@ -154,6 +187,70 @@ export const Carousel = ({
     if (playing != null) setIsPlaying(playing);
   }, []);
 
+  const handleVideoTimeChange = React.useCallback(
+    (currentTime: number, duration: number) => {
+      if (isScrubbingVideoRef.current) return;
+      setVideoCurrentTime(Math.max(0, currentTime));
+      setVideoDuration(Math.max(0, duration));
+    },
+    []
+  );
+
+  const startVideoScrub = React.useCallback(() => {
+    const handle = videoHandleRef.current;
+    if (!handle || videoDuration <= 0) return;
+    isScrubbingVideoRef.current = true;
+    setIsVideoScrubbing(true);
+    wasPlayingBeforeVideoScrubRef.current = isPlaying;
+    handle.setScrubbingEnabled(true);
+
+    if (isPlaying) {
+      handle.pause();
+    }
+  }, [isPlaying, videoDuration]);
+
+  const previewVideoScrub = React.useCallback(
+    (seconds: number) => {
+      const nextTime = Math.max(0, Math.min(seconds, videoDuration));
+      scrubPreviewTargetRef.current = nextTime;
+      if (scrubPreviewFrameRef.current != null) return;
+
+      scrubPreviewFrameRef.current = requestAnimationFrame(() => {
+        scrubPreviewFrameRef.current = null;
+        const targetTime = scrubPreviewTargetRef.current;
+        scrubPreviewTargetRef.current = null;
+        if (targetTime == null) return;
+        setVideoCurrentTime(targetTime);
+        videoHandleRef.current?.seekTo(targetTime);
+      });
+    },
+    [videoDuration]
+  );
+
+  const commitVideoScrub = React.useCallback(
+    (seconds: number) => {
+      const handle = videoHandleRef.current;
+      const nextTime = Math.max(0, Math.min(seconds, videoDuration));
+
+      if (scrubPreviewFrameRef.current != null) {
+        cancelAnimationFrame(scrubPreviewFrameRef.current);
+        scrubPreviewFrameRef.current = null;
+      }
+
+      scrubPreviewTargetRef.current = null;
+      setVideoCurrentTime(nextTime);
+      handle?.setScrubbingEnabled(false);
+      handle?.seekTo(nextTime);
+      isScrubbingVideoRef.current = false;
+      setIsVideoScrubbing(false);
+
+      if (wasPlayingBeforeVideoScrubRef.current) {
+        handle?.play();
+      }
+    },
+    [videoDuration]
+  );
+
   const handleIndexChange = React.useCallback(
     (index: number) => {
       if (media[activeIndex.value]?.type === 'video') {
@@ -167,6 +264,19 @@ export const Carousel = ({
       const item = media[index];
       const isVideo = item?.type === 'video';
       setIsActiveVideo(isVideo);
+
+      if (scrubPreviewFrameRef.current != null) {
+        cancelAnimationFrame(scrubPreviewFrameRef.current);
+        scrubPreviewFrameRef.current = null;
+      }
+
+      scrubPreviewTargetRef.current = null;
+      videoHandleRef.current?.setScrubbingEnabled(false);
+      setIsVideoScrubbing(false);
+      isScrubbingVideoRef.current = false;
+      wasPlayingBeforeVideoScrubRef.current = false;
+      setVideoCurrentTime(0);
+      setVideoDuration(0);
 
       if (isVideo) {
         setIsPlaying(true);
@@ -212,6 +322,9 @@ export const Carousel = ({
           const isActive = index === activeIndexState;
           const isAdjacent = Math.abs(index - activeIndexState) <= 2;
 
+          const previewUri =
+            item.type === 'video' ? (item.thumbnailUri ?? null) : item.uri;
+
           return (
             <View
               className="items-center justify-center"
@@ -219,30 +332,45 @@ export const Carousel = ({
               style={{ width: contentWidth, height: contentHeight }}
             >
               {item.type === 'video' ? (
-                isAdjacent ? (
-                  <Pressable
-                    className="w-full flex-1 items-center justify-center"
-                    onPress={isActive ? handleTogglePlay : undefined}
-                  >
-                    <video.VideoPlayer
-                      autoPlay={isActive}
-                      handleRef={isActive ? videoHandleRef : undefined}
-                      maxHeight={contentHeight}
-                      maxWidth={contentWidth}
-                      muted={isMuted}
-                      onFullscreenReady={
-                        isActive ? handleFullscreenReady : undefined
-                      }
-                      onPlayingChange={isActive ? setIsPlaying : undefined}
-                      uri={item.uri}
+                <View className="bg-background relative w-full flex-1 items-center justify-center">
+                  {!!previewUri && (
+                    <Image
+                      contentFit="contain"
+                      fill
+                      uri={previewUri}
+                      wrapperClassName="bg-background"
                     />
-                  </Pressable>
-                ) : null
+                  )}
+                  {isAdjacent ? (
+                    <Pressable
+                      className="absolute inset-0 items-center justify-center"
+                      onPress={isActive ? handleTogglePlay : undefined}
+                    >
+                      <video.VideoPlayer
+                        autoPlay={isActive}
+                        handleRef={isActive ? videoHandleRef : undefined}
+                        maxHeight={contentHeight}
+                        maxWidth={contentWidth}
+                        muted={isMuted}
+                        onFullscreenReady={
+                          isActive ? handleFullscreenReady : undefined
+                        }
+                        onPlayingChange={isActive ? setIsPlaying : undefined}
+                        onTimeChange={
+                          isActive ? handleVideoTimeChange : undefined
+                        }
+                        thumbnailUri={item.thumbnailUri}
+                        uri={item.uri}
+                      />
+                    </Pressable>
+                  ) : null}
+                </View>
               ) : (
                 <Image
-                  maxHeight={contentHeight}
-                  maxWidth={contentWidth}
+                  contentFit="contain"
+                  fill
                   uri={item.uri}
+                  wrapperClassName="bg-background"
                 />
               )}
             </View>
@@ -250,30 +378,23 @@ export const Carousel = ({
         })}
       </ScrollView>
       {isActiveVideo && (
-        <View
-          className="absolute right-4 top-1 z-10 md:top-3"
-          style={{ marginTop: insets.top + 1 }}
-        >
-          <Button
-            className="size-11"
-            onPress={handleFullscreen}
-            size="icon"
-            variant="link"
+        <>
+          <View
+            className="absolute right-4 z-10 mr-0.5 items-end gap-1 md:right-8"
+            style={{ bottom: insets.bottom + 84 }}
           >
-            <Icon
-              className="color-foreground"
-              icon={CornersOut}
-              size={Platform.select({ default: 24, ios: 22 })}
-            />
-          </Button>
-        </View>
-      )}
-      <View
-        className="absolute bottom-2 left-4 right-4 z-10 flex-row items-center justify-between md:left-8"
-        style={{ marginBottom: insets.bottom }}
-      >
-        <View className="size-11 items-center justify-center">
-          {isActiveVideo && (
+            <Button
+              className="size-11"
+              onPress={handleFullscreen}
+              size="icon"
+              variant="link"
+            >
+              <Icon
+                className="color-foreground"
+                icon={CornersOut}
+                size={Platform.select({ default: 24, ios: 22 })}
+              />
+            </Button>
             <Button
               className="size-11"
               onPress={handleToggleMute}
@@ -286,32 +407,149 @@ export const Carousel = ({
                 size={Platform.select({ default: 24, ios: 22 })}
               />
             </Button>
-          )}
-        </View>
+          </View>
+          <View
+            className={cn(
+              'absolute right-4 bottom-10 left-4 z-10 md:right-8 md:left-8',
+              'min-h-8 justify-center px-3',
+              videoDuration > 0 ? 'pointer-events-auto' : 'pointer-events-none'
+            )}
+            style={{
+              marginBottom: insets.bottom,
+              opacity: videoDuration > 0 ? 1 : 0,
+            }}
+          >
+            <VideoScrubber
+              currentTime={videoCurrentTime}
+              duration={videoDuration}
+              isScrubbing={isVideoScrubbing}
+              onScrubEnd={commitVideoScrub}
+              onScrubMove={previewVideoScrub}
+              onScrubStart={startVideoScrub}
+            />
+          </View>
+        </>
+      )}
+      <View
+        className="pointer-events-none absolute right-4 bottom-2 left-4 z-10 items-center md:right-8 md:left-8"
+        style={{ marginBottom: insets.bottom }}
+      >
         {media.length > 1 && (
-          <Dots
-            activeIndex={activeIndex}
-            count={media.length}
-            onPress={setPage}
-          />
+          <Dots activeIndex={activeIndex} count={media.length} />
         )}
-        <View className="size-11 items-center justify-center">
-          {isActiveVideo && (
-            <Button
-              className="size-11"
-              onPress={handleTogglePlay}
-              size="icon"
-              variant="link"
-            >
-              <Icon
-                className="color-foreground"
-                icon={isPlaying ? Pause : Play}
-                size={Platform.select({ default: 24, ios: 22 })}
-              />
-            </Button>
-          )}
-        </View>
       </View>
+    </View>
+  );
+};
+
+const VideoScrubber = ({
+  currentTime,
+  duration,
+  isScrubbing,
+  onScrubEnd,
+  onScrubMove,
+  onScrubStart,
+}: {
+  currentTime: number;
+  duration: number;
+  isScrubbing: boolean;
+  onScrubEnd: (seconds: number) => void;
+  onScrubMove: (seconds: number) => void;
+  onScrubStart: () => void;
+}) => {
+  const trackWidth = useSharedValue(0);
+
+  const progress =
+    duration > 0 ? Math.max(0, Math.min(currentTime / duration, 1)) : 0;
+
+  const scrubTo = React.useCallback(
+    (x: number) => {
+      if (trackWidth.value <= 0 || duration <= 0) return;
+      const fraction = Math.max(0, Math.min(x / trackWidth.value, 1));
+      onScrubMove(fraction * duration);
+    },
+    [duration, onScrubMove, trackWidth]
+  );
+
+  const finishScrub = React.useCallback(
+    (x: number) => {
+      if (trackWidth.value <= 0 || duration <= 0) return;
+      const fraction = Math.max(0, Math.min(x / trackWidth.value, 1));
+      onScrubEnd(fraction * duration);
+    },
+    [duration, onScrubEnd, trackWidth]
+  );
+
+  const tap = React.useMemo(
+    () =>
+      Gesture.Tap().onEnd((e) => {
+        'worklet';
+        runOnJS(onScrubStart)();
+        runOnJS(scrubTo)(e.x);
+        runOnJS(finishScrub)(e.x);
+      }),
+    [finishScrub, onScrubStart, scrubTo]
+  );
+
+  const pan = React.useMemo(
+    () =>
+      Gesture.Pan()
+        .onStart((e) => {
+          'worklet';
+          runOnJS(onScrubStart)();
+          runOnJS(scrubTo)(e.x);
+        })
+        .onUpdate((e) => {
+          'worklet';
+          runOnJS(scrubTo)(e.x);
+        })
+        .onEnd((e) => {
+          'worklet';
+          runOnJS(finishScrub)(e.x);
+        }),
+    [finishScrub, onScrubStart, scrubTo]
+  );
+
+  const handleTrackLayout = React.useCallback(
+    (e: LayoutChangeEvent) => {
+      trackWidth.value = e.nativeEvent.layout.width;
+    },
+    [trackWidth]
+  );
+
+  return (
+    <View className="flex-row items-center">
+      <Text
+        className="min-w-[40px] text-xs"
+        style={{ color: 'rgba(255, 255, 255, 0.78)' }}
+      >
+        {formatTime(currentTime)}
+      </Text>
+      <GestureHandlerRootView className="flex-1 self-stretch">
+        <GestureDetector gesture={Gesture.Race(pan, tap)}>
+          <StyledAnimatedView className="h-8 flex-1 justify-center">
+            <View
+              className="relative h-1 overflow-hidden rounded-full"
+              onLayout={handleTrackLayout}
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.22)' }}
+            >
+              <View
+                className="absolute top-0 bottom-0 left-0 rounded-full"
+                style={{
+                  width: `${progress * 100}%`,
+                  backgroundColor: 'rgba(255, 255, 255, 0.96)',
+                }}
+              />
+            </View>
+          </StyledAnimatedView>
+        </GestureDetector>
+      </GestureHandlerRootView>
+      <Text
+        className="min-w-[40px] text-right text-xs"
+        style={{ color: 'rgba(255, 255, 255, 0.78)' }}
+      >
+        {formatTime(duration)}
+      </Text>
     </View>
   );
 };
@@ -326,52 +564,23 @@ const DOT_STEP = DOT_SIZE + DOT_GAP;
 const Dots = ({
   activeIndex,
   count,
-  onPress,
 }: {
   activeIndex: SharedValue<number>;
   count: number;
-  onPress: (index: number) => void;
 }) => {
   const visibleCount = Math.min(count, MAX_DOTS);
   const containerWidth = visibleCount * DOT_SIZE + (visibleCount - 1) * DOT_GAP;
-  const startIndex = useSharedValue(0);
-  const lastScrubbed = useSharedValue(-1);
-
-  const pan = React.useMemo(
-    () =>
-      Gesture.Pan()
-        .onStart(() => {
-          startIndex.value = activeIndex.value;
-          lastScrubbed.value = activeIndex.value;
-        })
-        .onUpdate((e) => {
-          const indexDelta = Math.round(-e.translationX / DOT_STEP);
-
-          const target = Math.max(
-            0,
-            Math.min(count - 1, startIndex.value + indexDelta)
-          );
-
-          if (target !== lastScrubbed.value) {
-            lastScrubbed.value = target;
-            runOnJS(onPress)(target);
-          }
-        }),
-    [activeIndex, count, lastScrubbed, onPress, startIndex]
-  );
 
   return (
-    <GestureDetector gesture={pan}>
-      <View className="h-11 flex-1 items-center justify-center">
-        <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
-          <Animated.View className="flex-row" style={{ gap: DOT_GAP }}>
-            {Array.from({ length: count }, (_, i) => (
-              <Dot activeIndex={activeIndex} count={count} index={i} key={i} />
-            ))}
-          </Animated.View>
-        </View>
+    <View className="h-11 flex-1 items-center justify-center">
+      <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
+        <StyledAnimatedView className="flex-row" style={{ gap: DOT_GAP }}>
+          {Array.from({ length: count }, (_, i) => (
+            <Dot activeIndex={activeIndex} count={count} index={i} key={i} />
+          ))}
+        </StyledAnimatedView>
       </View>
-    </GestureDetector>
+    </View>
   );
 };
 
@@ -409,7 +618,7 @@ const Dot = ({
 
   return (
     <AnimatedDotView style={[{ width: DOT_SIZE, height: DOT_SIZE }, style]}>
-      <View className="h-full w-full rounded-full bg-foreground shadow-xl" />
+      <View className="bg-foreground h-full w-full rounded-full shadow-xl" />
     </AnimatedDotView>
   );
 };

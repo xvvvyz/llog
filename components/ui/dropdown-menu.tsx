@@ -30,14 +30,14 @@ const Content = React.forwardRef<
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Overlay className="absolute inset-0">
         <Animated.View
-          className="absolute inset-0 bg-background/90"
+          className="bg-background/90 absolute inset-0"
           entering={animation(FadeIn)}
           exiting={animation(FadeOut)}
         />
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             className={cn(
-              'my-2 min-w-36 overflow-hidden rounded-2xl border border-border-secondary bg-popover py-2',
+              'border-border-secondary bg-popover my-2 min-w-36 overflow-hidden rounded-2xl border py-2',
               className
             )}
             entering={animation(FadeInUp)}
@@ -62,7 +62,7 @@ const Item = React.forwardRef<
     <DropdownMenuPrimitive.Item
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
-        'android:active:bg-transparent group relative flex h-10 flex-row items-center gap-4 pl-4 pr-6 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+        'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative flex h-10 flex-row items-center gap-4 pr-6 pl-4',
         className
       )}
       ref={ref}
@@ -99,7 +99,7 @@ const CheckboxItem = ({
       <DropdownMenuPrimitive.CheckboxItem
         android_ripple={{ color: useRippleColor('inverse') }}
         className={cn(
-          'android:active:bg-transparent group relative h-10 flex-row items-center justify-between gap-4 px-4 active:bg-accent web:cursor-default web:outline-none web:hover:bg-accent web:focus:bg-accent',
+          'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative h-10 flex-row items-center justify-between gap-4 px-4',
           className
         )}
         checked={opChecked}
@@ -118,7 +118,13 @@ const CheckboxItem = ({
 
 CheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
 
-export type SortDirection = 'asc' | 'desc';
+export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
+
+export type SortDirection = (typeof SORT_DIRECTIONS)[number];
+
+export const isSortDirection = (value: unknown): value is SortDirection =>
+  typeof value === 'string' &&
+  SORT_DIRECTIONS.some((direction) => direction === value);
 
 const SortItem = <T extends string>({
   children,
@@ -136,10 +142,12 @@ const SortItem = <T extends string>({
   value: T;
 }) => {
   const [opSort, setOpSort] = React.useState([sortBy, sortDirection]);
+
   React.useEffect(
     () => setOpSort([sortBy, sortDirection]),
     [sortBy, sortDirection]
   );
+
   const isActive = opSort[0] === value;
 
   const handleSort = React.useCallback(() => {
@@ -177,15 +185,15 @@ const Label = ({
   className?: string;
 }) => (
   <TextContext.Provider value="text-popover-foreground">
-    <View className={cn('px-4 pb-1 pt-2', className)}>
-      <Text className="text-xs text-muted-foreground">{children}</Text>
+    <View className={cn('px-4 pt-2 pb-1', className)}>
+      <Text className="text-muted-foreground text-xs">{children}</Text>
     </View>
   </TextContext.Provider>
 );
 
 Label.displayName = 'Label';
 
-const Separator = () => <View className="my-2 border-t border-border" />;
+const Separator = () => <View className="border-border my-2 border-t" />;
 
 const useContext = DropdownMenuPrimitive.useRootContext;
 
@@ -194,7 +202,6 @@ export {
   Content,
   Item,
   Label,
-  // RadioItem,
   Root,
   Separator,
   SortItem,

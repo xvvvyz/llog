@@ -47,7 +47,7 @@ export default function Layout() {
         a.actor?.id !== profile.id &&
         (!NEEDS_RECORD.has(a.type) || a.record) &&
         (!ui.activityLastReadDate ||
-          (a.date as unknown as string) > ui.activityLastReadDate)
+          String(a.date ?? '') > ui.activityLastReadDate)
     ).length;
   }, [activities, profile.id, ui.activityLastReadDate]);
 
@@ -162,7 +162,7 @@ export default function Layout() {
               />
               {unreadCount > 0 && (
                 <View
-                  className="absolute items-center justify-center rounded-full bg-primary"
+                  className="bg-primary absolute items-center justify-center rounded-full"
                   style={{
                     right: -6,
                     top: -4,
@@ -171,7 +171,7 @@ export default function Layout() {
                     paddingHorizontal: 4,
                   }}
                 >
-                  <Text className="text-[10px] font-bold leading-none text-primary-foreground">
+                  <Text className="text-primary-foreground text-[10px] leading-none font-bold">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
                 </View>

@@ -28,7 +28,7 @@ export const LogEditSheet = () => {
           <Label>Name</Label>
           <Input
             maxLength={32}
-            onChangeText={(name) => updateLog({ id: log.id, name })}
+            onChangeText={(name) => updateLog({ id: log.id!, name })}
             value={log.name}
           />
         </View>
@@ -43,7 +43,7 @@ export const LogEditSheet = () => {
                   <Button
                     className="h-full w-full rounded-full border-4"
                     key={`color-${color}`}
-                    onPress={() => updateLog({ color, id: log.id })}
+                    onPress={() => updateLog({ color, id: log.id! })}
                     ripple="default"
                     style={{
                       backgroundColor:

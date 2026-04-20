@@ -1,13 +1,17 @@
 import { ImageSize } from '@/types/image-size';
 import { assetToFileLike } from '@/utilities/asset-to-file-like';
+import { PickedMediaAsset } from '@/utilities/picked-media';
 import { ImageManipulator } from 'expo-image-manipulator';
-import { ImagePickerAsset } from 'expo-image-picker';
 
-export const processImageAsset = async (asset: ImagePickerAsset) => {
+export const processImageAsset = async (asset: PickedMediaAsset) => {
   let newWidth = asset.width;
   let newHeight = asset.height;
 
-  if (asset.width > ImageSize.Record || asset.height > ImageSize.Record) {
+  if (
+    asset.width != null &&
+    asset.height != null &&
+    (asset.width > ImageSize.Record || asset.height > ImageSize.Record)
+  ) {
     const scale = Math.min(
       ImageSize.Record / asset.width,
       ImageSize.Record / asset.height
@@ -17,11 +21,20 @@ export const processImageAsset = async (asset: ImagePickerAsset) => {
     newHeight = Math.round(asset.height * scale);
   }
 
-  const manipulated = await ImageManipulator.manipulate(asset.uri)
-    .resize({ height: newHeight, width: newWidth })
-    .renderAsync();
+  let manipulation = ImageManipulator.manipulate(asset.uri);
+
+  if (newWidth != null && newHeight != null) {
+    manipulation = manipulation.resize({ height: newHeight, width: newWidth });
+  }
+
+  const manipulated = await manipulation.renderAsync();
 
   const { uri } = await manipulated.saveAsync();
 
-  return assetToFileLike({ ...asset, mimeType: 'image/jpeg', uri });
+  return assetToFileLike({
+    ...asset,
+    file: undefined,
+    mimeType: 'image/jpeg',
+    uri,
+  });
 };

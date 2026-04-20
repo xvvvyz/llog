@@ -1,3 +1,5 @@
+import { storeImageDeliveryUrl, uploadImage } from '@/api/files/images';
+import { createDirectVideoUpload } from '@/api/files/stream';
 import { type Db } from '@/api/middleware/db';
 import { fileLike } from '@/types/file-like';
 import { zValidator } from '@hono/zod-validator';
@@ -7,6 +9,13 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
 type MediaKind = 'image' | 'audio' | 'video';
+type MultipartMediaKind = Exclude<MediaKind, 'video'>;
+
+const PENDING_STREAM_URI_PREFIX = 'stream-pending:';
+const MAX_STREAM_UPLOAD_DURATION_SECONDS = 36000;
+
+const DIRECT_VIDEO_UPLOAD_MAX_DURATION_SECONDS =
+  MAX_STREAM_UPLOAD_DURATION_SECONDS;
 
 export const MAX_BYTES_BY_KIND: Record<MediaKind, number> = {
   image: 10 * 1024 * 1024,
@@ -14,7 +23,20 @@ export const MAX_BYTES_BY_KIND: Record<MediaKind, number> = {
   video: 100 * 1024 * 1024,
 };
 
+export const MAX_MULTIPART_MEDIA_BYTES = Math.max(
+  MAX_BYTES_BY_KIND.image,
+  MAX_BYTES_BY_KIND.audio
+);
+
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
+
+const normalizeDurationSeconds = (duration?: number) => {
+  if (!Number.isFinite(duration) || duration == null || duration < 0) {
+    return undefined;
+  }
+
+  return Math.round(duration);
+};
 
 export const uploadLimit = (maxFileBytes: number) =>
   bodyLimit({
@@ -53,34 +75,7 @@ export const validateUpload = (file: File, allowed: MediaKind[]) => {
   return kind;
 };
 
-export const uploadMedia = async ({
-  db: dbClient,
-  duration,
-  file,
-  keyPrefix,
-  linkField,
-  linkId,
-  media,
-  mediaId: clientMediaId,
-  order,
-  r2,
-  recordId,
-}: {
-  db: Db;
-  duration?: number;
-  file: z.infer<typeof fileLike>;
-  keyPrefix: string;
-  linkField: 'reply' | 'record';
-  linkId: string;
-  media: MediaBinding;
-  mediaId?: string;
-  order?: number;
-  r2: R2Bucket;
-  recordId: string;
-}) => {
-  const upload = requireUploadedFile(file);
-  const type = validateUpload(upload, ['image', 'audio', 'video']);
-
+const queryRecordForMediaUpload = async (dbClient: Db, recordId: string) => {
   const { records } = await dbClient.query({
     records: {
       $: { fields: ['id'], where: { id: recordId } },
@@ -100,49 +95,127 @@ export const uploadMedia = async ({
     throw new HTTPException(400, { message: 'Record has no team' });
   }
 
+  return record;
+};
+
+export const uploadMedia = async ({
+  creatorId,
+  db: dbClient,
+  duration,
+  env,
+  file,
+  keyPrefix,
+  linkField,
+  linkId,
+  mediaId: clientMediaId,
+  order,
+  recordId,
+}: {
+  creatorId?: string;
+  db: Db;
+  duration?: number;
+  env: CloudflareEnv;
+  file: z.infer<typeof fileLike>;
+  keyPrefix: string;
+  linkField: 'reply' | 'record';
+  linkId: string;
+  mediaId?: string;
+  order?: number;
+  recordId: string;
+}) => {
+  const upload = requireUploadedFile(file);
+  const type = validateUpload(upload, ['image', 'audio']) as MultipartMediaKind;
+
+  await queryRecordForMediaUpload(dbClient, recordId);
+
   const mediaId = clientMediaId || id();
-  const key = `${keyPrefix}/media/${mediaId}`;
-  let previewUri: string | undefined;
+  const normalizedDuration = normalizeDurationSeconds(duration);
+  const baseKey = `${keyPrefix}/media/${mediaId}`;
+  let assetKey: string | undefined;
+  let uri = baseKey;
 
-  if (type === 'video') {
-    const [, preview] = await Promise.all([
-      r2.put(key, upload, {
-        httpMetadata: { contentType: upload.type },
-      }),
-      media
-        .input(upload.stream())
-        .transform({ width: 500 })
-        .output({ mode: 'frame', time: '0s', format: 'jpg' })
-        .response(),
-    ]);
-
-    const previewKey = `${key}_preview`;
-
-    await r2.put(previewKey, await preview.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/jpeg' },
+  if (type === 'image') {
+    const uploadedImage = await uploadImage({
+      creator: creatorId,
+      env,
+      file: upload,
     });
 
-    previewUri = previewKey;
+    assetKey = storeImageDeliveryUrl(uploadedImage.deliveryUrl);
+    uri = uploadedImage.deliveryUrl;
   } else {
-    await r2.put(key, upload, {
+    await env.R2.put(baseKey, upload, {
       httpMetadata: { contentType: upload.type },
     });
+
+    assetKey = baseKey;
   }
 
   await dbClient.transact(
     dbClient.tx.media[mediaId]
       .update({
-        teamId,
+        ...(assetKey ? { assetKey } : {}),
         type,
-        uri: key,
-        ...((type === 'audio' || type === 'video') && duration != null
-          ? { duration }
+        uri,
+        ...(type === 'audio' && normalizedDuration != null
+          ? { duration: normalizedDuration }
           : {}),
         ...(order != null ? { order } : {}),
-        ...(previewUri ? { previewUri } : {}),
       })
       .link({ [linkField]: linkId })
   );
+
+  return {
+    assetKey,
+    mediaId,
+    type,
+    uri,
+  };
+};
+
+export const createDirectVideoUploadDraft = async ({
+  creatorId,
+  db: dbClient,
+  env,
+  linkField,
+  linkId,
+  mediaId: clientMediaId,
+  order,
+  recordId,
+}: {
+  creatorId?: string;
+  db: Db;
+  env: CloudflareEnv;
+  linkField: 'reply' | 'record';
+  linkId: string;
+  mediaId?: string;
+  order?: number;
+  recordId: string;
+}) => {
+  await queryRecordForMediaUpload(dbClient, recordId);
+  const mediaId = clientMediaId || id();
+
+  const { uid, uploadURL } = await createDirectVideoUpload(env, {
+    creator: creatorId,
+    maxDurationSeconds: DIRECT_VIDEO_UPLOAD_MAX_DURATION_SECONDS,
+  });
+
+  await dbClient.transact(
+    dbClient.tx.media[mediaId]
+      .update({
+        assetKey: uid,
+        type: 'video',
+        uri: `${PENDING_STREAM_URI_PREFIX}${uid}`,
+        ...(order != null ? { order } : {}),
+      })
+      .link({ [linkField]: linkId })
+  );
+
+  return {
+    mediaId,
+    streamUid: uid,
+    uploadURL,
+  };
 };
 
 export const mediaValidator = zValidator(
@@ -150,6 +223,14 @@ export const mediaValidator = zValidator(
   z.object({
     duration: z.coerce.number().optional(),
     file: fileLike,
+    mediaId: z.string().optional(),
+    order: z.coerce.number().optional(),
+  })
+);
+
+export const directVideoUploadValidator = zValidator(
+  'json',
+  z.object({
     mediaId: z.string().optional(),
     order: z.coerce.number().optional(),
   })

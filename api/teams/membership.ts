@@ -1,12 +1,14 @@
+import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { auth, db } from '@/api/middleware/db';
 import { Role } from '@/types/role';
+import * as p from '@/utilities/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { removeMember } from './helpers';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-app.post('/leave', db(), auth(), async (c) => {
+app.post('/:teamId/leave', db(), auth(), async (c) => {
   const user = c.var.user!;
   const teamId = c.req.param('teamId');
 
@@ -36,6 +38,74 @@ app.post('/leave', db(), auth(), async (c) => {
 
   await removeMember(c.var.db, role.id, profileId, teamId);
   return c.json({ status: 'left' });
+});
+
+app.delete('/:teamId', db({ asUser: true }), async (c) => {
+  const teamId = c.req.param('teamId');
+
+  if (!teamId) {
+    throw new HTTPException(400, { message: 'Invalid request' });
+  }
+
+  const { teams } = await c.var.db.query({
+    teams: {
+      $: { where: { id: teamId } },
+      image: {},
+      roles: {
+        $: {
+          fields: ['role'] as ['role'],
+          where: { userId: c.var.user.id },
+        },
+      },
+      logs: {
+        records: {
+          media: {},
+          replies: { media: {} },
+        },
+      },
+    },
+  });
+
+  const team = teams[0];
+
+  if (!team) {
+    return c.json({ success: true });
+  }
+
+  if (!p.isOwnerRole(team.roles?.[0]?.role)) {
+    throw new HTTPException(403, { message: 'Forbidden' });
+  }
+
+  const mediaToDelete: Array<{
+    assetKey?: string | null;
+    uri?: string | null;
+  }> = [];
+
+  if (team.image) {
+    mediaToDelete.push(team.image);
+  }
+
+  for (const log of team.logs ?? []) {
+    for (const record of log.records ?? []) {
+      for (const item of record.media ?? []) {
+        mediaToDelete.push(item);
+      }
+
+      for (const reply of record.replies ?? []) {
+        for (const item of reply.media ?? []) {
+          mediaToDelete.push(item);
+        }
+      }
+    }
+  }
+
+  await c.var.db.transact(c.var.db.tx.teams[teamId].delete());
+
+  if (mediaToDelete.length) {
+    await deleteMediaAssets(c.env, mediaToDelete);
+  }
+
+  return c.json({ success: true });
 });
 
 export default app;

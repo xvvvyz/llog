@@ -21,6 +21,15 @@ function useWebAudioPlayer(uri: string) {
     const audio = audioRef.current;
     if (!audio) return;
 
+    if (!src) {
+      setLoaded(false);
+      setPlaying(false);
+      setDuration(0);
+      audio.removeAttribute('src');
+      audio.load();
+      return;
+    }
+
     const syncDuration = () => {
       if (Number.isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration);
@@ -147,20 +156,16 @@ export const AudioPlayer = ({
   const progress = playerDuration > 0 ? displayTime / playerDuration : 0;
 
   React.useEffect(() => {
-    if (!player.playing) {
-      releasePlayback();
-    }
+    if (!player.playing) releasePlayback();
   }, [player.playing, releasePlayback]);
 
   React.useEffect(() => {
     if (!player.playing) {
       if (!scrubbing.current && playerDuration > 0) {
         const t = player.getCurrentTime();
-
-        if (t >= playerDuration - 0.05) {
-          setDisplayTime(playerDuration);
-        }
+        if (t >= playerDuration - 0.05) setDisplayTime(playerDuration);
       }
+
       return;
     }
 
@@ -182,7 +187,6 @@ export const AudioPlayer = ({
   const play = React.useCallback(
     async (fromTime: number) => {
       if (!player.loaded) return;
-
       await claimPlayback();
       await player.play(fromTime);
     },
@@ -190,12 +194,10 @@ export const AudioPlayer = ({
   );
 
   const handlePlay = () => {
+    if (!player.src) return;
     const fromTime = displayTime >= playerDuration ? 0 : displayTime;
     void play(fromTime);
-
-    if (fromTime === 0) {
-      setDisplayTime(0);
-    }
+    if (fromTime === 0) setDisplayTime(0);
   };
 
   React.useEffect(() => {
@@ -252,10 +254,14 @@ export const AudioPlayer = ({
 
   return (
     <View className="flex-row items-center">
-      <audio ref={player.audioRef} preload="metadata" src={player.src} />
+      <audio
+        ref={player.audioRef}
+        preload="metadata"
+        src={player.src ?? undefined}
+      />
       <Button
         className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
-        disabled={!player.loaded}
+        disabled={!player.loaded || !player.src}
         onPress={() => (player.playing ? pause() : handlePlay())}
         size="icon"
         variant="secondary"
@@ -292,7 +298,7 @@ export const AudioPlayer = ({
           />
         </div>
       </div>
-      <Text className="min-w-[40px] text-right text-xs text-muted-foreground">
+      <Text className="text-muted-foreground min-w-[40px] text-right text-xs">
         {formatTime(player.playing ? displayTime : playerDuration)}
       </Text>
     </View>

@@ -8,6 +8,9 @@ export const REACTION_EMOJIS = ['❤️', '🔥', '🎉', '👍', '👎'] as con
 
 export type Emoji = (typeof REACTION_EMOJIS)[number];
 
+export const isEmoji = (value: unknown): value is Emoji =>
+  typeof value === 'string' && REACTION_EMOJIS.some((emoji) => emoji === value);
+
 export const REACTION_ICONS = {
   '👍': ThumbsUp,
   '👎': ThumbsDown,

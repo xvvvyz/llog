@@ -16,7 +16,13 @@ import { SortDescending } from 'phosphor-react-native/lib/module/icons/SortDesce
 import { TextAa } from 'phosphor-react-native/lib/module/icons/TextAa';
 import { View } from 'react-native';
 
-export type SortBy = 'serverCreatedAt' | 'name' | 'color';
+export const LOG_SORT_VALUES = ['serverCreatedAt', 'name', 'color'] as const;
+
+export type SortBy = (typeof LOG_SORT_VALUES)[number];
+
+export const isSortBy = (value: unknown): value is SortBy =>
+  typeof value === 'string' &&
+  LOG_SORT_VALUES.some((sortValue) => sortValue === value);
 
 export const LogListActions = ({
   className,

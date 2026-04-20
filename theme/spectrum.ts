@@ -125,6 +125,9 @@ export const SPECTRUM = {
       darker: 'hsl(0 0% 42%)',
     },
   ],
-};
+} as const;
 
-export type Color = keyof typeof SPECTRUM.light;
+type ToNumber<T> = T extends `${infer N extends number}` ? N : never;
+type SpectrumIndex = Extract<keyof typeof SPECTRUM.light, `${number}`>;
+
+export type Color = ToNumber<SpectrumIndex>;

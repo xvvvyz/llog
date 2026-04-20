@@ -1,10 +1,19 @@
 import { cn } from '@/utilities/cn';
+import { styledInterop } from '@/utilities/styled-interop';
 import { LegendList, LegendListProps, LegendListRef } from '@legendapp/list';
-import { cssInterop } from 'nativewind';
 import * as React from 'react';
 import { View } from 'react-native';
 
-cssInterop(LegendList, { contentContainerClassName: 'contentContainerStyle' });
+const StyledLegendList = styledInterop(
+  LegendList,
+  { contentContainerClassName: 'contentContainerStyle' },
+  { passThrough: true }
+);
+
+export type ListHandle = {
+  scrollToEnd: (options?: { animated?: boolean; viewOffset?: number }) => void;
+  scrollToOffset: (params: { animated?: boolean; offset: number }) => void;
+};
 
 export const List = <T,>({
   horizontal,
@@ -14,20 +23,28 @@ export const List = <T,>({
   wrapperClassName,
   ...props
 }: LegendListProps<T> & {
-  listRef?: React.RefObject<LegendListRef | null>;
+  listRef?: React.Ref<ListHandle | null>;
   wrapperClassName?: string;
 }) => {
   const innerRef = React.useRef<LegendListRef>(null);
-  const ref = listRef ?? innerRef;
+
+  React.useImperativeHandle(
+    listRef,
+    () => ({
+      scrollToEnd: (options) => innerRef.current?.scrollToEnd(options),
+      scrollToOffset: (params) => innerRef.current?.scrollToOffset(params),
+    }),
+    []
+  );
 
   return (
     <View className={cn(!horizontal && 'flex-1', wrapperClassName)}>
-      <LegendList<T>
+      <StyledLegendList<T>
         horizontal={horizontal}
         onLoad={onLoad}
         onScroll={onScroll}
         recycleItems
-        ref={ref}
+        ref={innerRef}
         {...props}
       />
     </View>

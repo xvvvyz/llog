@@ -4,16 +4,14 @@ import {
   ImageContentFit,
   Image as ImagePrimitive,
   ImageStyle,
-  useImage,
 } from 'expo-image';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export const Image = ({
   className,
   contentFit,
   fill,
   height,
-  maintainAspectRatio = true,
   maxHeight,
   maxWidth,
   style,
@@ -25,29 +23,15 @@ export const Image = ({
   contentFit?: ImageContentFit;
   fill?: boolean;
   height?: number;
-  maintainAspectRatio?: boolean;
   maxHeight?: number;
   maxWidth?: number;
   style?: ImageStyle;
-  uri: string;
+  uri?: string | null;
   width?: number;
   wrapperClassName?: string;
 }) => {
   const src = useFileUriToSrc(uri);
-  const image = useImage(src);
-
-  if (!fill && image && (!height || !width)) {
-    const aspectRatio = image.width / image.height;
-
-    if (!width && !height) {
-      width = image.width;
-      height = image.height;
-    } else if (maintainAspectRatio && !width && height) {
-      width = height * aspectRatio;
-    } else if (maintainAspectRatio && !height && width) {
-      height = width / aspectRatio;
-    }
-  }
+  const source = src ? { uri: src } : undefined;
 
   if (!fill && width && height && (maxWidth || maxHeight)) {
     const aspectRatio = width / height;
@@ -65,28 +49,25 @@ export const Image = ({
 
   return (
     <View
-      className={cn('overflow-hidden bg-border', wrapperClassName)}
+      className={cn(
+        'bg-border overflow-hidden',
+        fill && 'relative flex-1 self-stretch',
+        wrapperClassName
+      )}
       style={
         fill
-          ? { borderCurve: 'continuous', flex: 1, position: 'relative' }
+          ? { borderCurve: 'continuous' }
           : { borderCurve: 'continuous', height, width }
       }
     >
       <ImagePrimitive
         className={className}
-        contentFit={fill ? 'cover' : contentFit}
+        contentFit={contentFit ?? (fill ? 'cover' : undefined)}
         contentPosition="center"
-        source={image}
+        source={source}
         style={
           fill
-            ? {
-                bottom: 0,
-                left: 0,
-                position: 'absolute',
-                right: 0,
-                top: 0,
-                ...style,
-              }
+            ? [StyleSheet.absoluteFillObject, style]
             : { height, width, ...style }
         }
       />

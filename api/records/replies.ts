@@ -1,3 +1,4 @@
+import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { auth, db } from '@/api/middleware/db';
 import * as push from '@/api/push/helpers';
 import { deleteActivities } from '@/utilities/delete-activities';
@@ -11,7 +12,7 @@ import { z } from 'zod/v4';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.post(
-  '/:replyId/publish',
+  '/:recordId/replies/:replyId/publish',
   db(),
   auth(),
   zValidator(
@@ -160,7 +161,7 @@ app.post(
   }
 );
 
-app.delete('/:replyId', db({ asUser: true }), async (c) => {
+app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
   const replyId = c.req.param('replyId');
   const recordId = c.req.param('recordId');
 
@@ -205,17 +206,19 @@ app.delete('/:replyId', db({ asUser: true }), async (c) => {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 
-  const r2Keys: string[] = [];
+  const mediaToDelete: Array<{
+    assetKey?: string | null;
+    uri?: string | null;
+  }> = [];
 
   for (const item of reply.media ?? []) {
-    r2Keys.push(item.uri as string);
-    if (item.previewUri) r2Keys.push(item.previewUri as string);
+    mediaToDelete.push(item);
   }
 
   await c.var.db.transact(c.var.db.tx.replies[replyId].delete());
 
   await Promise.all([
-    r2Keys.length ? c.env.R2.delete(r2Keys) : undefined,
+    mediaToDelete.length ? deleteMediaAssets(c.env, mediaToDelete) : undefined,
     deleteActivities(c.env, reply.activities ?? []),
   ]);
 

@@ -5,9 +5,10 @@ import { Text } from '@/components/ui/text';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { Media } from '@/types/media';
 import { cn } from '@/utilities/cn';
+import * as m from '@/utilities/media';
 import { router } from 'expo-router';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
 export const ActivityItemQuotedRecord = ({
   logColor,
@@ -26,18 +27,18 @@ export const ActivityItemQuotedRecord = ({
   return (
     <View
       className={cn(
-        'max-w-full overflow-hidden rounded-xl bg-input',
+        'bg-input max-w-full overflow-hidden rounded-xl',
         !audioMedia.length && 'self-start'
       )}
     >
       {!!text && (
         <View className="flex-row gap-3 p-3">
           <View
-            className="w-1 self-stretch rounded-full bg-border"
+            className="bg-border w-1 self-stretch rounded-full"
             style={logColor ? { backgroundColor: logColor.default } : undefined}
           />
           <Text
-            className="flex-1 text-sm text-muted-foreground"
+            className="text-muted-foreground flex-1 text-sm"
             numberOfLines={1}
           >
             {text}
@@ -46,21 +47,18 @@ export const ActivityItemQuotedRecord = ({
       )}
       {!!visualMedia.length && (
         <ScrollView
+          contentContainerClassName={cn('px-3 pb-3', text ? 'pt-0' : 'pt-3')}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 12,
-            paddingTop: text ? 0 : 12,
-            paddingBottom: 12,
-          }}
         >
           <View className="flex-row gap-0.5">
             {visualMedia.map((item) => (
               <Pressable
+                disabled={m.isVideoMediaProcessing(item)}
                 key={item.id}
-                className="overflow-hidden rounded-lg"
-                style={{ width: 64, height: 64 }}
+                className="size-16 overflow-hidden rounded-lg"
                 onPress={() =>
+                  !m.isVideoMediaProcessing(item) &&
                   router.push({
                     pathname: `/record/[recordId]/media`,
                     params: {
@@ -70,30 +68,21 @@ export const ActivityItemQuotedRecord = ({
                   })
                 }
               >
-                <Image
-                  fill
-                  uri={item.type === 'video' ? item.previewUri! : item.uri}
-                />
+                <Image fill uri={m.getVisualMediaThumbnailUri(item)} />
                 {item.type === 'video' && (
-                  <View
-                    className="absolute inset-0 items-center justify-center"
-                    pointerEvents="none"
-                  >
-                    <View
-                      className="items-center justify-center rounded-full"
-                      style={{
-                        width: 24,
-                        height: 24,
-                        backgroundColor: 'rgba(0,0,0,0.5)',
-                      }}
-                    >
-                      <Icon
-                        className="text-white"
-                        icon={Play}
-                        size={12}
-                        weight="fill"
-                      />
-                    </View>
+                  <View className="pointer-events-none absolute inset-0 items-center justify-center">
+                    {m.isVideoMediaProcessing(item) ? (
+                      <ActivityIndicator color="white" size="small" />
+                    ) : (
+                      <View className="size-6 items-center justify-center rounded-full bg-black/50">
+                        <Icon
+                          className="text-white"
+                          icon={Play}
+                          size={12}
+                          weight="fill"
+                        />
+                      </View>
+                    )}
                   </View>
                 )}
               </Pressable>

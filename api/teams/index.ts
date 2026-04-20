@@ -8,9 +8,9 @@ import redeem from './redeem';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.route('/invite-links', redeem);
-app.route('/:teamId/invite-links', invites);
-app.route('/:teamId/members', members);
-app.route('/:teamId/logs/:logId/members', logMembers);
-app.route('/:teamId', membership);
+app.route('/', invites);
+app.route('/', members);
+app.route('/', logMembers);
+app.route('/', membership);
 
 export default app;

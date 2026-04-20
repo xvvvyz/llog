@@ -8,6 +8,10 @@ import { UI } from '../theme/ui';
 import * as appleStartup from '../utilities/apple-startup-images';
 import { AppIcon } from './logo-mark';
 
+const log = (message: string) => {
+  console.log(`[generate-media] ${message}`);
+};
+
 const buildIco = (
   images: Array<{ data: Uint8Array; size: number }>
 ): Buffer => {
@@ -134,10 +138,15 @@ const iconOutputs = [
   },
 ] as const;
 
-for (const output of iconOutputs) {
+log(`Rendering ${iconOutputs.length} app icons`);
+
+for (const [index, output] of iconOutputs.entries()) {
   await mkdir(dirname(output.path), { recursive: true });
   await Bun.write(output.path, await renderPng(output));
+  log(`Icon ${index + 1}/${iconOutputs.length}: ${output.path}`);
 }
+
+log('Rendering notification badge');
 
 // Badge — monochrome (white pills, transparent background) for use in notification status bar
 await Bun.write(
@@ -158,6 +167,8 @@ await Bun.write(
     .asPng()
 );
 
+log('Rendering SVG favicon');
+
 // SVG favicon — clip rounds outer corners to match inner squares; used by Chrome/Firefox/Edge.
 // Generated at 512 for a high-resolution coordinate space; no explicit width/height so it scales freely.
 const faviconSvg = renderSvg({
@@ -168,6 +179,8 @@ const faviconSvg = renderSvg({
 });
 
 await Bun.write(join(process.cwd(), 'public', 'favicon.svg'), faviconSvg);
+
+log('Rendering favicon PNG assets');
 
 await Bun.write(
   join(process.cwd(), 'public', 'favicon-32.png'),
@@ -201,6 +214,8 @@ await Bun.write(
     { data: ico512, size: 512 },
   ])
 );
+
+log('Wrote favicon.ico');
 
 const startupOutputDirectory = join(process.cwd(), 'public', 'apple-startup');
 
@@ -255,6 +270,15 @@ const renderStartupImage = async ({
 await rm(startupOutputDirectory, { force: true, recursive: true });
 await mkdir(startupOutputDirectory, { recursive: true });
 
+const totalStartupImages =
+  appleStartup.appleStartupImageSpecs.length *
+  appleStartup.appleStartupImageOrientations.length *
+  appleStartup.appleStartupImageThemes.length;
+
+let startupImageIndex = 0;
+
+log(`Rendering ${totalStartupImages} Apple startup images`);
+
 for (const spec of appleStartup.appleStartupImageSpecs) {
   for (const orientation of appleStartup.appleStartupImageOrientations) {
     const width =
@@ -277,6 +301,13 @@ for (const spec of appleStartup.appleStartupImageSpecs) {
         .replace(/^\//, '');
 
       await Bun.write(join(process.cwd(), 'public', relativeHref), png);
+      startupImageIndex += 1;
+
+      log(
+        `Startup ${startupImageIndex}/${totalStartupImages}: ${relativeHref}`
+      );
     }
   }
 }
+
+log('Done');

@@ -32,10 +32,7 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
     () =>
       [...members].sort((a, b) => {
         const roleOrder =
-          (p.ROLE_SORT_ORDER[a.role as keyof typeof p.ROLE_SORT_ORDER] ??
-            Number.MAX_SAFE_INTEGER) -
-          (p.ROLE_SORT_ORDER[b.role as keyof typeof p.ROLE_SORT_ORDER] ??
-            Number.MAX_SAFE_INTEGER);
+          p.getRoleSortOrder(a.role) - p.getRoleSortOrder(b.role);
 
         if (roleOrder !== 0) return roleOrder;
         const aName = a.user?.profile?.name?.trim() ?? '';

@@ -15,6 +15,9 @@ export const isAdminRole = (role?: string | null): role is Role.Admin =>
 export const isMemberRole = (role?: string | null): role is Role.Member =>
   role === Role.Member;
 
+export const isRole = (role?: string | null): role is Role =>
+  isOwnerRole(role) || isAdminRole(role) || isMemberRole(role);
+
 export const isManagedRole = (
   role?: string | null
 ): role is Role.Owner | Role.Admin => isOwnerRole(role) || isAdminRole(role);
@@ -96,6 +99,9 @@ export const canManageLogMember = ({
   targetRole,
 }: Pick<TeamMemberPolicyInput, 'actorRole' | 'targetRole'>) =>
   isManagedRole(actorRole) && isMemberRole(targetRole);
+
+export const getRoleSortOrder = (role?: string | null) =>
+  isRole(role) ? ROLE_SORT_ORDER[role] : Number.MAX_SAFE_INTEGER;
 
 const toIdSet = (ids?: Iterable<string>) => new Set(ids ?? []);
 

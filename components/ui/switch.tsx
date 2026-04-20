@@ -9,7 +9,7 @@ export const Switch = React.forwardRef<
   <SwitchPrimitive.Root
     checked={checked}
     className={cn(
-      'h-7 w-12 justify-center rounded-full border border-border-secondary px-0.5 web:transition-colors',
+      'border-border-secondary web:transition-colors h-7 w-12 justify-center rounded-full border px-0.5',
       checked ? 'border-primary bg-primary' : 'bg-input',
       disabled && 'opacity-50',
       className
@@ -20,7 +20,7 @@ export const Switch = React.forwardRef<
   >
     <SwitchPrimitive.Thumb
       className={cn(
-        'size-5 rounded-full bg-background shadow-sm web:transition-transform',
+        'bg-background web:transition-transform size-5 rounded-full shadow-xs',
         checked ? 'translate-x-5' : 'translate-x-0'
       )}
     />

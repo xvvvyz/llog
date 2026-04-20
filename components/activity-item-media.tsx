@@ -3,9 +3,10 @@ import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { Media } from '@/types/media';
+import * as m from '@/utilities/media';
 import { router } from 'expo-router';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
-import { Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 
 export const ActivityItemMedia = ({
   media,
@@ -22,8 +23,10 @@ export const ActivityItemMedia = ({
   const renderMediaThumb = (item: Media) => (
     <Pressable
       className="flex-1"
+      disabled={m.isVideoMediaProcessing(item)}
       key={item.id}
       onPress={() =>
+        !m.isVideoMediaProcessing(item) &&
         recordId &&
         router.push({
           pathname: `/record/[recordId]/media`,
@@ -37,24 +40,23 @@ export const ActivityItemMedia = ({
     >
       <Image
         fill
-        uri={item.type === 'video' ? item.previewUri! : item.uri}
+        uri={m.getVisualMediaThumbnailUri(item)}
         wrapperClassName="rounded-2xl"
       />
       {item.type === 'video' && (
-        <View
-          className="absolute inset-0 items-center justify-center"
-          pointerEvents="none"
-        >
-          <View
-            className="items-center justify-center rounded-full"
-            style={{
-              width: 40,
-              height: 40,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-            }}
-          >
-            <Icon className="text-white" icon={Play} size={20} weight="fill" />
-          </View>
+        <View className="pointer-events-none absolute inset-0 items-center justify-center">
+          {m.isVideoMediaProcessing(item) ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <View className="size-10 items-center justify-center rounded-full bg-black/50">
+              <Icon
+                className="text-white"
+                icon={Play}
+                size={20}
+                weight="fill"
+              />
+            </View>
+          )}
         </View>
       )}
     </Pressable>
@@ -63,7 +65,7 @@ export const ActivityItemMedia = ({
   return (
     <>
       {!!visualMedia.length && (
-        <View className="gap-0.5" style={{ aspectRatio: 3 / 2 }}>
+        <View className="aspect-[3/2] gap-0.5">
           <View className="flex-1 flex-row gap-0.5">
             {visualMedia.slice(0, 3).map(renderMediaThumb)}
           </View>

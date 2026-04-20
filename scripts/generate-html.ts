@@ -1,21 +1,19 @@
 import { join } from 'node:path';
 import { UI } from '../theme/ui';
-import {
-  appleStartupImageOrientations,
-  appleStartupImageSpecs,
-  appleStartupImageThemes,
-  getAppleStartupImageHref,
-  getAppleStartupImageMedia,
-} from '../utilities/apple-startup-images';
+import * as appleStartupImages from '../utilities/apple-startup-images';
 
 const light = UI.light.background;
 const dark = UI.dark.background;
 
-const startupLinks = appleStartupImageSpecs.flatMap((spec) =>
-  appleStartupImageOrientations.flatMap((orientation) =>
-    appleStartupImageThemes.map((theme) => {
-      const media = getAppleStartupImageMedia({ ...spec, orientation, theme });
-      const href = getAppleStartupImageHref({
+const startupLinks = appleStartupImages.appleStartupImageSpecs.flatMap((spec) =>
+  appleStartupImages.appleStartupImageOrientations.flatMap((orientation) =>
+    appleStartupImages.appleStartupImageThemes.map((theme) => {
+      const media = appleStartupImages.getAppleStartupImageMedia({
+        ...spec,
+        orientation,
+        theme,
+      });
+      const href = appleStartupImages.getAppleStartupImageHref({
         id: spec.id,
         orientation,
         theme,

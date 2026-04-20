@@ -12,6 +12,8 @@ import { uploadReplyMedia } from '@/mutations/upload-reply-media';
 import { useRecord } from '@/queries/use-record';
 import { useReplyDraft } from '@/queries/use-reply-draft';
 import { db } from '@/utilities/db';
+import { PickedMediaAsset } from '@/utilities/picked-media';
+import { requestPostSubmitScroll } from '@/utilities/post-submit-scroll';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -56,7 +58,7 @@ export const ReplyCreateSheet = () => {
 
   const handleUploadMedia = React.useCallback(
     async (
-      asset: import('expo-image-picker').ImagePickerAsset,
+      asset: PickedMediaAsset,
       onProgress: (progress: number) => void,
       mediaId: string,
       order: number
@@ -95,7 +97,6 @@ export const ReplyCreateSheet = () => {
 
   const handleSubmit = React.useCallback(async () => {
     if (!hasContent || !replyId) return;
-
     setIsSubmitting(true);
 
     try {
@@ -106,6 +107,11 @@ export const ReplyCreateSheet = () => {
           id: replyId,
           text: text.trim(),
           recordId,
+        });
+        requestPostSubmitScroll({
+          id: recordId,
+          scope: 'record',
+          target: 'end',
         });
       }
 
@@ -118,7 +124,7 @@ export const ReplyCreateSheet = () => {
 
   return (
     <Sheet
-      className="rounded-t-2xl xs:rounded-t-4xl"
+      className="xs:rounded-t-4xl rounded-t-2xl"
       loading={isEdit ? !editReply : !!recordId && !draft.id}
       onDismiss={() => {
         sheetManager.close('reply-create');
@@ -128,15 +134,14 @@ export const ReplyCreateSheet = () => {
       portalName="reply-create"
     >
       <View className="mx-auto w-full max-w-lg gap-3 p-4 pb-8 sm:pt-8">
-        <View className="max-h-[40dvh] rounded-xl border border-border-secondary bg-input md:max-h-[60dvh]">
+        <View className="border-border-secondary bg-input max-h-[40dvh] rounded-xl border md:max-h-[60dvh]">
           <Textarea
             autoFocus
-            className="border-0 bg-transparent"
+            className="max-h-[180px] min-h-[120px] border-0 bg-transparent"
             maxLength={10240}
             numberOfLines={8}
             onChangeText={setText}
             placeholder="Add a reply"
-            style={{ maxHeight: 180, minHeight: 120 }}
             value={text}
           />
           {mediaPreview}

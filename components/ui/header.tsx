@@ -32,14 +32,14 @@ export const Header = ({
         {title ? (
           <View
             className={cn(
-              'absolute left-20 right-20 flex-1 justify-center md:static',
+              'absolute right-20 left-20 flex-1 justify-center md:static',
               titleWrapperClassName
             )}
           >
             {typeof title === 'string' ? (
               <Text
                 className={cn(
-                  'android:text-lg text-center font-medium md:text-left web:md:text-xl',
+                  'android:text-lg web:md:text-xl text-center font-medium md:text-left',
                   titleClassName
                 )}
                 numberOfLines={1}

@@ -5,6 +5,8 @@ import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
+import { storeImageDeliveryUrl, uploadImage } from './images';
+import { deleteMediaAssets } from './media-cleanup';
 import * as upload from './upload';
 
 const queryProfileWithImage = (userId: string) => ({
@@ -17,7 +19,7 @@ const queryProfileWithImage = (userId: string) => ({
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.put(
-  '/',
+  '/me/avatar',
   upload.uploadLimit(upload.MAX_BYTES_BY_KIND.image),
   db({ asUser: true }),
   zValidator('form', z.object({ file: fileLike })),
@@ -33,20 +35,25 @@ app.put(
     }
 
     if (profile.image) {
-      await c.env.R2.delete(profile.image.uri as string);
+      await c.var.db.transact(c.var.db.tx.media[profile.image.id].delete());
+      await deleteMediaAssets(c.env, [profile.image]);
     }
 
     const mediaId = id();
 
-    const stored = await c.env.R2.put(
-      `profiles/${c.var.user.id}/media/${mediaId}`,
+    const stored = await uploadImage({
+      creator: c.var.user.id,
+      env: c.env,
       file,
-      { httpMetadata: { contentType: file.type } }
-    );
+    });
 
     await c.var.db.transact(
       c.var.db.tx.media[mediaId]
-        .update({ type: 'image', uri: stored.key })
+        .update({
+          assetKey: storeImageDeliveryUrl(stored.deliveryUrl),
+          type: 'image',
+          uri: stored.deliveryUrl,
+        })
         .link({ profile: profile.id })
     );
 
@@ -54,13 +61,13 @@ app.put(
   }
 );
 
-app.delete('/', db({ asUser: true }), async (c) => {
+app.delete('/me/avatar', db({ asUser: true }), async (c) => {
   const result = await c.var.db.query(queryProfileWithImage(c.var.user.id));
   const profile = result.profiles?.[0];
 
   if (profile.image) {
     await c.var.db.transact(c.var.db.tx.media[profile.image.id].delete());
-    await c.env.R2.delete(profile.image.uri as string);
+    await deleteMediaAssets(c.env, [profile.image]);
   }
 
   return c.json({ success: true });

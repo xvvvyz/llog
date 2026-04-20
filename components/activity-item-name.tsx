@@ -12,7 +12,7 @@ export const ActivityItemName = ({ group }: { group: GroupedActivity }) => {
 
     return (
       <Text className="shrink text-sm leading-5" numberOfLines={1}>
-        <Text className="text-sm font-medium leading-5">{actor?.name}</Text>
+        <Text className="text-sm leading-5 font-medium">{actor?.name}</Text>
         {othersCount > 0 && (
           <Text className="text-muted-foreground">{` +${othersCount}`}</Text>
         )}
@@ -21,7 +21,7 @@ export const ActivityItemName = ({ group }: { group: GroupedActivity }) => {
   }
 
   return (
-    <Text className="shrink text-sm font-medium leading-5" numberOfLines={1}>
+    <Text className="shrink text-sm leading-5 font-medium" numberOfLines={1}>
       {actor?.name}
     </Text>
   );

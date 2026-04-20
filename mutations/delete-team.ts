@@ -1,6 +1,9 @@
-import { db } from '@/utilities/db';
+import { apiOrThrow } from '@/utilities/api';
 
-export const deleteTeam = async ({ id }: { id?: string }) => {
-  if (!id) return;
-  return db.transact(db.tx.teams[id].delete());
+export const deleteTeam = async ({ id }: { id: string }) => {
+  return apiOrThrow(
+    `/teams/${id}`,
+    { method: 'DELETE' },
+    'Failed to delete team'
+  );
 };

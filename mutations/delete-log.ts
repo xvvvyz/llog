@@ -1,8 +1,6 @@
 import { apiOrThrow } from '@/utilities/api';
 
-export const deleteLog = async ({ id }: { id?: string }) => {
-  if (!id) return;
-
+export const deleteLog = async ({ id }: { id: string }) => {
   return apiOrThrow(
     `/logs/${id}`,
     { method: 'DELETE' },

@@ -1,18 +1,19 @@
-import * as fileAccess from '@/utilities/file-access-token';
-import * as React from 'react';
+import { Image } from 'expo-image';
 
-export { useFileAccessToken } from '@/utilities/file-access-token';
+export type ResolvedFileUrl = string | null;
 
-export const fileUriToSrc = fileAccess.buildFileUrl;
+const isAbsoluteUri = (uri: string) => /^[a-z][a-z\d+.-]*:/i.test(uri);
 
-export const useFileUriToSrc = (uri: string) => {
-  const token = fileAccess.useFileAccessToken();
-  const tokenForUrl = fileAccess.isProtectedUri(uri) ? token : null;
-  return React.useMemo(
-    () => fileAccess.buildFileUrl(uri, tokenForUrl),
-    [uri, tokenForUrl]
-  );
+export const fileUriToSrc = (uri?: string | null): ResolvedFileUrl => {
+  if (!uri) return null;
+  if (isAbsoluteUri(uri)) return uri;
+  return `${process.env.EXPO_PUBLIC_API_URL}/files/${uri}`;
 };
 
-export const preloadMedia = async (uri: string) =>
-  fileAccess.buildFileUrl(uri, await fileAccess.resolveFileAccessToken());
+export const useFileUriToSrc = (uri?: string | null) => fileUriToSrc(uri);
+
+export const preloadMedia = async (uri: string) => {
+  const src = fileUriToSrc(uri);
+  if (!src) return;
+  await Image.prefetch(src);
+};

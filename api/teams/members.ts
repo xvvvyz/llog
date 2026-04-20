@@ -10,7 +10,7 @@ import { removeMember } from './helpers';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.patch(
-  '/:roleId',
+  '/:teamId/members/:roleId',
   db(),
   auth(),
   zValidator('json', z.object({ role: z.enum([Role.Admin, Role.Member]) })),
@@ -95,7 +95,7 @@ app.patch(
   }
 );
 
-app.delete('/:roleId', db(), auth(), async (c) => {
+app.delete('/:teamId/members/:roleId', db(), auth(), async (c) => {
   const user = c.var.user!;
   const teamId = c.req.param('teamId');
   const roleId = c.req.param('roleId');

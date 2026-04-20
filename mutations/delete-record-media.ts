@@ -1,4 +1,4 @@
-import { apiOrThrow } from '@/utilities/api';
+import { deleteMedia } from './media';
 
 export const deleteRecordMedia = async ({
   mediaId,
@@ -9,9 +9,8 @@ export const deleteRecordMedia = async ({
 }) => {
   if (!mediaId || !recordId) return;
 
-  await apiOrThrow(
-    `/files/records/${recordId}/media/${mediaId}`,
-    { method: 'DELETE' },
-    'Failed to delete record media'
-  );
+  await deleteMedia({
+    errorMessage: 'Failed to delete record media',
+    path: `/files/records/${recordId}/media/${mediaId}`,
+  });
 };

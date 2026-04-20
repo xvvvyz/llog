@@ -2,7 +2,7 @@ import { Button, ButtonProps } from '@/components/ui/button';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/utilities/cn';
 import { Href, Link, router } from 'expo-router';
-import { StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export const TabButton = ({
   children,
@@ -19,10 +19,11 @@ export const TabButton = ({
     typeof style === 'function' ? style : StyleSheet.flatten(style);
 
   const buttonStyle =
-    mobileTab && flattenedStyle && typeof flattenedStyle !== 'function'
-      ? (({ flex: _flex, ...restStyle }) => restStyle)(
-          flattenedStyle as ViewStyle
-        )
+    mobileTab &&
+    flattenedStyle &&
+    typeof flattenedStyle === 'object' &&
+    !Array.isArray(flattenedStyle)
+      ? (({ flex: _flex, ...restStyle }) => restStyle)(flattenedStyle)
       : flattenedStyle;
 
   const button = (

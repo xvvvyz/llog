@@ -1,5 +1,9 @@
 import { Platform } from 'react-native';
 
+const isStandaloneNavigator = (
+  value: Navigator
+): value is Navigator & { standalone?: boolean } => 'standalone' in value;
+
 export const isPwa = (): boolean => {
   if (Platform.OS !== 'web') return false;
 
@@ -7,6 +11,6 @@ export const isPwa = (): boolean => {
     window.matchMedia('(display-mode: standalone)').matches ||
     window.matchMedia('(display-mode: minimal-ui)').matches ||
     window.matchMedia('(display-mode: fullscreen)').matches ||
-    !!(navigator as Navigator & { standalone?: boolean }).standalone
+    (isStandaloneNavigator(navigator) && navigator.standalone === true)
   );
 };

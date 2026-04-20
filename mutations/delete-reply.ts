@@ -4,10 +4,9 @@ export const deleteReply = async ({
   id,
   recordId,
 }: {
-  id?: string;
-  recordId?: string;
+  id: string;
+  recordId: string;
 }) => {
-  if (!id || !recordId) return;
   return apiOrThrow(
     `/records/${recordId}/replies/${id}`,
     { method: 'DELETE' },

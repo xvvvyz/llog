@@ -26,14 +26,12 @@ export const createLog = async ({
   const profileIds = data.roles
     .filter((r) => p.isManagedRole(r.role))
     .map((r) => r.user?.profile?.id)
-    .filter(Boolean) as string[];
+    .filter((profileId): profileId is string => !!profileId);
 
   const logId = id ?? generateId();
 
   return db.transact([
-    db.tx.logs[logId]
-      .update({ color: color as number, name, teamId })
-      .link({ team: teamId }),
+    db.tx.logs[logId].update({ color, name, teamId }).link({ team: teamId }),
     ...profileIds.map((pid) => db.tx.logs[logId].link({ profiles: pid })),
   ]);
 };

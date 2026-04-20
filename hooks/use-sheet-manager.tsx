@@ -1,8 +1,7 @@
 import { SheetName } from '@/types/sheet-names';
 import { usePathname } from 'expo-router';
-import { Keyboard } from 'react-native';
-
 import * as React from 'react';
+import { Keyboard } from 'react-native';
 
 type SheetStackItem = {
   context?: string;
@@ -18,15 +17,7 @@ const SheetContext = React.createContext<{
   open: (name: SheetName, id?: string, context?: string) => void;
   someOpen: () => boolean;
   suspend: () => void;
-}>({
-  close: () => {},
-  getContext: () => undefined,
-  getId: () => undefined,
-  isOpen: () => false,
-  open: () => {},
-  someOpen: () => false,
-  suspend: () => {},
-});
+} | null>(null);
 
 export const SheetManagerProvider = ({
   children,

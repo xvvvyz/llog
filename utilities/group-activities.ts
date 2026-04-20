@@ -14,12 +14,25 @@ export type ActivityWithRelations = Activity & {
   team?: Team & { image?: Media };
 };
 
+export const GROUPED_ACTIVITY_TYPES = [
+  'member_joined',
+  'member_left',
+  'reaction_added',
+  'record_published',
+  'reply_posted',
+] as const;
+
+export type GroupedActivityType = (typeof GROUPED_ACTIVITY_TYPES)[number];
+
 export type GroupedActivity = {
   key: string;
-  type: string;
-  activities: ActivityWithRelations[];
+  type: GroupedActivityType;
+  activities: [ActivityWithRelations, ...ActivityWithRelations[]];
   latestDate: number | string;
 };
+
+const isGroupedActivityType = (value: string): value is GroupedActivityType =>
+  GROUPED_ACTIVITY_TYPES.some((type) => type === value);
 
 export const groupActivities = (
   activities: ActivityWithRelations[],
@@ -40,14 +53,16 @@ export const groupActivities = (
   const groups: GroupedActivity[] = [];
 
   for (const activity of filtered) {
+    if (!isGroupedActivityType(activity.type)) continue;
+
     if (activity.type === 'reaction_added') {
       const lastGroup = groups[groups.length - 1];
       const targetId = activity.reply?.id ?? activity.record?.id;
 
       const lastTargetId =
         lastGroup?.type === 'reaction_added'
-          ? (lastGroup.activities[0]?.reply?.id ??
-            lastGroup.activities[0]?.record?.id)
+          ? (lastGroup.activities[0].reply?.id ??
+            lastGroup.activities[0].record?.id)
           : undefined;
 
       if (lastGroup?.type === 'reaction_added' && targetId === lastTargetId) {

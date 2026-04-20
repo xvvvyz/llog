@@ -35,7 +35,7 @@ export const LogTagsSheetTag = ({
   return (
     <View
       className={cn(
-        'h-10 w-40 flex-row items-center rounded-full border border-border-secondary bg-input',
+        'border-border-secondary bg-input h-10 w-40 flex-row items-center rounded-full border',
         className
       )}
       style={{ borderCurve: 'continuous' }}
@@ -69,7 +69,7 @@ export const LogTagsSheetTag = ({
             <Icon className="text-muted-foreground" icon={X} />
           </Button>
         ) : (
-          <View className="absolute right-0 top-0 size-10 cursor-grab">
+          <View className="absolute top-0 right-0 size-10 cursor-grab">
             <Sortable.Handle>
               <View className="size-10 items-center justify-center">
                 <Icon className="text-placeholder" icon={DotsSixVertical} />

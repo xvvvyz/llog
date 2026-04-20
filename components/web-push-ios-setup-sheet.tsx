@@ -57,18 +57,18 @@ export const WebPushIosSetupSheet = () => {
     >
       <View className="mx-auto w-full max-w-md p-8">
         <Icon
-          className="mb-6 self-center text-primary"
+          className="text-primary mb-6 self-center"
           icon={BellRinging}
           size={64}
         />
         <Text className="text-center text-2xl">Web notifications on iOS</Text>
         <View
-          className="mt-8 gap-2.5 rounded-2xl bg-input px-6 py-5"
+          className="bg-input mt-8 gap-2.5 rounded-2xl px-6 py-5"
           style={{ borderCurve: 'continuous' }}
         >
           {steps.map((step, index) => (
             <View className="flex-row items-start" key={step.text}>
-              <Text className="w-7 pr-2 text-placeholder">{index + 1}.</Text>
+              <Text className="text-placeholder w-7 pr-2">{index + 1}.</Text>
               <View className="min-w-0 flex-1 flex-row flex-wrap items-center gap-x-1.5 gap-y-1">
                 {step.prefix && (
                   <Text className="text-muted-foreground">{step.prefix}</Text>
@@ -86,7 +86,7 @@ export const WebPushIosSetupSheet = () => {
           ))}
         </View>
         <Button
-          className="text-white web:hover:opacity-90"
+          className="web:hover:opacity-90 text-white"
           onPress={() => sheetManager.close('web-push-ios-setup')}
           wrapperClassName="mt-12"
         >

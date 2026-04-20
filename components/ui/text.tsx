@@ -14,7 +14,7 @@ const Text = React.forwardRef<TextRef, SlottableTextProps>(
     return (
       <Component
         className={cn(
-          'native:leading-tight select-none text-base text-foreground',
+          'native:leading-tight text-foreground text-base select-none',
           textClass,
           className
         )}

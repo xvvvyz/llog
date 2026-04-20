@@ -4,9 +4,9 @@ import * as React from 'react';
 
 const breakpoints = Object.entries(
   tailwindConfig.theme?.extend?.screens ?? {}
-).reduce(
+).reduce<Record<string, number>>(
   (acc, [key, value]) => ({ ...acc, [key]: parseInt(value) }),
-  {} as Record<string, number>
+  {}
 );
 
 export const useBreakpoints = () => {
