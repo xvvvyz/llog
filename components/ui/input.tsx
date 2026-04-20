@@ -1,10 +1,10 @@
 import { cn } from '@/utilities/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { TextInput } from 'react-native';
+import { StyleSheet, TextInput } from 'react-native';
 
 const inputVariants = cva(
-  'text-base native:leading-5 border border-border-secondary web:placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden',
+  'text-base native:text-base native:leading-5 border border-border-secondary web:placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden',
   {
     defaultVariants: {
       size: 'default',
@@ -23,46 +23,51 @@ const Input = React.forwardRef<
   React.ComponentRef<typeof TextInput>,
   React.ComponentPropsWithoutRef<typeof TextInput> &
     VariantProps<typeof inputVariants>
->(({ className, size, value, onChangeText, defaultValue, ...props }, ref) => {
-  const [localValue, setLocalValue] = React.useState(
-    value ?? defaultValue ?? ''
-  );
+>(
+  (
+    { className, size, style, value, onChangeText, defaultValue, ...props },
+    ref
+  ) => {
+    const [localValue, setLocalValue] = React.useState(
+      value ?? defaultValue ?? ''
+    );
 
-  React.useEffect(() => {
-    if (value !== undefined) setLocalValue(value);
-  }, [value]);
+    React.useEffect(() => {
+      if (value !== undefined) setLocalValue(value);
+    }, [value]);
 
-  const handleChangeText = React.useCallback(
-    (text: string) => {
-      setLocalValue(text);
-      if (onChangeText) React.startTransition(() => onChangeText(text));
-    },
-    [onChangeText]
-  );
+    const handleChangeText = React.useCallback(
+      (text: string) => {
+        setLocalValue(text);
+        if (onChangeText) React.startTransition(() => onChangeText(text));
+      },
+      [onChangeText]
+    );
 
-  return (
-    <TextInput
-      autoCapitalize="none"
-      autoComplete="off"
-      autoCorrect={false}
-      blurOnSubmit={false}
-      className={cn(
-        inputVariants({ size }),
-        props.editable === false && 'web:cursor-not-allowed opacity-50',
-        className
-      )}
-      lineBreakModeIOS="clip"
-      onChangeText={handleChangeText}
-      placeholderTextColorClassName="accent-placeholder"
-      ref={ref}
-      returnKeyType="done"
-      style={{ borderCurve: 'continuous' }}
-      submitBehavior="submit"
-      value={localValue}
-      {...props}
-    />
-  );
-});
+    return (
+      <TextInput
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect={false}
+        blurOnSubmit={false}
+        className={cn(
+          inputVariants({ size }),
+          props.editable === false && 'web:cursor-not-allowed opacity-50',
+          className
+        )}
+        lineBreakModeIOS="clip"
+        onChangeText={handleChangeText}
+        placeholderTextColorClassName="accent-placeholder"
+        ref={ref}
+        returnKeyType="done"
+        style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
+        submitBehavior="submit"
+        value={localValue}
+        {...props}
+      />
+    );
+  }
+);
 
 Input.displayName = 'Input';
 

@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useMediaComposer } from '@/hooks/use-media-composer';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useWindowDimensions } from '@/hooks/use-window-dimensions';
 import { deleteReplyMedia } from '@/mutations/delete-reply-media';
 import { publishReply } from '@/mutations/publish-reply';
 import { updateReply } from '@/mutations/update-reply';
@@ -15,12 +16,13 @@ import { db } from '@/utilities/db';
 import { PickedMediaAsset } from '@/utilities/picked-media';
 import { requestPostSubmitScroll } from '@/utilities/post-submit-scroll';
 import * as React from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 export const ReplyCreateSheet = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [text, setText] = React.useState('');
   const sheetManager = useSheetManager();
+  const windowDimensions = useWindowDimensions();
 
   const editRecordId = sheetManager.getContext('reply-create');
   const isEdit = !!editRecordId;
@@ -89,6 +91,19 @@ export const ReplyCreateSheet = () => {
 
   const hasContent = !!text.trim() || mediaCount > 0;
 
+  const nativeComposerMaxHeight =
+    Platform.OS === 'web'
+      ? undefined
+      : Math.round(windowDimensions.height * 0.4);
+
+  const nativeTextareaStyle =
+    Platform.OS === 'web'
+      ? undefined
+      : {
+          maxHeight: 180,
+          minHeight: 120,
+        };
+
   const handleSubmit = React.useCallback(async () => {
     if (!hasContent || !replyId) return;
     setIsSubmitting(true);
@@ -128,7 +143,14 @@ export const ReplyCreateSheet = () => {
       portalName="reply-create"
     >
       <View className="mx-auto w-full max-w-lg gap-3 p-4 pb-8 sm:pt-8">
-        <View className="border-border-secondary bg-input max-h-[40dvh] rounded-xl border md:max-h-[60dvh]">
+        <View
+          className="border-border-secondary bg-input web:max-h-[40dvh] web:md:max-h-[60dvh] rounded-xl border"
+          style={
+            nativeComposerMaxHeight
+              ? { maxHeight: nativeComposerMaxHeight }
+              : undefined
+          }
+        >
           <Textarea
             autoFocus
             className="max-h-[180px] min-h-[120px] border-0 bg-transparent"
@@ -136,12 +158,13 @@ export const ReplyCreateSheet = () => {
             numberOfLines={8}
             onChangeText={setText}
             placeholder="Add a reply"
+            style={nativeTextareaStyle}
             value={text}
           />
           {mediaPreview}
         </View>
-        <View className="flex-row justify-end gap-3">
-          {toolbar}
+        <View className="flex-row items-center gap-3 px-4">
+          <View className="flex-1 flex-row items-center gap-3">{toolbar}</View>
           <Button
             className="web:hover:opacity-90 active:opacity-90"
             disabled={isBusy || isSubmitting || !hasContent}

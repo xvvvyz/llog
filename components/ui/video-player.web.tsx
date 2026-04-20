@@ -31,7 +31,6 @@ export const VideoPlayer = ({
   maxHeight,
   maxWidth,
   muted = true,
-  onFullscreenReady,
   onPlayingChange,
   onTimeChange,
   thumbnailUri,
@@ -43,8 +42,6 @@ export const VideoPlayer = ({
   maxHeight?: number;
   maxWidth?: number;
   muted?: boolean;
-  nativeControls?: boolean;
-  onFullscreenReady?: (enterFullscreen: () => void) => void;
   onPlayingChange?: (isPlaying: boolean) => void;
   onTimeChange?: (currentTime: number, duration: number) => void;
   thumbnailUri?: string | null;
@@ -351,46 +348,6 @@ export const VideoPlayer = ({
       void play();
     }
   }, [autoPlay, play, src]);
-
-  React.useEffect(() => {
-    const video = ref.current;
-    if (!video || !onFullscreenReady || !src) return;
-
-    const onFullscreenChange = () => {
-      if (!document.fullscreenElement) video.controls = false;
-    };
-
-    const webkitVideo = video as HTMLVideoElement & {
-      webkitDisplayingFullscreen?: boolean;
-      webkitEnterFullscreen?: () => void;
-    };
-
-    const onWebkitFullscreenChange = () => {
-      if (!webkitVideo.webkitDisplayingFullscreen) video.controls = false;
-    };
-
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    video.addEventListener('webkitendfullscreen', onWebkitFullscreenChange);
-
-    onFullscreenReady(() => {
-      video.controls = true;
-
-      if (webkitVideo.webkitEnterFullscreen) {
-        webkitVideo.webkitEnterFullscreen();
-      } else {
-        video.requestFullscreen?.();
-      }
-    });
-
-    return () => {
-      document.removeEventListener('fullscreenchange', onFullscreenChange);
-
-      video.removeEventListener(
-        'webkitendfullscreen',
-        onWebkitFullscreenChange
-      );
-    };
-  }, [onFullscreenReady, src]);
 
   return (
     <div

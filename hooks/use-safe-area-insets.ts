@@ -3,6 +3,6 @@ import { useSafeAreaInsets as _useSafeAreaInsets } from 'react-native-safe-area-
 
 export function useSafeAreaInsets() {
   const insets = _useSafeAreaInsets();
-  if (isPwa()) return { ...insets, bottom: 24 };
+  if (isPwa()) return { ...insets, bottom: 28 };
   return insets;
 }

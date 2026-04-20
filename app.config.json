@@ -4,7 +4,6 @@
     "slug": "llog",
     "version": "0.0.1",
     "platforms": ["ios", "android", "web"],
-    "orientation": "portrait",
     "scheme": "llog",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",

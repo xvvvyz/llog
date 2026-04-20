@@ -18,5 +18,4 @@ const withReanimatedConfig =
 module.exports = withUniwindConfig(withReanimatedConfig, {
   cssEntryFile: './theme/global.css',
   dtsFile: './uniwind-types.d.ts',
-  polyfills: { rem: 17 },
 });

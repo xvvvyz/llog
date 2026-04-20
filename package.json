@@ -7,7 +7,7 @@
     "android": "bunx concurrently --raw 'bun run:android' 'bun dev:worker'",
     "build:web": "bun run generate:assets && expo export --platform web --output-dir web",
     "dev:tunnel": "source .env.development && cloudflared tunnel --loglevel debug run --token $CLOUDFLARED_TOKEN",
-    "dev:worker": "wrangler dev",
+    "dev:worker": "wrangler dev --ip 0.0.0.0",
     "doc": "bunx expo-doctor",
     "format": "prettier --write .",
     "generate:assets": "bun scripts/generate-theme.ts && bun scripts/generate-media.tsx && bun scripts/generate-html.ts",

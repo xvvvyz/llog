@@ -5,6 +5,20 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import * as React from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
+const DEFAULT_SEEK_TOLERANCE = {
+  toleranceAfter: 0,
+  toleranceBefore: 0,
+} as const;
+
+const SCRUB_SEEK_TOLERANCE = {
+  toleranceAfter: 0.75,
+  toleranceBefore: 0.75,
+} as const;
+
+const SCRUB_PREVIEW_SEEK_INTERVAL_MS = 40;
+const SCRUB_PREVIEW_STEP_SECONDS = 0.05;
+const SCRUB_PREVIEW_MIN_DELTA_SECONDS = 0.03;
+
 export interface VideoPlayerHandle {
   pause: () => void;
   play: () => void;
@@ -21,8 +35,6 @@ export const VideoPlayer = ({
   maxHeight,
   maxWidth,
   muted = true,
-  nativeControls = false,
-  onFullscreenReady,
   onPlayingChange,
   onTimeChange,
   thumbnailUri,
@@ -34,27 +46,37 @@ export const VideoPlayer = ({
   maxHeight?: number;
   maxWidth?: number;
   muted?: boolean;
-  nativeControls?: boolean;
-  onFullscreenReady?: (enterFullscreen: () => void) => void;
   onPlayingChange?: (isPlaying: boolean) => void;
   onTimeChange?: (currentTime: number, duration: number) => void;
   thumbnailUri?: string | null;
   uri: string;
 }) => {
   const source = useFileUriToSrc(uri);
-  const videoViewRef = React.useRef<VideoView>(null);
+  const onPlayingChangeRef = React.useRef(onPlayingChange);
+  const onTimeChangeRef = React.useRef(onTimeChange);
   const [isBuffering, setIsBuffering] = React.useState(Boolean(source));
+  const [isScrubbing, setIsScrubbing] = React.useState(false);
+  const scrubbingEnabledRef = React.useRef(false);
+  const lastScrubSeekAtRef = React.useRef(0);
+  const lastScrubSeekTargetRef = React.useRef<number | null>(null);
 
   const [hasRenderedFirstFrame, setHasRenderedFirstFrame] =
     React.useState(false);
-  const showThumbnail =
-    Boolean(thumbnailUri) && (isBuffering || !hasRenderedFirstFrame);
+
+  const markFirstFrameRendered = React.useCallback(() => {
+    setHasRenderedFirstFrame(true);
+  }, []);
+
+  const showThumbnail = Boolean(thumbnailUri) && !hasRenderedFirstFrame;
+
+  const showLoadingIndicator =
+    isBuffering && !isScrubbing && !hasRenderedFirstFrame;
 
   const player = useVideoPlayer(source, (player) => {
     player.loop = true;
     player.muted = muted;
     player.timeUpdateEventInterval = 1 / 60;
-    player.seekTolerance = { toleranceAfter: 0, toleranceBefore: 0 };
+    player.seekTolerance = DEFAULT_SEEK_TOLERANCE;
   });
 
   const pausePlayback = React.useCallback(() => {
@@ -78,13 +100,64 @@ export const VideoPlayer = ({
       void startPlayback();
     },
     seekTo: (seconds: number) => {
+      if (scrubbingEnabledRef.current) {
+        const now = Date.now();
+
+        const quantizedSeconds =
+          Math.round(seconds / SCRUB_PREVIEW_STEP_SECONDS) *
+          SCRUB_PREVIEW_STEP_SECONDS;
+
+        const currentTime = Number.isFinite(player.currentTime)
+          ? player.currentTime
+          : 0;
+
+        const lastTarget = lastScrubSeekTargetRef.current;
+
+        const isEffectivelyUnchanged =
+          Math.abs(currentTime - quantizedSeconds) <
+            SCRUB_PREVIEW_MIN_DELTA_SECONDS ||
+          (lastTarget != null &&
+            Math.abs(lastTarget - quantizedSeconds) <
+              SCRUB_PREVIEW_MIN_DELTA_SECONDS);
+
+        if (
+          isEffectivelyUnchanged ||
+          now - lastScrubSeekAtRef.current < SCRUB_PREVIEW_SEEK_INTERVAL_MS
+        ) {
+          return;
+        }
+
+        lastScrubSeekAtRef.current = now;
+        lastScrubSeekTargetRef.current = quantizedSeconds;
+        player.currentTime = quantizedSeconds;
+        onTimeChangeRef.current?.(quantizedSeconds, player.duration);
+        return;
+      }
+
+      lastScrubSeekTargetRef.current = seconds;
       player.currentTime = seconds;
-      onTimeChange?.(player.currentTime, player.duration);
+      onTimeChangeRef.current?.(player.currentTime, player.duration);
     },
     setScrubbingEnabled: (enabled: boolean) => {
+      scrubbingEnabledRef.current = enabled;
+      setIsScrubbing(enabled);
+
+      player.seekTolerance = enabled
+        ? SCRUB_SEEK_TOLERANCE
+        : DEFAULT_SEEK_TOLERANCE;
+
       player.scrubbingModeOptions = {
         scrubbingModeEnabled: enabled,
+        allowSkippingMediaCodecFlush: enabled,
+        enableDynamicScheduling: enabled,
+        increaseCodecOperatingRate: enabled,
+        useDecodeOnlyFlag: enabled,
       };
+
+      if (enabled) {
+        lastScrubSeekAtRef.current = 0;
+        lastScrubSeekTargetRef.current = null;
+      }
     },
     toggleMute: () => {
       player.muted = !player.muted;
@@ -102,14 +175,36 @@ export const VideoPlayer = ({
   }));
 
   React.useEffect(() => {
+    onPlayingChangeRef.current = onPlayingChange;
+  }, [onPlayingChange]);
+
+  React.useEffect(() => {
+    onTimeChangeRef.current = onTimeChange;
+  }, [onTimeChange]);
+
+  React.useEffect(() => {
     player.muted = muted;
   }, [muted, player]);
 
   React.useEffect(() => {
     setIsBuffering(Boolean(source));
+    setIsScrubbing(false);
+    scrubbingEnabledRef.current = false;
+    lastScrubSeekAtRef.current = 0;
+    lastScrubSeekTargetRef.current = null;
+    player.seekTolerance = DEFAULT_SEEK_TOLERANCE;
+
+    player.scrubbingModeOptions = {
+      scrubbingModeEnabled: false,
+      allowSkippingMediaCodecFlush: false,
+      enableDynamicScheduling: false,
+      increaseCodecOperatingRate: false,
+      useDecodeOnlyFlag: false,
+    };
+
     setHasRenderedFirstFrame(false);
-    onTimeChange?.(0, 0);
-  }, [onTimeChange, source, thumbnailUri]);
+    onTimeChangeRef.current?.(0, 0);
+  }, [player, source, thumbnailUri]);
 
   React.useEffect(() => {
     if (!source) {
@@ -122,17 +217,22 @@ export const VideoPlayer = ({
     });
 
     const playingSub = player.addListener('playingChange', ({ isPlaying }) => {
+      if (isPlaying) markFirstFrameRendered();
       if (isPlaying) void claimPlayback();
       else releasePlayback();
-      onPlayingChange?.(isPlaying);
+      onPlayingChangeRef.current?.(isPlaying);
     });
 
     const sourceLoadSub = player.addListener('sourceLoad', ({ duration }) => {
-      onTimeChange?.(player.currentTime, duration);
+      onTimeChangeRef.current?.(player.currentTime, duration);
     });
 
-    const timeUpdateSub = player.addListener('timeUpdate', ({ currentTime }) =>
-      onTimeChange?.(currentTime, player.duration)
+    const timeUpdateSub = player.addListener(
+      'timeUpdate',
+      ({ currentTime }) => {
+        if (currentTime > 0) markFirstFrameRendered();
+        onTimeChangeRef.current?.(currentTime, player.duration);
+      }
     );
 
     return () => {
@@ -141,24 +241,12 @@ export const VideoPlayer = ({
       sourceLoadSub.remove();
       timeUpdateSub.remove();
     };
-  }, [
-    claimPlayback,
-    onPlayingChange,
-    onTimeChange,
-    player,
-    releasePlayback,
-    source,
-  ]);
+  }, [claimPlayback, markFirstFrameRendered, player, releasePlayback, source]);
 
   React.useEffect(() => {
     if (!autoPlay) return;
     void startPlayback();
   }, [autoPlay, startPlayback]);
-
-  React.useEffect(() => {
-    if (!onFullscreenReady) return;
-    onFullscreenReady(() => videoViewRef.current?.enterFullscreen());
-  }, [onFullscreenReady]);
 
   return (
     <View
@@ -167,10 +255,8 @@ export const VideoPlayer = ({
     >
       <VideoView
         contentFit={contentFit}
-        nativeControls={nativeControls}
-        onFirstFrameRender={() => setHasRenderedFirstFrame(true)}
+        onFirstFrameRender={markFirstFrameRendered}
         player={player}
-        ref={videoViewRef}
         surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
         style={[StyleSheet.absoluteFill, showThumbnail && { opacity: 0 }]}
       />
@@ -179,7 +265,7 @@ export const VideoPlayer = ({
           <Image fill contentFit={contentFit} uri={thumbnailUri} />
         </View>
       )}
-      {isBuffering && (
+      {showLoadingIndicator && (
         <View className="absolute inset-0 items-center justify-center">
           <ActivityIndicator color="white" />
         </View>

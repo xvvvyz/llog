@@ -27,18 +27,17 @@ export const ActivityItemQuotedRecord = ({
   return (
     <View
       className={cn(
-        'bg-input max-w-full overflow-hidden rounded-xl',
-        !audioMedia.length && 'self-start'
+        'bg-input max-w-full self-start overflow-hidden rounded-xl'
       )}
     >
       {!!text && (
-        <View className="flex-row gap-3 p-3">
+        <View className="max-w-full min-w-0 flex-row gap-3 p-3">
           <View
             className="bg-border w-1 self-stretch rounded-full"
             style={logColor ? { backgroundColor: logColor.default } : undefined}
           />
           <Text
-            className="text-muted-foreground flex-1 text-sm"
+            className="text-muted-foreground max-w-full shrink text-sm"
             numberOfLines={1}
           >
             {text}

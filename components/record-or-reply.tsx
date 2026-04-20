@@ -193,12 +193,12 @@ export const RecordOrReply = ({
             <View className="flex-row items-start justify-between gap-2">
               <View className="flex-1 flex-row items-baseline gap-2">
                 <Text
-                  className="shrink leading-5 font-medium"
+                  className="shrink leading-tight font-medium"
                   numberOfLines={1}
                 >
                   {record.author?.name}
                 </Text>
-                <Text className="text-muted-foreground shrink-0 text-sm leading-5">
+                <Text className="text-muted-foreground shrink-0 text-sm leading-tight">
                   {formatDate(record.date)}
                 </Text>
               </View>
@@ -277,10 +277,10 @@ export const RecordOrReply = ({
       <View className="flex-row items-start gap-3 p-4 pb-0">
         <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
         <View className="flex-1">
-          <Text className="leading-5 font-medium" numberOfLines={1}>
+          <Text className="leading-tight font-medium" numberOfLines={1}>
             {record.author?.name}
           </Text>
-          <Text className="text-muted-foreground text-sm leading-5">
+          <Text className="text-muted-foreground text-sm leading-tight">
             {formatDate(record.date)}
           </Text>
         </View>

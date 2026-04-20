@@ -148,13 +148,16 @@ export const SearchResultItem = ({
             <Avatar
               avatar={result.author.image?.uri}
               id={result.author.id}
-              size={34}
+              size={36}
             />
           )}
-          <View className="-mt-0.5 flex-1">
+          <View className="flex-1">
             <View className="flex-row items-baseline justify-between gap-2">
               {result.author && (
-                <Text className="shrink text-sm font-medium" numberOfLines={1}>
+                <Text
+                  className="shrink text-sm leading-tight font-medium"
+                  numberOfLines={1}
+                >
                   {result.author.name}
                 </Text>
               )}
@@ -182,7 +185,7 @@ export const SearchResultItem = ({
               )}
             </View>
             {result.date && (
-              <Text className="text-muted-foreground text-xs">
+              <Text className="text-muted-foreground text-xs leading-tight">
                 {formatDate(result.date)}
               </Text>
             )}

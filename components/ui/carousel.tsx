@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
+import { Text } from '@/components/ui/text';
 import * as video from '@/components/ui/video-player';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useWindowDimensions } from '@/hooks/use-window-dimensions';
@@ -10,7 +11,6 @@ import { cn } from '@/utilities/cn';
 import { db } from '@/utilities/db';
 import { preloadMedia } from '@/utilities/file-uri-to-src';
 import { formatTime } from '@/utilities/format-time';
-import { CornersOut } from 'phosphor-react-native/lib/module/icons/CornersOut';
 import { SpeakerHigh } from 'phosphor-react-native/lib/module/icons/SpeakerHigh';
 import { SpeakerSlash } from 'phosphor-react-native/lib/module/icons/SpeakerSlash';
 import * as React from 'react';
@@ -19,7 +19,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   View,
 } from 'react-native';
 import {
@@ -50,7 +49,6 @@ export const Carousel = ({
   const scrollRef = React.useRef<ScrollView>(null);
   const windowDimensions = useWindowDimensions();
   const activeIndex = useSharedValue(defaultIndex);
-  const enterFullscreenRef = React.useRef<(() => void) | null>(null);
   const hasAppliedInitialScroll = React.useRef(false);
   const previousContentWidthRef = React.useRef(0);
   const videoHandleRef = React.useRef<video.VideoPlayerHandle>(null);
@@ -65,7 +63,6 @@ export const Carousel = ({
   const [activeIndexState, setActiveIndexState] = React.useState(defaultIndex);
   const [videoCurrentTime, setVideoCurrentTime] = React.useState(0);
   const [videoDuration, setVideoDuration] = React.useState(0);
-  const [isVideoScrubbing, setIsVideoScrubbing] = React.useState(false);
   const isScrubbingVideoRef = React.useRef(false);
   const wasPlayingBeforeVideoScrubRef = React.useRef(false);
   const scrubPreviewFrameRef = React.useRef<number | null>(null);
@@ -73,6 +70,9 @@ export const Carousel = ({
 
   const contentHeight = windowDimensions.height - insets.top - insets.bottom;
   const contentWidth = windowDimensions.width;
+  const dotsBottomOffset = 12 + insets.bottom;
+  const scrubberBottomOffset = 44 + insets.bottom;
+  const videoButtonsBottomOffset = 88 + insets.bottom;
 
   const preloadFromIndex = React.useCallback(
     async (index: number) => {
@@ -160,14 +160,6 @@ export const Carousel = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isKeyboardNavigationEnabled, media.length, activeIndex, setPage]);
 
-  const handleFullscreenReady = React.useCallback((fn: () => void) => {
-    enterFullscreenRef.current = fn;
-  }, []);
-
-  const handleFullscreen = React.useCallback(() => {
-    enterFullscreenRef.current?.();
-  }, []);
-
   const handleToggleMute = React.useCallback(() => {
     const muted = videoHandleRef.current?.toggleMute();
 
@@ -195,7 +187,6 @@ export const Carousel = ({
     const handle = videoHandleRef.current;
     if (!handle || videoDuration <= 0) return;
     isScrubbingVideoRef.current = true;
-    setIsVideoScrubbing(true);
     wasPlayingBeforeVideoScrubRef.current = isPlaying;
     handle.setScrubbingEnabled(true);
 
@@ -237,7 +228,6 @@ export const Carousel = ({
       handle?.setScrubbingEnabled(false);
       handle?.seekTo(nextTime);
       isScrubbingVideoRef.current = false;
-      setIsVideoScrubbing(false);
 
       if (wasPlayingBeforeVideoScrubRef.current) {
         handle?.play();
@@ -267,7 +257,6 @@ export const Carousel = ({
 
       scrubPreviewTargetRef.current = null;
       videoHandleRef.current?.setScrubbingEnabled(false);
-      setIsVideoScrubbing(false);
       isScrubbingVideoRef.current = false;
       wasPlayingBeforeVideoScrubRef.current = false;
       setVideoCurrentTime(0);
@@ -275,8 +264,6 @@ export const Carousel = ({
 
       if (isVideo) {
         setIsPlaying(true);
-      } else {
-        enterFullscreenRef.current = null;
       }
     },
     [activeIndex, isPlaying, media, preloadFromIndex]
@@ -347,9 +334,6 @@ export const Carousel = ({
                         maxHeight={contentHeight}
                         maxWidth={contentWidth}
                         muted={isMuted}
-                        onFullscreenReady={
-                          isActive ? handleFullscreenReady : undefined
-                        }
                         onPlayingChange={isActive ? setIsPlaying : undefined}
                         onTimeChange={
                           isActive ? handleVideoTimeChange : undefined
@@ -376,20 +360,8 @@ export const Carousel = ({
         <>
           <View
             className="absolute right-4 z-10 mr-0.5 items-end gap-1 md:right-8"
-            style={{ bottom: insets.bottom + 84 }}
+            style={{ bottom: videoButtonsBottomOffset }}
           >
-            <Button
-              className="size-11"
-              onPress={handleFullscreen}
-              size="icon"
-              variant="link"
-            >
-              <Icon
-                className="color-foreground"
-                icon={CornersOut}
-                size={Platform.select({ default: 24, ios: 22 })}
-              />
-            </Button>
             <Button
               className="size-11"
               onPress={handleToggleMute}
@@ -405,19 +377,18 @@ export const Carousel = ({
           </View>
           <View
             className={cn(
-              'absolute right-4 bottom-10 left-4 z-10 md:right-8 md:left-8',
-              'min-h-8 justify-center px-3',
+              'absolute right-4 left-4 z-10 md:right-8 md:left-8',
+              'h-8 justify-center px-3',
               videoDuration > 0 ? 'pointer-events-auto' : 'pointer-events-none'
             )}
             style={{
-              marginBottom: insets.bottom,
+              bottom: scrubberBottomOffset,
               opacity: videoDuration > 0 ? 1 : 0,
             }}
           >
             <VideoScrubber
               currentTime={videoCurrentTime}
               duration={videoDuration}
-              isScrubbing={isVideoScrubbing}
               onScrubEnd={commitVideoScrub}
               onScrubMove={previewVideoScrub}
               onScrubStart={startVideoScrub}
@@ -426,8 +397,8 @@ export const Carousel = ({
         </>
       )}
       <View
-        className="pointer-events-none absolute right-4 bottom-2 left-4 z-10 items-center md:right-8 md:left-8"
-        style={{ marginBottom: insets.bottom }}
+        className="pointer-events-none absolute right-4 left-4 z-10 items-center md:right-8 md:left-8"
+        style={{ bottom: dotsBottomOffset }}
       >
         {media.length > 1 && (
           <Dots activeIndex={activeIndex} count={media.length} />
@@ -440,14 +411,12 @@ export const Carousel = ({
 const VideoScrubber = ({
   currentTime,
   duration,
-  isScrubbing,
   onScrubEnd,
   onScrubMove,
   onScrubStart,
 }: {
   currentTime: number;
   duration: number;
-  isScrubbing: boolean;
   onScrubEnd: (seconds: number) => void;
   onScrubMove: (seconds: number) => void;
   onScrubStart: () => void;
@@ -514,18 +483,18 @@ const VideoScrubber = ({
 
   return (
     <View className="flex-row items-center">
-      <Text className="min-w-[40px] text-xs text-[rgba(255,255,255,0.78)]">
+      <Text className="text-muted-foreground min-w-[40px] text-xs leading-4">
         {formatTime(currentTime)}
       </Text>
       <GestureHandlerRootView className="flex-1 self-stretch">
         <GestureDetector gesture={Gesture.Race(pan, tap)}>
           <Animated.View className="h-8 flex-1 justify-center">
             <View
-              className="relative h-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.22)]"
+              className="bg-border relative h-1 overflow-hidden rounded-full"
               onLayout={handleTrackLayout}
             >
               <View
-                className="absolute top-0 bottom-0 left-0 rounded-full bg-[rgba(255,255,255,0.96)]"
+                className="bg-foreground absolute top-0 bottom-0 left-0 rounded-full"
                 style={{
                   width: `${progress * 100}%`,
                 }}
@@ -534,7 +503,7 @@ const VideoScrubber = ({
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
-      <Text className="min-w-[40px] text-right text-xs text-[rgba(255,255,255,0.78)]">
+      <Text className="text-muted-foreground min-w-[40px] text-right text-xs leading-4">
         {formatTime(duration)}
       </Text>
     </View>
@@ -559,14 +528,12 @@ const Dots = ({
   const containerWidth = visibleCount * DOT_SIZE + (visibleCount - 1) * DOT_GAP;
 
   return (
-    <View className="h-11 flex-1 items-center justify-center">
-      <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
-        <Animated.View className="flex-row" style={{ gap: DOT_GAP }}>
-          {Array.from({ length: count }, (_, i) => (
-            <Dot activeIndex={activeIndex} count={count} index={i} key={i} />
-          ))}
-        </Animated.View>
-      </View>
+    <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
+      <Animated.View className="flex-row" style={{ gap: DOT_GAP }}>
+        {Array.from({ length: count }, (_, i) => (
+          <Dot activeIndex={activeIndex} count={count} index={i} key={i} />
+        ))}
+      </Animated.View>
     </View>
   );
 };
