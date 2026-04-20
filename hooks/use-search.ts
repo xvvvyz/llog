@@ -16,6 +16,7 @@ type SearchDocument = {
   logColor?: number;
   recordId?: string;
   authorId?: string;
+  authorAvatarSeedId?: string;
   authorName?: string;
   authorImage?: string;
   people: string;
@@ -95,6 +96,7 @@ export const useSearch = ({
         people: log.profiles?.map((p) => p.name).join(' ') ?? '',
         profiles: log.profiles?.length
           ? log.profiles.map((p) => ({
+              avatarSeedId: p.avatarSeedId,
               id: p.id,
               name: p.name,
               uri: p.image?.uri,
@@ -119,6 +121,7 @@ export const useSearch = ({
         recordId: record.id,
         people: record.author?.name ?? '',
         authorId: record.author?.id,
+        authorAvatarSeedId: record.author?.avatarSeedId,
         authorName: record.author?.name,
         authorImage: record.author?.image?.uri,
         media: record.media?.length
@@ -147,6 +150,7 @@ export const useSearch = ({
         recordId: reply.record?.id,
         people: reply.author?.name ?? '',
         authorId: reply.author?.id,
+        authorAvatarSeedId: reply.author?.avatarSeedId,
         authorName: reply.author?.name,
         authorImage: reply.author?.image?.uri,
         media: reply.media?.length
@@ -176,6 +180,7 @@ export const useSearch = ({
         'logColor',
         'recordId',
         'authorId',
+        'authorAvatarSeedId',
         'authorName',
         'authorImage',
         'people',
@@ -232,6 +237,7 @@ export const useSearch = ({
         author: result.authorId
           ? {
               id: result.authorId,
+              avatarSeedId: result.authorAvatarSeedId,
               name: result.authorName ?? '',
               image: result.authorImage
                 ? { uri: result.authorImage }

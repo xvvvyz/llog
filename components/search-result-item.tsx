@@ -125,7 +125,12 @@ export const SearchResultItem = ({
             <View className="flex-row">
               {result.profiles.map((profile, i) => (
                 <View className={cn(i > 0 && '-ml-[10px]')} key={profile.id}>
-                  <Avatar avatar={profile.uri} id={profile.id} size={22} />
+                  <Avatar
+                    avatar={profile.uri}
+                    id={profile.id}
+                    seedId={profile.avatarSeedId}
+                    size={22}
+                  />
                 </View>
               ))}
             </View>
@@ -148,6 +153,7 @@ export const SearchResultItem = ({
             <Avatar
               avatar={result.author.image?.uri}
               id={result.author.id}
+              seedId={result.author.avatarSeedId}
               size={36}
             />
           )}

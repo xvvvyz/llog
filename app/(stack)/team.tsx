@@ -339,7 +339,12 @@ export default function Team() {
                       variant="link"
                     >
                       <Label className="shrink-0 p-0">Avatar</Label>
-                      <Avatar avatar={team.image?.uri} id={team.id} size={34} />
+                      <Avatar
+                        avatar={team.image?.uri}
+                        fallback="gradient"
+                        id={team.id}
+                        size={36}
+                      />
                     </Button>
                   </Menu.Trigger>
                   <Menu.Content align="end">
@@ -363,7 +368,12 @@ export default function Team() {
               ) : (
                 <View className="border-border flex-row items-end justify-between border-b pt-3 pb-3">
                   <Label className="shrink-0 p-0">Avatar</Label>
-                  <Avatar avatar={team.image?.uri} id={team.id} size={34} />
+                  <Avatar
+                    avatar={team.image?.uri}
+                    fallback="gradient"
+                    id={team.id}
+                    size={36}
+                  />
                 </View>
               )}
             </View>
@@ -500,13 +510,17 @@ export default function Team() {
                       <Avatar
                         avatar={profile?.image?.uri}
                         id={profile?.id}
-                        size={34}
+                        seedId={profile?.avatarSeedId}
+                        size={36}
                       />
                       <View className="flex-1">
-                        <Text className="text-sm font-medium" numberOfLines={1}>
+                        <Text
+                          className="text-sm leading-tight font-medium"
+                          numberOfLines={1}
+                        >
                           {profile?.name}
                         </Text>
-                        <Text className="text-placeholder text-xs">
+                        <Text className="text-placeholder text-xs leading-tight">
                           {ROLE_LABELS[member.role] ?? member.role}
                         </Text>
                       </View>

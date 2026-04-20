@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { deleteProfileImage } from '@/mutations/delete-profile-image';
+import { randomizeProfileAvatar } from '@/mutations/randomize-profile-avatar';
 import { updateProfile } from '@/mutations/update-profile';
 import { uploadProfileImage } from '@/mutations/upload-profile-image';
 import { useProfile } from '@/queries/use-profile';
@@ -21,6 +22,7 @@ import { db } from '@/utilities/db';
 import * as wp from '@/utilities/web-push';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
+import { Shuffle } from 'phosphor-react-native/lib/module/icons/Shuffle';
 import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
@@ -66,6 +68,10 @@ export default function Account() {
     if (picker.canceled) return;
     await uploadProfileImage(picker.assets[0]);
   }, []);
+
+  const handleRandomizeProfileAvatar = React.useCallback(async () => {
+    await randomizeProfileAvatar({ profileId: profile.id });
+  }, [profile.id]);
 
   React.useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -196,11 +202,18 @@ export default function Account() {
                     <Avatar
                       avatar={profile.image?.uri}
                       id={profile.id}
-                      size={34}
+                      seedId={profile.avatarSeedId}
+                      size={36}
                     />
                   </Button>
                 </Menu.Trigger>
                 <Menu.Content align="end">
+                  {!profile.image && (
+                    <Menu.Item onPress={handleRandomizeProfileAvatar}>
+                      <Icon className="text-placeholder" icon={Shuffle} />
+                      <Text>Randomize</Text>
+                    </Menu.Item>
+                  )}
                   <Menu.Item onPress={handleUploadProfileImage}>
                     <Icon className="text-placeholder" icon={UploadSimple} />
                     <Text>Upload</Text>

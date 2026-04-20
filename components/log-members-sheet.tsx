@@ -73,6 +73,7 @@ export const LogMembersSheet = () => {
                   <Avatar
                     avatar={profile.image?.uri}
                     id={profile.id}
+                    seedId={profile.avatarSeedId}
                     size={28}
                   />
                   <Text numberOfLines={1}>{profile.name}</Text>

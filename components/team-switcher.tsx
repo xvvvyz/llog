@@ -38,6 +38,7 @@ export const TeamSwitcher = ({
           <Avatar
             avatar={activeTeam?.image?.uri ?? lastAvatarRef.current}
             className={cn('shrink-0', breakpoints.md ? 'mr-3' : 'mr-1')}
+            fallback="gradient"
             id={activeTeam?.id ?? lastIdRef.current}
             size={breakpoints.md ? 20 : 16}
           />
@@ -54,7 +55,12 @@ export const TeamSwitcher = ({
             key={t.id}
             onPress={() => switchTeam({ teamId: t.id, uiId: ui.id })}
           >
-            <Avatar avatar={t.image?.uri} id={t.id} size={20} />
+            <Avatar
+              avatar={t.image?.uri}
+              fallback="gradient"
+              id={t.id}
+              size={20}
+            />
             <Text className="flex-1">{t.name}</Text>
             {t.id === ui.activeTeamId && (
               <Icon className="-mr-1" icon={Check} />

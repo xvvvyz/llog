@@ -38,6 +38,7 @@ app.get('/:token', db(), async (c) => {
     .map((role) => role.user?.profile)
     .filter(Boolean)
     .map((profile) => ({
+      avatarSeedId: profile!.avatarSeedId,
       id: profile!.id,
       name: profile!.name,
       image: profile!.image?.uri,
@@ -45,6 +46,7 @@ app.get('/:token', db(), async (c) => {
 
   const logMembers = (link.logs ?? []).flatMap((log) =>
     (log.profiles ?? []).map((profile) => ({
+      avatarSeedId: profile.avatarSeedId,
       id: profile.id,
       name: profile.name,
       image: profile.image?.uri,

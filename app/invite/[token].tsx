@@ -18,6 +18,7 @@ import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 interface Member {
+  avatarSeedId?: string;
   id: string;
   name?: string;
   image?: string;
@@ -184,13 +185,18 @@ export default function InviteLink() {
             {linkInfo.members.slice(0, 4).map((member, i) => (
               <View
                 key={member.id}
-                className="border-background items-center justify-center rounded-full border-2"
+                className="bg-background items-center justify-center overflow-hidden rounded-full p-0.5"
                 style={[
                   { width: 68, height: 68 },
                   i > 0 ? { marginLeft: -22 } : undefined,
                 ]}
               >
-                <Avatar avatar={member.image} id={member.id} size={64} />
+                <Avatar
+                  avatar={member.image}
+                  id={member.id}
+                  seedId={member.avatarSeedId}
+                  size={64}
+                />
               </View>
             ))}
             {linkInfo.members.length > 4 && (

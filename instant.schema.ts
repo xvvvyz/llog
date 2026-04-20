@@ -47,6 +47,7 @@ const schema = i.schema({
       teamId: i.string().indexed(),
     }),
     profiles: i.entity({
+      avatarSeedId: i.string().optional(),
       name: i.string(),
     }),
     subscriptions: i.entity({

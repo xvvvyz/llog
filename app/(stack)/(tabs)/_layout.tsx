@@ -211,7 +211,8 @@ export default function Layout() {
             <Avatar
               avatar={profile.image?.uri}
               id={profile.id}
-              size={breakpoints.md ? 36 : 24}
+              seedId={profile.avatarSeedId}
+              size={breakpoints.md ? 36 : 25}
             />
           ),
         }}

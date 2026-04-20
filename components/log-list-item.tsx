@@ -18,10 +18,15 @@ export const LogListItem = ({
   tags,
 }: {
   className?: string;
-  color: string;
+  color: { darker: string; default: string; lighter: string };
   id: string;
   name: string;
-  profiles: { id: string; name: string; image?: { uri: string } }[];
+  profiles: {
+    avatarSeedId?: string;
+    id: string;
+    name: string;
+    image?: { uri: string };
+  }[];
   tags: Tag[];
 }) => {
   return (
@@ -35,7 +40,7 @@ export const LogListItem = ({
         <Button
           className="flex h-28 w-full flex-col items-start justify-between p-4 active:opacity-90"
           ripple="default"
-          style={{ backgroundColor: color }}
+          style={{ backgroundColor: color.default }}
           variant="ghost"
           wrapperClassName="rounded-2xl"
         >
@@ -59,18 +64,21 @@ export const LogListItem = ({
               {name}
             </Text>
             {profiles.length > 0 && (
-              <View className="-mr-[5px] -mb-[5px] flex-row">
+              <View className="-mr-[6px] -mb-[6px] flex-row">
                 {profiles.map((profile, i) => (
                   <View
                     className={cn(
-                      'size-[22px] rounded-full',
+                      'size-[24px] items-center justify-center overflow-hidden rounded-full p-px',
                       i > 0 && '-ml-[10px]'
                     )}
+                    style={{ backgroundColor: color.default }}
                     key={profile.id}
                   >
                     <Avatar
                       avatar={profile.image?.uri}
+                      className="opacity-90"
                       id={profile.id}
+                      seedId={profile.avatarSeedId}
                       size={22}
                     />
                   </View>

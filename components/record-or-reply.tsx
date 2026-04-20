@@ -188,7 +188,11 @@ export const RecordOrReply = ({
         )}
       >
         <View className="flex-row gap-3">
-          <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
+          <Avatar
+            avatar={record.author?.image?.uri}
+            id={record.author?.id}
+            seedId={record.author?.avatarSeedId}
+          />
           <View className="flex-1">
             <View className="flex-row items-start justify-between gap-2">
               <View className="flex-1 flex-row items-baseline gap-2">
@@ -275,7 +279,11 @@ export const RecordOrReply = ({
   return (
     <Card className={cn('gap-4', className)}>
       <View className="flex-row items-start gap-3 p-4 pb-0">
-        <Avatar avatar={record.author?.image?.uri} id={record.author?.id} />
+        <Avatar
+          avatar={record.author?.image?.uri}
+          id={record.author?.id}
+          seedId={record.author?.avatarSeedId}
+        />
         <View className="flex-1">
           <Text className="leading-tight font-medium" numberOfLines={1}>
             {record.author?.name}

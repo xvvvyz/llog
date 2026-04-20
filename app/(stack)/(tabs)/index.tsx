@@ -153,7 +153,7 @@ export default function Index() {
             return (
               <LogListItem
                 className="p-1.5 md:p-2"
-                color={color.default}
+                color={color}
                 id={item.id}
                 name={item.name}
                 profiles={item.profiles ?? []}

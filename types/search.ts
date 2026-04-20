@@ -7,6 +7,7 @@ export type SearchMediaItem = {
 };
 
 export type SearchProfile = {
+  avatarSeedId?: string;
   id: string;
   name: string;
   uri?: string;
@@ -23,7 +24,12 @@ export type SearchResult = {
   logName?: string;
   logColor?: number;
   recordId?: string;
-  author?: { id: string; name: string; image?: { uri: string } };
+  author?: {
+    avatarSeedId?: string;
+    id: string;
+    name: string;
+    image?: { uri: string };
+  };
   media?: SearchMediaItem[];
   profiles?: SearchProfile[];
 };
