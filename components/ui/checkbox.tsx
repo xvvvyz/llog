@@ -24,14 +24,13 @@ export const Checkbox = ({
     <Button
       aria-checked={checked}
       className={cn(
-        checked && 'bg-primary',
-        checked && checkedColor && 'web:hover:opacity-90 active:opacity-90',
+        checked && 'bg-primary web:hover:opacity-90 active:opacity-90',
         className
       )}
       onPress={handleChange}
       role="checkbox"
       size="icon"
-      style={{ backgroundColor: checked ? checkedColor : undefined }}
+      style={checked && { backgroundColor: checkedColor }}
       variant="secondary"
       {...rest}
     >

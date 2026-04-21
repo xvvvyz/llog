@@ -3,7 +3,7 @@ import { useRippleColor } from '@/hooks/use-ripple-color';
 import { cn } from '@/utilities/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
   defaultVariants: {
@@ -97,7 +97,16 @@ const Button = React.forwardRef<
   ButtonProps
 >(
   (
-    { className, disabled, ripple, size, variant, wrapperClassName, ...props },
+    {
+      className,
+      disabled,
+      ripple,
+      size,
+      style,
+      variant,
+      wrapperClassName,
+      ...props
+    },
     ref
   ) => {
     const rippleColor = useRippleColor(
@@ -137,7 +146,7 @@ const Button = React.forwardRef<
             disabled={disabled}
             ref={ref}
             role="button"
-            style={{ borderCurve: 'continuous' }}
+            style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
             {...props}
           />
         </View>
