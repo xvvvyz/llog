@@ -49,10 +49,6 @@ export default function Account() {
   const sheetManager = useSheetManager();
   const ui = useUi();
 
-  const handleSubmitName = React.useCallback(() => {
-    nameInputRef.current?.blur();
-  }, []);
-
   const handleUploadProfileImage = React.useCallback(async () => {
     const picker = await launchImageLibraryAsync({
       allowsEditing: true,
@@ -243,16 +239,13 @@ export default function Account() {
                   Name
                 </Label>
                 <Input
-                  blurOnSubmit
                   maxLength={32}
                   className="rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(text) =>
                     updateProfile({ id: profile.id!, name: text })
                   }
-                  onSubmitEditing={handleSubmitName}
                   ref={nameInputRef}
                   selectTextOnFocus
-                  submitBehavior="blurAndSubmit"
                   value={profile.name}
                 />
               </Pressable>

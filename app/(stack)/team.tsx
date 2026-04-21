@@ -205,10 +205,6 @@ export default function Team() {
 
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
 
-  const handleSubmitName = React.useCallback(() => {
-    nameInputRef.current?.blur();
-  }, []);
-
   const activeTeamLogIds = React.useMemo(
     () => new Set(logs.data.map((log) => log.id)),
     [logs.data]
@@ -398,15 +394,12 @@ export default function Team() {
                   Name
                 </Label>
                 <Input
-                  blurOnSubmit
                   editable={canManage}
                   maxLength={32}
                   className="min-w-0 shrink rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(name) => updateTeam({ id: team.id!, name })}
-                  onSubmitEditing={handleSubmitName}
                   ref={nameInputRef}
                   selectTextOnFocus
-                  submitBehavior="blurAndSubmit"
                   value={team.name}
                 />
               </Pressable>
