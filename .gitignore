@@ -12,7 +12,12 @@ ios/
 web/
 
 assets/icon.png
-assets/favicon.png
+assets/android-adaptive-icon-foreground.png
+assets/android-adaptive-icon-monochrome.png
+assets/android-icon.png
+assets/ios-icon.png
+assets/splash-icon.png
+assets/splash-icon-dark.png
 
 public/apple-startup/
 public/index.html
@@ -24,4 +29,5 @@ public/badge-72.png
 public/icon-*.png
 
 expo-env.d.ts
+uniwind-types.d.ts
 worker-configuration.d.ts

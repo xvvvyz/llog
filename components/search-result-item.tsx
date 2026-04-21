@@ -170,7 +170,7 @@ export const SearchResultItem = ({
               {result.logName && (
                 <View className="min-w-32 flex-1 flex-row items-baseline justify-end gap-1">
                   <Text
-                    className="text-muted-foreground shrink-0 text-xs"
+                    className="text-muted-foreground shrink-0 text-xs leading-tight"
                     numberOfLines={1}
                   >
                     {result.type === 'reply' ? 'Reply in' : 'Record in'}
@@ -181,7 +181,7 @@ export const SearchResultItem = ({
                       style={{ backgroundColor: logColor?.default }}
                     />
                     <Text
-                      className="text-muted-foreground shrink text-xs"
+                      className="text-muted-foreground shrink text-xs leading-tight"
                       numberOfLines={1}
                     >
                       {result.logName}
@@ -199,8 +199,8 @@ export const SearchResultItem = ({
         </View>
         {!!result.text && (
           <HighlightedText
-            className="text-muted-foreground text-sm"
-            highlightClassName="text-sm font-medium text-foreground"
+            className="text-muted-foreground text-sm leading-tight"
+            highlightClassName="text-sm leading-tight font-medium text-foreground"
             numberOfLines={2}
             terms={result.terms}
             text={result.text}

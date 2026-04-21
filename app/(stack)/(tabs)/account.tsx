@@ -29,11 +29,6 @@ import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimpl
 import * as React from 'react';
 import { Keyboard, Platform, Pressable, View } from 'react-native';
 
-const NOTIFICATION_PERMISSION_ALERT = {
-  message: 'Allow access to send notifications.',
-  title: 'Notifications',
-} as const;
-
 export default function Account() {
   const [isPushPending, setIsPushPending] = React.useState(false);
   const [isSigningOut, setIsSigningOut] = React.useState(false);
@@ -164,7 +159,10 @@ export default function Account() {
           : await wp.enableWebPush();
 
       if (nextState.status === 'blocked') {
-        alert(NOTIFICATION_PERMISSION_ALERT);
+        alert({
+          message: 'Allow access to send notifications.',
+          title: 'Notifications',
+        });
       }
 
       setPushState(nextState);
@@ -195,10 +193,13 @@ export default function Account() {
               <Menu.Root>
                 <Menu.Trigger asChild>
                   <Button
-                    className="border-border items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
+                    className="border-border w-full items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
                     variant="link"
+                    wrapperClassName="w-full rounded-none"
                   >
-                    <Label className="shrink-0 p-0">Avatar</Label>
+                    <Text className="text-muted-foreground shrink-0 text-base leading-tight">
+                      Avatar
+                    </Text>
                     <Avatar
                       avatar={profile.image?.uri}
                       id={profile.id}
@@ -207,7 +208,7 @@ export default function Account() {
                     />
                   </Button>
                 </Menu.Trigger>
-                <Menu.Content align="end">
+                <Menu.Content align="end" className="my-0">
                   {!profile.image && (
                     <Menu.Item onPress={handleRandomizeProfileAvatar}>
                       <Icon className="text-placeholder" icon={Shuffle} />
@@ -231,7 +232,10 @@ export default function Account() {
               </Menu.Root>
             </View>
             <View className="px-4">
-              <View className="border-border flex-row items-center justify-between border-b">
+              <Pressable
+                className="border-border flex-row items-center justify-between border-b"
+                onPress={() => nameInputRef.current?.focus()}
+              >
                 <Label
                   className="p-0"
                   onPress={() => nameInputRef.current?.focus()}
@@ -247,10 +251,11 @@ export default function Account() {
                   }
                   onSubmitEditing={handleSubmitName}
                   ref={nameInputRef}
+                  selectTextOnFocus
                   submitBehavior="blurAndSubmit"
                   value={profile.name}
                 />
-              </View>
+              </Pressable>
             </View>
             <View className="px-4">
               <View className="border-border flex-row items-center justify-between border-b">

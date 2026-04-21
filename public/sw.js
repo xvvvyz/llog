@@ -43,6 +43,7 @@ self.addEventListener('notificationclick', (event) => {
         includeUncontrolled: true,
         type: 'window',
       });
+
       const [client] = clients;
 
       if (client) {

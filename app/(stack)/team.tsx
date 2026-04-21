@@ -43,7 +43,7 @@ import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
 import { UserMinus } from 'phosphor-react-native/lib/module/icons/UserMinus';
 import * as React from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Pressable, View } from 'react-native';
 
 const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
@@ -205,6 +205,10 @@ export default function Team() {
 
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
 
+  const handleSubmitName = React.useCallback(() => {
+    nameInputRef.current?.blur();
+  }, []);
+
   const activeTeamLogIds = React.useMemo(
     () => new Set(logs.data.map((log) => log.id)),
     [logs.data]
@@ -327,7 +331,8 @@ export default function Team() {
   return (
     <Page>
       <Header left={<BackButton />} title={<TeamSwitcher hideSettings />} />
-      <ScrollView contentContainerClassName="items-center justify-center flex-1 p-3">
+      <View className="flex-1 items-center justify-center p-3">
+        <Pressable className="absolute inset-0" onPress={Keyboard.dismiss} />
         <Card className="w-full max-w-xs overflow-hidden p-0">
           <View className="pb-2">
             <View className="px-4">
@@ -335,10 +340,13 @@ export default function Team() {
                 <Menu.Root>
                   <Menu.Trigger asChild>
                     <Button
-                      className="border-border items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
+                      className="border-border w-full items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
                       variant="link"
+                      wrapperClassName="w-full rounded-none"
                     >
-                      <Label className="shrink-0 p-0">Avatar</Label>
+                      <Text className="text-muted-foreground shrink-0 text-base leading-tight">
+                        Avatar
+                      </Text>
                       <Avatar
                         avatar={team.image?.uri}
                         fallback="gradient"
@@ -347,7 +355,7 @@ export default function Team() {
                       />
                     </Button>
                   </Menu.Trigger>
-                  <Menu.Content align="end">
+                  <Menu.Content align="end" className="my-0">
                     <Menu.Item onPress={handleUploadTeamImage}>
                       <Icon className="text-placeholder" icon={UploadSimple} />
                       <Text>Upload</Text>
@@ -378,7 +386,11 @@ export default function Team() {
               )}
             </View>
             <View className="px-4">
-              <View className="border-border flex-row items-center justify-between border-b">
+              <Pressable
+                className="border-border flex-row items-center justify-between border-b"
+                disabled={!canManage}
+                onPress={() => nameInputRef.current?.focus()}
+              >
                 <Label
                   className="shrink-0 p-0"
                   onPress={() => nameInputRef.current?.focus()}
@@ -386,14 +398,18 @@ export default function Team() {
                   Name
                 </Label>
                 <Input
+                  blurOnSubmit
                   editable={canManage}
                   maxLength={32}
                   className="min-w-0 shrink rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(name) => updateTeam({ id: team.id!, name })}
+                  onSubmitEditing={handleSubmitName}
                   ref={nameInputRef}
+                  selectTextOnFocus
+                  submitBehavior="blurAndSubmit"
                   value={team.name}
                 />
-              </View>
+              </Pressable>
             </View>
             {canManage &&
               [Role.Admin, Role.Member]
@@ -462,10 +478,7 @@ export default function Team() {
                     </View>
                   </View>
                 ))}
-            <ScrollView
-              className="max-h-60 px-4"
-              contentContainerClassName="py-2"
-            >
+            <View className="max-h-60 px-4 py-2">
               {members.map((member) => {
                 const profile = member.user?.profile;
                 const isSelf = member.userId === auth.user?.id;
@@ -585,7 +598,7 @@ export default function Team() {
                   </View>
                 );
               })}
-            </ScrollView>
+            </View>
             <View>
               {canDeleteTeam && (
                 <>
@@ -606,7 +619,7 @@ export default function Team() {
             </View>
           </View>
         </Card>
-      </ScrollView>
+      </View>
     </Page>
   );
 }

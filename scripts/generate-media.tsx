@@ -4,9 +4,12 @@ import { dirname, join } from 'node:path';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import satori from 'satori';
-import { UI } from '../theme/ui';
 import * as appleStartup from '../utilities/apple-startup-images';
 import { AppIcon } from './logo-mark';
+
+const { NATIVE_SPLASH_BACKGROUNDS } = require('../theme/native.cjs') as {
+  NATIVE_SPLASH_BACKGROUNDS: { light: string; dark: string };
+};
 
 const log = (message: string) => {
   console.log(`[generate-media] ${message}`);
@@ -70,10 +73,23 @@ const renderSvg = ({
 const renderPng = async (opts: Parameters<typeof renderSvg>[0]) =>
   new Resvg(renderSvg(opts)).render().asPng();
 
+const renderAppIconPng = async ({
+  fitToWidth,
+  ...props
+}: React.ComponentProps<typeof AppIcon> & { fitToWidth?: number }) =>
+  new Resvg(renderToStaticMarkup(React.createElement(AppIcon, props)), {
+    ...(fitToWidth != null
+      ? { fitTo: { mode: 'width' as const, value: fitToWidth } }
+      : null),
+  })
+    .render()
+    .asPng();
+
 const ICON_PADDING = 0.22;
 const ICON_RADIUS = 0.48;
 const MASKABLE_PADDING = 0.1;
 const MASKABLE_RADIUS = ICON_RADIUS;
+const ANDROID_ADAPTIVE_CONTENT_SCALE = 0.61;
 
 const iconOutputs = [
   {
@@ -83,7 +99,13 @@ const iconOutputs = [
     size: 1024,
   },
   {
-    path: join(process.cwd(), 'assets', 'favicon.png'),
+    path: join(process.cwd(), 'assets', 'ios-icon.png'),
+    paddingRatio: ICON_PADDING,
+    radiusRatio: ICON_RADIUS,
+    size: 1024,
+  },
+  {
+    path: join(process.cwd(), 'assets', 'android-icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 1024,
@@ -138,6 +160,50 @@ const iconOutputs = [
   },
 ] as const;
 
+const nativeAssetOutputs = [
+  {
+    path: join(process.cwd(), 'assets', 'android-adaptive-icon-foreground.png'),
+    render: () =>
+      renderAppIconPng({
+        backgroundColor: 'transparent',
+        contentScale: ANDROID_ADAPTIVE_CONTENT_SCALE,
+        size: 1024,
+      }),
+  },
+  {
+    path: join(process.cwd(), 'assets', 'android-adaptive-icon-monochrome.png'),
+    render: () =>
+      renderAppIconPng({
+        backgroundColor: 'transparent',
+        colors: ['#000000', '#000000', '#000000'],
+        contentScale: ANDROID_ADAPTIVE_CONTENT_SCALE,
+        dotColors: ['#000000', '#000000', '#000000'],
+        size: 1024,
+      }),
+  },
+  {
+    path: join(process.cwd(), 'assets', 'splash-icon.png'),
+    render: () =>
+      renderAppIconPng({
+        backgroundColor: 'transparent',
+        cropToContent: true,
+        fitToWidth: 1024,
+        size: 1024,
+      }),
+  },
+  {
+    path: join(process.cwd(), 'assets', 'splash-icon-dark.png'),
+    render: () =>
+      renderAppIconPng({
+        backgroundColor: 'transparent',
+        colorScheme: 'dark',
+        cropToContent: true,
+        fitToWidth: 1024,
+        size: 1024,
+      }),
+  },
+] as const;
+
 log(`Rendering ${iconOutputs.length} app icons`);
 
 for (const [index, output] of iconOutputs.entries()) {
@@ -146,25 +212,27 @@ for (const [index, output] of iconOutputs.entries()) {
   log(`Icon ${index + 1}/${iconOutputs.length}: ${output.path}`);
 }
 
+log(`Rendering ${nativeAssetOutputs.length} native assets`);
+
+for (const [index, output] of nativeAssetOutputs.entries()) {
+  await mkdir(dirname(output.path), { recursive: true });
+  await Bun.write(output.path, await output.render());
+  log(`Native ${index + 1}/${nativeAssetOutputs.length}: ${output.path}`);
+}
+
 log('Rendering notification badge');
 
 // Badge — monochrome (white pills, transparent background) for use in notification status bar
 await Bun.write(
   join(process.cwd(), 'public', 'badge-72.png'),
-  new Resvg(
-    renderToStaticMarkup(
-      React.createElement(AppIcon, {
-        backgroundColor: 'transparent',
-        colors: ['white', 'white', 'white'],
-        cropToContent: true,
-        dotColors: ['white', 'white', 'white'],
-        size: 72,
-      })
-    ),
-    { fitTo: { mode: 'width', value: 72 } }
-  )
-    .render()
-    .asPng()
+  await renderAppIconPng({
+    backgroundColor: 'transparent',
+    colors: ['white', 'white', 'white'],
+    cropToContent: true,
+    dotColors: ['white', 'white', 'white'],
+    fitToWidth: 72,
+    size: 72,
+  })
 );
 
 log('Rendering SVG favicon');
@@ -228,7 +296,6 @@ const renderStartupImage = async ({
   theme: appleStartup.AppleStartupImageTheme;
   width: number;
 }) => {
-  const palette = UI[theme];
   const markSize = Math.min(Math.round(Math.min(width, height) * 0.3), 480);
 
   const markSvg = renderToStaticMarkup(
@@ -251,7 +318,10 @@ const renderStartupImage = async ({
           height,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: palette.background,
+          backgroundColor:
+            theme === 'dark'
+              ? NATIVE_SPLASH_BACKGROUNDS.dark
+              : NATIVE_SPLASH_BACKGROUNDS.light,
         },
       },
       React.createElement('img', {

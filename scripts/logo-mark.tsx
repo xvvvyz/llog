@@ -399,6 +399,7 @@ export const AppIcon = ({
   backgroundColor = APP_ICON_BG,
   clip = false,
   colorScheme = 'light',
+  contentScale = 0.72,
   colors,
   cropToContent = false,
   dotColors,
@@ -407,6 +408,7 @@ export const AppIcon = ({
   backgroundColor?: string;
   clip?: boolean;
   colorScheme?: 'light' | 'dark';
+  contentScale?: number;
   colors?: readonly string[];
   cropToContent?: boolean;
   dotColors?: readonly string[];
@@ -421,7 +423,7 @@ export const AppIcon = ({
     dotColors ??
     (colorScheme === 'dark' ? PILL_DOT_COLORS_DARK : PILL_DOT_COLORS);
 
-  const contentWidth = size * 0.72;
+  const contentWidth = size * contentScale;
   const longestPillWidth = contentWidth * PILL_WIDTH_RATIOS[0];
   const squareSide = longestPillWidth;
   const gap = squareSide / 11; // 3 bars + 2 gaps, bars = 3× gap → 11 units total
