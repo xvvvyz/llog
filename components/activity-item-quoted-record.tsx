@@ -27,7 +27,7 @@ export const ActivityItemQuotedRecord = ({
   return (
     <View
       className={cn(
-        'bg-input max-w-full self-start overflow-hidden rounded-xl'
+        'bg-input max-w-full min-w-0 self-start overflow-hidden rounded-xl'
       )}
     >
       {!!text && (
@@ -46,28 +46,35 @@ export const ActivityItemQuotedRecord = ({
       )}
       {!!visualMedia.length && (
         <ScrollView
+          className="max-w-full self-start"
           contentContainerClassName={cn('px-3 pb-3', text ? 'pt-0' : 'pt-3')}
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
         >
           <View className="flex-row gap-0.5">
-            {visualMedia.map((item) => (
+            {visualMedia.map((item, index) => (
               <Pressable
                 disabled={m.isVideoMediaProcessing(item)}
                 key={item.id}
-                className="size-16 overflow-hidden rounded-lg"
+                className="h-16 w-16 shrink-0 overflow-hidden rounded-lg"
                 onPress={() =>
                   !m.isVideoMediaProcessing(item) &&
                   router.push({
                     pathname: `/record/[recordId]/media`,
                     params: {
                       recordId,
-                      defaultIndex: String(visualMedia.indexOf(item)),
+                      defaultIndex: String(index),
                     },
                   })
                 }
               >
-                <Image fill uri={m.getVisualMediaThumbnailUri(item)} />
+                <Image
+                  contentFit="cover"
+                  height={64}
+                  uri={m.getVisualMediaThumbnailUri(item)}
+                  width={64}
+                />
                 {item.type === 'video' && (
                   <View className="pointer-events-none absolute inset-0 items-center justify-center">
                     {m.isVideoMediaProcessing(item) ? (
