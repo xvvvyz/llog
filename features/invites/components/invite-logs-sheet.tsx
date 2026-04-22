@@ -60,33 +60,40 @@ export const InviteLogsSheet = () => {
     });
   }, []);
 
+  const getInviteUrlForSelection = React.useCallback(async () => {
+    if (!activeTeamId || selectedLogIds.size === 0) {
+      throw new Error('No invite logs selected');
+    }
+
+    const logIds = [...selectedLogIds];
+    const existing = findMemberInviteByLogs(invites, logIds);
+
+    const token = existing
+      ? existing.token
+      : (
+          await createInviteLink({
+            teamId: activeTeamId,
+            role: Role.Member,
+            logIds,
+          })
+        ).token;
+
+    return getInviteUrl(token);
+  }, [activeTeamId, invites, selectedLogIds]);
+
   const handleConfirm = React.useCallback(async () => {
     if (!activeTeamId || selectedLogIds.size === 0) return;
     setIsLoading(true);
 
     try {
-      const logIds = [...selectedLogIds];
-      const existing = findMemberInviteByLogs(invites, logIds);
-
-      const token = existing
-        ? existing.token
-        : (
-            await createInviteLink({
-              teamId: activeTeamId,
-              role: Role.Member,
-              logIds,
-            })
-          ).token;
-
-      const url = getInviteUrl(token);
-
       if (action === 'qr') {
+        const url = await getInviteUrlForSelection();
         sheetManager.close('invite-logs');
         setTimeout(() => sheetManager.open('invite-qr', url), 300);
         return;
       }
 
-      await copy(url);
+      await copy(getInviteUrlForSelection);
       setIsLoading(false);
 
       dismissTimer.current = setTimeout(() => {
@@ -96,7 +103,14 @@ export const InviteLogsSheet = () => {
     } catch {
       setIsLoading(false);
     }
-  }, [activeTeamId, selectedLogIds, invites, action, sheetManager, copy]);
+  }, [
+    activeTeamId,
+    selectedLogIds,
+    action,
+    sheetManager,
+    copy,
+    getInviteUrlForSelection,
+  ]);
 
   const handleDismiss = React.useCallback(() => {
     clearTimeout(dismissTimer.current);

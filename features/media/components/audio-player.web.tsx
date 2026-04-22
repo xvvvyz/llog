@@ -253,7 +253,7 @@ export const AudioPlayer = ({
   }, [play, player, playerDuration]);
 
   return (
-    <View className="flex-row items-center">
+    <View className="min-w-0 flex-row items-center">
       <audio
         ref={player.audioRef}
         preload="metadata"
@@ -269,7 +269,7 @@ export const AudioPlayer = ({
         <Icon icon={player.playing ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
       <div
-        className="flex flex-1 cursor-pointer touch-none items-center"
+        className="flex min-w-20 flex-1 cursor-pointer touch-none items-center self-stretch"
         ref={trackRef}
         style={{ height: compact ? 24 : 32 }}
       >

@@ -1,9 +1,7 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format-time';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
@@ -12,11 +10,7 @@ import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import * as React from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue } from 'react-native-reanimated';
 
 export const AudioPlayer = ({
@@ -29,7 +23,6 @@ export const AudioPlayer = ({
   uri: string;
 }) => {
   const src = useFileUriToSrc(uri);
-  const colorScheme = useColorScheme();
   const player = useAudioPlayer(src, { updateInterval: 50 });
   const status = useAudioPlayerStatus(player);
   const trackWidth = useSharedValue(0);
@@ -50,9 +43,6 @@ export const AudioPlayer = ({
     playerDuration > 0
       ? Math.max(0, Math.min(displayTime / playerDuration, 1))
       : 0;
-
-  const trackColor = UI[colorScheme].progressTrack;
-  const fillColor = UI[colorScheme].progressFill;
 
   React.useEffect(() => {
     if (isScrubbingRef.current) return;
@@ -150,7 +140,7 @@ export const AudioPlayer = ({
   };
 
   return (
-    <View className="flex-row items-center">
+    <View className="min-w-0 flex-row items-center">
       <Button
         className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
         disabled={!src}
@@ -160,27 +150,26 @@ export const AudioPlayer = ({
       >
         <Icon icon={status.playing ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
-      <GestureHandlerRootView className="flex-1 self-stretch">
-        <GestureDetector gesture={gesture}>
-          <Animated.View
-            className={cn('flex-1 justify-center', compact ? 'h-6' : 'h-8')}
+      <GestureDetector gesture={gesture}>
+        <Animated.View
+          className={cn(
+            'min-w-20 flex-1 justify-center self-stretch',
+            compact ? 'h-6' : 'h-8'
+          )}
+        >
+          <View
+            className="bg-progress-track relative h-1 w-full overflow-hidden rounded-full"
+            onLayout={onTrackLayout}
           >
             <View
-              className="relative h-1 overflow-hidden rounded-full"
-              onLayout={onTrackLayout}
-              style={{ backgroundColor: trackColor }}
-            >
-              <View
-                className="absolute top-0 bottom-0 left-0 rounded-full"
-                style={{
-                  width: `${progress * 100}%`,
-                  backgroundColor: fillColor,
-                }}
-              />
-            </View>
-          </Animated.View>
-        </GestureDetector>
-      </GestureHandlerRootView>
+              className="bg-progress-fill absolute top-0 bottom-0 left-0 rounded-full"
+              style={{
+                width: `${progress * 100}%`,
+              }}
+            />
+          </View>
+        </Animated.View>
+      </GestureDetector>
       <Text className="text-muted-foreground min-w-[40px] text-right text-xs">
         {formatTime(status.playing ? displayTime : playerDuration)}
       </Text>

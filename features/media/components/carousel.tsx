@@ -104,12 +104,15 @@ export const Carousel = ({
     carouselRef,
   });
 
-  const { handleActiveMediaLoad, maybePreloadAdjacentFromIndex } =
-    useCarouselPreloading({
-      activeIndexRef,
-      getClampedIndex,
-      media,
-    });
+  const {
+    handleActiveMediaLoad,
+    isActiveMediaLoading,
+    syncActiveMediaLoadingState,
+  } = useCarouselPreloading({
+    activeIndexRef,
+    getClampedIndex,
+    media,
+  });
 
   const getDominantIndex = React.useCallback(
     (absoluteProgress: number) =>
@@ -195,6 +198,7 @@ export const Carousel = ({
     activeIndexRef.current = nextIndex;
     activeMediaIdRef.current = nextMediaId;
     setActiveIndexState(nextIndex);
+    syncActiveMediaLoadingState(nextIndex);
 
     setIsPlaying(
       media[nextIndex]?.type === 'video' && shouldAutoPlayVideo(nextMediaId)
@@ -206,16 +210,14 @@ export const Carousel = ({
         index: nextIndex,
       });
     });
-
-    maybePreloadAdjacentFromIndex(nextIndex);
   }, [
     activeIndex,
     getClampedIndex,
     getVisibleMediaIds,
     media,
-    maybePreloadAdjacentFromIndex,
     resetVideoUiState,
     shouldAutoPlayVideo,
+    syncActiveMediaLoadingState,
   ]);
 
   React.useEffect(() => {
@@ -230,6 +232,7 @@ export const Carousel = ({
     activeMediaIdRef.current = nextMediaId;
     visibleMediaIdsRef.current = getVisibleMediaIds(safeDefaultIndex);
     setActiveIndexState(safeDefaultIndex);
+    syncActiveMediaLoadingState(safeDefaultIndex);
 
     setIsPlaying(
       media[safeDefaultIndex]?.type === 'video' &&
@@ -242,16 +245,14 @@ export const Carousel = ({
         index: safeDefaultIndex,
       });
     });
-
-    maybePreloadAdjacentFromIndex(safeDefaultIndex);
   }, [
     activeIndex,
     getVisibleMediaIds,
     media,
-    maybePreloadAdjacentFromIndex,
     resetVideoUiState,
     safeDefaultIndex,
     shouldAutoPlayVideo,
+    syncActiveMediaLoadingState,
   ]);
 
   React.useEffect(() => {
@@ -290,19 +291,13 @@ export const Carousel = ({
       activeIndexRef.current = index;
       activeMediaIdRef.current = media[index]?.id;
       setActiveIndexState(index);
+      syncActiveMediaLoadingState(index);
 
       setIsPlaying(
         media[index]?.type === 'video' && shouldAutoPlayVideo(media[index]?.id)
       );
-
-      maybePreloadAdjacentFromIndex(index);
     },
-    [
-      media,
-      maybePreloadAdjacentFromIndex,
-      resetVideoUiState,
-      shouldAutoPlayVideo,
-    ]
+    [media, resetVideoUiState, shouldAutoPlayVideo, syncActiveMediaLoadingState]
   );
 
   const handleProgressChange = React.useCallback(
@@ -351,6 +346,7 @@ export const Carousel = ({
           contentHeight={contentHeight}
           contentWidth={contentWidth}
           index={index}
+          isActiveMediaLoading={isActiveMediaLoading}
           isMuted={isMuted}
           isPlaying={isPlaying}
           isScrubbingVideo={isScrubbingVideo}
@@ -379,6 +375,7 @@ export const Carousel = ({
       handleVideoTimeChange,
       handleZoomInteractionStateChange,
       handleZoomStateChange,
+      isActiveMediaLoading,
       isMuted,
       isPlaying,
       isScrubbingVideo,

@@ -11,6 +11,7 @@ type CarouselItemProps = {
   contentHeight: number;
   contentWidth: number;
   index: number;
+  isActiveMediaLoading: boolean;
   isMuted: boolean;
   isPlaying: boolean;
   isScrubbingVideo: boolean;
@@ -36,6 +37,7 @@ const CarouselItemComponent = ({
   contentHeight,
   contentWidth,
   index,
+  isActiveMediaLoading,
   isMuted,
   isPlaying,
   isScrubbingVideo,
@@ -55,6 +57,7 @@ const CarouselItemComponent = ({
 }: CarouselItemProps) => {
   const isActive = index === visibleIndex;
   const isAdjacent = Math.abs(index - visibleIndex) <= 2;
+  const shouldRenderInactiveMedia = !isActiveMediaLoading;
 
   return (
     <View
@@ -67,6 +70,7 @@ const CarouselItemComponent = ({
           contentWidth={contentWidth}
           isActive={isActive}
           isAdjacent={isAdjacent}
+          shouldRenderInactiveMedia={shouldRenderInactiveMedia}
           isMuted={isMuted}
           isPlaying={isPlaying}
           isScrubbingVideo={isScrubbingVideo}
@@ -96,6 +100,7 @@ const CarouselItemComponent = ({
           onZoomInteractionStateChange={onZoomInteractionStateChange}
           onZoomStateChange={onZoomStateChange}
           resetZoomToken={resetZoomToken}
+          shouldRenderInactiveMedia={shouldRenderInactiveMedia}
         />
       )}
     </View>
@@ -111,6 +116,7 @@ const CarouselVideoItem = ({
   contentWidth,
   isActive,
   isAdjacent,
+  shouldRenderInactiveMedia,
   isMuted,
   isPlaying,
   isScrubbingVideo,
@@ -132,6 +138,7 @@ const CarouselVideoItem = ({
   contentWidth: number;
   isActive: boolean;
   isAdjacent: boolean;
+  shouldRenderInactiveMedia: boolean;
   isMuted: boolean;
   isPlaying: boolean;
   isScrubbingVideo: boolean;
@@ -155,6 +162,9 @@ const CarouselVideoItem = ({
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const hasReportedActiveLoadRef = React.useRef(false);
 
+  const shouldRenderVideo =
+    isActive || (isAdjacent && (shouldRenderInactiveMedia || hasLoaded));
+
   React.useEffect(() => {
     setHasLoaded(false);
     hasReportedActiveLoadRef.current = false;
@@ -177,7 +187,7 @@ const CarouselVideoItem = ({
 
   return (
     <View className="bg-background relative w-full flex-1 items-center justify-center">
-      {isAdjacent ? (
+      {shouldRenderVideo ? (
         <React.Fragment>
           <ZoomableMedia
             suppressDoubleTapZoom
@@ -230,6 +240,7 @@ const CarouselImageItem = ({
   onZoomInteractionStateChange,
   onZoomStateChange,
   resetZoomToken,
+  shouldRenderInactiveMedia,
 }: {
   contentHeight: number;
   contentWidth: number;
@@ -244,9 +255,11 @@ const CarouselImageItem = ({
   ) => void;
   onZoomStateChange: (mediaId: string, nextIsZoomed: boolean) => void;
   resetZoomToken: number;
+  shouldRenderInactiveMedia: boolean;
 }) => {
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const hasReportedActiveLoadRef = React.useRef(false);
+  const shouldRenderImage = isActive || shouldRenderInactiveMedia || hasLoaded;
 
   React.useEffect(() => {
     setHasLoaded(false);
@@ -267,6 +280,15 @@ const CarouselImageItem = ({
   const handleLoaded = React.useCallback(() => {
     setHasLoaded(true);
   }, []);
+
+  if (!shouldRenderImage) {
+    return (
+      <View
+        className="bg-background"
+        style={{ width: contentWidth, height: contentHeight }}
+      />
+    );
+  }
 
   return (
     <ZoomableMedia

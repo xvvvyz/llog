@@ -133,6 +133,12 @@ export default function Team() {
     return token;
   }, [invites, activeTeamId]);
 
+  const getOrCreateAdminInviteUrl = React.useCallback(async () => {
+    const token = await getOrCreateAdminLink();
+    if (!token) throw new Error('Failed to create invite link');
+    return getInviteUrl(token);
+  }, [getOrCreateAdminLink]);
+
   const handleCopyLink = React.useCallback(
     async (role: string) => {
       if (role === Role.Member) {
@@ -143,18 +149,14 @@ export default function Team() {
       setLoadingAction(`copy-${role}`);
 
       try {
-        const token = await getOrCreateAdminLink();
-
-        if (token) {
-          await copy(getInviteUrl(token));
-          setCopiedRole(role);
-          setTimeout(() => setCopiedRole(null), 2000);
-        }
+        await copy(getOrCreateAdminInviteUrl);
+        setCopiedRole(role);
+        setTimeout(() => setCopiedRole(null), 2000);
       } finally {
         setLoadingAction(null);
       }
     },
-    [getOrCreateAdminLink, sheetManager, copy]
+    [copy, getOrCreateAdminInviteUrl, sheetManager]
   );
 
   const handleShowQr = React.useCallback(
@@ -167,13 +169,12 @@ export default function Team() {
       setLoadingAction(`qr-${role}`);
 
       try {
-        const token = await getOrCreateAdminLink();
-        if (token) sheetManager.open('invite-qr', getInviteUrl(token));
+        sheetManager.open('invite-qr', await getOrCreateAdminInviteUrl());
       } finally {
         setLoadingAction(null);
       }
     },
-    [getOrCreateAdminLink, sheetManager]
+    [getOrCreateAdminInviteUrl, sheetManager]
   );
 
   const handleDelete = React.useCallback(

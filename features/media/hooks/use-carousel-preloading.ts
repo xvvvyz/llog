@@ -1,6 +1,3 @@
-import * as video from '@/features/media/components/video-player';
-import { CAROUSEL_MEDIA_QUALITY } from '@/features/media/lib/carousel-helpers';
-import { preloadMedia } from '@/features/media/lib/file-uri-to-src';
 import { Media } from '@/features/media/types/media';
 import * as React from 'react';
 
@@ -14,56 +11,39 @@ export const useCarouselPreloading = ({
   media: Media[];
 }) => {
   const loadedMediaIdsRef = React.useRef(new Set<string>());
-  const adjacentPreloadKeysRef = React.useRef(new Set<string>());
 
-  const preloadAdjacentFromIndex = React.useCallback(
+  const [isActiveMediaLoading, setIsActiveMediaLoading] = React.useState(() => {
+    const activeMediaId = media[activeIndexRef.current]?.id;
+
+    return activeMediaId
+      ? !loadedMediaIdsRef.current.has(activeMediaId)
+      : false;
+  });
+
+  const syncActiveMediaLoadingState = React.useCallback(
     (index: number) => {
-      if (media.length === 0) return;
+      if (media.length === 0) {
+        setIsActiveMediaLoading(false);
+        return;
+      }
+
       const safeIndex = getClampedIndex(index);
-      const targets = [safeIndex - 1, safeIndex + 1];
+      const mediaId = media[safeIndex]?.id;
 
-      targets.forEach((i) => {
-        const item = media[i];
-        if (!item) return;
-
-        const previewUri = item.type === 'video' ? item.thumbnailUri : item.uri;
-
-        if (previewUri) {
-          void preloadMedia(previewUri, { quality: CAROUSEL_MEDIA_QUALITY });
-        }
-
-        if (item.type === 'video') {
-          video.preloadVideo(item.uri);
-        }
-      });
+      setIsActiveMediaLoading(
+        Boolean(mediaId) && !loadedMediaIdsRef.current.has(mediaId)
+      );
     },
     [getClampedIndex, media]
-  );
-
-  const maybePreloadAdjacentFromIndex = React.useCallback(
-    (index: number) => {
-      if (media.length === 0) return;
-
-      const safeIndex = getClampedIndex(index);
-      const item = media[safeIndex];
-      if (!item) return;
-      if (!loadedMediaIdsRef.current.has(item.id)) return;
-
-      const preloadKey = `${item.id}:${safeIndex}`;
-      if (adjacentPreloadKeysRef.current.has(preloadKey)) return;
-      adjacentPreloadKeysRef.current.add(preloadKey);
-      preloadAdjacentFromIndex(safeIndex);
-    },
-    [getClampedIndex, media, preloadAdjacentFromIndex]
   );
 
   const handleActiveMediaLoad = React.useCallback(
     (mediaId: string, _index: number) => {
       loadedMediaIdsRef.current.add(mediaId);
       if (media[activeIndexRef.current]?.id !== mediaId) return;
-      maybePreloadAdjacentFromIndex(activeIndexRef.current);
+      setIsActiveMediaLoading(false);
     },
-    [activeIndexRef, media, maybePreloadAdjacentFromIndex]
+    [activeIndexRef, media]
   );
 
   React.useEffect(() => {
@@ -72,18 +52,12 @@ export const useCarouselPreloading = ({
     loadedMediaIdsRef.current.forEach((mediaId) => {
       if (!mediaIdSet.has(mediaId)) loadedMediaIdsRef.current.delete(mediaId);
     });
-
-    adjacentPreloadKeysRef.current.forEach((preloadKey) => {
-      const mediaId = preloadKey.split(':', 1)[0];
-
-      if (!mediaIdSet.has(mediaId)) {
-        adjacentPreloadKeysRef.current.delete(preloadKey);
-      }
-    });
-  }, [media]);
+    syncActiveMediaLoadingState(activeIndexRef.current);
+  }, [activeIndexRef, media, syncActiveMediaLoadingState]);
 
   return {
     handleActiveMediaLoad,
-    maybePreloadAdjacentFromIndex,
+    isActiveMediaLoading,
+    syncActiveMediaLoadingState,
   };
 };

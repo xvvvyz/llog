@@ -44,31 +44,32 @@ export const LogDropdownMenuInviteItems = ({ id }: { id?: string }) => {
     return token;
   }, [id, invites, log.teamId]);
 
+  const getOrCreateInviteUrl = React.useCallback(async () => {
+    const token = await getOrCreateLink();
+    if (!token) throw new Error('Failed to create invite link');
+    return getInviteUrl(token);
+  }, [getOrCreateLink]);
+
   const handleCopyLink = React.useCallback(async () => {
     setLoadingAction('copy');
 
     try {
-      const token = await getOrCreateLink();
-      if (token) await copy(getInviteUrl(token));
+      await copy(getOrCreateInviteUrl);
     } finally {
       setLoadingAction(null);
     }
-  }, [copy, getOrCreateLink]);
+  }, [copy, getOrCreateInviteUrl]);
 
   const handleShowQr = React.useCallback(async () => {
     setLoadingAction('qr');
 
     try {
-      const token = await getOrCreateLink();
-
-      if (token) {
-        onOpenChange(false);
-        sheetManager.open('invite-qr', getInviteUrl(token));
-      }
+      onOpenChange(false);
+      sheetManager.open('invite-qr', await getOrCreateInviteUrl());
     } finally {
       setLoadingAction(null);
     }
-  }, [getOrCreateLink, onOpenChange, sheetManager]);
+  }, [getOrCreateInviteUrl, onOpenChange, sheetManager]);
 
   return (
     <>

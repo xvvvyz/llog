@@ -1,8 +1,5 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
-import {
-  fileUriToSrc,
-  useFileUriToSrc,
-} from '@/features/media/lib/file-uri-to-src';
+import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
 import * as videoPreload from '@/features/media/lib/video-preload';
 import { UI } from '@/theme/ui';
 import { Spinner } from '@/ui/spinner';
@@ -28,66 +25,6 @@ const resetVideoSource = (video: HTMLVideoElement) => {
 const SCRUB_PREVIEW_SEEK_INTERVAL_MS = 40;
 const SCRUB_PREVIEW_STEP_SECONDS = 0.05;
 const SCRUB_PREVIEW_MIN_DELTA_SECONDS = 0.03;
-
-type PreloadedVideoEntry = {
-  hls?: HlsClient;
-  removeListeners: () => void;
-  video: HTMLVideoElement;
-};
-
-const preloadCache = videoPreload.createPreloadCache<PreloadedVideoEntry>({
-  limit: videoPreload.VIDEO_PRELOAD_CACHE_LIMIT,
-  dispose: (entry) => {
-    entry.removeListeners();
-    entry.hls?.destroy();
-    entry.video.pause();
-    resetVideoSource(entry.video);
-  },
-});
-
-export const preloadVideo = (uri?: string | null) => {
-  if (typeof document === 'undefined') return;
-
-  const source = fileUriToSrc(uri);
-  if (!source) return;
-
-  if (preloadCache.has(source)) {
-    preloadCache.touch(source);
-    return;
-  }
-
-  const video = document.createElement('video');
-  video.muted = true;
-  video.playsInline = true;
-  video.preload = 'auto';
-
-  const markReady = () => {
-    videoPreload.markVideoWarm(source);
-  };
-
-  video.addEventListener('canplay', markReady);
-  video.addEventListener('loadeddata', markReady);
-
-  const removeListeners = () => {
-    video.removeEventListener('canplay', markReady);
-    video.removeEventListener('loadeddata', markReady);
-  };
-
-  const canPlayNativeHls =
-    video.canPlayType('application/vnd.apple.mpegurl') !== '' ||
-    video.canPlayType('application/x-mpegURL') !== '';
-
-  if (!canPlayNativeHls && isHlsClientSupported()) {
-    const hls = new HlsClient();
-    hls.on(HlsEvents.MEDIA_ATTACHED, () => hls.loadSource(source));
-    hls.attachMedia(video);
-    preloadCache.set(source, { hls, removeListeners, video });
-  } else {
-    video.src = source;
-    video.load();
-    preloadCache.set(source, { removeListeners, video });
-  }
-};
 
 export const VideoPlayer = ({
   autoPlay,

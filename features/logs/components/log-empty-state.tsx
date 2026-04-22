@@ -58,27 +58,31 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
     return token;
   }, [log.teamId, logId, invites]);
 
+  const getOrCreateInviteUrl = React.useCallback(async () => {
+    const token = await getOrCreateLink();
+    if (!token) throw new Error('Failed to create invite link');
+    return getInviteUrl(token);
+  }, [getOrCreateLink]);
+
   const handleCopyLink = React.useCallback(async () => {
     setLoadingAction('copy');
 
     try {
-      const token = await getOrCreateLink();
-      if (token) await copy(getInviteUrl(token));
+      await copy(getOrCreateInviteUrl);
     } finally {
       setLoadingAction(null);
     }
-  }, [getOrCreateLink, copy]);
+  }, [copy, getOrCreateInviteUrl]);
 
   const handleShowQr = React.useCallback(async () => {
     setLoadingAction('qr');
 
     try {
-      const token = await getOrCreateLink();
-      if (token) sheetManager.open('invite-qr', getInviteUrl(token));
+      sheetManager.open('invite-qr', await getOrCreateInviteUrl());
     } finally {
       setLoadingAction(null);
     }
-  }, [getOrCreateLink, sheetManager]);
+  }, [getOrCreateInviteUrl, sheetManager]);
 
   return (
     <View className="mx-auto w-full max-w-[13rem] flex-1 justify-center gap-3 px-3 py-8">

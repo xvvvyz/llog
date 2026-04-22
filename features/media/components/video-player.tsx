@@ -1,18 +1,10 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
-import {
-  fileUriToSrc,
-  useFileUriToSrc,
-} from '@/features/media/lib/file-uri-to-src';
+import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
 import * as videoPreload from '@/features/media/lib/video-preload';
 import { UI } from '@/theme/ui';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
-import {
-  createVideoPlayer,
-  useVideoPlayer,
-  VideoView,
-  type VideoPlayer as ExpoVideoPlayer,
-} from 'expo-video';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import * as React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
@@ -29,53 +21,6 @@ const SCRUB_SEEK_TOLERANCE = {
 const SCRUB_PREVIEW_SEEK_INTERVAL_MS = 40;
 const SCRUB_PREVIEW_STEP_SECONDS = 0.05;
 const SCRUB_PREVIEW_MIN_DELTA_SECONDS = 0.03;
-
-type PreloadedVideoEntry = {
-  player: ExpoVideoPlayer;
-  subscriptions: { remove: () => void }[];
-};
-
-const preloadCache = videoPreload.createPreloadCache<PreloadedVideoEntry>({
-  limit: videoPreload.VIDEO_PRELOAD_CACHE_LIMIT,
-  dispose: (entry) => {
-    entry.subscriptions.forEach((subscription) => subscription.remove());
-    entry.player.pause();
-    entry.player.replace(null);
-    entry.player.release();
-  },
-});
-
-export const preloadVideo = (uri?: string | null) => {
-  const source = fileUriToSrc(uri);
-  if (!source) return;
-
-  const existingEntry = preloadCache.get(source);
-  if (existingEntry) {
-    if (existingEntry.player.status === 'readyToPlay') {
-      videoPreload.markVideoWarm(source);
-    }
-
-    preloadCache.touch(source);
-    return;
-  }
-
-  const player = createVideoPlayer(source);
-  player.loop = false;
-  player.muted = true;
-  player.timeUpdateEventInterval = 0;
-
-  const subscriptions = [
-    player.addListener('sourceLoad', () => {
-      videoPreload.markVideoWarm(source);
-    }),
-    player.addListener('statusChange', ({ status }) => {
-      if (status === 'readyToPlay') videoPreload.markVideoWarm(source);
-    }),
-  ];
-
-  if (player.status === 'readyToPlay') videoPreload.markVideoWarm(source);
-  preloadCache.set(source, { player, subscriptions });
-};
 
 export interface VideoPlayerHandle {
   pause: () => void;
