@@ -1,7 +1,7 @@
+import * as push from '@/features/account/lib/web-push';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
-import * as push from '@/lib/web-push';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';

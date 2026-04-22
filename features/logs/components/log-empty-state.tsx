@@ -1,0 +1,160 @@
+import { getInviteUrl } from '@/features/invites/lib/invite-url';
+import { createInviteLink } from '@/features/invites/mutations/create-invite-link';
+import { useTeamInvites } from '@/features/invites/queries/use-team-invite-links';
+import { useLogColor } from '@/features/logs/hooks/use-log-color';
+import { useLog } from '@/features/logs/queries/use-log';
+import { isMemberRole } from '@/features/teams/lib/permissions';
+import { useMyRole } from '@/features/teams/queries/use-my-role';
+import { useTeamMembers } from '@/features/teams/queries/use-team-members';
+import { Role } from '@/features/teams/types/role';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useCopy } from '@/hooks/use-copy';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { UI } from '@/theme/ui';
+import { Button } from '@/ui/button';
+import { Icon } from '@/ui/icon';
+import { Text } from '@/ui/text';
+import { Check } from 'phosphor-react-native/lib/module/icons/Check';
+import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
+import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
+import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
+import { Users } from 'phosphor-react-native/lib/module/icons/Users';
+import * as React from 'react';
+import { ActivityIndicator, View } from 'react-native';
+
+export const LogEmptyState = ({ logId }: { logId: string }) => {
+  const log = useLog({ id: logId });
+  const { canManage } = useMyRole({ teamId: log.teamId });
+  const colorScheme = useColorScheme();
+  const logColor = useLogColor({ id: logId });
+  const sheetManager = useSheetManager();
+  const { members } = useTeamMembers({ teamId: log.teamId });
+  const { invites } = useTeamInvites({ teamId: log.teamId });
+  const { copy, copied } = useCopy();
+  const hasMembers = members.some((member) => isMemberRole(member.role));
+
+  const [loadingAction, setLoadingAction] = React.useState<
+    'copy' | 'qr' | null
+  >(null);
+
+  const getOrCreateLink = React.useCallback(async () => {
+    if (!log.teamId) return null;
+
+    const existing = invites.find((link) => {
+      if (link.role !== Role.Member) return false;
+      const logIds = link.logs?.map((l) => l.id) ?? [];
+      return logIds.length === 1 && logIds[0] === logId;
+    });
+
+    if (existing) return existing.token;
+
+    const { token } = await createInviteLink({
+      teamId: log.teamId,
+      role: Role.Member,
+      logIds: [logId],
+    });
+
+    return token;
+  }, [log.teamId, logId, invites]);
+
+  const handleCopyLink = React.useCallback(async () => {
+    setLoadingAction('copy');
+
+    try {
+      const token = await getOrCreateLink();
+      if (token) await copy(getInviteUrl(token));
+    } finally {
+      setLoadingAction(null);
+    }
+  }, [getOrCreateLink, copy]);
+
+  const handleShowQr = React.useCallback(async () => {
+    setLoadingAction('qr');
+
+    try {
+      const token = await getOrCreateLink();
+      if (token) sheetManager.open('invite-qr', getInviteUrl(token));
+    } finally {
+      setLoadingAction(null);
+    }
+  }, [getOrCreateLink, sheetManager]);
+
+  return (
+    <View className="mx-auto w-full max-w-[13rem] flex-1 justify-center gap-3 px-3 py-8">
+      {canManage && (
+        <>
+          <Button
+            className="justify-between"
+            onPress={() => sheetManager.open('log-edit', logId)}
+            size="xs"
+            variant="secondary"
+          >
+            <Text>Edit details</Text>
+            <Icon className="-mr-0.5" icon={NotePencil} />
+          </Button>
+          <Button
+            className="justify-between"
+            onPress={handleCopyLink}
+            size="xs"
+            variant="secondary"
+          >
+            <Text>
+              {copied
+                ? 'Copied!'
+                : loadingAction === 'copy'
+                  ? 'Generating…'
+                  : 'Copy invite link'}
+            </Text>
+            {loadingAction === 'copy' ? (
+              <ActivityIndicator
+                size={16}
+                color={UI[colorScheme].mutedForeground}
+              />
+            ) : (
+              <Icon className="-mr-0.5" icon={copied ? Check : Copy} />
+            )}
+          </Button>
+          <Button
+            className="justify-between"
+            onPress={handleShowQr}
+            size="xs"
+            variant="secondary"
+          >
+            <Text>
+              {loadingAction === 'qr' ? 'Generating…' : 'Show invite QR'}
+            </Text>
+            {loadingAction === 'qr' ? (
+              <ActivityIndicator
+                size={16}
+                color={UI[colorScheme].mutedForeground}
+              />
+            ) : (
+              <Icon className="-mr-0.5" icon={QrCode} />
+            )}
+          </Button>
+          {hasMembers && (
+            <Button
+              className="justify-between"
+              onPress={() => sheetManager.open('log-members', logId)}
+              size="xs"
+              variant="secondary"
+            >
+              <Text>Manage members</Text>
+              <Icon className="-mr-0.5" icon={Users} />
+            </Button>
+          )}
+        </>
+      )}
+      <Button
+        className="web:hover:opacity-90 mt-3 active:opacity-90"
+        onPress={() => sheetManager.open('record-create', logId)}
+        size="xs"
+        style={{ backgroundColor: logColor.default }}
+      >
+        <Icon className="text-contrast-foreground -ml-0.5" icon={Plus} />
+        <Text className="text-contrast-foreground">Record</Text>
+      </Button>
+    </View>
+  );
+};

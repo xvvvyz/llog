@@ -1,12 +1,12 @@
-import { RecordOrReply } from '@/features/records/record-or-reply';
+import { useLogColor } from '@/features/logs/hooks/use-log-color';
+import { RecordOrReply } from '@/features/records/components/record-or-reply';
+import * as scroll from '@/features/records/lib/post-submit-scroll';
+import { textToTitle } from '@/features/records/lib/text-to-title';
+import { useRecord } from '@/features/records/queries/use-record';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { useLogColor } from '@/hooks/use-log-color';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import * as scroll from '@/lib/post-submit-scroll';
-import { textToTitle } from '@/lib/text-to-title';
-import { useRecord } from '@/queries/use-record';
 import { BackButton } from '@/ui/back-button';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';

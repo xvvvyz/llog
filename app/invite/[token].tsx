@@ -1,9 +1,9 @@
+import * as storage from '@/features/invites/lib/invite-storage';
+import { redeemInviteLink } from '@/features/invites/mutations/redeem-invite-link';
+import { switchTeam } from '@/features/teams/mutations/switch-team';
+import { useTeams } from '@/features/teams/queries/use-teams';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
-import * as storage from '@/lib/invite-storage';
-import { redeemInviteLink } from '@/mutations/redeem-invite-link';
-import { switchTeam } from '@/mutations/switch-team';
-import { useTeams } from '@/queries/use-teams';
 import { UI } from '@/theme/ui';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';

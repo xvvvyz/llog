@@ -1,5 +1,5 @@
 import { createAdminDb, type Db } from '@/api/middleware/db';
-import * as permissions from '@/lib/permissions';
+import * as permissions from '@/features/teams/lib/permissions';
 import { buildPushHTTPRequest } from '@pushforge/builder';
 import { z } from 'zod/v4';
 

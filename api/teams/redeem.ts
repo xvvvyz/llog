@@ -1,7 +1,7 @@
 import { auth, db } from '@/api/middleware/db';
 import { memberJoinedActivity } from '@/api/teams/helpers';
-import * as permissions from '@/lib/permissions';
-import { Role } from '@/types/role';
+import * as permissions from '@/features/teams/lib/permissions';
+import { Role } from '@/features/teams/types/role';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';

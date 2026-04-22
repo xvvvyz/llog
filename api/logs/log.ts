@@ -1,7 +1,7 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { db } from '@/api/middleware/db';
-import { deleteActivities } from '@/lib/delete-activities';
-import * as permissions from '@/lib/permissions';
+import { deleteActivities } from '@/features/activity/lib/delete-activities';
+import * as permissions from '@/features/teams/lib/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 

@@ -1,12 +1,12 @@
+import { useProfile } from '@/features/account/queries/use-profile';
+import { useActivities } from '@/features/activity/queries/use-activities';
+import { PENDING_INVITE_KEY } from '@/features/invites/lib/invite-storage';
+import { useTeams } from '@/features/teams/queries/use-teams';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { cn } from '@/lib/cn';
 import { db } from '@/lib/db';
-import { PENDING_INVITE_KEY } from '@/lib/invite-storage';
-import { useActivities } from '@/queries/use-activities';
-import { useProfile } from '@/queries/use-profile';
-import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
 import { Avatar } from '@/ui/avatar';

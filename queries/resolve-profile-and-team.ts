@@ -1,4 +1,4 @@
-import { getProfile } from '@/queries/get-profile';
+import { getProfile } from '@/features/account/queries/get-profile';
 
 export const resolveProfileAndTeam = async (
   profileId?: string,

@@ -1,8 +1,8 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { auth, db } from '@/api/middleware/db';
 import { removeMember } from '@/api/teams/helpers';
-import * as permissions from '@/lib/permissions';
-import { Role } from '@/types/role';
+import * as permissions from '@/features/teams/lib/permissions';
+import { Role } from '@/features/teams/types/role';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 

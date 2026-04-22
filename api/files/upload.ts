@@ -1,7 +1,7 @@
 import { storeImageDeliveryUrl, uploadImage } from '@/api/files/images';
 import { createDirectVideoUpload } from '@/api/files/stream';
 import { type Db } from '@/api/middleware/db';
-import { fileLike } from '@/types/file-like';
+import { fileLike } from '@/features/media/types/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { bodyLimit } from 'hono/body-limit';

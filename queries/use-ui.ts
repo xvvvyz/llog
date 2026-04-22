@@ -1,4 +1,4 @@
-import { SortBy, isSortBy } from '@/features/logs/log-list-actions';
+import { SortBy, isSortBy } from '@/features/logs/components/log-list-actions';
 import { db } from '@/lib/db';
 import { Emoji, isEmoji } from '@/types/emoji';
 import { SortDirection, isSortDirection } from '@/ui/dropdown-menu';

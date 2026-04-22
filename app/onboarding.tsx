@@ -1,6 +1,6 @@
+import { onboardUser } from '@/features/account/mutations/onboard-user';
+import { useProfile } from '@/features/account/queries/use-profile';
 import { db } from '@/lib/db';
-import { onboardUser } from '@/mutations/onboard-user';
-import { useProfile } from '@/queries/use-profile';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';

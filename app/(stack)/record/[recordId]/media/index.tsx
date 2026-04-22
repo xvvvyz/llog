@@ -1,7 +1,10 @@
-import { Carousel } from '@/features/media/carousel';
+import { Carousel } from '@/features/media/components/carousel';
+import {
+  useRecordMedia,
+  useReplyMedia,
+} from '@/features/records/queries/use-record-media';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
-import { useRecordMedia, useReplyMedia } from '@/queries/use-record-media';
 import { BackButton } from '@/ui/back-button';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';

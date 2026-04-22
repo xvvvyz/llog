@@ -1,9 +1,9 @@
-import { ActivityItem } from '@/features/activity/activity-item';
+import { useProfile } from '@/features/account/queries/use-profile';
+import { ActivityItem } from '@/features/activity/components/activity-item';
+import * as grouping from '@/features/activity/lib/group-activities';
+import { markActivitiesRead } from '@/features/activity/mutations/mark-activities-read';
+import { useActivities } from '@/features/activity/queries/use-activities';
 import { cn } from '@/lib/cn';
-import * as grouping from '@/lib/group-activities';
-import { markActivitiesRead } from '@/mutations/mark-activities-read';
-import { useActivities } from '@/queries/use-activities';
-import { useProfile } from '@/queries/use-profile';
 import { useUi } from '@/queries/use-ui';
 import { Header } from '@/ui/header';
 import { Icon } from '@/ui/icon';

@@ -1,6 +1,6 @@
+import { createTeam } from '@/features/teams/mutations/create-team';
+import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
-import { createTeam } from '@/mutations/create-team';
-import { useTeams } from '@/queries/use-teams';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';

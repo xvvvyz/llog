@@ -2,7 +2,7 @@ import { storeImageDeliveryUrl, uploadImage } from '@/api/files/images';
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import * as upload from '@/api/files/upload';
 import { db } from '@/api/middleware/db';
-import { fileLike } from '@/types/file-like';
+import { fileLike } from '@/features/media/types/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';

@@ -1,5 +1,5 @@
+import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
 import { cn } from '@/lib/cn';
-import { useFileUriToSrc } from '@/lib/file-uri-to-src';
 import { Image as ExpoImage, ImageContentFit, ImageStyle } from 'expo-image';
 import { StyleProp, StyleSheet, View } from 'react-native';
 import { useResolveClassNames } from 'uniwind';

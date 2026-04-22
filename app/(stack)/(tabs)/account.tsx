@@ -1,12 +1,12 @@
+import * as push from '@/features/account/lib/web-push';
+import { deleteProfileImage } from '@/features/account/mutations/delete-profile-image';
+import { randomizeProfileAvatar } from '@/features/account/mutations/randomize-profile-avatar';
+import { updateProfile } from '@/features/account/mutations/update-profile';
+import { uploadProfileImage } from '@/features/account/mutations/upload-profile-image';
+import { useProfile } from '@/features/account/queries/use-profile';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
-import * as push from '@/lib/web-push';
-import { deleteProfileImage } from '@/mutations/delete-profile-image';
-import { randomizeProfileAvatar } from '@/mutations/randomize-profile-avatar';
-import { updateProfile } from '@/mutations/update-profile';
-import { uploadProfileImage } from '@/mutations/upload-profile-image';
-import { useProfile } from '@/queries/use-profile';
 import { useUi } from '@/queries/use-ui';
 import { REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
 import { Avatar } from '@/ui/avatar';
