@@ -2,18 +2,79 @@ import * as startupImages from '@/lib/apple-startup-images';
 import { AppIcon } from '@/scripts/logo-mark';
 import { UI } from '@/theme/ui';
 import { Resvg } from '@resvg/resvg-js';
-import { mkdir, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import satori from 'satori';
+import { createLogger } from './logger';
 
 const { NATIVE_SPLASH_BACKGROUNDS } = require('../theme/native.cjs') as {
   NATIVE_SPLASH_BACKGROUNDS: { light: string; dark: string };
 };
 
-const log = (message: string) => {
-  console.log(`[generate-media] ${message}`);
+const PROJECT_ROOT = process.cwd();
+const MEDIA_CACHE_PATH = join(PROJECT_ROOT, '.expo', 'generate-media.json');
+
+const MEDIA_SOURCE_PATHS = [
+  join(PROJECT_ROOT, 'scripts', 'generate-media.tsx'),
+  join(PROJECT_ROOT, 'scripts', 'logo-mark.tsx'),
+  join(PROJECT_ROOT, 'lib', 'apple-startup-images.ts'),
+  join(PROJECT_ROOT, 'theme', 'base.ts'),
+  join(PROJECT_ROOT, 'theme', 'native.cjs'),
+  join(PROJECT_ROOT, 'theme', 'spectrum.ts'),
+  join(PROJECT_ROOT, 'theme', 'ui.ts'),
+] as const;
+
+const { log, progress } = createLogger('generate-media');
+
+const publicPath = (...segments: string[]) =>
+  join(PROJECT_ROOT, 'public', ...segments);
+
+const assetsPath = (...segments: string[]) =>
+  join(PROJECT_ROOT, 'assets', ...segments);
+
+const fileExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const createSourceHash = async (paths: readonly string[]) => {
+  const hash = createHash('sha256');
+
+  for (const path of paths) {
+    hash.update(await readFile(path));
+  }
+
+  return hash.digest('hex');
+};
+
+const readCachedSourceHash = async (path: string) => {
+  try {
+    const cache = JSON.parse(await readFile(path, 'utf8')) as {
+      sourceHash?: string;
+    };
+
+    return typeof cache.sourceHash === 'string' ? cache.sourceHash : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedSourceHash = async ({
+  path,
+  sourceHash,
+}: {
+  path: string;
+  sourceHash: string;
+}) => {
+  await mkdir(dirname(path), { recursive: true });
+  await Bun.write(path, `${JSON.stringify({ sourceHash }, null, 2)}\n`);
 };
 
 const buildIco = (
@@ -71,20 +132,23 @@ const renderSvg = ({
     })
   );
 
+const renderSvgToPng = (
+  svg: string,
+  options?: ConstructorParameters<typeof Resvg>[1]
+) => new Resvg(svg, options).render().asPng();
+
 const renderPng = async (opts: Parameters<typeof renderSvg>[0]) =>
-  new Resvg(renderSvg(opts)).render().asPng();
+  renderSvgToPng(renderSvg(opts));
 
 const renderAppIconPng = async ({
   fitToWidth,
   ...props
 }: React.ComponentProps<typeof AppIcon> & { fitToWidth?: number }) =>
-  new Resvg(renderToStaticMarkup(React.createElement(AppIcon, props)), {
+  renderSvgToPng(renderToStaticMarkup(React.createElement(AppIcon, props)), {
     ...(fitToWidth != null
       ? { fitTo: { mode: 'width' as const, value: fitToWidth } }
       : null),
-  })
-    .render()
-    .asPng();
+  });
 
 const ICON_PADDING = 0.22;
 const ICON_RADIUS = 0.48;
@@ -96,67 +160,67 @@ const contrastForeground = UI.light.contrastForeground;
 
 const iconOutputs = [
   {
-    path: join(process.cwd(), 'assets', 'icon.png'),
+    path: assetsPath('icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 1024,
   },
   {
-    path: join(process.cwd(), 'assets', 'ios-icon.png'),
+    path: assetsPath('ios-icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 1024,
   },
   {
-    path: join(process.cwd(), 'assets', 'android-icon.png'),
+    path: assetsPath('android-icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 1024,
   },
   {
-    path: join(process.cwd(), 'public', 'apple-touch-icon.png'),
+    path: publicPath('apple-touch-icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 512,
   },
   {
-    path: join(process.cwd(), 'public', 'apple-touch-icon-180.png'),
+    path: publicPath('apple-touch-icon-180.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 180,
   },
   {
-    path: join(process.cwd(), 'public', 'apple-touch-icon-167.png'),
+    path: publicPath('apple-touch-icon-167.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 167,
   },
   {
-    path: join(process.cwd(), 'public', 'apple-touch-icon-152.png'),
+    path: publicPath('apple-touch-icon-152.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 152,
   },
   {
-    path: join(process.cwd(), 'public', 'icon-192.png'),
+    path: publicPath('icon-192.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 192,
   },
   {
-    path: join(process.cwd(), 'public', 'icon-512.png'),
+    path: publicPath('icon-512.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 512,
   },
   {
-    path: join(process.cwd(), 'public', 'icon-192-maskable.png'),
+    path: publicPath('icon-192-maskable.png'),
     paddingRatio: MASKABLE_PADDING,
     radiusRatio: MASKABLE_RADIUS,
     size: 192,
   },
   {
-    path: join(process.cwd(), 'public', 'icon-512-maskable.png'),
+    path: publicPath('icon-512-maskable.png'),
     paddingRatio: MASKABLE_PADDING,
     radiusRatio: MASKABLE_RADIUS,
     size: 512,
@@ -165,7 +229,7 @@ const iconOutputs = [
 
 const nativeAssetOutputs = [
   {
-    path: join(process.cwd(), 'assets', 'android-adaptive-icon-foreground.png'),
+    path: assetsPath('android-adaptive-icon-foreground.png'),
     render: () =>
       renderAppIconPng({
         backgroundColor: 'transparent',
@@ -174,7 +238,7 @@ const nativeAssetOutputs = [
       }),
   },
   {
-    path: join(process.cwd(), 'assets', 'android-adaptive-icon-monochrome.png'),
+    path: assetsPath('android-adaptive-icon-monochrome.png'),
     render: () =>
       renderAppIconPng({
         backgroundColor: 'transparent',
@@ -185,7 +249,7 @@ const nativeAssetOutputs = [
       }),
   },
   {
-    path: join(process.cwd(), 'assets', 'splash-icon.png'),
+    path: assetsPath('splash-icon.png'),
     render: () =>
       renderAppIconPng({
         backgroundColor: 'transparent',
@@ -195,7 +259,7 @@ const nativeAssetOutputs = [
       }),
   },
   {
-    path: join(process.cwd(), 'assets', 'splash-icon-dark.png'),
+    path: assetsPath('splash-icon-dark.png'),
     render: () =>
       renderAppIconPng({
         backgroundColor: 'transparent',
@@ -207,12 +271,58 @@ const nativeAssetOutputs = [
   },
 ] as const;
 
+const badgeOutputPath = publicPath('badge-72.png');
+const faviconSvgPath = publicPath('favicon.svg');
+const favicon32Path = publicPath('favicon-32.png');
+const faviconIcoPath = publicPath('favicon.ico');
+const startupOutputDirectory = publicPath('apple-startup');
+
+const startupOutputPaths = startupImages.appleStartupImageSpecs.flatMap(
+  (spec) =>
+    startupImages.appleStartupImageOrientations.flatMap((orientation) =>
+      startupImages.appleStartupImageThemes.map((theme) =>
+        publicPath(
+          startupImages
+            .getAppleStartupImageHref({
+              id: spec.id,
+              orientation,
+              theme,
+            })
+            .replace(/^\//, '')
+        )
+      )
+    )
+);
+
+const mediaOutputPaths = [
+  ...iconOutputs.map((output) => output.path),
+  ...nativeAssetOutputs.map((output) => output.path),
+  badgeOutputPath,
+  faviconSvgPath,
+  favicon32Path,
+  faviconIcoPath,
+  ...startupOutputPaths,
+];
+
+const currentSourceHash = await createSourceHash(MEDIA_SOURCE_PATHS);
+const cachedSourceHash = await readCachedSourceHash(MEDIA_CACHE_PATH);
+
+const hasAllOutputs =
+  cachedSourceHash === currentSourceHash &&
+  (await Promise.all(mediaOutputPaths.map(fileExists))).every(Boolean);
+
+if (hasAllOutputs) {
+  log(`Assets unchanged; skipping ${mediaOutputPaths.length} media outputs`);
+  log('Done');
+  process.exit(0);
+}
+
 log(`Rendering ${iconOutputs.length} app icons`);
 
 for (const [index, output] of iconOutputs.entries()) {
   await mkdir(dirname(output.path), { recursive: true });
   await Bun.write(output.path, await renderPng(output));
-  log(`Icon ${index + 1}/${iconOutputs.length}: ${output.path}`);
+  progress(`Icon ${index + 1}/${iconOutputs.length}: ${output.path}`);
 }
 
 log(`Rendering ${nativeAssetOutputs.length} native assets`);
@@ -220,14 +330,14 @@ log(`Rendering ${nativeAssetOutputs.length} native assets`);
 for (const [index, output] of nativeAssetOutputs.entries()) {
   await mkdir(dirname(output.path), { recursive: true });
   await Bun.write(output.path, await output.render());
-  log(`Native ${index + 1}/${nativeAssetOutputs.length}: ${output.path}`);
+  progress(`Native ${index + 1}/${nativeAssetOutputs.length}: ${output.path}`);
 }
 
 log('Rendering notification badge');
 
 // Badge — monochrome (white pills, transparent background) for use in notification status bar
 await Bun.write(
-  join(process.cwd(), 'public', 'badge-72.png'),
+  badgeOutputPath,
   await renderAppIconPng({
     backgroundColor: 'transparent',
     colors: [contrastForeground, contrastForeground, contrastForeground],
@@ -249,12 +359,12 @@ const faviconSvg = renderSvg({
   size: 512,
 });
 
-await Bun.write(join(process.cwd(), 'public', 'favicon.svg'), faviconSvg);
+await Bun.write(faviconSvgPath, faviconSvg);
 
 log('Rendering favicon PNG assets');
 
 await Bun.write(
-  join(process.cwd(), 'public', 'favicon-32.png'),
+  favicon32Path,
   await renderPng({
     clip: true,
     paddingRatio: ICON_PADDING,
@@ -279,7 +389,7 @@ const [ico32, ico512] = await Promise.all([
 ]);
 
 await Bun.write(
-  join(process.cwd(), 'public', 'favicon.ico'),
+  faviconIcoPath,
   buildIco([
     { data: ico32, size: 32 },
     { data: ico512, size: 512 },
@@ -287,8 +397,6 @@ await Bun.write(
 );
 
 log('Wrote favicon.ico');
-
-const startupOutputDirectory = join(process.cwd(), 'public', 'apple-startup');
 
 const renderStartupImage = async ({
   height,
@@ -337,7 +445,7 @@ const renderStartupImage = async ({
     { height, width }
   );
 
-  return new Resvg(svg).render().asPng();
+  return renderSvgToPng(svg);
 };
 
 await rm(startupOutputDirectory, { force: true, recursive: true });
@@ -373,14 +481,19 @@ for (const spec of startupImages.appleStartupImageSpecs) {
         })
         .replace(/^\//, '');
 
-      await Bun.write(join(process.cwd(), 'public', relativeHref), png);
+      await Bun.write(publicPath(relativeHref), png);
       startupImageIndex += 1;
 
-      log(
+      progress(
         `Startup ${startupImageIndex}/${totalStartupImages}: ${relativeHref}`
       );
     }
   }
 }
+
+await writeCachedSourceHash({
+  path: MEDIA_CACHE_PATH,
+  sourceHash: currentSourceHash,
+});
 
 log('Done');

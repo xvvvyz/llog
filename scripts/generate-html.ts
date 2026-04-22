@@ -2,9 +2,15 @@ import * as startupImages from '@/lib/apple-startup-images';
 import { UI } from '@/theme/ui';
 import { rename } from 'node:fs/promises';
 import { join } from 'node:path';
+import { createLogger } from './logger';
+
+const { flush, log, progress } = createLogger('generate-html');
 
 const light = UI.light.background;
 const dark = UI.dark.background;
+
+const publicPath = (...segments: string[]) =>
+  join(process.cwd(), 'public', ...segments);
 
 const startupLinks = startupImages.appleStartupImageSpecs.flatMap((spec) =>
   startupImages.appleStartupImageOrientations.flatMap((orientation) =>
@@ -35,7 +41,7 @@ const tags = [
   `<meta name="color-scheme" content="light dark"/>`,
   `<meta name="description" content="Track anything in your world."/>`,
   `<meta name="theme-color" content="${dark}" media="(prefers-color-scheme: dark)"/>`,
-  `<meta name="theme-color" content="${light}"/>`,
+  `<meta name="theme-color" content="${light}" media="(prefers-color-scheme: light)"/>`,
   `<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,interactive-widget=resizes-content,user-scalable=no,viewport-fit=auto"/>`,
   `<style id="background-color">html,body,#root{background-color:${light}}@media(prefers-color-scheme:dark){html,body,#root{background-color:${dark}}}</style>`,
   `<style id="expo-reset">html,body{height:100%}body{overflow:hidden}#root{display:flex;height:100%;flex:1}</style>`,
@@ -49,8 +55,9 @@ const tags = [
 ];
 
 const html = `<!doctype html><html lang="en"><head>${tags.join('')}</head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>`;
-const outputPath = join(process.cwd(), 'public', 'index.html');
-const tempPath = join(process.cwd(), 'public', 'index.html.tmp');
+const outputPath = publicPath('index.html');
+const tempPath = publicPath('index.html.tmp');
+const manifestPath = publicPath('manifest.webmanifest');
 
 const manifest = JSON.stringify(
   {
@@ -99,10 +106,14 @@ const manifest = JSON.stringify(
   2
 );
 
+progress('Writing index.html');
 await Bun.write(tempPath, html);
 await rename(tempPath, outputPath);
+progress(`Wrote ${outputPath}`);
+flush();
 
-await Bun.write(
-  join(process.cwd(), 'public', 'manifest.webmanifest'),
-  `${manifest}\n`
-);
+progress('Writing manifest.webmanifest');
+await Bun.write(manifestPath, `${manifest}\n`);
+progress(`Wrote ${manifestPath}`);
+flush();
+log('Done');

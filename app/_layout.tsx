@@ -8,7 +8,6 @@ import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
-import Head from 'expo-router/head';
 import { setBackgroundColorAsync } from 'expo-system-ui';
 import * as React from 'react';
 import { Platform } from 'react-native';
@@ -106,11 +105,6 @@ export default function Layout() {
 
   return (
     <React.Fragment>
-      {Platform.OS === 'web' && (
-        <Head>
-          <meta name="theme-color" content={UI[colorScheme].background} />
-        </Head>
-      )}
       <ThemeProvider
         value={{
           dark: colorScheme === 'dark',
