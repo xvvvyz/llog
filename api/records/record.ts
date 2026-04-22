@@ -1,8 +1,8 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { auth, db } from '@/api/middleware/db';
 import * as push from '@/api/push/helpers';
-import { deleteActivities } from '@/utilities/delete-activities';
-import * as p from '@/utilities/permissions';
+import { deleteActivities } from '@/lib/delete-activities';
+import * as p from '@/lib/permissions';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';

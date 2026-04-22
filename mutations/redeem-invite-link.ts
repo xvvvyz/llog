@@ -1,4 +1,4 @@
-import { api } from '@/utilities/api';
+import { api } from '@/lib/api';
 
 export const redeemInviteLink = async ({ token }: { token: string }) => {
   const res = await api(`/teams/invite-links/${token}/redeem`, {

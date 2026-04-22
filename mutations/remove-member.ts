@@ -1,4 +1,4 @@
-import { api } from '@/utilities/api';
+import { api } from '@/lib/api';
 
 export const removeMember = async ({
   teamId,

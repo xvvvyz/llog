@@ -1,4 +1,4 @@
-import { isPwa } from '@/utilities/pwa';
+import { isPwa } from '@/lib/pwa';
 import { useSafeAreaInsets as _useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function useSafeAreaInsets() {

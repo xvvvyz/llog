@@ -1,7 +1,7 @@
-import { SortBy, isSortBy } from '@/components/log-list-actions';
-import { SortDirection, isSortDirection } from '@/components/ui/dropdown-menu';
+import { SortBy, isSortBy } from '@/features/logs/log-list-actions';
+import { db } from '@/lib/db';
 import { Emoji, isEmoji } from '@/types/emoji';
-import { db } from '@/utilities/db';
+import { SortDirection, isSortDirection } from '@/ui/dropdown-menu';
 
 export const useUi = () => {
   const auth = db.useAuth();

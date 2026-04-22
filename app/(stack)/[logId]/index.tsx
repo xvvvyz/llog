@@ -1,23 +1,24 @@
-import { LogDropdownMenu } from '@/components/log-dropdown-menu';
-import { LogEmptyState } from '@/components/log-empty-state';
-import { RecordOrReply } from '@/components/record-or-reply';
-import { BackButton } from '@/components/ui/back-button';
-import { Button } from '@/components/ui/button';
-import { Header } from '@/components/ui/header';
-import { Icon } from '@/components/ui/icon';
-import type { ListHandle } from '@/components/ui/list';
-import { List } from '@/components/ui/list';
-import { Loading } from '@/components/ui/loading';
-import { Page } from '@/components/ui/page';
-import { Text } from '@/components/ui/text';
+import { LogDropdownMenu } from '@/features/logs/log-dropdown-menu';
+import { LogEmptyState } from '@/features/logs/log-empty-state';
+import { RecordOrReply } from '@/features/records/record-or-reply';
+import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
+import * as scroll from '@/lib/post-submit-scroll';
 import { useLog } from '@/queries/use-log';
 import { useRecords } from '@/queries/use-records';
-import { cn } from '@/utilities/cn';
-import * as scroll from '@/utilities/post-submit-scroll';
+import { BackButton } from '@/ui/back-button';
+import { Button } from '@/ui/button';
+import { Header } from '@/ui/header';
+import { Icon } from '@/ui/icon';
+import type { ListHandle } from '@/ui/list';
+import { List } from '@/ui/list';
+import { Loading } from '@/ui/loading';
+import { Page } from '@/ui/page';
+import { Text } from '@/ui/text';
 import { useLocalSearchParams } from 'expo-router';
 import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
@@ -25,6 +26,7 @@ import * as React from 'react';
 import { Platform, View } from 'react-native';
 
 export default function Index() {
+  const breakpoints = useBreakpoints();
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ logId: string }>();
@@ -36,6 +38,7 @@ export default function Index() {
   const logColor = useLogColor({ id: params.logId });
   const records = useRecords({ logId: params.logId });
   const hasRecords = records.data.length > 0;
+  const showFab = hasRecords && !breakpoints.md;
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: params.logId,
@@ -78,8 +81,11 @@ export default function Index() {
                 style={{ backgroundColor: logColor.default }}
                 variant="secondary"
               >
-                <Icon className="-ml-0.5 text-white" icon={Plus} />
-                <Text className="text-white">Record</Text>
+                <Icon
+                  className="text-contrast-foreground -ml-0.5"
+                  icon={Plus}
+                />
+                <Text className="text-contrast-foreground">Record</Text>
               </Button>
             )}
             <LogDropdownMenu
@@ -110,7 +116,9 @@ export default function Index() {
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
-          contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + (showFab ? 104 : 0),
+          }}
           data={records.data}
           keyExtractor={(record) => record.id}
           keyboardDismissMode="on-drag"
@@ -131,9 +139,9 @@ export default function Index() {
           wrapperClassName="flex-1"
         />
       )}
-      {hasRecords && (
+      {showFab && (
         <View
-          className="absolute right-8 bottom-8 md:hidden"
+          className="absolute right-8 bottom-8"
           style={{ marginBottom: insets.bottom }}
         >
           <Button
@@ -144,7 +152,7 @@ export default function Index() {
             variant="secondary"
             wrapperClassName="rounded-full"
           >
-            <Icon className="text-white" icon={Plus} />
+            <Icon className="text-contrast-foreground" icon={Plus} />
           </Button>
         </View>
       )}

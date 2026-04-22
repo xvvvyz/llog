@@ -1,6 +1,6 @@
+import { db } from '@/lib/db';
 import { useResolvedTeamIds } from '@/queries/use-resolved-team-ids';
 import { useUi } from '@/queries/use-ui';
-import { db } from '@/utilities/db';
 import * as React from 'react';
 
 export const useLogs = ({

@@ -1,9 +1,10 @@
+import { SPECTRUM } from '@/theme/spectrum';
+import { UI } from '@/theme/ui';
 import * as React from 'react';
-import { SPECTRUM } from '../theme/spectrum';
 
 const LOGO_COLOR_INDEXES = [1, 5, 2, 7] as const;
 
-export const ICON_BACKGROUND = 'hsl(0 0% 100%)';
+export const ICON_BACKGROUND = UI.light.contrastForeground;
 
 export const LOGO_COLORS = LOGO_COLOR_INDEXES.map(
   (index) => SPECTRUM.light[index].default
@@ -321,7 +322,7 @@ export const LogoSvg = ({
 
 const PILL_WIDTH_RATIOS = [0.8, 0.68, 0.56] as const;
 
-const APP_ICON_BG = 'hsl(0 0% 100%)';
+const APP_ICON_BG = UI.light.contrastForeground;
 
 const getSquirclePillPath = ({
   exponent = 4.5,

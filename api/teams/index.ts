@@ -1,9 +1,9 @@
+import invites from '@/api/teams/invite-links';
+import logMembers from '@/api/teams/log-members';
+import members from '@/api/teams/members';
+import membership from '@/api/teams/membership';
+import redeem from '@/api/teams/redeem';
 import { Hono } from 'hono';
-import invites from './invite-links';
-import logMembers from './log-members';
-import members from './members';
-import membership from './membership';
-import redeem from './redeem';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

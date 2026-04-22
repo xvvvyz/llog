@@ -1,14 +1,14 @@
+import { storeImageDeliveryUrl, uploadImage } from '@/api/files/images';
+import { deleteMediaAssets } from '@/api/files/media-cleanup';
+import * as upload from '@/api/files/upload';
 import { db } from '@/api/middleware/db';
+import * as p from '@/lib/permissions';
 import { fileLike } from '@/types/file-like';
-import * as p from '@/utilities/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
-import { storeImageDeliveryUrl, uploadImage } from './images';
-import { deleteMediaAssets } from './media-cleanup';
-import * as upload from './upload';
 
 const queryTeamWithImageAndRole = (teamId: string, userId: string) => ({
   roles: {

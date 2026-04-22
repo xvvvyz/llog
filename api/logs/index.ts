@@ -1,5 +1,5 @@
+import log from '@/api/logs/log';
 import { Hono } from 'hono';
-import log from './log';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

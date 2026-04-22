@@ -1,5 +1,5 @@
+import * as mediaRoutes from '@/api/files/media-routes';
 import { HTTPException } from 'hono/http-exception';
-import * as mediaRoutes from './media-routes';
 
 const requireReplyTarget = async (c: mediaRoutes.MediaContext) => {
   const replyId = c.req.param('replyId');

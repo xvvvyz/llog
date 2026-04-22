@@ -1,6 +1,6 @@
 import { auth, db } from '@/api/middleware/db';
+import * as p from '@/lib/permissions';
 import { Role } from '@/types/role';
-import * as p from '@/utilities/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';

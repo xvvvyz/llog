@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/lib/db';
 import * as React from 'react';
 
 export const useRecords = ({ logId }: { logId?: string }) => {

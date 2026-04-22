@@ -1,0 +1,34 @@
+import { cn } from '@/lib/cn';
+import * as LabelPrimitive from '@rn-primitives/label';
+import * as React from 'react';
+
+const Label = React.forwardRef<
+  LabelPrimitive.TextRef,
+  LabelPrimitive.TextProps
+>(
+  (
+    { className, onPress, onLongPress, onPressIn, onPressOut, ...props },
+    ref
+  ) => (
+    <LabelPrimitive.Root
+      className="web:cursor-default"
+      onLongPress={onLongPress}
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+    >
+      <LabelPrimitive.Text
+        ref={ref}
+        className={cn(
+          'text-muted-foreground web:peer-disabled:cursor-not-allowed web:peer-disabled:opacity-70 px-2 pb-1.5 text-base leading-tight',
+          className
+        )}
+        {...props}
+      />
+    </LabelPrimitive.Root>
+  )
+);
+
+Label.displayName = LabelPrimitive.Root.displayName;
+
+export { Label };

@@ -1,22 +1,13 @@
-import { TeamSwitcher } from '@/components/team-switcher';
-import { Avatar } from '@/components/ui/avatar';
-import { BackButton } from '@/components/ui/back-button';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import * as Menu from '@/components/ui/dropdown-menu';
-import { Header } from '@/components/ui/header';
-import { Icon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loading } from '@/components/ui/loading';
-import { Page } from '@/components/ui/page';
-import { Text } from '@/components/ui/text';
+import { TeamMemberMenuContent } from '@/features/teams/team-member-menu-content';
+import { TeamSwitcher } from '@/features/teams/team-switcher';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { db } from '@/lib/db';
+import { getInviteUrl } from '@/lib/invite-url';
+import * as p from '@/lib/permissions';
 import { createInviteLink } from '@/mutations/create-invite-link';
 import { deleteTeamImage } from '@/mutations/delete-team-image';
-import { updateRole } from '@/mutations/update-role';
 import { updateTeam } from '@/mutations/update-team';
 import { uploadTeamImage } from '@/mutations/upload-team-image';
 import { useLogs } from '@/queries/use-logs';
@@ -28,9 +19,18 @@ import { useTeams } from '@/queries/use-teams';
 import { useUi } from '@/queries/use-ui';
 import { UI } from '@/theme/ui';
 import { Role } from '@/types/role';
-import { db } from '@/utilities/db';
-import { getInviteUrl } from '@/utilities/invite-url';
-import * as p from '@/utilities/permissions';
+import { Avatar } from '@/ui/avatar';
+import { BackButton } from '@/ui/back-button';
+import { Button } from '@/ui/button';
+import { Card } from '@/ui/card';
+import * as Menu from '@/ui/dropdown-menu';
+import { Header } from '@/ui/header';
+import { Icon } from '@/ui/icon';
+import { Input } from '@/ui/input';
+import { Label } from '@/ui/label';
+import { Loading } from '@/ui/loading';
+import { Page } from '@/ui/page';
+import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { Check } from 'phosphor-react-native/lib/module/icons/Check';
 import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
@@ -38,10 +38,8 @@ import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsTh
 import { LinkBreak } from 'phosphor-react-native/lib/module/icons/LinkBreak';
 import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
 import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
-import { SquaresFour } from 'phosphor-react-native/lib/module/icons/SquaresFour';
 import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
-import { UserMinus } from 'phosphor-react-native/lib/module/icons/UserMinus';
 import * as React from 'react';
 import { ActivityIndicator, Keyboard, Pressable, View } from 'react-native';
 
@@ -49,136 +47,6 @@ const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
   [Role.Admin]: 'Admin',
   [Role.Member]: 'Member',
-};
-
-const ASSIGNABLE_ROLES = [Role.Admin, Role.Member] as const;
-type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
-
-const TeamMemberMenuContent = ({
-  activeTeamId,
-  canChangeToAdmin,
-  canChangeToMember,
-  canRemoveMember,
-  canViewLogs,
-  memberId,
-  memberRole,
-  onOpenMemberLogs,
-  onOpenMemberLogsAfterDemotion,
-}: {
-  activeTeamId?: string;
-  canChangeToAdmin: boolean;
-  canChangeToMember: boolean;
-  canRemoveMember: boolean;
-  canViewLogs: boolean;
-  memberId: string;
-  memberRole: string;
-  onOpenMemberLogs: (memberId: string) => void;
-  onOpenMemberLogsAfterDemotion: (memberId: string) => void;
-}) => {
-  const colorScheme = useColorScheme();
-  const sheetManager = useSheetManager();
-  const { onOpenChange } = Menu.useContext();
-
-  const [loadingRole, setLoadingRole] = React.useState<AssignableRole | null>(
-    null
-  );
-
-  const handleRolePress = React.useCallback(
-    async (nextRole: AssignableRole) => {
-      if (loadingRole === nextRole) return;
-
-      if (memberRole === nextRole) {
-        if (nextRole === Role.Member) {
-          onOpenChange(false);
-          onOpenMemberLogs(memberId);
-        }
-
-        return;
-      }
-
-      if (!activeTeamId) return;
-      setLoadingRole(nextRole);
-
-      try {
-        await updateRole({
-          roleId: memberId,
-          role: nextRole,
-          teamId: activeTeamId,
-        });
-
-        if (nextRole === Role.Member) {
-          onOpenChange(false);
-          onOpenMemberLogsAfterDemotion(memberId);
-        }
-      } finally {
-        setLoadingRole(null);
-      }
-    },
-    [
-      activeTeamId,
-      loadingRole,
-      memberId,
-      memberRole,
-      onOpenChange,
-      onOpenMemberLogs,
-      onOpenMemberLogsAfterDemotion,
-    ]
-  );
-
-  return (
-    <>
-      {ASSIGNABLE_ROLES.map((r) => {
-        const isDisabled =
-          (r === Role.Admin && !canChangeToAdmin) ||
-          (r === Role.Member && !canChangeToMember);
-
-        return (
-          <Menu.Item
-            closeOnPress={false}
-            disabled={isDisabled || !!loadingRole}
-            key={r}
-            onPress={() => handleRolePress(r)}
-          >
-            <View className="size-5 items-center justify-center">
-              {loadingRole === r ? (
-                <ActivityIndicator
-                  size={16}
-                  color={UI[colorScheme].mutedForeground}
-                />
-              ) : (
-                memberRole === r && <Icon className="-mr-1" icon={Check} />
-              )}
-            </View>
-            <Text className={loadingRole === r ? 'text-placeholder' : ''}>
-              {ROLE_LABELS[r]}
-            </Text>
-          </Menu.Item>
-        );
-      })}
-      {canViewLogs && (
-        <>
-          <Menu.Separator />
-          <Menu.Item
-            className={loadingRole ? 'opacity-50' : ''}
-            disabled={!!loadingRole}
-            onPress={() => onOpenMemberLogs(memberId)}
-          >
-            <Icon icon={SquaresFour} />
-            <Text>Logs</Text>
-          </Menu.Item>
-        </>
-      )}
-      <Menu.Separator />
-      <Menu.Item
-        className={!canRemoveMember || loadingRole ? 'opacity-50' : ''}
-        disabled={!canRemoveMember || !!loadingRole}
-        onPress={() => sheetManager.open('member-remove', memberId)}
-      >
-        <Icon className="text-destructive" icon={UserMinus} />
-        <Text className="text-destructive">Remove</Text>
-      </Menu.Item>
-    </>
-  );
 };
 
 export default function Team() {

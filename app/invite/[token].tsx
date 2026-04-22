@@ -1,15 +1,16 @@
-import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Loading } from '@/components/ui/loading';
-import { Page } from '@/components/ui/page';
-import { Text } from '@/components/ui/text';
+import { alert } from '@/lib/alert';
+import { db } from '@/lib/db';
+import * as storage from '@/lib/invite-storage';
 import { redeemInviteLink } from '@/mutations/redeem-invite-link';
 import { switchTeam } from '@/mutations/switch-team';
 import { useTeams } from '@/queries/use-teams';
-import { alert } from '@/utilities/alert';
-import { db } from '@/utilities/db';
-import * as storage from '@/utilities/invite-storage';
+import { UI } from '@/theme/ui';
+import { Avatar } from '@/ui/avatar';
+import { Button } from '@/ui/button';
+import { Icon } from '@/ui/icon';
+import { Loading } from '@/ui/loading';
+import { Page } from '@/ui/page';
+import { Text } from '@/ui/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight } from 'phosphor-react-native/lib/module/icons/ArrowRight';
@@ -247,13 +248,16 @@ export default function InviteLink() {
         >
           {isRedeeming ? (
             <>
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color={UI.light.contrastForeground} />
               <Text>Joining{'\u2026'}</Text>
             </>
           ) : linkInfo?.isValid ? (
             <>
               <Text>Let{'\u2019'}s go</Text>
-              <Icon icon={ArrowRight} className="-mr-0.5 text-white" />
+              <Icon
+                icon={ArrowRight}
+                className="text-contrast-foreground -mr-0.5"
+              />
             </>
           ) : (
             <>

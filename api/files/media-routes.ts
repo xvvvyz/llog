@@ -1,9 +1,9 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
+import * as upload from '@/api/files/upload';
 import { type Db, db } from '@/api/middleware/db';
-import * as p from '@/utilities/permissions';
+import * as p from '@/lib/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import * as upload from './upload';
 
 export type MediaContext = {
   env: CloudflareEnv;

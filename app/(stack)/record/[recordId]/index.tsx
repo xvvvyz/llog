@@ -1,26 +1,28 @@
-import { RecordOrReply } from '@/components/record-or-reply';
-import { BackButton } from '@/components/ui/back-button';
-import { Button } from '@/components/ui/button';
-import { Header } from '@/components/ui/header';
-import { Icon } from '@/components/ui/icon';
-import type { ListHandle } from '@/components/ui/list';
-import { List } from '@/components/ui/list';
-import { Loading } from '@/components/ui/loading';
-import { Page } from '@/components/ui/page';
-import { Text } from '@/components/ui/text';
+import { RecordOrReply } from '@/features/records/record-or-reply';
+import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useLogColor } from '@/hooks/use-log-color';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
+import * as scroll from '@/lib/post-submit-scroll';
+import { textToTitle } from '@/lib/text-to-title';
 import { useRecord } from '@/queries/use-record';
-import { cn } from '@/utilities/cn';
-import * as scroll from '@/utilities/post-submit-scroll';
-import { textToTitle } from '@/utilities/text-to-title';
+import { BackButton } from '@/ui/back-button';
+import { Button } from '@/ui/button';
+import { Header } from '@/ui/header';
+import { Icon } from '@/ui/icon';
+import type { ListHandle } from '@/ui/list';
+import { List } from '@/ui/list';
+import { Loading } from '@/ui/loading';
+import { Page } from '@/ui/page';
+import { Text } from '@/ui/text';
 import { useLocalSearchParams } from 'expo-router';
 import { ArrowBendDownLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendDownLeft';
 import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Index() {
+  const breakpoints = useBreakpoints();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ recordId: string }>();
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
@@ -29,6 +31,7 @@ export default function Index() {
 
   const record = useRecord({ id: params.recordId });
   const logColor = useLogColor({ id: record.log?.id });
+  const showFab = !breakpoints.md;
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: params.recordId,
@@ -68,8 +71,11 @@ export default function Index() {
             style={{ backgroundColor: logColor?.default }}
             variant="secondary"
           >
-            <Icon className="-ml-0.5 text-white" icon={ArrowBendDownLeft} />
-            <Text className="text-white">Reply</Text>
+            <Icon
+              className="text-contrast-foreground -ml-0.5"
+              icon={ArrowBendDownLeft}
+            />
+            <Text className="text-contrast-foreground">Reply</Text>
           </Button>
         }
         title={textToTitle(record.text)}
@@ -79,7 +85,10 @@ export default function Index() {
       {record.isLoading ? (
         <Loading />
       ) : (
-        <View className="flex-1" style={{ paddingBottom: insets.bottom + 104 }}>
+        <View
+          className="flex-1"
+          style={{ paddingBottom: insets.bottom + (showFab ? 104 : 0) }}
+        >
           <List
             contentContainerClassName="mx-auto w-full max-w-lg border border-border-secondary rounded-4xl my-4 bg-card md:my-8"
             data={data}
@@ -104,21 +113,26 @@ export default function Index() {
           />
         </View>
       )}
-      <View
-        className="absolute right-8 bottom-8 md:hidden"
-        style={{ marginBottom: insets.bottom }}
-      >
-        <Button
-          className="web:hover:opacity-90 size-14 rounded-full active:opacity-90"
-          onPress={() => sheetManager.open('reply-create', params.recordId)}
-          size="icon"
-          style={{ backgroundColor: logColor?.default }}
-          variant="secondary"
-          wrapperClassName="rounded-full"
+      {showFab && (
+        <View
+          className="absolute right-8 bottom-8"
+          style={{ marginBottom: insets.bottom }}
         >
-          <Icon className="text-white" icon={ArrowBendDownLeft} />
-        </Button>
-      </View>
+          <Button
+            className="web:hover:opacity-90 size-14 rounded-full active:opacity-90"
+            onPress={() => sheetManager.open('reply-create', params.recordId)}
+            size="icon"
+            style={{ backgroundColor: logColor?.default }}
+            variant="secondary"
+            wrapperClassName="rounded-full"
+          >
+            <Icon
+              className="text-contrast-foreground"
+              icon={ArrowBendDownLeft}
+            />
+          </Button>
+        </View>
+      )}
     </Page>
   );
 

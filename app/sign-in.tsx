@@ -1,11 +1,12 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loading } from '@/components/ui/loading';
-import { Page } from '@/components/ui/page';
-import { Text } from '@/components/ui/text';
-import { alert } from '@/utilities/alert';
-import { db } from '@/utilities/db';
+import { alert } from '@/lib/alert';
+import { db } from '@/lib/db';
+import { UI } from '@/theme/ui';
+import { Button } from '@/ui/button';
+import { Input } from '@/ui/input';
+import { Label } from '@/ui/label';
+import { Loading } from '@/ui/loading';
+import { Page } from '@/ui/page';
+import { Text } from '@/ui/text';
 import { Redirect, router } from 'expo-router';
 import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
@@ -54,7 +55,7 @@ export default function SignIn() {
           wrapperClassName="mt-6"
         >
           {isTransitioning ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color={UI.light.contrastForeground} />
           ) : (
             <Text>Sign in</Text>
           )}
@@ -96,7 +97,7 @@ export default function SignIn() {
         wrapperClassName="mt-6"
       >
         {isTransitioning ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator color={UI.light.contrastForeground} />
         ) : (
           <Text>Confirm</Text>
         )}

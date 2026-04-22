@@ -1,7 +1,7 @@
+import { db } from '@/lib/db';
 import { createReplyDraft } from '@/mutations/create-reply-draft';
 import { useProfile } from '@/queries/use-profile';
 import { useRecord } from '@/queries/use-record';
-import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 import * as React from 'react';
 

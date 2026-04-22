@@ -1,6 +1,7 @@
+import * as appleStartupImages from '@/lib/apple-startup-images';
+import { UI } from '@/theme/ui';
+import { rename } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UI } from '../theme/ui';
-import * as appleStartupImages from '../utilities/apple-startup-images';
 
 const light = UI.light.background;
 const dark = UI.dark.background;
@@ -46,5 +47,60 @@ const tags = [
 ];
 
 const html = `<!doctype html><html lang="en"><head>${tags.join('')}</head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>`;
+const outputPath = join(process.cwd(), 'public', 'index.html');
+const tempPath = join(process.cwd(), 'public', 'index.html.tmp');
 
-await Bun.write(join(process.cwd(), 'public', 'index.html'), html);
+const manifest = JSON.stringify(
+  {
+    name: 'llog',
+    short_name: 'llog',
+    id: '/',
+    description: 'Track anything in your world.',
+    display: 'standalone',
+    start_url: '/',
+    scope: '/',
+    background_color: dark,
+    theme_color: dark,
+    icons: [
+      {
+        src: '/favicon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+      },
+      {
+        src: '/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/icon-192-maskable.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icon-512-maskable.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+    ],
+  },
+  null,
+  2
+);
+
+await Bun.write(tempPath, html);
+await rename(tempPath, outputPath);
+
+await Bun.write(
+  join(process.cwd(), 'public', 'manifest.webmanifest'),
+  `${manifest}\n`
+);

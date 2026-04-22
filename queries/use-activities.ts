@@ -1,6 +1,6 @@
+import { db } from '@/lib/db';
+import * as p from '@/lib/permissions';
 import { useTeams } from '@/queries/use-teams';
-import { db } from '@/utilities/db';
-import * as p from '@/utilities/permissions';
 import * as React from 'react';
 
 export const useActivities = () => {

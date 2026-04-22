@@ -1,7 +1,7 @@
 // https://www.instantdb.com/docs/permissions
 
-import { InstantRules } from '@instantdb/react-native';
 import { Role } from './types/role';
+import { InstantRules } from '@instantdb/react-native';
 
 const isOwner = `'${Role.Owner}_' + auth.id + '_' + data.teamId in`;
 const isAdmin = `'${Role.Admin}_' + auth.id + '_' + data.teamId in`;

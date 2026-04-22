@@ -1,5 +1,5 @@
+import { db } from '@/lib/db';
 import { resolveProfileAndTeam } from '@/queries/resolve-profile-and-team';
-import { db } from '@/utilities/db';
 import { id } from '@instantdb/react-native';
 
 export const toggleReaction = async ({

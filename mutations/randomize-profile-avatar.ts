@@ -1,5 +1,5 @@
+import { db } from '@/lib/db';
 import { getProfile } from '@/queries/get-profile';
-import { db } from '@/utilities/db';
 import { nanoid } from 'nanoid';
 
 export const randomizeProfileAvatar = async ({

@@ -1,11 +1,12 @@
+import * as appleStartup from '@/lib/apple-startup-images';
+import { AppIcon } from '@/scripts/logo-mark';
+import { UI } from '@/theme/ui';
 import { Resvg } from '@resvg/resvg-js';
 import { mkdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import satori from 'satori';
-import * as appleStartup from '../utilities/apple-startup-images';
-import { AppIcon } from './logo-mark';
 
 const { NATIVE_SPLASH_BACKGROUNDS } = require('../theme/native.cjs') as {
   NATIVE_SPLASH_BACKGROUNDS: { light: string; dark: string };
@@ -90,6 +91,8 @@ const ICON_RADIUS = 0.48;
 const MASKABLE_PADDING = 0.1;
 const MASKABLE_RADIUS = ICON_RADIUS;
 const ANDROID_ADAPTIVE_CONTENT_SCALE = 0.61;
+const contrastBackground = UI.light.contrastBackground;
+const contrastForeground = UI.light.contrastForeground;
 
 const iconOutputs = [
   {
@@ -175,9 +178,9 @@ const nativeAssetOutputs = [
     render: () =>
       renderAppIconPng({
         backgroundColor: 'transparent',
-        colors: ['#000000', '#000000', '#000000'],
+        colors: [contrastBackground, contrastBackground, contrastBackground],
         contentScale: ANDROID_ADAPTIVE_CONTENT_SCALE,
-        dotColors: ['#000000', '#000000', '#000000'],
+        dotColors: [contrastBackground, contrastBackground, contrastBackground],
         size: 1024,
       }),
   },
@@ -227,9 +230,9 @@ await Bun.write(
   join(process.cwd(), 'public', 'badge-72.png'),
   await renderAppIconPng({
     backgroundColor: 'transparent',
-    colors: ['white', 'white', 'white'],
+    colors: [contrastForeground, contrastForeground, contrastForeground],
     cropToContent: true,
-    dotColors: ['white', 'white', 'white'],
+    dotColors: [contrastForeground, contrastForeground, contrastForeground],
     fitToWidth: 72,
     size: 72,
   })

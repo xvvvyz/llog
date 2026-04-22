@@ -1,10 +1,10 @@
-import { BackButton } from '@/components/ui/back-button';
-import { Carousel } from '@/components/ui/carousel';
-import { Loading } from '@/components/ui/loading';
-import { Page } from '@/components/ui/page';
+import { Carousel } from '@/features/media/carousel';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
+import { clampIndex } from '@/lib/clamp';
 import { useRecordMedia, useReplyMedia } from '@/queries/use-record-media';
-import { clampIndex } from '@/utilities/clamp';
+import { BackButton } from '@/ui/back-button';
+import { Loading } from '@/ui/loading';
+import { Page } from '@/ui/page';
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { Redirect, Stack, router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';

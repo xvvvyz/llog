@@ -1,9 +1,9 @@
+import fileByKey from '@/api/files/file-by-key';
+import meAvatar from '@/api/files/me-avatar';
+import recordMedia from '@/api/files/record-media';
+import replyMedia from '@/api/files/reply-media';
+import teamAvatar from '@/api/files/team-avatar';
 import { Hono } from 'hono';
-import fileByKey from './file-by-key';
-import meAvatar from './me-avatar';
-import recordMedia from './record-media';
-import replyMedia from './reply-media';
-import teamAvatar from './team-avatar';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

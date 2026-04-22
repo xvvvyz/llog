@@ -1,7 +1,7 @@
-import { SortBy } from '@/components/log-list-actions';
-import { SortDirection } from '@/components/ui/dropdown-menu';
+import { SortBy } from '@/features/logs/log-list-actions';
+import { db } from '@/lib/db';
 import { resolveUiId } from '@/queries/resolve-ui-id';
-import { db } from '@/utilities/db';
+import { SortDirection } from '@/ui/dropdown-menu';
 
 export const updateUiLogsSort = async ({
   sort,

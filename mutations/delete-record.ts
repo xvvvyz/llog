@@ -1,4 +1,4 @@
-import { apiOrThrow } from '@/utilities/api';
+import { apiOrThrow } from '@/lib/api';
 
 export const deleteRecord = async ({ id }: { id: string }) => {
   return apiOrThrow(

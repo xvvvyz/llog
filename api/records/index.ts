@@ -1,6 +1,6 @@
+import record from '@/api/records/record';
+import replies from '@/api/records/replies';
 import { Hono } from 'hono';
-import record from './record';
-import replies from './replies';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

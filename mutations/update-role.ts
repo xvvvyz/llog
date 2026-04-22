@@ -1,5 +1,5 @@
+import { apiOrThrow } from '@/lib/api';
 import { Role } from '@/types/role';
-import { apiOrThrow } from '@/utilities/api';
 
 export const updateRole = async ({
   roleId,

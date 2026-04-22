@@ -1,6 +1,6 @@
+import { db } from '@/lib/db';
 import { useTeams } from '@/queries/use-teams';
 import { SearchMediaItem, SearchProfile, SearchResult } from '@/types/search';
-import { db } from '@/utilities/db';
 import type { SearchResult as MiniSearchResult } from 'minisearch';
 import MiniSearch from 'minisearch';
 import * as React from 'react';

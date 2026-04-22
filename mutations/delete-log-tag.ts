@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/lib/db';
 
 export const deleteTag = async ({ id }: { id?: string }) => {
   if (!id) return;

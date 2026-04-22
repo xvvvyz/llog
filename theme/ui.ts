@@ -22,6 +22,12 @@ export const UI = {
     input: 'hsl(0 0% 100% / 0.5)',
     placeholder: 'hsl(0 0% 0% / 0.5)',
     ring: 'hsl(211 78% 58%)',
+    contrastForeground: 'hsl(0 0% 100%)',
+    contrastBackground: 'hsl(0 0% 0%)',
+    progressTrack: 'hsl(0 0% 0% / 0.12)',
+    progressFill: 'hsl(0 0% 0% / 0.7)',
+    ripple: 'hsl(0 0% 100% / 0.25)',
+    rippleInverse: 'hsl(0 0% 0% / 0.08)',
   },
   dark: {
     background: 'hsl(0 0% 5%)',
@@ -44,6 +50,12 @@ export const UI = {
     input: 'hsl(0 0% 100% / 0.05)',
     placeholder: 'hsl(0 0% 100% / 0.4)',
     ring: 'hsl(211 80% 59%)',
+    contrastForeground: 'hsl(0 0% 100%)',
+    contrastBackground: 'hsl(0 0% 0%)',
+    progressTrack: 'hsl(0 0% 100% / 0.1)',
+    progressFill: 'hsl(0 0% 100% / 0.8)',
+    ripple: 'hsl(0 0% 0% / 0.25)',
+    rippleInverse: 'hsl(0 0% 100% / 0.1)',
   },
 };
 

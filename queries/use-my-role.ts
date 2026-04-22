@@ -1,6 +1,6 @@
+import { db } from '@/lib/db';
+import * as p from '@/lib/permissions';
 import { useUi } from '@/queries/use-ui';
-import { db } from '@/utilities/db';
-import * as p from '@/utilities/permissions';
 
 export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
   const auth = db.useAuth();

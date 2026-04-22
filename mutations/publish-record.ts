@@ -1,4 +1,4 @@
-import { apiOrThrow } from '@/utilities/api';
+import { apiOrThrow } from '@/lib/api';
 
 export const publishRecord = async ({ id: recordId }: { id?: string }) => {
   if (!recordId) return;

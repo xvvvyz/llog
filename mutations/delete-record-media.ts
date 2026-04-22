@@ -1,4 +1,4 @@
-import { deleteMedia } from './media';
+import { deleteMedia } from '@/mutations/media';
 
 export const deleteRecordMedia = async ({
   mediaId,

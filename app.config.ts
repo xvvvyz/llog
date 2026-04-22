@@ -1,8 +1,10 @@
 import type { ExpoConfig } from 'expo/config';
 
-const { NATIVE_SPLASH_BACKGROUNDS } = require('./theme/native.cjs') as {
-  NATIVE_SPLASH_BACKGROUNDS: { light: string; dark: string };
-};
+const { NATIVE_ADAPTIVE_ICON_BACKGROUND, NATIVE_SPLASH_BACKGROUNDS } =
+  require('./theme/native.cjs') as {
+    NATIVE_ADAPTIVE_ICON_BACKGROUND: string;
+    NATIVE_SPLASH_BACKGROUNDS: { light: string; dark: string };
+  };
 
 const config: { expo: ExpoConfig } = {
   expo: {
@@ -21,7 +23,7 @@ const config: { expo: ExpoConfig } = {
       icon: './assets/android-icon.png',
       adaptiveIcon: {
         foregroundImage: './assets/android-adaptive-icon-foreground.png',
-        backgroundColor: '#ffffff',
+        backgroundColor: NATIVE_ADAPTIVE_ICON_BACKGROUND,
         monochromeImage: './assets/android-adaptive-icon-monochrome.png',
       },
       package: 'co.xvyz.llog',

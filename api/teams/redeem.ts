@@ -1,10 +1,10 @@
 import { auth, db } from '@/api/middleware/db';
+import { memberJoinedActivity } from '@/api/teams/helpers';
+import * as p from '@/lib/permissions';
 import { Role } from '@/types/role';
-import * as p from '@/utilities/permissions';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { memberJoinedActivity } from './helpers';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

@@ -1,7 +1,7 @@
+import { db } from '@/lib/db';
 import { createRecordDraft } from '@/mutations/create-record-draft';
 import { useLog } from '@/queries/use-log';
 import { useProfile } from '@/queries/use-profile';
-import { db } from '@/utilities/db';
 import * as React from 'react';
 
 export const useRecordDraft = ({ logId }: { logId?: string }) => {

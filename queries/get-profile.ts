@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/lib/db';
 
 export const getProfile = async () => {
   const auth = await db.getAuth();

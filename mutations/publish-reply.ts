@@ -1,4 +1,4 @@
-import { apiOrThrow } from '@/utilities/api';
+import { apiOrThrow } from '@/lib/api';
 
 export const publishReply = async ({
   id: replyId,

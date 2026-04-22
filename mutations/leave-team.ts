@@ -1,5 +1,5 @@
+import { api } from '@/lib/api';
 import { switchTeam } from '@/mutations/switch-team';
-import { api } from '@/utilities/api';
 
 export const leaveTeam = async ({
   teamId,

@@ -1,6 +1,6 @@
+import { api } from '@/lib/api';
+import { assetToFileLike } from '@/lib/asset-to-file-like';
 import { ImageSize } from '@/types/image-size';
-import { api } from '@/utilities/api';
-import { assetToFileLike } from '@/utilities/asset-to-file-like';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { ImagePickerAsset } from 'expo-image-picker';
 

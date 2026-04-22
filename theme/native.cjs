@@ -40,4 +40,11 @@ const NATIVE_SPLASH_BACKGROUNDS = {
   dark: oklchToHex(extractThemeColor('dark', 'background')),
 };
 
-module.exports = { NATIVE_SPLASH_BACKGROUNDS };
+const NATIVE_ADAPTIVE_ICON_BACKGROUND = oklchToHex(
+  extractThemeColor('light', 'contrastForeground')
+);
+
+module.exports = {
+  NATIVE_ADAPTIVE_ICON_BACKGROUND,
+  NATIVE_SPLASH_BACKGROUNDS,
+};

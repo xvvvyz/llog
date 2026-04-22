@@ -1,5 +1,5 @@
+import { db } from '@/lib/db';
 import { resolveUiId } from '@/queries/resolve-ui-id';
-import { db } from '@/utilities/db';
 
 export const switchTeam = async ({
   teamId,

@@ -1,5 +1,5 @@
+import { db } from '@/lib/db';
 import { useUi } from '@/queries/use-ui';
-import { db } from '@/utilities/db';
 
 export const useHasNoTags = () => {
   const ui = useUi();

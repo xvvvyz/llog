@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/lib/db';
 import * as React from 'react';
 
 export const useTeams = () => {
@@ -19,6 +19,7 @@ export const useTeams = () => {
 
   const teams = React.useMemo(() => {
     const seen = new Set<string>();
+
     return (
       data?.roles
         ?.map((role) => role.team)

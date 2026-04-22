@@ -1,6 +1,6 @@
+import { getFileScope } from '@/api/files/media-storage';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { getFileScope } from './media-storage';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

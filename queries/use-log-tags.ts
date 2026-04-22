@@ -1,5 +1,5 @@
+import { db } from '@/lib/db';
 import { useResolvedTeamIds } from '@/queries/use-resolved-team-ids';
-import { db } from '@/utilities/db';
 import * as React from 'react';
 
 export const useTags = ({

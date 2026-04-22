@@ -1,3 +1,6 @@
+import { storeImageDeliveryUrl, uploadImage } from '@/api/files/images';
+import { deleteMediaAssets } from '@/api/files/media-cleanup';
+import * as upload from '@/api/files/upload';
 import { db } from '@/api/middleware/db';
 import { fileLike } from '@/types/file-like';
 import { zValidator } from '@hono/zod-validator';
@@ -5,9 +8,6 @@ import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
-import { storeImageDeliveryUrl, uploadImage } from './images';
-import { deleteMediaAssets } from './media-cleanup';
-import * as upload from './upload';
 
 const queryProfileWithImage = (userId: string) => ({
   profiles: {

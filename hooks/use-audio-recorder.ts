@@ -1,4 +1,4 @@
-import { alert } from '@/utilities/alert';
+import { alert } from '@/lib/alert';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,

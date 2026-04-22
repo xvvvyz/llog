@@ -1,10 +1,10 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { auth, db } from '@/api/middleware/db';
+import { removeMember } from '@/api/teams/helpers';
+import * as p from '@/lib/permissions';
 import { Role } from '@/types/role';
-import * as p from '@/utilities/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { removeMember } from './helpers';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 

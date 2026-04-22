@@ -1,5 +1,5 @@
+import { db } from '@/lib/db';
 import { resolveProfileAndTeam } from '@/queries/resolve-profile-and-team';
-import { db } from '@/utilities/db';
 
 export const createReplyDraft = async ({
   replyId,

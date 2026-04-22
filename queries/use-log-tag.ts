@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/lib/db';
 
 export const useTag = ({ id }: { id?: string }) => {
   const { data, isLoading } = db.useQuery(

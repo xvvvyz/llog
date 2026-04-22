@@ -1,9 +1,9 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
+import { db } from '@/lib/db';
+import * as wp from '@/lib/web-push';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
-import { db } from '@/utilities/db';
-import * as wp from '@/utilities/web-push';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';

@@ -1,4 +1,4 @@
-import { db } from '@/utilities/db';
+import { db } from '@/lib/db';
 import * as React from 'react';
 
 export const useLog = ({ id }: { id?: string }) => {

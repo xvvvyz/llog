@@ -1,5 +1,5 @@
-import { PickedMediaAsset } from '@/utilities/picked-media';
-import { uploadMedia } from './media';
+import { PickedMediaAsset } from '@/lib/picked-media';
+import { uploadMedia } from '@/mutations/media';
 
 export const uploadRecordMedia = async ({
   asset,

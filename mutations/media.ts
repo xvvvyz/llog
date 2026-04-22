@@ -1,8 +1,8 @@
-import { apiOrThrow } from '@/utilities/api';
-import { apiUpload } from '@/utilities/api-upload';
-import { directVideoUpload } from '@/utilities/direct-video-upload';
-import { PickedMediaAsset } from '@/utilities/picked-media';
-import { prepareMediaFormData } from '@/utilities/prepare-media-form-data';
+import { apiOrThrow } from '@/lib/api';
+import { apiUpload } from '@/lib/api-upload';
+import { directVideoUpload } from '@/lib/direct-video-upload';
+import { PickedMediaAsset } from '@/lib/picked-media';
+import { prepareMediaFormData } from '@/lib/prepare-media-form-data';
 
 type UploadMediaArgs = {
   asset?: PickedMediaAsset;
