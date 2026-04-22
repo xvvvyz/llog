@@ -4,7 +4,6 @@ import { Icon } from '@/components/ui/icon';
 import { List } from '@/components/ui/list';
 import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
-import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { markActivitiesRead } from '@/mutations/mark-activities-read';
 import { useActivities } from '@/queries/use-activities';
 import { useProfile } from '@/queries/use-profile';
@@ -20,7 +19,6 @@ export default function Activity() {
   const { activities, isLoading } = useActivities();
   const profile = useProfile();
   const ui = useUi();
-  const insets = useSafeAreaInsets();
 
   const grouped = React.useMemo(
     () => ga.groupActivities(activities, profile.id),
@@ -66,7 +64,6 @@ export default function Activity() {
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
-          contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
           data={grouped}
           estimatedItemSize={80}
           keyExtractor={(item) => item.key}

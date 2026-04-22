@@ -8,7 +8,6 @@ import { Page } from '@/components/ui/page';
 import { SearchInput } from '@/components/ui/search-input';
 import { Text } from '@/components/ui/text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSearch } from '@/hooks/use-search';
 import { useTags } from '@/queries/use-log-tags';
 import { useLogs } from '@/queries/use-logs';
@@ -26,7 +25,6 @@ export default function Search() {
   const [selectedLogIds, setSelectedLogIds] = React.useState<string[]>([]);
   const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
   const colorScheme = useColorScheme();
-  const insets = useSafeAreaInsets();
   const { teams } = useTeams();
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
   const logs = useLogs({ teamIds });
@@ -157,7 +155,6 @@ export default function Search() {
           </View>
         }
         contentContainerClassName="mx-auto w-full max-w-lg px-4 pt-4 md:pt-8"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
         data={query.trim() ? results : []}
         estimatedItemSize={100}
         keyExtractor={(item) => `${item.type}:${item.id}`}

@@ -4,9 +4,21 @@ import { Loading } from '@/components/ui/loading';
 import { Page } from '@/components/ui/page';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useRecordMedia, useReplyMedia } from '@/queries/use-record-media';
-import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { clampIndex } from '@/utilities/clamp';
+import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
+import { Redirect, Stack, router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
+
+const mediaScreenOptions = Platform.select<NativeStackNavigationOptions>({
+  ios: {
+    animation: 'simple_push',
+    animationMatchesGesture: true,
+  },
+  web: {
+    animation: 'none',
+  },
+});
 
 export default function Index() {
   const insets = useSafeAreaInsets();
@@ -41,8 +53,19 @@ export default function Index() {
       if (idx !== -1) return idx;
     }
 
-    return params.defaultIndex ? Number(params.defaultIndex) : 0;
+    const parsedIndex = params.defaultIndex
+      ? Number.parseInt(params.defaultIndex, 10)
+      : 0;
+
+    return clampIndex(parsedIndex, visualMedia.length);
   }, [params.id, params.defaultIndex, visualMedia]);
+
+  const carouselKey = React.useMemo(
+    () =>
+      params.id ??
+      `record-media:${params.replyId ?? params.recordId}:${defaultIndex}`,
+    [defaultIndex, params.id, params.recordId, params.replyId]
+  );
 
   React.useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -66,27 +89,40 @@ export default function Index() {
   }, []);
 
   if (isLoading) {
-    return <Loading />;
+    return (
+      <React.Fragment>
+        <Stack.Screen options={mediaScreenOptions} />
+        <Loading />
+      </React.Fragment>
+    );
   }
 
   if (!visualMedia.length) {
-    if (params.id) return <Loading />;
-    return <Redirect href={`/record/${params.recordId}`} />;
+    return (
+      <React.Fragment>
+        <Stack.Screen options={mediaScreenOptions} />
+        <Redirect href={`/record/${params.recordId}`} />
+      </React.Fragment>
+    );
   }
 
   return (
-    <Page>
-      <View
-        className="absolute top-1 left-4 z-10 rounded-full md:top-3 md:left-8"
-        style={{ marginTop: insets.top + 1 }}
-      >
-        <BackButton />
-      </View>
-      <Carousel
-        defaultIndex={defaultIndex}
-        media={visualMedia}
-        isKeyboardNavigationEnabled={visualMedia.length > 1}
-      />
-    </Page>
+    <React.Fragment>
+      <Stack.Screen options={mediaScreenOptions} />
+      <Page>
+        <View
+          className="absolute top-1 left-4 z-10 rounded-full md:top-3 md:left-8"
+          style={{ marginTop: insets.top + 1 }}
+        >
+          <BackButton />
+        </View>
+        <Carousel
+          key={carouselKey}
+          defaultIndex={defaultIndex}
+          media={visualMedia}
+          isKeyboardNavigationEnabled={visualMedia.length > 1}
+        />
+      </Page>
+    </React.Fragment>
   );
 }

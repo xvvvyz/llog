@@ -1,8 +1,15 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useExclusiveMediaPlayback } from '@/hooks/use-exclusive-media-playback';
-import { useFileUriToSrc } from '@/utilities/file-uri-to-src';
+import { fileUriToSrc, useFileUriToSrc } from '@/utilities/file-uri-to-src';
+import {
+  createPreloadCache,
+  isNearVideoStart,
+  isVideoWarm,
+  markVideoWarm,
+  VIDEO_PRELOAD_CACHE_LIMIT,
+} from '@/utilities/video-preload';
 import HlsClient, { Events as HlsEvents } from 'hls.js';
 import * as React from 'react';
-import { ActivityIndicator } from 'react-native';
 
 export interface VideoPlayerHandle {
   pause: () => void;
@@ -24,6 +31,66 @@ const SCRUB_PREVIEW_SEEK_INTERVAL_MS = 40;
 const SCRUB_PREVIEW_STEP_SECONDS = 0.05;
 const SCRUB_PREVIEW_MIN_DELTA_SECONDS = 0.03;
 
+type PreloadedVideoEntry = {
+  hls?: HlsClient;
+  removeListeners: () => void;
+  video: HTMLVideoElement;
+};
+
+const preloadCache = createPreloadCache<PreloadedVideoEntry>({
+  limit: VIDEO_PRELOAD_CACHE_LIMIT,
+  dispose: (entry) => {
+    entry.removeListeners();
+    entry.hls?.destroy();
+    entry.video.pause();
+    resetVideoSource(entry.video);
+  },
+});
+
+export const preloadVideo = (uri?: string | null) => {
+  if (typeof document === 'undefined') return;
+
+  const source = fileUriToSrc(uri);
+  if (!source) return;
+
+  if (preloadCache.has(source)) {
+    preloadCache.touch(source);
+    return;
+  }
+
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+
+  const markReady = () => {
+    markVideoWarm(source);
+  };
+
+  video.addEventListener('canplay', markReady);
+  video.addEventListener('loadeddata', markReady);
+
+  const removeListeners = () => {
+    video.removeEventListener('canplay', markReady);
+    video.removeEventListener('loadeddata', markReady);
+  };
+
+  const canPlayNativeHls =
+    video.canPlayType('application/vnd.apple.mpegurl') !== '' ||
+    video.canPlayType('application/x-mpegURL') !== '';
+
+  if (!canPlayNativeHls && isHlsClientSupported()) {
+    const hls = new HlsClient();
+    hls.on(HlsEvents.MEDIA_ATTACHED, () => hls.loadSource(source));
+    hls.attachMedia(video);
+    preloadCache.set(source, { hls, removeListeners, video });
+  } else {
+    video.src = source;
+    video.load();
+    preloadCache.set(source, { removeListeners, video });
+  }
+};
+
 export const VideoPlayer = ({
   autoPlay,
   contentFit = 'contain',
@@ -33,6 +100,7 @@ export const VideoPlayer = ({
   muted = true,
   onPlayingChange,
   onTimeChange,
+  resetToken = 0,
   thumbnailUri,
   uri,
 }: {
@@ -44,12 +112,15 @@ export const VideoPlayer = ({
   muted?: boolean;
   onPlayingChange?: (isPlaying: boolean) => void;
   onTimeChange?: (currentTime: number, duration: number) => void;
+  resetToken?: number;
   thumbnailUri?: string | null;
   uri: string;
 }) => {
   const src = useFileUriToSrc(uri);
   const poster = useFileUriToSrc(thumbnailUri);
   const ref = React.useRef<HTMLVideoElement>(null);
+  const onPlayingChangeRef = React.useRef(onPlayingChange);
+  const onTimeChangeRef = React.useRef(onTimeChange);
 
   const pausePlayback = React.useCallback(() => {
     ref.current?.pause();
@@ -60,22 +131,73 @@ export const VideoPlayer = ({
 
   const [isBuffering, setIsBuffering] = React.useState(true);
 
+  const [showInitialLoadingIndicator, setShowInitialLoadingIndicator] =
+    React.useState(() => Boolean(src) && !isVideoWarm(src));
+
   const [hasRenderedFirstFrame, setHasRenderedFirstFrame] =
     React.useState(false);
+
+  const [isAtStart, setIsAtStart] = React.useState(true);
 
   const rafRef = React.useRef<number>(0);
   const scrubbingEnabledRef = React.useRef(false);
   const lastScrubSeekAtRef = React.useRef(0);
   const lastScrubSeekTargetRef = React.useRef<number | null>(null);
+  const previousResetTokenRef = React.useRef(resetToken);
+  const wasAutoPlayRef = React.useRef(false);
 
-  const showThumbnail =
-    Boolean(poster) && (isBuffering || !hasRenderedFirstFrame);
+  const markVideoReady = React.useCallback(() => {
+    markVideoWarm(src);
+    setShowInitialLoadingIndicator(false);
+  }, [src]);
+
+  const showThumbnail = Boolean(poster) && isAtStart && !hasRenderedFirstFrame;
+  const showLoadingIndicator = showInitialLoadingIndicator && isBuffering;
+
+  React.useEffect(() => {
+    onPlayingChangeRef.current = onPlayingChange;
+  }, [onPlayingChange]);
+
+  React.useEffect(() => {
+    onTimeChangeRef.current = onTimeChange;
+    if (!onTimeChange || !src) return;
+    const video = ref.current;
+    if (!video) return;
+
+    onTimeChange(
+      Number.isFinite(video.currentTime) ? video.currentTime : 0,
+      Number.isFinite(video.duration) ? video.duration : 0
+    );
+  }, [onTimeChange, src]);
 
   React.useEffect(() => {
     setIsBuffering(Boolean(src));
+    setShowInitialLoadingIndicator(Boolean(src) && !isVideoWarm(src));
     setHasRenderedFirstFrame(false);
-    onTimeChange?.(0, 0);
-  }, [onTimeChange, src]);
+    setIsAtStart(true);
+    wasAutoPlayRef.current = false;
+    onTimeChangeRef.current?.(0, 0);
+  }, [src]);
+
+  React.useEffect(() => {
+    if (previousResetTokenRef.current === resetToken) return;
+    previousResetTokenRef.current = resetToken;
+    const video = ref.current;
+    if (!video) return;
+    video.pause();
+    setIsBuffering(false);
+    setHasRenderedFirstFrame(false);
+    setIsAtStart(true);
+    scrubbingEnabledRef.current = false;
+    lastScrubSeekAtRef.current = 0;
+    lastScrubSeekTargetRef.current = 0;
+
+    try {
+      video.currentTime = 0;
+    } catch {}
+
+    onTimeChangeRef.current?.(0, video.duration);
+  }, [resetToken]);
 
   const play = React.useCallback(async () => {
     const video = ref.current;
@@ -136,12 +258,15 @@ export const VideoPlayer = ({
         } else {
           video.currentTime = quantizedSeconds;
         }
+
+        setIsAtStart(isNearVideoStart(quantizedSeconds));
       } else {
         lastScrubSeekTargetRef.current = seconds;
         video.currentTime = seconds;
+        setIsAtStart(isNearVideoStart(seconds));
       }
 
-      onTimeChange?.(video.currentTime, video.duration);
+      onTimeChangeRef.current?.(video.currentTime, video.duration);
     },
     setScrubbingEnabled: (enabled: boolean) => {
       scrubbingEnabledRef.current = enabled;
@@ -187,23 +312,19 @@ export const VideoPlayer = ({
     if (!canPlayNativeHls && isHlsClientSupported()) {
       const hls = new HlsClient();
 
-      const startPlayback = () => {
-        if (!autoPlay) return;
-        void play();
-      };
-
       hls.on(HlsEvents.MEDIA_ATTACHED, () => {
         hls.loadSource(src);
       });
 
       hls.on(HlsEvents.MANIFEST_PARSED, () => {
         setIsBuffering(false);
-        startPlayback();
+        markVideoReady();
       });
 
       hls.on(HlsEvents.ERROR, (_, data) => {
         if (data.fatal) {
           setIsBuffering(false);
+          setShowInitialLoadingIndicator(false);
           releasePlayback();
         }
       });
@@ -222,7 +343,7 @@ export const VideoPlayer = ({
     return () => {
       resetVideoSource(video);
     };
-  }, [autoPlay, play, releasePlayback, src]);
+  }, [markVideoReady, releasePlayback, src]);
 
   React.useEffect(() => {
     const video = ref.current;
@@ -234,19 +355,30 @@ export const VideoPlayer = ({
     const onPlaying = () => {
       setIsBuffering(false);
       setHasRenderedFirstFrame(true);
+      markVideoReady();
     };
 
-    const onCanPlay = () => setIsBuffering(false);
+    const onCanPlay = () => {
+      setIsBuffering(false);
+      markVideoReady();
+    };
 
     const onLoadedData = () => {
       setIsBuffering(false);
       setHasRenderedFirstFrame(true);
+      markVideoReady();
       syncTime();
     };
 
     const syncTime = () => {
-      onTimeChange?.(
-        Number.isFinite(video.currentTime) ? video.currentTime : 0,
+      const currentTime = Number.isFinite(video.currentTime)
+        ? video.currentTime
+        : 0;
+
+      setIsAtStart(isNearVideoStart(currentTime));
+
+      onTimeChangeRef.current?.(
+        currentTime,
         Number.isFinite(video.duration) ? video.duration : 0
       );
     };
@@ -262,12 +394,12 @@ export const VideoPlayer = ({
 
     const onPlay = async () => {
       await claimPlayback();
-      onPlayingChange?.(true);
+      onPlayingChangeRef.current?.(true);
     };
 
     const onPause = () => {
       releasePlayback();
-      onPlayingChange?.(false);
+      onPlayingChangeRef.current?.(false);
     };
 
     video.addEventListener('play', onPlay);
@@ -285,14 +417,14 @@ export const VideoPlayer = ({
       video.removeEventListener('play', onPlay);
       video.removeEventListener('pause', onPause);
     };
-  }, [claimPlayback, onPlayingChange, onTimeChange, releasePlayback, src]);
+  }, [claimPlayback, markVideoReady, releasePlayback, src]);
 
   React.useEffect(() => {
     const video = ref.current;
     if (!video || !src) return;
 
     const tick = () => {
-      onTimeChange?.(
+      onTimeChangeRef.current?.(
         Number.isFinite(video.currentTime) ? video.currentTime : 0,
         Number.isFinite(video.duration) ? video.duration : 0
       );
@@ -323,28 +455,21 @@ export const VideoPlayer = ({
       video.removeEventListener('pause', stop);
       video.removeEventListener('ended', stop);
     };
-  }, [onTimeChange, src]);
+  }, [src]);
 
   React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
+    if (!src) return;
+    const wasAutoPlay = wasAutoPlayRef.current;
+    wasAutoPlayRef.current = Boolean(autoPlay);
 
-    const onEnded = async () => {
-      video.currentTime = 0;
+    if (!autoPlay) {
+      if (wasAutoPlay) video.pause();
+      return;
+    }
 
-      try {
-        await video.play();
-      } catch {
-        // noop
-      }
-    };
-
-    video.addEventListener('ended', onEnded);
-    return () => video.removeEventListener('ended', onEnded);
-  }, [src]);
-
-  React.useEffect(() => {
-    if (src && autoPlay) {
+    if (!wasAutoPlay) {
       void play();
     }
   }, [autoPlay, play, src]);
@@ -357,14 +482,11 @@ export const VideoPlayer = ({
       <video
         className="absolute inset-0 block h-full w-full"
         ref={ref}
+        loop
         muted={muted}
-        poster={poster ?? undefined}
         playsInline
-        preload="metadata"
-        style={{
-          opacity: showThumbnail ? 0 : 1,
-          objectFit: contentFit,
-        }}
+        preload="auto"
+        style={{ opacity: showThumbnail ? 0 : 1, objectFit: contentFit }}
       />
       {showThumbnail && (
         <img
@@ -372,14 +494,12 @@ export const VideoPlayer = ({
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full"
           src={poster ?? undefined}
-          style={{
-            objectFit: contentFit,
-          }}
+          style={{ objectFit: contentFit }}
         />
       )}
-      {isBuffering && (
+      {showLoadingIndicator && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <ActivityIndicator color="white" />
+          <Spinner color="white" />
         </div>
       )}
     </div>

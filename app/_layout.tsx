@@ -17,6 +17,60 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
 
+// react-native-gesture-handler on web throws "Cannot find single active touch"
+// when a pointer is released outside an active gesture. It is benign (no state
+// corruption, no missed events) but surfaces as a fatal uncaught error that
+// breaks the dev overlay. Filter it from the console and global handler until
+// the upstream fix lands.
+const SINGLE_ACTIVE_TOUCH_ERROR = 'Cannot find single active touch';
+
+const isSingleActiveTouchError = (value: unknown) => {
+  if (typeof value === 'string') {
+    return value.includes(SINGLE_ACTIVE_TOUCH_ERROR);
+  }
+
+  if (value instanceof Error) {
+    return value.message.includes(SINGLE_ACTIVE_TOUCH_ERROR);
+  }
+
+  return false;
+};
+
+if (Platform.OS === 'web') {
+  const globalScope = globalThis as typeof globalThis & {
+    __llogSingleActiveTouchGuardInstalled?: boolean;
+
+    ErrorUtils?: {
+      getGlobalHandler?: () => (error: unknown, isFatal: boolean) => void;
+      setGlobalHandler?: (
+        handler: (error: unknown, isFatal: boolean) => void
+      ) => void;
+    };
+  };
+
+  if (!globalScope.__llogSingleActiveTouchGuardInstalled) {
+    globalScope.__llogSingleActiveTouchGuardInstalled = true;
+    const originalConsoleError = console.error.bind(console);
+
+    console.error = (...args) => {
+      if (args.some(isSingleActiveTouchError)) return;
+      originalConsoleError(...args);
+    };
+
+    const getGlobalHandler = globalScope.ErrorUtils?.getGlobalHandler;
+    const setGlobalHandler = globalScope.ErrorUtils?.setGlobalHandler;
+
+    if (getGlobalHandler && setGlobalHandler) {
+      const originalGlobalHandler = getGlobalHandler();
+
+      setGlobalHandler((error, isFatal) => {
+        if (isSingleActiveTouchError(error)) return;
+        originalGlobalHandler(error, isFatal);
+      });
+    }
+  }
+}
+
 export default function Layout() {
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
