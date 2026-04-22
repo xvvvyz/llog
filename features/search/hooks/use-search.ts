@@ -1,8 +1,4 @@
-import {
-  SearchMediaItem,
-  SearchProfile,
-  SearchResult,
-} from '@/features/search/types/search';
+import type * as searchTypes from '@/features/search/types/search';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
 import type { SearchResult as MiniSearchResult } from 'minisearch';
@@ -24,8 +20,8 @@ type SearchDocument = {
   authorName?: string;
   authorImage?: string;
   people: string;
-  media?: SearchMediaItem[];
-  profiles?: SearchProfile[];
+  media?: searchTypes.SearchMediaItem[];
+  profiles?: searchTypes.SearchProfile[];
   tagIds?: string[];
 };
 
@@ -203,7 +199,7 @@ export const useSearch = ({
     return ms;
   }, [documents]);
 
-  const results = React.useMemo((): SearchResult[] => {
+  const results = React.useMemo((): searchTypes.SearchResult[] => {
     const trimmed = query.trim();
     if (!trimmed) return [];
 
@@ -250,7 +246,7 @@ export const useSearch = ({
           : undefined,
         media: result.media,
         profiles: result.profiles,
-      } satisfies SearchResult;
+      } satisfies searchTypes.SearchResult;
     });
   }, [query, logIds, tagIds, miniSearch]);
 

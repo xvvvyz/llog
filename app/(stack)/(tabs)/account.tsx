@@ -200,7 +200,7 @@ export default function Account() {
                       avatar={profile.image?.uri}
                       id={profile.id}
                       seedId={profile.avatarSeedId}
-                      size={36}
+                      size={42}
                     />
                   </Button>
                 </Menu.Trigger>

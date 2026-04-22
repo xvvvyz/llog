@@ -147,6 +147,19 @@ const schema = i.schema({
         label: 'activities',
       },
     },
+    reactionsActivities: {
+      forward: {
+        on: 'reactions',
+        has: 'one',
+        label: 'activity',
+      },
+      reverse: {
+        on: 'activities',
+        has: 'one',
+        label: 'reaction',
+        onDelete: 'cascade',
+      },
+    },
     repliesReactions: {
       forward: {
         on: 'replies',

@@ -37,6 +37,9 @@ export const toggleReaction = async ({
   }
 
   if (logId) {
+    const reactionId = id();
+    const activityId = id();
+
     const activityLink: Record<string, string> = {
       actor: resolved.profileId,
       team: resolved.teamId,
@@ -47,10 +50,10 @@ export const toggleReaction = async ({
     if (replyId) activityLink.reply = replyId;
 
     return db.transact([
-      db.tx.reactions[id()]
+      db.tx.reactions[reactionId]
         .update({ emoji, teamId: resolved.teamId })
-        .link(reactionLink),
-      db.tx.activities[id()]
+        .link({ ...reactionLink, activity: activityId }),
+      db.tx.activities[activityId]
         .update({
           type: 'reaction_added',
           date: new Date().toISOString(),

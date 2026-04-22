@@ -37,12 +37,12 @@ export const SearchResultLogCard = ({
         {!!result.profiles?.length && (
           <View className="flex-row">
             {result.profiles.map((profile, index) => (
-              <View className={cn(index > 0 && '-ml-[10px]')} key={profile.id}>
+              <View className={cn(index > 0 && '-ml-[8px]')} key={profile.id}>
                 <Avatar
                   avatar={profile.uri}
                   id={profile.id}
                   seedId={profile.avatarSeedId}
-                  size={22}
+                  size={18}
                 />
               </View>
             ))}

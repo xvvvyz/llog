@@ -43,12 +43,13 @@ export const RecordOrReplyCard = ({
           avatar={record.author?.image?.uri}
           id={record.author?.id}
           seedId={record.author?.avatarSeedId}
+          size={42}
         />
         <View className="flex-1">
-          <Text className="leading-tight font-medium" numberOfLines={1}>
+          <Text className="leading-snug font-medium" numberOfLines={1}>
             {record.author?.name}
           </Text>
-          <Text className="text-muted-foreground text-sm leading-tight">
+          <Text className="text-muted-foreground text-sm leading-snug">
             {formatDate(record.date)}
           </Text>
         </View>

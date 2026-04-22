@@ -5,6 +5,16 @@ import { Role } from './features/teams/types/role';
 
 const isOwner = `'${Role.Owner}_' + auth.id + '_' + data.teamId in`;
 const isAdmin = `'${Role.Admin}_' + auth.id + '_' + data.teamId in`;
+const canManageCurrentTeam = `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`;
+
+const isOwnerFor = (teamIdRef: string) =>
+  `data.ref('${teamIdRef}').exists(teamId, '${Role.Owner}_' + auth.id + '_' + teamId in auth.ref('$user.roles.key'))`;
+
+const isAdminFor = (teamIdRef: string) =>
+  `data.ref('${teamIdRef}').exists(teamId, '${Role.Admin}_' + auth.id + '_' + teamId in auth.ref('$user.roles.key'))`;
+
+const canManageFor = (teamIdRef: string) =>
+  `${isOwnerFor(teamIdRef)} || ${isAdminFor(teamIdRef)}`;
 
 const rules = {
   $default: {
@@ -21,13 +31,32 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
-      `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`,
+      canManageCurrentTeam,
+      'hasReaction',
+      "size(data.ref('reaction.id')) > 0",
+      'isReactionAuthor',
+      "data.ref('reaction.author.user.id') == auth.ref('$user.id')",
+      'isReactionRecordAuthor',
+      "auth.id in data.ref('reaction.record.author.user.id')",
+      'isReactionReplyAuthor',
+      "auth.id in data.ref('reaction.reply.author.user.id')",
+      'isReactionReplyRecordAuthor',
+      "auth.id in data.ref('reaction.reply.record.author.user.id')",
+      'isReactionRecordTeamMember',
+      "auth.id in data.ref('reaction.record.log.team.roles.user.id')",
+      'isReactionReplyTeamMember',
+      "auth.id in data.ref('reaction.reply.record.log.team.roles.user.id')",
+      'canManageReactionRecord',
+      canManageFor('reaction.record.log.team.id'),
+      'canManageReactionReply',
+      canManageFor('reaction.reply.record.log.team.id'),
     ],
     allow: {
       view: 'isTeamMember && (!hasLog || canManage || isLogMember)',
       create: 'isTeamMember',
       update: 'false',
-      delete: 'false',
+      delete:
+        'hasReaction && (isReactionAuthor || (isReactionRecordAuthor && isReactionRecordTeamMember) || (isReactionReplyAuthor && isReactionReplyTeamMember) || (isReactionReplyRecordAuthor && isReactionReplyTeamMember) || canManageReactionRecord || canManageReactionReply)',
     },
   },
   $users: {
@@ -59,7 +88,7 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('record.log.profiles.user.id')",
       'canManage',
-      `${isOwner} data.ref('record.log.team.roles.key') || ${isAdmin} data.ref('record.log.team.roles.key')`,
+      canManageFor('record.log.team.id'),
       'canDeleteOwn',
       'isAuthor && isTeamMember',
       'canDeleteFromOwnRecord',
@@ -83,7 +112,7 @@ const rules = {
       'isProfileOwner',
       "auth.id in data.ref('profile.user.id')",
       'isTeamImageManager',
-      `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`,
+      canManageFor('team.id'),
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'isRecordAuthor',
@@ -101,9 +130,9 @@ const rules = {
       'isReplyLogMember',
       "auth.id in data.ref('reply.record.log.profiles.user.id')",
       'canManageRecord',
-      `${isOwner} data.ref('record.log.team.roles.key') || ${isAdmin} data.ref('record.log.team.roles.key')`,
+      canManageFor('record.log.team.id'),
       'canManageReply',
-      `${isOwner} data.ref('reply.record.log.team.roles.key') || ${isAdmin} data.ref('reply.record.log.team.roles.key')`,
+      canManageFor('reply.record.log.team.id'),
       'canViewRecordMedia',
       'isRecordTeamMember && (canManageRecord || isRecordLogMember)',
       'canViewReplyMedia',
@@ -113,8 +142,7 @@ const rules = {
     ],
     allow: {
       view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordMedia || canViewReplyMedia',
-      create:
-        'hasOneLink && (isProfileOwner || isTeamImageManager || canViewRecordMedia || canViewReplyMedia)',
+      create: 'hasOneLink && (isProfileOwner || isTeamImageManager)',
       delete:
         'isProfileOwner || isTeamImageManager || (isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply',
     },
@@ -144,7 +172,7 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'canManage',
-      `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`,
+      canManageCurrentTeam,
     ],
     allow: {
       view: 'isTeamMember',
@@ -162,7 +190,7 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('profiles.user.id')",
       'canManage',
-      `${isOwner} data.ref('team.roles.key') || ${isAdmin} data.ref('team.roles.key')`,
+      canManageCurrentTeam,
     ],
     allow: {
       view: 'isTeamMember && (canManage || isLogMember)',
@@ -183,9 +211,17 @@ const rules = {
       'auth.id != null',
       'isProfileOwner',
       "data.ref('user.id') == auth.ref('$user.id')",
+      'hasSharedLogAccess',
+      "auth.id != null && auth.id in data.ref('logs.profiles.user.id')",
+      'hasManagedTeamOwnerAccess',
+      `data.ref('user.roles.team.id').exists(teamId, '${Role.Owner}_' + auth.id + '_' + teamId in auth.ref('$user.roles.key'))`,
+      'hasManagedTeamAdminAccess',
+      `data.ref('user.roles.team.id').exists(teamId, '${Role.Admin}_' + auth.id + '_' + teamId in auth.ref('$user.roles.key'))`,
+      'hasManagedTeamAccess',
+      'hasManagedTeamOwnerAccess || hasManagedTeamAdminAccess',
     ],
     allow: {
-      view: 'isAuthenticated',
+      view: 'isProfileOwner || hasSharedLogAccess || hasManagedTeamAccess',
       create: 'isAuthenticated && isValidName',
       update: 'isProfileOwner && isValidName',
       delete: 'isProfileOwner',
@@ -225,9 +261,9 @@ const rules = {
       'isReplyLogMember',
       "auth.id in data.ref('reply.record.log.profiles.user.id')",
       'canManageRecord',
-      `${isOwner} data.ref('record.log.team.roles.key') || ${isAdmin} data.ref('record.log.team.roles.key')`,
+      canManageFor('record.log.team.id'),
       'canManageReply',
-      `${isOwner} data.ref('reply.record.log.team.roles.key') || ${isAdmin} data.ref('reply.record.log.team.roles.key')`,
+      canManageFor('reply.record.log.team.id'),
       'canViewRecord',
       'isRecordTeamMember && (canManageRecord || isRecordLogMember)',
       'canViewReply',
@@ -253,7 +289,7 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
-      `${isOwner} data.ref('log.team.roles.key') || ${isAdmin} data.ref('log.team.roles.key')`,
+      canManageFor('log.team.id'),
       'canDeleteOwn',
       'isAuthor && isTeamMember',
     ],

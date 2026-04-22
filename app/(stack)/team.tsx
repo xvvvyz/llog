@@ -216,7 +216,7 @@ export default function Team() {
                         avatar={team.image?.uri}
                         fallback="gradient"
                         id={team.id}
-                        size={36}
+                        size={42}
                       />
                     </Button>
                   </Menu.Trigger>
@@ -245,7 +245,7 @@ export default function Team() {
                     avatar={team.image?.uri}
                     fallback="gradient"
                     id={team.id}
-                    size={36}
+                    size={42}
                   />
                 </View>
               )}
@@ -386,7 +386,7 @@ export default function Team() {
                         avatar={profile?.image?.uri}
                         id={profile?.id}
                         seedId={profile?.avatarSeedId}
-                        size={36}
+                        size={32}
                       />
                       <View className="flex-1">
                         <Text

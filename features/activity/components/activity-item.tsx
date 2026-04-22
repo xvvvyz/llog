@@ -16,7 +16,7 @@ import { Pressable, View } from 'react-native';
 const CATEGORY_LABELS: Record<GroupedActivity['type'], string> = {
   record_published: 'Recorded',
   reply_posted: 'Replied',
-  reaction_added: 'Emoted',
+  reaction_added: 'Reacted',
   member_joined: 'Joined',
   member_left: 'Left',
 };
@@ -79,7 +79,7 @@ export const ActivityItem = ({
           avatar={actor?.image?.uri}
           id={actor?.id}
           seedId={actor?.avatarSeedId}
-          size={36}
+          size={32}
         />
         <View className="flex-1">
           <View className="flex-row items-baseline justify-between gap-3">
@@ -155,6 +155,5 @@ export const ActivityItem = ({
   );
 
   if (!isClickable) return content;
-
   return <Pressable onPress={handlePress}>{content}</Pressable>;
 };

@@ -1,7 +1,4 @@
-import type {
-  WebPushState,
-  WebPushSupportState,
-} from '@/features/account/types/web-push';
+import type * as webPushTypes from '@/features/account/types/web-push';
 import { apiOrThrow } from '@/lib/api';
 
 export type {
@@ -47,7 +44,7 @@ export const isStandaloneWebApp = () =>
   (isStandaloneNavigator(window.navigator) &&
     window.navigator.standalone === true);
 
-export const getWebPushSupportState = (): WebPushSupportState => {
+export const getWebPushSupportState = (): webPushTypes.WebPushSupportState => {
   if (typeof window === 'undefined') {
     return 'unsupported';
   }
@@ -119,7 +116,7 @@ export const registerWebPushServiceWorker = async () => {
   return registrationPromise;
 };
 
-export const getWebPushState = async (): Promise<WebPushState> => {
+export const getWebPushState = async (): Promise<webPushTypes.WebPushState> => {
   if (!isSupported()) {
     return { status: 'unsupported' };
   }
@@ -135,34 +132,35 @@ export const getWebPushState = async (): Promise<WebPushState> => {
     : { status: 'disabled' };
 };
 
-export const syncWebPushSubscription = async (): Promise<WebPushState> => {
-  if (!isSupported()) {
-    return { status: 'unsupported' };
-  }
+export const syncWebPushSubscription =
+  async (): Promise<webPushTypes.WebPushState> => {
+    if (!isSupported()) {
+      return { status: 'unsupported' };
+    }
 
-  if (Notification.permission === 'denied') {
-    return { status: 'blocked' };
-  }
+    if (Notification.permission === 'denied') {
+      return { status: 'blocked' };
+    }
 
-  const subscription = await getSubscription();
+    const subscription = await getSubscription();
 
-  if (!subscription || Notification.permission !== 'granted') {
-    return { status: 'disabled' };
-  }
+    if (!subscription || Notification.permission !== 'granted') {
+      return { status: 'disabled' };
+    }
 
-  const freshPermission = await Notification.requestPermission();
+    const freshPermission = await Notification.requestPermission();
 
-  if (freshPermission === 'denied') {
-    return { status: 'blocked' };
-  }
+    if (freshPermission === 'denied') {
+      return { status: 'blocked' };
+    }
 
-  if (freshPermission !== 'granted') {
-    return { status: 'disabled' };
-  }
+    if (freshPermission !== 'granted') {
+      return { status: 'disabled' };
+    }
 
-  await saveSubscription(subscription);
-  return { endpoint: subscription.endpoint, status: 'enabled' };
-};
+    await saveSubscription(subscription);
+    return { endpoint: subscription.endpoint, status: 'enabled' };
+  };
 
 export const enableWebPush = async () => {
   if (!isSupported()) {
@@ -197,7 +195,7 @@ export const enableWebPush = async () => {
   return {
     endpoint: subscription.endpoint,
     status: 'enabled',
-  } satisfies WebPushState;
+  } satisfies webPushTypes.WebPushState;
 };
 
 export const disableWebPush = async () => {

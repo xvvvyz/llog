@@ -88,33 +88,36 @@ export default function Index() {
       {record.isLoading ? (
         <Loading />
       ) : (
-        <View
-          className="flex-1"
-          style={{ paddingBottom: insets.bottom + (showFab ? 104 : 0) }}
-        >
-          <List
-            contentContainerClassName="mx-auto w-full max-w-lg border border-border-secondary rounded-4xl my-4 bg-card md:my-8"
-            data={data}
-            estimatedItemSize={100}
-            keyExtractor={(item) => item.id ?? ''}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="always"
-            listRef={listRef}
-            maintainScrollAtEnd
-            maintainVisibleContentPosition
-            renderItem={({ index, item }) => (
-              <RecordOrReply
-                className={cn(index === 0 && 'border-t-0')}
-                replyId={index > 0 ? item.id : undefined}
-                logId={record.log?.id}
-                record={item}
-                recordId={params.recordId}
-                variant="compact"
-              />
-            )}
-            wrapperClassName="flex-1"
-          />
-        </View>
+        <List
+          contentContainerClassName="mx-auto w-full max-w-lg"
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + (showFab ? 104 : 0),
+          }}
+          data={data}
+          estimatedItemSize={100}
+          keyExtractor={(item) => item.id ?? ''}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="always"
+          listRef={listRef}
+          maintainScrollAtEnd
+          maintainVisibleContentPosition
+          renderItem={({ index, item }) => (
+            <RecordOrReply
+              className={cn(
+                'bg-card border-x',
+                index === 0 && 'mt-4 rounded-t-4xl md:mt-8',
+                index === data.length - 1 &&
+                  'mb-4 rounded-b-4xl border-b md:mb-8'
+              )}
+              replyId={index > 0 ? item.id : undefined}
+              logId={record.log?.id}
+              record={item}
+              recordId={params.recordId}
+              variant="compact"
+            />
+          )}
+          wrapperClassName="flex-1"
+        />
       )}
       {showFab && (
         <View

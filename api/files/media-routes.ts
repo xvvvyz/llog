@@ -1,6 +1,6 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import * as upload from '@/api/files/upload';
-import { type Db, db } from '@/api/middleware/db';
+import { auth, type Db, db } from '@/api/middleware/db';
 import * as permissions from '@/features/teams/lib/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -69,7 +69,8 @@ export const createMediaRoutes = <const TPath extends string>({
 
   app.post(
     `${basePath}/video-upload`,
-    db({ asUser: true }),
+    db(),
+    auth(),
     upload.directVideoUploadValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
@@ -93,7 +94,8 @@ export const createMediaRoutes = <const TPath extends string>({
   app.put(
     basePath,
     upload.uploadLimit(upload.MAX_MULTIPART_MEDIA_BYTES),
-    db({ asUser: true }),
+    db(),
+    auth(),
     upload.mediaValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
@@ -117,7 +119,7 @@ export const createMediaRoutes = <const TPath extends string>({
     }
   );
 
-  app.delete(`${basePath}/:mediaId`, db({ asUser: true }), async (c) => {
+  app.delete(`${basePath}/:mediaId`, db(), auth(), async (c) => {
     const mediaId = c.req.param('mediaId');
 
     if (!mediaId) {
@@ -145,10 +147,4 @@ export const canDeleteMedia = ({
 }: {
   actorRole?: string | null;
   isAuthor?: boolean;
-}) =>
-  Boolean(
-    permissions.canDeleteOwnOrManagedResource({
-      actorRole,
-      isAuthor: isAuthor ?? false,
-    })
-  );
+}) => Boolean(permissions.isManagedRole(actorRole) || (isAuthor && actorRole));

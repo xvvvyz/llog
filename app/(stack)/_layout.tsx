@@ -17,13 +17,31 @@ import { MemberRemoveSheet } from '@/features/teams/components/member-remove-she
 import { TeamDeleteSheet } from '@/features/teams/components/team-delete-sheet';
 import { TeamLeaveSheet } from '@/features/teams/components/team-leave-sheet';
 import { TeamSwitchSheet } from '@/features/teams/components/team-switch-sheet';
+import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { Stack } from 'expo-router';
 import * as React from 'react';
+import { Platform } from 'react-native';
 
 export default function Layout() {
   return (
     <React.Fragment>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="record/[recordId]/media"
+          options={Platform.select<NativeStackNavigationOptions>({
+            android: {},
+            ios: {
+              animation: 'simple_push',
+              animationMatchesGesture: true,
+              fullScreenGestureEnabled: false,
+              gestureEnabled: true,
+            },
+            web: {
+              animation: 'none',
+            },
+          })}
+        />
+      </Stack>
       <ReplyCreateSheet />
       <ReplyDeleteSheet />
       <InviteDeleteSheet />

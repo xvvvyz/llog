@@ -75,27 +75,92 @@ export const validateUpload = (file: File, allowed: MediaKind[]) => {
   return kind;
 };
 
-const queryRecordForMediaUpload = async (dbClient: Db, recordId: string) => {
-  const { records } = await dbClient.query({
-    records: {
-      $: { fields: ['id'], where: { id: recordId } },
-      log: { team: { $: { fields: ['id'] } } },
+const denyUploadTarget = () => {
+  throw new HTTPException(403, { message: 'Forbidden' });
+};
+
+const assertCanUploadToOwnedTarget = async ({
+  creatorId,
+  db: dbClient,
+  linkField,
+  linkId,
+  recordId,
+}: {
+  creatorId: string;
+  db: Db;
+  linkField: 'reply' | 'record';
+  linkId: string;
+  recordId: string;
+}) => {
+  if (linkField === 'record') {
+    const { records } = await dbClient.query({
+      records: {
+        $: {
+          fields: ['id'] as ['id'],
+          where: { id: recordId },
+        },
+        author: { user: { $: { fields: ['id'] as ['id'] } } },
+        log: {
+          team: {
+            $: { fields: ['id'] as ['id'] },
+            roles: {
+              $: {
+                fields: ['id'] as ['id'],
+                where: { userId: creatorId },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const record = records[0];
+
+    if (
+      !record?.id ||
+      record.author?.user?.id !== creatorId ||
+      !record.log?.team?.roles?.[0]?.id
+    ) {
+      denyUploadTarget();
+    }
+
+    return;
+  }
+
+  const { replies } = await dbClient.query({
+    replies: {
+      $: {
+        fields: ['id'] as ['id'],
+        where: { id: linkId, record: recordId },
+      },
+      author: { user: { $: { fields: ['id'] as ['id'] } } },
+      record: {
+        $: { fields: ['id'] as ['id'] },
+        log: {
+          team: {
+            $: { fields: ['id'] as ['id'] },
+            roles: {
+              $: {
+                fields: ['id'] as ['id'],
+                where: { userId: creatorId },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
-  const record = records[0];
+  const reply = replies[0];
 
-  if (!record) {
-    throw new HTTPException(400, { message: 'Record not found' });
+  if (
+    !reply?.id ||
+    reply.record?.id !== recordId ||
+    reply.author?.user?.id !== creatorId ||
+    !reply.record?.log?.team?.roles?.[0]?.id
+  ) {
+    denyUploadTarget();
   }
-
-  const teamId = record.log?.team?.id;
-
-  if (!teamId) {
-    throw new HTTPException(400, { message: 'Record has no team' });
-  }
-
-  return record;
 };
 
 export const uploadMedia = async ({
@@ -111,7 +176,7 @@ export const uploadMedia = async ({
   order,
   recordId,
 }: {
-  creatorId?: string;
+  creatorId: string;
   db: Db;
   duration?: number;
   env: CloudflareEnv;
@@ -126,7 +191,13 @@ export const uploadMedia = async ({
   const upload = requireUploadedFile(file);
   const type = validateUpload(upload, ['image', 'audio']) as MultipartMediaKind;
 
-  await queryRecordForMediaUpload(dbClient, recordId);
+  await assertCanUploadToOwnedTarget({
+    creatorId,
+    db: dbClient,
+    linkField,
+    linkId,
+    recordId,
+  });
 
   const mediaId = clientMediaId || id();
   const normalizedDuration = normalizeDurationSeconds(duration);
@@ -183,7 +254,7 @@ export const createDirectVideoUploadDraft = async ({
   order,
   recordId,
 }: {
-  creatorId?: string;
+  creatorId: string;
   db: Db;
   env: CloudflareEnv;
   linkField: 'reply' | 'record';
@@ -192,7 +263,14 @@ export const createDirectVideoUploadDraft = async ({
   order?: number;
   recordId: string;
 }) => {
-  await queryRecordForMediaUpload(dbClient, recordId);
+  await assertCanUploadToOwnedTarget({
+    creatorId,
+    db: dbClient,
+    linkField,
+    linkId,
+    recordId,
+  });
+
   const mediaId = clientMediaId || id();
 
   const { uid, uploadURL } = await createDirectVideoUpload(env, {

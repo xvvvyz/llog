@@ -33,7 +33,7 @@ export const SearchResultRecordCard = ({
               avatar={result.author.image?.uri}
               id={result.author.id}
               seedId={result.author.avatarSeedId}
-              size={36}
+              size={32}
             />
           )}
           <View className="flex-1">

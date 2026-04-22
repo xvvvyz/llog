@@ -34,17 +34,18 @@ export const CompactRecordOrReply = ({
           avatar={record.author?.image?.uri}
           id={record.author?.id}
           seedId={record.author?.avatarSeedId}
+          size={42}
         />
         <View className="flex-1">
           <View className="flex-row items-start justify-between gap-2">
             <View className="flex-1 flex-row items-baseline gap-2">
               <Text
-                className="shrink leading-tight font-medium"
+                className="shrink leading-snug font-medium"
                 numberOfLines={1}
               >
                 {record.author?.name}
               </Text>
-              <Text className="text-muted-foreground shrink-0 text-sm leading-tight">
+              <Text className="text-muted-foreground shrink-0 text-sm leading-snug">
                 {formatDate(record.date)}
               </Text>
             </View>

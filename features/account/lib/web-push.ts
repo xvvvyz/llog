@@ -1,7 +1,4 @@
-import type {
-  WebPushState,
-  WebPushSupportState,
-} from '@/features/account/types/web-push';
+import type * as webPushTypes from '@/features/account/types/web-push';
 
 export type {
   WebPushState,
@@ -16,11 +13,13 @@ export const isStandaloneWebApp = () => false;
 
 export const registerWebPushServiceWorker = async () => null;
 
-export const getWebPushSupportState = (): WebPushSupportState => 'unsupported';
+export const getWebPushSupportState = (): webPushTypes.WebPushSupportState =>
+  'unsupported';
 
-export const getWebPushState = async (): Promise<WebPushState> => ({
-  status: 'unsupported',
-});
+export const getWebPushState =
+  async (): Promise<webPushTypes.WebPushState> => ({
+    status: 'unsupported',
+  });
 
 export const syncWebPushSubscription = async () => getWebPushState();
 

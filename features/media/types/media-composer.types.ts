@@ -1,7 +1,4 @@
-import type {
-  PickedMediaAsset,
-  PickedMediaType,
-} from '@/features/media/lib/picked-media';
+import type * as pickedMedia from '@/features/media/lib/picked-media';
 import type { Media } from '@/features/media/types/media';
 
 export interface PendingUpload {
@@ -9,7 +6,7 @@ export interface PendingUpload {
   height?: number;
   id: string;
   order: number;
-  type: PickedMediaType;
+  type: pickedMedia.PickedMediaType;
   uri: string;
   width?: number;
 }
@@ -35,7 +32,7 @@ export interface UseMediaComposerOptions {
   onDeleteMedia: (mediaId: string) => Promise<void>;
   onOpenAudio: () => void;
   onUploadMedia: (
-    asset: PickedMediaAsset,
+    asset: pickedMedia.PickedMediaAsset,
     mediaId: string,
     order: number
   ) => Promise<void>;

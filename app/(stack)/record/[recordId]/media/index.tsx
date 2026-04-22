@@ -1,30 +1,13 @@
 import { Carousel } from '@/features/media/components/carousel';
-import {
-  useRecordMedia,
-  useReplyMedia,
-} from '@/features/records/queries/use-record-media';
+import * as recordMediaQueries from '@/features/records/queries/use-record-media';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
 import { BackButton } from '@/ui/back-button';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
-import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
-import { Redirect, Stack, router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Platform, StatusBar, View } from 'react-native';
-
-const mediaScreenOptions = Platform.select<NativeStackNavigationOptions>({
-  android: {},
-  ios: {
-    animation: 'simple_push',
-    animationMatchesGesture: true,
-    fullScreenGestureEnabled: false,
-    gestureEnabled: true,
-  },
-  web: {
-    animation: 'none',
-  },
-});
 
 export default function Index() {
   const insets = useSafeAreaInsets();
@@ -37,11 +20,11 @@ export default function Index() {
     recordId: string;
   }>();
 
-  const record = useRecordMedia({
+  const record = recordMediaQueries.useRecordMedia({
     id: params.replyId ? undefined : params.recordId,
   });
 
-  const reply = useReplyMedia({ id: params.replyId });
+  const reply = recordMediaQueries.useReplyMedia({ id: params.replyId });
   const allMedia = params.replyId ? reply.media : record.media;
 
   const visualMedia = React.useMemo(
@@ -96,26 +79,15 @@ export default function Index() {
   }, []);
 
   if (isLoading) {
-    return (
-      <React.Fragment>
-        <Stack.Screen options={mediaScreenOptions} />
-        <Loading />
-      </React.Fragment>
-    );
+    return <Loading />;
   }
 
   if (!visualMedia.length) {
-    return (
-      <React.Fragment>
-        <Stack.Screen options={mediaScreenOptions} />
-        <Redirect href={`/record/${params.recordId}`} />
-      </React.Fragment>
-    );
+    return <Redirect href={`/record/${params.recordId}`} />;
   }
 
   return (
     <React.Fragment>
-      <Stack.Screen options={mediaScreenOptions} />
       {Platform.OS !== 'web' ? <StatusBar animated hidden /> : null}
       <Page>
         {!isUiHidden && (

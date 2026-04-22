@@ -152,12 +152,20 @@ export const useMediaComposerState = ({
         for (const { asset, mediaId, order } of items) {
           try {
             await onUploadMedia(asset, mediaId, order);
-          } catch {
+          } catch (error) {
             setPendingUploads((prev) =>
               prev.filter((item) => item.id !== mediaId)
             );
 
             removeLocalPreviewUri(mediaId);
+
+            alert({
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to upload media.',
+              title: 'Upload failed',
+            });
           }
         }
       };
