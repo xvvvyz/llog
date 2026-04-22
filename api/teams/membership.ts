@@ -1,7 +1,7 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { auth, db } from '@/api/middleware/db';
 import { removeMember } from '@/api/teams/helpers';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@/types/role';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -72,7 +72,7 @@ app.delete('/:teamId', db({ asUser: true }), async (c) => {
     return c.json({ success: true });
   }
 
-  if (!p.isOwnerRole(team.roles?.[0]?.role)) {
+  if (!permissions.isOwnerRole(team.roles?.[0]?.role)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 

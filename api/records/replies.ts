@@ -2,7 +2,7 @@ import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { auth, db } from '@/api/middleware/db';
 import * as push from '@/api/push/helpers';
 import { deleteActivities } from '@/lib/delete-activities';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
@@ -98,7 +98,7 @@ app.post(
       (profile) => profile.user?.id === user.id
     );
 
-    if (!isAuthor || (!p.canManageTeam(actorRole) && !isLogMember)) {
+    if (!isAuthor || (!permissions.canManageTeam(actorRole) && !isLogMember)) {
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
@@ -197,7 +197,7 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
 
   const canDelete =
     reply.record?.id === recordId &&
-    p.canDeleteOwnOrManagedResource({
+    permissions.canDeleteOwnOrManagedResource({
       actorRole: callerRole,
       isAuthor: reply.author?.user?.id === c.var.user.id,
     });

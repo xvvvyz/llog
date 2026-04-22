@@ -1,24 +1,9 @@
-import {
-  MAX_AUDIO_ATTACHMENTS,
-  isPendingAudioUpload,
-  isVisualPendingUpload,
-  toVisualMediaType,
-  type PendingAudioUpload,
-  type PendingUpload,
-  type UseMediaComposerOptions,
-  type VisualPreviewItem,
-} from '@/features/media/media-composer.types';
+import * as mediaComposer from '@/features/media/media-composer.types';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { alert } from '@/lib/alert';
 import { clipboardToAssets } from '@/lib/clipboard-to-assets';
-import * as m from '@/lib/media';
-import {
-  FILE_PICKER_MIME_TYPES,
-  isVisualPickedMedia,
-  normalizeDocumentPickerAsset,
-  normalizeImagePickerAsset,
-  type PickedMediaAsset,
-} from '@/lib/picked-media';
+import * as mediaUtils from '@/lib/media';
+import * as pickedMedia from '@/lib/picked-media';
 import { id } from '@instantdb/react-native';
 import { getDocumentAsync } from 'expo-document-picker';
 import {
@@ -35,7 +20,7 @@ interface PendingDeletion {
 }
 
 type UseMediaComposerStateOptions = Pick<
-  UseMediaComposerOptions,
+  mediaComposer.UseMediaComposerOptions,
   'isOpen' | 'media' | 'onDeleteMedia' | 'onUploadMedia'
 > & {
   scopeKey: string;
@@ -51,9 +36,9 @@ export const useMediaComposerState = ({
   const [isDeleteTransitioning, startDeleteTransition] = React.useTransition();
   const nextDeleteRequestIdRef = React.useRef(0);
 
-  const [pendingUploads, setPendingUploads] = React.useState<PendingUpload[]>(
-    []
-  );
+  const [pendingUploads, setPendingUploads] = React.useState<
+    mediaComposer.PendingUpload[]
+  >([]);
 
   const [pendingDeletions, setPendingDeletions] = React.useState<
     Record<string, PendingDeletion>
@@ -75,12 +60,12 @@ export const useMediaComposerState = ({
   const { audioMedia, visualMedia } = useFilteredMedia(visibleMedia);
 
   const pendingAudioCount = React.useMemo(
-    () => pendingUploads.filter(isPendingAudioUpload).length,
+    () => pendingUploads.filter(mediaComposer.isPendingAudioUpload).length,
     [pendingUploads]
   );
 
   const canAddAudio =
-    audioMedia.length + pendingAudioCount < MAX_AUDIO_ATTACHMENTS;
+    audioMedia.length + pendingAudioCount < mediaComposer.MAX_AUDIO_ATTACHMENTS;
 
   const removeLocalPreviewUri = React.useCallback((mediaId: string) => {
     setLocalPreviewUris((prev) => {
@@ -92,10 +77,12 @@ export const useMediaComposerState = ({
   }, []);
 
   const uploadAssets = React.useCallback(
-    (inputAssets: PickedMediaAsset[]) => {
+    (inputAssets: pickedMedia.PickedMediaAsset[]) => {
       const availableAudioSlots = Math.max(
         0,
-        MAX_AUDIO_ATTACHMENTS - audioMedia.length - pendingAudioCount
+        mediaComposer.MAX_AUDIO_ATTACHMENTS -
+          audioMedia.length -
+          pendingAudioCount
       );
 
       let remainingAudioSlots = availableAudioSlots;
@@ -110,7 +97,7 @@ export const useMediaComposerState = ({
       if (!assets.length) {
         if (inputAssets.some((asset) => asset.type === 'audio')) {
           alert({
-            message: `You can attach up to ${MAX_AUDIO_ATTACHMENTS} audio files.`,
+            message: `You can attach up to ${mediaComposer.MAX_AUDIO_ATTACHMENTS} audio files.`,
             title: 'Audio limit reached',
           });
         }
@@ -147,7 +134,9 @@ export const useMediaComposerState = ({
         ...prev,
         ...Object.fromEntries(
           assets.flatMap((asset, i) =>
-            isVisualPickedMedia(asset) ? [[mediaIds[i], asset.uri]] : []
+            pickedMedia.isVisualPickedMedia(asset)
+              ? [[mediaIds[i], asset.uri]]
+              : []
           )
         ),
       }));
@@ -167,6 +156,7 @@ export const useMediaComposerState = ({
             setPendingUploads((prev) =>
               prev.filter((item) => item.id !== mediaId)
             );
+
             removeLocalPreviewUri(mediaId);
           }
         }
@@ -262,8 +252,8 @@ export const useMediaComposerState = ({
 
     uploadAssets(
       picker.assets
-        .map((asset) => normalizeImagePickerAsset(asset))
-        .filter((asset): asset is PickedMediaAsset => !!asset)
+        .map((asset) => pickedMedia.normalizeImagePickerAsset(asset))
+        .filter((asset): asset is pickedMedia.PickedMediaAsset => !!asset)
     );
   }, [ensureMediaLibraryPermission, uploadAssets]);
 
@@ -272,14 +262,14 @@ export const useMediaComposerState = ({
       base64: false,
       copyToCacheDirectory: true,
       multiple: true,
-      type: FILE_PICKER_MIME_TYPES,
+      type: pickedMedia.FILE_PICKER_MIME_TYPES,
     });
 
     if (picker.canceled) return;
 
     const assets = (picker.assets ?? [])
-      .map((asset) => normalizeDocumentPickerAsset(asset))
-      .filter((asset): asset is PickedMediaAsset => !!asset);
+      .map((asset) => pickedMedia.normalizeDocumentPickerAsset(asset))
+      .filter((asset): asset is pickedMedia.PickedMediaAsset => !!asset);
 
     if (!assets.length) {
       alert({
@@ -303,6 +293,7 @@ export const useMediaComposerState = ({
         needsCamera: !cameraPermission.granted,
         needsLibrary: !libraryPermission.granted,
       });
+
       return;
     }
 
@@ -315,8 +306,8 @@ export const useMediaComposerState = ({
 
     uploadAssets(
       picker.assets
-        .map((asset) => normalizeImagePickerAsset(asset))
-        .filter((asset): asset is PickedMediaAsset => !!asset)
+        .map((asset) => pickedMedia.normalizeImagePickerAsset(asset))
+        .filter((asset): asset is pickedMedia.PickedMediaAsset => !!asset)
     );
   }, [showCapturePermissionAlert, uploadAssets]);
 
@@ -368,7 +359,7 @@ export const useMediaComposerState = ({
 
       const mediaIds = new Set(
         visibleMedia
-          .filter((item) => !m.isVideoMediaProcessing(item))
+          .filter((item) => !mediaUtils.isVideoMediaProcessing(item))
           .map((item) => item.id)
       );
 
@@ -412,7 +403,7 @@ export const useMediaComposerState = ({
   );
 
   const allVisual = React.useMemo(
-    (): VisualPreviewItem[] =>
+    (): mediaComposer.VisualPreviewItem[] =>
       [
         ...visualMedia
           .filter((item) => !pendingIdSet.has(item.id))
@@ -420,42 +411,44 @@ export const useMediaComposerState = ({
             ...item,
             pending: false,
             localUri: localPreviewUris[item.id],
-            type: toVisualMediaType(item.type),
+            type: mediaComposer.toVisualMediaType(item.type),
           })),
-        ...pendingUploads.filter(isVisualPendingUpload).map((item) => {
-          const real = realMediaById.get(item.id);
+        ...pendingUploads
+          .filter(mediaComposer.isVisualPendingUpload)
+          .map((item) => {
+            const real = realMediaById.get(item.id);
 
-          if (real && !m.isVideoMediaProcessing(real)) {
+            if (real && !mediaUtils.isVideoMediaProcessing(real)) {
+              return {
+                ...real,
+                height: item.height,
+                order: item.order,
+                pending: false,
+                localUri: localPreviewUris[item.id] ?? item.uri,
+                type: mediaComposer.toVisualMediaType(real.type),
+                width: item.width,
+              };
+            }
+
             return {
-              ...real,
               height: item.height,
+              id: item.id,
               order: item.order,
-              pending: false,
+              uri: item.uri,
+              type: item.type,
+              pending: true,
               localUri: localPreviewUris[item.id] ?? item.uri,
-              type: toVisualMediaType(real.type),
               width: item.width,
             };
-          }
-
-          return {
-            height: item.height,
-            id: item.id,
-            order: item.order,
-            uri: item.uri,
-            type: item.type,
-            pending: true,
-            localUri: localPreviewUris[item.id] ?? item.uri,
-            width: item.width,
-          };
-        }),
+          }),
       ].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [localPreviewUris, pendingIdSet, pendingUploads, realMediaById, visualMedia]
   );
 
   const pendingAudio = React.useMemo(
-    (): PendingAudioUpload[] =>
+    (): mediaComposer.PendingAudioUpload[] =>
       pendingUploads
-        .filter(isPendingAudioUpload)
+        .filter(mediaComposer.isPendingAudioUpload)
         .sort((a, b) => a.order - b.order),
     [pendingUploads]
   );

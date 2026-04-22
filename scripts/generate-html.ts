@@ -1,4 +1,4 @@
-import * as appleStartupImages from '@/lib/apple-startup-images';
+import * as startupImages from '@/lib/apple-startup-images';
 import { UI } from '@/theme/ui';
 import { rename } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -6,19 +6,21 @@ import { join } from 'node:path';
 const light = UI.light.background;
 const dark = UI.dark.background;
 
-const startupLinks = appleStartupImages.appleStartupImageSpecs.flatMap((spec) =>
-  appleStartupImages.appleStartupImageOrientations.flatMap((orientation) =>
-    appleStartupImages.appleStartupImageThemes.map((theme) => {
-      const media = appleStartupImages.getAppleStartupImageMedia({
+const startupLinks = startupImages.appleStartupImageSpecs.flatMap((spec) =>
+  startupImages.appleStartupImageOrientations.flatMap((orientation) =>
+    startupImages.appleStartupImageThemes.map((theme) => {
+      const media = startupImages.getAppleStartupImageMedia({
         ...spec,
         orientation,
         theme,
       });
-      const href = appleStartupImages.getAppleStartupImageHref({
+
+      const href = startupImages.getAppleStartupImageHref({
         id: spec.id,
         orientation,
         theme,
       });
+
       return `<link rel="apple-touch-startup-image" media="${media}" href="${href}"/>`;
     })
   )

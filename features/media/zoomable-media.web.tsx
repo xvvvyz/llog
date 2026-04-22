@@ -13,7 +13,7 @@ const ZOOM_ANIMATION_MS = 200;
 
 export const ZoomableMedia = ({
   children,
-  disabledDoubleTapZoom = false,
+  suppressDoubleTapZoom = false,
   height,
   onInteractionStateChange,
   onZoomStateChange,
@@ -21,7 +21,7 @@ export const ZoomableMedia = ({
   width,
 }: {
   children: React.ReactNode;
-  disabledDoubleTapZoom?: boolean;
+  suppressDoubleTapZoom?: boolean;
   height: number;
   onInteractionStateChange?: (isInteracting: boolean) => void;
   onZoomStateChange?: (isZoomed: boolean) => void;
@@ -161,18 +161,18 @@ export const ZoomableMedia = ({
 
   const handleDoubleClick = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      if (disabledDoubleTapZoom) return;
+      if (suppressDoubleTapZoom) return;
       event.preventDefault();
       updateInteractionState(true);
       zoomToPoint(event.clientX, event.clientY);
       updateInteractionState(false);
     },
-    [disabledDoubleTapZoom, updateInteractionState, zoomToPoint]
+    [suppressDoubleTapZoom, updateInteractionState, zoomToPoint]
   );
 
   const handleTouchEnd = React.useCallback(
     (event: React.TouchEvent<HTMLDivElement>) => {
-      if (disabledDoubleTapZoom) return;
+      if (suppressDoubleTapZoom) return;
 
       if (event.changedTouches.length !== 1) {
         lastTouchEndRef.current = null;
@@ -209,7 +209,7 @@ export const ZoomableMedia = ({
       zoomToPoint(touch.clientX, touch.clientY);
       updateInteractionState(false);
     },
-    [disabledDoubleTapZoom, updateInteractionState, zoomToPoint]
+    [suppressDoubleTapZoom, updateInteractionState, zoomToPoint]
   );
 
   const handlePanningStart = React.useCallback(() => {

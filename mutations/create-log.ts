@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { getActiveTeamId } from '@/queries/get-active-team-id';
 import { Color } from '@/theme/spectrum';
 import { id as generateId } from '@instantdb/react-native';
@@ -24,7 +24,7 @@ export const createLog = async ({
   });
 
   const profileIds = data.roles
-    .filter((r) => p.isManagedRole(r.role))
+    .filter((r) => permissions.isManagedRole(r.role))
     .map((r) => r.user?.profile?.id)
     .filter((profileId): profileId is string => !!profileId);
 

@@ -51,7 +51,10 @@ export default function Index() {
     const frame = requestAnimationFrame(() => {
       if (!listRef.current) return;
       listRef.current.scrollToOffset({ animated: true, offset: 0 });
-      scroll.clearPostSubmitScroll({ id: params.logId, scope: 'log' });
+      scroll.clearPostSubmitScroll({
+        id: params.logId,
+        scope: 'log',
+      });
     });
 
     return () => cancelAnimationFrame(frame);

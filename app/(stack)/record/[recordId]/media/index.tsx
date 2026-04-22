@@ -8,12 +8,15 @@ import { Page } from '@/ui/page';
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { Redirect, Stack, router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, StatusBar, View } from 'react-native';
 
 const mediaScreenOptions = Platform.select<NativeStackNavigationOptions>({
+  android: {},
   ios: {
     animation: 'simple_push',
     animationMatchesGesture: true,
+    fullScreenGestureEnabled: false,
+    gestureEnabled: true,
   },
   web: {
     animation: 'none',
@@ -22,6 +25,7 @@ const mediaScreenOptions = Platform.select<NativeStackNavigationOptions>({
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+  const [isUiHidden, setIsUiHidden] = React.useState(false);
 
   const params = useLocalSearchParams<{
     replyId?: string;
@@ -109,16 +113,20 @@ export default function Index() {
   return (
     <React.Fragment>
       <Stack.Screen options={mediaScreenOptions} />
+      {Platform.OS !== 'web' ? <StatusBar animated hidden /> : null}
       <Page>
-        <View
-          className="absolute top-1 left-4 z-10 rounded-full md:top-3 md:left-8"
-          style={{ marginTop: insets.top + 1 }}
-        >
-          <BackButton />
-        </View>
+        {!isUiHidden && (
+          <View
+            className="absolute top-1 left-4 z-10 rounded-full md:top-3 md:left-8"
+            style={{ marginTop: insets.top + 1 }}
+          >
+            <BackButton />
+          </View>
+        )}
         <Carousel
           key={carouselKey}
           defaultIndex={defaultIndex}
+          onUiHiddenChange={setIsUiHidden}
           media={visualMedia}
           isKeyboardNavigationEnabled={visualMedia.length > 1}
         />

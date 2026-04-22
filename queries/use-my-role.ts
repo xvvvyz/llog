@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { useUi } from '@/queries/use-ui';
 
 export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
@@ -26,7 +26,7 @@ export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
 
   return {
     ...role,
-    ...p.getTeamPermissionFlags(role?.role),
+    ...permissions.getTeamPermissionFlags(role?.role),
     isLoading,
   };
 };

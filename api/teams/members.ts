@@ -1,6 +1,6 @@
 import { auth, db } from '@/api/middleware/db';
 import { removeMember } from '@/api/teams/helpers';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@/types/role';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -49,7 +49,7 @@ app.patch(
     }
 
     if (
-      !p.canChangeTeamMemberRole({
+      !permissions.canChangeTeamMemberRole({
         actorRole,
         isSelf: targetRole.userId === user.id,
         nextRole,
@@ -73,7 +73,10 @@ app.patch(
     if (profileId && targetRole.role !== nextRole) {
       const logIds = logs.map((log) => log.id);
 
-      if (p.isManagedRole(nextRole) && !p.isManagedRole(targetRole.role)) {
+      if (
+        permissions.isManagedRole(nextRole) &&
+        !permissions.isManagedRole(targetRole.role)
+      ) {
         tx.push(
           ...logIds.map((logId) =>
             c.var.db.tx.logs[logId].link({ profiles: profileId })
@@ -81,7 +84,10 @@ app.patch(
         );
       }
 
-      if (!p.isManagedRole(nextRole) && p.isManagedRole(targetRole.role)) {
+      if (
+        !permissions.isManagedRole(nextRole) &&
+        permissions.isManagedRole(targetRole.role)
+      ) {
         tx.push(
           ...logIds.map((logId) =>
             c.var.db.tx.logs[logId].unlink({ profiles: profileId })
@@ -124,7 +130,7 @@ app.delete('/:teamId/members/:roleId', db(), auth(), async (c) => {
   }
 
   if (
-    !p.canRemoveTeamMember({
+    !permissions.canRemoveTeamMember({
       actorRole: callerRole,
       isSelf: targetRole.userId === user.id,
       targetRole: targetRole.role,

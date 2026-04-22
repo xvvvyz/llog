@@ -93,6 +93,7 @@ export const VideoPlayer = ({
   maxHeight,
   maxWidth,
   muted = true,
+  onReady,
   onPlayingChange,
   onTimeChange,
   resetToken = 0,
@@ -106,6 +107,7 @@ export const VideoPlayer = ({
   maxHeight?: number;
   maxWidth?: number;
   muted?: boolean;
+  onReady?: () => void;
   onPlayingChange?: (isPlaying: boolean) => void;
   onTimeChange?: (currentTime: number, duration: number) => void;
   resetToken?: number;
@@ -141,12 +143,18 @@ export const VideoPlayer = ({
   const lastScrubSeekAtRef = React.useRef(0);
   const lastScrubSeekTargetRef = React.useRef<number | null>(null);
   const previousResetTokenRef = React.useRef(resetToken);
+  const readyNotifiedRef = React.useRef(false);
   const wasAutoPlayRef = React.useRef(false);
 
   const markVideoReady = React.useCallback(() => {
     videoPreload.markVideoWarm(src);
     setShowInitialLoadingIndicator(false);
-  }, [src]);
+
+    if (!readyNotifiedRef.current) {
+      readyNotifiedRef.current = true;
+      onReady?.();
+    }
+  }, [onReady, src]);
 
   const showThumbnail = Boolean(poster) && isAtStart && !hasRenderedFirstFrame;
   const showLoadingIndicator = showInitialLoadingIndicator && isBuffering;
@@ -169,11 +177,14 @@ export const VideoPlayer = ({
 
   React.useEffect(() => {
     setIsBuffering(Boolean(src));
+
     setShowInitialLoadingIndicator(
       Boolean(src) && !videoPreload.isVideoWarm(src)
     );
+
     setHasRenderedFirstFrame(false);
     setIsAtStart(true);
+    readyNotifiedRef.current = false;
     wasAutoPlayRef.current = false;
     onTimeChangeRef.current?.(0, 0);
   }, [src]);
@@ -187,6 +198,7 @@ export const VideoPlayer = ({
     setIsBuffering(false);
     setHasRenderedFirstFrame(false);
     setIsAtStart(true);
+    readyNotifiedRef.current = false;
     scrubbingEnabledRef.current = false;
     lastScrubSeekAtRef.current = 0;
     lastScrubSeekTargetRef.current = 0;

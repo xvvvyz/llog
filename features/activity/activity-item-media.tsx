@@ -1,6 +1,6 @@
 import { AudioPlaylist } from '@/features/media/audio-player';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
-import * as m from '@/lib/media';
+import * as mediaUtils from '@/lib/media';
 import { UI } from '@/theme/ui';
 import { Media } from '@/types/media';
 import { Icon } from '@/ui/icon';
@@ -20,15 +20,17 @@ export const ActivityItemMedia = ({
 }) => {
   const { audioMedia, visualMedia } = useFilteredMedia(media || []);
   if (!visualMedia.length && !audioMedia.length) return null;
-  const timelineTargetWidth = m.getTimelineTargetWidth(visualMedia.length);
+  const timelineTargetWidth = mediaUtils.getTimelineTargetWidth(
+    visualMedia.length
+  );
 
   const renderMediaThumb = (item: Media) => (
     <Pressable
       className="flex-1"
-      disabled={m.isVideoMediaProcessing(item)}
+      disabled={mediaUtils.isVideoMediaProcessing(item)}
       key={item.id}
       onPress={() =>
-        !m.isVideoMediaProcessing(item) &&
+        !mediaUtils.isVideoMediaProcessing(item) &&
         recordId &&
         router.push({
           pathname: `/record/[recordId]/media`,
@@ -43,12 +45,12 @@ export const ActivityItemMedia = ({
       <Image
         fill
         targetWidth={timelineTargetWidth}
-        uri={m.getVisualMediaThumbnailUri(item)}
+        uri={mediaUtils.getVisualMediaThumbnailUri(item)}
         wrapperClassName="rounded-2xl"
       />
       {item.type === 'video' && (
         <View className="pointer-events-none absolute inset-0 items-center justify-center">
-          {m.isVideoMediaProcessing(item) ? (
+          {mediaUtils.isVideoMediaProcessing(item) ? (
             <ActivityIndicator color={UI.light.contrastForeground} />
           ) : (
             <View className="bg-contrast-background/50 size-10 items-center justify-center rounded-full">

@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
-import * as wp from '@/lib/web-push';
+import * as push from '@/lib/web-push';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
@@ -85,7 +85,7 @@ export default function Layout() {
 
     void (async () => {
       try {
-        await wp.registerWebPushServiceWorker();
+        await push.registerWebPushServiceWorker();
       } catch (error) {
         console.error('Failed to register service worker', error);
       }
@@ -97,7 +97,7 @@ export default function Layout() {
 
     void (async () => {
       try {
-        await wp.syncWebPushSubscription();
+        await push.syncWebPushSubscription();
       } catch (error) {
         console.error('Failed to sync web push subscription', error);
       }

@@ -5,7 +5,7 @@ import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import { getInviteUrl } from '@/lib/invite-url';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { createInviteLink } from '@/mutations/create-invite-link';
 import { deleteTeamImage } from '@/mutations/delete-team-image';
 import { updateTeam } from '@/mutations/update-team';
@@ -347,29 +347,29 @@ export default function Team() {
                 const isLastOwner =
                   member.role === Role.Owner && ownerCount <= 1;
 
-                const canShowMemberMenu = p.canOpenTeamMemberMenu({
+                const canShowMemberMenu = permissions.canOpenTeamMemberMenu({
                   actorRole: myRole.role,
                   isSelf,
                   targetRole: member.role,
                 });
 
-                const canChangeToAdmin = p.canChangeTeamMemberRole({
+                const canChangeToAdmin = permissions.canChangeTeamMemberRole({
                   actorRole: myRole.role,
                   isSelf,
                   nextRole: Role.Admin,
                   targetRole: member.role,
                 });
 
-                const canChangeToMember = p.canChangeTeamMemberRole({
+                const canChangeToMember = permissions.canChangeTeamMemberRole({
                   actorRole: myRole.role,
                   isSelf,
                   nextRole: Role.Member,
                   targetRole: member.role,
                 });
 
-                const canViewLogs = p.isMemberRole(member.role);
+                const canViewLogs = permissions.isMemberRole(member.role);
 
-                const canRemoveMember = p.canRemoveTeamMember({
+                const canRemoveMember = permissions.canRemoveTeamMember({
                   actorRole: myRole.role,
                   isSelf,
                   targetRole: member.role,

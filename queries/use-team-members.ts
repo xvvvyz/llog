@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { useMyRole } from '@/queries/use-my-role';
 import { useUi } from '@/queries/use-ui';
 import * as React from 'react';
@@ -32,7 +32,8 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
     () =>
       [...members].sort((a, b) => {
         const roleOrder =
-          p.getRoleSortOrder(a.role) - p.getRoleSortOrder(b.role);
+          permissions.getRoleSortOrder(a.role) -
+          permissions.getRoleSortOrder(b.role);
 
         if (roleOrder !== 0) return roleOrder;
         const aName = a.user?.profile?.name?.trim() ?? '';
@@ -50,7 +51,7 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
     return sortedMembers.filter((member) => {
       const memberLogIds = member.user?.profile?.logs?.map((l) => l.id) ?? [];
 
-      return p.canViewTeamMember({
+      return permissions.canViewTeamMember({
         actorLogIds: myLogIds,
         actorRole: myRole.role,
         targetLogIds: memberLogIds,

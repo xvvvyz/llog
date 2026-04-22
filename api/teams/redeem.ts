@@ -1,6 +1,6 @@
 import { auth, db } from '@/api/middleware/db';
 import { memberJoinedActivity } from '@/api/teams/helpers';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@/types/role';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
@@ -34,7 +34,7 @@ app.get('/:token', db(), async (c) => {
   }
 
   const adminMembers = (link.team?.roles ?? [])
-    .filter((role) => p.isManagedRole(role.role))
+    .filter((role) => permissions.isManagedRole(role.role))
     .map((role) => role.user?.profile)
     .filter(Boolean)
     .map((profile) => ({
@@ -107,13 +107,13 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
   const existingRole = existingRoles[0];
   const logIds = link.logs?.map((log) => log.id) ?? [];
 
-  const desiredRole = p.getInviteRedemptionRole({
+  const desiredRole = permissions.getInviteRedemptionRole({
     currentRole: existingRole?.role,
     invitedRole: link.role,
   });
 
   const targetLogIds =
-    actorId && p.isManagedRole(desiredRole)
+    actorId && permissions.isManagedRole(desiredRole)
       ? (
           await c.var.db.query({
             logs: {

@@ -1,7 +1,7 @@
 import { AudioPlaylist } from '@/features/media/audio-player';
 import { useFilteredMedia } from '@/hooks/use-filtered-media';
 import { cn } from '@/lib/cn';
-import * as m from '@/lib/media';
+import * as mediaUtils from '@/lib/media';
 import { UI } from '@/theme/ui';
 import { Media } from '@/types/media';
 import { Icon } from '@/ui/icon';
@@ -56,11 +56,11 @@ export const ActivityItemQuotedRecord = ({
           <View className="flex-row gap-0.5">
             {visualMedia.map((item, index) => (
               <Pressable
-                disabled={m.isVideoMediaProcessing(item)}
+                disabled={mediaUtils.isVideoMediaProcessing(item)}
                 key={item.id}
                 className="h-16 w-16 shrink-0 overflow-hidden rounded-lg"
                 onPress={() =>
-                  !m.isVideoMediaProcessing(item) &&
+                  !mediaUtils.isVideoMediaProcessing(item) &&
                   router.push({
                     pathname: `/record/[recordId]/media`,
                     params: {
@@ -75,12 +75,12 @@ export const ActivityItemQuotedRecord = ({
                   height={64}
                   targetHeight={128}
                   targetWidth={128}
-                  uri={m.getVisualMediaThumbnailUri(item)}
+                  uri={mediaUtils.getVisualMediaThumbnailUri(item)}
                   width={64}
                 />
                 {item.type === 'video' && (
                   <View className="pointer-events-none absolute inset-0 items-center justify-center">
-                    {m.isVideoMediaProcessing(item) ? (
+                    {mediaUtils.isVideoMediaProcessing(item) ? (
                       <ActivityIndicator
                         color={UI.light.contrastForeground}
                         size="small"

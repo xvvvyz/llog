@@ -14,6 +14,7 @@ type CarouselItemProps = {
   isMuted: boolean;
   isPlaying: boolean;
   isScrubbingVideo: boolean;
+  onActiveMediaLoad: (mediaId: string, index: number) => void;
   item: Media;
   mediaQuality: number;
   onTogglePlay: () => void;
@@ -31,13 +32,14 @@ type CarouselItemProps = {
   visibleIndex: number;
 };
 
-export const CarouselItem = ({
+const CarouselItemComponent = ({
   contentHeight,
   contentWidth,
   index,
   isMuted,
   isPlaying,
   isScrubbingVideo,
+  onActiveMediaLoad,
   item,
   mediaQuality,
   onTogglePlay,
@@ -68,8 +70,10 @@ export const CarouselItem = ({
           isMuted={isMuted}
           isPlaying={isPlaying}
           isScrubbingVideo={isScrubbingVideo}
+          index={index}
           item={item}
           mediaQuality={mediaQuality}
+          onActiveMediaLoad={onActiveMediaLoad}
           onTogglePlay={onTogglePlay}
           onVideoTimeChange={onVideoTimeChange}
           onZoomInteractionStateChange={onZoomInteractionStateChange}
@@ -84,8 +88,11 @@ export const CarouselItem = ({
         <CarouselImageItem
           contentHeight={contentHeight}
           contentWidth={contentWidth}
+          index={index}
+          isActive={isActive}
           item={item}
           mediaQuality={mediaQuality}
+          onActiveMediaLoad={onActiveMediaLoad}
           onZoomInteractionStateChange={onZoomInteractionStateChange}
           onZoomStateChange={onZoomStateChange}
           resetZoomToken={resetZoomToken}
@@ -95,6 +102,10 @@ export const CarouselItem = ({
   );
 };
 
+export const CarouselItem = React.memo(CarouselItemComponent);
+
+CarouselItem.displayName = 'CarouselItem';
+
 const CarouselVideoItem = ({
   contentHeight,
   contentWidth,
@@ -103,8 +114,10 @@ const CarouselVideoItem = ({
   isMuted,
   isPlaying,
   isScrubbingVideo,
+  index,
   item,
   mediaQuality,
+  onActiveMediaLoad,
   onTogglePlay,
   onVideoTimeChange,
   onZoomInteractionStateChange,
@@ -122,8 +135,10 @@ const CarouselVideoItem = ({
   isMuted: boolean;
   isPlaying: boolean;
   isScrubbingVideo: boolean;
+  index: number;
   item: Media;
   mediaQuality: number;
+  onActiveMediaLoad: (mediaId: string, index: number) => void;
   onTogglePlay: () => void;
   onVideoTimeChange: (currentTime: number, duration: number) => void;
   onZoomInteractionStateChange: (
@@ -137,54 +152,68 @@ const CarouselVideoItem = ({
   shouldAutoPlay: boolean;
   videoHandleRef: React.RefObject<video.VideoPlayerHandle | null>;
 }) => {
-  const previewUri = item.thumbnailUri ?? null;
+  const [hasLoaded, setHasLoaded] = React.useState(false);
+  const hasReportedActiveLoadRef = React.useRef(false);
+
+  React.useEffect(() => {
+    setHasLoaded(false);
+    hasReportedActiveLoadRef.current = false;
+  }, [item.id, item.thumbnailUri, item.uri]);
+
+  React.useEffect(() => {
+    if (!isActive) hasReportedActiveLoadRef.current = false;
+  }, [isActive]);
+
+  React.useEffect(() => {
+    if (!isActive || !hasLoaded || hasReportedActiveLoadRef.current) return;
+
+    hasReportedActiveLoadRef.current = true;
+    onActiveMediaLoad(item.id, index);
+  }, [hasLoaded, index, isActive, item.id, onActiveMediaLoad]);
+
+  const handleLoaded = React.useCallback(() => {
+    setHasLoaded(true);
+  }, []);
 
   return (
     <View className="bg-background relative w-full flex-1 items-center justify-center">
-      {!!previewUri && (
-        <Image
-          contentFit="contain"
-          fill
-          quality={mediaQuality}
-          uri={previewUri}
-          wrapperClassName="bg-background"
-        />
-      )}
       {isAdjacent ? (
-        <ZoomableMedia
-          disabledDoubleTapZoom
-          height={contentHeight}
-          onInteractionStateChange={(nextIsInteracting) =>
-            onZoomInteractionStateChange(item.id, nextIsInteracting)
-          }
-          onZoomStateChange={(nextIsZoomed) =>
-            onZoomStateChange(item.id, nextIsZoomed)
-          }
-          resetToken={resetZoomToken}
-          width={contentWidth}
-        >
-          <Pressable
-            className="flex-1 items-center justify-center self-stretch"
-            onPress={isActive ? onTogglePlay : undefined}
+        <React.Fragment>
+          <ZoomableMedia
+            suppressDoubleTapZoom
+            height={contentHeight}
+            onInteractionStateChange={(nextIsInteracting) =>
+              onZoomInteractionStateChange(item.id, nextIsInteracting)
+            }
+            onZoomStateChange={(nextIsZoomed) =>
+              onZoomStateChange(item.id, nextIsZoomed)
+            }
+            resetToken={resetZoomToken}
+            width={contentWidth}
           >
-            <video.VideoPlayer
-              autoPlay={isActive && shouldAutoPlay}
-              handleRef={isActive ? videoHandleRef : undefined}
-              maxHeight={contentHeight}
-              maxWidth={contentWidth}
-              muted={isMuted}
-              onPlayingChange={isActive ? setIsPlaying : undefined}
-              onTimeChange={isActive ? onVideoTimeChange : undefined}
-              resetToken={resetVideoToken}
-              thumbnailQuality={mediaQuality}
-              thumbnailUri={item.thumbnailUri}
-              uri={item.uri}
-            />
-            {isActive && !isPlaying && !isScrubbingVideo && (
-              <VideoPlayOverlay />
-            )}
-          </Pressable>
-        </ZoomableMedia>
+            <Pressable
+              className="items-center justify-center"
+              onPress={isActive ? onTogglePlay : undefined}
+              style={{ width: contentWidth, height: contentHeight }}
+            >
+              <video.VideoPlayer
+                autoPlay={isActive && shouldAutoPlay}
+                handleRef={isActive ? videoHandleRef : undefined}
+                maxHeight={contentHeight}
+                maxWidth={contentWidth}
+                muted={isMuted}
+                onReady={handleLoaded}
+                onPlayingChange={isActive ? setIsPlaying : undefined}
+                onTimeChange={isActive ? onVideoTimeChange : undefined}
+                resetToken={resetVideoToken}
+                thumbnailQuality={mediaQuality}
+                thumbnailUri={item.thumbnailUri}
+                uri={item.uri}
+              />
+            </Pressable>
+          </ZoomableMedia>
+          {isActive && !isPlaying && !isScrubbingVideo && <VideoPlayOverlay />}
+        </React.Fragment>
       ) : null}
     </View>
   );
@@ -193,16 +222,22 @@ const CarouselVideoItem = ({
 const CarouselImageItem = ({
   contentHeight,
   contentWidth,
+  index,
+  isActive,
   item,
   mediaQuality,
+  onActiveMediaLoad,
   onZoomInteractionStateChange,
   onZoomStateChange,
   resetZoomToken,
 }: {
   contentHeight: number;
   contentWidth: number;
+  index: number;
+  isActive: boolean;
   item: Media;
   mediaQuality: number;
+  onActiveMediaLoad: (mediaId: string, index: number) => void;
   onZoomInteractionStateChange: (
     mediaId: string,
     nextIsInteracting: boolean
@@ -210,6 +245,29 @@ const CarouselImageItem = ({
   onZoomStateChange: (mediaId: string, nextIsZoomed: boolean) => void;
   resetZoomToken: number;
 }) => {
+  const [hasLoaded, setHasLoaded] = React.useState(false);
+  const hasReportedActiveLoadRef = React.useRef(false);
+
+  React.useEffect(() => {
+    setHasLoaded(false);
+    hasReportedActiveLoadRef.current = false;
+  }, [item.id, item.uri]);
+
+  React.useEffect(() => {
+    if (!isActive) hasReportedActiveLoadRef.current = false;
+  }, [isActive]);
+
+  React.useEffect(() => {
+    if (!isActive || !hasLoaded || hasReportedActiveLoadRef.current) return;
+
+    hasReportedActiveLoadRef.current = true;
+    onActiveMediaLoad(item.id, index);
+  }, [hasLoaded, index, isActive, item.id, onActiveMediaLoad]);
+
+  const handleLoaded = React.useCallback(() => {
+    setHasLoaded(true);
+  }, []);
+
   return (
     <ZoomableMedia
       height={contentHeight}
@@ -225,6 +283,8 @@ const CarouselImageItem = ({
       <Image
         contentFit="contain"
         height={contentHeight}
+        onDisplay={handleLoaded}
+        onLoad={handleLoaded}
         quality={mediaQuality}
         uri={item.uri}
         width={contentWidth}

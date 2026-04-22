@@ -1,7 +1,7 @@
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
-import * as wp from '@/lib/web-push';
+import * as push from '@/lib/web-push';
 import { deleteProfileImage } from '@/mutations/delete-profile-image';
 import { randomizeProfileAvatar } from '@/mutations/randomize-profile-avatar';
 import { updateProfile } from '@/mutations/update-profile';
@@ -34,14 +34,14 @@ export default function Account() {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   const [pendingPushState, setPendingPushState] =
-    React.useState<wp.WebPushState | null>(null);
+    React.useState<push.WebPushState | null>(null);
 
-  const [pushState, setPushState] = React.useState<wp.WebPushState>({
+  const [pushState, setPushState] = React.useState<push.WebPushState>({
     status: 'unsupported',
   });
 
   const [pushSupport, setPushSupport] =
-    React.useState<wp.WebPushSupportState>('unsupported');
+    React.useState<push.WebPushSupportState>('unsupported');
 
   const auth = db.useAuth();
   const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
@@ -66,7 +66,7 @@ export default function Account() {
 
   React.useEffect(() => {
     if (Platform.OS !== 'web') return;
-    setPushSupport(wp.getWebPushSupportState());
+    setPushSupport(push.getWebPushSupportState());
   }, []);
 
   React.useEffect(() => {
@@ -75,11 +75,11 @@ export default function Account() {
 
     void (async () => {
       try {
-        const state = await wp.syncWebPushSubscription();
+        const state = await push.syncWebPushSubscription();
         if (!cancelled) setPushState(state);
       } catch (error) {
         console.error('Failed to refresh web push state', error);
-        const state = await wp.getWebPushState();
+        const state = await push.getWebPushState();
         if (!cancelled) setPushState(state);
       }
     })();
@@ -96,7 +96,7 @@ export default function Account() {
       if (document.visibilityState !== 'visible') return;
 
       try {
-        setPushState(await wp.getWebPushState());
+        setPushState(await push.getWebPushState());
       } catch (error) {
         console.error(error);
       }
@@ -139,11 +139,11 @@ export default function Account() {
       pushState.status === 'enabled'
         ? ({
             status: 'disabled',
-          } satisfies wp.WebPushState)
+          } satisfies push.WebPushState)
         : ({
             endpoint: pushState.endpoint,
             status: 'enabled',
-          } satisfies wp.WebPushState);
+          } satisfies push.WebPushState);
 
     setPendingPushState(optimisticState);
     setIsPushPending(true);
@@ -151,8 +151,8 @@ export default function Account() {
     try {
       const nextState =
         pushState.status === 'enabled'
-          ? await wp.disableWebPush()
-          : await wp.enableWebPush();
+          ? await push.disableWebPush()
+          : await push.enableWebPush();
 
       if (nextState.status === 'blocked') {
         alert({
@@ -343,7 +343,7 @@ export default function Account() {
                 try {
                   if (Platform.OS === 'web') {
                     try {
-                      await wp.detachWebPushSubscription();
+                      await push.detachWebPushSubscription();
                     } catch (error) {
                       console.error(
                         'Failed to detach web push subscription during sign out',

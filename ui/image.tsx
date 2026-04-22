@@ -11,6 +11,8 @@ export const Image = ({
   height,
   maxHeight,
   maxWidth,
+  onDisplay,
+  onLoad,
   quality,
   style,
   targetHeight,
@@ -25,6 +27,8 @@ export const Image = ({
   height?: number;
   maxHeight?: number;
   maxWidth?: number;
+  onDisplay?: () => void;
+  onLoad?: () => void;
   quality?: number;
   style?: StyleProp<ImageStyle>;
   targetHeight?: number;
@@ -72,6 +76,8 @@ export const Image = ({
       <ExpoImage
         contentFit={contentFit ?? (fill ? 'cover' : undefined)}
         contentPosition="center"
+        onDisplay={onDisplay}
+        onLoad={onLoad}
         source={source}
         style={
           fill

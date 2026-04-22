@@ -1,5 +1,5 @@
 import { createAdminDb, type Db } from '@/api/middleware/db';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { buildPushHTTPRequest } from '@pushforge/builder';
 import { z } from 'zod/v4';
 
@@ -103,7 +103,7 @@ export const collectRecipientSubscriptions = ({
     if (
       role.user?.id &&
       role.user.id !== actorUserId &&
-      p.canManageTeam(role.role)
+      permissions.canManageTeam(role.role)
     ) {
       users.push(role.user);
     }

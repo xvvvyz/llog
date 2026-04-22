@@ -2,7 +2,7 @@ import { storeImageDeliveryUrl, uploadImage } from '@/api/files/images';
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import * as upload from '@/api/files/upload';
 import { db } from '@/api/middleware/db';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { fileLike } from '@/types/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -48,7 +48,7 @@ app.put(
       throw new HTTPException(404, { message: 'Team not found' });
     }
 
-    if (!p.canManageTeam(callerRole)) {
+    if (!permissions.canManageTeam(callerRole)) {
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
@@ -97,7 +97,7 @@ app.delete('/teams/:teamId/avatar', db({ asUser: true }), async (c) => {
     throw new HTTPException(404, { message: 'Team not found' });
   }
 
-  if (!p.canManageTeam(callerRole)) {
+  if (!permissions.canManageTeam(callerRole)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 

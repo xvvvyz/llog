@@ -90,6 +90,7 @@ export const VideoPlayer = ({
   maxHeight,
   maxWidth,
   muted = true,
+  onReady,
   onPlayingChange,
   onTimeChange,
   resetToken = 0,
@@ -103,6 +104,7 @@ export const VideoPlayer = ({
   maxHeight?: number;
   maxWidth?: number;
   muted?: boolean;
+  onReady?: () => void;
   onPlayingChange?: (isPlaying: boolean) => void;
   onTimeChange?: (currentTime: number, duration: number) => void;
   resetToken?: number;
@@ -123,6 +125,7 @@ export const VideoPlayer = ({
   const lastScrubSeekAtRef = React.useRef(0);
   const lastScrubSeekTargetRef = React.useRef<number | null>(null);
   const previousResetTokenRef = React.useRef(resetToken);
+  const readyNotifiedRef = React.useRef(false);
   const wasAutoPlayRef = React.useRef(false);
 
   const [hasRenderedFirstFrame, setHasRenderedFirstFrame] =
@@ -133,7 +136,12 @@ export const VideoPlayer = ({
   const markVideoReady = React.useCallback(() => {
     videoPreload.markVideoWarm(source);
     setShowInitialLoadingIndicator(false);
-  }, [source]);
+
+    if (!readyNotifiedRef.current) {
+      readyNotifiedRef.current = true;
+      onReady?.();
+    }
+  }, [onReady, source]);
 
   const markFirstFrameRendered = React.useCallback(() => {
     setHasRenderedFirstFrame(true);
@@ -283,6 +291,7 @@ export const VideoPlayer = ({
     setIsScrubbing(false);
     setHasRenderedFirstFrame(false);
     setIsAtStart(true);
+    readyNotifiedRef.current = false;
     scrubbingEnabledRef.current = false;
     lastScrubSeekAtRef.current = 0;
     lastScrubSeekTargetRef.current = 0;
@@ -319,6 +328,7 @@ export const VideoPlayer = ({
 
     setHasRenderedFirstFrame(false);
     setIsAtStart(true);
+    readyNotifiedRef.current = false;
     wasAutoPlayRef.current = false;
     onTimeChangeRef.current?.(0, 0);
   }, [player, source, thumbnailUri]);
@@ -390,9 +400,14 @@ export const VideoPlayer = ({
       style={{ width: maxWidth, height: maxHeight }}
     >
       <VideoView
+        allowsPictureInPicture={false}
+        allowsVideoFrameAnalysis={false}
         contentFit={contentFit}
+        fullscreenOptions={{ enable: false }}
+        nativeControls={false}
         onFirstFrameRender={markFirstFrameRendered}
         player={player}
+        pointerEvents="none"
         surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
         style={[StyleSheet.absoluteFill, showThumbnail && { opacity: 0 }]}
       />

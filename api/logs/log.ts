@@ -1,7 +1,7 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import { db } from '@/api/middleware/db';
 import { deleteActivities } from '@/lib/delete-activities';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
@@ -42,7 +42,7 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
 
   const callerRole = log.team?.roles?.[0]?.role;
 
-  if (!p.canManageTeam(callerRole)) {
+  if (!permissions.canManageTeam(callerRole)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 

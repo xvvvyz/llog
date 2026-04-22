@@ -1,4 +1,4 @@
-import * as appleStartup from '@/lib/apple-startup-images';
+import * as startupImages from '@/lib/apple-startup-images';
 import { AppIcon } from '@/scripts/logo-mark';
 import { UI } from '@/theme/ui';
 import { Resvg } from '@resvg/resvg-js';
@@ -296,7 +296,7 @@ const renderStartupImage = async ({
   width,
 }: {
   height: number;
-  theme: appleStartup.AppleStartupImageTheme;
+  theme: startupImages.AppleStartupImageTheme;
   width: number;
 }) => {
   const markSize = Math.min(Math.round(Math.min(width, height) * 0.3), 480);
@@ -344,16 +344,16 @@ await rm(startupOutputDirectory, { force: true, recursive: true });
 await mkdir(startupOutputDirectory, { recursive: true });
 
 const totalStartupImages =
-  appleStartup.appleStartupImageSpecs.length *
-  appleStartup.appleStartupImageOrientations.length *
-  appleStartup.appleStartupImageThemes.length;
+  startupImages.appleStartupImageSpecs.length *
+  startupImages.appleStartupImageOrientations.length *
+  startupImages.appleStartupImageThemes.length;
 
 let startupImageIndex = 0;
 
 log(`Rendering ${totalStartupImages} Apple startup images`);
 
-for (const spec of appleStartup.appleStartupImageSpecs) {
-  for (const orientation of appleStartup.appleStartupImageOrientations) {
+for (const spec of startupImages.appleStartupImageSpecs) {
+  for (const orientation of startupImages.appleStartupImageOrientations) {
     const width =
       (orientation === 'portrait' ? spec.viewportWidth : spec.viewportHeight) *
       spec.pixelRatio;
@@ -362,10 +362,10 @@ for (const spec of appleStartup.appleStartupImageSpecs) {
       (orientation === 'portrait' ? spec.viewportHeight : spec.viewportWidth) *
       spec.pixelRatio;
 
-    for (const theme of appleStartup.appleStartupImageThemes) {
+    for (const theme of startupImages.appleStartupImageThemes) {
       const png = await renderStartupImage({ height, theme, width });
 
-      const relativeHref = appleStartup
+      const relativeHref = startupImages
         .getAppleStartupImageHref({
           id: spec.id,
           orientation,

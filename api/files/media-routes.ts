@@ -1,7 +1,7 @@
 import { deleteMediaAssets } from '@/api/files/media-cleanup';
 import * as upload from '@/api/files/upload';
 import { type Db, db } from '@/api/middleware/db';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
@@ -147,7 +147,7 @@ export const canDeleteMedia = ({
   isAuthor?: boolean;
 }) =>
   Boolean(
-    p.canDeleteOwnOrManagedResource({
+    permissions.canDeleteOwnOrManagedResource({
       actorRole,
       isAuthor: isAuthor ?? false,
     })

@@ -1,4 +1,4 @@
-import * as m from '@/lib/media';
+import * as media from '@/lib/media';
 import { UI } from '@/theme/ui';
 import { Media } from '@/types/media';
 import { Icon } from '@/ui/icon';
@@ -31,7 +31,7 @@ export const RecordOrReplyMediaGrid = ({
     return next;
   }, [visualMedia]);
 
-  const timelineTargetWidth = m.getTimelineTargetWidth(visualMedia.length);
+  const timelineTargetWidth = media.getTimelineTargetWidth(visualMedia.length);
 
   const handlePress = React.useCallback(
     (mediaId: string) => {
@@ -51,7 +51,7 @@ export const RecordOrReplyMediaGrid = ({
 
   const renderMediaThumb = React.useCallback(
     (item: Media) => {
-      const isProcessing = m.isVideoMediaProcessing(item);
+      const isProcessing = media.isVideoMediaProcessing(item);
 
       return (
         <Pressable
@@ -63,7 +63,7 @@ export const RecordOrReplyMediaGrid = ({
           <Image
             fill
             targetWidth={timelineTargetWidth}
-            uri={m.getVisualMediaThumbnailUri(item)}
+            uri={media.getVisualMediaThumbnailUri(item)}
             wrapperClassName="rounded-2xl"
           />
           {item.type === 'video' && (

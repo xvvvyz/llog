@@ -16,7 +16,6 @@ import { Page } from '@/ui/page';
 import { SearchInput } from '@/ui/search-input';
 import { Text } from '@/ui/text';
 import { Funnel } from 'phosphor-react-native/lib/module/icons/Funnel';
-import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -160,18 +159,6 @@ export default function Search() {
         keyExtractor={(item) => `${item.type}:${item.id}`}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          query.trim() ? (
-            <View className="items-center justify-center gap-4 py-16">
-              <Icon
-                className="text-muted-foreground"
-                icon={MagnifyingGlass}
-                size={48}
-              />
-              <Text className="text-muted-foreground">No results found</Text>
-            </View>
-          ) : null
-        }
         renderItem={renderItem}
       />
     </Page>

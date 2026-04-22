@@ -43,7 +43,7 @@ const config: { expo: ExpoConfig } = {
         {
           backgroundColor: NATIVE_SPLASH_BACKGROUNDS.light,
           image: './assets/splash-icon.png',
-          imageWidth: 240,
+          imageWidth: 120,
           dark: {
             backgroundColor: NATIVE_SPLASH_BACKGROUNDS.dark,
             image: './assets/splash-icon-dark.png',

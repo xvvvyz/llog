@@ -1,11 +1,8 @@
 import { AudioPlayer } from '@/features/media/audio-player';
-import {
-  type PendingAudioUpload,
-  type VisualPreviewItem,
-} from '@/features/media/media-composer.types';
+import type * as mediaComposer from '@/features/media/media-composer.types';
 import { VideoPlayer } from '@/features/media/video-player';
 import { useFileUriToSrc } from '@/lib/file-uri-to-src';
-import * as m from '@/lib/media';
+import * as media from '@/lib/media';
 import type { Media } from '@/types/media';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
@@ -100,10 +97,10 @@ const SheetVisualPreviewImage = ({
   item,
   onRemoteReady,
 }: {
-  item: VisualPreviewItem;
+  item: mediaComposer.VisualPreviewItem;
   onRemoteReady: (mediaId: string) => void;
 }) => {
-  const remoteSrc = useFileUriToSrc(m.getVisualMediaThumbnailUri(item));
+  const remoteSrc = useFileUriToSrc(media.getVisualMediaThumbnailUri(item));
   const remoteSource = remoteSrc ? { uri: remoteSrc } : null;
 
   const [isRemoteReady, setIsRemoteReady] = React.useState(false);
@@ -165,8 +162,8 @@ export const MediaComposerPreview = ({
   onDeleteMedia: (mediaId: string) => void;
   onOpenVisual: (mediaId: string) => void;
   onRemoteReady: (mediaId: string) => void;
-  pendingAudio: PendingAudioUpload[];
-  visualItems: VisualPreviewItem[];
+  pendingAudio: mediaComposer.PendingAudioUpload[];
+  visualItems: mediaComposer.VisualPreviewItem[];
 }) => {
   return (
     <>
@@ -224,7 +221,7 @@ export const MediaComposerPreview = ({
                 </Pressable>
                 {item.type === 'video' &&
                   !item.pending &&
-                  !m.isVideoMediaProcessing(item) && (
+                  !media.isVideoMediaProcessing(item) && (
                     <View className="pointer-events-none absolute bottom-0 left-0 z-10 size-6 items-center justify-center">
                       <Icon
                         className="text-contrast-foreground"

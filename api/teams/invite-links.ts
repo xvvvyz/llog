@@ -1,5 +1,5 @@
 import { auth, db } from '@/api/middleware/db';
-import * as p from '@/lib/permissions';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@/types/role';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -46,7 +46,7 @@ app.post(
 
     const callerRole = callerRoles[0]?.role;
 
-    if (!p.canManageTeam(callerRole)) {
+    if (!permissions.canManageTeam(callerRole)) {
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 

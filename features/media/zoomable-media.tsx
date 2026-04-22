@@ -1,15 +1,14 @@
 import * as zoomableMediaConstants from '@/features/media/zoomable-media.constants';
+import {
+  Zoomable,
+  type ZoomableRef,
+} from '@likashefqet/react-native-image-zoom';
 import * as React from 'react';
 import { View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import {
-  ResumableZoom,
-  type ResumableZoomRefType,
-} from 'react-native-zoom-toolkit';
 
 export const ZoomableMedia = ({
   children,
-  disabledDoubleTapZoom = false,
+  suppressDoubleTapZoom = false,
   height,
   onInteractionStateChange,
   onZoomStateChange,
@@ -17,20 +16,19 @@ export const ZoomableMedia = ({
   width,
 }: {
   children: React.ReactNode;
-  disabledDoubleTapZoom?: boolean;
+  suppressDoubleTapZoom?: boolean;
   height: number;
   onInteractionStateChange?: (isInteracting: boolean) => void;
   onZoomStateChange?: (isZoomed: boolean) => void;
   resetToken?: number;
   width: number;
 }) => {
-  const zoomRef = React.useRef<ResumableZoomRefType>(null);
+  const zoomRef = React.useRef<ZoomableRef>(null);
   const isZoomedRef = React.useRef(false);
   const isInteractingRef = React.useRef(false);
   const onInteractionStateChangeRef = React.useRef(onInteractionStateChange);
   const onZoomStateChangeRef = React.useRef(onZoomStateChange);
   const previousResetTokenRef = React.useRef(resetToken);
-  const [isZoomed, setIsZoomed] = React.useState(false);
 
   React.useEffect(() => {
     onInteractionStateChangeRef.current = onInteractionStateChange;
@@ -54,61 +52,23 @@ export const ZoomableMedia = ({
     if (isZoomedRef.current === nextIsZoomed) return;
 
     isZoomedRef.current = nextIsZoomed;
-    setIsZoomed(nextIsZoomed);
     onZoomStateChangeRef.current?.(nextIsZoomed);
   }, []);
 
   const syncZoomState = React.useCallback(() => {
-    const scale = zoomRef.current?.getState().scale ?? 1;
+    const scale = zoomRef.current?.getInfo().transformations.scale ?? 1;
     updateZoomState(scale > zoomableMediaConstants.ZOOM_THRESHOLD);
   }, [updateZoomState]);
 
-  const handleDoubleTap = React.useCallback(
-    (x: number, y: number) => {
-      if (disabledDoubleTapZoom) return;
-
-      const zoom = zoomRef.current;
-      if (!zoom) return;
-
-      const { maxScale, scale } = zoom.getState();
-
-      if (scale > zoomableMediaConstants.ZOOM_THRESHOLD) {
-        zoom.reset();
-        updateZoomState(false);
-        return;
-      }
-
-      updateInteractionState(true);
-      const nextScale = Math.min(
-        zoomableMediaConstants.DOUBLE_TAP_SCALE,
-        maxScale
-      );
-      zoom.zoom(nextScale, { x, y });
-      updateZoomState(nextScale > zoomableMediaConstants.ZOOM_THRESHOLD);
-      updateInteractionState(false);
-    },
-    [disabledDoubleTapZoom, updateInteractionState, updateZoomState]
-  );
-
-  const doubleTap = React.useMemo(
-    () =>
-      Gesture.Tap()
-        .enabled(!disabledDoubleTapZoom)
-        .maxDuration(250)
-        .numberOfTaps(2)
-        .runOnJS(true)
-        .onEnd((event) => {
-          handleDoubleTap(event.x, event.y);
-        }),
-    [disabledDoubleTapZoom, handleDoubleTap]
-  );
+  const handleInteractionEnd = React.useCallback(() => {
+    updateInteractionState(false);
+    syncZoomState();
+  }, [syncZoomState, updateInteractionState]);
 
   React.useEffect(() => {
-    const zoom = zoomRef.current;
-
     return () => {
       updateInteractionState(false);
-      zoom?.reset(false);
+      zoomRef.current?.reset();
     };
   }, [updateInteractionState]);
 
@@ -117,34 +77,29 @@ export const ZoomableMedia = ({
 
     previousResetTokenRef.current = resetToken;
     updateInteractionState(false);
-    zoomRef.current?.reset(false);
     updateZoomState(false);
+    zoomRef.current?.reset();
   }, [resetToken, updateInteractionState, updateZoomState]);
 
   return (
-    <GestureDetector gesture={doubleTap}>
-      <View style={{ height, width }}>
-        <ResumableZoom
-          maxScale={4}
-          minScale={1}
-          onGestureEnd={syncZoomState}
-          onPanEnd={() => updateInteractionState(false)}
-          onPanStart={() => updateInteractionState(true)}
-          onPinchEnd={() => updateInteractionState(false)}
-          onPinchStart={() => updateInteractionState(true)}
-          panEnabled={isZoomed}
-          ref={zoomRef}
-          style={{ height, width }}
-          tapsEnabled={false}
-        >
-          <View
-            className="items-center justify-center"
-            style={{ height, width }}
-          >
-            {children}
-          </View>
-        </ResumableZoom>
-      </View>
-    </GestureDetector>
+    <View style={{ height, width }}>
+      <Zoomable
+        doubleTapScale={
+          suppressDoubleTapZoom ? 1 : zoomableMediaConstants.DOUBLE_TAP_SCALE
+        }
+        isDoubleTapEnabled
+        maxScale={4}
+        minScale={1}
+        onInteractionEnd={handleInteractionEnd}
+        onInteractionStart={() => updateInteractionState(true)}
+        onResetAnimationEnd={() => syncZoomState()}
+        ref={zoomRef}
+        style={{ height, width }}
+      >
+        <View className="items-center justify-center" style={{ height, width }}>
+          {children}
+        </View>
+      </Zoomable>
+    </View>
   );
 };

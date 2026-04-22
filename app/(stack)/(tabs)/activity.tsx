@@ -1,6 +1,6 @@
 import { ActivityItem } from '@/features/activity/activity-item';
 import { cn } from '@/lib/cn';
-import * as ga from '@/lib/group-activities';
+import * as grouping from '@/lib/group-activities';
 import { markActivitiesRead } from '@/mutations/mark-activities-read';
 import { useActivities } from '@/queries/use-activities';
 import { useProfile } from '@/queries/use-profile';
@@ -21,7 +21,7 @@ export default function Activity() {
   const ui = useUi();
 
   const grouped = React.useMemo(
-    () => ga.groupActivities(activities, profile.id),
+    () => grouping.groupActivities(activities, profile.id),
     [activities, profile.id]
   );
 
@@ -39,7 +39,7 @@ export default function Activity() {
   );
 
   const renderItem = React.useCallback(
-    ({ item, index }: { item: ga.GroupedActivity; index: number }) => (
+    ({ item, index }: { item: grouping.GroupedActivity; index: number }) => (
       <ActivityItem
         className={cn(
           'mt-4',

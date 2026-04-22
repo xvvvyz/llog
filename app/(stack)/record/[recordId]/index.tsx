@@ -49,7 +49,10 @@ export default function Index() {
     const frame = requestAnimationFrame(() => {
       if (!listRef.current) return;
       listRef.current.scrollToEnd({ animated: true });
-      scroll.clearPostSubmitScroll({ id: params.recordId, scope: 'record' });
+      scroll.clearPostSubmitScroll({
+        id: params.recordId,
+        scope: 'record',
+      });
     });
 
     return () => cancelAnimationFrame(frame);
