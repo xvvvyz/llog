@@ -52,6 +52,7 @@ export const useCarouselPreloading = ({
     loadedMediaIdsRef.current.forEach((mediaId) => {
       if (!mediaIdSet.has(mediaId)) loadedMediaIdsRef.current.delete(mediaId);
     });
+
     syncActiveMediaLoadingState(activeIndexRef.current);
   }, [activeIndexRef, media, syncActiveMediaLoadingState]);
 

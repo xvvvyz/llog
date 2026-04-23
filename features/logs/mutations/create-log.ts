@@ -29,9 +29,12 @@ export const createLog = async ({
     .filter((profileId): profileId is string => !!profileId);
 
   const logId = id ?? generateId();
+  const trimmedName = name.trim();
 
   return db.transact([
-    db.tx.logs[logId].update({ color, name, teamId }).link({ team: teamId }),
+    db.tx.logs[logId]
+      .update({ color, name: trimmedName, teamId })
+      .link({ team: teamId }),
     ...profileIds.map((pid) => db.tx.logs[logId].link({ profiles: pid })),
   ]);
 };

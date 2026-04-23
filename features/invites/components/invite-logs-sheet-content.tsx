@@ -31,6 +31,7 @@ export const InviteLogsSheetContent = ({
   selectedLogIds: Set<string>;
 }) => {
   const colorScheme = useColorScheme();
+
   const buttonLabel = copied
     ? 'Copied!'
     : action === 'qr'

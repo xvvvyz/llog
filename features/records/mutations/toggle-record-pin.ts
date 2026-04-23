@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 
-export const toggleRecordPin = async ({
+export const toggleRecordPin = ({
   id,
   isPinned,
 }: {

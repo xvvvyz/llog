@@ -282,6 +282,10 @@ const rules = {
       'newData.text == null || size(newData.text) <= 10240',
       'isAuthor',
       "data.ref('author.user.id') == auth.ref('$user.id')",
+      'onlyModifiesText',
+      "request.modifiedFields.all(field, field in ['text'])",
+      'onlyModifiesPinnedState',
+      "request.modifiedFields.all(field, field in ['isPinned'])",
       'isDraft',
       'data.isDraft == true',
       'isTeamMember',
@@ -297,7 +301,8 @@ const rules = {
       view: 'isTeamMember && ((!isDraft && (canManage || isLogMember)) || isAuthor)',
       create:
         'isAuthor && isTeamMember && (canManage || isLogMember) && isValidNewText',
-      update: 'isAuthor && isTeamMember && isValidNewText',
+      update:
+        '(isAuthor && isTeamMember && onlyModifiesText && isValidNewText) || (canManage && !isDraft && onlyModifiesPinnedState)',
       delete: 'canDeleteOwn || canManage',
       link: {
         replies: 'auth.id != null',

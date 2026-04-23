@@ -54,8 +54,10 @@ export const InviteLogsSheet = () => {
   const toggleLog = React.useCallback((logId: string) => {
     setSelectedLogIds((prev) => {
       const next = new Set(prev);
+
       if (next.has(logId)) next.delete(logId);
       else next.add(logId);
+
       return next;
     });
   }, []);

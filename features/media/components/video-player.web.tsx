@@ -1,6 +1,7 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
 import * as videoPreload from '@/features/media/lib/video-preload';
+import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import { Spinner } from '@/ui/spinner';
 import HlsClient, { Events as HlsEvents } from 'hls.js';
@@ -431,21 +432,26 @@ export const VideoPlayer = ({
       style={{ width: maxWidth, height: maxHeight }}
     >
       <video
-        className="absolute inset-0 block h-full w-full"
+        className={cn(
+          'absolute inset-0 block h-full w-full',
+          contentFit === 'cover' ? 'object-cover' : 'object-contain',
+          showThumbnail ? 'opacity-0' : 'opacity-100'
+        )}
         ref={ref}
         loop
         muted={muted}
         playsInline
         preload="auto"
-        style={{ opacity: showThumbnail ? 0 : 1, objectFit: contentFit }}
       />
       {showThumbnail && (
         <img
           alt=""
           aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full"
+          className={cn(
+            'pointer-events-none absolute inset-0 h-full w-full',
+            contentFit === 'cover' ? 'object-cover' : 'object-contain'
+          )}
           src={poster ?? undefined}
-          style={{ objectFit: contentFit }}
         />
       )}
       {showLoadingIndicator && (

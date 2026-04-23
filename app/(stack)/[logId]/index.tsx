@@ -37,8 +37,11 @@ export default function Index() {
   const log = useLog({ id: params.logId });
   const logColor = useLogColor({ id: params.logId });
   const records = useRecords({ logId: params.logId });
-  const hasRecords = records.data.length > 0;
+  const recordData = records.data;
+  const recordsLoading = records.isLoading;
+  const hasRecords = recordData.length > 0;
   const showFab = hasRecords && !breakpoints.md;
+  const contentPaddingBottom = insets.bottom + (showFab ? 104 : 0);
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: params.logId,
@@ -46,11 +49,12 @@ export default function Index() {
   });
 
   React.useEffect(() => {
-    if (pendingScroll !== 'top' || records.isLoading || !hasRecords) return;
+    if (pendingScroll !== 'top' || recordsLoading || !hasRecords) return;
 
     const frame = requestAnimationFrame(() => {
       if (!listRef.current) return;
       listRef.current.scrollToOffset({ animated: true, offset: 0 });
+
       scroll.clearPostSubmitScroll({
         id: params.logId,
         scope: 'log',
@@ -62,11 +66,11 @@ export default function Index() {
     hasRecords,
     params.logId,
     pendingScroll,
-    records.data.length,
-    records.isLoading,
+    recordData.length,
+    recordsLoading,
   ]);
 
-  if (sheetManager.someOpen()) {
+  if (sheetManager.someOpen() && renderCacheRef.current) {
     return renderCacheRef.current;
   }
 
@@ -112,27 +116,31 @@ export default function Index() {
         }
         title={log.name}
       />
-      {records.isLoading ? (
+      {recordsLoading ? (
         <Loading />
       ) : !hasRecords ? (
         <LogEmptyState logId={params.logId} />
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
-          contentContainerStyle={{
-            paddingBottom: insets.bottom + (showFab ? 104 : 0),
-          }}
-          data={records.data}
+          data={recordData}
           keyExtractor={(record) => record.id}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
+          ListFooterComponent={
+            contentPaddingBottom > 0 ? (
+              <View style={{ height: contentPaddingBottom }} />
+            ) : null
+          }
           listRef={listRef}
+          onEndReached={records.loadNextPage}
+          onEndReachedThreshold={1}
           renderItem={({ index, item }) => (
             <RecordOrReply
               className={cn(
                 'mt-4',
                 index === 0 && 'md:mt-8',
-                index === records.data.length - 1 && 'mb-4 md:mb-8'
+                index === recordData.length - 1 && 'mb-4 md:mb-8'
               )}
               logId={params.logId}
               numberOfLines={5}

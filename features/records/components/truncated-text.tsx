@@ -1,4 +1,5 @@
 import { renderLinkifiedText } from '@/features/records/components/linkified-text';
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { cn } from '@/lib/cn';
 import { Text } from '@/ui/text';
 import { type TextRef } from '@rn-primitives/types';
@@ -19,6 +20,7 @@ export const TruncatedText = ({
   const [expanded, setExpanded] = React.useState(false);
   const [truncated, setTruncated] = React.useState(false);
   const textRef = React.useRef<TextRef>(null);
+  const displayText = trimDisplayText(text);
 
   React.useEffect(() => {
     if (!numberOfLines || expanded) return;
@@ -35,7 +37,9 @@ export const TruncatedText = ({
     }
 
     if (node.scrollHeight > node.clientHeight) setTruncated(true);
-  }, [numberOfLines, expanded, text]);
+  }, [numberOfLines, expanded, displayText]);
+
+  if (!displayText) return null;
 
   return (
     <View>
@@ -44,7 +48,7 @@ export const TruncatedText = ({
         className={className}
         numberOfLines={expanded ? undefined : numberOfLines}
       >
-        {renderLinkifiedText({ color, text })}
+        {renderLinkifiedText({ color, text: displayText })}
       </Text>
       {truncated && !expanded && (
         <Pressable className="px-4" onPress={() => setExpanded(true)}>

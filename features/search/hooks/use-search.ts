@@ -1,3 +1,4 @@
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import type * as searchTypes from '@/features/search/types/search';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
@@ -107,12 +108,13 @@ export const useSearch = ({
     }
 
     for (const record of data.records ?? []) {
-      if (!record.text) continue;
+      const text = trimDisplayText(record.text);
+      if (!text) continue;
 
       docs.push({
         id: `record:${record.id}`,
         type: 'record',
-        text: record.text,
+        text,
         name: '',
         date: record.date,
         logId: record.log?.id,
@@ -136,12 +138,13 @@ export const useSearch = ({
     }
 
     for (const reply of data.replies ?? []) {
-      if (!reply.text) continue;
+      const text = trimDisplayText(reply.text);
+      if (!text) continue;
 
       docs.push({
         id: `reply:${reply.id}`,
         type: 'reply',
-        text: reply.text,
+        text,
         name: '',
         date: reply.date,
         logId: reply.record?.log?.id,

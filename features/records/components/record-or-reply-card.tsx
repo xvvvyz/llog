@@ -3,6 +3,7 @@ import { RecordOrReplyDropdownMenu } from '@/features/records/components/record-
 import { RecordOrReplyMediaGrid } from '@/features/records/components/record-or-reply-media-grid';
 import { RecordOrReplyReactionsRow } from '@/features/records/components/record-or-reply-reactions-row';
 import { TruncatedText } from '@/features/records/components/truncated-text';
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { type RecordOrReplySharedProps } from '@/features/records/types/record-or-reply.types';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/time';
@@ -11,7 +12,7 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { ArrowBendDownLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendDownLeft';
 import { PushPin } from 'phosphor-react-native/lib/module/icons/PushPin';
 import { View } from 'react-native';
@@ -36,6 +37,8 @@ export const RecordOrReplyCard = ({
   onOpenReply: () => void;
   onUnpin: () => void;
 }) => {
+  const displayText = trimDisplayText(record.text);
+
   return (
     <Card className={cn('gap-4', className)}>
       <View className="flex-row items-start gap-3 p-4 pb-0">
@@ -64,9 +67,9 @@ export const RecordOrReplyCard = ({
               wrapperClassName="rounded-lg opacity-100"
             >
               <Icon
+                color={accentColor}
                 icon={PushPin}
                 size={16}
-                style={accentColor ? { color: accentColor } : undefined}
                 weight="fill"
               />
             </Button>
@@ -75,28 +78,24 @@ export const RecordOrReplyCard = ({
             accentColor={accentColor}
             authorId={record.author?.id}
             isPinned={'isPinned' in record ? !!record.isPinned : undefined}
+            logId={logId}
             recordId={recordId}
             teamId={record.teamId}
           />
         </View>
       </View>
-      {!!record.text && (
+      {!!displayText && (
         <TruncatedText
           className="px-4 select-text"
           color={accentColor}
           numberOfLines={numberOfLines}
-          text={record.text}
+          text={displayText}
         />
       )}
-      <RecordOrReplyMediaGrid
-        fallbackRecordId={record.id}
-        recordId={recordId}
-        replyId={replyId}
-        visualMedia={visualMedia}
-      />
+      <RecordOrReplyMediaGrid visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="gap-2 px-4">
-          <AudioPlaylist clips={audioMedia} />
+          <AudioPlaylist className="-mr-1" clips={audioMedia} />
         </View>
       )}
       <RecordOrReplyReactionsRow
@@ -111,14 +110,16 @@ export const RecordOrReplyCard = ({
           !!record.replies && (
             <View className="flex-row items-center gap-1.5 self-center">
               {record.replies.length > 0 && (
-                <Link asChild href={`/record/${recordId}?focus=reply`}>
-                  <Button size="xs" variant="ghost">
-                    <Text className="text-muted-foreground text-sm font-normal">
-                      {record.replies.length} repl
-                      {record.replies.length === 1 ? 'y' : 'ies'}
-                    </Text>
-                  </Button>
-                </Link>
+                <Button
+                  onPress={() => router.setParams({ recordId })}
+                  size="xs"
+                  variant="ghost"
+                >
+                  <Text className="text-muted-foreground text-sm font-normal">
+                    {record.replies.length} repl
+                    {record.replies.length === 1 ? 'y' : 'ies'}
+                  </Text>
+                </Button>
               )}
               <Button
                 className="w-8 px-0"

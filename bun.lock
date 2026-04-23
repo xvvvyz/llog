@@ -7,11 +7,11 @@
       "dependencies": {
         "@babel/core": "^7.29.0",
         "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
-        "@cloudflare/workers-types": "^4.20260422.1",
+        "@cloudflare/workers-types": "^4.20260423.1",
         "@expo/metro-runtime": "^55.0.10",
         "@hono/zod-validator": "^0.7.6",
-        "@instantdb/admin": "1.0.13",
-        "@instantdb/react-native": "1.0.13",
+        "@instantdb/admin": "1.0.14",
+        "@instantdb/react-native": "1.0.14",
         "@legendapp/list": "^2.0.19",
         "@likashefqet/react-native-image-zoom": "^4.3.0",
         "@pushforge/builder": "^2.0.4",
@@ -57,7 +57,7 @@
         "expo-video": "^55.0.15",
         "hls.js": "^1.6.16",
         "hono": "^4.12.14",
-        "instant-cli": "1.0.13",
+        "instant-cli": "1.0.14",
         "linkify-it": "^5.0.0",
         "minisearch": "^7.2.0",
         "nanoid": "^5.1.9",
@@ -304,7 +304,7 @@
 
     "@cloudflare/workerd-windows-64": ["@cloudflare/workerd-windows-64@1.20260421.1", "", { "os": "win32", "cpu": "x64" }, "sha512-q1SFgwlNH9lFmw74vh7EJbJtduo92Nx51mNOfd3/u6pux6AldcwRviYzKEEv3FEbtv6OBB7J8D5f8vtZj7Z6Sg=="],
 
-    "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260422.1", "", {}, "sha512-kI4baXLJloST4J/PxAfhz3azy4TPC7L2wcX6nusOzSNJJD/L5CSsivSJobgkYaMG5yspzRFQUQlCdPza0nTHbQ=="],
+    "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260423.1", "", {}, "sha512-SHIc0NeJMtn0sW043eWtMxYFbJ9VPSLkcx+FEqCk0uZLD3HrWT+5xWhm6EYiOYDg0vnrlXNHcu2ly/01zDh3bw=="],
 
     "@commander-js/extra-typings": ["@commander-js/extra-typings@14.0.0", "", { "peerDependencies": { "commander": "~14.0.0" } }, "sha512-hIn0ncNaJRLkZrxBIp5AsW/eXEHNKYQBh0aPdoUqNgD+Io3NIykQqpKFyKcuasZhicGaEZJX/JBSIkZ4e5x8Dg=="],
 
@@ -538,19 +538,19 @@
 
     "@img/sharp-win32-x64": ["@img/sharp-win32-x64@0.34.5", "", { "os": "win32", "cpu": "x64" }, "sha512-+29YMsqY2/9eFEiW93eqWnuLcWcufowXewwSNIT6UwZdUUCrM3oFjMWH/Z6/TMmb4hlFenmfAVbpWeup2jryCw=="],
 
-    "@instantdb/admin": ["@instantdb/admin@1.0.13", "", { "dependencies": { "@instantdb/core": "1.0.13", "@instantdb/eventsource": "4.1.0-2", "@instantdb/version": "1.0.13", "cookie": "^1.1.1", "uuid": "^11.1.0" } }, "sha512-DrzhNTddJysmZx5RS20PqeiNruGuhnqMH7Qj6gQL8HgU97BLMYmYTzsE5oMtsqzEbz5H0AChkWScSEn99dyzmg=="],
+    "@instantdb/admin": ["@instantdb/admin@1.0.14", "", { "dependencies": { "@instantdb/core": "1.0.14", "@instantdb/eventsource": "4.1.0-2", "@instantdb/version": "1.0.14", "cookie": "^1.1.1", "uuid": "^11.1.0" } }, "sha512-H9gwGWLslfge5EcSIFo7gHGPoAYqIHC/oQthxfDjkjniJ++dxw0jizzy9tkeieJsVOXmD63k152W1BcqrsyASg=="],
 
-    "@instantdb/core": ["@instantdb/core@1.0.13", "", { "dependencies": { "@instantdb/version": "1.0.13", "mutative": "^1.0.10", "uuid": "^11.1.0" } }, "sha512-BOZ/xW3gOuAcKADAc9uAbihuZg9COIGW7ikOib4yLpeVzsvoIgYqFGDJsHC9QFykD3Jg88SBzQhGKLtLJib2Ww=="],
+    "@instantdb/core": ["@instantdb/core@1.0.14", "", { "dependencies": { "@instantdb/version": "1.0.14", "mutative": "^1.0.10", "uuid": "^11.1.0" } }, "sha512-GBe5QWTSucJbYgHo0i7kFNE90lzw2L350juw536uzUaDORWmZSXw66NG0LrQ3jNIJYL4l5rhW2cPltbjDt9HDw=="],
 
     "@instantdb/eventsource": ["@instantdb/eventsource@4.1.0-2", "", { "dependencies": { "eventsource-parser": "^3.0.1" } }, "sha512-k2uzhsRzdD7hzV3fv+eoCRNeluZcj4pDfUKKAhvIS6xshc7zHkaM9/m3vxBgaYoNVmvOyaGp84TcHG0/Bp7k4g=="],
 
-    "@instantdb/platform": ["@instantdb/platform@1.0.13", "", { "dependencies": { "@babel/parser": "^8.0.0-beta.0", "@babel/types": "^8.0.0-beta.0", "@instantdb/core": "1.0.13", "@instantdb/version": "1.0.13" } }, "sha512-FZBGK7W0Y9OfcIt1zuYa3dX93VXN5Ix5IZMRZssCOux5KZF2+1IjOYD/c9ODZPFk4AnaQFf+4wocEvDNBwgxJw=="],
+    "@instantdb/platform": ["@instantdb/platform@1.0.14", "", { "dependencies": { "@babel/parser": "^8.0.0-beta.0", "@babel/types": "^8.0.0-beta.0", "@instantdb/core": "1.0.14", "@instantdb/version": "1.0.14" } }, "sha512-FJx3DjtKpcJdhj47CMbyptKp63ZI762FEw5ZjPCb0aBeAJKjwYDv42KQ99QX12IIvv/GhRvJRISqmRTgvDN2Xw=="],
 
-    "@instantdb/react-common": ["@instantdb/react-common@1.0.13", "", { "dependencies": { "@instantdb/core": "1.0.13", "@instantdb/version": "1.0.13" }, "peerDependencies": { "react": ">=16" } }, "sha512-9DpGMwnhTkcSGSmlg7xSwwm0yP3Cg1X6pYsIySjSYMYnRQQqDfNReLe0noobt5vtiQnHc1H5lyMbcApp3CRkVA=="],
+    "@instantdb/react-common": ["@instantdb/react-common@1.0.14", "", { "dependencies": { "@instantdb/core": "1.0.14", "@instantdb/version": "1.0.14" }, "peerDependencies": { "react": ">=16" } }, "sha512-whnZwGprhudQhmnPA9k99zi9/+4lm03995DWxSNA9Vn4OO6TEymiAwG3elQ8tG6aH9iLIxa0f9GDKy24UK5DZw=="],
 
-    "@instantdb/react-native": ["@instantdb/react-native@1.0.13", "", { "dependencies": { "@instantdb/core": "1.0.13", "@instantdb/react-common": "1.0.13", "@instantdb/version": "1.0.13", "web-streams-polyfill": "^4.2.0" }, "peerDependencies": { "@react-native-async-storage/async-storage": ">=1.15", "@react-native-community/netinfo": ">=7.1", "react": ">=16", "react-native": ">=0.56", "react-native-get-random-values": ">=1.5" } }, "sha512-CD1TF3U/UUmsJzb4nC0cEAX4uv5OmSZ0SVUpdswmfQLVSCZkpUE0LVEeh9CROJfGE5aISca0rFRKKkdSbvlWgg=="],
+    "@instantdb/react-native": ["@instantdb/react-native@1.0.14", "", { "dependencies": { "@instantdb/core": "1.0.14", "@instantdb/react-common": "1.0.14", "@instantdb/version": "1.0.14", "web-streams-polyfill": "^4.2.0" }, "peerDependencies": { "@react-native-async-storage/async-storage": ">=1.15", "@react-native-community/netinfo": ">=7.1", "react": ">=16", "react-native": ">=0.56", "react-native-get-random-values": ">=1.5" } }, "sha512-PH7qiGugGlQo/IwJCLTOHpM+ynrX62GRIVkPBFlsOGdOl+0nF073RI6wA/rkCYEiASFc4Lc4EX9bhdUsIKNtKQ=="],
 
-    "@instantdb/version": ["@instantdb/version@1.0.13", "", {}, "sha512-O3NOPxzq46Eloj1k9fJ8xFPYCHzR/KJOz+p0fwJnjLhLaygSV6zOiyWZO43z3VTKcPEIri/EVtdKilYBs466XA=="],
+    "@instantdb/version": ["@instantdb/version@1.0.14", "", {}, "sha512-HTnyGMVv175F5Rhldjnhhxxi+UfTDILlXEC5R0bzH5Dbpicj6oqmehkmQfYQVq5LJFQiX5tddBpIS9amXFfINQ=="],
 
     "@isaacs/ttlcache": ["@isaacs/ttlcache@1.4.1", "", {}, "sha512-RQgQ4uQ+pLbqXfOmieB91ejmLwvSgv9nLx6sT6sD83s7umBypgg+OIBOBbEUiJXrfpnp9j0mRhYYdzp9uqq3lA=="],
 
@@ -1514,7 +1514,7 @@
 
     "inline-style-prefixer": ["inline-style-prefixer@7.0.1", "", { "dependencies": { "css-in-js-utils": "^3.1.0" } }, "sha512-lhYo5qNTQp3EvSSp3sRvXMbVQTLrvGV6DycRMJ5dm2BLMiJ30wpXKdDdgX+GmJZ5uQMucwRKHamXSst3Sj/Giw=="],
 
-    "instant-cli": ["instant-cli@1.0.13", "", { "dependencies": { "@commander-js/extra-typings": "^14.0.0", "@effect/platform": "^0.94.1", "@effect/platform-node": "^0.104.0", "@instantdb/core": "1.0.13", "@instantdb/platform": "1.0.13", "@instantdb/version": "1.0.13", "acorn": "^8.15.0", "acorn-typescript": "^1.4.13", "ansi-escapes": "4.3.2", "boxen": "^8.0.1", "chalk": "^5.3.0", "commander": "^14.0.0", "dotenv": "^16.3.1", "dotenv-flow": "^4.1.0", "effect": "^3.19.14", "env-paths": "^3.0.0", "find-up-simple": "^1.0.0", "json-diff": "^1.0.6", "json5": "^2.2.3", "lodash.throttle": "^4.1.1", "minimist": "^1.2.8", "open": "^10.1.0", "package-directory": "^8.1.0", "package-manager-detector": "^1.6.0", "pkg-types": "^2.3.0", "prettier": "^3.3.3", "sisteransi": "^1.0.5", "string-width": "^8.1.0", "strip-ansi": "^7.1.2", "terminal-link": "^3.0.0", "unconfig": "^0.5.5" }, "bin": { "instant-cli": "bin/index.js" } }, "sha512-ZEeHR4oQDjOK8XWXuDSBuxO5daa9oXX04Z1focBl8SGmaetIJPe6yD3NP162iOWzD5gF2KistU67MzP5sNksow=="],
+    "instant-cli": ["instant-cli@1.0.14", "", { "dependencies": { "@commander-js/extra-typings": "^14.0.0", "@effect/platform": "^0.94.1", "@effect/platform-node": "^0.104.0", "@instantdb/core": "1.0.14", "@instantdb/platform": "1.0.14", "@instantdb/version": "1.0.14", "acorn": "^8.15.0", "acorn-typescript": "^1.4.13", "ansi-escapes": "4.3.2", "boxen": "^8.0.1", "chalk": "^5.3.0", "commander": "^14.0.0", "dotenv": "^16.3.1", "dotenv-flow": "^4.1.0", "effect": "^3.19.14", "env-paths": "^3.0.0", "find-up-simple": "^1.0.0", "json-diff": "^1.0.6", "json5": "^2.2.3", "lodash.throttle": "^4.1.1", "minimist": "^1.2.8", "open": "^10.1.0", "package-directory": "^8.1.0", "package-manager-detector": "^1.6.0", "pkg-types": "^2.3.0", "prettier": "^3.3.3", "sisteransi": "^1.0.5", "string-width": "^8.1.0", "strip-ansi": "^7.1.2", "terminal-link": "^3.0.0", "unconfig": "^0.5.5" }, "bin": { "instant-cli": "bin/index.js" } }, "sha512-lJNcoPe9JKm8S0ihXRABYp1HOpMIfq27FIMe9/R/pJ7WU0Dl5JbNv/B8bnNHtgmrdZK1fhpR2pZQmfqR33o6XA=="],
 
     "internal-slot": ["internal-slot@1.1.0", "", { "dependencies": { "es-errors": "^1.3.0", "hasown": "^2.0.2", "side-channel": "^1.1.0" } }, "sha512-4gd7VpWNQNB4UKKCFFVcp1AVv+FMOgs9NKzjHKusc8jTMhd5eL1NqQqOpE0KzMds804/yHlglp3uxgluOqAPLw=="],
 

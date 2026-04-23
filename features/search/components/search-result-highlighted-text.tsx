@@ -1,3 +1,4 @@
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 
@@ -17,27 +18,35 @@ export const SearchResultHighlightedText = ({
   terms: string[];
   text: string;
 }) => {
+  const trimmedText = trimDisplayText(text);
+
   const pattern = React.useMemo(() => {
     if (!terms.length) return null;
     return new RegExp(`(${terms.map(escapeRegex).join('|')})`, 'gi');
   }, [terms]);
 
+  if (!trimmedText) return null;
+
   if (!pattern) {
     return (
       <Text className={className} numberOfLines={numberOfLines}>
-        {text}
+        {trimmedText}
       </Text>
     );
   }
 
-  const firstMatch = text.search(pattern);
+  const firstMatch = trimmedText.search(pattern);
 
-  let displayText = text;
+  let displayText = trimmedText;
   let prefix = '';
 
   if (firstMatch > 30) {
-    const cutPoint = text.lastIndexOf(' ', firstMatch - 5);
-    displayText = text.slice(cutPoint > 0 ? cutPoint + 1 : firstMatch - 20);
+    const cutPoint = trimmedText.lastIndexOf(' ', firstMatch - 5);
+
+    displayText = trimmedText.slice(
+      cutPoint > 0 ? cutPoint + 1 : firstMatch - 20
+    );
+
     prefix = '\u2026 ';
   }
 

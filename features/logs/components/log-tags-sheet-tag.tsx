@@ -2,7 +2,6 @@ import { useLogColor } from '@/features/logs/hooks/use-log-color';
 import { toggleTag } from '@/features/logs/mutations/toggle-log-tag';
 import { updateTag } from '@/features/logs/mutations/update-log-tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { Icon } from '@/ui/icon';
@@ -14,13 +13,11 @@ import { View } from 'react-native';
 import Sortable from 'react-native-sortables';
 
 export const LogTagsSheetTag = ({
-  className,
   id,
   isSelected,
   logId,
   name,
 }: {
-  className?: string;
   id: string;
   isSelected: boolean;
   logId?: string;
@@ -34,10 +31,7 @@ export const LogTagsSheetTag = ({
 
   return (
     <View
-      className={cn(
-        'border-border-secondary bg-input h-10 w-40 flex-row items-center rounded-full border',
-        className
-      )}
+      className="border-border-secondary bg-input h-10 w-40 flex-row items-center rounded-full border"
       style={{ borderCurve: 'continuous' }}
     >
       <Checkbox

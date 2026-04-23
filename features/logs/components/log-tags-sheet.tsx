@@ -16,7 +16,7 @@ import { Text } from '@/ui/text';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { Tag } from 'phosphor-react-native/lib/module/icons/Tag';
 import * as React from 'react';
-import { ScrollView, View, ViewStyle } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable from 'react-native-sortables';
 
@@ -78,9 +78,9 @@ export const LogTagsSheet = () => {
             <Icon
               aria-hidden
               className="text-primary"
+              color={logColor.default}
               icon={Tag}
               size={48}
-              style={{ color: logColor.default } as ViewStyle}
             />
           )}
           {!isLoading && (

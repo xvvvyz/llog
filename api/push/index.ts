@@ -44,11 +44,13 @@ app.delete(
   zValidator('json', z.object({ endpoint: z.string().url() })),
   async (c) => {
     const { endpoint } = c.req.valid('json');
+
     await push.deletePushSubscriptionByEndpoint(
       c.var.db,
       c.var.user.id,
       endpoint
     );
+
     return c.json({ enabled: false, endpoint });
   }
 );

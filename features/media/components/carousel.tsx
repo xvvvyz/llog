@@ -10,25 +10,39 @@ import * as carouselHelpers from '@/features/media/lib/carousel-helpers';
 import { Media } from '@/features/media/types/media';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
-import { cn } from '@/lib/cn';
+import { Spinner } from '@/ui/spinner';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
+
+import Animated, {
+  type SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
+
 import ReanimatedCarousel, {
   type ICarouselInstance,
 } from 'react-native-reanimated-carousel';
 
 export const Carousel = ({
-  className,
   defaultIndex = 0,
+  dismissMediaOpacity,
+  dismissMediaTranslateY,
+  dismissOverlayOpacity,
+  isDismissGestureActive = false,
   media,
   isKeyboardNavigationEnabled = false,
+  onDismissLockChange,
   onUiHiddenChange,
 }: {
-  className?: string;
   defaultIndex?: number;
+  dismissMediaOpacity?: SharedValue<number>;
+  dismissMediaTranslateY?: SharedValue<number>;
+  dismissOverlayOpacity?: SharedValue<number>;
+  isDismissGestureActive?: boolean;
   media: Media[];
   isKeyboardNavigationEnabled?: boolean;
+  onDismissLockChange?: (isLocked: boolean) => void;
   onUiHiddenChange?: (isHidden: boolean) => void;
 }) => {
   const insets = useSafeAreaInsets();
@@ -43,6 +57,10 @@ export const Carousel = ({
   const safeDefaultIndex = getClampedIndex(defaultIndex);
   const activeIndex = useSharedValue(safeDefaultIndex);
   const activeIndexRef = React.useRef(safeDefaultIndex);
+  const carouselGestureStartIndexRef = React.useRef<number | null>(null);
+  const dismissGestureLockIndexRef = React.useRef<number | null>(null);
+  const isDismissGestureActiveRef = React.useRef(isDismissGestureActive);
+  isDismissGestureActiveRef.current = isDismissGestureActive;
 
   const activeMediaIdRef = React.useRef<string | undefined>(
     media[safeDefaultIndex]?.id
@@ -133,13 +151,27 @@ export const Carousel = ({
   const dotsBottomOffset = 12 + insets.bottom;
   const scrubberBottomOffset = 44 + insets.bottom;
   const videoButtonsBottomOffset = 88 + insets.bottom;
-  const isActiveVideo = media[activeIndexState]?.type === 'video';
+  const activeMedia = media[activeIndexState];
+  const isActiveVideo = activeMedia?.type === 'video';
+
+  const showImageLoadingIndicator =
+    activeMedia?.type === 'image' && isActiveMediaLoading;
+
   const shouldHideUi = isActiveVideo && isPlaying;
 
   const carouselStyle = React.useMemo(
     () => ({ height: contentHeight, width: contentWidth }),
     [contentHeight, contentWidth]
   );
+
+  const mediaLayerStyle = useAnimatedStyle(() => ({
+    opacity: dismissMediaOpacity?.value ?? 1,
+    transform: [{ translateY: dismissMediaTranslateY?.value ?? 0 }],
+  }));
+
+  const overlayOpacityStyle = useAnimatedStyle(() => ({
+    opacity: dismissOverlayOpacity?.value ?? 1,
+  }));
 
   React.useEffect(() => {
     onUiHiddenChange?.(shouldHideUi);
@@ -148,6 +180,17 @@ export const Carousel = ({
       onUiHiddenChange?.(false);
     };
   }, [onUiHiddenChange, shouldHideUi]);
+
+  React.useEffect(() => {
+    onDismissLockChange?.(isNavigationLocked);
+  }, [isNavigationLocked, onDismissLockChange]);
+
+  React.useEffect(
+    () => () => {
+      onDismissLockChange?.(false);
+    },
+    [onDismissLockChange]
+  );
 
   const setPage = React.useCallback(
     (index: number) => {
@@ -223,9 +266,7 @@ export const Carousel = ({
   React.useEffect(() => {
     if (media.length === 0) return;
     if (safeDefaultIndex === activeIndexRef.current) return;
-
     const nextMediaId = media[safeDefaultIndex]?.id;
-
     resetVideoUiState();
     activeIndex.value = safeDefaultIndex;
     activeIndexRef.current = safeDefaultIndex;
@@ -256,7 +297,13 @@ export const Carousel = ({
   ]);
 
   React.useEffect(() => {
-    if (!isKeyboardNavigationEnabled || Platform.OS !== 'web') return;
+    if (
+      !isKeyboardNavigationEnabled ||
+      Platform.OS !== 'web' ||
+      isDismissGestureActive
+    ) {
+      return;
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isNavigationLocked) return;
@@ -275,6 +322,7 @@ export const Carousel = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [
     activeIndexState,
+    isDismissGestureActive,
     isKeyboardNavigationEnabled,
     isNavigationLocked,
     media.length,
@@ -284,9 +332,7 @@ export const Carousel = ({
   const syncActiveIndex = React.useCallback(
     (index: number) => {
       const previousIndex = activeIndexRef.current;
-
       if (index === previousIndex) return;
-
       resetVideoUiState();
       activeIndexRef.current = index;
       activeMediaIdRef.current = media[index]?.id;
@@ -300,9 +346,63 @@ export const Carousel = ({
     [media, resetVideoUiState, shouldAutoPlayVideo, syncActiveMediaLoadingState]
   );
 
+  const resetToDismissLockedIndex = React.useCallback(() => {
+    const lockedIndex = getClampedIndex(
+      dismissGestureLockIndexRef.current ??
+        carouselGestureStartIndexRef.current ??
+        activeIndexRef.current
+    );
+
+    dismissGestureLockIndexRef.current = lockedIndex;
+    activeIndex.value = lockedIndex;
+    const lockedVisibleMediaIds = getVisibleMediaIds(lockedIndex);
+
+    visibleMediaIdsRef.current.forEach((mediaId) => {
+      if (!lockedVisibleMediaIds.has(mediaId)) {
+        handleHiddenMedia(mediaId);
+      }
+    });
+
+    visibleMediaIdsRef.current = lockedVisibleMediaIds;
+    syncActiveIndex(lockedIndex);
+
+    carouselRef.current?.scrollTo({
+      animated: false,
+      index: lockedIndex,
+    });
+
+    return lockedIndex;
+  }, [
+    activeIndex,
+    getClampedIndex,
+    getVisibleMediaIds,
+    handleHiddenMedia,
+    syncActiveIndex,
+  ]);
+
+  React.useEffect(() => {
+    if (!isDismissGestureActive) {
+      dismissGestureLockIndexRef.current = null;
+      carouselGestureStartIndexRef.current = null;
+      return;
+    }
+
+    resetToDismissLockedIndex();
+  }, [isDismissGestureActive, resetToDismissLockedIndex]);
+
   const handleProgressChange = React.useCallback(
     (_offsetProgress: number, absoluteProgress: number) => {
       if (!Number.isFinite(absoluteProgress)) return;
+
+      if (isDismissGestureActiveRef.current) {
+        activeIndex.value = getClampedIndex(
+          dismissGestureLockIndexRef.current ??
+            carouselGestureStartIndexRef.current ??
+            activeIndexRef.current
+        );
+
+        return;
+      }
 
       activeIndex.value = absoluteProgress;
       syncActiveIndex(getDominantIndex(absoluteProgress));
@@ -318,6 +418,7 @@ export const Carousel = ({
     },
     [
       activeIndex,
+      getClampedIndex,
       getDominantIndex,
       getVisibleMediaIds,
       handleHiddenMedia,
@@ -326,15 +427,23 @@ export const Carousel = ({
   );
 
   const handleCarouselScrollStart = React.useCallback(() => {
+    carouselGestureStartIndexRef.current = activeIndexRef.current;
     setIsSwiping(true);
   }, []);
 
   const handleCarouselScrollEnd = React.useCallback(
     (index: number) => {
       setIsSwiping(false);
+
+      if (isDismissGestureActiveRef.current) {
+        resetToDismissLockedIndex();
+        return;
+      }
+
+      carouselGestureStartIndexRef.current = null;
       syncActiveIndex(index);
     },
-    [syncActiveIndex]
+    [resetToDismissLockedIndex, syncActiveIndex]
   );
 
   const renderCarouselItem = React.useCallback(
@@ -387,47 +496,62 @@ export const Carousel = ({
   );
 
   return (
-    <View className={cn('relative flex-1', className)} onLayout={handleLayout}>
-      {contentWidth > 0 && contentHeight > 0 ? (
-        <ReanimatedCarousel
-          data={media}
-          defaultIndex={safeDefaultIndex}
-          enabled={!isNavigationLocked && media.length > 1}
-          height={contentHeight}
-          loop={false}
-          onConfigurePanGesture={handleConfigurePanGesture}
-          onProgressChange={handleProgressChange}
-          onScrollEnd={handleCarouselScrollEnd}
-          onScrollStart={handleCarouselScrollStart}
-          ref={carouselRef}
-          renderItem={renderCarouselItem}
-          style={carouselStyle}
-          width={contentWidth}
-          windowSize={5}
-        />
-      ) : null}
-      {isActiveVideo && !shouldHideUi && (
-        <CarouselVideoControls
-          currentTime={videoCurrentTime}
-          duration={videoDuration}
-          isMuted={isMuted}
-          isSwiping={isSwiping}
-          onScrubEnd={commitVideoScrub}
-          onScrubMove={previewVideoScrub}
-          onScrubStart={startVideoScrub}
-          onToggleMute={handleToggleMute}
-          scrubberBottomOffset={scrubberBottomOffset}
-          videoButtonsBottomOffset={videoButtonsBottomOffset}
-        />
-      )}
-      <View
+    <View className="relative flex-1" onLayout={handleLayout}>
+      <Animated.View className="flex-1" style={mediaLayerStyle}>
+        {contentWidth > 0 && contentHeight > 0 ? (
+          <ReanimatedCarousel
+            data={media}
+            defaultIndex={safeDefaultIndex}
+            enabled={
+              !isNavigationLocked && !isDismissGestureActive && media.length > 1
+            }
+            height={contentHeight}
+            loop={false}
+            onConfigurePanGesture={handleConfigurePanGesture}
+            onProgressChange={handleProgressChange}
+            onScrollEnd={handleCarouselScrollEnd}
+            onScrollStart={handleCarouselScrollStart}
+            ref={carouselRef}
+            renderItem={renderCarouselItem}
+            style={carouselStyle}
+            width={contentWidth}
+            windowSize={carouselHelpers.CAROUSEL_PRELOAD_DISTANCE * 2 + 1}
+          />
+        ) : null}
+        {showImageLoadingIndicator && (
+          <View className="pointer-events-none absolute inset-0 items-center justify-center">
+            <Spinner />
+          </View>
+        )}
+      </Animated.View>
+      <Animated.View
+        className="absolute inset-0"
+        pointerEvents="box-none"
+        style={overlayOpacityStyle}
+      >
+        {isActiveVideo && !shouldHideUi && (
+          <CarouselVideoControls
+            currentTime={videoCurrentTime}
+            duration={videoDuration}
+            isMuted={isMuted}
+            isSwiping={isSwiping}
+            onScrubEnd={commitVideoScrub}
+            onScrubMove={previewVideoScrub}
+            onScrubStart={startVideoScrub}
+            onToggleMute={handleToggleMute}
+            scrubberBottomOffset={scrubberBottomOffset}
+            videoButtonsBottomOffset={videoButtonsBottomOffset}
+          />
+        )}
+      </Animated.View>
+      <Animated.View
         className="pointer-events-none absolute right-4 left-4 z-10 items-center md:right-8 md:left-8"
-        style={{ bottom: dotsBottomOffset }}
+        style={[overlayOpacityStyle, { bottom: dotsBottomOffset }]}
       >
         {!shouldHideUi && media.length > 1 && (
           <CarouselDots activeIndex={activeIndex} count={media.length} />
         )}
-      </View>
+      </Animated.View>
     </View>
   );
 };

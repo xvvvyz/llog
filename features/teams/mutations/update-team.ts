@@ -7,5 +7,5 @@ export const updateTeam = async ({
   id: string;
   name: string;
 }) => {
-  return db.transact(db.tx.teams[id].update({ name }));
+  return db.transact(db.tx.teams[id].update({ name: name.trim() }));
 };

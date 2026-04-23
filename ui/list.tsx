@@ -12,26 +12,35 @@ const StyledLegendList = withUniwind(LegendList, {
 
 export type ListHandle = {
   scrollToEnd: (options?: { animated?: boolean; viewOffset?: number }) => void;
+  scrollToIndex: (params: {
+    animated?: boolean;
+    index: number;
+    viewOffset?: number;
+    viewPosition?: number;
+  }) => void;
   scrollToOffset: (params: { animated?: boolean; offset: number }) => void;
+};
+
+type ListProps<T> = LegendListProps<T> & {
+  contentContainerClassName?: string;
+  listRef?: React.Ref<ListHandle | null>;
+  wrapperClassName?: string;
 };
 
 export const List = <T,>({
   horizontal,
   listRef,
-  onLoad,
-  onScroll,
+  numColumns,
   wrapperClassName,
   ...props
-}: LegendListProps<T> & {
-  listRef?: React.Ref<ListHandle | null>;
-  wrapperClassName?: string;
-}) => {
+}: ListProps<T>) => {
   const innerRef = React.useRef<LegendListRef>(null);
 
   React.useImperativeHandle(
     listRef,
     () => ({
       scrollToEnd: (options) => innerRef.current?.scrollToEnd(options),
+      scrollToIndex: (params) => innerRef.current?.scrollToIndex(params),
       scrollToOffset: (params) => innerRef.current?.scrollToOffset(params),
     }),
     []
@@ -41,8 +50,7 @@ export const List = <T,>({
     <View className={cn(!horizontal && 'flex-1', wrapperClassName)}>
       <StyledLegendList<T>
         horizontal={horizontal}
-        onLoad={onLoad}
-        onScroll={onScroll}
+        numColumns={numColumns}
         recycleItems
         ref={innerRef}
         {...props}

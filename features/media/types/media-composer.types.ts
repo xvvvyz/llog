@@ -39,8 +39,6 @@ export interface UseMediaComposerOptions {
   recordId?: string;
 }
 
-export const MAX_AUDIO_ATTACHMENTS = 3;
-
 export const isPendingAudioUpload = (
   item: PendingUpload
 ): item is PendingAudioUpload => item.type === 'audio';

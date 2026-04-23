@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View } from 'react-native';
+
 import Animated, {
   type SharedValue,
   useAnimatedStyle,
@@ -24,7 +25,7 @@ export const CarouselDots = ({
 
   return (
     <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
-      <Animated.View className="flex-row" style={{ gap: DOT_GAP }}>
+      <Animated.View className="flex-row gap-2">
         {Array.from({ length: count }, (_, i) => (
           <CarouselDot
             activeIndex={activeIndex}
@@ -69,7 +70,7 @@ const CarouselDot = ({
   });
 
   return (
-    <AnimatedDotView style={[{ width: DOT_SIZE, height: DOT_SIZE }, style]}>
+    <AnimatedDotView className="size-2" style={style}>
       <View className="bg-foreground h-full w-full rounded-full shadow-xl" />
     </AnimatedDotView>
   );

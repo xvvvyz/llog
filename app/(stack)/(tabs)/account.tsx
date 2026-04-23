@@ -340,6 +340,7 @@ export default function Account() {
               disabled={isSigningOut}
               onPress={async () => {
                 setIsSigningOut(true);
+
                 try {
                   if (Platform.OS === 'web') {
                     try {

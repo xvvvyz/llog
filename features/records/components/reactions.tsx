@@ -97,10 +97,10 @@ export const Reactions = ({
                   userReacted && !color && 'text-primary',
                   !userReacted && 'text-muted-foreground'
                 )}
+                color={userReacted ? color : undefined}
                 icon={
                   isEmoji(emoji) ? REACTION_ICONS[emoji] : REACTION_ICONS['❤️']
                 }
-                style={userReacted && color ? { color } : undefined}
                 weight={userReacted ? 'fill' : 'regular'}
               />
               <Text

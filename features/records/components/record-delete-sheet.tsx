@@ -24,7 +24,10 @@ export const RecordDeleteSheet = () => {
         try {
           await deleteRecord({ id: recordId });
           sheetManager.close('record-delete');
-          if (context === 'detail') router.back();
+
+          if (context === 'detail:modal') {
+            router.setParams({ recordId: undefined });
+          }
         } catch (error) {
           setIsPending(false);
           throw error;

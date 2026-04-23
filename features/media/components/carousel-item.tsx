@@ -1,11 +1,12 @@
 import * as video from '@/features/media/components/video-player';
 import { ZoomableMedia } from '@/features/media/components/zoomable-media';
+import * as carouselHelpers from '@/features/media/lib/carousel-helpers';
 import { Media } from '@/features/media/types/media';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
 import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { PixelRatio, Pressable, View } from 'react-native';
 
 type CarouselItemProps = {
   contentHeight: number;
@@ -56,7 +57,10 @@ const CarouselItemComponent = ({
   visibleIndex,
 }: CarouselItemProps) => {
   const isActive = index === visibleIndex;
-  const isAdjacent = Math.abs(index - visibleIndex) <= 2;
+
+  const isAdjacent =
+    Math.abs(index - visibleIndex) <= carouselHelpers.CAROUSEL_PRELOAD_DISTANCE;
+
   const shouldRenderInactiveMedia = !isActiveMediaLoading;
 
   return (
@@ -94,6 +98,7 @@ const CarouselItemComponent = ({
           contentWidth={contentWidth}
           index={index}
           isActive={isActive}
+          isAdjacent={isAdjacent}
           item={item}
           mediaQuality={mediaQuality}
           onActiveMediaLoad={onActiveMediaLoad}
@@ -176,7 +181,6 @@ const CarouselVideoItem = ({
 
   React.useEffect(() => {
     if (!isActive || !hasLoaded || hasReportedActiveLoadRef.current) return;
-
     hasReportedActiveLoadRef.current = true;
     onActiveMediaLoad(item.id, index);
   }, [hasLoaded, index, isActive, item.id, onActiveMediaLoad]);
@@ -186,7 +190,7 @@ const CarouselVideoItem = ({
   }, []);
 
   return (
-    <View className="bg-background relative w-full flex-1 items-center justify-center">
+    <View className="relative w-full flex-1 items-center justify-center">
       {shouldRenderVideo ? (
         <React.Fragment>
           <ZoomableMedia
@@ -234,6 +238,7 @@ const CarouselImageItem = ({
   contentWidth,
   index,
   isActive,
+  isAdjacent,
   item,
   mediaQuality,
   onActiveMediaLoad,
@@ -246,6 +251,7 @@ const CarouselImageItem = ({
   contentWidth: number;
   index: number;
   isActive: boolean;
+  isAdjacent: boolean;
   item: Media;
   mediaQuality: number;
   onActiveMediaLoad: (mediaId: string, index: number) => void;
@@ -258,11 +264,29 @@ const CarouselImageItem = ({
   shouldRenderInactiveMedia: boolean;
 }) => {
   const [hasLoaded, setHasLoaded] = React.useState(false);
+  const [hasDisplayed, setHasDisplayed] = React.useState(false);
   const hasReportedActiveLoadRef = React.useRef(false);
-  const shouldRenderImage = isActive || shouldRenderInactiveMedia || hasLoaded;
+
+  const requestScale =
+    Math.min(PixelRatio.get(), 2) *
+    carouselHelpers.CAROUSEL_IMAGE_REQUEST_SCALE;
+
+  const targetWidth = Math.min(
+    Math.round(contentWidth * requestScale),
+    carouselHelpers.CAROUSEL_IMAGE_MAX_TARGET_SIZE
+  );
+
+  const targetHeight = Math.min(
+    Math.round(contentHeight * requestScale),
+    carouselHelpers.CAROUSEL_IMAGE_MAX_TARGET_SIZE
+  );
+
+  const shouldRenderImage =
+    isActive || (isAdjacent && shouldRenderInactiveMedia) || hasLoaded;
 
   React.useEffect(() => {
     setHasLoaded(false);
+    setHasDisplayed(false);
     hasReportedActiveLoadRef.current = false;
   }, [item.id, item.uri]);
 
@@ -271,23 +295,23 @@ const CarouselImageItem = ({
   }, [isActive]);
 
   React.useEffect(() => {
-    if (!isActive || !hasLoaded || hasReportedActiveLoadRef.current) return;
+    if (!isActive || !hasDisplayed || hasReportedActiveLoadRef.current) return;
 
     hasReportedActiveLoadRef.current = true;
     onActiveMediaLoad(item.id, index);
-  }, [hasLoaded, index, isActive, item.id, onActiveMediaLoad]);
+  }, [hasDisplayed, index, isActive, item.id, onActiveMediaLoad]);
 
-  const handleLoaded = React.useCallback(() => {
+  const handleLoad = React.useCallback(() => {
     setHasLoaded(true);
   }, []);
 
+  const handleDisplay = React.useCallback(() => {
+    setHasLoaded(true);
+    setHasDisplayed(true);
+  }, []);
+
   if (!shouldRenderImage) {
-    return (
-      <View
-        className="bg-background"
-        style={{ width: contentWidth, height: contentHeight }}
-      />
-    );
+    return <View style={{ width: contentWidth, height: contentHeight }} />;
   }
 
   return (
@@ -305,12 +329,14 @@ const CarouselImageItem = ({
       <Image
         contentFit="contain"
         height={contentHeight}
-        onDisplay={handleLoaded}
-        onLoad={handleLoaded}
+        onDisplay={handleDisplay}
+        onLoad={handleLoad}
         quality={mediaQuality}
+        targetHeight={targetHeight}
+        targetWidth={targetWidth}
         uri={item.uri}
         width={contentWidth}
-        wrapperClassName="bg-background"
+        wrapperClassName="bg-transparent"
       />
     </ZoomableMedia>
   );

@@ -1,6 +1,6 @@
-import { useWindowDimensions } from '@/hooks/use-window-dimensions';
 import { BREAKPOINT_VALUES } from '@/theme/tokens';
 import * as React from 'react';
+import { useWindowDimensions } from 'react-native';
 
 export const useBreakpoints = () => {
   const { width } = useWindowDimensions();

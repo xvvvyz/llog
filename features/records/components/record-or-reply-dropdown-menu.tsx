@@ -1,4 +1,5 @@
 import { useProfile } from '@/features/account/queries/use-profile';
+import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-record-pin';
 import { canDeleteOwnOrManagedResource } from '@/features/teams/lib/permissions';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
@@ -18,6 +19,7 @@ export const RecordOrReplyDropdownMenu = ({
   accentColor,
   authorId,
   className,
+  logId,
   replyId,
   isDetail,
   isPinned,
@@ -30,6 +32,7 @@ export const RecordOrReplyDropdownMenu = ({
   replyId?: string;
   isDetail?: boolean;
   isPinned?: boolean;
+  logId?: string;
   recordId: string;
   teamId?: string;
 }) => {
@@ -79,16 +82,23 @@ export const RecordOrReplyDropdownMenu = ({
           )}
           {canPin && (
             <Menu.Item
-              onPress={() =>
-                toggleRecordPin({ id: recordId, isPinned: !isPinned })
-              }
+              onPress={() => {
+                const nextIsPinned = !isPinned;
+                void toggleRecordPin({ id: recordId, isPinned: nextIsPinned });
+
+                if (nextIsPinned) {
+                  requestPostSubmitScroll({
+                    id: logId,
+                    scope: 'log',
+                    target: 'top',
+                  });
+                }
+              }}
             >
               <Icon
                 className={!isPinned ? 'text-placeholder' : undefined}
+                color={isPinned ? accentColor : undefined}
                 icon={PushPin}
-                style={
-                  isPinned && accentColor ? { color: accentColor } : undefined
-                }
                 weight={isPinned ? 'fill' : 'regular'}
               />
               <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
@@ -103,7 +113,7 @@ export const RecordOrReplyDropdownMenu = ({
                 sheetManager.open(
                   'record-delete',
                   recordId,
-                  isDetail ? 'detail' : undefined
+                  isDetail ? 'detail:modal' : undefined
                 );
               }
             }}

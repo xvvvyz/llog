@@ -244,6 +244,7 @@ export const VideoPlayer = ({
     lastScrubSeekAtRef.current = 0;
     lastScrubSeekTargetRef.current = 0;
     player.seekTolerance = DEFAULT_SEEK_TOLERANCE;
+
     player.scrubbingModeOptions = {
       scrubbingModeEnabled: false,
       allowSkippingMediaCodecFlush: false,
@@ -251,6 +252,7 @@ export const VideoPlayer = ({
       increaseCodecOperatingRate: false,
       useDecodeOnlyFlag: false,
     };
+
     player.currentTime = 0;
     onTimeChangeRef.current?.(0, player.duration);
   }, [player, resetToken]);
@@ -258,9 +260,11 @@ export const VideoPlayer = ({
   React.useEffect(() => {
     setIsBuffering(Boolean(source));
     setIsScrubbing(false);
+
     setShowInitialLoadingIndicator(
       Boolean(source) && !videoPreload.isVideoWarm(source)
     );
+
     scrubbingEnabledRef.current = false;
     lastScrubSeekAtRef.current = 0;
     lastScrubSeekTargetRef.current = null;
@@ -295,8 +299,10 @@ export const VideoPlayer = ({
 
     const playingSub = player.addListener('playingChange', ({ isPlaying }) => {
       if (isPlaying) markFirstFrameRendered();
+
       if (isPlaying) void claimPlayback();
       else releasePlayback();
+
       onPlayingChangeRef.current?.(isPlaying);
     });
 
@@ -360,12 +366,13 @@ export const VideoPlayer = ({
         style={[StyleSheet.absoluteFill, showThumbnail && { opacity: 0 }]}
       />
       {showThumbnail && (
-        <View className="pointer-events-none" style={StyleSheet.absoluteFill}>
+        <View className="pointer-events-none absolute inset-0">
           <Image
             fill
             contentFit={contentFit}
             quality={thumbnailQuality}
             uri={thumbnailUri}
+            wrapperClassName="bg-transparent"
           />
         </View>
       )}

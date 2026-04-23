@@ -1,25 +1,24 @@
 import { AudioPlaylist } from '@/features/media/components/audio-player';
 import { useFilteredMedia } from '@/features/media/hooks/use-filtered-media';
+import { useMediaLightbox } from '@/features/media/hooks/use-media-lightbox';
 import * as mediaUtils from '@/features/media/lib/media';
 import { Media } from '@/features/media/types/media';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
-import { router } from 'expo-router';
 import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import * as React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
-export const ActivityItemMedia = ({
-  media,
-  recordId,
-  replyId,
-}: {
-  media?: Media[];
-  recordId?: string;
-  replyId?: string;
-}) => {
+export const ActivityItemMedia = ({ media }: { media?: Media[] }) => {
   const { audioMedia, visualMedia } = useFilteredMedia(media || []);
+
+  const { mediaLightbox, openMediaLightbox } = useMediaLightbox({
+    media: visualMedia,
+  });
+
   if (!visualMedia.length && !audioMedia.length) return null;
+
   const timelineTargetWidth = mediaUtils.getTimelineTargetWidth(
     visualMedia.length
   );
@@ -30,16 +29,7 @@ export const ActivityItemMedia = ({
       disabled={mediaUtils.isVideoMediaProcessing(item)}
       key={item.id}
       onPress={() =>
-        !mediaUtils.isVideoMediaProcessing(item) &&
-        recordId &&
-        router.push({
-          pathname: `/record/[recordId]/media`,
-          params: {
-            recordId,
-            ...(replyId && { replyId }),
-            defaultIndex: String(visualMedia.indexOf(item)),
-          },
-        })
+        !mediaUtils.isVideoMediaProcessing(item) && openMediaLightbox(item.id)
       }
     >
       <Image
@@ -68,7 +58,7 @@ export const ActivityItemMedia = ({
   );
 
   return (
-    <>
+    <React.Fragment>
       {!!visualMedia.length && (
         <View className="aspect-[3/2] gap-0.5">
           <View className="flex-1 flex-row gap-0.5">
@@ -86,6 +76,7 @@ export const ActivityItemMedia = ({
           <AudioPlaylist clips={audioMedia} />
         </View>
       )}
-    </>
+      {mediaLightbox}
+    </React.Fragment>
   );
 };

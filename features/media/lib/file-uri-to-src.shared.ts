@@ -7,6 +7,7 @@ export type FileUriToSrcOptions = {
 };
 
 const DEFAULT_CLOUDFLARE_IMAGE_QUALITY = 75;
+const DEFAULT_CLOUDFLARE_IMAGE_FORMAT = 'webp';
 
 const isAbsoluteUri = (uri: string) => /^[a-z][a-z\d+.-]*:/i.test(uri);
 
@@ -45,7 +46,7 @@ const getCloudflareFlexibleVariantSrc = (
   const quality = options?.quality ?? DEFAULT_CLOUDFLARE_IMAGE_QUALITY;
   const targetWidth = roundPositiveDimension(options?.targetWidth);
   const targetHeight = roundPositiveDimension(options?.targetHeight);
-  const variant = [`q=${quality}`];
+  const variant = [`format=${DEFAULT_CLOUDFLARE_IMAGE_FORMAT}`, `q=${quality}`];
 
   if (targetWidth != null) {
     variant.push(`w=${targetWidth}`);

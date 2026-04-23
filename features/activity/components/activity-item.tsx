@@ -3,6 +3,7 @@ import { ActivityItemMedia } from '@/features/activity/components/activity-item-
 import { ActivityItemName } from '@/features/activity/components/activity-item-name';
 import { ActivityItemQuotedRecord } from '@/features/activity/components/activity-item-quoted-record';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/time';
@@ -40,7 +41,7 @@ export const ActivityItem = ({
 
   const handlePress = () => {
     const recordId = record?.id;
-    if (recordId) router.push(`/record/${recordId}`);
+    if (recordId) router.setParams({ recordId });
   };
 
   const mediaSource =
@@ -52,13 +53,9 @@ export const ActivityItem = ({
 
   const mediaProps =
     group.type === 'record_published'
-      ? { media: mediaSource, recordId: first.record?.id }
+      ? { media: mediaSource }
       : group.type === 'reply_posted'
-        ? {
-            media: mediaSource,
-            recordId: first.record?.id,
-            replyId: first.reply?.id,
-          }
+        ? { media: mediaSource }
         : null;
 
   const hasVisualMedia = mediaSource?.some(
@@ -71,6 +68,8 @@ export const ActivityItem = ({
   const showQuotedRecord =
     (group.type === 'reply_posted' || group.type === 'reaction_added') &&
     record;
+
+  const quotedRecordText = trimDisplayText(record?.text);
 
   const content = (
     <Card className={cn('gap-4', !mediaIsLast && 'pb-4', className)}>
@@ -144,8 +143,7 @@ export const ActivityItem = ({
           <ActivityItemQuotedRecord
             logColor={logColor}
             media={record.media}
-            recordId={record.id!}
-            text={record.text}
+            text={quotedRecordText}
           />
         </View>
       )}

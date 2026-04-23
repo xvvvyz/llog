@@ -16,7 +16,7 @@ export const publishReply = async ({
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text: text.trim() }),
     },
     'Failed to publish reply'
   );

@@ -20,13 +20,14 @@ export const createTag = async ({
   });
 
   const tagId = id ?? generateId();
+  const trimmedName = name.trim();
 
   return db.transact([
     ...data.tags.map((tag) =>
       db.tx.tags[tag.id].update({ order: tag.order + 1 })
     ),
     db.tx.tags[tagId]
-      .update({ name, order: 0, teamId })
+      .update({ name: trimmedName, order: 0, teamId })
       .link({ logs: logId, team: teamId }),
   ]);
 };

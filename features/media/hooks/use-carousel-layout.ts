@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { LayoutChangeEvent, Platform } from 'react-native';
 import type { PanGesture } from 'react-native-gesture-handler';
+import { useSharedValue } from 'react-native-reanimated';
 import type { ICarouselInstance } from 'react-native-reanimated-carousel';
 
-const IOS_BACK_SWIPE_EDGE_WIDTH = 44;
+const CAROUSEL_SWIPE_ACTIVATION_OFFSET_PX = 6;
+const CAROUSEL_VERTICAL_SWIPE_ACTIVATION_OFFSET_PX = 10;
 
 export const useCarouselLayout = ({
   activeIndex,
@@ -13,6 +15,8 @@ export const useCarouselLayout = ({
   carouselRef: React.RefObject<ICarouselInstance | null>;
 }) => {
   const previousLayoutRef = React.useRef({ height: 0, width: 0 });
+  const gestureStartX = useSharedValue(0);
+  const gestureStartY = useSharedValue(0);
 
   const [containerLayout, setContainerLayout] = React.useState({
     height: 0,
@@ -36,21 +40,62 @@ export const useCarouselLayout = ({
 
   const handleConfigurePanGesture = React.useCallback(
     (panGesture: PanGesture) => {
-      if (Platform.OS !== 'ios') return;
-      if (contentWidth <= IOS_BACK_SWIPE_EDGE_WIDTH) return;
+      panGesture.activeOffsetX([
+        -CAROUSEL_SWIPE_ACTIVATION_OFFSET_PX,
+        CAROUSEL_SWIPE_ACTIVATION_OFFSET_PX,
+      ]);
 
-      // keep the left edge free so iOS interactive-pop wins over carousel swipes.
-      panGesture.hitSlop({
-        right: 0,
-        width: contentWidth - IOS_BACK_SWIPE_EDGE_WIDTH,
-      });
+      if (Platform.OS !== 'web') return;
+
+      panGesture
+        .manualActivation(true)
+        .onTouchesDown((event) => {
+          'worklet';
+
+          const touch = event.allTouches[0];
+
+          if (!touch || event.numberOfTouches !== 1) return;
+
+          gestureStartX.value = touch.absoluteX;
+          gestureStartY.value = touch.absoluteY;
+        })
+        .onTouchesMove((event, stateManager) => {
+          'worklet';
+
+          const touch = event.allTouches[0];
+
+          if (!touch || event.numberOfTouches !== 1) {
+            stateManager.fail();
+            return;
+          }
+
+          const translationX = touch.absoluteX - gestureStartX.value;
+          const translationY = touch.absoluteY - gestureStartY.value;
+          const absoluteTranslationX = Math.abs(translationX);
+          const absoluteTranslationY = Math.abs(translationY);
+
+          if (
+            absoluteTranslationY >=
+              CAROUSEL_VERTICAL_SWIPE_ACTIVATION_OFFSET_PX &&
+            absoluteTranslationY > absoluteTranslationX
+          ) {
+            stateManager.fail();
+            return;
+          }
+
+          if (
+            absoluteTranslationX >= CAROUSEL_SWIPE_ACTIVATION_OFFSET_PX &&
+            absoluteTranslationX > absoluteTranslationY
+          ) {
+            stateManager.activate();
+          }
+        });
     },
-    [contentWidth]
+    [gestureStartX, gestureStartY]
   );
 
   React.useEffect(() => {
     if (contentWidth === 0 || contentHeight === 0) return;
-
     const previousLayout = previousLayoutRef.current;
 
     const hasLayoutChanged =

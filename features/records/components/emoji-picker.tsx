@@ -88,8 +88,8 @@ export const EmojiPicker = ({
                   selected && !color && 'text-primary',
                   !selected && 'text-muted-foreground'
                 )}
+                color={color && selected ? color : undefined}
                 icon={REACTION_ICONS[emoji]}
-                style={color && selected ? { color } : undefined}
                 weight={selected ? 'fill' : 'regular'}
               />
             </Menu.Item>

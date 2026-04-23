@@ -1,5 +1,6 @@
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
 import { renderLinkifiedText } from '@/features/records/components/linkified-text';
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { REACTION_ICONS, isEmoji } from '@/types/emoji';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
@@ -14,13 +15,14 @@ export const ActivityItemContent = ({
 }) => {
   const { type, activities } = group;
   const first = activities[0];
-  const replyText = first?.reply?.text;
+  const recordText = trimDisplayText(first?.record?.text);
+  const replyText = trimDisplayText(first?.reply?.text);
 
   switch (type) {
     case 'record_published': {
-      return first?.record?.text ? (
+      return recordText ? (
         <Text className="-my-1 px-4" numberOfLines={2}>
-          {renderLinkifiedText({ text: first.record.text })}
+          {renderLinkifiedText({ text: recordText })}
         </Text>
       ) : null;
     }
@@ -49,8 +51,8 @@ export const ActivityItemContent = ({
             <Icon
               key={emojis[i]}
               className="text-muted-foreground"
+              color={logColor?.default}
               icon={icon}
-              style={logColor ? { color: logColor.default } : undefined}
               weight="fill"
             />
           ))}

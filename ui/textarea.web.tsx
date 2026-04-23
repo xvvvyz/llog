@@ -6,6 +6,8 @@ import * as React from 'react';
 export const Textarea = React.forwardRef<
   React.ComponentRef<typeof TextareaAutosize>,
   Omit<React.ComponentPropsWithoutRef<typeof TextareaAutosize>, 'onChange'> & {
+    maxRows?: number;
+    minRows?: number;
     numberOfLines?: number;
     onChangeText?: (text: string) => void;
     onSubmitEditing?: () => void;
@@ -17,6 +19,8 @@ export const Textarea = React.forwardRef<
       className,
       defaultValue,
       maxLength,
+      maxRows,
+      minRows,
       numberOfLines,
       onChangeText,
       onSubmitEditing,
@@ -51,7 +55,8 @@ export const Textarea = React.forwardRef<
           className
         )}
         maxLength={maxLength}
-        maxRows={numberOfLines}
+        maxRows={maxRows ?? numberOfLines}
+        minRows={minRows}
         onChange={handleChange}
         onKeyDown={(e) => {
           if (!e.shiftKey && e.key === 'Enter' && onSubmitEditing) {

@@ -1,4 +1,5 @@
 import { SortBy, isSortBy } from '@/features/logs/components/log-list-actions';
+import * as audioPlaybackRateUtils from '@/features/media/lib/audio-playback-rate';
 import { db } from '@/lib/db';
 import { Emoji, isEmoji } from '@/types/emoji';
 import { SortDirection, isSortDirection } from '@/ui/dropdown-menu';
@@ -23,6 +24,12 @@ export const useUi = () => {
     ? ui.doubleTapEmoji
     : '❤️';
 
+  const audioPlaybackRate = audioPlaybackRateUtils.isAudioPlaybackRate(
+    ui?.audioPlaybackRate
+  )
+    ? ui.audioPlaybackRate
+    : audioPlaybackRateUtils.DEFAULT_AUDIO_PLAYBACK_RATE;
+
   const logsSortBy: SortBy = isSortBy(ui?.logsSortBy)
     ? ui.logsSortBy
     : 'serverCreatedAt';
@@ -36,6 +43,7 @@ export const useUi = () => {
   return {
     activityLastReadDate: ui?.activityLastReadDate,
     activeTeamId: ui?.team?.id,
+    audioPlaybackRate,
     doubleTapEmoji,
     id: ui?.id,
     isLoading,

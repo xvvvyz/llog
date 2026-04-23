@@ -3,6 +3,7 @@ import { RecordOrReplyDropdownMenu } from '@/features/records/components/record-
 import { RecordOrReplyMediaGrid } from '@/features/records/components/record-or-reply-media-grid';
 import { RecordOrReplyReactionsRow } from '@/features/records/components/record-or-reply-reactions-row';
 import { TruncatedText } from '@/features/records/components/truncated-text';
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { type RecordOrReplySharedProps } from '@/features/records/types/record-or-reply.types';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/time';
@@ -21,7 +22,11 @@ export const CompactRecordOrReply = ({
   recordId,
   replyId,
   visualMedia,
-}: RecordOrReplySharedProps & { className?: string }) => {
+}: RecordOrReplySharedProps & {
+  className?: string;
+}) => {
+  const displayText = trimDisplayText(record.text);
+
   return (
     <View
       className={cn(
@@ -53,6 +58,7 @@ export const CompactRecordOrReply = ({
               className="-mt-1.5 -mr-1.5 -mb-3"
               accentColor={accentColor}
               authorId={record.author?.id}
+              logId={logId}
               replyId={replyId}
               isDetail
               isPinned={'isPinned' in record ? !!record.isPinned : undefined}
@@ -60,22 +66,17 @@ export const CompactRecordOrReply = ({
               teamId={record.teamId}
             />
           </View>
-          {!!record.text && (
+          {!!displayText && (
             <TruncatedText
               className="select-text"
               color={accentColor}
               numberOfLines={numberOfLines}
-              text={record.text}
+              text={displayText}
             />
           )}
           {visualMedia.length > 0 && (
             <View className="mt-4">
-              <RecordOrReplyMediaGrid
-                fallbackRecordId={record.id}
-                recordId={recordId}
-                replyId={replyId}
-                visualMedia={visualMedia}
-              />
+              <RecordOrReplyMediaGrid visualMedia={visualMedia} />
             </View>
           )}
           {audioMedia.length > 0 && (

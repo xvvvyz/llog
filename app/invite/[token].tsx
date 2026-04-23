@@ -3,6 +3,7 @@ import { redeemInviteLink } from '@/features/invites/mutations/redeem-invite-lin
 import { switchTeam } from '@/features/teams/mutations/switch-team';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { alert } from '@/lib/alert';
+import { cn } from '@/lib/cn';
 import { db } from '@/lib/db';
 import { UI } from '@/theme/ui';
 import { Avatar } from '@/ui/avatar';
@@ -186,11 +187,10 @@ export default function InviteLink() {
             {linkInfo.members.slice(0, 4).map((member, i) => (
               <View
                 key={member.id}
-                className="bg-background items-center justify-center overflow-hidden rounded-full p-0.5"
-                style={[
-                  { width: 68, height: 68 },
-                  i > 0 ? { marginLeft: -22 } : undefined,
-                ]}
+                className={cn(
+                  'bg-background size-[68px] items-center justify-center overflow-hidden rounded-full p-0.5',
+                  i > 0 && '-ml-[22px]'
+                )}
               >
                 <Avatar
                   avatar={member.image}

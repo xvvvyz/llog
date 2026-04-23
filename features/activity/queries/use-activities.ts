@@ -1,21 +1,43 @@
 import * as permissions from '@/features/teams/lib/permissions';
-import { useTeams } from '@/features/teams/queries/use-teams';
+import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
 export const useActivities = () => {
   const auth = db.useAuth();
-  const { teams } = useTeams();
-  const teamIds = React.useMemo(() => teams.map((t) => t.id), [teams]);
 
-  const { data, isLoading } = db.useQuery(
-    auth.user && teamIds.length
+  const { data: rolesData, isLoading: rolesLoading } = db.useQuery(
+    auth.user
+      ? {
+          roles: {
+            $: { where: { userId: auth.user.id } },
+          },
+        }
+      : null
+  );
+
+  const roles = rolesData?.roles ?? [];
+
+  const teamIds = React.useMemo(
+    () => Array.from(new Set(roles.map((role) => role.teamId))),
+    [roles]
+  );
+
+  const shouldQueryActivities = !!auth.user && teamIds.length > 0;
+
+  const {
+    data,
+    isLoading: activitiesLoading,
+    canLoadNextPage,
+    loadNextPage,
+  } = db.useInfiniteQuery(
+    shouldQueryActivities
       ? {
           activities: {
             $: {
               where: { teamId: { $in: teamIds } },
               order: { date: 'desc' },
-              limit: 100,
+              limit: 25,
             },
             actor: {
               image: {},
@@ -26,26 +48,27 @@ export const useActivities = () => {
             reply: { media: {} },
             log: {},
           },
-          roles: {
-            $: { where: { userId: auth.user.id, teamId: { $in: teamIds } } },
-          },
         }
-      : null
+      : (null as never)
   );
 
   const manageableTeamIds = React.useMemo(
     () =>
       new Set(
-        (data?.roles ?? [])
+        roles
           .filter((role) => permissions.canManageTeam(role.role))
           .map((role) => role.teamId)
       ),
-    [data?.roles]
+    [roles]
   );
+
+  const hasRolesSnapshot = !auth.user || rolesData !== undefined;
+  const hasActivitiesSnapshot = !shouldQueryActivities || data !== undefined;
+  const rawActivities = data?.activities ?? [];
 
   const activities = React.useMemo(
     () =>
-      (data?.activities ?? []).filter((activity) => {
+      rawActivities.filter((activity) => {
         if (
           activity.type !== 'member_joined' &&
           activity.type !== 'member_left'
@@ -59,8 +82,22 @@ export const useActivities = () => {
 
         return (activity.actor?.logs?.length ?? 0) > 0;
       }),
-    [data?.activities, manageableTeamIds]
+    [manageableTeamIds, rawActivities]
   );
 
-  return { activities, isLoading };
+  const handleLoadNextPage = useLoadNextPage({
+    canLoadNextPage: shouldQueryActivities ? canLoadNextPage : false,
+    itemCount: rawActivities.length,
+    loadNextPage,
+  });
+
+  return {
+    activities,
+    canLoadNextPage: shouldQueryActivities ? canLoadNextPage : false,
+    isLoading:
+      !hasRolesSnapshot ||
+      rolesLoading ||
+      (shouldQueryActivities && (activitiesLoading || !hasActivitiesSnapshot)),
+    loadNextPage: handleLoadNextPage,
+  };
 };

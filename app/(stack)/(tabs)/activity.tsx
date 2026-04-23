@@ -16,7 +16,7 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Activity() {
-  const { activities, isLoading } = useActivities();
+  const { activities, isLoading, loadNextPage } = useActivities();
   const profile = useProfile();
   const ui = useUi();
 
@@ -67,7 +67,10 @@ export default function Activity() {
           data={grouped}
           estimatedItemSize={80}
           keyExtractor={(item) => item.key}
+          onEndReached={loadNextPage}
+          onEndReachedThreshold={1}
           renderItem={renderItem}
+          waitForInitialLayout
         />
       )}
     </Page>

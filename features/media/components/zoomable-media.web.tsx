@@ -1,6 +1,7 @@
 import * as zoomableMediaConstants from '@/features/media/constants/zoomable-media';
 import { clamp } from '@/lib/clamp';
 import * as React from 'react';
+
 import {
   TransformComponent,
   TransformWrapper,

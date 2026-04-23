@@ -1,6 +1,9 @@
 import { Media } from '@/features/media/types/media';
 
 export const CAROUSEL_MEDIA_QUALITY = 90;
+export const CAROUSEL_PRELOAD_DISTANCE = 2;
+export const CAROUSEL_IMAGE_REQUEST_SCALE = 1.5;
+export const CAROUSEL_IMAGE_MAX_TARGET_SIZE = 2560;
 
 export const pruneStateMap = <T extends boolean | number>(
   currentState: Record<string, T>,
@@ -27,6 +30,7 @@ export const getDominantCarouselIndex = (
     0,
     Math.min(mediaCount - 1, absoluteProgress)
   );
+
   const baseIndex = Math.floor(clampedProgress);
   const fractionalProgress = clampedProgress - baseIndex;
 

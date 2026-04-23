@@ -77,6 +77,7 @@ const schema = i.schema({
     }),
     ui: i.entity({
       activityLastReadDate: i.date().optional(),
+      audioPlaybackRate: i.number().optional(),
       doubleTapEmoji: i.string().optional(),
       logsSortBy: i.string().optional(),
       logsSortDirection: i.string().optional(),

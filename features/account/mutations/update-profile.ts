@@ -9,5 +9,7 @@ export const updateProfile = async ({
   id: string;
   name?: string;
 }) => {
-  return db.transact(db.tx.profiles[id].update({ avatarSeedId, name }));
+  return db.transact(
+    db.tx.profiles[id].update({ avatarSeedId, name: name?.trim() })
+  );
 };

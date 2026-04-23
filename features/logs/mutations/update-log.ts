@@ -9,5 +9,5 @@ export const updateLog = async ({
   id: string;
   name?: string;
 }) => {
-  return db.transact(db.tx.logs[id].update({ color, name }));
+  return db.transact(db.tx.logs[id].update({ color, name: name?.trim() }));
 };

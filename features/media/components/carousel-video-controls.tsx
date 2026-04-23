@@ -62,12 +62,11 @@ export const CarouselVideoControls = ({
         className={cn(
           'absolute right-4 left-4 z-10 md:right-8 md:left-8',
           'h-8 justify-center px-3',
-          duration > 0 ? 'pointer-events-auto' : 'pointer-events-none'
+          duration > 0
+            ? 'pointer-events-auto opacity-100'
+            : 'pointer-events-none opacity-0'
         )}
-        style={{
-          bottom: scrubberBottomOffset,
-          opacity: duration > 0 ? 1 : 0,
-        }}
+        style={{ bottom: scrubberBottomOffset }}
       >
         <VideoScrubber
           currentTime={currentTime}

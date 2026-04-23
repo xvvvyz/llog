@@ -1,8 +1,10 @@
 import * as zoomableMediaConstants from '@/features/media/constants/zoomable-media';
+
 import {
   Zoomable,
   type ZoomableRef,
 } from '@likashefqet/react-native-image-zoom';
+
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -66,9 +68,11 @@ export const ZoomableMedia = ({
   }, [syncZoomState, updateInteractionState]);
 
   React.useEffect(() => {
+    const zoom = zoomRef.current;
+
     return () => {
       updateInteractionState(false);
-      zoomRef.current?.reset();
+      zoom?.reset();
     };
   }, [updateInteractionState]);
 

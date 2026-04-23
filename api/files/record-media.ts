@@ -1,5 +1,6 @@
 import { canDeleteMedia, createMediaRoutes } from '@/api/files/media-routes';
 import { HTTPException } from 'hono/http-exception';
+
 const requireRecordId = (recordId?: string) => {
   if (!recordId) {
     throw new HTTPException(400, { message: 'Record not found' });

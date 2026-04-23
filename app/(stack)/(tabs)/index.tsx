@@ -15,7 +15,6 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';
 import { Icon } from '@/ui/icon';
-import { List } from '@/ui/list';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { id } from '@instantdb/react-native';
@@ -23,7 +22,7 @@ import { router } from 'expo-router';
 import MiniSearch from 'minisearch';
 import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import * as React from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 export default function Index() {
   const [rawQuery, setRawQuery] = React.useState('');
@@ -80,7 +79,10 @@ export default function Index() {
 
   const hasLoadedRef = React.useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
-  if (sheetManager.someOpen()) return renderCacheRef.current;
+
+  if (sheetManager.someOpen() && renderCacheRef.current) {
+    return renderCacheRef.current;
+  }
 
   renderCacheRef.current = (
     <Page>
@@ -121,48 +123,55 @@ export default function Index() {
       ) : isEmpty ? (
         <LogListEmptyState canManage={canManage} />
       ) : (
-        <List
-          ListHeaderComponent={
-            !breakpoints.md && !isEmpty ? (
-              <LogListActions
-                className="p-1.5 pt-4 md:p-2"
-                tags={tags.data}
-                query={rawQuery}
-                selectedTagIds={selectedTagIds}
-                setQuery={setRawQuery}
-                setSelectedTagIds={setSelectedTagIds}
-              />
-            ) : null
-          }
-          contentContainerClassName="p-2.5 pt-0 md:p-6"
-          data={filteredLogs}
-          estimatedItemSize={112}
-          key={`grid-${columns}`}
-          keyExtractor={(item) => item.id}
+        <ScrollView
+          className="flex-1"
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
-          numColumns={columns}
-          renderItem={({ item }) => {
-            const color =
-              SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
+          contentContainerClassName="p-2.5 pt-0 md:p-6"
+        >
+          {!breakpoints.md && !isEmpty && (
+            <LogListActions
+              className="p-1.5 pt-4 md:p-2"
+              tags={tags.data}
+              query={rawQuery}
+              selectedTagIds={selectedTagIds}
+              setQuery={setRawQuery}
+              setSelectedTagIds={setSelectedTagIds}
+            />
+          )}
+          <View className="flex-row flex-wrap">
+            {filteredLogs.map((item) => {
+              const color =
+                SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
 
-            const itemTagIds = new Set(
-              item.tags.map((tag: { id: string }) => tag.id)
-            );
+              const itemTagIds = new Set(
+                item.tags.map((tag: { id: string }) => tag.id)
+              );
 
-            return (
-              <LogListItem
-                className="p-1.5 md:p-2"
-                color={color}
-                id={item.id}
-                name={item.name}
-                profiles={item.profiles ?? []}
-                tags={tags.data.filter((tag) => itemTagIds.has(tag.id))}
-              />
-            );
-          }}
-          wrapperClassName="flex-1"
-        />
+              return (
+                <View
+                  className={cn(
+                    columns === 2 && 'w-1/2',
+                    columns === 3 && 'w-1/3',
+                    columns === 4 && 'w-1/4',
+                    columns === 5 && 'w-1/5',
+                    columns === 6 && 'w-1/6'
+                  )}
+                  key={item.id}
+                >
+                  <LogListItem
+                    className="p-1.5 md:p-2"
+                    color={color}
+                    id={item.id}
+                    name={item.name}
+                    profiles={item.profiles ?? []}
+                    tags={tags.data.filter((tag) => itemTagIds.has(tag.id))}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
       )}
     </Page>
   );

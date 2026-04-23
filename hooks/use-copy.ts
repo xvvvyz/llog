@@ -21,6 +21,7 @@ const copyOnWeb = async (value: CopyValue) => {
         ),
       }),
     ]);
+
     return;
   }
 

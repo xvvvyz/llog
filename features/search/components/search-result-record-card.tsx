@@ -1,3 +1,4 @@
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { SearchResultHighlightedText } from '@/features/search/components/search-result-highlighted-text';
 import { SearchResult } from '@/features/search/types/search';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -23,6 +24,8 @@ export const SearchResultRecordCard = ({
     result.logColor != null
       ? SPECTRUM[colorScheme][result.logColor]
       : undefined;
+
+  const displayText = trimDisplayText(result.text);
 
   return (
     <Pressable className={className} onPress={onPress}>
@@ -76,13 +79,13 @@ export const SearchResultRecordCard = ({
             )}
           </View>
         </View>
-        {!!result.text && (
+        {!!displayText && (
           <SearchResultHighlightedText
             className="text-muted-foreground text-sm leading-tight"
             highlightClassName="text-sm leading-tight font-medium text-foreground"
             numberOfLines={2}
             terms={result.terms}
-            text={result.text}
+            text={displayText}
           />
         )}
       </Card>

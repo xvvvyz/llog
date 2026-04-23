@@ -88,7 +88,8 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
     throw new HTTPException(409, { message: 'Record already published' });
   }
 
-  const hasContent = !!record.text?.trim() || !!record.media?.length;
+  const trimmedText = record.text?.trim() ?? '';
+  const hasContent = !!trimmedText || !!record.media?.length;
 
   if (!hasContent || !record.log?.id || !record.teamId || !record.author?.id) {
     throw new HTTPException(400, { message: 'Invalid record draft' });
@@ -97,7 +98,11 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
   const now = new Date().toISOString();
 
   await c.var.db.transact([
-    c.var.db.tx.records[recordId].update({ date: now, isDraft: false }),
+    c.var.db.tx.records[recordId].update({
+      date: now,
+      isDraft: false,
+      text: trimmedText,
+    }),
     c.var.db.tx.activities[id()]
       .update({
         type: 'record_published',
@@ -123,7 +128,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
       authorName: record.author.name,
       logName: record.log.name,
       recordId,
-      text: record.text,
+      text: trimmedText,
     })
   );
 

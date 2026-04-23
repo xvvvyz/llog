@@ -1,10 +1,12 @@
 import { alert } from '@/lib/alert';
+
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
   useAudioRecorder as useExpoAudioRecorder,
 } from 'expo-audio';
+
 import * as React from 'react';
 import { Platform } from 'react-native';
 
@@ -259,6 +261,7 @@ export const useAudioRecorder = () => {
     } catch (error) {
       const wasCancelled =
         requestId !== startRequestIdRef.current || !isRecordingRef.current;
+
       const permissionDenied = isMicrophonePermissionError(error);
 
       isRecordingRef.current = false;
@@ -269,6 +272,7 @@ export const useAudioRecorder = () => {
       }
 
       setHasPermission((prev) => (permissionDenied ? false : prev));
+
       setStartError(
         permissionDenied
           ? null

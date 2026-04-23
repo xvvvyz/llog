@@ -11,9 +11,10 @@ export const createTeam = async ({ name }: { name: string }) => {
   if (!ui) return;
 
   const teamId = generateId();
+  const trimmedName = name.trim();
 
   await db.transact([
-    db.tx.teams[teamId].update({ name }),
+    db.tx.teams[teamId].update({ name: trimmedName }),
     db.tx.roles[generateId()]
       .update({
         key: `${Role.Owner}_${auth.id}_${teamId}`,

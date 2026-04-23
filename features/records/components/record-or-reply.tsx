@@ -44,6 +44,7 @@ export const RecordOrReply = ({
     if (!record.teamId) return;
 
     const emoji = ui.doubleTapEmoji;
+
     const existingReaction = record.reactions?.find(
       (r) => r.emoji === emoji && r.author?.id === profile.id
     );

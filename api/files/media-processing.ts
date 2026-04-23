@@ -16,6 +16,7 @@ export const finalizeStreamVideo = async ({
   thumbnailUri?: string | null;
 }) => {
   const adminDb = getAdminDb(env);
+
   const { media } = await adminDb.query({
     media: {
       $: { where: { assetKey: streamUid } },
