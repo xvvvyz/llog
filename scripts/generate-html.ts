@@ -2,9 +2,16 @@ import * as startupImages from '@/lib/apple-startup-images';
 import { UI } from '@/theme/ui';
 import { rename } from 'node:fs/promises';
 import { join } from 'node:path';
+import { parseAssetPlatforms } from './generate-platforms';
 import { createLogger } from './logger';
 
 const { flush, log, progress } = createLogger('generate-html');
+const platforms = parseAssetPlatforms();
+
+if (!platforms.web) {
+  log('Skipping HTML assets for non-web platform selection');
+  process.exit(0);
+}
 
 const light = UI.light.background;
 const dark = UI.dark.background;

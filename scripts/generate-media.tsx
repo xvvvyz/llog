@@ -8,6 +8,12 @@ import { dirname, join } from 'node:path';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import satori from 'satori';
+
+import {
+  formatAssetPlatforms,
+  parseAssetPlatforms,
+} from './generate-platforms';
+
 import { createLogger } from './logger';
 
 const { NATIVE_SPLASH_BACKGROUNDS } = require('../theme/native.cjs') as {
@@ -28,6 +34,7 @@ const MEDIA_SOURCE_PATHS = [
 ] as const;
 
 const { log, progress } = createLogger('generate-media');
+const platforms = parseAssetPlatforms();
 
 const publicPath = (...segments: string[]) =>
   join(PROJECT_ROOT, 'public', ...segments);
@@ -158,25 +165,34 @@ const ANDROID_ADAPTIVE_CONTENT_SCALE = 0.61;
 const contrastBackground = UI.light.contrastBackground;
 const contrastForeground = UI.light.contrastForeground;
 
-const iconOutputs = [
+const sharedNativeIconOutputs = [
   {
     path: assetsPath('icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 1024,
   },
+] as const;
+
+const iosIconOutputs = [
   {
     path: assetsPath('ios-icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 1024,
   },
+] as const;
+
+const androidIconOutputs = [
   {
     path: assetsPath('android-icon.png'),
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 1024,
   },
+] as const;
+
+const webIconOutputs = [
   {
     path: publicPath('apple-touch-icon.png'),
     paddingRatio: ICON_PADDING,
@@ -227,7 +243,7 @@ const iconOutputs = [
   },
 ] as const;
 
-const nativeAssetOutputs = [
+const androidNativeAssetOutputs = [
   {
     path: assetsPath('android-adaptive-icon-foreground.png'),
     render: () =>
@@ -248,6 +264,9 @@ const nativeAssetOutputs = [
         size: 1024,
       }),
   },
+] as const;
+
+const sharedNativeAssetOutputs = [
   {
     path: assetsPath('splash-icon.png'),
     render: () =>
@@ -294,14 +313,32 @@ const startupOutputPaths = startupImages.appleStartupImageSpecs.flatMap(
     )
 );
 
+const selectedIconOutputs = [
+  ...(platforms.ios || platforms.android ? sharedNativeIconOutputs : []),
+  ...(platforms.ios ? iosIconOutputs : []),
+  ...(platforms.android ? androidIconOutputs : []),
+  ...(platforms.web ? webIconOutputs : []),
+];
+
+const selectedNativeAssetOutputs = [
+  ...(platforms.ios || platforms.android ? sharedNativeAssetOutputs : []),
+  ...(platforms.android ? androidNativeAssetOutputs : []),
+];
+
+const selectedWebOutputPaths = platforms.web
+  ? [
+      badgeOutputPath,
+      faviconSvgPath,
+      favicon32Path,
+      faviconIcoPath,
+      ...startupOutputPaths,
+    ]
+  : [];
+
 const mediaOutputPaths = [
-  ...iconOutputs.map((output) => output.path),
-  ...nativeAssetOutputs.map((output) => output.path),
-  badgeOutputPath,
-  faviconSvgPath,
-  favicon32Path,
-  faviconIcoPath,
-  ...startupOutputPaths,
+  ...selectedIconOutputs.map((output) => output.path),
+  ...selectedNativeAssetOutputs.map((output) => output.path),
+  ...selectedWebOutputPaths,
 ];
 
 const currentSourceHash = await createSourceHash(MEDIA_SOURCE_PATHS);
@@ -312,91 +349,101 @@ const hasAllOutputs =
   (await Promise.all(mediaOutputPaths.map(fileExists))).every(Boolean);
 
 if (hasAllOutputs) {
-  log(`Assets unchanged; skipping ${mediaOutputPaths.length} media outputs`);
+  log(
+    `Assets unchanged for ${formatAssetPlatforms(platforms)}; skipping ${mediaOutputPaths.length} media outputs`
+  );
+
   log('Done');
   process.exit(0);
 }
 
-log(`Rendering ${iconOutputs.length} app icons`);
+log(
+  `Rendering ${selectedIconOutputs.length} app icons for ${formatAssetPlatforms(platforms)}`
+);
 
-for (const [index, output] of iconOutputs.entries()) {
+for (const [index, output] of selectedIconOutputs.entries()) {
   await mkdir(dirname(output.path), { recursive: true });
   await Bun.write(output.path, await renderPng(output));
-  progress(`Icon ${index + 1}/${iconOutputs.length}: ${output.path}`);
+  progress(`Icon ${index + 1}/${selectedIconOutputs.length}: ${output.path}`);
 }
 
-log(`Rendering ${nativeAssetOutputs.length} native assets`);
+log(`Rendering ${selectedNativeAssetOutputs.length} native assets`);
 
-for (const [index, output] of nativeAssetOutputs.entries()) {
+for (const [index, output] of selectedNativeAssetOutputs.entries()) {
   await mkdir(dirname(output.path), { recursive: true });
   await Bun.write(output.path, await output.render());
-  progress(`Native ${index + 1}/${nativeAssetOutputs.length}: ${output.path}`);
+
+  progress(
+    `Native ${index + 1}/${selectedNativeAssetOutputs.length}: ${output.path}`
+  );
 }
 
-log('Rendering notification badge');
+if (platforms.web) {
+  log('Rendering notification badge');
 
-// Badge — monochrome (white pills, transparent background) for use in notification status bar
-await Bun.write(
-  badgeOutputPath,
-  await renderAppIconPng({
-    backgroundColor: 'transparent',
-    colors: [contrastForeground, contrastForeground, contrastForeground],
-    cropToContent: true,
-    dotColors: [contrastForeground, contrastForeground, contrastForeground],
-    fitToWidth: 72,
-    size: 72,
-  })
-);
+  // Badge — monochrome (white pills, transparent background) for use in notification status bar
+  await Bun.write(
+    badgeOutputPath,
+    await renderAppIconPng({
+      backgroundColor: 'transparent',
+      colors: [contrastForeground, contrastForeground, contrastForeground],
+      cropToContent: true,
+      dotColors: [contrastForeground, contrastForeground, contrastForeground],
+      fitToWidth: 72,
+      size: 72,
+    })
+  );
 
-log('Rendering SVG favicon');
+  log('Rendering SVG favicon');
 
-// SVG favicon — clip rounds outer corners to match inner squares; used by Chrome/Firefox/Edge.
-// Generated at 512 for a high-resolution coordinate space; no explicit width/height so it scales freely.
-const faviconSvg = renderSvg({
-  clip: true,
-  paddingRatio: ICON_PADDING,
-  radiusRatio: ICON_RADIUS,
-  size: 512,
-});
-
-await Bun.write(faviconSvgPath, faviconSvg);
-
-log('Rendering favicon PNG assets');
-
-await Bun.write(
-  favicon32Path,
-  await renderPng({
-    clip: true,
-    paddingRatio: ICON_PADDING,
-    radiusRatio: ICON_RADIUS,
-    size: 32,
-  })
-);
-
-const [ico32, ico512] = await Promise.all([
-  renderPng({
-    clip: true,
-    paddingRatio: ICON_PADDING,
-    radiusRatio: ICON_RADIUS,
-    size: 32,
-  }),
-  renderPng({
+  // SVG favicon — clip rounds outer corners to match inner squares; used by Chrome/Firefox/Edge.
+  // Generated at 512 for a high-resolution coordinate space; no explicit width/height so it scales freely.
+  const faviconSvg = renderSvg({
     clip: true,
     paddingRatio: ICON_PADDING,
     radiusRatio: ICON_RADIUS,
     size: 512,
-  }),
-]);
+  });
 
-await Bun.write(
-  faviconIcoPath,
-  buildIco([
-    { data: ico32, size: 32 },
-    { data: ico512, size: 512 },
-  ])
-);
+  await Bun.write(faviconSvgPath, faviconSvg);
 
-log('Wrote favicon.ico');
+  log('Rendering favicon PNG assets');
+
+  await Bun.write(
+    favicon32Path,
+    await renderPng({
+      clip: true,
+      paddingRatio: ICON_PADDING,
+      radiusRatio: ICON_RADIUS,
+      size: 32,
+    })
+  );
+
+  const [ico32, ico512] = await Promise.all([
+    renderPng({
+      clip: true,
+      paddingRatio: ICON_PADDING,
+      radiusRatio: ICON_RADIUS,
+      size: 32,
+    }),
+    renderPng({
+      clip: true,
+      paddingRatio: ICON_PADDING,
+      radiusRatio: ICON_RADIUS,
+      size: 512,
+    }),
+  ]);
+
+  await Bun.write(
+    faviconIcoPath,
+    buildIco([
+      { data: ico32, size: 32 },
+      { data: ico512, size: 512 },
+    ])
+  );
+
+  log('Wrote favicon.ico');
+}
 
 const renderStartupImage = async ({
   height,
@@ -448,45 +495,49 @@ const renderStartupImage = async ({
   return renderSvgToPng(svg);
 };
 
-await rm(startupOutputDirectory, { force: true, recursive: true });
-await mkdir(startupOutputDirectory, { recursive: true });
+if (platforms.web) {
+  await rm(startupOutputDirectory, { force: true, recursive: true });
+  await mkdir(startupOutputDirectory, { recursive: true });
 
-const totalStartupImages =
-  startupImages.appleStartupImageSpecs.length *
-  startupImages.appleStartupImageOrientations.length *
-  startupImages.appleStartupImageThemes.length;
+  const totalStartupImages =
+    startupImages.appleStartupImageSpecs.length *
+    startupImages.appleStartupImageOrientations.length *
+    startupImages.appleStartupImageThemes.length;
 
-let startupImageIndex = 0;
+  let startupImageIndex = 0;
 
-log(`Rendering ${totalStartupImages} Apple startup images`);
+  log(`Rendering ${totalStartupImages} Apple startup images`);
 
-for (const spec of startupImages.appleStartupImageSpecs) {
-  for (const orientation of startupImages.appleStartupImageOrientations) {
-    const width =
-      (orientation === 'portrait' ? spec.viewportWidth : spec.viewportHeight) *
-      spec.pixelRatio;
+  for (const spec of startupImages.appleStartupImageSpecs) {
+    for (const orientation of startupImages.appleStartupImageOrientations) {
+      const width =
+        (orientation === 'portrait'
+          ? spec.viewportWidth
+          : spec.viewportHeight) * spec.pixelRatio;
 
-    const height =
-      (orientation === 'portrait' ? spec.viewportHeight : spec.viewportWidth) *
-      spec.pixelRatio;
+      const height =
+        (orientation === 'portrait'
+          ? spec.viewportHeight
+          : spec.viewportWidth) * spec.pixelRatio;
 
-    for (const theme of startupImages.appleStartupImageThemes) {
-      const png = await renderStartupImage({ height, theme, width });
+      for (const theme of startupImages.appleStartupImageThemes) {
+        const png = await renderStartupImage({ height, theme, width });
 
-      const relativeHref = startupImages
-        .getAppleStartupImageHref({
-          id: spec.id,
-          orientation,
-          theme,
-        })
-        .replace(/^\//, '');
+        const relativeHref = startupImages
+          .getAppleStartupImageHref({
+            id: spec.id,
+            orientation,
+            theme,
+          })
+          .replace(/^\//, '');
 
-      await Bun.write(publicPath(relativeHref), png);
-      startupImageIndex += 1;
+        await Bun.write(publicPath(relativeHref), png);
+        startupImageIndex += 1;
 
-      progress(
-        `Startup ${startupImageIndex}/${totalStartupImages}: ${relativeHref}`
-      );
+        progress(
+          `Startup ${startupImageIndex}/${totalStartupImages}: ${relativeHref}`
+        );
+      }
     }
   }
 }
