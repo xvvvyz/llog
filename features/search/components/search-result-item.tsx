@@ -1,3 +1,4 @@
+import { openRecordDetail } from '@/features/records/lib/record-detail-route';
 import { SearchResultLogCard } from '@/features/search/components/search-result-log-card';
 import { SearchResultRecordCard } from '@/features/search/components/search-result-record-card';
 import { SearchResult } from '@/features/search/types/search';
@@ -18,11 +19,11 @@ export const SearchResultItem = ({
         break;
       }
       case 'record': {
-        router.setParams({ recordId: result.id });
+        openRecordDetail(result.id);
         break;
       }
       case 'reply': {
-        if (result.recordId) router.setParams({ recordId: result.recordId });
+        openRecordDetail(result.recordId);
         break;
       }
     }

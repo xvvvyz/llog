@@ -115,7 +115,7 @@ export const RecordOrReplyDropdownMenu = ({
                 sheetManager.open(
                   'record-delete',
                   recordId,
-                  isDetail ? 'detail:modal' : undefined
+                  isDetail ? `detail:${logId ?? ''}` : undefined
                 );
               }
             }}

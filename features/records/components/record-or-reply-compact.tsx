@@ -74,7 +74,10 @@ export const CompactRecordOrReply = ({
           )}
           {visualMedia.length > 0 && (
             <View className="mt-4">
-              <RecordOrReplyMediaGrid visualMedia={visualMedia} />
+              <RecordOrReplyMediaGrid
+                recordId={recordId}
+                visualMedia={visualMedia}
+              />
             </View>
           )}
           {audioMedia.length > 0 && (

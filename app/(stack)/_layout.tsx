@@ -10,7 +10,6 @@ import { TagDeleteSheet } from '@/features/logs/components/tag-delete-sheet';
 import { RecordAudioSheet } from '@/features/records/components/record-audio-sheet';
 import { RecordCreateSheet } from '@/features/records/components/record-create-sheet';
 import { RecordDeleteSheet } from '@/features/records/components/record-delete-sheet';
-import { RecordDetailModal } from '@/features/records/components/record-detail-modal';
 import { ReplyCreateSheet } from '@/features/records/components/reply-create-sheet';
 import { ReplyDeleteSheet } from '@/features/records/components/reply-delete-sheet';
 import { MemberLogsSheet } from '@/features/teams/components/member-logs-sheet';
@@ -18,17 +17,23 @@ import { MemberRemoveSheet } from '@/features/teams/components/member-remove-she
 import { TeamDeleteSheet } from '@/features/teams/components/team-delete-sheet';
 import { TeamLeaveSheet } from '@/features/teams/components/team-leave-sheet';
 import { TeamSwitchSheet } from '@/features/teams/components/team-switch-sheet';
-import { Stack, useGlobalSearchParams } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as React from 'react';
 
 export default function Layout() {
-  const params = useGlobalSearchParams<{ recordId?: string }>();
-
   return (
     <React.Fragment>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen
-          name="media/[mediaId]"
+          name="records/[recordId]"
+          options={{
+            animation: 'none',
+            contentStyle: { backgroundColor: 'transparent' },
+            presentation: 'transparentModal',
+          }}
+        />
+        <Stack.Screen
+          name="records/[recordId]/media/[mediaId]"
           options={{
             animation: 'none',
             contentStyle: { backgroundColor: 'transparent' },
@@ -36,7 +41,6 @@ export default function Layout() {
           }}
         />
       </Stack>
-      <RecordDetailModal recordId={params.recordId} />
       <ReplyCreateSheet />
       <ReplyDeleteSheet />
       <InviteDeleteSheet />

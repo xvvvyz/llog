@@ -1,4 +1,5 @@
 import { DestructiveConfirmSheet } from '@/components/destructive-confirm-sheet';
+import { getLogHref } from '@/features/records/lib/record-detail-route';
 import { deleteRecord } from '@/features/records/mutations/delete-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { router } from 'expo-router';
@@ -29,8 +30,14 @@ export const RecordDeleteSheet = () => {
           await deleteRecord({ id: recordId });
           sheetManager.close('record-delete');
 
-          if (context === 'detail:modal') {
-            router.setParams({ recordId: undefined });
+          if (context?.startsWith('detail:')) {
+            const logId = context.slice('detail:'.length);
+
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace(logId ? getLogHref(logId) : '/');
+            }
           }
         } catch (error) {
           setIsPending(false);

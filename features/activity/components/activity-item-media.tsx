@@ -10,13 +10,15 @@ import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
-export const ActivityItemMedia = ({ media }: { media?: Media[] }) => {
+export const ActivityItemMedia = ({
+  media,
+  recordId,
+}: {
+  media?: Media[];
+  recordId?: string;
+}) => {
   const { audioMedia, visualMedia } = useFilteredMedia(media || []);
-
-  const { mediaLightbox, openMediaLightbox } = useMediaLightbox({
-    media: visualMedia,
-  });
-
+  const { openMediaLightbox } = useMediaLightbox({ recordId });
   if (!visualMedia.length && !audioMedia.length) return null;
 
   const timelineTargetWidth = mediaUtils.getTimelineTargetWidth(
@@ -27,7 +29,7 @@ export const ActivityItemMedia = ({ media }: { media?: Media[] }) => {
     <Pressable
       key={item.id}
       className="flex-1"
-      disabled={mediaUtils.isVideoMediaProcessing(item)}
+      disabled={mediaUtils.isVideoMediaProcessing(item) || !recordId}
       onPress={() =>
         !mediaUtils.isVideoMediaProcessing(item) && openMediaLightbox(item.id)
       }
@@ -76,7 +78,6 @@ export const ActivityItemMedia = ({ media }: { media?: Media[] }) => {
           <AudioPlaylist clips={audioMedia} />
         </View>
       )}
-      {mediaLightbox}
     </React.Fragment>
   );
 };

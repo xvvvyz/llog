@@ -1,7 +1,7 @@
 import { useLogColor } from '@/features/logs/hooks/use-log-color';
 import { RecordOrReply } from '@/features/records/components/record-or-reply';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
-import { useRecord } from '@/features/records/queries/use-record';
+import { type UseRecordResult } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
@@ -16,15 +16,16 @@ import { View } from 'react-native';
 
 export const RecordDetailView = ({
   pageClassName,
+  record,
   recordId,
 }: {
   pageClassName?: string;
+  record: UseRecordResult;
   recordId: string;
 }) => {
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const listRef = React.useRef<ListHandle>(null);
   const sheetManager = useSheetManager();
-  const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
   const contentPaddingBottom = 104;
 

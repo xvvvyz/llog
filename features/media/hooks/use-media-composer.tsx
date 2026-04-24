@@ -2,7 +2,6 @@ import { MediaComposerPreview } from '@/features/media/components/media-composer
 import { MediaComposerToolbar } from '@/features/media/components/media-composer-toolbar';
 import { useMediaComposerState } from '@/features/media/hooks/use-media-composer-state';
 import { useMediaLightbox } from '@/features/media/hooks/use-media-lightbox';
-import { type Media } from '@/features/media/types/media';
 import { type UseMediaComposerOptions } from '@/features/media/types/media-composer.types';
 import * as React from 'react';
 
@@ -36,14 +35,7 @@ export const useMediaComposer = ({
     scopeKey: `${recordId ?? ''}:${replyId ?? ''}`,
   });
 
-  const previewMedia = React.useMemo(
-    () => allVisual.filter((item) => !item.pending) as Media[],
-    [allVisual]
-  );
-
-  const { mediaLightbox, openMediaLightbox } = useMediaLightbox({
-    media: previewMedia,
-  });
+  const { openMediaLightbox } = useMediaLightbox({ recordId });
 
   const handleOpenVisual = React.useCallback(
     (mediaId: string) => {
@@ -53,18 +45,15 @@ export const useMediaComposer = ({
   );
 
   const mediaPreview = (
-    <React.Fragment>
-      <MediaComposerPreview
-        audioMedia={audioMedia}
-        autoPlayPendingVideoId={autoPlayPendingVideoId}
-        onDeleteMedia={handleDeleteMedia}
-        onOpenVisual={handleOpenVisual}
-        onRemoteReady={removeLocalPreviewUri}
-        pendingAudio={pendingAudio}
-        visualItems={allVisual}
-      />
-      {mediaLightbox}
-    </React.Fragment>
+    <MediaComposerPreview
+      audioMedia={audioMedia}
+      autoPlayPendingVideoId={autoPlayPendingVideoId}
+      onDeleteMedia={handleDeleteMedia}
+      onOpenVisual={handleOpenVisual}
+      onRemoteReady={removeLocalPreviewUri}
+      pendingAudio={pendingAudio}
+      visualItems={allVisual}
+    />
   );
 
   const toolbar = (

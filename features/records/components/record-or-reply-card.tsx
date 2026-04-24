@@ -3,6 +3,7 @@ import { RecordOrReplyDropdownMenu } from '@/features/records/components/record-
 import { RecordOrReplyMediaGrid } from '@/features/records/components/record-or-reply-media-grid';
 import { RecordOrReplyReactionsRow } from '@/features/records/components/record-or-reply-reactions-row';
 import { TruncatedText } from '@/features/records/components/truncated-text';
+import { openRecordDetail } from '@/features/records/lib/record-detail-route';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { type RecordOrReplySharedProps } from '@/features/records/types/record-or-reply.types';
 import { cn } from '@/lib/cn';
@@ -12,7 +13,6 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { router } from 'expo-router';
 import { ArrowBendDownLeft, PushPin } from 'phosphor-react-native';
 import { View } from 'react-native';
 
@@ -91,7 +91,7 @@ export const RecordOrReplyCard = ({
           text={displayText}
         />
       )}
-      <RecordOrReplyMediaGrid visualMedia={visualMedia} />
+      <RecordOrReplyMediaGrid recordId={recordId} visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
           <AudioPlaylist className="-mr-1" clips={audioMedia} />
@@ -110,7 +110,7 @@ export const RecordOrReplyCard = ({
             <View className="flex-row gap-1.5 items-center self-center">
               {record.replies.length > 0 && (
                 <Button
-                  onPress={() => router.setParams({ recordId })}
+                  onPress={() => openRecordDetail(recordId)}
                   size="xs"
                   variant="ghost"
                 >

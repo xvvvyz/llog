@@ -3,6 +3,7 @@ import { ActivityItemMedia } from '@/features/activity/components/activity-item-
 import { ActivityItemName } from '@/features/activity/components/activity-item-name';
 import { ActivityItemQuotedRecord } from '@/features/activity/components/activity-item-quoted-record';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
+import { openRecordDetail } from '@/features/records/lib/record-detail-route';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
@@ -11,7 +12,6 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { Avatar } from '@/ui/avatar';
 import { Card } from '@/ui/card';
 import { Text } from '@/ui/text';
-import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 const CATEGORY_LABELS: Record<GroupedActivity['type'], string> = {
@@ -40,8 +40,7 @@ export const ActivityItem = ({
   const isClickable = Boolean(record?.id);
 
   const handlePress = () => {
-    const recordId = record?.id;
-    if (recordId) router.setParams({ recordId });
+    openRecordDetail(record?.id);
   };
 
   const mediaSource =
@@ -53,9 +52,9 @@ export const ActivityItem = ({
 
   const mediaProps =
     group.type === 'record_published'
-      ? { media: mediaSource }
+      ? { media: mediaSource, recordId: record?.id }
       : group.type === 'reply_posted'
-        ? { media: mediaSource }
+        ? { media: mediaSource, recordId: record?.id }
         : null;
 
   const hasVisualMedia = mediaSource?.some(
@@ -141,6 +140,7 @@ export const ActivityItem = ({
           <ActivityItemQuotedRecord
             logColor={logColor}
             media={record.media}
+            recordId={record.id}
             text={quotedRecordText}
           />
         </View>

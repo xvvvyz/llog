@@ -9,15 +9,14 @@ import * as React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
 export const RecordOrReplyMediaGrid = ({
+  recordId,
   visualMedia,
 }: {
+  recordId?: string;
   visualMedia: Media[];
 }) => {
   const timelineTargetWidth = media.getTimelineTargetWidth(visualMedia.length);
-
-  const { mediaLightbox, openMediaLightbox } = useMediaLightbox({
-    media: visualMedia,
-  });
+  const { openMediaLightbox } = useMediaLightbox({ recordId });
 
   const handlePress = React.useCallback(
     (mediaId: string) => {
@@ -34,7 +33,7 @@ export const RecordOrReplyMediaGrid = ({
         <Pressable
           key={item.id}
           className="flex-1"
-          disabled={isProcessing}
+          disabled={isProcessing || !recordId}
           onPress={() => handlePress(item.id)}
         >
           <Image
@@ -68,18 +67,15 @@ export const RecordOrReplyMediaGrid = ({
   if (!visualMedia.length) return null;
 
   return (
-    <React.Fragment>
-      <View className="aspect-[3/2] gap-0.5">
-        <View className="flex-1 flex-row gap-0.5">
-          {visualMedia.slice(0, 3).map(renderMediaThumb)}
-        </View>
-        {visualMedia.length > 3 && (
-          <View className="flex-1 flex-row gap-0.5">
-            {visualMedia.slice(3, 6).map(renderMediaThumb)}
-          </View>
-        )}
+    <View className="aspect-[3/2] gap-0.5">
+      <View className="flex-1 flex-row gap-0.5">
+        {visualMedia.slice(0, 3).map(renderMediaThumb)}
       </View>
-      {mediaLightbox}
-    </React.Fragment>
+      {visualMedia.length > 3 && (
+        <View className="flex-1 flex-row gap-0.5">
+          {visualMedia.slice(3, 6).map(renderMediaThumb)}
+        </View>
+      )}
+    </View>
   );
 };

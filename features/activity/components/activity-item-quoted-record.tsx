@@ -16,19 +16,17 @@ import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 export const ActivityItemQuotedRecord = ({
   logColor,
   media,
+  recordId,
   text,
 }: {
   logColor: { lighter: string; default: string; darker: string } | null;
   media?: Media[];
+  recordId?: string;
   text?: string;
 }) => {
   const { audioMedia, visualMedia } = useFilteredMedia(media || []);
   const displayText = trimDisplayText(text);
-
-  const { mediaLightbox, openMediaLightbox } = useMediaLightbox({
-    media: visualMedia,
-  });
-
+  const { openMediaLightbox } = useMediaLightbox({ recordId });
   const hasAudioMedia = audioMedia.length > 0;
   if (!displayText && !visualMedia.length && !hasAudioMedia) return null;
 
@@ -71,7 +69,9 @@ export const ActivityItemQuotedRecord = ({
                 <Pressable
                   key={item.id}
                   className="overflow-hidden h-16 w-16 rounded-lg shrink-0"
-                  disabled={mediaUtils.isVideoMediaProcessing(item)}
+                  disabled={
+                    mediaUtils.isVideoMediaProcessing(item) || !recordId
+                  }
                   onPress={() =>
                     !mediaUtils.isVideoMediaProcessing(item) &&
                     openMediaLightbox(item.id)
@@ -124,7 +124,6 @@ export const ActivityItemQuotedRecord = ({
           </View>
         )}
       </View>
-      {mediaLightbox}
     </React.Fragment>
   );
 };

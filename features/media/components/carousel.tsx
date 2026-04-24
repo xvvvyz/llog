@@ -32,6 +32,7 @@ export const Carousel = ({
   isDismissGestureActive = false,
   media,
   isKeyboardNavigationEnabled = false,
+  onActiveMediaChange,
   onDismissLockChange,
   onUiHiddenChange,
 }: {
@@ -42,6 +43,7 @@ export const Carousel = ({
   isDismissGestureActive?: boolean;
   media: Media[];
   isKeyboardNavigationEnabled?: boolean;
+  onActiveMediaChange?: (mediaId: string) => void;
   onDismissLockChange?: (isLocked: boolean) => void;
   onUiHiddenChange?: (isHidden: boolean) => void;
 }) => {
@@ -416,8 +418,10 @@ export const Carousel = ({
 
       carouselGestureStartIndexRef.current = null;
       syncActiveIndex(index);
+      const nextMediaId = media[index]?.id;
+      if (nextMediaId) onActiveMediaChange?.(nextMediaId);
     },
-    [resetToDismissLockedIndex, syncActiveIndex]
+    [media, onActiveMediaChange, resetToDismissLockedIndex, syncActiveIndex]
   );
 
   const renderCarouselItem = React.useCallback(

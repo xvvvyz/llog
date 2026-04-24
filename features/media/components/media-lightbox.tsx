@@ -14,11 +14,13 @@ import Animated from 'react-native-reanimated';
 export const MediaLightbox = ({
   media,
   mediaId,
+  onActiveMediaChange,
   onCloseAnimationEnd,
   onRequestClose,
 }: {
   media: Media[];
   mediaId?: string;
+  onActiveMediaChange?: (mediaId: string) => void;
   onCloseAnimationEnd?: () => void;
   onRequestClose: () => void;
 }) => {
@@ -113,6 +115,7 @@ export const MediaLightbox = ({
           isDismissGestureActive={isDismissGestureActive}
           isKeyboardNavigationEnabled={media.length > 1}
           media={media}
+          onActiveMediaChange={onActiveMediaChange}
           onDismissLockChange={setIsDismissLocked}
           onUiHiddenChange={setIsUiHidden}
         />

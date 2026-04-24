@@ -26,3 +26,5 @@ export const useRecord = ({ id }: { id?: string }) => {
   const media = record?.media ?? [];
   return { ...record, replies, media, isLoading };
 };
+
+export type UseRecordResult = ReturnType<typeof useRecord>;
