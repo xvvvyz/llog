@@ -61,8 +61,7 @@ export default function Search() {
       <SearchResultItem
         result={item}
         className={cn(
-          'mt-3',
-          index === 0 && 'md:mt-0',
+          index === 0 ? 'mt-0' : 'mt-3',
           index === results.length - 1 && 'mb-4 md:mb-8'
         )}
       />

@@ -146,8 +146,6 @@ export const Carousel = ({
   const showImageLoadingIndicator =
     activeMedia?.type === 'image' && isActiveMediaLoading;
 
-  const shouldHideUi = isActiveVideo && isPlaying;
-
   const carouselStyle = React.useMemo(
     () => ({ height: contentHeight, width: contentWidth }),
     [contentHeight, contentWidth]
@@ -163,12 +161,12 @@ export const Carousel = ({
   }));
 
   React.useEffect(() => {
-    onUiHiddenChange?.(shouldHideUi);
+    onUiHiddenChange?.(false);
 
     return () => {
       onUiHiddenChange?.(false);
     };
-  }, [onUiHiddenChange, shouldHideUi]);
+  }, [onUiHiddenChange]);
 
   React.useEffect(() => {
     onDismissLockChange?.(isNavigationLocked);
@@ -505,7 +503,7 @@ export const Carousel = ({
         pointerEvents="box-none"
         style={overlayOpacityStyle}
       >
-        {isActiveVideo && !shouldHideUi && (
+        {isActiveVideo && (
           <CarouselVideoControls
             currentTime={videoCurrentTime}
             duration={videoDuration}
@@ -524,7 +522,7 @@ export const Carousel = ({
         className="absolute left-4 right-4 z-10 pointer-events-none items-center md:left-8 md:right-8"
         style={[overlayOpacityStyle, { bottom: dotsBottomOffset }]}
       >
-        {!shouldHideUi && media.length > 1 && (
+        {media.length > 1 && (
           <CarouselDots activeIndex={activeIndex} count={media.length} />
         )}
       </Animated.View>
