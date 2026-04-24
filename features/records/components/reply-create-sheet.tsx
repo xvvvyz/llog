@@ -7,7 +7,6 @@ export const ReplyCreateSheet = () => {
 
   return (
     <Sheet
-      constrainToViewport
       loading={composer.loading}
       onDismiss={composer.onDismiss}
       open={composer.isOpen}
@@ -26,7 +25,7 @@ export const ReplyCreateSheet = () => {
         onChangeText={composer.onChangeText}
         onSubmit={composer.onSubmit}
         onTextareaFocusChange={composer.onTextareaFocusChange}
-        placeholder="Add a reply"
+        placeholder="What do you think?"
         submitLabel={composer.submitLabel}
         submitTextClassName="text-contrast-foreground"
         submitVariant="secondary"

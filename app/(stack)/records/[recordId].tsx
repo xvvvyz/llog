@@ -34,14 +34,13 @@ export default function RecordDetailRoute() {
 
   return (
     <Sheet
-      className="min-h-0"
-      fullHeight
+      nativeModal={false}
       onDismiss={exitRoute}
       open
       portalName="record-detail"
     >
       {isNotFound ? (
-        <View className="flex-1 p-6 gap-4 items-center justify-center">
+        <View className="p-6 gap-4 items-center justify-center">
           <Text className="text-center text-muted-foreground">
             Record not found.
           </Text>
@@ -51,7 +50,8 @@ export default function RecordDetailRoute() {
         </View>
       ) : (
         <DetailView
-          pageClassName="min-h-0 overflow-hidden bg-popover"
+          onClose={exitRoute}
+          pageClassName="flex-none max-h-full overflow-hidden bg-popover"
           record={record}
           recordId={routeRecordId ?? ''}
         />

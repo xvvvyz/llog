@@ -26,19 +26,17 @@ import Animated, {
 export const Sheet = ({
   children,
   className,
-  constrainToViewport,
-  fullHeight,
   loading,
+  nativeModal = true,
   onDismiss,
   open,
   portalName,
-  topInset = 24,
+  topInset = 72,
 }: {
   children: React.ReactNode;
   className?: string;
-  constrainToViewport?: boolean;
-  fullHeight?: boolean;
   loading?: boolean;
+  nativeModal?: boolean;
   onDismiss: () => void;
   open: boolean;
   portalName: string;
@@ -60,11 +58,59 @@ export const Sheet = ({
     )
   );
 
-  const heightStyle = fullHeight
-    ? { height: availableHeight }
-    : constrainToViewport
-      ? { maxHeight: availableHeight }
-      : undefined;
+  const heightStyle = { maxHeight: availableHeight };
+
+  const sheet = (
+    <Animated.View
+      className="absolute inset-0"
+      entering={animation(FadeInDown)}
+      exiting={animation(FadeOutDown)}
+    >
+      <Animated.View
+        className="absolute inset-0 bg-background/90"
+        entering={animation(FadeIn)}
+        exiting={animation(FadeOut)}
+      >
+        <Pressable
+          className="h-full w-full cursor-default"
+          onPress={onDismiss}
+        />
+      </Animated.View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="absolute inset-0 justify-end"
+        pointerEvents="box-none"
+        style={platformLayout.keyboardAvoidingStyle}
+      >
+        <View
+          className={cn(
+            'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t',
+            className
+          )}
+          style={StyleSheet.flatten([
+            { borderCurve: 'continuous' },
+            heightStyle,
+          ])}
+        >
+          {children}
+          {loading && (
+            <Animated.View
+              className="absolute inset-0 z-10 rounded-t-4xl bg-popover"
+              exiting={animation(FadeOut)}
+            >
+              <Loading className="bg-popover" />
+            </Animated.View>
+          )}
+        </View>
+        <View
+          className="border-border border-x bg-popover"
+          style={platformLayout.bottomSpacerStyle}
+        />
+      </KeyboardAvoidingView>
+    </Animated.View>
+  );
+
+  if (!nativeModal) return open ? sheet : null;
 
   return (
     <Portal name={portalName}>
@@ -76,54 +122,7 @@ export const Sheet = ({
         transparent
         visible={open}
       >
-        <Animated.View
-          className="absolute inset-0"
-          entering={animation(FadeInDown)}
-          exiting={animation(FadeOutDown)}
-        >
-          <Animated.View
-            className="absolute inset-0 bg-background/90"
-            entering={animation(FadeIn)}
-            exiting={animation(FadeOut)}
-          >
-            <Pressable
-              className="h-full w-full cursor-default"
-              onPress={onDismiss}
-            />
-          </Animated.View>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="absolute inset-0 justify-end"
-            pointerEvents="box-none"
-            style={platformLayout.keyboardAvoidingStyle}
-          >
-            <View
-              className={cn(
-                'border-border-secondary bg-popover overflow-hidden rounded-t-4xl border-x border-t',
-                (fullHeight || constrainToViewport) && 'min-h-0',
-                className
-              )}
-              style={StyleSheet.flatten([
-                { borderCurve: 'continuous' },
-                heightStyle,
-              ])}
-            >
-              {children}
-              {loading && (
-                <Animated.View
-                  className="absolute inset-0 z-10 rounded-t-4xl bg-popover"
-                  exiting={animation(FadeOut)}
-                >
-                  <Loading className="bg-popover" />
-                </Animated.View>
-              )}
-            </View>
-            <View
-              className="border-border border-x bg-popover"
-              style={platformLayout.bottomSpacerStyle}
-            />
-          </KeyboardAvoidingView>
-        </Animated.View>
+        {sheet}
       </Modal>
     </Portal>
   );

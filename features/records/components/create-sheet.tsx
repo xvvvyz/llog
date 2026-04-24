@@ -7,7 +7,6 @@ export const RecordCreateSheet = () => {
 
   return (
     <Sheet
-      constrainToViewport
       loading={composer.loading}
       onDismiss={composer.onDismiss}
       open={composer.isOpen}
