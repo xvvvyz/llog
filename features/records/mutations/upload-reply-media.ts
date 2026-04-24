@@ -1,5 +1,5 @@
-import { PickedMediaAsset } from '@/features/media/lib/picked-media';
-import { uploadMedia } from '@/features/media/mutations/media';
+import { PickedMediaAsset } from '@/features/media/lib/picked';
+import { uploadMedia } from '@/features/media/mutations/requests';
 
 export const uploadReplyMedia = async ({
   asset,

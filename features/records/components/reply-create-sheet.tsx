@@ -1,4 +1,4 @@
-import { ReplyCreateSheetForm } from '@/features/records/components/reply-create-sheet-form';
+import { ReplyForm } from '@/features/records/components/reply-form';
 import { useReplyComposerModel } from '@/features/records/hooks/use-reply-composer-model';
 import { Sheet } from '@/ui/sheet';
 
@@ -14,7 +14,7 @@ export const ReplyCreateSheet = () => {
       portalName="reply-create"
       topInset={64}
     >
-      <ReplyCreateSheetForm
+      <ReplyForm
         attachmentCount={composer.mediaCount}
         hasContent={composer.hasContent}
         isBusy={composer.isBusy}

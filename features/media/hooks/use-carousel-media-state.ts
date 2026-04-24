@@ -1,4 +1,4 @@
-import { pruneStateMap } from '@/features/media/lib/carousel-helpers';
+import { pruneStateMap } from '@/features/media/lib/carousel';
 import { Media } from '@/features/media/types/media';
 import * as React from 'react';
 

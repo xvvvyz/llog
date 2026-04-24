@@ -1,4 +1,4 @@
-import { SortBy, isSortBy } from '@/features/logs/components/log-list-actions';
+import { SortBy, isSortBy } from '@/features/logs/components/list-actions';
 import * as audioPlaybackRateUtils from '@/features/media/lib/audio-playback-rate';
 import { db } from '@/lib/db';
 import { Emoji, isEmoji } from '@/types/emoji';

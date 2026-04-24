@@ -1,5 +1,5 @@
 import { auth, db } from '@/api/middleware/db';
-import { memberJoinedActivity } from '@/api/teams/helpers';
+import { memberJoinedActivity } from '@/api/teams/member-actions';
 import * as permissions from '@/features/teams/lib/permissions';
 import { Role } from '@/features/teams/types/role';
 import { id } from '@instantdb/admin';

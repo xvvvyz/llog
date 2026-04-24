@@ -1,7 +1,7 @@
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import * as React from 'react';
 
-export const useGridColumns = (columns: number[]) => {
+export const useBreakpointColumns = (columns: number[]) => {
   const breakpoints = useBreakpoints();
 
   return React.useMemo(() => {

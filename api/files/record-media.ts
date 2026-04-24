@@ -1,4 +1,4 @@
-import { canDeleteMedia, createMediaRoutes } from '@/api/files/media-routes';
+import * as mediaRouter from '@/api/files/media-router';
 import { HTTPException } from 'hono/http-exception';
 
 const requireRecordId = (recordId?: string) => {
@@ -6,7 +6,7 @@ const requireRecordId = (recordId?: string) => {
   return recordId;
 };
 
-const app = createMediaRoutes({
+const app = mediaRouter.createMediaRouter({
   basePath: '/records/:recordId/media',
   resolveDeleteTarget: async (c) => {
     const mediaId = c.req.param('mediaId');
@@ -37,7 +37,7 @@ const app = createMediaRoutes({
     return {
       canDelete:
         item?.record?.id === recordId &&
-        canDeleteMedia({
+        mediaRouter.canDeleteMedia({
           actorRole: item?.record?.log?.team?.roles?.[0]?.role,
           isAuthor: item?.record?.author?.user?.id === c.var.user.id,
         }),

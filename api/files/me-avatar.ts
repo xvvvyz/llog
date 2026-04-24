@@ -1,6 +1,6 @@
-import { storeImageDeliveryUrl, uploadImage } from '@/api/files/images';
-import { deleteMediaAssets } from '@/api/files/media-cleanup';
-import * as upload from '@/api/files/upload';
+import * as cloudflareImages from '@/api/files/cloudflare-images';
+import { deleteMediaAssets } from '@/api/files/delete-media-assets';
+import * as upload from '@/api/files/media-upload';
 import { db } from '@/api/middleware/db';
 import { fileLike } from '@/features/media/types/file-like';
 import { zValidator } from '@hono/zod-validator';
@@ -40,7 +40,7 @@ app.put(
 
     const mediaId = id();
 
-    const stored = await uploadImage({
+    const stored = await cloudflareImages.uploadImage({
       creator: c.var.user.id,
       env: c.env,
       file,
@@ -49,7 +49,7 @@ app.put(
     await c.var.db.transact(
       c.var.db.tx.media[mediaId]
         .update({
-          assetKey: storeImageDeliveryUrl(stored.deliveryUrl),
+          assetKey: cloudflareImages.storeImageDeliveryUrl(stored.deliveryUrl),
           type: 'image',
           uri: stored.deliveryUrl,
         })

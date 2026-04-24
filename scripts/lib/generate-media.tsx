@@ -7,13 +7,9 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import satori from 'satori';
 import * as startupImages from './apple-startup-images';
+import * as generatePlatforms from './generate-platforms';
 import { createLogger } from './logger';
 import { AppIcon } from './logo-mark';
-
-import {
-  AssetPlatformSelection,
-  formatAssetPlatforms,
-} from './generate-platforms';
 
 const { NATIVE_SPLASH_BACKGROUNDS } = require('../../theme/native.cjs') as {
   NATIVE_SPLASH_BACKGROUNDS: { light: string; dark: string };
@@ -304,7 +300,9 @@ const startupOutputPaths = startupImages.appleStartupImageSpecs.flatMap(
     )
 );
 
-export async function generateMedia(platforms: AssetPlatformSelection) {
+export async function generateMedia(
+  platforms: generatePlatforms.AssetPlatformSelection
+) {
   const { log, progress } = createLogger('generate-media');
 
   const selectedIconOutputs = [
@@ -344,7 +342,7 @@ export async function generateMedia(platforms: AssetPlatformSelection) {
 
   if (hasAllOutputs) {
     log(
-      `Assets unchanged for ${formatAssetPlatforms(platforms)}; skipping ${mediaOutputPaths.length} media outputs`
+      `Assets unchanged for ${generatePlatforms.formatAssetPlatforms(platforms)}; skipping ${mediaOutputPaths.length} media outputs`
     );
 
     log('Done');
@@ -352,7 +350,7 @@ export async function generateMedia(platforms: AssetPlatformSelection) {
   }
 
   log(
-    `Rendering ${selectedIconOutputs.length} app icons for ${formatAssetPlatforms(platforms)}`
+    `Rendering ${selectedIconOutputs.length} app icons for ${generatePlatforms.formatAssetPlatforms(platforms)}`
   );
 
   for (const [index, output] of selectedIconOutputs.entries()) {

@@ -1,6 +1,6 @@
-import { useTags } from '@/features/logs/queries/use-log-tags';
 import { useLogs } from '@/features/logs/queries/use-logs';
-import { SearchResultItem } from '@/features/search/components/search-result-item';
+import { useTags } from '@/features/logs/queries/use-tags';
+import { ResultItem } from '@/features/search/components/result-item';
 import { useSearch } from '@/features/search/hooks/use-search';
 import { SearchResult } from '@/features/search/types/search';
 import { useTeams } from '@/features/teams/queries/use-teams';
@@ -58,7 +58,7 @@ export default function Search() {
 
   const renderItem = React.useCallback(
     ({ item, index }: { item: SearchResult; index: number }) => (
-      <SearchResultItem
+      <ResultItem
         result={item}
         className={cn(
           index === 0 ? 'mt-0' : 'mt-3',

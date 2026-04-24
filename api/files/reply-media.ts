@@ -1,7 +1,7 @@
-import * as mediaRoutes from '@/api/files/media-routes';
+import * as mediaRouter from '@/api/files/media-router';
 import { HTTPException } from 'hono/http-exception';
 
-const requireReplyTarget = async (c: mediaRoutes.MediaContext) => {
+const requireReplyTarget = async (c: mediaRouter.MediaContext) => {
   const replyId = c.req.param('replyId');
   const recordId = c.req.param('recordId');
 
@@ -9,11 +9,11 @@ const requireReplyTarget = async (c: mediaRoutes.MediaContext) => {
     throw new HTTPException(400, { message: 'Reply not found' });
   }
 
-  await mediaRoutes.assertReplyRecord(c.var.db, replyId, recordId);
+  await mediaRouter.assertReplyRecord(c.var.db, replyId, recordId);
   return { recordId, replyId };
 };
 
-const app = mediaRoutes.createMediaRoutes({
+const app = mediaRouter.createMediaRouter({
   basePath: '/records/:recordId/replies/:replyId/media',
   resolveDeleteTarget: async (c) => {
     const replyId = c.req.param('replyId');
@@ -50,7 +50,7 @@ const app = mediaRoutes.createMediaRoutes({
       canDelete:
         item?.reply?.id === replyId &&
         item?.reply?.record?.id === recordId &&
-        mediaRoutes.canDeleteMedia({
+        mediaRouter.canDeleteMedia({
           actorRole: item?.reply?.record?.log?.team?.roles?.[0]?.role,
           isAuthor: item?.reply?.author?.user?.id === c.var.user.id,
         }),

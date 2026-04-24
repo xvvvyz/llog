@@ -1,5 +1,5 @@
 import { auth, db } from '@/api/middleware/db';
-import * as push from '@/api/push/helpers';
+import * as push from '@/api/push/web-push';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';

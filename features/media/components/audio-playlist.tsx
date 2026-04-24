@@ -1,6 +1,6 @@
 import { useAudioPlaylistPlayback } from '@/features/media/hooks/use-audio-playlist-playback';
 import { useUiAudioPlaybackRate } from '@/features/media/hooks/use-ui-audio-playback-rate';
-import type * as audioPlayerTypes from '@/features/media/types/audio-player.types';
+import type * as audioPlayerTypes from '@/features/media/types/audio-player';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';

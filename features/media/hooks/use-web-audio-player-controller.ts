@@ -1,7 +1,7 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import { useWebAudioPlayer } from '@/features/media/hooks/use-web-audio-player';
 import * as audioPlaybackRateUtils from '@/features/media/lib/audio-playback-rate';
-import type { AudioPlayerProps } from '@/features/media/types/audio-player.types';
+import type { AudioPlayerProps } from '@/features/media/types/audio-player';
 import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
 import * as React from 'react';

@@ -1,5 +1,5 @@
-import { RecordDetailView } from '@/features/records/components/record-detail-view';
-import { getLogHref } from '@/features/records/lib/record-detail-route';
+import { DetailView } from '@/features/records/components/detail-view';
+import { getLogHref } from '@/features/records/lib/route';
 import { useRecord } from '@/features/records/queries/use-record';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
@@ -50,7 +50,7 @@ export default function RecordDetailRoute() {
           </Button>
         </View>
       ) : (
-        <RecordDetailView
+        <DetailView
           pageClassName="min-h-0 overflow-hidden bg-popover"
           record={record}
           recordId={routeRecordId ?? ''}

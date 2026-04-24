@@ -1,7 +1,7 @@
-import { AudioPlaybackRateButton } from '@/features/media/components/audio-playback-rate-button';
 import { createAudioPlaylist } from '@/features/media/components/audio-playlist';
+import { PlaybackRateButton } from '@/features/media/components/playback-rate-button';
 import { useNativeAudioPlayerController } from '@/features/media/hooks/use-native-audio-player-controller';
-import type { AudioPlayerProps } from '@/features/media/types/audio-player.types';
+import type { AudioPlayerProps } from '@/features/media/types/audio-player';
 import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
@@ -62,7 +62,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
         {formatTime(isPlaying ? displayTime : playerDuration)}
       </Text>
       {showPlaybackRate && (
-        <AudioPlaybackRateButton
+        <PlaybackRateButton
           compact={compact}
           disabled={isDisabled}
           onPlaybackRateChange={handlePlaybackRateChange}

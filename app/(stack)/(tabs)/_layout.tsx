@@ -1,6 +1,6 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useActivities } from '@/features/activity/queries/use-activities';
-import { PENDING_INVITE_KEY } from '@/features/invites/lib/invite-storage';
+import { PENDING_INVITE_KEY } from '@/features/invites/lib/storage';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';

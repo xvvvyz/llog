@@ -1,12 +1,12 @@
-import { LogListActions } from '@/features/logs/components/log-list-actions';
-import { LogListEmptyState } from '@/features/logs/components/log-list-empty-state';
-import { LogListItem } from '@/features/logs/components/log-list-item';
+import { ListActions } from '@/features/logs/components/list-actions';
+import { ListEmptyState } from '@/features/logs/components/list-empty-state';
+import { ListItem } from '@/features/logs/components/list-item';
 import { createLog } from '@/features/logs/mutations/create-log';
-import { useTags } from '@/features/logs/queries/use-log-tags';
 import { useLogs } from '@/features/logs/queries/use-logs';
-import { TeamSwitcher } from '@/features/teams/components/team-switcher';
+import { useTags } from '@/features/logs/queries/use-tags';
+import { TeamSwitcher } from '@/features/teams/components/switcher';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
-import { useGridColumns as useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
+import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -90,7 +90,7 @@ export default function Index() {
         right={
           <View className="flex-row items-center">
             {breakpoints.md && !isEmpty && (
-              <LogListActions
+              <ListActions
                 className={cn(isEmpty && 'md:hidden')}
                 query={rawQuery}
                 selectedTagIds={selectedTagIds}
@@ -120,7 +120,7 @@ export default function Index() {
       {logs.isLoading && !hasLoadedRef.current ? (
         <Loading />
       ) : isEmpty ? (
-        <LogListEmptyState canManage={canManage} />
+        <ListEmptyState canManage={canManage} />
       ) : (
         <ScrollView
           className="flex-1"
@@ -129,7 +129,7 @@ export default function Index() {
           keyboardShouldPersistTaps="handled"
         >
           {!breakpoints.md && !isEmpty && (
-            <LogListActions
+            <ListActions
               className="p-1.5 pt-4 md:p-2"
               query={rawQuery}
               selectedTagIds={selectedTagIds}
@@ -158,7 +158,7 @@ export default function Index() {
                     columns === 6 && 'w-1/6'
                   )}
                 >
-                  <LogListItem
+                  <ListItem
                     className="p-1.5 md:p-2"
                     color={color}
                     id={item.id}

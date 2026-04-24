@@ -1,5 +1,5 @@
 import { clipboardToAssets } from '@/features/media/lib/clipboard-to-assets';
-import type { PickedMediaAsset } from '@/features/media/lib/picked-media';
+import type { PickedMediaAsset } from '@/features/media/lib/picked';
 import * as React from 'react';
 import { Platform } from 'react-native';
 

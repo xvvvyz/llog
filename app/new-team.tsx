@@ -1,4 +1,4 @@
-import { createTeam } from '@/features/teams/mutations/create-team';
+import { createTeam } from '@/features/teams/mutations/create';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
 import { UI } from '@/theme/ui';

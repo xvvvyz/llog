@@ -1,4 +1,4 @@
-import { PickedMediaAsset } from '@/features/media/lib/picked-media';
+import { PickedMediaAsset } from '@/features/media/lib/picked';
 
 export const clipboardToAssets = (items: DataTransferItemList) => {
   const files: File[] = [];

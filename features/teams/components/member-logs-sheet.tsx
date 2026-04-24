@@ -1,4 +1,4 @@
-import { toggleLogMember } from '@/features/logs/mutations/toggle-log-member';
+import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';

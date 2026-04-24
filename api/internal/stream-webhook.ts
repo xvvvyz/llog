@@ -1,5 +1,5 @@
-import { finalizeStreamVideo } from '@/api/files/media-processing';
-import { verifyStreamWebhook } from '@/api/files/stream';
+import { verifyStreamWebhook } from '@/api/files/cloudflare-stream';
+import { finalizeStreamVideo } from '@/api/files/stream-video-finalization';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 

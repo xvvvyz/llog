@@ -1,5 +1,5 @@
 import { useProfile } from '@/features/account/queries/use-profile';
-import { ActivityItem } from '@/features/activity/components/activity-item';
+import { Item } from '@/features/activity/components/item';
 import * as grouping from '@/features/activity/lib/group-activities';
 import { markActivitiesRead } from '@/features/activity/mutations/mark-activities-read';
 import { useActivities } from '@/features/activity/queries/use-activities';
@@ -40,7 +40,7 @@ export default function Activity() {
 
   const renderItem = React.useCallback(
     ({ item, index }: { item: grouping.GroupedActivity; index: number }) => (
-      <ActivityItem
+      <Item
         group={item}
         className={cn(
           'mt-4',

@@ -1,8 +1,8 @@
-import { LogDropdownMenu } from '@/features/logs/components/log-dropdown-menu';
-import { LogEmptyState } from '@/features/logs/components/log-empty-state';
-import { useLogColor } from '@/features/logs/hooks/use-log-color';
+import { DropdownMenu } from '@/features/logs/components/dropdown-menu';
+import { EmptyState } from '@/features/logs/components/empty-state';
+import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
-import { RecordOrReply } from '@/features/records/components/record-or-reply';
+import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { useRecords } from '@/features/records/queries/use-records';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
@@ -90,7 +90,7 @@ export default function Index() {
                 <Text className="text-contrast-foreground">Record</Text>
               </Button>
             )}
-            <LogDropdownMenu
+            <DropdownMenu
               contentClassName="mt-2"
               id={log.id}
               triggerWrapperClassName="md:-mr-4 md:ml-4"
@@ -106,14 +106,14 @@ export default function Index() {
                 icon={DotsThreeVertical}
                 size={24}
               />
-            </LogDropdownMenu>
+            </DropdownMenu>
           </View>
         }
       />
       {recordsLoading ? (
         <Loading />
       ) : !hasRecords ? (
-        <LogEmptyState logId={params.logId} />
+        <EmptyState logId={params.logId} />
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
@@ -131,7 +131,7 @@ export default function Index() {
             ) : null
           }
           renderItem={({ index, item }) => (
-            <RecordOrReply
+            <Entry
               logId={params.logId}
               numberOfLines={5}
               record={item}

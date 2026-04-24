@@ -1,16 +1,13 @@
-import { MediaLightbox } from '@/features/media/components/media-lightbox';
-import { useLightboxMedia } from '@/features/media/queries/use-lightbox-media';
+import { Lightbox } from '@/features/media/components/lightbox';
+import { useLightboxMedia } from '@/features/media/queries/use-lightbox-items';
+import * as recordRoutes from '@/features/records/lib/route';
+import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { Button } from '@/ui/button';
 import { Loading } from '@/ui/loading';
 import { Text } from '@/ui/text';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
-
-import {
-  getRecordDetailHref,
-  getRecordMediaHref,
-} from '@/features/records/lib/record-detail-route';
 
 const getRouteParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
@@ -30,6 +27,7 @@ export default function MediaLightboxRoute() {
   });
 
   const [visibleMediaId, setVisibleMediaId] = React.useState(routeMediaId);
+  const shouldShowLoadingIndicator = useDelayedTrue(isLoading);
   const addressMediaIdRef = React.useRef(routeMediaId);
   const shouldGoBackAfterCloseRef = React.useRef(false);
 
@@ -44,13 +42,20 @@ export default function MediaLightboxRoute() {
       return;
     }
 
-    router.replace(routeRecordId ? getRecordDetailHref(routeRecordId) : '/');
+    router.replace(
+      routeRecordId ? recordRoutes.getRecordDetailHref(routeRecordId) : '/'
+    );
   }, [routeRecordId]);
 
   const handleActiveMediaChange = React.useCallback(
     (nextMediaId: string) => {
       if (!routeRecordId || nextMediaId === addressMediaIdRef.current) return;
-      const nextHref = getRecordMediaHref(routeRecordId, nextMediaId);
+
+      const nextHref = recordRoutes.getRecordMediaHref(
+        routeRecordId,
+        nextMediaId
+      );
+
       addressMediaIdRef.current = nextMediaId;
 
       if (typeof window !== 'undefined') {
@@ -97,13 +102,13 @@ export default function MediaLightboxRoute() {
   if (isLoading) {
     return (
       <View className="absolute inset-0 bg-background">
-        <Loading />
+        {shouldShowLoadingIndicator ? <Loading /> : null}
       </View>
     );
   }
 
   return (
-    <MediaLightbox
+    <Lightbox
       media={media}
       mediaId={visibleMediaId}
       onActiveMediaChange={handleActiveMediaChange}

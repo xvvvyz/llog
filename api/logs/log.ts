@@ -1,4 +1,4 @@
-import { deleteMediaAssets } from '@/api/files/media-cleanup';
+import { deleteMediaAssets } from '@/api/files/delete-media-assets';
 import { db } from '@/api/middleware/db';
 import { deleteActivities } from '@/features/activity/lib/delete-activities';
 import * as permissions from '@/features/teams/lib/permissions';

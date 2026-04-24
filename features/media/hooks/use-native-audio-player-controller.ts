@@ -1,7 +1,7 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import * as audioPlaybackRate from '@/features/media/lib/audio-playback-rate';
 import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
-import type { AudioPlayerProps } from '@/features/media/types/audio-player.types';
+import type { AudioPlayerProps } from '@/features/media/types/audio-player';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as React from 'react';
 import type { LayoutChangeEvent } from 'react-native';

@@ -1,5 +1,5 @@
 import { assetToFileLike } from '@/features/media/lib/asset-to-file-like';
-import { PickedMediaAsset } from '@/features/media/lib/picked-media';
+import { PickedMediaAsset } from '@/features/media/lib/picked';
 import { api, apiOrThrow } from '@/lib/api';
 
 const uploadToStreamUrl = async ({

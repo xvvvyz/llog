@@ -1,6 +1,6 @@
-import * as storage from '@/features/invites/lib/invite-storage';
-import { redeemInviteLink } from '@/features/invites/mutations/redeem-invite-link';
-import { switchTeam } from '@/features/teams/mutations/switch-team';
+import * as storage from '@/features/invites/lib/storage';
+import { redeemInviteLink } from '@/features/invites/mutations/redeem-link';
+import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';

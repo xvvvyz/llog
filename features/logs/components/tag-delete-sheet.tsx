@@ -1,5 +1,5 @@
-import { deleteTag } from '@/features/logs/mutations/delete-log-tag';
-import { useTag } from '@/features/logs/queries/use-log-tag';
+import { deleteTag } from '@/features/logs/mutations/delete-tag';
+import { useTag } from '@/features/logs/queries/use-tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';

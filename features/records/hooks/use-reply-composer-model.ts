@@ -1,6 +1,6 @@
-import { useLogColor } from '@/features/logs/hooks/use-log-color';
-import { useMediaComposer } from '@/features/media/hooks/use-media-composer';
-import type { PickedMediaAsset } from '@/features/media/lib/picked-media';
+import { useLogColor } from '@/features/logs/hooks/use-color';
+import { useMediaComposer } from '@/features/media/hooks/use-composer';
+import type { PickedMediaAsset } from '@/features/media/lib/picked';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { deleteReplyMedia } from '@/features/records/mutations/delete-reply-media';

@@ -1,5 +1,5 @@
 import { auth, db } from '@/api/middleware/db';
-import { removeMember } from '@/api/teams/helpers';
+import { removeMember } from '@/api/teams/member-actions';
 import * as permissions from '@/features/teams/lib/permissions';
 import { Role } from '@/features/teams/types/role';
 import { zValidator } from '@hono/zod-validator';
