@@ -40,6 +40,7 @@ export const ResultLogCard = ({
               <View key={profile.id} className={cn(index > 0 && '-ml-[8px]')}>
                 <Avatar
                   avatar={profile.uri}
+                  className="border-border-secondary border"
                   id={profile.id}
                   seedId={profile.avatarSeedId}
                   size={18}

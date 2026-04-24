@@ -43,6 +43,7 @@ export const EntryCard = ({
       <View className="flex-row p-4 pb-0 gap-3 items-start">
         <Avatar
           avatar={record.author?.image?.uri}
+          className="border-border-secondary border"
           id={record.author?.id}
           seedId={record.author?.avatarSeedId}
           size={42}

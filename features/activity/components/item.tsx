@@ -75,11 +75,12 @@ export const Item = ({
       <View className="flex-row p-4 pb-0 gap-3 items-start">
         <Avatar
           avatar={actor?.image?.uri}
+          className="border-border-secondary border"
           id={actor?.id}
           seedId={actor?.avatarSeedId}
           size={32}
         />
-        <View className="flex-1">
+        <View className="flex-1 -mt-0.5">
           <View className="flex-row gap-3 items-baseline justify-between">
             <ItemName group={group} />
             <View className="flex-1 flex-row min-w-32 gap-1 items-center justify-end">

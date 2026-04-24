@@ -79,7 +79,6 @@ export const ListItem = ({
                   >
                     <Avatar
                       avatar={profile.image?.uri}
-                      className="opacity-90"
                       id={profile.id}
                       seedId={profile.avatarSeedId}
                       size={22}

@@ -193,6 +193,7 @@ export default function Account() {
                     </Text>
                     <Avatar
                       avatar={profile.image?.uri}
+                      className="border-border-secondary border"
                       id={profile.id}
                       seedId={profile.avatarSeedId}
                       size={42}

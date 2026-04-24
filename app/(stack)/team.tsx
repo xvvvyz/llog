@@ -216,6 +216,7 @@ export default function Team() {
                       </Text>
                       <Avatar
                         avatar={team.image?.uri}
+                        className="border-border-secondary border"
                         fallback="gradient"
                         id={team.id}
                         size={42}
@@ -245,6 +246,7 @@ export default function Team() {
                   <Label className="p-0 shrink-0">Avatar</Label>
                   <Avatar
                     avatar={team.image?.uri}
+                    className="border-border-secondary border"
                     fallback="gradient"
                     id={team.id}
                     size={42}
@@ -386,6 +388,7 @@ export default function Team() {
                     <View className="flex-1 flex-row gap-3 items-center">
                       <Avatar
                         avatar={profile?.image?.uri}
+                        className="border-border-secondary border"
                         id={profile?.id}
                         seedId={profile?.avatarSeedId}
                         size={32}

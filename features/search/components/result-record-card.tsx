@@ -34,12 +34,13 @@ export const ResultRecordCard = ({
           {result.author && (
             <Avatar
               avatar={result.author.image?.uri}
+              className="border-border-secondary border"
               id={result.author.id}
               seedId={result.author.avatarSeedId}
               size={32}
             />
           )}
-          <View className="flex-1">
+          <View className="flex-1 -mt-0.5">
             <View className="flex-row gap-2 items-baseline justify-between">
               {result.author && (
                 <Text

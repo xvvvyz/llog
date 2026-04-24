@@ -197,6 +197,7 @@ export default function Layout() {
           tabBarIcon: () => (
             <Avatar
               avatar={profile.image?.uri}
+              className="border-border-secondary border"
               id={profile.id}
               seedId={profile.avatarSeedId}
               size={breakpoints.md ? 36 : 25}

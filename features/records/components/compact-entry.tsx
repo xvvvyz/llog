@@ -35,6 +35,7 @@ export const CompactEntry = ({
       <View className="flex-row gap-3">
         <Avatar
           avatar={record.author?.image?.uri}
+          className="border-border-secondary border"
           id={record.author?.id}
           seedId={record.author?.avatarSeedId}
           size={42}
