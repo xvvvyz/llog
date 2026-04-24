@@ -12,7 +12,7 @@
     "dev:ios": "bunx concurrently --raw 'bun metro:ios' 'bun worker'",
     "doc": "bunx expo-doctor",
     "format": "bun scripts/format.ts",
-    "generate:assets": "bun scripts/generate-assets.ts",
+    "generate:assets": "bun scripts/assets.ts",
     "generate:vapid": "bunx @pushforge/builder vapid",
     "lint": "expo lint && tsc --noEmit",
     "metro": "expo start --offline",

@@ -1,4 +1,4 @@
-// used by @/scripts/generate-theme.ts to generate other theme files
+// used by @/scripts/assets.ts to generate other theme files
 
 export const COLORS = Object.freeze({
   light: {
