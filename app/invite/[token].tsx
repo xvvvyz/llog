@@ -14,8 +14,7 @@ import { Page } from '@/ui/page';
 import { Text } from '@/ui/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { ArrowRight } from 'phosphor-react-native/lib/module/icons/ArrowRight';
-import { WarningCircle } from 'phosphor-react-native/lib/module/icons/WarningCircle';
+import { ArrowRight, WarningCircle } from 'phosphor-react-native';
 import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -39,7 +38,7 @@ const renderLogNames = (names: string[]) =>
   names.map((name, i) => (
     <React.Fragment key={`${name}-${i}`}>
       {i > 0 ? (i === names.length - 1 ? ' and ' : ', ') : null}
-      <Text className="text-foreground font-medium">{name}</Text>
+      <Text className="font-medium text-foreground">{name}</Text>
     </React.Fragment>
   ));
 
@@ -56,7 +55,6 @@ export default function InviteLink() {
 
   React.useEffect(() => {
     if (!token) return;
-
     let cancelled = false;
 
     void (async () => {
@@ -66,18 +64,11 @@ export default function InviteLink() {
         );
 
         const data = await response.json();
-
-        if (!cancelled) {
-          setLinkInfo(data);
-        }
+        if (!cancelled) setLinkInfo(data);
       } catch {
-        if (!cancelled) {
-          setLinkInfo({ isValid: false });
-        }
+        if (!cancelled) setLinkInfo({ isValid: false });
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       }
     })();
 
@@ -99,9 +90,7 @@ export default function InviteLink() {
         storage.PENDING_INVITE_AUTO_JOIN_KEY
       );
 
-      if (!cancelled) {
-        setShouldResumeAcceptedInvite(pendingToken === token);
-      }
+      if (!cancelled) setShouldResumeAcceptedInvite(pendingToken === token);
     })();
 
     return () => {
@@ -160,9 +149,7 @@ export default function InviteLink() {
     if (shouldAutoJoin) handleJoin();
   }, [shouldAutoJoin, handleJoin]);
 
-  if (!token) {
-    return <Redirect href="/" />;
-  }
+  if (!token) return <Redirect href="/" />;
 
   if (
     isLoading ||
@@ -178,8 +165,8 @@ export default function InviteLink() {
   }
 
   return (
-    <Page className="items-center justify-center p-6">
-      <View className="flex-1 items-center justify-center gap-8 px-3 py-8">
+    <Page className="p-6 items-center justify-center">
+      <View className="flex-1 px-3 py-8 gap-8 items-center justify-center">
         {linkInfo?.isValid &&
         linkInfo.members &&
         linkInfo.members.length > 0 ? (
@@ -201,7 +188,7 @@ export default function InviteLink() {
               </View>
             ))}
             {linkInfo.members.length > 4 && (
-              <Text className="ml-3 text-sm font-medium">
+              <Text className="ml-3 font-medium text-sm">
                 +{linkInfo.members.length - 4}
               </Text>
             )}
@@ -209,7 +196,7 @@ export default function InviteLink() {
         ) : (
           <Icon className="text-destructive" icon={WarningCircle} size={64} />
         )}
-        <Text className="text-muted-foreground mt-2 text-center">
+        <Text className="mt-2 text-center text-muted-foreground">
           {linkInfo?.isValid
             ? linkInfo.logNames && linkInfo.logNames.length > 0
               ? `You\u2019ve been invited to join the `
@@ -227,7 +214,7 @@ export default function InviteLink() {
           {linkInfo?.isValid &&
             !(linkInfo.logNames && linkInfo.logNames.length > 0) && (
               <>
-                <Text className="text-foreground font-medium">
+                <Text className="font-medium text-foreground">
                   {linkInfo.teamName}
                 </Text>
                 .
@@ -236,6 +223,8 @@ export default function InviteLink() {
         </Text>
         <Button
           disabled={isRedeeming}
+          variant={linkInfo?.isValid ? 'default' : 'secondary'}
+          wrapperClassName="mt-4"
           onPress={
             linkInfo?.isValid
               ? auth.user
@@ -243,8 +232,6 @@ export default function InviteLink() {
                 : handleSignIn
               : () => router.replace('/')
           }
-          variant={linkInfo?.isValid ? 'default' : 'secondary'}
-          wrapperClassName="mt-4"
         >
           {isRedeeming ? (
             <>
@@ -255,14 +242,14 @@ export default function InviteLink() {
             <>
               <Text>Let{'\u2019'}s go</Text>
               <Icon
+                className="-mr-0.5 text-contrast-foreground"
                 icon={ArrowRight}
-                className="text-contrast-foreground -mr-0.5"
               />
             </>
           ) : (
             <>
               <Text>Oh well</Text>
-              <Icon icon={ArrowRight} className="-mr-0.5" />
+              <Icon className="-mr-0.5" icon={ArrowRight} />
             </>
           )}
         </Button>

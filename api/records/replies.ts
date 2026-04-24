@@ -15,12 +15,7 @@ app.post(
   '/:recordId/replies/:replyId/publish',
   db(),
   auth(),
-  zValidator(
-    'json',
-    z.object({
-      text: z.string().max(10240),
-    })
-  ),
+  zValidator('json', z.object({ text: z.string().max(10240) })),
   async (c) => {
     const user = c.var.user!;
     const replyId = c.req.param('replyId');
@@ -36,43 +31,29 @@ app.post(
       replies: {
         $: { where: { id: replyId } },
         author: {
-          $: { fields: ['id', 'name'] as ['id', 'name'] },
-          user: { $: { fields: ['id'] as ['id'] } },
+          $: { fields: ['id', 'name'] },
+          user: { $: { fields: ['id'] } },
         },
-        media: { $: { fields: ['id'] as ['id'] } },
+        media: { $: { fields: ['id'] } },
         record: {
-          $: { fields: ['id'] as ['id'] },
+          $: { fields: ['id'] },
           log: {
-            $: { fields: ['id', 'name'] as ['id', 'name'] },
+            $: { fields: ['id', 'name'] },
             profiles: {
               user: {
-                $: { fields: ['id'] as ['id'] },
+                $: { fields: ['id'] },
                 subscriptions: {
-                  $: {
-                    fields: ['id', 'endpoint', 'subscription'] as [
-                      'id',
-                      'endpoint',
-                      'subscription',
-                    ],
-                  },
+                  $: { fields: ['id', 'endpoint', 'subscription'] },
                 },
               },
             },
             team: {
               roles: {
-                $: {
-                  fields: ['id', 'role', 'userId'] as ['id', 'role', 'userId'],
-                },
+                $: { fields: ['id', 'role', 'userId'] },
                 user: {
-                  $: { fields: ['id'] as ['id'] },
+                  $: { fields: ['id'] },
                   subscriptions: {
-                    $: {
-                      fields: ['id', 'endpoint', 'subscription'] as [
-                        'id',
-                        'endpoint',
-                        'subscription',
-                      ],
-                    },
+                    $: { fields: ['id', 'endpoint', 'subscription'] },
                   },
                 },
               },
@@ -127,11 +108,7 @@ app.post(
         text: trimmedText,
       }),
       c.var.db.tx.activities[id()]
-        .update({
-          type: 'reply_posted',
-          date: now,
-          teamId: reply.teamId,
-        })
+        .update({ type: 'reply_posted', date: now, teamId: reply.teamId })
         .link({
           actor: reply.author.id,
           team: reply.teamId,
@@ -174,14 +151,11 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
       $: { where: { id: replyId } },
       author: { user: { $: { fields: ['id'] } } },
       record: {
-        $: { fields: ['id'] as ['id'] },
+        $: { fields: ['id'] },
         log: {
           team: {
             roles: {
-              $: {
-                fields: ['role'] as ['role'],
-                where: { userId: c.var.user.id },
-              },
+              $: { fields: ['role'], where: { userId: c.var.user.id } },
             },
           },
         },
@@ -202,9 +176,7 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
       isAuthor: reply.author?.user?.id === c.var.user.id,
     });
 
-  if (!canDelete) {
-    throw new HTTPException(403, { message: 'Forbidden' });
-  }
+  if (!canDelete) throw new HTTPException(403, { message: 'Forbidden' });
 
   const mediaToDelete: Array<{
     assetKey?: string | null;

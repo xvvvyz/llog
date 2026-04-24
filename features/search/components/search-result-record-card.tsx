@@ -29,8 +29,8 @@ export const SearchResultRecordCard = ({
 
   return (
     <Pressable className={className} onPress={onPress}>
-      <Card className="gap-3 p-4">
-        <View className="flex-row items-start gap-3">
+      <Card className="p-4 gap-3">
+        <View className="flex-row gap-3 items-start">
           {result.author && (
             <Avatar
               avatar={result.author.image?.uri}
@@ -40,30 +40,30 @@ export const SearchResultRecordCard = ({
             />
           )}
           <View className="flex-1">
-            <View className="flex-row items-baseline justify-between gap-2">
+            <View className="flex-row gap-2 items-baseline justify-between">
               {result.author && (
                 <Text
-                  className="shrink text-sm leading-tight font-medium"
+                  className="font-medium leading-tight text-sm shrink"
                   numberOfLines={1}
                 >
                   {result.author.name}
                 </Text>
               )}
               {result.logName && (
-                <View className="min-w-32 flex-1 flex-row items-baseline justify-end gap-1">
+                <View className="flex-1 flex-row min-w-32 gap-1 items-baseline justify-end">
                   <Text
-                    className="text-muted-foreground shrink-0 text-xs leading-tight"
+                    className="leading-tight text-muted-foreground text-xs shrink-0"
                     numberOfLines={1}
                   >
                     {result.type === 'reply' ? 'Reply in' : 'Record in'}
                   </Text>
-                  <View className="shrink flex-row items-center gap-1">
+                  <View className="flex-row gap-1 items-center shrink">
                     <View
-                      className="size-2.5 shrink-0 rounded-[2px]"
+                      className="size-2.5 rounded-[2px] shrink-0"
                       style={{ backgroundColor: logColor?.default }}
                     />
                     <Text
-                      className="text-muted-foreground shrink text-xs leading-tight"
+                      className="leading-tight text-muted-foreground text-xs shrink"
                       numberOfLines={1}
                     >
                       {result.logName}
@@ -73,7 +73,7 @@ export const SearchResultRecordCard = ({
               )}
             </View>
             {result.date && (
-              <Text className="text-muted-foreground text-xs leading-tight">
+              <Text className="leading-tight text-muted-foreground text-xs">
                 {formatDate(result.date)}
               </Text>
             )}
@@ -81,7 +81,7 @@ export const SearchResultRecordCard = ({
         </View>
         {!!displayText && (
           <SearchResultHighlightedText
-            className="text-muted-foreground text-sm leading-tight"
+            className="leading-tight text-muted-foreground text-sm"
             highlightClassName="text-sm leading-tight font-medium text-foreground"
             numberOfLines={2}
             terms={result.terms}

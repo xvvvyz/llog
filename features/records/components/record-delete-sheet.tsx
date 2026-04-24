@@ -16,6 +16,10 @@ export const RecordDeleteSheet = () => {
   return (
     <DestructiveConfirmSheet
       isPending={isPending}
+      onDismiss={() => sheetManager.close('record-delete')}
+      open={open}
+      portalName="record-delete"
+      title="Delete record?"
       onConfirm={async () => {
         setIsPending(true);
         const context = sheetManager.getContext('record-delete');
@@ -33,10 +37,6 @@ export const RecordDeleteSheet = () => {
           throw error;
         }
       }}
-      onDismiss={() => sheetManager.close('record-delete')}
-      open={open}
-      portalName="record-delete"
-      title="Delete record?"
     />
   );
 };

@@ -55,7 +55,6 @@ export const useWebAudioPlayer = (uri: string) => {
     setLoaded(false);
     setPlaying(false);
     setDuration(0);
-
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('canplay', onCanPlay);
     audio.addEventListener('durationchange', onDurationChange);
@@ -63,7 +62,6 @@ export const useWebAudioPlayer = (uri: string) => {
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('error', onError);
-
     audio.load();
 
     if (audio.readyState >= 1) {

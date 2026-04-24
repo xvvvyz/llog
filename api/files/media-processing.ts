@@ -18,16 +18,11 @@ export const finalizeStreamVideo = async ({
   const adminDb = getAdminDb(env);
 
   const { media } = await adminDb.query({
-    media: {
-      $: { where: { assetKey: streamUid } },
-    },
+    media: { $: { where: { assetKey: streamUid } } },
   });
 
   const item = media[0];
-
-  if (!item?.id) {
-    return;
-  }
+  if (!item?.id) return;
 
   try {
     if (!hlsUri) {

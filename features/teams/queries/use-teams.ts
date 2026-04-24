@@ -9,9 +9,7 @@ export const useTeams = () => {
       ? {
           roles: {
             $: { where: { userId: auth.user.id } },
-            team: {
-              image: {},
-            },
+            team: { image: {} },
           },
         }
       : null

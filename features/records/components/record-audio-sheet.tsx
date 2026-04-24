@@ -22,7 +22,6 @@ export const RecordAudioSheet = () => {
   const [isUploading, setIsUploading] = React.useState(false);
   const sheetManager = useSheetManager();
   const recorder = useAudioRecorder();
-
   const draftId = sheetManager.getId('record-audio');
   const rawContext = sheetManager.getContext('record-audio');
 
@@ -82,7 +81,6 @@ export const RecordAudioSheet = () => {
 
   const handleCancel = React.useCallback(async () => {
     if (isUploading) return;
-
     isClosingRef.current = true;
 
     try {
@@ -114,11 +112,7 @@ export const RecordAudioSheet = () => {
           recordId: audioContext.recordId,
         });
       } else {
-        await uploadRecordMedia({
-          audioUri: uri,
-          duration,
-          recordId: draftId,
-        });
+        await uploadRecordMedia({ audioUri: uri, duration, recordId: draftId });
       }
 
       recorder.reset();
@@ -128,16 +122,12 @@ export const RecordAudioSheet = () => {
 
   const handleSave = React.useCallback(async () => {
     if (isUploading) return;
-
     isClosingRef.current = true;
     setIsUploading(true);
 
     try {
       let uri = recorder.uri;
-
-      if (recorder.isRecording) {
-        uri = await recorder.stop();
-      }
+      if (recorder.isRecording) uri = await recorder.stop();
 
       if (!uri) {
         isClosingRef.current = false;

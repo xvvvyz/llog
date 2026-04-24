@@ -12,20 +12,13 @@ function extractThemeColor(mode, key) {
     new RegExp(`${mode}:\\s*\\{[\\s\\S]*?${key}:\\s*'([^']+)'`)
   );
 
-  if (!match) {
-    throw new Error(`Could not find ${mode}.${key} in theme/base.ts`);
-  }
-
+  if (!match) throw new Error(`Could not find ${mode}.${key} in theme/base.ts`);
   return match[1];
 }
 
 function parseOKLCH(oklchStr) {
   const match = oklchStr.match(/oklch\(([^)]+)\)/);
-
-  if (!match) {
-    throw new Error(`Invalid OKLCH color: ${oklchStr}`);
-  }
-
+  if (!match) throw new Error(`Invalid OKLCH color: ${oklchStr}`);
   const [l, c, h] = match[1].split('/')[0].trim().split(/\s+/).map(Number);
   return { l, c, h };
 }
@@ -44,7 +37,4 @@ const NATIVE_ADAPTIVE_ICON_BACKGROUND = oklchToHex(
   extractThemeColor('light', 'contrastForeground')
 );
 
-module.exports = {
-  NATIVE_ADAPTIVE_ICON_BACKGROUND,
-  NATIVE_SPLASH_BACKGROUNDS,
-};
+module.exports = { NATIVE_ADAPTIVE_ICON_BACKGROUND, NATIVE_SPLASH_BACKGROUNDS };

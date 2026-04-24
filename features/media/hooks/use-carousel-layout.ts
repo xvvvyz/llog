@@ -51,17 +51,13 @@ export const useCarouselLayout = ({
         .manualActivation(true)
         .onTouchesDown((event) => {
           'worklet';
-
           const touch = event.allTouches[0];
-
           if (!touch || event.numberOfTouches !== 1) return;
-
           gestureStartX.value = touch.absoluteX;
           gestureStartY.value = touch.absoluteY;
         })
         .onTouchesMove((event, stateManager) => {
           'worklet';
-
           const touch = event.allTouches[0];
 
           if (!touch || event.numberOfTouches !== 1) {
@@ -103,18 +99,11 @@ export const useCarouselLayout = ({
       (previousLayout.width !== contentWidth ||
         previousLayout.height !== contentHeight);
 
-    previousLayoutRef.current = {
-      height: contentHeight,
-      width: contentWidth,
-    };
-
+    previousLayoutRef.current = { height: contentHeight, width: contentWidth };
     if (!hasLayoutChanged) return;
 
     requestAnimationFrame(() => {
-      carouselRef.current?.scrollTo({
-        animated: false,
-        index: activeIndex,
-      });
+      carouselRef.current?.scrollTo({ animated: false, index: activeIndex });
     });
   }, [activeIndex, carouselRef, contentHeight, contentWidth]);
 

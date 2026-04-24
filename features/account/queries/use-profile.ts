@@ -5,16 +5,10 @@ export const useProfile = () => {
 
   const { data, isLoading } = db.useQuery(
     auth.user
-      ? {
-          profiles: {
-            $: { where: { user: auth.user.id } },
-            image: {},
-          },
-        }
+      ? { profiles: { $: { where: { user: auth.user.id } }, image: {} } }
       : null
   );
 
   const profile = data?.profiles?.[0];
-
   return { ...profile, isLoading };
 };

@@ -51,12 +51,7 @@ export const Image = ({
     }
   }
 
-  const src = useFileUriToSrc(uri, {
-    quality,
-    targetHeight,
-    targetWidth,
-  });
-
+  const src = useFileUriToSrc(uri, { quality, targetHeight, targetWidth });
   const source = src ? { uri: src } : undefined;
   const resolvedClassName = useResolveClassNames(className ?? '');
 

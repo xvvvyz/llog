@@ -3,11 +3,7 @@ import { usePathname } from 'expo-router';
 import * as React from 'react';
 import { Keyboard } from 'react-native';
 
-type SheetStackItem = {
-  context?: string;
-  id?: string;
-  name: SheetName;
-};
+type SheetStackItem = { context?: string; id?: string; name: SheetName };
 
 const SheetContext = React.createContext<{
   close: (name: SheetName) => void;

@@ -10,7 +10,7 @@ import type { ListHandle } from '@/ui/list';
 import { List } from '@/ui/list';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
-import { ArrowBendDownLeft } from 'phosphor-react-native/lib/module/icons/ArrowBendDownLeft';
+import { ArrowBendDownLeft } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -24,7 +24,6 @@ export const RecordDetailView = ({
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const listRef = React.useRef<ListHandle>(null);
   const sheetManager = useSheetManager();
-
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
   const contentPaddingBottom = 104;
@@ -45,11 +44,7 @@ export const RecordDetailView = ({
     const frame = requestAnimationFrame(() => {
       if (!listRef.current) return;
       listRef.current.scrollToEnd({ animated: true });
-
-      scroll.clearPostSubmitScroll({
-        id: recordId,
-        scope: 'record',
-      });
+      scroll.clearPostSubmitScroll({ id: recordId, scope: 'record' });
     });
 
     return () => cancelAnimationFrame(frame);
@@ -68,36 +63,36 @@ export const RecordDetailView = ({
           contentContainerClassName="mx-auto w-full max-w-lg pt-4 web:pt-[45px]"
           data={data}
           estimatedItemSize={100}
-          keyExtractor={(item) => item.id ?? ''}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
+          keyExtractor={(item) => item.id ?? ''}
+          listRef={listRef}
+          maintainScrollAtEnd
+          maintainVisibleContentPosition
+          wrapperClassName="flex-1"
           ListFooterComponent={
             contentPaddingBottom > 0 ? (
               <View style={{ height: contentPaddingBottom }} />
             ) : null
           }
-          listRef={listRef}
-          maintainScrollAtEnd
-          maintainVisibleContentPosition
           renderItem={({ index, item }) => (
             <RecordOrReply
+              logId={record.log?.id}
+              record={item}
+              recordId={recordId}
+              replyId={index > 0 ? item.id : undefined}
+              variant="compact"
               className={cn(
                 'border-t-0',
                 index === data.length - 1 && 'mb-4 md:mb-8'
               )}
-              replyId={index > 0 ? item.id : undefined}
-              logId={record.log?.id}
-              record={item}
-              recordId={recordId}
-              variant="compact"
             />
           )}
-          wrapperClassName="flex-1"
         />
       )}
-      <View className="absolute inset-x-0 bottom-8 mx-auto w-full max-w-lg items-end px-4">
+      <View className="absolute bottom-8 inset-x-0 mx-auto max-w-lg w-full px-4 items-end">
         <Button
-          className="web:hover:opacity-90 size-14 rounded-full active:opacity-90"
+          className="size-14 rounded-full active:opacity-90 web:hover:opacity-90"
           onPress={() => sheetManager.open('reply-create', recordId)}
           size="icon"
           style={{ backgroundColor: logColor?.default }}

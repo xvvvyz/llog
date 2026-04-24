@@ -6,9 +6,7 @@ import { UI } from '@/theme/ui';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { SquaresFour } from 'phosphor-react-native/lib/module/icons/SquaresFour';
-import { UserMinus } from 'phosphor-react-native/lib/module/icons/UserMinus';
+import { Check, SquaresFour, UserMinus } from 'phosphor-react-native';
 import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -101,16 +99,16 @@ export const TeamMemberMenuContent = ({
 
         return (
           <Menu.Item
+            key={role}
             closeOnPress={false}
             disabled={isDisabled || !!loadingRole}
-            key={role}
             onPress={() => handleRolePress(role)}
           >
             <View className="size-5 items-center justify-center">
               {loadingRole === role ? (
                 <ActivityIndicator
-                  size={16}
                   color={UI[colorScheme].mutedForeground}
+                  size={16}
                 />
               ) : (
                 memberRole === role && <Icon className="-mr-1" icon={Check} />

@@ -18,15 +18,15 @@ export const Header = ({
   return (
     <View style={{ paddingTop: insets.top }}>
       <View
-        className="flex-row items-center justify-between px-4 md:px-8"
+        className="flex-row px-4 items-center justify-between md:px-8"
         style={{ height }}
       >
         <View>{left}</View>
         {title ? (
-          <View className="absolute right-20 left-20 flex-1 justify-center md:static">
+          <View className="absolute left-20 right-20 flex-1 justify-center md:static">
             {typeof title === 'string' ? (
               <Text
-                className="android:text-lg web:md:text-xl text-center font-medium md:text-left"
+                className="font-medium text-center android:text-lg md:text-left web:md:text-xl"
                 numberOfLines={1}
               >
                 {title}

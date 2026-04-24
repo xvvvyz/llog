@@ -11,9 +11,7 @@ import { UI } from '@/theme/ui';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
-import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
+import { Check, Copy, QrCode } from 'phosphor-react-native';
 import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -31,7 +29,6 @@ export const LogDropdownMenuInviteItems = ({ id }: { id?: string }) => {
 
   const getOrCreateLink = React.useCallback(async () => {
     if (!log.teamId || !id) return null;
-
     const existing = findMemberInviteByLogs(invites, [id]);
     if (existing) return existing.token;
 
@@ -77,8 +74,8 @@ export const LogDropdownMenuInviteItems = ({ id }: { id?: string }) => {
         {loadingAction === 'copy' ? (
           <View className="size-5 items-center justify-center">
             <ActivityIndicator
-              size={16}
               color={UI[colorScheme].mutedForeground}
+              size={16}
             />
           </View>
         ) : (
@@ -92,8 +89,8 @@ export const LogDropdownMenuInviteItems = ({ id }: { id?: string }) => {
         {loadingAction === 'qr' ? (
           <View className="size-5 items-center justify-center">
             <ActivityIndicator
-              size={16}
               color={UI[colorScheme].mutedForeground}
+              size={16}
             />
           </View>
         ) : (

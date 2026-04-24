@@ -36,7 +36,7 @@ export default function SignIn() {
       });
 
     return (
-      <Page className="mx-auto w-full max-w-sm justify-center p-6">
+      <Page className="mx-auto max-w-sm w-full p-6 justify-center">
         <Label>Email address</Label>
         <Input
           autoComplete="email"
@@ -79,7 +79,7 @@ export default function SignIn() {
     });
 
   return (
-    <Page className="mx-auto w-full max-w-sm justify-center p-6">
+    <Page className="mx-auto max-w-sm w-full p-6 justify-center">
       <Label>
         Enter the code sent to <Text className="font-medium">{email}</Text>
       </Label>

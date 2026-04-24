@@ -11,12 +11,7 @@ export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
     auth.user && resolvedTeamId
       ? {
           roles: {
-            $: {
-              where: {
-                team: resolvedTeamId,
-                userId: auth.user.id,
-              },
-            },
+            $: { where: { team: resolvedTeamId, userId: auth.user.id } },
           },
         }
       : null

@@ -17,19 +17,9 @@ export default function NewTeam() {
   const [rawName, setRawName] = React.useState('');
   const auth = db.useAuth();
   const { teams, isLoading } = useTeams();
-
-  if (!auth.isLoading && !auth.user) {
-    return <Redirect href="/sign-in" />;
-  }
-
-  if (!isLoading && teams.length > 0) {
-    return <Redirect href="/" />;
-  }
-
-  if (isLoading) {
-    return <Loading />;
-  }
-
+  if (!auth.isLoading && !auth.user) return <Redirect href="/sign-in" />;
+  if (!isLoading && teams.length > 0) return <Redirect href="/" />;
+  if (isLoading) return <Loading />;
   const name = rawName.trim();
   const isDisabled = !name || isTransitioning;
 
@@ -40,7 +30,7 @@ export default function NewTeam() {
     });
 
   return (
-    <Page className="mx-auto w-full max-w-sm justify-center p-6">
+    <Page className="mx-auto max-w-sm w-full p-6 justify-center">
       <Label>Create a team</Label>
       <Input
         autoFocus

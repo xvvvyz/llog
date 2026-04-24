@@ -45,9 +45,7 @@ export const isStandaloneWebApp = () =>
     window.navigator.standalone === true);
 
 export const getWebPushSupportState = (): webPushTypes.WebPushSupportState => {
-  if (typeof window === 'undefined') {
-    return 'unsupported';
-  }
+  if (typeof window === 'undefined') return 'unsupported';
 
   if (isIosWebDevice() && isSafariBrowser() && !isStandaloneWebApp()) {
     return 'ios-home-screen-required';
@@ -117,14 +115,8 @@ export const registerWebPushServiceWorker = async () => {
 };
 
 export const getWebPushState = async (): Promise<webPushTypes.WebPushState> => {
-  if (!isSupported()) {
-    return { status: 'unsupported' };
-  }
-
-  if (Notification.permission === 'denied') {
-    return { status: 'blocked' };
-  }
-
+  if (!isSupported()) return { status: 'unsupported' };
+  if (Notification.permission === 'denied') return { status: 'blocked' };
   const subscription = await getSubscription();
 
   return subscription && Notification.permission === 'granted'
@@ -134,14 +126,8 @@ export const getWebPushState = async (): Promise<webPushTypes.WebPushState> => {
 
 export const syncWebPushSubscription =
   async (): Promise<webPushTypes.WebPushState> => {
-    if (!isSupported()) {
-      return { status: 'unsupported' };
-    }
-
-    if (Notification.permission === 'denied') {
-      return { status: 'blocked' };
-    }
-
+    if (!isSupported()) return { status: 'unsupported' };
+    if (Notification.permission === 'denied') return { status: 'blocked' };
     const subscription = await getSubscription();
 
     if (!subscription || Notification.permission !== 'granted') {
@@ -149,36 +135,18 @@ export const syncWebPushSubscription =
     }
 
     const freshPermission = await Notification.requestPermission();
-
-    if (freshPermission === 'denied') {
-      return { status: 'blocked' };
-    }
-
-    if (freshPermission !== 'granted') {
-      return { status: 'disabled' };
-    }
-
+    if (freshPermission === 'denied') return { status: 'blocked' };
+    if (freshPermission !== 'granted') return { status: 'disabled' };
     await saveSubscription(subscription);
     return { endpoint: subscription.endpoint, status: 'enabled' };
   };
 
 export const enableWebPush = async () => {
-  if (!isSupported()) {
-    return { status: 'unsupported' };
-  }
-
+  if (!isSupported()) return { status: 'unsupported' };
   const permission = await Notification.requestPermission();
-
-  if (permission !== 'granted') {
-    return getWebPushState();
-  }
-
+  if (permission !== 'granted') return getWebPushState();
   const registration = await registerWebPushServiceWorker();
-
-  if (!registration) {
-    throw new Error('Failed to register the service worker.');
-  }
-
+  if (!registration) throw new Error('Failed to register the service worker.');
   let subscription = await registration.pushManager.getSubscription();
 
   if (!subscription) {

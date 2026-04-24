@@ -6,20 +6,15 @@ export type {
 } from '@/features/account/types/web-push';
 
 export const isIosWebDevice = () => false;
-
 export const isSafariBrowser = () => false;
-
 export const isStandaloneWebApp = () => false;
-
 export const registerWebPushServiceWorker = async () => null;
 
 export const getWebPushSupportState = (): webPushTypes.WebPushSupportState =>
   'unsupported';
 
 export const getWebPushState =
-  async (): Promise<webPushTypes.WebPushState> => ({
-    status: 'unsupported',
-  });
+  async (): Promise<webPushTypes.WebPushState> => ({ status: 'unsupported' });
 
 export const syncWebPushSubscription = async () => getWebPushState();
 
@@ -28,5 +23,4 @@ export const enableWebPush = async () => {
 };
 
 export const disableWebPush = async () => getWebPushState();
-
 export const detachWebPushSubscription = async () => {};

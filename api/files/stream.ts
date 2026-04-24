@@ -25,7 +25,6 @@ const readApiError = async (response: Response) => {
   try {
     const parsed = JSON.parse(text);
     const first = parsed?.errors?.[0];
-
     if (typeof first?.message === 'string') return first.message;
     if (typeof parsed?.message === 'string') return parsed.message;
   } catch {
@@ -42,7 +41,6 @@ const streamFetch = async <T>(
 ) => {
   const { accountId, apiToken } = getConfig(env);
   const headers = new Headers(init.headers);
-
   headers.set('Authorization', `Bearer ${apiToken}`);
 
   if (!headers.has('Content-Type') && init.body != null) {
@@ -54,12 +52,8 @@ const streamFetch = async <T>(
     headers,
   });
 
-  if (!response.ok) {
-    throw new Error(await readApiError(response));
-  }
-
+  if (!response.ok) throw new Error(await readApiError(response));
   if (response.status === 204) return null as T;
-
   const body = (await response.json()) as { result: T };
   return body.result;
 };
@@ -103,7 +97,6 @@ const parseWebhookSignature = (header: string) => {
 
   for (const part of parts) {
     const [key, value] = part.split('=', 2);
-
     if (key === 'time') time = value ?? '';
     if (key === 'sig1') sig = value ?? '';
   }
@@ -122,15 +115,10 @@ export const verifyStreamWebhook = async (
 ) => {
   const header = c.req.header('Webhook-Signature') ?? '';
   const secret = c.env.CLOUDFLARE_STREAM_WEBHOOK_SECRET;
-
   if (!header || !secret) return false;
-
   const { sig, time } = parseWebhookSignature(header);
-
   if (!sig || !time) return false;
-
   const timestamp = Number(time);
-
   if (!Number.isFinite(timestamp)) return false;
   if (Math.abs(Date.now() / 1000 - timestamp) > 5 * 60) return false;
 

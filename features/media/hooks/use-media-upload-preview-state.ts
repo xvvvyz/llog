@@ -37,7 +37,6 @@ export const useMediaUploadPreviewState = ({
     (inputAssets: pickedMedia.PickedMediaAsset[]) => {
       const assets = inputAssets;
       if (!assets.length) return;
-
       const mediaIds = assets.map(() => id());
       const baseOrder = mediaCount + pendingUploads.length;
 

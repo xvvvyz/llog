@@ -10,7 +10,6 @@ import { z } from 'zod/v4';
 
 type MediaKind = 'image' | 'audio' | 'video';
 type MultipartMediaKind = Exclude<MediaKind, 'video'>;
-
 const PENDING_STREAM_URI_PREFIX = 'stream-pending:';
 const MAX_STREAM_UPLOAD_DURATION_SECONDS = 36000;
 
@@ -95,20 +94,12 @@ const assertCanUploadToOwnedTarget = async ({
   if (linkField === 'record') {
     const { records } = await dbClient.query({
       records: {
-        $: {
-          fields: ['id'] as ['id'],
-          where: { id: recordId },
-        },
-        author: { user: { $: { fields: ['id'] as ['id'] } } },
+        $: { fields: ['id'], where: { id: recordId } },
+        author: { user: { $: { fields: ['id'] } } },
         log: {
           team: {
-            $: { fields: ['id'] as ['id'] },
-            roles: {
-              $: {
-                fields: ['id'] as ['id'],
-                where: { userId: creatorId },
-              },
-            },
+            $: { fields: ['id'] },
+            roles: { $: { fields: ['id'], where: { userId: creatorId } } },
           },
         },
       },
@@ -129,22 +120,14 @@ const assertCanUploadToOwnedTarget = async ({
 
   const { replies } = await dbClient.query({
     replies: {
-      $: {
-        fields: ['id'] as ['id'],
-        where: { id: linkId, record: recordId },
-      },
-      author: { user: { $: { fields: ['id'] as ['id'] } } },
+      $: { fields: ['id'], where: { id: linkId, record: recordId } },
+      author: { user: { $: { fields: ['id'] } } },
       record: {
-        $: { fields: ['id'] as ['id'] },
+        $: { fields: ['id'] },
         log: {
           team: {
-            $: { fields: ['id'] as ['id'] },
-            roles: {
-              $: {
-                fields: ['id'] as ['id'],
-                where: { userId: creatorId },
-              },
-            },
+            $: { fields: ['id'] },
+            roles: { $: { fields: ['id'], where: { userId: creatorId } } },
           },
         },
       },
@@ -236,12 +219,7 @@ export const uploadMedia = async ({
       .link({ [linkField]: linkId })
   );
 
-  return {
-    assetKey,
-    mediaId,
-    type,
-    uri,
-  };
+  return { assetKey, mediaId, type, uri };
 };
 
 export const createDirectVideoUploadDraft = async ({
@@ -289,11 +267,7 @@ export const createDirectVideoUploadDraft = async ({
       .link({ [linkField]: linkId })
   );
 
-  return {
-    mediaId,
-    streamUid: uid,
-    uploadURL,
-  };
+  return { mediaId, streamUid: uid, uploadURL };
 };
 
 export const mediaValidator = zValidator(

@@ -27,7 +27,7 @@ export const RecordOrReplyReactionsRow = ({
 }) => {
   return (
     <View className={cn('flex-row items-stretch', className)}>
-      <View className="flex-row flex-wrap items-center gap-1.5 self-center">
+      <View className="flex-row flex-wrap gap-1.5 items-center self-center">
         <EmojiPicker
           color={accentColor}
           logId={logId}
@@ -37,7 +37,7 @@ export const RecordOrReplyReactionsRow = ({
           teamId={record.teamId}
         />
         {!!record.reactions?.length && (
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row gap-2 items-center">
             <Reactions
               color={accentColor}
               logId={logId}
@@ -50,7 +50,7 @@ export const RecordOrReplyReactionsRow = ({
         )}
       </View>
       <RecordOrReplyDoubleTapReactionZone
-        className="-mt-3 -mb-3 pt-3 pb-3"
+        className="-mb-3 -mt-3 pb-3 pt-3"
         onDoubleTap={onDoubleTapReaction}
       />
       {trailing}

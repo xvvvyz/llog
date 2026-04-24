@@ -7,11 +7,7 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
-type InviteLog = {
-  color?: number | null;
-  id: string;
-  name: string;
-};
+type InviteLog = { color?: number | null; id: string; name: string };
 
 export const InviteLogsSheetContent = ({
   action,
@@ -49,10 +45,10 @@ export const InviteLogsSheetContent = ({
 
         return (
           <View
-            className="flex-row items-center justify-between py-2.5"
             key={log.id}
+            className="flex-row py-2.5 items-center justify-between"
           >
-            <View className="flex-row items-center gap-3">
+            <View className="flex-row gap-3 items-center">
               <View
                 className="size-4 rounded-md"
                 style={{ backgroundColor: color.default }}

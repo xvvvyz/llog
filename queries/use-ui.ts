@@ -9,12 +9,7 @@ export const useUi = () => {
 
   const { data, isLoading } = db.useQuery(
     auth.user
-      ? {
-          ui: {
-            $: { where: { user: auth.user.id } },
-            team: {},
-          },
-        }
+      ? { ui: { $: { where: { user: auth.user.id } }, team: {} } }
       : null
   );
 

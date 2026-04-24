@@ -33,7 +33,6 @@ export const useCarouselMediaState = ({
   const videoPlaybackIntentStateRef = React.useRef<Record<string, boolean>>({});
   const zoomedMediaStateRef = React.useRef<Record<string, boolean>>({});
   const zoomInteractionStateRef = React.useRef<Record<string, boolean>>({});
-
   const activeMediaId = media[activeIndexState]?.id;
 
   const isActiveNavigationLocked = activeMediaId
@@ -56,10 +55,7 @@ export const useCarouselMediaState = ({
   const setVideoPlaybackIntent = React.useCallback(
     (mediaId: string, shouldPlay: boolean) => {
       setVideoPlaybackIntentState((currentState) => {
-        if ((currentState[mediaId] ?? true) === shouldPlay) {
-          return currentState;
-        }
-
+        if ((currentState[mediaId] ?? true) === shouldPlay) return currentState;
         const nextState = { ...currentState, [mediaId]: shouldPlay };
         videoPlaybackIntentStateRef.current = nextState;
         return nextState;
@@ -110,11 +106,7 @@ export const useCarouselMediaState = ({
           return currentState;
         }
 
-        const nextState = {
-          ...currentState,
-          [mediaId]: nextIsZoomed,
-        };
-
+        const nextState = { ...currentState, [mediaId]: nextIsZoomed };
         zoomedMediaStateRef.current = nextState;
         return nextState;
       });
@@ -129,11 +121,7 @@ export const useCarouselMediaState = ({
           return currentState;
         }
 
-        const nextState = {
-          ...currentState,
-          [mediaId]: nextIsInteracting,
-        };
-
+        const nextState = { ...currentState, [mediaId]: nextIsInteracting };
         zoomInteractionStateRef.current = nextState;
         return nextState;
       });
@@ -154,7 +142,6 @@ export const useCarouselMediaState = ({
 
       const isZoomed = zoomedMediaStateRef.current[mediaId] ?? false;
       const isInteracting = zoomInteractionStateRef.current[mediaId] ?? false;
-
       if (!isZoomed && !isInteracting) return;
 
       setZoomResetTokens((currentState) => ({
@@ -164,24 +151,14 @@ export const useCarouselMediaState = ({
 
       setZoomedMediaState((currentState) => {
         if (!(currentState[mediaId] ?? false)) return currentState;
-
-        const nextState = {
-          ...currentState,
-          [mediaId]: false,
-        };
-
+        const nextState = { ...currentState, [mediaId]: false };
         zoomedMediaStateRef.current = nextState;
         return nextState;
       });
 
       setZoomInteractionState((currentState) => {
         if (!(currentState[mediaId] ?? false)) return currentState;
-
-        const nextState = {
-          ...currentState,
-          [mediaId]: false,
-        };
-
+        const nextState = { ...currentState, [mediaId]: false };
         zoomInteractionStateRef.current = nextState;
         return nextState;
       });

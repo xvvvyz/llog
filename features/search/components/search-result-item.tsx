@@ -17,12 +17,10 @@ export const SearchResultItem = ({
         router.push(`/${result.id}`);
         break;
       }
-
       case 'record': {
         router.setParams({ recordId: result.id });
         break;
       }
-
       case 'reply': {
         if (result.recordId) router.setParams({ recordId: result.recordId });
         break;

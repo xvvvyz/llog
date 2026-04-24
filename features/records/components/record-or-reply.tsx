@@ -37,12 +37,10 @@ export const RecordOrReply = ({
   const profile = useProfile();
   const sheetManager = useSheetManager();
   const ui = useUi();
-
   const { audioMedia, visualMedia } = useFilteredMedia(record.media || []);
 
   const handleDoubleTapReaction = React.useCallback(() => {
     if (!record.teamId) return;
-
     const emoji = ui.doubleTapEmoji;
 
     const existingReaction = record.reactions?.find(

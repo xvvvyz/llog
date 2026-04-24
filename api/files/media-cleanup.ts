@@ -4,10 +4,7 @@ import { deleteStreamVideo } from '@/api/files/stream';
 
 export const deleteMediaAssets = async (
   env: CloudflareEnv,
-  media: Array<{
-    assetKey?: string | null;
-    uri?: string | null;
-  }>
+  media: Array<{ assetKey?: string | null; uri?: string | null }>
 ) => {
   const r2Keys = [...new Set(media.flatMap((item) => getMediaR2Keys(item)))];
 

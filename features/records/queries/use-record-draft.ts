@@ -24,12 +24,7 @@ export const useRecordDraft = ({ logId }: { logId?: string }) => {
 
   React.useEffect(() => {
     if (isLoading || log.isLoading || record || !log.teamId) return;
-
-    createRecordDraft({
-      logId,
-      profileId: profile.id,
-      teamId: log.teamId,
-    });
+    createRecordDraft({ logId, profileId: profile.id, teamId: log.teamId });
   }, [isLoading, log.isLoading, log.teamId, logId, record, profile.id]);
 
   const media = record?.media ?? [];

@@ -28,7 +28,6 @@ export const useLoadNextPage = ({
   return React.useCallback(() => {
     if (!canLoadNextPage) return;
     if (requestedCountRef.current === itemCount) return;
-
     requestedCountRef.current = itemCount;
     loadNextPage();
   }, [canLoadNextPage, itemCount, loadNextPage]);

@@ -7,15 +7,8 @@ import { HTTPException } from 'hono/http-exception';
 
 export type MediaContext = {
   env: CloudflareEnv;
-  req: {
-    param: (name: string) => string | undefined;
-  };
-  var: {
-    db: Db;
-    user: {
-      id: string;
-    };
-  };
+  req: { param: (name: string) => string | undefined };
+  var: { db: Db; user: { id: string } };
 };
 
 type UploadTarget = {
@@ -31,10 +24,7 @@ type MediaAsset = {
   uri?: string | null;
 };
 
-type DeleteTarget = {
-  canDelete: boolean;
-  item?: MediaAsset;
-};
+type DeleteTarget = { canDelete: boolean; item?: MediaAsset };
 
 type MediaRouteConfig = {
   resolveDeleteTarget: (c: MediaContext) => Promise<DeleteTarget>;
@@ -48,10 +38,7 @@ export const assertReplyRecord = async (
 ) => {
   const { replies } = await dbClient.query({
     replies: {
-      $: {
-        fields: ['id'] as ['id'],
-        where: { id: replyId, record: recordId },
-      },
+      $: { fields: ['id'], where: { id: replyId, record: recordId } },
     },
   });
 
@@ -121,11 +108,7 @@ export const createMediaRoutes = <const TPath extends string>({
 
   app.delete(`${basePath}/:mediaId`, db(), auth(), async (c) => {
     const mediaId = c.req.param('mediaId');
-
-    if (!mediaId) {
-      throw new HTTPException(400, { message: 'Invalid request' });
-    }
-
+    if (!mediaId) throw new HTTPException(400, { message: 'Invalid request' });
     const { canDelete, item } = await resolveDeleteTarget(c);
 
     if (!item?.id || !canDelete) {
@@ -134,7 +117,6 @@ export const createMediaRoutes = <const TPath extends string>({
 
     await c.var.db.transact(c.var.db.tx.media[mediaId].delete());
     await deleteMediaAssets(c.env, [item]);
-
     return c.json({ success: true });
   });
 

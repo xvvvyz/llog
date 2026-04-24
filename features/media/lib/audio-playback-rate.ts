@@ -1,5 +1,4 @@
 export const AUDIO_PLAYBACK_RATES = [1, 1.5, 2] as const;
-
 export type AudioPlaybackRate = (typeof AUDIO_PLAYBACK_RATES)[number];
 
 export const DEFAULT_AUDIO_PLAYBACK_RATE: AudioPlaybackRate =

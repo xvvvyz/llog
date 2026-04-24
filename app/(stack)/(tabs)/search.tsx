@@ -15,7 +15,7 @@ import { List } from '@/ui/list';
 import { Page } from '@/ui/page';
 import { SearchInput } from '@/ui/search-input';
 import { Text } from '@/ui/text';
-import { Funnel } from 'phosphor-react-native/lib/module/icons/Funnel';
+import { Funnel } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -59,12 +59,12 @@ export default function Search() {
   const renderItem = React.useCallback(
     ({ item, index }: { item: SearchResult; index: number }) => (
       <SearchResultItem
+        result={item}
         className={cn(
           'mt-3',
           index === 0 && 'md:mt-0',
           index === results.length - 1 && 'mb-4 md:mb-8'
         )}
-        result={item}
       />
     ),
     [results.length]
@@ -74,8 +74,15 @@ export default function Search() {
     <Page>
       <Header title="Search" />
       <List
+        contentContainerClassName="mx-auto w-full max-w-lg px-4 pt-4 md:pt-8"
+        data={query.trim() ? results : []}
+        estimatedItemSize={100}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        keyExtractor={(item) => `${item.type}:${item.id}`}
+        renderItem={renderItem}
         ListHeaderComponent={
-          <View className="gap-3 pb-3">
+          <View className="pb-3 gap-3">
             <View className="flex-row gap-3">
               <SearchInput
                 query={query}
@@ -101,15 +108,13 @@ export default function Search() {
 
                           return (
                             <DropdownMenu.CheckboxItem
-                              checked={logIdSet.has(log.id)}
                               key={log.id}
+                              checked={logIdSet.has(log.id)}
                               onCheckedChange={() => toggleLogId(log.id)}
                             >
                               <View
                                 className="size-3 rounded-[2px]"
-                                style={{
-                                  backgroundColor: color?.default,
-                                }}
+                                style={{ backgroundColor: color?.default }}
                               />
                               <Text>{log.name}</Text>
                             </DropdownMenu.CheckboxItem>
@@ -123,8 +128,8 @@ export default function Search() {
                         <DropdownMenu.Label>Tags</DropdownMenu.Label>
                         {tags.data.map((tag) => (
                           <DropdownMenu.CheckboxItem
-                            checked={tagIdSet.has(tag.id)}
                             key={tag.id}
+                            checked={tagIdSet.has(tag.id)}
                             onCheckedChange={() => toggleTagId(tag.id)}
                           >
                             <Text>{tag.name}</Text>
@@ -153,13 +158,6 @@ export default function Search() {
             </View>
           </View>
         }
-        contentContainerClassName="mx-auto w-full max-w-lg px-4 pt-4 md:pt-8"
-        data={query.trim() ? results : []}
-        estimatedItemSize={100}
-        keyExtractor={(item) => `${item.type}:${item.id}`}
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-        renderItem={renderItem}
       />
     </Page>
   );

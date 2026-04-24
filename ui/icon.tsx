@@ -2,6 +2,7 @@ import { cn } from '@/lib/cn';
 import { TextContext } from '@/ui/text';
 import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 import * as React from 'react';
+import { useResolveClassNames } from 'uniwind';
 
 import {
   StyleSheet,
@@ -9,8 +10,6 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-
-import { useResolveClassNames } from 'uniwind';
 
 interface IconProps extends PhosphorIconProps {
   className?: string;

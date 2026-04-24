@@ -1,6 +1,5 @@
 export const VIDEO_START_THRESHOLD_SECONDS = 0.05;
 const VIDEO_WARM_SET_LIMIT = 32;
-
 const warmedVideoSources = new Set<string>();
 
 export const markVideoWarm = (source?: string | null) => {

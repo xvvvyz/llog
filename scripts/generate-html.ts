@@ -78,11 +78,7 @@ const manifest = JSON.stringify(
     background_color: dark,
     theme_color: dark,
     icons: [
-      {
-        src: '/favicon.svg',
-        sizes: 'any',
-        type: 'image/svg+xml',
-      },
+      { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
       {
         src: '/icon-192.png',
         sizes: '192x192',
@@ -118,7 +114,6 @@ await Bun.write(tempPath, html);
 await rename(tempPath, outputPath);
 progress(`Wrote ${outputPath}`);
 flush();
-
 progress('Writing manifest.webmanifest');
 await Bun.write(manifestPath, `${manifest}\n`);
 progress(`Wrote ${manifestPath}`);

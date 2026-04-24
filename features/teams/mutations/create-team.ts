@@ -6,10 +6,8 @@ import { id as generateId } from '@instantdb/react-native';
 export const createTeam = async ({ name }: { name: string }) => {
   const auth = await db.getAuth();
   if (!auth) return;
-
   const ui = await getUi();
   if (!ui) return;
-
   const teamId = generateId();
   const trimmedName = name.trim();
 

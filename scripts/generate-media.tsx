@@ -8,13 +8,12 @@ import { dirname, join } from 'node:path';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import satori from 'satori';
+import { createLogger } from './logger';
 
 import {
   formatAssetPlatforms,
   parseAssetPlatforms,
 } from './generate-platforms';
-
-import { createLogger } from './logger';
 
 const { NATIVE_SPLASH_BACKGROUNDS } = require('../theme/native.cjs') as {
   NATIVE_SPLASH_BACKGROUNDS: { light: string; dark: string };
@@ -95,7 +94,6 @@ const buildIco = (
     headerBytes + images.reduce((s, img) => s + img.data.length, 0);
 
   const buf = Buffer.alloc(totalBytes);
-
   buf.writeUInt16LE(0, 0);
   buf.writeUInt16LE(1, 2);
   buf.writeUInt16LE(images.length, 4);
@@ -302,11 +300,7 @@ const startupOutputPaths = startupImages.appleStartupImageSpecs.flatMap(
       startupImages.appleStartupImageThemes.map((theme) =>
         publicPath(
           startupImages
-            .getAppleStartupImageHref({
-              id: spec.id,
-              orientation,
-              theme,
-            })
+            .getAppleStartupImageHref({ id: spec.id, orientation, theme })
             .replace(/^\//, '')
         )
       )
@@ -406,7 +400,6 @@ if (platforms.web) {
   });
 
   await Bun.write(faviconSvgPath, faviconSvg);
-
   log('Rendering favicon PNG assets');
 
   await Bun.write(
@@ -505,7 +498,6 @@ if (platforms.web) {
     startupImages.appleStartupImageThemes.length;
 
   let startupImageIndex = 0;
-
   log(`Rendering ${totalStartupImages} Apple startup images`);
 
   for (const spec of startupImages.appleStartupImageSpecs) {
@@ -524,11 +516,7 @@ if (platforms.web) {
         const png = await renderStartupImage({ height, theme, width });
 
         const relativeHref = startupImages
-          .getAppleStartupImageHref({
-            id: spec.id,
-            orientation,
-            theme,
-          })
+          .getAppleStartupImageHref({ id: spec.id, orientation, theme })
           .replace(/^\//, '');
 
         await Bun.write(publicPath(relativeHref), png);

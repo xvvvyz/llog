@@ -4,31 +4,16 @@
   "compatibility_flags": ["nodejs_compat"],
   "name": "llog",
   "main": "api/index.ts",
-  "r2_buckets": [
-    {
-      "binding": "R2",
-      "bucket_name": "llog",
-      "remote": true,
-    },
-  ],
-  "vars": {
-    "ENV": "development",
-  },
+  "r2_buckets": [{ "binding": "R2", "bucket_name": "llog", "remote": true }],
+  "vars": { "ENV": "development" },
   "env": {
     "production": {
       "assets": {
         "directory": "web",
         "not_found_handling": "single-page-application",
       },
-      "r2_buckets": [
-        {
-          "binding": "R2",
-          "bucket_name": "llog",
-        },
-      ],
-      "vars": {
-        "ENV": "production",
-      },
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
+      "vars": { "ENV": "production" },
     },
   },
 }

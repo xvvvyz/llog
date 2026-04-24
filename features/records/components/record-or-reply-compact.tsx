@@ -22,9 +22,7 @@ export const CompactRecordOrReply = ({
   recordId,
   replyId,
   visualMedia,
-}: RecordOrReplySharedProps & {
-  className?: string;
-}) => {
+}: RecordOrReplySharedProps & { className?: string }) => {
   const displayText = trimDisplayText(record.text);
 
   return (
@@ -42,27 +40,27 @@ export const CompactRecordOrReply = ({
           size={42}
         />
         <View className="flex-1">
-          <View className="flex-row items-start justify-between gap-2">
-            <View className="flex-1 flex-row items-baseline gap-2">
+          <View className="flex-row gap-2 items-start justify-between">
+            <View className="flex-1 flex-row gap-2 items-baseline">
               <Text
-                className="shrink leading-snug font-medium"
+                className="font-medium leading-snug shrink"
                 numberOfLines={1}
               >
                 {record.author?.name}
               </Text>
-              <Text className="text-muted-foreground shrink-0 text-sm leading-snug">
+              <Text className="leading-snug text-muted-foreground text-sm shrink-0">
                 {formatDate(record.date)}
               </Text>
             </View>
             <RecordOrReplyDropdownMenu
-              className="-mt-1.5 -mr-1.5 -mb-3"
               accentColor={accentColor}
               authorId={record.author?.id}
-              logId={logId}
-              replyId={replyId}
+              className="-mb-3 -mr-1.5 -mt-1.5"
               isDetail
               isPinned={'isPinned' in record ? !!record.isPinned : undefined}
+              logId={logId}
               recordId={recordId}
+              replyId={replyId}
               teamId={record.teamId}
             />
           </View>

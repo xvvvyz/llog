@@ -8,10 +8,7 @@ import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
-import { Tag } from 'phosphor-react-native/lib/module/icons/Tag';
-import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
-import { Users } from 'phosphor-react-native/lib/module/icons/Users';
+import { NotePencil, Tag, Trash, Users } from 'phosphor-react-native';
 import * as React from 'react';
 import { ViewStyle } from 'react-native';
 

@@ -17,19 +17,9 @@ export default function Onboarding() {
   const [rawName, setRawName] = React.useState('');
   const auth = db.useAuth();
   const profile = useProfile();
-
-  if (!auth.isLoading && !auth.user) {
-    return <Redirect href="/sign-in" />;
-  }
-
-  if (profile.id) {
-    return <Redirect href="/" />;
-  }
-
-  if (profile.isLoading) {
-    return <Loading />;
-  }
-
+  if (!auth.isLoading && !auth.user) return <Redirect href="/sign-in" />;
+  if (profile.id) return <Redirect href="/" />;
+  if (profile.isLoading) return <Loading />;
   const name = rawName.trim();
   const isDisabled = !name || isTransitioning;
 
@@ -40,7 +30,7 @@ export default function Onboarding() {
     });
 
   return (
-    <Page className="mx-auto w-full max-w-sm justify-center p-6">
+    <Page className="mx-auto max-w-sm w-full p-6 justify-center">
       <Label>What is your name?</Label>
       <Input
         autoComplete="name"

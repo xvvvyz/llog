@@ -3,8 +3,7 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
 import type { IconProps } from 'phosphor-react-native';
-import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
-import { X } from 'phosphor-react-native/lib/module/icons/X';
+import { MagnifyingGlass, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -35,14 +34,14 @@ export const SearchInput = React.forwardRef<
   ) => {
     return (
       <View className={cn('relative', wrapperClassName)}>
-        <View className="absolute top-1/2 left-3 -translate-y-1/2">
-          <Icon icon={MagnifyingGlass} className="text-placeholder" size={20} />
+        <View className="absolute left-3 top-1/2 -translate-y-1/2">
+          <Icon className="text-placeholder" icon={MagnifyingGlass} size={20} />
         </View>
         <Input
+          ref={ref}
           className={cn('px-10', className)}
           onChangeText={setQuery}
           placeholder={placeholder}
-          ref={ref}
           value={query}
           {...props}
         />

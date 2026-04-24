@@ -26,10 +26,7 @@ export const useCarouselVideoControls = ({
   const [isScrubbingVideo, setIsScrubbingVideo] = React.useState(false);
 
   const [{ videoCurrentTime, videoDuration }, setVideoUiState] = React.useState(
-    {
-      videoCurrentTime: 0,
-      videoDuration: 0,
-    }
+    { videoCurrentTime: 0, videoDuration: 0 }
   );
 
   const isScrubbingVideoRef = React.useRef(false);
@@ -69,10 +66,7 @@ export const useCarouselVideoControls = ({
         return currentState;
       }
 
-      return {
-        videoCurrentTime: 0,
-        videoDuration: 0,
-      };
+      return { videoCurrentTime: 0, videoDuration: 0 };
     });
   }, [videoHandleRef]);
 
@@ -129,9 +123,7 @@ export const useCarouselVideoControls = ({
         const hasDurationChanged =
           currentState.videoDuration !== nextVideoDuration;
 
-        if (!hasCurrentTimeChanged && !hasDurationChanged) {
-          return currentState;
-        }
+        if (!hasCurrentTimeChanged && !hasDurationChanged) return currentState;
 
         return {
           videoCurrentTime: hasCurrentTimeChanged
@@ -153,10 +145,7 @@ export const useCarouselVideoControls = ({
     setIsScrubbingVideo(true);
     wasPlayingBeforeVideoScrubRef.current = isPlaying;
     handle.setScrubbingEnabled(true);
-
-    if (isPlaying) {
-      handle.pause();
-    }
+    if (isPlaying) handle.pause();
   }, [isPlaying, videoDuration, videoHandleRef]);
 
   const previewVideoScrub = React.useCallback(
@@ -172,14 +161,8 @@ export const useCarouselVideoControls = ({
         if (targetTime == null) return;
 
         setVideoUiState((currentState) => {
-          if (currentState.videoCurrentTime === targetTime) {
-            return currentState;
-          }
-
-          return {
-            ...currentState,
-            videoCurrentTime: targetTime,
-          };
+          if (currentState.videoCurrentTime === targetTime) return currentState;
+          return { ...currentState, videoCurrentTime: targetTime };
         });
 
         videoHandleRef.current?.seekTo(targetTime);
@@ -202,14 +185,8 @@ export const useCarouselVideoControls = ({
       scrubPreviewTargetRef.current = null;
 
       setVideoUiState((currentState) => {
-        if (currentState.videoCurrentTime === nextTime) {
-          return currentState;
-        }
-
-        return {
-          ...currentState,
-          videoCurrentTime: nextTime,
-        };
+        if (currentState.videoCurrentTime === nextTime) return currentState;
+        return { ...currentState, videoCurrentTime: nextTime };
       });
 
       handle?.setScrubbingEnabled(false);

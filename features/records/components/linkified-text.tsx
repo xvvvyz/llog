@@ -21,10 +21,7 @@ export const renderLinkifiedText = ({
 
   for (const match of matches) {
     const index = match.index;
-
-    if (index > lastIndex) {
-      parts.push(text.slice(lastIndex, index));
-    }
+    if (index > lastIndex) parts.push(text.slice(lastIndex, index));
 
     const href = match.schema
       ? match.url
@@ -35,9 +32,9 @@ export const renderLinkifiedText = ({
     if (Platform.OS === 'web') {
       parts.push(
         <Text
+          key={`${href}-${index}`}
           asChild
           className={cn('underline', !color && 'text-primary')}
-          key={`${href}-${index}`}
           style={linkStyle}
         >
           <a href={href} rel="noreferrer noopener" target="_blank">
@@ -48,8 +45,8 @@ export const renderLinkifiedText = ({
     } else {
       parts.push(
         <Text
-          className={cn('underline', !color && 'text-primary')}
           key={`${href}-${index}`}
+          className={cn('underline', !color && 'text-primary')}
           onPress={() => Linking.openURL(href)}
           style={linkStyle}
         >
@@ -61,9 +58,6 @@ export const renderLinkifiedText = ({
     lastIndex = match.lastIndex;
   }
 
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
   return parts.length ? parts : text;
 };

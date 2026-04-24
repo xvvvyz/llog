@@ -16,9 +16,7 @@ import { TabButton } from '@/ui/tab-button';
 import { Text } from '@/ui/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, Tabs } from 'expo-router';
-import { Bell } from 'phosphor-react-native/lib/module/icons/Bell';
-import { MagnifyingGlass } from 'phosphor-react-native/lib/module/icons/MagnifyingGlass';
-import { SquaresFour } from 'phosphor-react-native/lib/module/icons/SquaresFour';
+import { Bell, MagnifyingGlass, SquaresFour } from 'phosphor-react-native';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 
@@ -75,21 +73,10 @@ export default function Layout() {
     };
   }, [auth.user, profile.isLoading, profile.id]);
 
-  if (!auth.isLoading && !auth.user) {
-    return <Redirect href="/sign-in" />;
-  }
-
-  if (!profile.isLoading && !profile.id) {
-    return <Redirect href="/onboarding" />;
-  }
-
-  if (profile.isLoading || teamsLoading || !checkedPending) {
-    return <Loading />;
-  }
-
-  if (profile.id && teams.length === 0) {
-    return <Redirect href="/new-team" />;
-  }
+  if (!auth.isLoading && !auth.user) return <Redirect href="/sign-in" />;
+  if (!profile.isLoading && !profile.id) return <Redirect href="/onboarding" />;
+  if (profile.isLoading || teamsLoading || !checkedPending) return <Loading />;
+  if (profile.id && teams.length === 0) return <Redirect href="/new-team" />;
 
   return (
     <Tabs
@@ -161,8 +148,8 @@ export default function Layout() {
                 size={24}
               />
               {unreadCount > 0 && (
-                <View className="bg-primary absolute -top-1 -right-1.5 h-4 min-w-4 items-center justify-center rounded-full px-1">
-                  <Text className="text-primary-foreground text-[10px] leading-none font-bold">
+                <View className="absolute -right-1.5 -top-1 h-4 min-w-4 px-1 rounded-full bg-primary items-center justify-center">
+                  <Text className="font-bold leading-none text-[10px] text-primary-foreground">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
                 </View>

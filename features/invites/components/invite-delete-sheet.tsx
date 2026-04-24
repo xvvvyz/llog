@@ -47,8 +47,8 @@ export const InviteDeleteSheet = () => {
       open={open}
       portalName="invite-delete"
     >
-      <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">{label}</Text>
+      <View className="mx-auto max-w-md w-full p-8">
+        <Text className="text-2xl text-center">{label}</Text>
         <Button
           disabled={isLoading}
           onPress={handleInvalidate}

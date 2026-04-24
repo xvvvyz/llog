@@ -100,13 +100,7 @@ const getLogoGeometry = ({
   const radius = Math.max(1, Math.round(squareSize * radiusRatio));
   const contentSize = squareSize * 2 + gap;
   const offset = Math.floor((size - contentSize) / 2);
-
-  return {
-    gap,
-    offset,
-    radius,
-    squareSize,
-  };
+  return { gap, offset, radius, squareSize };
 };
 
 export const LogoMark = ({
@@ -152,23 +146,13 @@ export const LogoMark = ({
     },
     React.createElement(
       'div',
-      {
-        style: {
-          display: 'flex',
-          gap,
-        },
-      },
+      { style: { display: 'flex', gap } },
       createSquare(colors[0], 'top-left'),
       createSquare(colors[1], 'top-right')
     ),
     React.createElement(
       'div',
-      {
-        style: {
-          display: 'flex',
-          gap,
-        },
-      },
+      { style: { display: 'flex', gap } },
       createSquare(colors[2], 'bottom-left'),
       createSquare(colors[3], 'bottom-right')
     )
@@ -195,7 +179,6 @@ export const LogoSvg = ({
   size: number;
 }) => {
   const colors = colorsProp ?? getLogoColors(colorScheme);
-
   // Use float arithmetic so the squares are perfectly centered in the SVG canvas.
   // getLogoGeometry rounds to integers (needed for React Native layout), but SVG
   // handles sub-pixel coordinates natively — skipping the rounding eliminates the
@@ -204,7 +187,6 @@ export const LogoSvg = ({
   const gap = paddedSize * gapRatio;
   const squareSize = (paddedSize - gap) / 2;
   const offset = size * paddingRatio; // == (size - paddedSize) / 2, exactly symmetric
-
   const continuousExponent = 2.8 + (1 - radiusRatio) * 2.5;
   const x1 = offset;
   const x2 = offset + squareSize + gap;
@@ -321,7 +303,6 @@ export const LogoSvg = ({
 };
 
 const PILL_WIDTH_RATIOS = [0.8, 0.68, 0.56] as const;
-
 const APP_ICON_BG = UI.light.contrastForeground;
 
 const getSquirclePillPath = ({
@@ -373,8 +354,10 @@ const getSquirclePillPath = ({
 };
 
 const PILL_COLORS = [
-  SPECTRUM.light[6].lighter, // cyan
-  SPECTRUM.light[7].lighter, // blue
+  SPECTRUM.light[6].lighter,
+  // cyan
+  SPECTRUM.light[7].lighter,
+  // blue
   SPECTRUM.light[8].lighter, // lavender
 ] as const;
 
@@ -431,7 +414,6 @@ export const AppIcon = ({
   const pillHeight = gap * 3;
   const startY = (size - squareSide) / 2;
   const leftX = (size - longestPillWidth) / 2;
-
   const clipId = 'icon-clip';
   const continuousExponent = 4.5;
 

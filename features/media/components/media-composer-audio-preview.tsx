@@ -8,9 +8,7 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import { CaretLeft } from 'phosphor-react-native/lib/module/icons/CaretLeft';
-import { CaretRight } from 'phosphor-react-native/lib/module/icons/CaretRight';
-import { X } from 'phosphor-react-native/lib/module/icons/X';
+import { CaretLeft, CaretRight, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -72,20 +70,19 @@ export const MediaComposerAudioPreview = ({
   const hasMultipleItems = items.length > 1;
   const countWidth = String(items.length).length * 14 + 26;
   const { audioPlaybackRate } = useUiAudioPlaybackRate();
-
   if (!activeItem) return null;
 
   return (
-    <View className="border-border-secondary shrink-0 border-t p-4">
-      <View className="w-full flex-row items-center gap-2">
-        <View className="min-w-0 flex-1">
+    <View className="p-4 border-border-secondary border-t shrink-0">
+      <View className="flex-row w-full gap-2 items-center">
+        <View className="flex-1 min-w-0">
           {items.map((previewItem, index) => {
             const isActive = index === activeIndex;
 
             return (
               <View
-                className={cn('min-w-0 flex-1', !isActive && 'hidden')}
                 key={previewItem.id}
+                className={cn('min-w-0 flex-1', !isActive && 'hidden')}
               >
                 {previewItem.type === 'media' ? (
                   <AudioPlayer
@@ -100,7 +97,7 @@ export const MediaComposerAudioPreview = ({
                     uri={previewItem.item.uri}
                   />
                 ) : (
-                  <View className="bg-card flex-1 rounded-lg px-3 py-2">
+                  <View className="flex-1 px-3 py-2 rounded-lg bg-card">
                     <Text numberOfLines={1}>
                       {previewItem.item.fileName?.trim() || 'Audio file'}
                     </Text>
@@ -125,7 +122,7 @@ export const MediaComposerAudioPreview = ({
           </View>
         )}
         {hasMultipleItems && (
-          <View className="shrink-0 flex-row items-center gap-1">
+          <View className="flex-row gap-1 items-center shrink-0">
             <Button
               accessibilityLabel="Previous audio"
               className="w-8 px-0"
@@ -136,7 +133,7 @@ export const MediaComposerAudioPreview = ({
               <Icon icon={CaretLeft} />
             </Button>
             <Text
-              className="text-muted-foreground text-center text-xs"
+              className="text-center text-muted-foreground text-xs"
               numberOfLines={1}
               style={{ width: countWidth }}
             >

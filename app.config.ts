@@ -15,10 +15,7 @@ const config: { expo: ExpoConfig } = {
     scheme: 'llog',
     userInterfaceStyle: 'automatic',
     icon: './assets/icon.png',
-    ios: {
-      bundleIdentifier: 'co.xvyz.llog',
-      icon: './assets/ios-icon.png',
-    },
+    ios: { bundleIdentifier: 'co.xvyz.llog', icon: './assets/ios-icon.png' },
     android: {
       icon: './assets/android-icon.png',
       adaptiveIcon: {
@@ -29,11 +26,7 @@ const config: { expo: ExpoConfig } = {
       package: 'co.xvyz.llog',
       softwareKeyboardLayoutMode: 'pan',
     },
-    web: {
-      bundler: 'metro',
-      output: 'single',
-      outputDirectory: 'web',
-    },
+    web: { bundler: 'metro', output: 'single', outputDirectory: 'web' },
     plugins: [
       'expo-router',
       'expo-image-picker',
@@ -51,9 +44,7 @@ const config: { expo: ExpoConfig } = {
         },
       ],
     ],
-    experiments: {
-      typedRoutes: true,
-    },
+    experiments: { typedRoutes: true },
   },
 };
 

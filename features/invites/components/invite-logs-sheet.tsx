@@ -40,10 +40,7 @@ export const InviteLogsSheet = () => {
     activeTeamId
       ? {
           logs: {
-            $: {
-              order: { name: 'asc' },
-              where: { team: activeTeamId },
-            },
+            $: { order: { name: 'asc' }, where: { team: activeTeamId } },
           },
         }
       : null

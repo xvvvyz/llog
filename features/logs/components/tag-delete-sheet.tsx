@@ -17,15 +17,15 @@ export const TagDeleteSheet = () => {
       open={sheetManager.isOpen('tag-delete')}
       portalName="tag-delete"
     >
-      <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">Delete tag?</Text>
+      <View className="mx-auto max-w-md w-full p-8">
+        <Text className="text-2xl text-center">Delete tag?</Text>
         <Button
+          variant="destructive"
+          wrapperClassName="mt-12"
           onPress={() => {
             sheetManager.close('tag-delete');
             deleteTag({ id: logTag.id });
           }}
-          variant="destructive"
-          wrapperClassName="mt-12"
         >
           <Text>Delete</Text>
         </Button>

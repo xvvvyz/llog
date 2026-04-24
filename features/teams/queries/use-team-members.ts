@@ -15,12 +15,7 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
       ? {
           roles: {
             $: { where: { team: resolvedTeamId } },
-            user: {
-              profile: {
-                image: {},
-                logs: { $: { fields: ['id'] } },
-              },
-            },
+            user: { profile: { image: {}, logs: { $: { fields: ['id'] } } } },
           },
         }
       : null

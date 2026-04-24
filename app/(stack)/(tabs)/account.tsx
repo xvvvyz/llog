@@ -22,10 +22,7 @@ import { Switch } from '@/ui/switch';
 import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
-import { Shuffle } from 'phosphor-react-native/lib/module/icons/Shuffle';
-import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
-import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
-import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
+import { Shuffle, SignOut, Trash, UploadSimple } from 'phosphor-react-native';
 import * as React from 'react';
 import { Keyboard, Platform, Pressable, View } from 'react-native';
 
@@ -137,9 +134,7 @@ export default function Account() {
 
     const optimisticState =
       pushState.status === 'enabled'
-        ? ({
-            status: 'disabled',
-          } satisfies push.WebPushState)
+        ? ({ status: 'disabled' } satisfies push.WebPushState)
         : ({
             endpoint: pushState.endpoint,
             status: 'enabled',
@@ -181,19 +176,19 @@ export default function Account() {
   return (
     <Page>
       <Header title="Account" />
-      <View className="flex-1 items-center justify-center p-3">
+      <View className="flex-1 p-3 items-center justify-center">
         <Pressable className="absolute inset-0" onPress={Keyboard.dismiss} />
-        <Card className="w-full max-w-xs overflow-hidden p-0">
+        <Card className="overflow-hidden max-w-xs w-full p-0">
           <View className="pb-2">
             <View className="px-4">
               <Menu.Root>
                 <Menu.Trigger asChild>
                   <Button
-                    className="border-border w-full items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
+                    className="w-full pb-3 pt-3 px-0 border-b border-border rounded-none items-end justify-between"
                     variant="link"
                     wrapperClassName="w-full rounded-none"
                   >
-                    <Text className="text-muted-foreground shrink-0 text-base leading-tight">
+                    <Text className="leading-tight text-base text-muted-foreground shrink-0">
                       Avatar
                     </Text>
                     <Avatar
@@ -229,7 +224,7 @@ export default function Account() {
             </View>
             <View className="px-4">
               <Pressable
-                className="border-border flex-row items-center justify-between border-b"
+                className="flex-row border-b border-border items-center justify-between"
                 onPress={() => nameInputRef.current?.focus()}
               >
                 <Label
@@ -239,24 +234,24 @@ export default function Account() {
                   Name
                 </Label>
                 <Input
+                  ref={nameInputRef}
+                  className="pr-0 border-0 rounded-none bg-transparent text-right"
                   maxLength={32}
-                  className="rounded-none border-0 bg-transparent pr-0 text-right"
+                  selectTextOnFocus
+                  value={profile.name}
                   onChangeText={(text) =>
                     updateProfile({ id: profile.id!, name: text })
                   }
-                  ref={nameInputRef}
-                  selectTextOnFocus
-                  value={profile.name}
                 />
               </Pressable>
             </View>
             <View className="px-4">
-              <View className="border-border flex-row items-center justify-between border-b">
+              <View className="flex-row border-b border-border items-center justify-between">
                 <Label className="p-0">Email</Label>
                 <Input
+                  className="pr-0 border-0 rounded-none bg-transparent text-right"
                   editable={false}
                   maxLength={32}
-                  className="rounded-none border-0 bg-transparent pr-0 text-right"
                   value={auth.user?.email ?? undefined}
                 />
               </View>
@@ -265,19 +260,19 @@ export default function Account() {
               <View className="px-4">
                 <Pressable
                   accessibilityRole="switch"
+                  className="flex-row py-3 border-b border-border gap-4 items-center justify-between"
+                  disabled={isPushToggleDisabled}
+                  onPress={handleTogglePush}
                   accessibilityState={{
                     checked: pushEnabled,
                     disabled: isPushToggleDisabled,
                   }}
-                  className="border-border flex-row items-center justify-between gap-4 border-b py-3"
-                  disabled={isPushToggleDisabled}
-                  onPress={handleTogglePush}
                 >
                   <View className="flex-1">
-                    <Text className="text-muted-foreground font-normal">
+                    <Text className="font-normal text-muted-foreground">
                       Notifications
                     </Text>
-                    <Text className="text-placeholder pb-0.5 text-xs">
+                    <Text className="pb-0.5 text-placeholder text-xs">
                       {pushState.status === 'blocked'
                         ? 'Blocked in browser or device settings'
                         : 'Receive new record & reply alerts'}
@@ -295,13 +290,13 @@ export default function Account() {
             <Menu.Root>
               <Menu.Trigger asChild>
                 <Button
-                  className="justify-between rounded-none"
+                  className="rounded-none justify-between"
                   variant="ghost"
                   wrapperClassName="rounded-none"
                 >
                   <Text className="font-normal">Double tap reaction</Text>
                   <Icon
-                    className="text-primary -mr-0.5"
+                    className="-mr-0.5 text-primary"
                     icon={REACTION_ICONS[ui.doubleTapEmoji]}
                     weight="fill"
                   />
@@ -311,33 +306,33 @@ export default function Account() {
                 {REACTION_EMOJIS.map((emoji) => (
                   <Menu.Item
                     key={emoji}
-                    className="size-10 min-w-0 justify-center rounded-xl pr-0 pl-0"
+                    className="min-w-0 size-10 pl-0 pr-0 rounded-xl justify-center"
                     onPress={() =>
                       ui.id &&
                       db.transact(
-                        db.tx.ui[ui.id].update({
-                          doubleTapEmoji: emoji,
-                        })
+                        db.tx.ui[ui.id].update({ doubleTapEmoji: emoji })
                       )
                     }
                   >
                     <Icon
+                      icon={REACTION_ICONS[emoji]}
+                      weight={ui.doubleTapEmoji === emoji ? 'fill' : 'regular'}
                       className={
                         ui.doubleTapEmoji === emoji
                           ? 'text-primary'
                           : 'text-muted-foreground'
                       }
-                      icon={REACTION_ICONS[emoji]}
-                      weight={ui.doubleTapEmoji === emoji ? 'fill' : 'regular'}
                     />
                   </Menu.Item>
                 ))}
               </Menu.Content>
             </Menu.Root>
-            <View className="border-border my-2 border-t" />
+            <View className="my-2 border-border border-t" />
             <Button
-              className="justify-between rounded-none"
+              className="rounded-none justify-between"
               disabled={isSigningOut}
+              variant="ghost"
+              wrapperClassName="rounded-none"
               onPress={async () => {
                 setIsSigningOut(true);
 
@@ -359,11 +354,9 @@ export default function Account() {
                   setIsSigningOut(false);
                 }
               }}
-              variant="ghost"
-              wrapperClassName="rounded-none"
             >
               <Text className="font-normal">Sign out</Text>
-              <Icon className="text-placeholder -mr-0.5" icon={SignOut} />
+              <Icon className="-mr-0.5 text-placeholder" icon={SignOut} />
             </Button>
           </View>
         </Card>

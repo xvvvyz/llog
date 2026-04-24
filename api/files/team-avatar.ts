@@ -10,16 +10,6 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
-const queryTeamWithImageAndRole = (teamId: string, userId: string) => ({
-  roles: {
-    $: { where: { team: teamId, userId } },
-  },
-  teams: {
-    $: { fields: ['id'] as ['id'], where: { id: teamId } },
-    image: {},
-  },
-});
-
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.put(
@@ -29,24 +19,18 @@ app.put(
   zValidator('form', z.object({ file: fileLike })),
   async (c) => {
     const teamId = c.req.param('teamId');
-
-    if (!teamId) {
-      throw new HTTPException(400, { message: 'Team not found' });
-    }
-
+    if (!teamId) throw new HTTPException(400, { message: 'Team not found' });
     const file = upload.requireUploadedFile(c.req.valid('form').file);
     upload.validateUpload(file, ['image']);
 
-    const result = await c.var.db.query(
-      queryTeamWithImageAndRole(teamId, c.var.user.id)
-    );
+    const result = await c.var.db.query({
+      roles: { $: { where: { team: teamId, userId: c.var.user.id } } },
+      teams: { $: { fields: ['id'], where: { id: teamId } }, image: {} },
+    });
 
     const team = result.teams?.[0];
     const callerRole = result.roles?.[0]?.role;
-
-    if (!team?.id) {
-      throw new HTTPException(404, { message: 'Team not found' });
-    }
+    if (!team?.id) throw new HTTPException(404, { message: 'Team not found' });
 
     if (!permissions.canManageTeam(callerRole)) {
       throw new HTTPException(403, { message: 'Forbidden' });
@@ -81,21 +65,16 @@ app.put(
 
 app.delete('/teams/:teamId/avatar', db({ asUser: true }), async (c) => {
   const teamId = c.req.param('teamId');
+  if (!teamId) throw new HTTPException(400, { message: 'Team not found' });
 
-  if (!teamId) {
-    throw new HTTPException(400, { message: 'Team not found' });
-  }
-
-  const result = await c.var.db.query(
-    queryTeamWithImageAndRole(teamId, c.var.user.id)
-  );
+  const result = await c.var.db.query({
+    roles: { $: { where: { team: teamId, userId: c.var.user.id } } },
+    teams: { $: { fields: ['id'], where: { id: teamId } }, image: {} },
+  });
 
   const team = result.teams?.[0];
   const callerRole = result.roles?.[0]?.role;
-
-  if (!team?.id) {
-    throw new HTTPException(404, { message: 'Team not found' });
-  }
+  if (!team?.id) throw new HTTPException(404, { message: 'Team not found' });
 
   if (!permissions.canManageTeam(callerRole)) {
     throw new HTTPException(403, { message: 'Forbidden' });

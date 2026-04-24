@@ -28,8 +28,5 @@ export const useUiAudioPlaybackRate = () => {
     [uiId]
   );
 
-  return {
-    audioPlaybackRate: localPlaybackRate,
-    setAudioPlaybackRate,
-  };
+  return { audioPlaybackRate: localPlaybackRate, setAudioPlaybackRate };
 };

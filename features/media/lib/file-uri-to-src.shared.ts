@@ -8,7 +8,6 @@ export type FileUriToSrcOptions = {
 
 const DEFAULT_CLOUDFLARE_IMAGE_QUALITY = 75;
 const DEFAULT_CLOUDFLARE_IMAGE_FORMAT = 'webp';
-
 const isAbsoluteUri = (uri: string) => /^[a-z][a-z\d+.-]*:/i.test(uri);
 
 const roundPositiveDimension = (value?: number) =>
@@ -39,26 +38,15 @@ const getCloudflareFlexibleVariantSrc = (
     return uri;
   }
 
-  if (parts.length <= variantIndex) {
-    return uri;
-  }
-
+  if (parts.length <= variantIndex) return uri;
   const quality = options?.quality ?? DEFAULT_CLOUDFLARE_IMAGE_QUALITY;
   const targetWidth = roundPositiveDimension(options?.targetWidth);
   const targetHeight = roundPositiveDimension(options?.targetHeight);
   const variant = [`format=${DEFAULT_CLOUDFLARE_IMAGE_FORMAT}`, `q=${quality}`];
-
-  if (targetWidth != null) {
-    variant.push(`w=${targetWidth}`);
-  }
-
-  if (targetHeight != null) {
-    variant.push(`h=${targetHeight}`);
-  }
-
+  if (targetWidth != null) variant.push(`w=${targetWidth}`);
+  if (targetHeight != null) variant.push(`h=${targetHeight}`);
   parts[variantIndex] = variant.join(',');
   url.pathname = `/${parts.join('/')}`;
-
   return url.toString();
 };
 
@@ -67,11 +55,7 @@ export const fileUriToSrc = (
   options?: FileUriToSrcOptions
 ): ResolvedFileUrl => {
   if (!uri) return null;
-
-  if (isAbsoluteUri(uri)) {
-    return getCloudflareFlexibleVariantSrc(uri, options);
-  }
-
+  if (isAbsoluteUri(uri)) return getCloudflareFlexibleVariantSrc(uri, options);
   return `${process.env.EXPO_PUBLIC_API_URL}/files/${uri}`;
 };
 

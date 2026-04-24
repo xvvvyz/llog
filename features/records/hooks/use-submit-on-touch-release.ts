@@ -4,16 +4,8 @@ import { Platform } from 'react-native';
 
 type ButtonProps = React.ComponentPropsWithoutRef<typeof Button>;
 type ButtonTouchEvent = Parameters<NonNullable<ButtonProps['onTouchStart']>>[0];
-
-type TouchPoint = {
-  x: number;
-  y: number;
-};
-
-type TouchStart = TouchPoint & {
-  enabled: boolean;
-};
-
+type TouchPoint = { x: number; y: number };
+type TouchStart = TouchPoint & { enabled: boolean };
 const TOUCH_CANCEL_DISTANCE = 16;
 const SKIP_PRESS_RESET_MS = 500;
 
@@ -38,7 +30,6 @@ const readTouchPoint = (event: ButtonTouchEvent): TouchPoint | null => {
   const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent.touches?.[0];
   const x = touch?.clientX ?? touch?.pageX ?? nativeEvent.pageX;
   const y = touch?.clientY ?? touch?.pageY ?? nativeEvent.pageY;
-
   return typeof x === 'number' && typeof y === 'number' ? { x, y } : null;
 };
 
@@ -113,13 +104,10 @@ export const useSubmitOnTouchRelease = ({
     (event: ButtonTouchEvent) => {
       const start = touchStartRef.current;
       touchStartRef.current = null;
-
       if (!start?.enabled) return;
-
       const end = readTouchPoint(event) ?? start;
       const distance = Math.hypot(end.x - start.x, end.y - start.y);
       if (distance > TOUCH_CANCEL_DISTANCE) return;
-
       preventFollowUpClick(event);
       markNextPressHandled();
       void onSubmit();

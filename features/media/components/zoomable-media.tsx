@@ -1,12 +1,11 @@
 import * as zoomableMediaConstants from '@/features/media/constants/zoomable-media';
+import * as React from 'react';
+import { View } from 'react-native';
 
 import {
   Zoomable,
   type ZoomableRef,
 } from '@likashefqet/react-native-image-zoom';
-
-import * as React from 'react';
-import { View } from 'react-native';
 
 export const ZoomableMedia = ({
   children,
@@ -43,7 +42,6 @@ export const ZoomableMedia = ({
   const updateInteractionState = React.useCallback(
     (nextIsInteracting: boolean) => {
       if (isInteractingRef.current === nextIsInteracting) return;
-
       isInteractingRef.current = nextIsInteracting;
       onInteractionStateChangeRef.current?.(nextIsInteracting);
     },
@@ -52,7 +50,6 @@ export const ZoomableMedia = ({
 
   const updateZoomState = React.useCallback((nextIsZoomed: boolean) => {
     if (isZoomedRef.current === nextIsZoomed) return;
-
     isZoomedRef.current = nextIsZoomed;
     onZoomStateChangeRef.current?.(nextIsZoomed);
   }, []);
@@ -78,7 +75,6 @@ export const ZoomableMedia = ({
 
   React.useEffect(() => {
     if (resetToken === previousResetTokenRef.current) return;
-
     previousResetTokenRef.current = resetToken;
     updateInteractionState(false);
     updateZoomState(false);
@@ -88,17 +84,17 @@ export const ZoomableMedia = ({
   return (
     <View style={{ height, width }}>
       <Zoomable
-        doubleTapScale={
-          suppressDoubleTapZoom ? 1 : zoomableMediaConstants.DOUBLE_TAP_SCALE
-        }
+        ref={zoomRef}
         isDoubleTapEnabled
         maxScale={4}
         minScale={1}
         onInteractionEnd={handleInteractionEnd}
         onInteractionStart={() => updateInteractionState(true)}
         onResetAnimationEnd={() => syncZoomState()}
-        ref={zoomRef}
         style={{ height, width }}
+        doubleTapScale={
+          suppressDoubleTapZoom ? 1 : zoomableMediaConstants.DOUBLE_TAP_SCALE
+        }
       >
         <View className="items-center justify-center" style={{ height, width }}>
           {children}

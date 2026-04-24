@@ -9,11 +9,7 @@
   "background_color": "hsl(0 0% 5%)",
   "theme_color": "hsl(0 0% 5%)",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",

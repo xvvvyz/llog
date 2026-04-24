@@ -25,7 +25,6 @@ export const EXIT_TRANSLATION_RATIO = 0.35;
 export const RESET_CHROME_FADE_DURATION_MS = 140;
 export const RESET_MEDIA_FADE_DURATION_MS = 180;
 export const SPRING_CONFIG = { damping: 26, mass: 1, stiffness: 260 };
-
 export type CloseAnimationMode = 'animated' | 'instant';
 export type DismissDirection = -1 | 1;
 
@@ -112,7 +111,6 @@ export const resetDismissAnimation = ({
   translateY,
 }: MediaLightboxAnimatedValues) => {
   'worklet';
-
   translateY.value = withSpring(0, SPRING_CONFIG);
 
   backgroundOpacity.value = withTiming(1, {
@@ -149,10 +147,8 @@ export const isDismissAnimationSettled = ({
 
 const getLinearFadeOpacity = (distance: number, fadeDistance: number) => {
   'worklet';
-
   const clampedFadeDistance = Math.max(fadeDistance, 1);
   const fadeProgress = Math.min(Math.max(distance, 0), clampedFadeDistance);
-
   return 1 - fadeProgress / clampedFadeDistance;
 };
 

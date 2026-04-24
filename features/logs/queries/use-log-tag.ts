@@ -6,6 +6,5 @@ export const useTag = ({ id }: { id?: string }) => {
   );
 
   const tag = data?.tags?.[0];
-
   return { id: tag?.id, isLoading, name: tag?.name };
 };

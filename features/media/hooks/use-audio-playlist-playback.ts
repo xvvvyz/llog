@@ -52,9 +52,7 @@ export const useAudioPlaylistPlayback = <T>(
 
       const shouldContinue = wantsPlaybackRef.current;
       const nextItem = items[normalizedIndex];
-
       setCurrentIndex(normalizedIndex);
-
       if (!shouldContinue) return;
 
       if (nextItem && isPlayable(nextItem)) {

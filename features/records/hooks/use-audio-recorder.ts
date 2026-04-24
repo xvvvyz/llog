@@ -1,4 +1,6 @@
 import { alert } from '@/lib/alert';
+import * as React from 'react';
+import { Platform } from 'react-native';
 
 import {
   RecordingPresets,
@@ -6,9 +8,6 @@ import {
   setAudioModeAsync,
   useAudioRecorder as useExpoAudioRecorder,
 } from 'expo-audio';
-
-import * as React from 'react';
-import { Platform } from 'react-native';
 
 const MAX_DURATION = 300;
 
@@ -19,7 +18,6 @@ const MICROPHONE_PERMISSION_ALERT = {
 
 const isMicrophonePermissionError = (error: unknown) => {
   if (!error || typeof error !== 'object') return false;
-
   const name = 'name' in error ? String(error.name) : '';
   const message = 'message' in error ? String(error.message).toLowerCase() : '';
 
@@ -148,10 +146,7 @@ export const useAudioRecorder = () => {
 
     try {
       const status = recorder.getStatus();
-
-      if (status.canRecord || status.isRecording) {
-        await recorder.stop();
-      }
+      if (status.canRecord || status.isRecording) await recorder.stop();
     } catch {
       // noop
     } finally {
@@ -209,7 +204,6 @@ export const useAudioRecorder = () => {
 
   const record = React.useCallback(async () => {
     if (isRecordingRef.current) return;
-
     const requestId = ++startRequestIdRef.current;
     isRecordingRef.current = true;
     setStartError(null);
@@ -263,7 +257,6 @@ export const useAudioRecorder = () => {
         requestId !== startRequestIdRef.current || !isRecordingRef.current;
 
       const permissionDenied = isMicrophonePermissionError(error);
-
       isRecordingRef.current = false;
 
       if (wasCancelled) {
@@ -281,14 +274,8 @@ export const useAudioRecorder = () => {
             : 'Unable to start recording. Please try again.'
       );
 
-      if (permissionDenied) {
-        showMicrophonePermissionAlert();
-      }
-
-      if (Platform.OS !== 'web') {
-        await resetAudioMode();
-      }
-
+      if (permissionDenied) showMicrophonePermissionAlert();
+      if (Platform.OS !== 'web') await resetAudioMode();
       releasePreparedRecorder();
     }
   }, [

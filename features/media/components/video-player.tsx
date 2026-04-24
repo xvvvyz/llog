@@ -217,7 +217,6 @@ export const VideoPlayer = ({
 
   React.useEffect(() => {
     onTimeChangeRef.current = onTimeChange;
-
     if (!onTimeChange || !source) return;
 
     onTimeChange(
@@ -232,7 +231,6 @@ export const VideoPlayer = ({
 
   React.useEffect(() => {
     if (previousResetTokenRef.current === resetToken) return;
-
     previousResetTokenRef.current = resetToken;
     player.pause();
     setIsBuffering(false);
@@ -362,14 +360,14 @@ export const VideoPlayer = ({
         onFirstFrameRender={markFirstFrameRendered}
         player={player}
         pointerEvents="none"
-        surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
         style={[StyleSheet.absoluteFill, showThumbnail && { opacity: 0 }]}
+        surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
       />
       {showThumbnail && (
-        <View className="pointer-events-none absolute inset-0">
+        <View className="absolute inset-0 pointer-events-none">
           <Image
-            fill
             contentFit={contentFit}
+            fill
             quality={thumbnailQuality}
             uri={thumbnailUri}
             wrapperClassName="bg-transparent"

@@ -16,22 +16,14 @@ app.get('/:token', db(), async (c) => {
       $: { where: { token } },
       team: {
         $: { fields: ['name'] },
-        roles: {
-          user: { profile: { image: {} } },
-        },
+        roles: { user: { profile: { image: {} } } },
       },
-      logs: {
-        $: { fields: ['name'] },
-        profiles: { image: {} },
-      },
+      logs: { $: { fields: ['name'] }, profiles: { image: {} } },
     },
   });
 
   const link = invites[0];
-
-  if (!link) {
-    throw new HTTPException(404, { message: 'Invite link not found' });
-  }
+  if (!link) throw new HTTPException(404, { message: 'Invite link not found' });
 
   const adminMembers = (link.team?.roles ?? [])
     .filter((role) => permissions.isManagedRole(role.role))
@@ -83,16 +75,9 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
   });
 
   const link = invites[0];
-
-  if (!link) {
-    throw new HTTPException(404, { message: 'Invite link not found' });
-  }
-
+  if (!link) throw new HTTPException(404, { message: 'Invite link not found' });
   const teamId = link.team?.id;
-
-  if (!teamId) {
-    throw new HTTPException(400, { message: 'Invalid invite link' });
-  }
+  if (!teamId) throw new HTTPException(400, { message: 'Invalid invite link' });
 
   const [{ roles: existingRoles }, { profiles }] = await Promise.all([
     c.var.db.query({
@@ -116,9 +101,7 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
     actorId && permissions.isManagedRole(desiredRole)
       ? (
           await c.var.db.query({
-            logs: {
-              $: { where: { team: teamId }, fields: ['id'] },
-            },
+            logs: { $: { where: { team: teamId }, fields: ['id'] } },
           })
         ).logs.map((log) => log.id)
       : logIds;
@@ -145,9 +128,7 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
       );
     }
 
-    if (tx.length) {
-      await c.var.db.transact(tx);
-    }
+    if (tx.length) await c.var.db.transact(tx);
 
     return c.json({
       status: desiredRole !== existingRole.role ? 'role_updated' : 'logs_added',

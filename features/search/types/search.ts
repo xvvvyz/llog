@@ -1,10 +1,5 @@
 export type SearchResultType = 'record' | 'reply' | 'log';
-
-export type SearchMediaItem = {
-  id: string;
-  type: string;
-  uri: string;
-};
+export type SearchMediaItem = { id: string; type: string; uri: string };
 
 export type SearchProfile = {
   avatarSeedId?: string;

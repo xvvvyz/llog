@@ -5,7 +5,6 @@ import {
 
 const args = process.argv.slice(2);
 const platforms = parseAssetPlatforms(args);
-
 console.log(`generate-assets: platforms ${formatAssetPlatforms(platforms)}`);
 
 const commands = [
@@ -15,14 +14,7 @@ const commands = [
 ] as const;
 
 for (const command of commands) {
-  const process = Bun.spawn(command, {
-    stdout: 'inherit',
-    stderr: 'inherit',
-  });
-
+  const process = Bun.spawn(command, { stdout: 'inherit', stderr: 'inherit' });
   const exitCode = await process.exited;
-
-  if (exitCode !== 0) {
-    process.exit(exitCode);
-  }
+  if (exitCode !== 0) process.exit(exitCode);
 }

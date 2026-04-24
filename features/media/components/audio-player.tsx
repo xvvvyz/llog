@@ -7,8 +7,7 @@ import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
-import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import { Pause, Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -31,7 +30,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   } = useNativeAudioPlayerController(props);
 
   return (
-    <View className="min-w-0 flex-row items-center">
+    <View className="flex-row min-w-0 items-center">
       <Button
         className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
         disabled={isDisabled}
@@ -49,19 +48,17 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           )}
         >
           <View
-            className="bg-progress-track relative h-1 w-full overflow-hidden rounded-full"
+            className="relative overflow-hidden h-1 w-full rounded-full bg-progress-track"
             onLayout={handleTrackLayout}
           >
             <View
-              className="bg-progress-fill absolute top-0 bottom-0 left-0 rounded-full"
-              style={{
-                width: `${progress * 100}%`,
-              }}
+              className="absolute bottom-0 left-0 top-0 rounded-full bg-progress-fill"
+              style={{ width: `${progress * 100}%` }}
             />
           </View>
         </Animated.View>
       </GestureDetector>
-      <Text className="text-muted-foreground ml-3 min-w-[40px] text-left text-xs">
+      <Text className="ml-3 min-w-[40px] text-left text-muted-foreground text-xs">
         {formatTime(isPlaying ? displayTime : playerDuration)}
       </Text>
       {showPlaybackRate && (

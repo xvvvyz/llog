@@ -3,13 +3,16 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';
-import { BellRinging } from 'phosphor-react-native/lib/module/icons/BellRinging';
-import { CaretCircleDown } from 'phosphor-react-native/lib/module/icons/CaretCircleDown';
-import { DotsThreeCircle } from 'phosphor-react-native/lib/module/icons/DotsThreeCircle';
-import { Export } from 'phosphor-react-native/lib/module/icons/Export';
-import { PlusSquare } from 'phosphor-react-native/lib/module/icons/PlusSquare';
 import * as React from 'react';
 import { View } from 'react-native';
+
+import {
+  BellRinging,
+  CaretCircleDown,
+  DotsThreeCircle,
+  Export,
+  PlusSquare,
+} from 'phosphor-react-native';
 
 type Step = {
   icon?: React.ComponentProps<typeof Icon>['icon'];
@@ -36,21 +39,21 @@ export const WebPushIosSetupSheet = () => {
       open={sheetManager.isOpen('web-push-ios-setup')}
       portalName="web-push-ios-setup"
     >
-      <View className="mx-auto w-full max-w-md p-8">
+      <View className="mx-auto max-w-md w-full p-8">
         <Icon
-          className="text-primary mb-6 self-center"
+          className="mb-6 text-primary self-center"
           icon={BellRinging}
           size={64}
         />
-        <Text className="text-center text-2xl">Web notifications on iOS</Text>
+        <Text className="text-2xl text-center">Web notifications on iOS</Text>
         <View
-          className="bg-input mt-8 gap-2.5 rounded-2xl px-6 py-5"
+          className="mt-8 px-6 py-5 rounded-2xl bg-input gap-2.5"
           style={{ borderCurve: 'continuous' }}
         >
           {steps.map((step, index) => (
-            <View className="flex-row items-start" key={step.text}>
-              <Text className="text-placeholder w-7 pr-2">{index + 1}.</Text>
-              <View className="min-w-0 flex-1 flex-row flex-wrap items-center gap-x-1.5 gap-y-1">
+            <View key={step.text} className="flex-row items-start">
+              <Text className="w-7 pr-2 text-placeholder">{index + 1}.</Text>
+              <View className="flex-1 flex-row flex-wrap min-w-0 gap-x-1.5 gap-y-1 items-center">
                 {step.prefix && (
                   <Text className="text-muted-foreground">{step.prefix}</Text>
                 )}

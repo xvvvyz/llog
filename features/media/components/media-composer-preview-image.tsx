@@ -15,7 +15,6 @@ export const MediaComposerPreviewImage = ({
 }) => {
   const remoteSrc = useFileUriToSrc(media.getVisualMediaThumbnailUri(item));
   const remoteSource = remoteSrc ? { uri: remoteSrc } : null;
-
   const [isRemoteReady, setIsRemoteReady] = React.useState(false);
   const shouldHoldLocalPreview = item.type === 'image' && !!item.localUri;
   const showRemoteLoadingIndicator = !isRemoteReady && !shouldHoldLocalPreview;
@@ -30,7 +29,7 @@ export const MediaComposerPreviewImage = ({
   }, [item.id, onRemoteReady, shouldHoldLocalPreview]);
 
   return (
-    <View className="bg-card relative flex-1">
+    <View className="relative flex-1 bg-card">
       {shouldHoldLocalPreview && (
         <ImagePrimitive
           contentFit="cover"

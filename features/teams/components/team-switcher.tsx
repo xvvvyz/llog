@@ -10,10 +10,7 @@ import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
 import { router } from 'expo-router';
-import { CaretDown } from 'phosphor-react-native/lib/module/icons/CaretDown';
-import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { GearSix } from 'phosphor-react-native/lib/module/icons/GearSix';
-import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -34,7 +31,7 @@ export const TeamSwitcher = ({
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
-        <Button className="h-auto gap-1 py-3 md:self-start" variant="link">
+        <Button className="h-auto py-3 gap-1 md:self-start" variant="link">
           <Avatar
             avatar={activeTeam?.image?.uri ?? lastAvatarRef.current}
             className={cn('shrink-0', breakpoints.md ? 'mr-3' : 'mr-1')}
@@ -51,8 +48,8 @@ export const TeamSwitcher = ({
       <Menu.Content align={breakpoints.md ? 'start' : 'center'}>
         {teams.map((t) => (
           <Menu.Item
-            className="justify-between"
             key={t.id}
+            className="justify-between"
             onPress={() => switchTeam({ teamId: t.id, uiId: ui.id })}
           >
             <Avatar

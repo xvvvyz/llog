@@ -47,7 +47,7 @@ export const AudioPlaybackRateButton = ({
       size="xs"
       variant="ghost"
     >
-      <Text className="text-muted-foreground text-xs font-normal tabular-nums">
+      <Text className="font-normal text-muted-foreground text-xs tabular-nums">
         {label}
       </Text>
     </Button>

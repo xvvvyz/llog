@@ -14,14 +14,17 @@ import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
-import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
-import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
-import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
-import { Users } from 'phosphor-react-native/lib/module/icons/Users';
 import * as React from 'react';
 import { ActivityIndicator, View } from 'react-native';
+
+import {
+  Check,
+  Copy,
+  NotePencil,
+  Plus,
+  QrCode,
+  Users,
+} from 'phosphor-react-native';
 
 export const LogEmptyState = ({ logId }: { logId: string }) => {
   const log = useLog({ id: logId });
@@ -85,7 +88,7 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
   }, [getOrCreateInviteUrl, sheetManager]);
 
   return (
-    <View className="mx-auto w-full max-w-[13rem] flex-1 justify-center gap-3 px-3 py-8">
+    <View className="flex-1 mx-auto max-w-[13rem] w-full px-3 py-8 gap-3 justify-center">
       {canManage && (
         <>
           <Button
@@ -112,8 +115,8 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
             </Text>
             {loadingAction === 'copy' ? (
               <ActivityIndicator
-                size={16}
                 color={UI[colorScheme].mutedForeground}
+                size={16}
               />
             ) : (
               <Icon className="-mr-0.5" icon={copied ? Check : Copy} />
@@ -130,8 +133,8 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
             </Text>
             {loadingAction === 'qr' ? (
               <ActivityIndicator
-                size={16}
                 color={UI[colorScheme].mutedForeground}
+                size={16}
               />
             ) : (
               <Icon className="-mr-0.5" icon={QrCode} />
@@ -151,12 +154,12 @@ export const LogEmptyState = ({ logId }: { logId: string }) => {
         </>
       )}
       <Button
-        className="web:hover:opacity-90 mt-3 active:opacity-90"
+        className="mt-3 active:opacity-90 web:hover:opacity-90"
         onPress={() => sheetManager.open('record-create', logId)}
         size="xs"
         style={{ backgroundColor: logColor.default }}
       >
-        <Icon className="text-contrast-foreground -ml-0.5" icon={Plus} />
+        <Icon className="-ml-0.5 text-contrast-foreground" icon={Plus} />
         <Text className="text-contrast-foreground">Record</Text>
       </Button>
     </View>

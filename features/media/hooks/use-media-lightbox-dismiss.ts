@@ -60,7 +60,6 @@ export const useMediaLightboxDismiss = ({
 
   React.useEffect(() => {
     if (isModalVisible) return;
-
     setIsDismissLocked(false);
     setIsDismissGestureActive(false);
     webTouchStateRef.current = null;
@@ -68,7 +67,6 @@ export const useMediaLightboxDismiss = ({
 
   React.useEffect(() => {
     if (!isVisible) return;
-
     setIsDismissLocked(false);
     setIsDismissGestureActive(false);
     webTouchStateRef.current = null;
@@ -88,12 +86,10 @@ export const useMediaLightboxDismiss = ({
         ])
         .onBegin(() => {
           'worklet';
-
           shouldSkipGestureReset.value = false;
         })
         .onStart(() => {
           'worklet';
-
           cancelAnimation(overlayOpacity);
 
           overlayOpacity.value = withTiming(0, {
@@ -105,7 +101,6 @@ export const useMediaLightboxDismiss = ({
         })
         .onUpdate((event) => {
           'worklet';
-
           translateY.value = event.translationY;
 
           backgroundOpacity.value = mediaLightboxAnimation.getDragChromeOpacity(
@@ -177,7 +172,6 @@ export const useMediaLightboxDismiss = ({
   const handleWebTouchStart = React.useCallback(
     (event: GestureResponderEvent) => {
       if (Platform.OS !== 'web' || isClosing || isDismissLocked) return;
-
       const touch = event.nativeEvent.touches[0];
 
       if (!touch || event.nativeEvent.touches.length !== 1) {
@@ -200,7 +194,6 @@ export const useMediaLightboxDismiss = ({
   const handleWebTouchMove = React.useCallback(
     (event: GestureResponderEvent) => {
       if (Platform.OS !== 'web') return;
-
       const touchState = webTouchStateRef.current;
       const touch = event.nativeEvent.touches[0];
 
@@ -242,7 +235,6 @@ export const useMediaLightboxDismiss = ({
       }
 
       event.preventDefault();
-
       const now = Date.now();
       const deltaTime = Math.max(now - touchState.lastTime, 1);
 
@@ -251,7 +243,6 @@ export const useMediaLightboxDismiss = ({
 
       touchState.lastTime = now;
       touchState.lastY = touch.pageY;
-
       translateY.value = translationY;
 
       backgroundOpacity.value = mediaLightboxAnimation.getDragChromeOpacity(
@@ -277,9 +268,7 @@ export const useMediaLightboxDismiss = ({
   const handleWebTouchEnd = React.useCallback(() => {
     const touchState = webTouchStateRef.current;
     webTouchStateRef.current = null;
-
     if (!touchState?.isDragging) return;
-
     const translationY = touchState.lastY - touchState.startY;
 
     const direction: mediaLightboxAnimation.DismissDirection =
@@ -307,7 +296,6 @@ export const useMediaLightboxDismiss = ({
   const handleWebTouchCancel = React.useCallback(() => {
     const wasDragging = webTouchStateRef.current?.isDragging ?? false;
     webTouchStateRef.current = null;
-
     if (!wasDragging) return;
     updateDismissGestureActive(false);
     resetDismissPosition();

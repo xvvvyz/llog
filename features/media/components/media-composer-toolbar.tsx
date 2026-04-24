@@ -1,11 +1,14 @@
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { Camera } from 'phosphor-react-native/lib/module/icons/Camera';
-import { ImageSquare } from 'phosphor-react-native/lib/module/icons/ImageSquare';
-import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
-import { Paperclip } from 'phosphor-react-native/lib/module/icons/Paperclip';
-import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
 import { Platform } from 'react-native';
+
+import {
+  Camera,
+  ImageSquare,
+  Microphone,
+  Paperclip,
+  Plus,
+} from 'phosphor-react-native';
 
 export const MediaComposerToolbar = ({
   canAddAudio,

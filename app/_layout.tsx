@@ -15,7 +15,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
-
 // react-native-gesture-handler on web throws "Cannot find single active touch"
 // when a pointer is released outside an active gesture. It is benign (no state
 // corruption, no missed events) but surfaces as a fatal uncaught error that
@@ -38,7 +37,6 @@ const isSingleActiveTouchError = (value: unknown) => {
 if (Platform.OS === 'web') {
   const globalScope = globalThis as typeof globalThis & {
     __llogSingleActiveTouchGuardInstalled?: boolean;
-
     ErrorUtils?: {
       getGlobalHandler?: () => (error: unknown, isFatal: boolean) => void;
       setGlobalHandler?: (

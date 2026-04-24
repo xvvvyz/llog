@@ -22,13 +22,7 @@ export const uploadMedia = async ({
   path,
 }: UploadMediaArgs) => {
   if (asset?.type === 'video') {
-    await directVideoUpload({
-      asset,
-      mediaId,
-      order,
-      path,
-    });
-
+    await directVideoUpload({ asset, mediaId, order, path });
     return;
   }
 

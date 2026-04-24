@@ -4,7 +4,7 @@ import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Microphone } from 'phosphor-react-native/lib/module/icons/Microphone';
+import { Microphone } from 'phosphor-react-native';
 import { ActivityIndicator, View } from 'react-native';
 
 export const RecordAudioSheetContent = ({
@@ -27,8 +27,8 @@ export const RecordAudioSheetContent = ({
   startError?: string | null;
 }) => {
   return (
-    <View className="mx-auto w-full max-w-sm gap-12 p-8">
-      <View className="items-center gap-4">
+    <View className="mx-auto max-w-sm w-full p-8 gap-12">
+      <View className="gap-4 items-center">
         <View
           className={cn(
             'size-16 items-center justify-center rounded-full border',
@@ -38,26 +38,26 @@ export const RecordAudioSheetContent = ({
           )}
         >
           <Icon
-            className={
-              isMicActive ? 'text-destructive' : 'text-muted-foreground'
-            }
             icon={Microphone}
             size={28}
             weight="fill"
+            className={
+              isMicActive ? 'text-destructive' : 'text-muted-foreground'
+            }
           />
         </View>
-        <Text className="text-2xl font-medium tabular-nums">
+        <Text className="font-medium text-2xl tabular-nums">
           {formatTime(duration)}
         </Text>
         {startError ? (
-          <Text className="text-muted-foreground text-center text-sm">
+          <Text className="text-center text-muted-foreground text-sm">
             {startError}
           </Text>
         ) : null}
       </View>
       <View className="gap-3">
         <Button
-          className="web:hover:opacity-90 active:opacity-90"
+          className="active:opacity-90 web:hover:opacity-90"
           disabled={isUploading || !canSave}
           onPress={onSave}
           style={logColor ? { backgroundColor: logColor } : undefined}

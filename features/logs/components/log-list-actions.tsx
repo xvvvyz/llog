@@ -8,16 +8,18 @@ import * as DropdownMenu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
 import { Text } from '@/ui/text';
-import { Calendar } from 'phosphor-react-native/lib/module/icons/Calendar';
-import { Funnel } from 'phosphor-react-native/lib/module/icons/Funnel';
-import { Palette } from 'phosphor-react-native/lib/module/icons/Palette';
-import { SortAscending } from 'phosphor-react-native/lib/module/icons/SortAscending';
-import { SortDescending } from 'phosphor-react-native/lib/module/icons/SortDescending';
-import { TextAa } from 'phosphor-react-native/lib/module/icons/TextAa';
 import { View } from 'react-native';
 
-export const LOG_SORT_VALUES = ['serverCreatedAt', 'name', 'color'] as const;
+import {
+  Calendar,
+  Funnel,
+  Palette,
+  SortAscending,
+  SortDescending,
+  TextAa,
+} from 'phosphor-react-native';
 
+export const LOG_SORT_VALUES = ['serverCreatedAt', 'name', 'color'] as const;
 export type SortBy = (typeof LOG_SORT_VALUES)[number];
 
 export const isSortBy = (value: unknown): value is SortBy =>
@@ -41,7 +43,6 @@ export const LogListActions = ({
 }) => {
   const breakpoints = useBreakpoints();
   const ui = useUi();
-
   const tagIdSet = new Set(selectedTagIds);
   const hasFilters = selectedTagIds.length > 0;
 
@@ -72,8 +73,8 @@ export const LogListActions = ({
             <DropdownMenu.Label>Tags</DropdownMenu.Label>
             {tags.map((tag) => (
               <DropdownMenu.CheckboxItem
-                checked={tagIdSet.has(tag.id)}
                 key={tag.id}
+                checked={tagIdSet.has(tag.id)}
                 onCheckedChange={() => toggleTagId(tag.id)}
               >
                 <Text>{tag.name}</Text>

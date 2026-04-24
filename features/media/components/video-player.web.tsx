@@ -78,7 +78,6 @@ export const VideoPlayer = ({
     React.useState(false);
 
   const [isAtStart, setIsAtStart] = React.useState(true);
-
   const rafRef = React.useRef<number>(0);
   const scrubbingEnabledRef = React.useRef(false);
   const lastScrubSeekAtRef = React.useRef(0);
@@ -301,7 +300,6 @@ export const VideoPlayer = ({
     const video = ref.current;
     if (!video) return;
     if (!src) return;
-
     const onWaiting = () => setIsBuffering(true);
 
     const onPlaying = () => {
@@ -396,10 +394,7 @@ export const VideoPlayer = ({
     video.addEventListener('play', start);
     video.addEventListener('pause', stop);
     video.addEventListener('ended', stop);
-
-    if (!video.paused) {
-      rafRef.current = requestAnimationFrame(tick);
-    }
+    if (!video.paused) rafRef.current = requestAnimationFrame(tick);
 
     return () => {
       stop();
@@ -421,9 +416,7 @@ export const VideoPlayer = ({
       return;
     }
 
-    if (!wasAutoPlay) {
-      void play();
-    }
+    if (!wasAutoPlay) void play();
   }, [autoPlay, play, src]);
 
   return (
@@ -432,26 +425,26 @@ export const VideoPlayer = ({
       style={{ width: maxWidth, height: maxHeight }}
     >
       <video
-        className={cn(
-          'absolute inset-0 block h-full w-full',
-          contentFit === 'cover' ? 'object-cover' : 'object-contain',
-          showThumbnail ? 'opacity-0' : 'opacity-100'
-        )}
         ref={ref}
         loop
         muted={muted}
         playsInline
         preload="auto"
+        className={cn(
+          'absolute inset-0 block h-full w-full',
+          contentFit === 'cover' ? 'object-cover' : 'object-contain',
+          showThumbnail ? 'opacity-0' : 'opacity-100'
+        )}
       />
       {showThumbnail && (
         <img
           alt=""
           aria-hidden
+          src={poster ?? undefined}
           className={cn(
             'pointer-events-none absolute inset-0 h-full w-full',
             contentFit === 'cover' ? 'object-cover' : 'object-contain'
           )}
-          src={poster ?? undefined}
         />
       )}
       {showLoadingIndicator && (

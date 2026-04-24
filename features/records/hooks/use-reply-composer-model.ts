@@ -17,25 +17,18 @@ export const useReplyComposerModel = () => {
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
   const isSubmittingRef = React.useRef(false);
   const sheetManager = useSheetManager();
-
   const editRecordId = sheetManager.getContext('reply-create');
   const isEdit = !!editRecordId;
   const sheetId = sheetManager.getId('reply-create');
   const recordId = isEdit ? editRecordId : sheetId;
   const editReplyId = isEdit ? sheetId : undefined;
-
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
   const draft = useReplyDraft({ recordId: isEdit ? undefined : recordId });
 
   const { data: editData } = db.useQuery(
     editReplyId
-      ? {
-          replies: {
-            $: { where: { id: editReplyId } },
-            media: {},
-          },
-        }
+      ? { replies: { $: { where: { id: editReplyId } }, media: {} } }
       : null
   );
 
@@ -52,13 +45,7 @@ export const useReplyComposerModel = () => {
 
   const handleUploadMedia = React.useCallback(
     async (asset: PickedMediaAsset, mediaId: string, order: number) => {
-      await uploadReplyMedia({
-        asset,
-        mediaId,
-        order,
-        recordId,
-        replyId,
-      });
+      await uploadReplyMedia({ asset, mediaId, order, recordId, replyId });
     },
     [recordId, replyId]
   );
@@ -112,18 +99,8 @@ export const useReplyComposerModel = () => {
     setIsSubmitting(true);
 
     try {
-      await publishReply({
-        id: replyId,
-        recordId,
-        text,
-      });
-
-      requestPostSubmitScroll({
-        id: recordId,
-        scope: 'record',
-        target: 'end',
-      });
-
+      await publishReply({ id: replyId, recordId, text });
+      requestPostSubmitScroll({ id: recordId, scope: 'record', target: 'end' });
       close();
     } finally {
       isSubmittingRef.current = false;

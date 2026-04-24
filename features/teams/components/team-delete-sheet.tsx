@@ -22,9 +22,11 @@ export const TeamDeleteSheet = () => {
       open={sheetManager.isOpen('team-delete')}
       portalName="team-delete"
     >
-      <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">Delete team?</Text>
+      <View className="mx-auto max-w-md w-full p-8">
+        <Text className="text-2xl text-center">Delete team?</Text>
         <Button
+          variant="destructive"
+          wrapperClassName="mt-12"
           onPress={async () => {
             const nextTeam = teams.find((t) => t.id !== team.id);
             sheetManager.close('team-delete');
@@ -36,8 +38,6 @@ export const TeamDeleteSheet = () => {
             await deleteTeam({ id: team.id! });
             router.replace('/');
           }}
-          variant="destructive"
-          wrapperClassName="mt-12"
         >
           <Text>Delete</Text>
         </Button>

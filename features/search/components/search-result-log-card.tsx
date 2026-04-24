@@ -25,19 +25,19 @@ export const SearchResultLogCard = ({
   return (
     <Pressable className={className} onPress={onPress}>
       <View
-        className="flex-row items-center justify-between rounded-2xl p-4"
+        className="flex-row p-4 rounded-2xl items-center justify-between"
         style={{
           backgroundColor: spectrum?.default,
           borderCurve: 'continuous',
         }}
       >
-        <Text className="text-contrast-foreground flex-1" numberOfLines={1}>
+        <Text className="flex-1 text-contrast-foreground" numberOfLines={1}>
           {result.text}
         </Text>
         {!!result.profiles?.length && (
           <View className="flex-row">
             {result.profiles.map((profile, index) => (
-              <View className={cn(index > 0 && '-ml-[8px]')} key={profile.id}>
+              <View key={profile.id} className={cn(index > 0 && '-ml-[8px]')}>
                 <Avatar
                   avatar={profile.uri}
                   id={profile.id}

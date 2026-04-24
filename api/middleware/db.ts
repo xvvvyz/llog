@@ -20,10 +20,7 @@ const getBearerToken = (authorization?: string | null) => {
 
 const verifyUserOrThrow = async (db: Db, authorization?: string | null) => {
   const authToken = getBearerToken(authorization);
-
-  if (!authToken) {
-    throw new HTTPException(401, { message: 'Unauthorized' });
-  }
+  if (!authToken) throw new HTTPException(401, { message: 'Unauthorized' });
 
   try {
     const user = await db.auth.verifyToken(authToken);
@@ -47,11 +44,7 @@ interface DbMiddleware<T extends DbMiddlewareOptions> {
 
 interface AuthMiddleware {
   Bindings: CloudflareEnv;
-  Variables: {
-    authToken: string;
-    db: Db;
-    user: User;
-  };
+  Variables: { authToken: string; db: Db; user: User };
 }
 
 export const db = <T extends DbMiddlewareOptions>({ asUser }: T = {} as T) =>

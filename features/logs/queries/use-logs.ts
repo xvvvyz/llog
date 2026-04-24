@@ -6,10 +6,7 @@ import * as React from 'react';
 export const useLogs = ({
   query,
   teamIds,
-}: {
-  query?: string;
-  teamIds?: string[];
-} = {}) => {
+}: { query?: string; teamIds?: string[] } = {}) => {
   const ui = useUi();
   const prevDataRef = React.useRef<any[]>([]);
   const resolvedTeamIds = useResolvedTeamIds(teamIds);

@@ -1,9 +1,6 @@
 import { Role } from '@/features/teams/types/role';
 
-type InviteLike = {
-  role: string;
-  logs?: { id: string }[] | null;
-};
+type InviteLike = { role: string; logs?: { id: string }[] | null };
 
 export const findMemberInviteByLogs = <T extends InviteLike>(
   invites: T[],

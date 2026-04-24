@@ -1,6 +1,7 @@
 import * as pickedMedia from '@/features/media/lib/picked-media';
 import { alert } from '@/lib/alert';
 import { getDocumentAsync } from 'expo-document-picker';
+import * as React from 'react';
 
 import {
   launchCameraAsync,
@@ -8,8 +9,6 @@ import {
   requestCameraPermissionsAsync,
   requestMediaLibraryPermissionsAsync,
 } from 'expo-image-picker';
-
-import * as React from 'react';
 
 export const useMediaPickerActions = ({
   onUploadAssets,
@@ -38,10 +37,7 @@ export const useMediaPickerActions = ({
             ? 'Allow access to take photos and videos.'
             : 'Allow access to save photos and videos.';
 
-      alert({
-        message,
-        title,
-      });
+      alert({ message, title });
     },
     []
   );
@@ -133,9 +129,5 @@ export const useMediaPickerActions = ({
     );
   }, [onUploadAssets, showCapturePermissionAlert]);
 
-  return {
-    handleBrowseMedia,
-    handleCaptureMedia,
-    handlePickFiles,
-  };
+  return { handleBrowseMedia, handleCaptureMedia, handlePickFiles };
 };

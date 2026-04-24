@@ -17,11 +17,7 @@ const canManageFor = (teamIdRef: string) =>
   `${isOwnerFor(teamIdRef)} || ${isAdminFor(teamIdRef)}`;
 
 const rules = {
-  $default: {
-    allow: {
-      $default: `false`,
-    },
-  },
+  $default: { allow: { $default: `false` } },
   activities: {
     bind: [
       'isTeamMember',
@@ -68,11 +64,7 @@ const rules = {
       update: 'false',
     },
   },
-  attrs: {
-    allow: {
-      create: 'false',
-    },
-  },
+  attrs: { allow: { create: 'false' } },
   replies: {
     bind: [
       'isValidNewText',
@@ -99,10 +91,7 @@ const rules = {
       create: 'isAuthor && isTeamMember && (canManage || isLogMember)',
       update: 'isAuthor && isTeamMember && isValidNewText',
       delete: 'canDeleteOwn || canDeleteFromOwnRecord || canManage',
-      link: {
-        reactions: 'auth.id != null',
-        activities: 'auth.id != null',
-      },
+      link: { reactions: 'auth.id != null', activities: 'auth.id != null' },
     },
   },
   media: {
@@ -197,10 +186,7 @@ const rules = {
       create: 'canManage && isValidName',
       update: 'canManage && isValidName',
       delete: 'canManage',
-      link: {
-        records: 'auth.id != null',
-        activities: 'auth.id != null',
-      },
+      link: { records: 'auth.id != null', activities: 'auth.id != null' },
     },
   },
   profiles: {
@@ -365,11 +351,7 @@ const rules = {
       link: { activities: 'auth.id != null' },
     },
   },
-  ui: {
-    allow: {
-      $default: "data.ref('user.id') == auth.ref('$user.id')",
-    },
-  },
+  ui: { allow: { $default: "data.ref('user.id') == auth.ref('$user.id')" } },
 } satisfies InstantRules;
 
 export default rules;

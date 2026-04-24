@@ -35,11 +35,7 @@ export const Reactions = ({
     >();
 
     for (const reaction of reactions) {
-      const entry = map.get(reaction.emoji) ?? {
-        count: 0,
-        userReacted: false,
-      };
-
+      const entry = map.get(reaction.emoji) ?? { count: 0, userReacted: false };
       entry.count++;
 
       if (reaction.author?.id === profile.id) {
@@ -70,13 +66,13 @@ export const Reactions = ({
             exiting={animation(ZoomOut)}
           >
             <Button
+              size="xs"
+              variant="ghost"
+              wrapperClassName="rounded-lg"
               className={cn(
                 'gap-1.5 rounded-lg',
                 userReacted ? 'active:bg-primary/20' : 'active:bg-accent'
               )}
-              size="xs"
-              variant="ghost"
-              wrapperClassName="rounded-lg"
               onPress={() => {
                 if (!teamId) return;
 
@@ -92,24 +88,24 @@ export const Reactions = ({
               }}
             >
               <Icon
+                color={userReacted ? color : undefined}
+                weight={userReacted ? 'fill' : 'regular'}
                 className={cn(
                   '-ml-0.5',
                   userReacted && !color && 'text-primary',
                   !userReacted && 'text-muted-foreground'
                 )}
-                color={userReacted ? color : undefined}
                 icon={
                   isEmoji(emoji) ? REACTION_ICONS[emoji] : REACTION_ICONS['❤️']
                 }
-                weight={userReacted ? 'fill' : 'regular'}
               />
               <Text
+                style={userReacted && color ? { color } : undefined}
                 className={cn(
                   'text-sm',
                   userReacted && !color && 'text-primary',
                   !userReacted && 'text-muted-foreground'
                 )}
-                style={userReacted && color ? { color } : undefined}
               >
                 {count}
               </Text>

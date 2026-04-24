@@ -27,14 +27,9 @@ type WebScrollLockSnapshot = {
   scrollY: number;
 };
 
-type WebVisualViewport = {
-  bottomInset: number;
-  height?: number;
-};
-
+type WebVisualViewport = { bottomInset: number; height?: number };
 let webScrollLockCount = 0;
 let webScrollLockSnapshot: WebScrollLockSnapshot | null = null;
-
 const SCROLL_LOCK_ALLOW_SELECTOR = '[data-testid="scroll-lock-allow"]';
 const WEB_SHEET_BOTTOM_OVERSCAN = 128;
 
@@ -52,7 +47,6 @@ const getWebVisualViewport = (baselineHeight?: number): WebVisualViewport => {
     !!activeElement?.isContentEditable;
 
   if (!textEntryFocused) return { bottomInset: 0, height: undefined };
-
   const viewport = window.visualViewport;
   const documentHeight = document.documentElement?.clientHeight ?? 0;
 
@@ -62,10 +56,7 @@ const getWebVisualViewport = (baselineHeight?: number): WebVisualViewport => {
     documentHeight
   );
 
-  if (!viewport) {
-    return { bottomInset: 0, height: window.innerHeight };
-  }
-
+  if (!viewport) return { bottomInset: 0, height: window.innerHeight };
   const viewportBottom = viewport.offsetTop + viewport.height;
 
   return {
@@ -105,7 +96,6 @@ const useWebSheetVisualViewport = (open: boolean): WebVisualViewport => {
     };
 
     update();
-
     const visualViewport = window.visualViewport;
     visualViewport?.addEventListener('resize', update);
     visualViewport?.addEventListener('scroll', update);
@@ -125,13 +115,11 @@ const useWebSheetVisualViewport = (open: boolean): WebVisualViewport => {
   }, [open]);
 
   if (!open) return { bottomInset: 0, height: undefined };
-
   return viewport;
 };
 
 const isEditableElement = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
-
   const tagName = target.tagName;
 
   return (
@@ -176,9 +164,7 @@ const canScrollWithinTarget = (
   deltaY: number
 ) => {
   if (!(target instanceof HTMLElement)) return false;
-
   if (target.closest(SCROLL_LOCK_ALLOW_SELECTOR)) return true;
-
   let element: HTMLElement | null = target;
 
   while (element && element !== document.body) {
@@ -192,7 +178,6 @@ const canScrollWithinTarget = (
 const useWebSheetScrollLock = (open: boolean) => {
   React.useEffect(() => {
     if (typeof window === 'undefined' || !open) return;
-
     const body = document.body;
     const html = document.documentElement;
     const scrollX = window.scrollX;
@@ -232,19 +217,14 @@ const useWebSheetScrollLock = (open: boolean) => {
     const restoreScrollPosition = () => {
       const snapshot = webScrollLockSnapshot;
       if (!snapshot) return;
-
-      if (restoreFrame !== undefined) {
-        window.cancelAnimationFrame(restoreFrame);
-      }
+      if (restoreFrame !== undefined) window.cancelAnimationFrame(restoreFrame);
 
       restoreFrame = window.requestAnimationFrame(() => {
         window.scrollTo(snapshot.scrollX, snapshot.scrollY);
       });
     };
 
-    window.addEventListener('scroll', restoreScrollPosition, {
-      passive: true,
-    });
+    window.addEventListener('scroll', restoreScrollPosition, { passive: true });
 
     const preventPageWheel = (event: WheelEvent) => {
       if (canScrollWithinTarget(event.target, event.deltaX, event.deltaY)) {
@@ -257,7 +237,6 @@ const useWebSheetScrollLock = (open: boolean) => {
     const captureTouchStart = (event: TouchEvent) => {
       const touch = event.touches[0];
       if (!touch) return;
-
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
     };
@@ -265,14 +244,9 @@ const useWebSheetScrollLock = (open: boolean) => {
     const preventPageTouchMove = (event: TouchEvent) => {
       const touch = event.touches[0];
       if (!touch) return;
-
       const deltaX = touchStartX - touch.clientX;
       const deltaY = touchStartY - touch.clientY;
-
-      if (canScrollWithinTarget(event.target, deltaX, deltaY)) {
-        return;
-      }
-
+      if (canScrollWithinTarget(event.target, deltaX, deltaY)) return;
       event.preventDefault();
     };
 
@@ -297,7 +271,6 @@ const useWebSheetScrollLock = (open: boolean) => {
     const activeOptions = { capture: true, passive: false };
     const passiveOptions = { capture: true, passive: true };
     const captureOptions = { capture: true };
-
     document.addEventListener('wheel', preventPageWheel, activeOptions);
     document.addEventListener('touchstart', captureTouchStart, passiveOptions);
     document.addEventListener('touchmove', preventPageTouchMove, activeOptions);
@@ -330,17 +303,11 @@ const useWebSheetScrollLock = (open: boolean) => {
         captureOptions
       );
 
-      if (restoreFrame !== undefined) {
-        window.cancelAnimationFrame(restoreFrame);
-      }
-
+      if (restoreFrame !== undefined) window.cancelAnimationFrame(restoreFrame);
       webScrollLockCount = Math.max(0, webScrollLockCount - 1);
-
       if (webScrollLockCount > 0 || !webScrollLockSnapshot) return;
-
       const snapshot = webScrollLockSnapshot;
       webScrollLockSnapshot = null;
-
       html.style.overflow = snapshot.htmlOverflow;
       html.style.overscrollBehavior = snapshot.htmlOverscrollBehavior;
       body.style.left = snapshot.bodyLeft;
@@ -350,7 +317,6 @@ const useWebSheetScrollLock = (open: boolean) => {
       body.style.right = snapshot.bodyRight;
       body.style.top = snapshot.bodyTop;
       body.style.width = snapshot.bodyWidth;
-
       window.scrollTo(snapshot.scrollX, snapshot.scrollY);
     };
   }, [open]);

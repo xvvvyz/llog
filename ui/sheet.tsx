@@ -82,7 +82,7 @@ export const Sheet = ({
           exiting={animation(FadeOutDown)}
         >
           <Animated.View
-            className="bg-background/90 absolute inset-0"
+            className="absolute inset-0 bg-background/90"
             entering={animation(FadeIn)}
             exiting={animation(FadeOut)}
           >
@@ -111,7 +111,7 @@ export const Sheet = ({
               {children}
               {loading && (
                 <Animated.View
-                  className="bg-popover absolute inset-0 z-10 rounded-t-4xl"
+                  className="absolute inset-0 z-10 rounded-t-4xl bg-popover"
                   exiting={animation(FadeOut)}
                 >
                   <Loading className="bg-popover" />
@@ -119,7 +119,7 @@ export const Sheet = ({
               )}
             </View>
             <View
-              className="border-border bg-popover border-x"
+              className="border-border border-x bg-popover"
               style={platformLayout.bottomSpacerStyle}
             />
           </KeyboardAvoidingView>

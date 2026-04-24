@@ -6,18 +6,9 @@ import * as React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
-  defaultVariants: {
-    size: 'default',
-    variant: 'default',
-  },
+  defaultVariants: { size: 'default', variant: 'default' },
   variants: {
-    size: {
-      default: '',
-      icon: '',
-      lg: '',
-      sm: '',
-      xs: 'rounded-lg',
-    },
+    size: { default: '', icon: '', lg: '', sm: '', xs: 'rounded-lg' },
     variant: {
       default: '',
       destructive: '',
@@ -32,10 +23,7 @@ const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
 const buttonVariants = cva(
   'group flex-row items-center rounded-xl gap-3 justify-center web:transition-opacity web:transition-colors web:focus-visible:outline-hidden',
   {
-    defaultVariants: {
-      size: 'default',
-      variant: 'default',
-    },
+    defaultVariants: { size: 'default', variant: 'default' },
     variants: {
       size: {
         default: 'h-11 px-4 py-2',
@@ -62,18 +50,9 @@ const buttonVariants = cva(
 const buttonTextVariants = cva(
   'web:whitespace-nowrap leading-5 font-medium text-foreground web:transition-colors',
   {
-    defaultVariants: {
-      size: 'default',
-      variant: 'default',
-    },
+    defaultVariants: { size: 'default', variant: 'default' },
     variants: {
-      size: {
-        default: '',
-        icon: '',
-        lg: '',
-        sm: '',
-        xs: 'text-sm',
-      },
+      size: { default: '', icon: '', lg: '', sm: '', xs: 'text-sm' },
       variant: {
         default: 'text-primary-foreground',
         destructive: 'text-destructive-foreground',
@@ -119,34 +98,26 @@ const Button = React.forwardRef<
     const shouldHaveRipple = variant !== 'link';
 
     return (
-      <TextContext.Provider
-        value={buttonTextVariants({
-          size,
-          variant,
-        })}
-      >
+      <TextContext.Provider value={buttonTextVariants({ size, variant })}>
         <View
+          style={{ borderCurve: 'continuous' }}
           className={cn(
             buttonWrapperVariants({ size, variant }),
             disabled && 'opacity-50',
             wrapperClassName
           )}
-          style={{ borderCurve: 'continuous' }}
         >
           <Pressable
-            android_ripple={
-              shouldHaveRipple
-                ? {
-                    color: rippleColor,
-                    borderless: false,
-                  }
-                : undefined
-            }
+            ref={ref}
             className={cn(buttonVariants({ className, size, variant }))}
             disabled={disabled}
-            ref={ref}
             role="button"
             style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
+            android_ripple={
+              shouldHaveRipple
+                ? { color: rippleColor, borderless: false }
+                : undefined
+            }
             {...props}
           />
         </View>

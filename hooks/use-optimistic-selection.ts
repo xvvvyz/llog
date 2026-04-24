@@ -1,9 +1,6 @@
 import * as React from 'react';
 
-type PendingSelection = {
-  requestId: number;
-  selected: boolean;
-};
+type PendingSelection = { requestId: number; selected: boolean };
 
 export const useOptimisticSelection = ({
   onChange,

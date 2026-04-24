@@ -7,7 +7,7 @@ import { REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
-import { SmileySticker } from 'phosphor-react-native/lib/module/icons/SmileySticker';
+import { SmileySticker } from 'phosphor-react-native';
 import * as React from 'react';
 
 export const EmojiPicker = ({
@@ -44,9 +44,7 @@ export const EmojiPicker = ({
     [reactions]
   );
 
-  if (REACTION_EMOJIS.every((emoji) => usedEmojis.has(emoji))) {
-    return null;
-  }
+  if (REACTION_EMOJIS.every((emoji) => usedEmojis.has(emoji))) return null;
 
   return (
     <Menu.Root>
@@ -68,7 +66,7 @@ export const EmojiPicker = ({
           return (
             <Menu.Item
               key={emoji}
-              className="size-10 min-w-0 justify-center rounded-xl pr-0 pl-0"
+              className="min-w-0 size-10 pl-0 pr-0 rounded-xl justify-center"
               onPress={() => {
                 if (!teamId) return;
 
@@ -84,13 +82,13 @@ export const EmojiPicker = ({
               }}
             >
               <Icon
+                color={color && selected ? color : undefined}
+                icon={REACTION_ICONS[emoji]}
+                weight={selected ? 'fill' : 'regular'}
                 className={cn(
                   selected && !color && 'text-primary',
                   !selected && 'text-muted-foreground'
                 )}
-                color={color && selected ? color : undefined}
-                icon={REACTION_ICONS[emoji]}
-                weight={selected ? 'fill' : 'regular'}
               />
             </Menu.Item>
           );

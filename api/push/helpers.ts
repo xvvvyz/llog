@@ -11,10 +11,7 @@ type StoredPushSubscription = {
   subscription?: z.infer<typeof pushSubscriptionSchema> | null;
 };
 
-type RecipientUser = {
-  id?: string;
-  subscriptions?: StoredPushSubscription[];
-};
+type RecipientUser = { id?: string; subscriptions?: StoredPushSubscription[] };
 
 type RecipientRole = {
   role?: string | null;
@@ -22,23 +19,16 @@ type RecipientRole = {
   userId?: string;
 };
 
-type RecipientProfile = {
-  user?: RecipientUser;
-};
+type RecipientProfile = { user?: RecipientUser };
 
 export const pushSubscriptionSchema = z.object({
   endpoint: z.string().url(),
   expirationTime: z.number().nullable().optional(),
-  keys: z.object({
-    auth: z.string().min(1),
-    p256dh: z.string().min(1),
-  }),
+  keys: z.object({ auth: z.string().min(1), p256dh: z.string().min(1) }),
 });
 
 const getPrivateJwk = (env: CloudflareEnv) => {
-  if (!env.WEB_PUSH_VAPID_PRIVATE_KEY) {
-    return null;
-  }
+  if (!env.WEB_PUSH_VAPID_PRIVATE_KEY) return null;
 
   try {
     return JSON.parse(env.WEB_PUSH_VAPID_PRIVATE_KEY) as JsonWebKey;
@@ -50,10 +40,7 @@ const getPrivateJwk = (env: CloudflareEnv) => {
 
 const trimBody = (text?: string | null) => {
   const value = text?.trim();
-
-  if (!value) {
-    return '';
-  }
+  if (!value) return '';
 
   return value.length > MAX_BODY_LENGTH
     ? `${value.slice(0, MAX_BODY_LENGTH - 1)}…`
@@ -158,9 +145,7 @@ export const upsertPushSubscription = async (
   subscription: z.infer<typeof pushSubscriptionSchema>
 ) => {
   const { subscriptions } = await db.query({
-    subscriptions: {
-      $: { where: { endpoint: subscription.endpoint } },
-    },
+    subscriptions: { $: { where: { endpoint: subscription.endpoint } } },
   });
 
   const existingId = subscriptions[0]?.id;
@@ -182,14 +167,7 @@ export const upsertPushSubscription = async (
 export const listUserPushSubscriptions = async (db: Db, userId: string) => {
   const { subscriptions } = await db.query({
     subscriptions: {
-      $: {
-        fields: ['id', 'endpoint', 'lastSeenAt'] as [
-          'id',
-          'endpoint',
-          'lastSeenAt',
-        ],
-        where: { user: userId },
-      },
+      $: { fields: ['id', 'endpoint', 'lastSeenAt'], where: { user: userId } },
     },
   });
 
@@ -204,7 +182,7 @@ export const deletePushSubscriptionByEndpoint = async (
   const { subscriptions } = await db.query({
     subscriptions: {
       $: { where: { endpoint } },
-      user: { $: { fields: ['id'] as ['id'] } },
+      user: { $: { fields: ['id'] } },
     },
   });
 
@@ -258,10 +236,7 @@ export const sendPushNotifications = async (
         const request = await buildPushHTTPRequest({
           message: {
             adminContact: env.MAILTO_CONTACT ?? '',
-            options: {
-              ttl: 300,
-              urgency: 'high',
-            },
+            options: { ttl: 300, urgency: 'high' },
             payload,
           },
           privateJWK: privateJwk,

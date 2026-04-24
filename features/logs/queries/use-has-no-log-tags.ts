@@ -10,11 +10,9 @@ export const useHasNoTags = () => {
           tags: {
             $: {
               fields: ['id'],
-
               // limit 2 so if we delete 1 of them
               // we don't get an empty state flash
               limit: 2,
-
               where: { team: ui.activeTeamId },
             },
           },

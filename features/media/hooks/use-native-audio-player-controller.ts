@@ -121,7 +121,6 @@ export const useNativeAudioPlayerController = ({
   const playFrom = React.useCallback(
     async (seconds: number) => {
       if (!src) return;
-
       const startTime = Math.max(0, Math.min(seconds, playerDuration));
       setDisplayTime(startTime);
       await player.seekTo(startTime);

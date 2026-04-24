@@ -54,11 +54,7 @@ const Textarea = React.forwardRef<
 
     const autoSizeStyle =
       minRows || maxRows
-        ? {
-            height: autoHeight ?? minHeight,
-            maxHeight,
-            minHeight,
-          }
+        ? { height: autoHeight ?? minHeight, maxHeight, minHeight }
         : undefined;
 
     React.useEffect(() => {
@@ -88,31 +84,31 @@ const Textarea = React.forwardRef<
 
     return (
       <TextInput
+        ref={ref}
         autoCapitalize="sentences"
         autoComplete="off"
         autoCorrect
         blurOnSubmit={false}
+        lineBreakModeIOS="wordWrapping"
+        multiline
+        numberOfLines={minRows ?? numberOfLines}
+        onChangeText={handleChangeText}
+        onContentSizeChange={handleContentSizeChange}
+        placeholderTextColorClassName="accent-placeholder"
+        returnKeyType="default"
+        scrollEnabled={scrollEnabled ?? true}
+        submitBehavior="newline"
+        textAlignVertical="top"
+        value={localValue}
         className={cn(
           'border-border-secondary bg-input native:text-base text-foreground rounded-xl border px-4 py-2.5 text-base',
           className
         )}
-        lineBreakModeIOS="wordWrapping"
-        multiline
-        numberOfLines={minRows ?? numberOfLines}
-        onContentSizeChange={handleContentSizeChange}
-        onChangeText={handleChangeText}
-        placeholderTextColorClassName="accent-placeholder"
-        ref={ref}
-        returnKeyType="default"
-        scrollEnabled={scrollEnabled ?? true}
         style={StyleSheet.flatten([
           { borderCurve: 'continuous' },
           autoSizeStyle,
           style,
         ])}
-        submitBehavior="newline"
-        textAlignVertical="top"
-        value={localValue}
         {...props}
       />
     );

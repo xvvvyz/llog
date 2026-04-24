@@ -4,7 +4,7 @@ import { Media } from '@/features/media/types/media';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
-import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
@@ -32,9 +32,9 @@ export const RecordOrReplyMediaGrid = ({
 
       return (
         <Pressable
+          key={item.id}
           className="flex-1"
           disabled={isProcessing}
-          key={item.id}
           onPress={() => handlePress(item.id)}
         >
           <Image
@@ -44,11 +44,11 @@ export const RecordOrReplyMediaGrid = ({
             wrapperClassName="rounded-2xl"
           />
           {item.type === 'video' && (
-            <View className="pointer-events-none absolute inset-0 items-center justify-center">
+            <View className="absolute inset-0 pointer-events-none items-center justify-center">
               {isProcessing ? (
                 <ActivityIndicator color={UI.light.contrastForeground} />
               ) : (
-                <View className="bg-contrast-background/50 size-10 items-center justify-center rounded-full">
+                <View className="size-10 rounded-full bg-contrast-background/50 items-center justify-center">
                   <Icon
                     className="text-contrast-foreground"
                     icon={Play}

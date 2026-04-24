@@ -22,8 +22,8 @@ export const DestructiveConfirmSheet = ({
 }) => {
   return (
     <Sheet onDismiss={onDismiss} open={open} portalName={portalName}>
-      <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">{title}</Text>
+      <View className="mx-auto max-w-md w-full p-8">
+        <Text className="text-2xl text-center">{title}</Text>
         <Button
           disabled={isPending}
           onPress={onConfirm}

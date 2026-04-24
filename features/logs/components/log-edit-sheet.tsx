@@ -12,7 +12,6 @@ import { View } from 'react-native';
 export const LogEditSheet = () => {
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
-
   const isDark = colorScheme === 'dark';
   const log = useLog({ id: sheetManager.getId('log-edit') });
 
@@ -23,7 +22,7 @@ export const LogEditSheet = () => {
       open={sheetManager.isOpen('log-edit')}
       portalName="log-edit"
     >
-      <View className="mx-auto w-full max-w-md p-8">
+      <View className="mx-auto max-w-md w-full p-8">
         <View>
           <Label>Name</Label>
           <Input
@@ -38,13 +37,15 @@ export const LogEditSheet = () => {
               [11, 0, 9, 8, 7, 6],
               [10, 1, 2, 3, 4, 5],
             ].map((row, rowIndex) => (
-              <View className="flex-row gap-2" key={`row-${rowIndex}`}>
+              <View key={`row-${rowIndex}`} className="flex-row gap-2">
                 {row.map((color) => (
                   <Button
-                    className="h-full w-full rounded-full border-4"
                     key={`color-${color}`}
+                    className="h-full w-full border-4 rounded-full"
                     onPress={() => updateLog({ color, id: log.id! })}
                     ripple="default"
+                    variant="ghost"
+                    wrapperClassName="shrink w-16 aspect-square rounded-full"
                     style={{
                       backgroundColor:
                         SPECTRUM[colorScheme][color][
@@ -63,8 +64,6 @@ export const LogEditSheet = () => {
                             : 'default'
                         ],
                     }}
-                    variant="ghost"
-                    wrapperClassName="shrink w-16 aspect-square rounded-full"
                   />
                 ))}
               </View>

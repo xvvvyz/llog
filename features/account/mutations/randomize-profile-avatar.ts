@@ -9,8 +9,6 @@ export const randomizeProfileAvatar = async ({
   if (!resolvedProfileId) return;
 
   return db.transact(
-    db.tx.profiles[resolvedProfileId].update({
-      avatarSeedId: nanoid(6),
-    })
+    db.tx.profiles[resolvedProfileId].update({ avatarSeedId: nanoid(6) })
   );
 };

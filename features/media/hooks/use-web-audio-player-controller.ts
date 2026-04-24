@@ -63,7 +63,6 @@ export const useWebAudioPlayerController = ({
     (element: HTMLDivElement | null) => {
       fillRef.current = element;
       if (!element) return;
-
       const time = displayTimeRef.current;
 
       const progress =
@@ -124,23 +123,14 @@ export const useWebAudioPlayerController = ({
     (time: number) => {
       const label = timeTextRef.current;
       if (!label) return;
-
       const nextText = formatTime(player.playing ? time : playerDuration);
-
-      if (label.textContent !== nextText) {
-        label.textContent = nextText;
-      }
+      if (label.textContent !== nextText) label.textContent = nextText;
     },
     [player.playing, playerDuration]
   );
 
   const updateDisplayTime = React.useCallback(
-    (
-      time: number,
-      options: {
-        forcePaint?: boolean;
-      } = {}
-    ) => {
+    (time: number, options: { forcePaint?: boolean } = {}) => {
       const nextTime = clampDisplayTime(time);
       displayTimeRef.current = nextTime;
       paintProgress(nextTime);
@@ -179,10 +169,7 @@ export const useWebAudioPlayerController = ({
   }, [player.playing, releasePlayback]);
 
   React.useEffect(() => {
-    if (player.playing) {
-      syncPlaybackClock(getProjectedPlaybackTime());
-    }
-
+    if (player.playing) syncPlaybackClock(getProjectedPlaybackTime());
     player.setPlaybackRate(currentPlaybackRate);
     playbackRateRef.current = currentPlaybackRate;
   }, [
@@ -200,16 +187,12 @@ export const useWebAudioPlayerController = ({
   React.useEffect(() => {
     if (previousSrcRef.current === player.src) return;
     previousSrcRef.current = player.src;
-
     lastAutoPlayKeyRef.current = undefined;
     displayedSecondRef.current = null;
     displayTimeRef.current = 0;
     syncPlaybackClock(0);
     paintTimeText(0);
-
-    if (fillRef.current) {
-      fillRef.current.style.transform = 'scaleX(0)';
-    }
+    if (fillRef.current) fillRef.current.style.transform = 'scaleX(0)';
   }, [paintTimeText, player.src, syncPlaybackClock]);
 
   React.useEffect(() => {
@@ -249,10 +232,7 @@ export const useWebAudioPlayerController = ({
     if (scrubbing.current) return;
 
     const tick = () => {
-      if (playerDuration > 0) {
-        updateDisplayTime(getProjectedPlaybackTime());
-      }
-
+      if (playerDuration > 0) updateDisplayTime(getProjectedPlaybackTime());
       rafRef.current = requestAnimationFrame(tick);
     };
 
@@ -272,10 +252,8 @@ export const useWebAudioPlayerController = ({
       const startTime = clampDisplayTime(fromTime);
       syncPlaybackClock(startTime);
       updateDisplayTime(startTime, { forcePaint: true });
-
       const didStart = await player.play(startTime);
       if (!didStart) return;
-
       syncPlaybackClock(startTime);
       await claimPlayback();
       onPlayStart?.();
@@ -329,7 +307,6 @@ export const useWebAudioPlayerController = ({
   const handlePlayButtonPointerDown = React.useCallback(
     (event: ButtonPointerDownEvent) => {
       if (playButtonDisabled) return;
-
       event.preventDefault();
       playPointerDownHandledRef.current = true;
       togglePlayback();
@@ -384,16 +361,9 @@ export const useWebAudioPlayerController = ({
     const onUp = (e: PointerEvent) => {
       if (!scrubbing.current) return;
       const time = getTime(getX(e));
-
-      if (time != null) {
-        updateDisplayTime(time, { forcePaint: true });
-      }
-
+      if (time != null) updateDisplayTime(time, { forcePaint: true });
       scrubbing.current = false;
-
-      if (wasPlayingBeforeScrub.current && time != null) {
-        void play(time);
-      }
+      if (wasPlayingBeforeScrub.current && time != null) void play(time);
     };
 
     track.addEventListener('pointerdown', onDown);

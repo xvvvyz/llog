@@ -7,13 +7,7 @@ export const useActivities = () => {
   const auth = db.useAuth();
 
   const { data: rolesData, isLoading: rolesLoading } = db.useQuery(
-    auth.user
-      ? {
-          roles: {
-            $: { where: { userId: auth.user.id } },
-          },
-        }
-      : null
+    auth.user ? { roles: { $: { where: { userId: auth.user.id } } } } : null
   );
 
   const roles = rolesData?.roles ?? [];
@@ -39,10 +33,7 @@ export const useActivities = () => {
               order: { date: 'desc' },
               limit: 25,
             },
-            actor: {
-              image: {},
-              logs: { $: { fields: ['id'] } },
-            },
+            actor: { image: {}, logs: { $: { fields: ['id'] } } },
             team: { image: {} },
             record: { media: {} },
             reply: { media: {} },
@@ -76,10 +67,7 @@ export const useActivities = () => {
           return true;
         }
 
-        if (manageableTeamIds.has(activity.teamId)) {
-          return true;
-        }
-
+        if (manageableTeamIds.has(activity.teamId)) return true;
         return (activity.actor?.logs?.length ?? 0) > 0;
       }),
     [manageableTeamIds, rawActivities]

@@ -19,9 +19,11 @@ export const TeamLeaveSheet = () => {
       open={sheetManager.isOpen('team-leave')}
       portalName="team-leave"
     >
-      <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">Leave team?</Text>
+      <View className="mx-auto max-w-md w-full p-8">
+        <Text className="text-2xl text-center">Leave team?</Text>
         <Button
+          variant="destructive"
+          wrapperClassName="mt-12"
           onPress={async () => {
             sheetManager.close('team-leave');
             if (!ui.activeTeamId) return;
@@ -35,8 +37,6 @@ export const TeamLeaveSheet = () => {
 
             router.replace('/');
           }}
-          variant="destructive"
-          wrapperClassName="mt-12"
         >
           <Text>Leave</Text>
         </Button>

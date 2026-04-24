@@ -6,10 +6,7 @@ export const api = async (path: string, options: RequestInit = {}) => {
   const { headers, ...rest } = options;
 
   return fetch(`${process.env.EXPO_PUBLIC_API_URL}${path}`, {
-    headers: {
-      Authorization: `Bearer ${auth.refresh_token}`,
-      ...headers,
-    },
+    headers: { Authorization: `Bearer ${auth.refresh_token}`, ...headers },
     ...rest,
   });
 };
@@ -33,14 +30,8 @@ export const apiOrThrow = async (
   if (body) {
     try {
       const parsed = JSON.parse(body);
-
-      if (typeof parsed?.message === 'string') {
-        throw new Error(parsed.message);
-      }
-
-      if (typeof parsed === 'string') {
-        throw new Error(parsed);
-      }
+      if (typeof parsed?.message === 'string') throw new Error(parsed.message);
+      if (typeof parsed === 'string') throw new Error(parsed);
     } catch (error) {
       if (error instanceof Error) throw error;
       throw new Error(body);

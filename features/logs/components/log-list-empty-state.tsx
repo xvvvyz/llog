@@ -4,17 +4,16 @@ import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
-import { Globe } from 'phosphor-react-native/lib/module/icons/Globe';
-import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { Globe, Plus } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const LogListEmptyState = ({ canManage }: { canManage?: boolean }) => {
   return (
-    <View className="flex-1 items-center justify-center gap-8 px-3 py-8">
+    <View className="flex-1 px-3 py-8 gap-8 items-center justify-center">
       <Icon className="text-primary" icon={Globe} size={64} />
       {canManage && (
         <>
-          <Text className="text-muted-foreground text-center">
+          <Text className="text-center text-muted-foreground">
             Track anything in your world.
           </Text>
           <Button
@@ -25,7 +24,7 @@ export const LogListEmptyState = ({ canManage }: { canManage?: boolean }) => {
               router.push(`/${logId}`);
             }}
           >
-            <Icon icon={Plus} className="text-contrast-foreground -ml-0.5" />
+            <Icon className="-ml-0.5 text-contrast-foreground" icon={Plus} />
             <Text>New log</Text>
           </Button>
         </>

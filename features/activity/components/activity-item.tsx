@@ -73,7 +73,7 @@ export const ActivityItem = ({
 
   const content = (
     <Card className={cn('gap-4', !mediaIsLast && 'pb-4', className)}>
-      <View className="flex-row items-start gap-3 p-4 pb-0">
+      <View className="flex-row p-4 pb-0 gap-3 items-start">
         <Avatar
           avatar={actor?.image?.uri}
           id={actor?.id}
@@ -81,11 +81,11 @@ export const ActivityItem = ({
           size={32}
         />
         <View className="flex-1">
-          <View className="flex-row items-baseline justify-between gap-3">
+          <View className="flex-row gap-3 items-baseline justify-between">
             <ActivityItemName group={group} />
-            <View className="min-w-32 flex-1 flex-row items-center justify-end gap-1">
+            <View className="flex-1 flex-row min-w-32 gap-1 items-center justify-end">
               <Text
-                className="text-muted-foreground shrink-0 text-xs"
+                className="text-muted-foreground text-xs shrink-0"
                 numberOfLines={1}
               >
                 {group.type === 'member_joined'
@@ -97,15 +97,13 @@ export const ActivityItem = ({
               {log &&
                 group.type !== 'member_joined' &&
                 group.type !== 'member_left' && (
-                  <View className="shrink flex-row items-center gap-1">
+                  <View className="flex-row gap-1 items-center shrink">
                     <View
-                      className="size-2.5 shrink-0 rounded-[2px]"
-                      style={{
-                        backgroundColor: logColor?.default,
-                      }}
+                      className="size-2.5 rounded-[2px] shrink-0"
+                      style={{ backgroundColor: logColor?.default }}
                     />
                     <Text
-                      className="text-muted-foreground shrink text-xs"
+                      className="text-muted-foreground text-xs shrink"
                       numberOfLines={1}
                     >
                       {log.name}
@@ -115,7 +113,7 @@ export const ActivityItem = ({
               {(group.type === 'member_joined' ||
                 group.type === 'member_left') &&
                 team?.name && (
-                  <View className="shrink flex-row items-center gap-1">
+                  <View className="flex-row gap-1 items-center shrink">
                     <Avatar
                       avatar={team.image?.uri}
                       className="shrink-0"
@@ -124,7 +122,7 @@ export const ActivityItem = ({
                       size={10}
                     />
                     <Text
-                      className="text-muted-foreground shrink text-xs"
+                      className="text-muted-foreground text-xs shrink"
                       numberOfLines={1}
                     >
                       {team.name}
@@ -133,7 +131,7 @@ export const ActivityItem = ({
                 )}
             </View>
           </View>
-          <Text className="text-muted-foreground text-xs leading-tight">
+          <Text className="leading-tight text-muted-foreground text-xs">
             {formatDate(group.latestDate)}
           </Text>
         </View>

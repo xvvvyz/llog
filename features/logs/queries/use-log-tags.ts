@@ -5,10 +5,7 @@ import * as React from 'react';
 export const useTags = ({
   query,
   teamIds,
-}: {
-  query?: string;
-  teamIds?: string[];
-} = {}) => {
+}: { query?: string; teamIds?: string[] } = {}) => {
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(
@@ -18,9 +15,7 @@ export const useTags = ({
             $: {
               where: {
                 teamId: { $in: resolvedTeamIds },
-                ...(query && {
-                  name: { $ilike: `%${query}%` },
-                }),
+                ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },
           },

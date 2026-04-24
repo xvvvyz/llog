@@ -39,11 +39,7 @@ export const removeMember = async (
       db.tx.profiles[profileId].unlink({ logs: log.id })
     ),
     db.tx.activities[id()]
-      .update({
-        type: 'member_left',
-        date: new Date().toISOString(),
-        teamId,
-      })
+      .update({ type: 'member_left', date: new Date().toISOString(), teamId })
       .link({ actor: profileId, team: teamId }),
   ]);
 };

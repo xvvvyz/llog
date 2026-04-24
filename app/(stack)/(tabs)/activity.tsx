@@ -11,7 +11,7 @@ import { List } from '@/ui/list';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { useFocusEffect } from 'expo-router';
-import { Sparkle } from 'phosphor-react-native/lib/module/icons/Sparkle';
+import { Sparkle } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -41,12 +41,12 @@ export default function Activity() {
   const renderItem = React.useCallback(
     ({ item, index }: { item: grouping.GroupedActivity; index: number }) => (
       <ActivityItem
+        group={item}
         className={cn(
           'mt-4',
           index === 0 && 'md:mt-8',
           index === grouped.length - 1 && 'mb-4 md:mb-8'
         )}
-        group={item}
       />
     ),
     [grouped.length]
@@ -58,7 +58,7 @@ export default function Activity() {
       {isLoading || profile.isLoading ? (
         <Loading />
       ) : !grouped.length ? (
-        <View className="flex-1 items-center justify-center gap-8 py-8">
+        <View className="flex-1 py-8 gap-8 items-center justify-center">
           <Icon className="text-primary" icon={Sparkle} size={64} />
         </View>
       ) : (

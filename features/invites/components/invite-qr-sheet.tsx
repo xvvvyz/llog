@@ -18,10 +18,10 @@ export const InviteQrSheet = () => {
       open={sheetManager.isOpen('invite-qr')}
       portalName="invite-qr"
     >
-      <View className="mx-auto w-full max-w-md items-center p-8">
+      <View className="mx-auto max-w-md w-full p-8 items-center">
         {url && (
-          <View className="bg-contrast-foreground rounded-lg p-4">
-            <QRCode value={url} size={180} />
+          <View className="p-4 rounded-lg bg-contrast-foreground">
+            <QRCode size={180} value={url} />
           </View>
         )}
       </View>

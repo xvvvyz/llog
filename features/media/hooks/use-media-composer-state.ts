@@ -9,9 +9,7 @@ import * as React from 'react';
 type UseMediaComposerStateOptions = Pick<
   UseMediaComposerOptions,
   'isOpen' | 'media' | 'onDeleteMedia' | 'onUploadMedia'
-> & {
-  scopeKey: string;
-};
+> & { scopeKey: string };
 
 export const useMediaComposerState = ({
   isOpen,
@@ -24,11 +22,7 @@ export const useMediaComposerState = ({
     handleDeleteMedia: requestDeleteMedia,
     isDeleteTransitioning,
     pendingDeletions,
-  } = useMediaPendingDeletions({
-    media,
-    onDeleteMedia,
-    scopeKey,
-  });
+  } = useMediaPendingDeletions({ media, onDeleteMedia, scopeKey });
 
   const visibleMedia = React.useMemo(
     () => media.filter((item) => !pendingDeletions[item.id]),
@@ -59,15 +53,10 @@ export const useMediaComposerState = ({
     [removeLocalPreviewUri, requestDeleteMedia]
   );
 
-  useClipboardMediaPaste({
-    enabled: isOpen,
-    onUploadAssets: uploadAssets,
-  });
+  useClipboardMediaPaste({ enabled: isOpen, onUploadAssets: uploadAssets });
 
   const { handleBrowseMedia, handleCaptureMedia, handlePickFiles } =
-    useMediaPickerActions({
-      onUploadAssets: uploadAssets,
-    });
+    useMediaPickerActions({ onUploadAssets: uploadAssets });
 
   const canAddAudio = true;
 

@@ -8,10 +8,5 @@ export const markActivitiesRead = async ({
   date: number | string;
 }) => {
   if (!uiId) return;
-
-  return db.transact(
-    db.tx.ui[uiId].update({
-      activityLastReadDate: date,
-    })
-  );
+  return db.transact(db.tx.ui[uiId].update({ activityLastReadDate: date }));
 };

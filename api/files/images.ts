@@ -9,10 +9,7 @@ const getConfig = (env: CloudflareEnv) => {
     throw new Error('Cloudflare Images is not configured');
   }
 
-  return {
-    accountId: env.CLOUDFLARE_ACCOUNT_ID,
-    apiToken,
-  };
+  return { accountId: env.CLOUDFLARE_ACCOUNT_ID, apiToken };
 };
 
 const readApiError = async (response: Response) => {
@@ -27,7 +24,6 @@ const readApiError = async (response: Response) => {
   try {
     const parsed = JSON.parse(text);
     const first = parsed?.errors?.[0];
-
     if (typeof first?.message === 'string') return first.message;
     if (typeof parsed?.message === 'string') return parsed.message;
   } catch {
@@ -44,7 +40,6 @@ const imagesFetch = async <T>(
 ) => {
   const { accountId, apiToken } = getConfig(env);
   const headers = new Headers(init.headers);
-
   headers.set('Authorization', `Bearer ${apiToken}`);
 
   const response = await fetch(`${API_BASE}/accounts/${accountId}${path}`, {
@@ -52,12 +47,8 @@ const imagesFetch = async <T>(
     headers,
   });
 
-  if (!response.ok) {
-    throw new Error(await readApiError(response));
-  }
-
+  if (!response.ok) throw new Error(await readApiError(response));
   if (response.status === 204) return null as T;
-
   const body = (await response.json()) as { result: T };
   return body.result;
 };
@@ -78,10 +69,7 @@ export const getStoredImageDeliveryUrl = (value?: string | null) =>
 export const getImageIdFromDeliveryUrl = (uri: string) => {
   const url = new URL(uri);
   const parts = url.pathname.split('/').filter(Boolean);
-
-  if (url.hostname.endsWith('imagedelivery.net')) {
-    return parts[1] ?? null;
-  }
+  if (url.hostname.endsWith('imagedelivery.net')) return parts[1] ?? null;
 
   if (parts[0] === 'cdn-cgi' && parts[1] === 'imagedelivery') {
     return parts[3] ?? null;
@@ -100,7 +88,6 @@ export const uploadImage = async ({
   file: File;
 }) => {
   const form = new FormData();
-
   form.set('file', file);
   if (creator) form.set('creator', creator);
   form.set('requireSignedURLs', 'false');
@@ -117,10 +104,7 @@ export const uploadImage = async ({
     throw new Error('Cloudflare Images did not return an image delivery URL');
   }
 
-  return {
-    deliveryUrl,
-    id: result.id,
-  };
+  return { deliveryUrl, id: result.id };
 };
 
 export const deleteImage = async (
@@ -130,10 +114,6 @@ export const deleteImage = async (
   const deliveryUrl = getStoredImageDeliveryUrl(storedUrl);
   if (!deliveryUrl) return;
   const imageId = getImageIdFromDeliveryUrl(deliveryUrl);
-
-  if (!imageId) {
-    throw new Error('Invalid Cloudflare Images delivery URL');
-  }
-
+  if (!imageId) throw new Error('Invalid Cloudflare Images delivery URL');
   await imagesFetch(env, `/images/v1/${imageId}`, { method: 'DELETE' });
 };

@@ -5,7 +5,7 @@ import { type Media } from '@/features/media/types/media';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { X } from 'phosphor-react-native/lib/module/icons/X';
+import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Modal, Platform, StatusBar, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -71,7 +71,6 @@ export const MediaLightbox = ({
   }, [media, resolvedMediaId]);
 
   const hasRenderedPreview = defaultIndex !== -1;
-
   if (!hasRenderedPreview) return null;
 
   const content = (
@@ -85,14 +84,14 @@ export const MediaLightbox = ({
     >
       {Platform.OS !== 'web' ? <StatusBar animated hidden /> : null}
       <Animated.View
-        className="bg-background absolute inset-0"
+        className="absolute inset-0 bg-background"
         pointerEvents="none"
         style={backgroundStyle}
       />
       <View className="absolute inset-0">
         {!isUiHidden && (
           <Animated.View
-            className="absolute top-1 right-4 z-10 rounded-full md:top-3 md:right-8"
+            className="absolute right-4 top-1 z-10 rounded-full md:right-8 md:top-3"
             style={[overlayStyle, { marginTop: insets.top + 1 }]}
           >
             <Button

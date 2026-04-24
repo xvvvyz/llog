@@ -5,8 +5,7 @@ import type * as mediaComposer from '@/features/media/types/media-composer.types
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
-import { Play } from 'phosphor-react-native/lib/module/icons/Play';
-import { X } from 'phosphor-react-native/lib/module/icons/X';
+import { Play, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -27,16 +26,16 @@ export const MediaComposerVisualPreview = ({
 
   return (
     <ScrollView
-      className="border-border-secondary shrink-0 grow-0 border-t"
+      className="border-border-secondary border-t grow-0 shrink-0"
       horizontal
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
       style={{ borderCurve: 'continuous' }}
       testID="scroll-lock-allow"
     >
-      <View className="flex-row gap-3 p-4">
+      <View className="flex-row p-4 gap-3">
         {visualItems.map((item) => (
-          <View className="relative size-16" key={item.id}>
+          <View key={item.id} className="relative size-16">
             <Pressable
               className={
                 item.pending
@@ -48,7 +47,7 @@ export const MediaComposerVisualPreview = ({
               }}
             >
               {item.pending ? (
-                <View className="bg-card flex-1">
+                <View className="flex-1 bg-card">
                   {item.type === 'video' ? (
                     <MediaComposerPendingVideoPreview
                       autoPlay={item.id === autoPlayPendingVideoId}
@@ -58,8 +57,8 @@ export const MediaComposerVisualPreview = ({
                     />
                   ) : (
                     <Image
-                      fill
                       contentFit="cover"
+                      fill
                       uri={item.localUri ?? item.uri}
                       wrapperClassName="bg-card"
                     />
@@ -78,7 +77,7 @@ export const MediaComposerVisualPreview = ({
             {item.type === 'video' &&
               !item.pending &&
               !media.isVideoMediaProcessing(item) && (
-                <View className="pointer-events-none absolute bottom-0 left-0 z-10 size-6 items-center justify-center">
+                <View className="absolute bottom-0 left-0 z-10 size-6 pointer-events-none items-center justify-center">
                   <Icon
                     className="text-contrast-foreground"
                     icon={Play}
@@ -88,7 +87,7 @@ export const MediaComposerVisualPreview = ({
               )}
             {!item.pending && (
               <Pressable
-                className="absolute top-0 right-0 z-20 size-6 items-center justify-center"
+                className="absolute right-0 top-0 z-20 size-6 items-center justify-center"
                 onPress={() => onDeleteMedia(item.id)}
               >
                 <Icon className="text-contrast-foreground" icon={X} size={12} />

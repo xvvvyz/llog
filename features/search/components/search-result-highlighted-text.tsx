@@ -36,7 +36,6 @@ export const SearchResultHighlightedText = ({
   }
 
   const firstMatch = trimmedText.search(pattern);
-
   let displayText = trimmedText;
   let prefix = '';
 
@@ -64,7 +63,6 @@ export const SearchResultHighlightedText = ({
   for (let index = 0; index < parts.length; index++) {
     const part = parts[index];
     if (!part) continue;
-
     const isMatch = pattern.test(part);
     pattern.lastIndex = 0;
 

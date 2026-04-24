@@ -85,11 +85,7 @@ export const Carousel = ({
     videoPlaybackIntentState,
     videoResetTokens,
     zoomResetTokens,
-  } = useCarouselMediaState({
-    activeIndexState,
-    isSwiping,
-    media,
-  });
+  } = useCarouselMediaState({ activeIndexState, isSwiping, media });
 
   const {
     commitVideoScrub,
@@ -117,20 +113,13 @@ export const Carousel = ({
     contentWidth,
     handleConfigurePanGesture,
     handleLayout,
-  } = useCarouselLayout({
-    activeIndex: activeIndexState,
-    carouselRef,
-  });
+  } = useCarouselLayout({ activeIndex: activeIndexState, carouselRef });
 
   const {
     handleActiveMediaLoad,
     isActiveMediaLoading,
     syncActiveMediaLoadingState,
-  } = useCarouselPreloading({
-    activeIndexRef,
-    getClampedIndex,
-    media,
-  });
+  } = useCarouselPreloading({ activeIndexRef, getClampedIndex, media });
 
   const getDominantIndex = React.useCallback(
     (absoluteProgress: number) =>
@@ -226,7 +215,6 @@ export const Carousel = ({
         : getClampedIndex(activeIndexRef.current);
 
     const nextMediaId = media[nextIndex]?.id;
-
     visibleMediaIdsRef.current = getVisibleMediaIds(nextIndex);
 
     if (
@@ -248,10 +236,7 @@ export const Carousel = ({
     );
 
     requestAnimationFrame(() => {
-      carouselRef.current?.scrollTo({
-        animated: false,
-        index: nextIndex,
-      });
+      carouselRef.current?.scrollTo({ animated: false, index: nextIndex });
     });
   }, [
     activeIndex,
@@ -358,19 +343,12 @@ export const Carousel = ({
     const lockedVisibleMediaIds = getVisibleMediaIds(lockedIndex);
 
     visibleMediaIdsRef.current.forEach((mediaId) => {
-      if (!lockedVisibleMediaIds.has(mediaId)) {
-        handleHiddenMedia(mediaId);
-      }
+      if (!lockedVisibleMediaIds.has(mediaId)) handleHiddenMedia(mediaId);
     });
 
     visibleMediaIdsRef.current = lockedVisibleMediaIds;
     syncActiveIndex(lockedIndex);
-
-    carouselRef.current?.scrollTo({
-      animated: false,
-      index: lockedIndex,
-    });
-
+    carouselRef.current?.scrollTo({ animated: false, index: lockedIndex });
     return lockedIndex;
   }, [
     activeIndex,
@@ -409,9 +387,7 @@ export const Carousel = ({
       const nextVisibleMediaIds = getVisibleMediaIds(absoluteProgress);
 
       visibleMediaIdsRef.current.forEach((mediaId) => {
-        if (!nextVisibleMediaIds.has(mediaId)) {
-          handleHiddenMedia(mediaId);
-        }
+        if (!nextVisibleMediaIds.has(mediaId)) handleHiddenMedia(mediaId);
       });
 
       visibleMediaIdsRef.current = nextVisibleMediaIds;
@@ -459,9 +435,9 @@ export const Carousel = ({
           isMuted={isMuted}
           isPlaying={isPlaying}
           isScrubbingVideo={isScrubbingVideo}
-          onActiveMediaLoad={handleActiveMediaLoad}
           item={item}
           mediaQuality={carouselHelpers.CAROUSEL_MEDIA_QUALITY}
+          onActiveMediaLoad={handleActiveMediaLoad}
           onTogglePlay={handleTogglePlay}
           onVideoTimeChange={handleVideoTimeChange}
           onZoomInteractionStateChange={handleZoomInteractionStateChange}
@@ -500,26 +476,26 @@ export const Carousel = ({
       <Animated.View className="flex-1" style={mediaLayerStyle}>
         {contentWidth > 0 && contentHeight > 0 ? (
           <ReanimatedCarousel
+            ref={carouselRef}
             data={media}
             defaultIndex={safeDefaultIndex}
-            enabled={
-              !isNavigationLocked && !isDismissGestureActive && media.length > 1
-            }
             height={contentHeight}
             loop={false}
             onConfigurePanGesture={handleConfigurePanGesture}
             onProgressChange={handleProgressChange}
             onScrollEnd={handleCarouselScrollEnd}
             onScrollStart={handleCarouselScrollStart}
-            ref={carouselRef}
             renderItem={renderCarouselItem}
             style={carouselStyle}
             width={contentWidth}
             windowSize={carouselHelpers.CAROUSEL_PRELOAD_DISTANCE * 2 + 1}
+            enabled={
+              !isNavigationLocked && !isDismissGestureActive && media.length > 1
+            }
           />
         ) : null}
         {showImageLoadingIndicator && (
-          <View className="pointer-events-none absolute inset-0 items-center justify-center">
+          <View className="absolute inset-0 pointer-events-none items-center justify-center">
             <Spinner />
           </View>
         )}
@@ -545,7 +521,7 @@ export const Carousel = ({
         )}
       </Animated.View>
       <Animated.View
-        className="pointer-events-none absolute right-4 left-4 z-10 items-center md:right-8 md:left-8"
+        className="absolute left-4 right-4 z-10 pointer-events-none items-center md:left-8 md:right-8"
         style={[overlayOpacityStyle, { bottom: dotsBottomOffset }]}
       >
         {!shouldHideUi && media.length > 1 && (

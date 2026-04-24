@@ -13,8 +13,7 @@ import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';
-import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
-import { Tag } from 'phosphor-react-native/lib/module/icons/Tag';
+import { Plus, Tag } from 'phosphor-react-native';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -29,28 +28,19 @@ export const LogTagsSheet = () => {
 
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const sheetManager = useSheetManager();
-
   const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
-
   const log = useLog({ id: sheetManager.getId('log-tags') });
   const logColor = useLogColor({ id: log.id });
   const tags = useTags({ query });
-
   const isLoading = log.isLoading || (!query && tags.isLoading);
 
   const handleCreateTag = React.useCallback(() => {
     if (!query) return;
 
     if (tags.queryExistingTagId) {
-      addTagToLog({
-        logId: log.id,
-        tagId: tags.queryExistingTagId,
-      });
+      addTagToLog({ logId: log.id, tagId: tags.queryExistingTagId });
     } else {
-      createTag({
-        logId: log.id,
-        name: query,
-      });
+      createTag({ logId: log.id, name: query });
     }
 
     setRawQuery('');
@@ -64,14 +54,14 @@ export const LogTagsSheet = () => {
       portalName="log-tags"
     >
       <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        keyboardShouldPersistTaps="always"
+        showsHorizontalScrollIndicator={false}
         contentContainerClassName={cn(
           'p-8 sm:mx-auto',
           isEmpty && !rawQuery && 'mx-auto'
         )}
-        horizontal
-        keyboardShouldPersistTaps="always"
-        ref={scrollViewRef}
-        showsHorizontalScrollIndicator={false}
       >
         <View className="h-10">
           {isEmpty && !rawQuery && (
@@ -100,9 +90,9 @@ export const LogTagsSheet = () => {
             >
               {tags.data.map((tag) => (
                 <LogTagsSheetTag
+                  key={tag.id}
                   id={tag.id}
                   isSelected={log.tagIdsSet.has(tag.id)}
-                  key={tag.id}
                   logId={log.id}
                   name={tag.name}
                 />
@@ -125,19 +115,19 @@ export const LogTagsSheet = () => {
           )}
         </View>
       </ScrollView>
-      <View className="w-full p-8 pt-0 sm:mx-auto sm:max-w-sm md:pt-0">
+      <View className="w-full p-8 pt-0 md:pt-0 sm:mx-auto sm:max-w-sm">
         <SearchInput
+          ref={searchInputRef}
           actionIcon={!tags.queryExistingTagId && query ? Plus : undefined}
           maxLength={16}
-          onActionPress={
-            !tags.queryExistingTagId && query ? handleCreateTag : undefined
-          }
           onSubmitEditing={handleCreateTag}
           placeholder="Type in a tag"
           query={rawQuery}
-          ref={searchInputRef}
           setQuery={setRawQuery}
           size="sm"
+          onActionPress={
+            !tags.queryExistingTagId && query ? handleCreateTag : undefined
+          }
         />
       </View>
     </Sheet>

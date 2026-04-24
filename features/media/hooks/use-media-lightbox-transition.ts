@@ -37,12 +37,7 @@ export const useMediaLightboxTransition = ({
 
   const animatedValues =
     React.useMemo<mediaLightboxAnimation.MediaLightboxAnimatedValues>(
-      () => ({
-        backgroundOpacity,
-        mediaOpacity,
-        overlayOpacity,
-        translateY,
-      }),
+      () => ({ backgroundOpacity, mediaOpacity, overlayOpacity, translateY }),
       [backgroundOpacity, mediaOpacity, overlayOpacity, translateY]
     );
 
@@ -81,7 +76,6 @@ export const useMediaLightboxTransition = ({
       direction?: mediaLightboxAnimation.DismissDirection;
     } = {}) => {
       if (isClosing) return;
-
       closeAnimationModeRef.current = animation;
       closeDirectionRef.current = direction;
       onRequestClose();

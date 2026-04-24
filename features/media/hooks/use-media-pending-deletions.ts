@@ -2,9 +2,7 @@ import type { Media } from '@/features/media/types/media';
 import type { UseMediaComposerOptions } from '@/features/media/types/media-composer.types';
 import * as React from 'react';
 
-type PendingDeletion = {
-  requestId: number;
-};
+type PendingDeletion = { requestId: number };
 
 export const useMediaPendingDeletions = ({
   media,
@@ -65,9 +63,5 @@ export const useMediaPendingDeletions = ({
     });
   }, [media]);
 
-  return {
-    handleDeleteMedia,
-    isDeleteTransitioning,
-    pendingDeletions,
-  };
+  return { handleDeleteMedia, isDeleteTransitioning, pendingDeletions };
 };

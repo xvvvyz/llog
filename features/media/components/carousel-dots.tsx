@@ -7,7 +7,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const AnimatedDotView = Animated.createAnimatedComponent(View);
-
 const MAX_DOTS = 5;
 const DOT_SIZE = 8;
 const DOT_GAP = 8;
@@ -24,14 +23,14 @@ export const CarouselDots = ({
   const containerWidth = visibleCount * DOT_SIZE + (visibleCount - 1) * DOT_GAP;
 
   return (
-    <View className="h-2 overflow-hidden" style={{ width: containerWidth }}>
+    <View className="overflow-hidden h-2" style={{ width: containerWidth }}>
       <Animated.View className="flex-row gap-2">
         {Array.from({ length: count }, (_, i) => (
           <CarouselDot
+            key={i}
             activeIndex={activeIndex}
             count={count}
             index={i}
-            key={i}
           />
         ))}
       </Animated.View>
@@ -71,7 +70,7 @@ const CarouselDot = ({
 
   return (
     <AnimatedDotView className="size-2" style={style}>
-      <View className="bg-foreground h-full w-full rounded-full shadow-xl" />
+      <View className="h-full w-full rounded-full bg-foreground shadow-xl" />
     </AnimatedDotView>
   );
 };

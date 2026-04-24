@@ -4,7 +4,7 @@ import * as carouselHelpers from '@/features/media/lib/carousel-helpers';
 import { Media } from '@/features/media/types/media';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
-import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { PixelRatio, Pressable, View } from 'react-native';
 
@@ -72,13 +72,12 @@ const CarouselItemComponent = ({
         <CarouselVideoItem
           contentHeight={contentHeight}
           contentWidth={contentWidth}
+          index={index}
           isActive={isActive}
           isAdjacent={isAdjacent}
-          shouldRenderInactiveMedia={shouldRenderInactiveMedia}
           isMuted={isMuted}
           isPlaying={isPlaying}
           isScrubbingVideo={isScrubbingVideo}
-          index={index}
           item={item}
           mediaQuality={mediaQuality}
           onActiveMediaLoad={onActiveMediaLoad}
@@ -90,6 +89,7 @@ const CarouselItemComponent = ({
           resetZoomToken={resetZoomToken}
           setIsPlaying={setIsPlaying}
           shouldAutoPlay={shouldAutoPlay}
+          shouldRenderInactiveMedia={shouldRenderInactiveMedia}
           videoHandleRef={videoHandleRef}
         />
       ) : (
@@ -113,7 +113,6 @@ const CarouselItemComponent = ({
 };
 
 export const CarouselItem = React.memo(CarouselItemComponent);
-
 CarouselItem.displayName = 'CarouselItem';
 
 const CarouselVideoItem = ({
@@ -190,20 +189,20 @@ const CarouselVideoItem = ({
   }, []);
 
   return (
-    <View className="relative w-full flex-1 items-center justify-center">
+    <View className="relative flex-1 w-full items-center justify-center">
       {shouldRenderVideo ? (
         <React.Fragment>
           <ZoomableMedia
-            suppressDoubleTapZoom
             height={contentHeight}
+            resetToken={resetZoomToken}
+            suppressDoubleTapZoom
+            width={contentWidth}
             onInteractionStateChange={(nextIsInteracting) =>
               onZoomInteractionStateChange(item.id, nextIsInteracting)
             }
             onZoomStateChange={(nextIsZoomed) =>
               onZoomStateChange(item.id, nextIsZoomed)
             }
-            resetToken={resetZoomToken}
-            width={contentWidth}
           >
             <Pressable
               className="items-center justify-center"
@@ -216,8 +215,8 @@ const CarouselVideoItem = ({
                 maxHeight={contentHeight}
                 maxWidth={contentWidth}
                 muted={isMuted}
-                onReady={handleLoaded}
                 onPlayingChange={isActive ? setIsPlaying : undefined}
+                onReady={handleLoaded}
                 onTimeChange={isActive ? onVideoTimeChange : undefined}
                 resetToken={resetVideoToken}
                 thumbnailQuality={mediaQuality}
@@ -296,7 +295,6 @@ const CarouselImageItem = ({
 
   React.useEffect(() => {
     if (!isActive || !hasDisplayed || hasReportedActiveLoadRef.current) return;
-
     hasReportedActiveLoadRef.current = true;
     onActiveMediaLoad(item.id, index);
   }, [hasDisplayed, index, isActive, item.id, onActiveMediaLoad]);
@@ -317,14 +315,14 @@ const CarouselImageItem = ({
   return (
     <ZoomableMedia
       height={contentHeight}
+      resetToken={resetZoomToken}
+      width={contentWidth}
       onInteractionStateChange={(nextIsInteracting) =>
         onZoomInteractionStateChange(item.id, nextIsInteracting)
       }
       onZoomStateChange={(nextIsZoomed) =>
         onZoomStateChange(item.id, nextIsZoomed)
       }
-      resetToken={resetZoomToken}
-      width={contentWidth}
     >
       <Image
         contentFit="contain"
@@ -344,8 +342,8 @@ const CarouselImageItem = ({
 
 const VideoPlayOverlay = () => {
   return (
-    <View className="pointer-events-none absolute inset-0 items-center justify-center">
-      <View className="bg-contrast-background/50 size-16 items-center justify-center rounded-full">
+    <View className="absolute inset-0 pointer-events-none items-center justify-center">
+      <View className="size-16 rounded-full bg-contrast-background/50 items-center justify-center">
         <Icon
           className="text-contrast-foreground"
           icon={Play}

@@ -24,7 +24,6 @@ export default function MediaLightboxRoute() {
 
   const handleCloseAnimationEnd = React.useCallback(() => {
     if (!shouldGoBackAfterCloseRef.current) return;
-
     shouldGoBackAfterCloseRef.current = false;
     router.back();
   }, []);

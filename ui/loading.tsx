@@ -21,7 +21,7 @@ export const Loading = ({ className }: { className?: string }) => {
     >
       <Spinner />
       {showTimeoutMessage && (
-        <Text className="text-placeholder mx-auto max-w-[15rem] text-center text-sm">
+        <Text className="mx-auto max-w-[15rem] text-center text-placeholder text-sm">
           This is taking longer than it should. Is&nbsp;your internet working?
         </Text>
       )}

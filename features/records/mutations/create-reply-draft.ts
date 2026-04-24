@@ -13,7 +13,6 @@ export const createReplyDraft = async ({
   teamId: string;
 }) => {
   if (!recordId) return;
-
   const resolved = await resolveProfileAndTeam(profileId, teamId);
   if (!resolved) return;
 

@@ -77,10 +77,5 @@ export const useMediaComposer = ({
     />
   );
 
-  return {
-    isBusy,
-    mediaCount,
-    mediaPreview,
-    toolbar,
-  };
+  return { isBusy, mediaCount, mediaPreview, toolbar };
 };

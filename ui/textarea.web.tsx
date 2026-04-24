@@ -1,7 +1,6 @@
 import { cn } from '@/lib/cn';
-import TextareaAutosize from 'react-textarea-autosize';
-
 import * as React from 'react';
+import TextareaAutosize from 'react-textarea-autosize';
 
 export const Textarea = React.forwardRef<
   React.ComponentRef<typeof TextareaAutosize>,
@@ -49,24 +48,24 @@ export const Textarea = React.forwardRef<
 
     return (
       <TextareaAutosize
+        ref={ref}
         autoFocus={autoFocus}
-        className={cn(
-          'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border px-4 py-2.5 focus-visible:outline-hidden',
-          className
-        )}
         maxLength={maxLength}
         maxRows={maxRows ?? numberOfLines}
         minRows={minRows}
         onChange={handleChange}
+        placeholder={placeholder}
+        value={localValue}
+        className={cn(
+          'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border px-4 py-2.5 focus-visible:outline-hidden',
+          className
+        )}
         onKeyDown={(e) => {
           if (!e.shiftKey && e.key === 'Enter' && onSubmitEditing) {
             e.preventDefault();
             onSubmitEditing();
           }
         }}
-        placeholder={placeholder}
-        ref={ref}
-        value={localValue}
         {...props}
       />
     );

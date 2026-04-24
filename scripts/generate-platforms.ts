@@ -1,5 +1,4 @@
 export type AssetPlatform = 'android' | 'ios' | 'web';
-
 export type AssetPlatformSelection = Record<AssetPlatform, boolean>;
 
 const platformFlags = {
@@ -19,7 +18,6 @@ export function parseAssetPlatforms(
 
   for (const arg of args) {
     if (arg === '--') continue;
-
     const platform = platformFlags[arg as keyof typeof platformFlags];
 
     if (platform == null) {
@@ -32,11 +30,7 @@ export function parseAssetPlatforms(
   }
 
   if (!selected.android && !selected.ios && !selected.web) {
-    return {
-      android: true,
-      ios: true,
-      web: true,
-    };
+    return { android: true, ios: true, web: true };
   }
 
   return selected;

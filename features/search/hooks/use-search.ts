@@ -53,27 +53,19 @@ export const useSearch = ({
     teamIds.length
       ? {
           records: {
-            $: {
-              where: { teamId: { $in: teamIds }, isDraft: false },
-            },
+            $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
             log: { tags: { $: { fields: ['id'] } } },
             media: {},
           },
           replies: {
-            $: {
-              where: { teamId: { $in: teamIds }, isDraft: false },
-            },
+            $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
-            record: {
-              log: { tags: { $: { fields: ['id'] } } },
-            },
+            record: { log: { tags: { $: { fields: ['id'] } } } },
             media: {},
           },
           logs: {
-            $: {
-              where: { teamId: { $in: teamIds } },
-            },
+            $: { where: { teamId: { $in: teamIds } } },
             tags: { $: { fields: ['id'] } },
             profiles: { image: {} },
           },
@@ -127,11 +119,7 @@ export const useSearch = ({
         authorName: record.author?.name,
         authorImage: record.author?.image?.uri,
         media: record.media?.length
-          ? record.media.map((m) => ({
-              id: m.id,
-              type: m.type,
-              uri: m.uri,
-            }))
+          ? record.media.map((m) => ({ id: m.id, type: m.type, uri: m.uri }))
           : undefined,
         tagIds: record.log?.tags?.map((t) => t.id),
       });
@@ -157,11 +145,7 @@ export const useSearch = ({
         authorName: reply.author?.name,
         authorImage: reply.author?.image?.uri,
         media: reply.media?.length
-          ? reply.media.map((m) => ({
-              id: m.id,
-              type: m.type,
-              uri: m.uri,
-            }))
+          ? reply.media.map((m) => ({ id: m.id, type: m.type, uri: m.uri }))
           : undefined,
         tagIds: reply.record?.log?.tags?.map((t) => t.id),
       });
@@ -191,11 +175,7 @@ export const useSearch = ({
         'profiles',
         'tagIds',
       ],
-      searchOptions: {
-        fuzzy: 0.2,
-        prefix: true,
-        boost: { name: 2 },
-      },
+      searchOptions: { fuzzy: 0.2, prefix: true, boost: { name: 2 } },
     });
 
     ms.addAll(documents);
@@ -205,20 +185,13 @@ export const useSearch = ({
   const results = React.useMemo((): searchTypes.SearchResult[] => {
     const trimmed = query.trim();
     if (!trimmed) return [];
-
     const raw = miniSearch.search(trimmed).filter(isSearchDocument);
     const logIdSet = logIds?.length ? new Set(logIds) : null;
     const tagIdSet = tagIds?.length ? new Set(tagIds) : null;
 
     const filtered = raw.filter((r) => {
-      if (logIdSet) {
-        if (!r.logId || !logIdSet.has(r.logId)) return false;
-      }
-
-      if (tagIdSet) {
-        if (!r.tagIds?.some((t) => tagIdSet.has(t))) return false;
-      }
-
+      if (logIdSet) if (!r.logId || !logIdSet.has(r.logId)) return false;
+      if (tagIdSet) if (!r.tagIds?.some((t) => tagIdSet.has(t))) return false;
       return true;
     });
 

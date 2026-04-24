@@ -66,10 +66,10 @@ export const LogMembersSheet = () => {
 
             return (
               <View
-                className="flex-row items-center justify-between py-2.5"
                 key={member.id}
+                className="flex-row py-2.5 items-center justify-between"
               >
-                <View className="flex-row items-center gap-3">
+                <View className="flex-row gap-3 items-center">
                   <Avatar
                     avatar={profile.image?.uri}
                     id={profile.id}

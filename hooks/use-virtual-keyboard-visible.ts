@@ -10,7 +10,6 @@ const VIRTUAL_KEYBOARD_MIN_HEIGHT = 80;
 
 const isTextEntryFocused = () => {
   if (typeof document === 'undefined') return false;
-
   const activeElement = document.activeElement as HTMLElement | null;
   const tagName = activeElement?.tagName;
 
@@ -36,7 +35,6 @@ export const useVirtualKeyboardVisible = (enabled: boolean) => {
     if (Platform.OS === 'web') {
       const update = () => {
         if (typeof window === 'undefined') return;
-
         const visualViewport = window.visualViewport;
 
         const viewportHeight = Math.round(
@@ -87,7 +85,6 @@ export const useVirtualKeyboardVisible = (enabled: boolean) => {
       };
 
       update();
-
       const visualViewport = window.visualViewport;
       visualViewport?.addEventListener('resize', update);
       visualViewport?.addEventListener('scroll', update);
@@ -119,7 +116,6 @@ export const useVirtualKeyboardVisible = (enabled: boolean) => {
     };
 
     const updateFromHideEvent = () => setIsVisible(false);
-
     setIsVisible(getNativeKeyboardVisible());
 
     const showSubscription = Keyboard.addListener(

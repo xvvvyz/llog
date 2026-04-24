@@ -4,9 +4,8 @@ import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
 import { Text, TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
-import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { SortAscending } from 'phosphor-react-native/lib/module/icons/SortAscending';
-import { SortDescending } from 'phosphor-react-native/lib/module/icons/SortDescending';
+import { Check, SortAscending, SortDescending } from 'phosphor-react-native';
+import * as React from 'react';
 import { View } from 'react-native';
 
 import Animated, {
@@ -16,10 +15,7 @@ import Animated, {
   FadeOutUp,
 } from 'react-native-reanimated';
 
-import * as React from 'react';
-
 const Root = DropdownMenuPrimitive.Root;
-
 const Trigger = DropdownMenuPrimitive.Trigger;
 
 const Content = React.forwardRef<
@@ -30,19 +26,19 @@ const Content = React.forwardRef<
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Overlay className="absolute inset-0">
         <Animated.View
-          className="bg-background/90 absolute inset-0"
+          className="absolute inset-0 bg-background/90"
           entering={animation(FadeIn)}
           exiting={animation(FadeOut)}
         />
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
+            entering={animation(FadeInUp)}
+            exiting={animation(FadeOutUp)}
+            style={{ borderCurve: 'continuous' }}
             className={cn(
               'border-border-secondary bg-popover my-2 min-w-36 overflow-hidden rounded-2xl border py-2',
               className
             )}
-            entering={animation(FadeInUp)}
-            exiting={animation(FadeOutUp)}
-            style={{ borderCurve: 'continuous' }}
           >
             {children as React.ReactNode}
           </Animated.View>
@@ -60,12 +56,12 @@ const Item = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TextContext.Provider value="text-popover-foreground">
     <DropdownMenuPrimitive.Item
+      ref={ref}
       android_ripple={{ color: useRippleColor('inverse') }}
       className={cn(
         'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative flex h-10 flex-row items-center gap-4 pr-6 pl-4',
         className
       )}
-      ref={ref}
       {...props}
     />
   </TextContext.Provider>
@@ -98,16 +94,16 @@ const CheckboxItem = ({
     <TextContext.Provider value="text-popover-foreground">
       <DropdownMenuPrimitive.CheckboxItem
         android_ripple={{ color: useRippleColor('inverse') }}
+        checked={opChecked}
+        closeOnPress={false}
+        onCheckedChange={handleCheckedChange}
         className={cn(
           'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative h-10 flex-row items-center justify-between gap-4 px-4',
           className
         )}
-        checked={opChecked}
-        closeOnPress={false}
-        onCheckedChange={handleCheckedChange}
         {...props}
       >
-        <View className="flex-row items-center gap-4">{children}</View>
+        <View className="flex-row gap-4 items-center">{children}</View>
         <DropdownMenuPrimitive.ItemIndicator>
           <Icon className="-mr-1.5" icon={Check} />
         </DropdownMenuPrimitive.ItemIndicator>
@@ -119,7 +115,6 @@ const CheckboxItem = ({
 CheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
 
 export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
-
 export type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
 export const isSortDirection = (value: unknown): value is SortDirection =>
@@ -167,7 +162,7 @@ const SortItem = <T extends string>({
       onPress={handleSort}
       {...props}
     >
-      <View className="flex-row items-center gap-4">{children}</View>
+      <View className="flex-row gap-4 items-center">{children}</View>
       {isActive && (
         <Icon icon={opSort[1] === 'asc' ? SortAscending : SortDescending} />
       )}
@@ -192,9 +187,7 @@ const Label = ({
 );
 
 Label.displayName = 'Label';
-
-const Separator = () => <View className="border-border my-2 border-t" />;
-
+const Separator = () => <View className="my-2 border-border border-t" />;
 const useContext = DropdownMenuPrimitive.useRootContext;
 
 export {

@@ -21,19 +21,12 @@ export const MemberLogsSheet = () => {
     activeTeamId && roleId
       ? {
           logs: {
-            $: {
-              order: { name: 'asc' },
-              where: { team: activeTeamId },
-            },
+            $: { order: { name: 'asc' }, where: { team: activeTeamId } },
             profiles: { $: { fields: ['id'] } },
           },
           roles: {
             $: { where: { id: roleId, team: activeTeamId } },
-            user: {
-              profile: {
-                $: { fields: ['id'] },
-              },
-            },
+            user: { profile: { $: { fields: ['id'] } } },
           },
         }
       : null
@@ -87,10 +80,10 @@ export const MemberLogsSheet = () => {
 
           return (
             <View
-              className="flex-row items-center justify-between py-2.5"
               key={log.id}
+              className="flex-row py-2.5 items-center justify-between"
             >
-              <View className="flex-row items-center gap-3">
+              <View className="flex-row gap-3 items-center">
                 <View
                   className="size-4 rounded-md"
                   style={{ backgroundColor: color.default }}

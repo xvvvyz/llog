@@ -34,9 +34,7 @@ export const getMediaLightboxRouteMedia = (mediaId?: string) => {
   if (!mediaId) return EMPTY_MEDIA;
 
   for (const media of mediaSources.values()) {
-    if (media.some((item) => item.id === mediaId)) {
-      return media;
-    }
+    if (media.some((item) => item.id === mediaId)) return media;
   }
 
   return EMPTY_MEDIA;

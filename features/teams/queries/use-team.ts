@@ -6,12 +6,7 @@ export const useTeam = () => {
 
   const { data, isLoading } = db.useQuery(
     activeTeamId
-      ? {
-          teams: {
-            $: { where: { id: activeTeamId } },
-            image: {},
-          },
-        }
+      ? { teams: { $: { where: { id: activeTeamId } }, image: {} } }
       : null
   );
 

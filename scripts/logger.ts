@@ -2,14 +2,10 @@ export const createLogger = (scope: string) => {
   const prefix = `[${scope}] `;
   let activeProgress = false;
   let previousLength = 0;
-
   const formatMessage = (message: string) => `${prefix}${message}`;
 
   const flush = () => {
-    if (!process.stdout.isTTY || !activeProgress) {
-      return;
-    }
-
+    if (!process.stdout.isTTY || !activeProgress) return;
     process.stdout.write('\n');
     activeProgress = false;
     previousLength = 0;

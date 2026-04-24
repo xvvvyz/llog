@@ -3,8 +3,7 @@ import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { SpeakerHigh } from 'phosphor-react-native/lib/module/icons/SpeakerHigh';
-import { SpeakerSlash } from 'phosphor-react-native/lib/module/icons/SpeakerSlash';
+import { SpeakerHigh, SpeakerSlash } from 'phosphor-react-native';
 import * as React from 'react';
 import { type LayoutChangeEvent, Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -41,7 +40,7 @@ export const CarouselVideoControls = ({
     <React.Fragment>
       {duration > 0 && (
         <View
-          className="absolute right-4 z-10 mr-0.5 items-end gap-1 md:right-8"
+          className="absolute right-4 z-10 mr-0.5 gap-1 items-end md:right-8"
           style={{ bottom: videoButtonsBottomOffset }}
         >
           <Button
@@ -59,6 +58,7 @@ export const CarouselVideoControls = ({
         </View>
       )}
       <View
+        style={{ bottom: scrubberBottomOffset }}
         className={cn(
           'absolute right-4 left-4 z-10 md:right-8 md:left-8',
           'h-8 justify-center px-3',
@@ -66,7 +66,6 @@ export const CarouselVideoControls = ({
             ? 'pointer-events-auto opacity-100'
             : 'pointer-events-none opacity-0'
         )}
-        style={{ bottom: scrubberBottomOffset }}
       >
         <VideoScrubber
           currentTime={currentTime}
@@ -155,25 +154,23 @@ const VideoScrubber = ({
 
   return (
     <View className="flex-row items-center">
-      <Text className="text-muted-foreground min-w-[40px] text-xs leading-4">
+      <Text className="min-w-[40px] leading-4 text-muted-foreground text-xs">
         {formatTime(currentTime)}
       </Text>
       <GestureDetector gesture={Gesture.Race(pan, tap)}>
-        <Animated.View className="h-8 flex-1 justify-center self-stretch">
+        <Animated.View className="flex-1 h-8 justify-center self-stretch">
           <View
-            className="bg-progress-track relative h-1 overflow-hidden rounded-full"
+            className="relative overflow-hidden h-1 rounded-full bg-progress-track"
             onLayout={handleTrackLayout}
           >
             <View
-              className="bg-progress-fill absolute top-0 bottom-0 left-0 rounded-full"
-              style={{
-                width: `${progress * 100}%`,
-              }}
+              className="absolute bottom-0 left-0 top-0 rounded-full bg-progress-fill"
+              style={{ width: `${progress * 100}%` }}
             />
           </View>
         </Animated.View>
       </GestureDetector>
-      <Text className="text-muted-foreground min-w-[40px] text-right text-xs leading-4">
+      <Text className="min-w-[40px] leading-4 text-muted-foreground text-right text-xs">
         {formatTime(duration)}
       </Text>
     </View>

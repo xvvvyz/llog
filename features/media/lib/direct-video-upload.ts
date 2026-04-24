@@ -11,7 +11,6 @@ const uploadToStreamUrl = async ({
 }) => {
   const xhr = new XMLHttpRequest();
   const body = new FormData();
-
   body.append('file', await assetToFileLike(asset));
 
   return new Promise<void>((resolve, reject) => {
@@ -58,10 +57,7 @@ export const directVideoUpload = async ({
   };
 
   try {
-    await uploadToStreamUrl({
-      asset,
-      uploadURL,
-    });
+    await uploadToStreamUrl({ asset, uploadURL });
   } catch (error) {
     await api(`${path}/${createdMediaId}`, { method: 'DELETE' }).catch(() => {
       // noop

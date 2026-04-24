@@ -9,11 +9,14 @@ import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
-import { NotePencil } from 'phosphor-react-native/lib/module/icons/NotePencil';
-import { PushPin } from 'phosphor-react-native/lib/module/icons/PushPin';
-import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
 import { View } from 'react-native';
+
+import {
+  DotsThreeVertical,
+  NotePencil,
+  PushPin,
+  Trash,
+} from 'phosphor-react-native';
 
 export const RecordOrReplyDropdownMenu = ({
   accentColor,
@@ -49,7 +52,6 @@ export const RecordOrReplyDropdownMenu = ({
   const canEdit = isAuthor;
   const canPin = !replyId && myRole.canPinRecords;
   const hasActionsAboveDelete = canEdit || canPin;
-
   if (!canDelete) return null;
 
   return (

@@ -10,7 +10,6 @@ const requireReplyTarget = async (c: mediaRoutes.MediaContext) => {
   }
 
   await mediaRoutes.assertReplyRecord(c.var.db, replyId, recordId);
-
   return { recordId, replyId };
 };
 
@@ -29,17 +28,14 @@ const app = mediaRoutes.createMediaRoutes({
       media: {
         $: { where: { id: mediaId } },
         reply: {
-          $: { fields: ['id'] as ['id'] },
+          $: { fields: ['id'] },
           author: { user: { $: { fields: ['id'] } } },
           record: {
-            $: { fields: ['id'] as ['id'] },
+            $: { fields: ['id'] },
             log: {
               team: {
                 roles: {
-                  $: {
-                    fields: ['role'] as ['role'],
-                    where: { userId: c.var.user.id },
-                  },
+                  $: { fields: ['role'], where: { userId: c.var.user.id } },
                 },
               },
             },

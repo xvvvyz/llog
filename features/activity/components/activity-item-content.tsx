@@ -26,7 +26,6 @@ export const ActivityItemContent = ({
         </Text>
       ) : null;
     }
-
     case 'reply_posted': {
       return replyText ? (
         <Text className="-my-1 px-4" numberOfLines={2}>
@@ -34,7 +33,6 @@ export const ActivityItemContent = ({
         </Text>
       ) : null;
     }
-
     case 'reaction_added': {
       const emojis = [
         ...new Set(activities.map((a) => a.emoji).filter(Boolean)),
@@ -46,7 +44,7 @@ export const ActivityItemContent = ({
         .filter(Boolean);
 
       return reactionIcons.length > 0 ? (
-        <View className="-my-0.5 flex-row gap-1 px-4">
+        <View className="flex-row -my-0.5 px-4 gap-1">
           {reactionIcons.map((icon, i) => (
             <Icon
               key={emojis[i]}
@@ -59,11 +57,9 @@ export const ActivityItemContent = ({
         </View>
       ) : null;
     }
-
     case 'member_joined': {
       return null;
     }
-
     default: {
       return null;
     }

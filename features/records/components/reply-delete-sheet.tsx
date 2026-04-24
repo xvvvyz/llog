@@ -15,6 +15,10 @@ export const ReplyDeleteSheet = () => {
   return (
     <DestructiveConfirmSheet
       isPending={isPending}
+      onDismiss={() => sheetManager.close('reply-delete')}
+      open={open}
+      portalName="reply-delete"
+      title="Delete reply?"
       onConfirm={async () => {
         setIsPending(true);
         const replyId = sheetManager.getId('reply-delete')!;
@@ -28,10 +32,6 @@ export const ReplyDeleteSheet = () => {
           throw error;
         }
       }}
-      onDismiss={() => sheetManager.close('reply-delete')}
-      open={open}
-      portalName="reply-delete"
-      title="Delete reply?"
     />
   );
 };

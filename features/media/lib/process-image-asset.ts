@@ -28,7 +28,6 @@ export const processImageAsset = async (asset: PickedMediaAsset) => {
   }
 
   const manipulated = await manipulation.renderAsync();
-
   const { uri } = await manipulated.saveAsync();
 
   return assetToFileLike({

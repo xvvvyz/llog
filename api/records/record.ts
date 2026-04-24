@@ -12,63 +12,43 @@ const app = new Hono<{ Bindings: CloudflareEnv }>();
 app.post('/:recordId/publish', db(), auth(), async (c) => {
   const user = c.var.user!;
   const recordId = c.req.param('recordId');
-
-  if (!recordId) {
-    throw new HTTPException(400, { message: 'Invalid request' });
-  }
+  if (!recordId) throw new HTTPException(400, { message: 'Invalid request' });
 
   const { records } = await c.var.db.query({
     records: {
       $: { where: { id: recordId } },
       author: {
-        $: { fields: ['id', 'name'] as ['id', 'name'] },
-        user: { $: { fields: ['id'] as ['id'] } },
+        $: { fields: ['id', 'name'] },
+        user: { $: { fields: ['id'] } },
       },
       log: {
-        $: { fields: ['id', 'name'] as ['id', 'name'] },
+        $: { fields: ['id', 'name'] },
         profiles: {
           user: {
-            $: { fields: ['id'] as ['id'] },
+            $: { fields: ['id'] },
             subscriptions: {
-              $: {
-                fields: ['id', 'endpoint', 'subscription'] as [
-                  'id',
-                  'endpoint',
-                  'subscription',
-                ],
-              },
+              $: { fields: ['id', 'endpoint', 'subscription'] },
             },
           },
         },
         team: {
           roles: {
-            $: {
-              fields: ['id', 'role', 'userId'] as ['id', 'role', 'userId'],
-            },
+            $: { fields: ['id', 'role', 'userId'] },
             user: {
-              $: { fields: ['id'] as ['id'] },
+              $: { fields: ['id'] },
               subscriptions: {
-                $: {
-                  fields: ['id', 'endpoint', 'subscription'] as [
-                    'id',
-                    'endpoint',
-                    'subscription',
-                  ],
-                },
+                $: { fields: ['id', 'endpoint', 'subscription'] },
               },
             },
           },
         },
       },
-      media: { $: { fields: ['id'] as ['id'] } },
+      media: { $: { fields: ['id'] } },
     },
   });
 
   const record = records[0];
-
-  if (!record) {
-    throw new HTTPException(404, { message: 'Record not found' });
-  }
+  if (!record) throw new HTTPException(404, { message: 'Record not found' });
 
   const actorRole = record.log?.team?.roles?.find(
     (role) => role.userId === user.id
@@ -104,11 +84,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
       text: trimmedText,
     }),
     c.var.db.tx.activities[id()]
-      .update({
-        type: 'record_published',
-        date: now,
-        teamId: record.teamId,
-      })
+      .update({ type: 'record_published', date: now, teamId: record.teamId })
       .link({
         actor: record.author.id,
         team: record.teamId,
@@ -137,10 +113,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
 
 app.delete('/:recordId', db({ asUser: true }), async (c) => {
   const recordId = c.req.param('recordId');
-
-  if (!recordId) {
-    throw new HTTPException(400, { message: 'Invalid request' });
-  }
+  if (!recordId) throw new HTTPException(400, { message: 'Invalid request' });
 
   const { records } = await c.var.db.query({
     records: {
@@ -148,12 +121,7 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
       author: { user: { $: { fields: ['id'] } } },
       log: {
         team: {
-          roles: {
-            $: {
-              fields: ['role'] as ['role'],
-              where: { userId: c.var.user.id },
-            },
-          },
+          roles: { $: { fields: ['role'], where: { userId: c.var.user.id } } },
         },
       },
       media: {},
@@ -171,9 +139,7 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
     isAuthor: record.author?.user?.id === c.var.user.id,
   });
 
-  if (!canDelete) {
-    throw new HTTPException(403, { message: 'Forbidden' });
-  }
+  if (!canDelete) throw new HTTPException(403, { message: 'Forbidden' });
 
   const mediaToDelete: Array<{
     assetKey?: string | null;

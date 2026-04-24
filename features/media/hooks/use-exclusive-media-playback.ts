@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 type PausePlayback = () => void | Promise<void>;
-
 let activePlayback: { id: symbol; pause: PausePlayback } | null = null;
 
 const requestExclusivePlayback = async (id: symbol, pause: PausePlayback) => {
@@ -12,32 +11,23 @@ const requestExclusivePlayback = async (id: symbol, pause: PausePlayback) => {
 
   const previous = activePlayback;
   activePlayback = { id, pause };
-
   if (!previous || previous.id === id) return;
 
   try {
     await previous.pause();
   } catch {}
 
-  if (activePlayback?.id === id) {
-    activePlayback = { id, pause };
-  }
+  if (activePlayback?.id === id) activePlayback = { id, pause };
 };
 
 const releaseExclusivePlayback = (id: symbol) => {
-  if (activePlayback?.id === id) {
-    activePlayback = null;
-  }
+  if (activePlayback?.id === id) activePlayback = null;
 };
 
 export const useExclusiveMediaPlayback = (pause: PausePlayback) => {
   const idRef = React.useRef<symbol | null>(null);
   const pauseRef = React.useRef(pause);
-
-  if (!idRef.current) {
-    idRef.current = Symbol('media-playback');
-  }
-
+  if (!idRef.current) idRef.current = Symbol('media-playback');
   pauseRef.current = pause;
 
   const claimPlayback = React.useCallback(() => {
@@ -49,6 +39,5 @@ export const useExclusiveMediaPlayback = (pause: PausePlayback) => {
   }, []);
 
   React.useEffect(() => releasePlayback, [releasePlayback]);
-
   return { claimPlayback, releasePlayback };
 };

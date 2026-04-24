@@ -9,7 +9,7 @@ import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Text } from '@/ui/text';
-import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
@@ -30,7 +30,6 @@ export const ActivityItemQuotedRecord = ({
   });
 
   const hasAudioMedia = audioMedia.length > 0;
-
   if (!displayText && !visualMedia.length && !hasAudioMedia) return null;
 
   return (
@@ -42,15 +41,15 @@ export const ActivityItemQuotedRecord = ({
         )}
       >
         {!!displayText && (
-          <View className="max-w-full min-w-0 flex-row gap-3 p-3">
+          <View className="flex-row max-w-full min-w-0 p-3 gap-3">
             <View
-              className="bg-border w-1 self-stretch rounded-full"
+              className="w-1 rounded-full bg-border self-stretch"
               style={
                 logColor ? { backgroundColor: logColor.default } : undefined
               }
             />
             <Text
-              className="text-muted-foreground max-w-full shrink text-sm"
+              className="max-w-full text-muted-foreground text-sm shrink"
               numberOfLines={1}
             >
               {displayText}
@@ -60,19 +59,19 @@ export const ActivityItemQuotedRecord = ({
         {!!visualMedia.length && (
           <ScrollView
             className="max-w-full grow-0 self-start"
+            horizontal
+            showsHorizontalScrollIndicator={false}
             contentContainerClassName={cn(
               'px-3 pb-3',
               displayText ? 'pt-0' : 'pt-3'
             )}
-            horizontal
-            showsHorizontalScrollIndicator={false}
           >
             <View className="flex-row gap-0.5">
               {visualMedia.map((item) => (
                 <Pressable
-                  className="h-16 w-16 shrink-0 overflow-hidden rounded-lg"
-                  disabled={mediaUtils.isVideoMediaProcessing(item)}
                   key={item.id}
+                  className="overflow-hidden h-16 w-16 rounded-lg shrink-0"
+                  disabled={mediaUtils.isVideoMediaProcessing(item)}
                   onPress={() =>
                     !mediaUtils.isVideoMediaProcessing(item) &&
                     openMediaLightbox(item.id)
@@ -87,14 +86,14 @@ export const ActivityItemQuotedRecord = ({
                     width={64}
                   />
                   {item.type === 'video' && (
-                    <View className="pointer-events-none absolute inset-0 items-center justify-center">
+                    <View className="absolute inset-0 pointer-events-none items-center justify-center">
                       {mediaUtils.isVideoMediaProcessing(item) ? (
                         <ActivityIndicator
                           color={UI.light.contrastForeground}
                           size="small"
                         />
                       ) : (
-                        <View className="bg-contrast-background/50 size-6 items-center justify-center rounded-full">
+                        <View className="size-6 rounded-full bg-contrast-background/50 items-center justify-center">
                           <Icon
                             className="text-contrast-foreground"
                             icon={Play}

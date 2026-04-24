@@ -6,7 +6,6 @@ import redeem from '@/api/teams/redeem';
 import { Hono } from 'hono';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
-
 app.route('/invite-links', redeem);
 app.route('/', invites);
 app.route('/', members);

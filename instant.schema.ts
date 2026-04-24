@@ -8,9 +8,7 @@ const schema = i.schema({
       path: i.string().unique().indexed().optional(),
       url: i.any().optional(),
     }),
-    $users: i.entity({
-      email: i.string().unique().indexed().optional(),
-    }),
+    $users: i.entity({ email: i.string().unique().indexed().optional() }),
     activities: i.entity({
       type: i.string().indexed(),
       date: i.date().indexed(),
@@ -72,9 +70,7 @@ const schema = i.schema({
       teamId: i.string().indexed(),
       userId: i.string(),
     }),
-    teams: i.entity({
-      name: i.string(),
-    }),
+    teams: i.entity({ name: i.string() }),
     ui: i.entity({
       activityLastReadDate: i.date().optional(),
       audioPlaybackRate: i.number().optional(),
@@ -86,53 +82,20 @@ const schema = i.schema({
   },
   links: {
     activitiesActors: {
-      forward: {
-        on: 'activities',
-        has: 'one',
-        label: 'actor',
-        required: true,
-      },
-      reverse: {
-        on: 'profiles',
-        has: 'many',
-        label: 'actorActivities',
-      },
+      forward: { on: 'activities', has: 'one', label: 'actor', required: true },
+      reverse: { on: 'profiles', has: 'many', label: 'actorActivities' },
     },
     activitiesReplies: {
-      forward: {
-        on: 'activities',
-        has: 'one',
-        label: 'reply',
-      },
-      reverse: {
-        on: 'replies',
-        has: 'many',
-        label: 'activities',
-      },
+      forward: { on: 'activities', has: 'one', label: 'reply' },
+      reverse: { on: 'replies', has: 'many', label: 'activities' },
     },
     activitiesLogs: {
-      forward: {
-        on: 'activities',
-        has: 'one',
-        label: 'log',
-      },
-      reverse: {
-        on: 'logs',
-        has: 'many',
-        label: 'activities',
-      },
+      forward: { on: 'activities', has: 'one', label: 'log' },
+      reverse: { on: 'logs', has: 'many', label: 'activities' },
     },
     activitiesRecords: {
-      forward: {
-        on: 'activities',
-        has: 'one',
-        label: 'record',
-      },
-      reverse: {
-        on: 'records',
-        has: 'many',
-        label: 'activities',
-      },
+      forward: { on: 'activities', has: 'one', label: 'record' },
+      reverse: { on: 'records', has: 'many', label: 'activities' },
     },
     activitiesTeams: {
       forward: {
@@ -142,18 +105,10 @@ const schema = i.schema({
         required: true,
         onDelete: 'cascade',
       },
-      reverse: {
-        on: 'teams',
-        has: 'many',
-        label: 'activities',
-      },
+      reverse: { on: 'teams', has: 'many', label: 'activities' },
     },
     reactionsActivities: {
-      forward: {
-        on: 'reactions',
-        has: 'one',
-        label: 'activity',
-      },
+      forward: { on: 'reactions', has: 'one', label: 'activity' },
       reverse: {
         on: 'activities',
         has: 'one',
@@ -162,11 +117,7 @@ const schema = i.schema({
       },
     },
     repliesReactions: {
-      forward: {
-        on: 'replies',
-        has: 'many',
-        label: 'reactions',
-      },
+      forward: { on: 'replies', has: 'many', label: 'reactions' },
       reverse: {
         on: 'reactions',
         has: 'one',
@@ -175,11 +126,7 @@ const schema = i.schema({
       },
     },
     teamsInvites: {
-      forward: {
-        on: 'teams',
-        has: 'many',
-        label: 'invites',
-      },
+      forward: { on: 'teams', has: 'many', label: 'invites' },
       reverse: {
         on: 'invites',
         has: 'one',
@@ -189,62 +136,23 @@ const schema = i.schema({
       },
     },
     invitesLogs: {
-      forward: {
-        on: 'invites',
-        has: 'many',
-        label: 'logs',
-      },
-      reverse: {
-        on: 'logs',
-        has: 'many',
-        label: 'invites',
-      },
+      forward: { on: 'invites', has: 'many', label: 'logs' },
+      reverse: { on: 'logs', has: 'many', label: 'invites' },
     },
     invitesCreators: {
-      forward: {
-        on: 'invites',
-        has: 'one',
-        label: 'creator',
-        required: true,
-      },
-      reverse: {
-        on: 'profiles',
-        has: 'many',
-        label: 'invites',
-      },
+      forward: { on: 'invites', has: 'one', label: 'creator', required: true },
+      reverse: { on: 'profiles', has: 'many', label: 'invites' },
     },
     repliesAuthors: {
-      forward: {
-        on: 'replies',
-        has: 'one',
-        label: 'author',
-        required: true,
-      },
-      reverse: {
-        on: 'profiles',
-        has: 'many',
-        label: 'replies',
-      },
+      forward: { on: 'replies', has: 'one', label: 'author', required: true },
+      reverse: { on: 'profiles', has: 'many', label: 'replies' },
     },
     repliesMedia: {
-      forward: {
-        on: 'replies',
-        has: 'many',
-        label: 'media',
-      },
-      reverse: {
-        on: 'media',
-        has: 'one',
-        label: 'reply',
-        onDelete: 'cascade',
-      },
+      forward: { on: 'replies', has: 'many', label: 'media' },
+      reverse: { on: 'media', has: 'one', label: 'reply', onDelete: 'cascade' },
     },
     logsRecords: {
-      forward: {
-        on: 'logs',
-        has: 'many',
-        label: 'records',
-      },
+      forward: { on: 'logs', has: 'many', label: 'records' },
       reverse: {
         on: 'records',
         has: 'one',
@@ -254,35 +162,15 @@ const schema = i.schema({
       },
     },
     logsTags: {
-      forward: {
-        on: 'logs',
-        has: 'many',
-        label: 'tags',
-      },
-      reverse: {
-        on: 'tags',
-        has: 'many',
-        label: 'logs',
-      },
+      forward: { on: 'logs', has: 'many', label: 'tags' },
+      reverse: { on: 'tags', has: 'many', label: 'logs' },
     },
     logsProfiles: {
-      forward: {
-        on: 'logs',
-        has: 'many',
-        label: 'profiles',
-      },
-      reverse: {
-        on: 'profiles',
-        has: 'many',
-        label: 'logs',
-      },
+      forward: { on: 'logs', has: 'many', label: 'profiles' },
+      reverse: { on: 'profiles', has: 'many', label: 'logs' },
     },
     profilesMedia: {
-      forward: {
-        on: 'profiles',
-        has: 'one',
-        label: 'image',
-      },
+      forward: { on: 'profiles', has: 'one', label: 'image' },
       reverse: {
         on: 'media',
         has: 'one',
@@ -291,17 +179,8 @@ const schema = i.schema({
       },
     },
     teamsMedia: {
-      forward: {
-        on: 'teams',
-        has: 'one',
-        label: 'image',
-      },
-      reverse: {
-        on: 'media',
-        has: 'one',
-        label: 'team',
-        onDelete: 'cascade',
-      },
+      forward: { on: 'teams', has: 'one', label: 'image' },
+      reverse: { on: 'media', has: 'one', label: 'team', onDelete: 'cascade' },
     },
     profilesUsers: {
       forward: {
@@ -311,11 +190,7 @@ const schema = i.schema({
         required: true,
         onDelete: 'cascade',
       },
-      reverse: {
-        on: '$users',
-        has: 'one',
-        label: 'profile',
-      },
+      reverse: { on: '$users', has: 'one', label: 'profile' },
     },
     subscriptionsUsers: {
       forward: {
@@ -325,44 +200,18 @@ const schema = i.schema({
         required: true,
         onDelete: 'cascade',
       },
-      reverse: {
-        on: '$users',
-        has: 'many',
-        label: 'subscriptions',
-      },
+      reverse: { on: '$users', has: 'many', label: 'subscriptions' },
     },
     reactionsAuthors: {
-      forward: {
-        on: 'reactions',
-        has: 'one',
-        label: 'author',
-        required: true,
-      },
-      reverse: {
-        on: 'profiles',
-        has: 'many',
-        label: 'reactions',
-      },
+      forward: { on: 'reactions', has: 'one', label: 'author', required: true },
+      reverse: { on: 'profiles', has: 'many', label: 'reactions' },
     },
     recordsAuthors: {
-      forward: {
-        on: 'records',
-        has: 'one',
-        label: 'author',
-        required: true,
-      },
-      reverse: {
-        on: 'profiles',
-        has: 'many',
-        label: 'records',
-      },
+      forward: { on: 'records', has: 'one', label: 'author', required: true },
+      reverse: { on: 'profiles', has: 'many', label: 'records' },
     },
     recordsReactions: {
-      forward: {
-        on: 'records',
-        has: 'many',
-        label: 'reactions',
-      },
+      forward: { on: 'records', has: 'many', label: 'reactions' },
       reverse: {
         on: 'reactions',
         has: 'one',
@@ -371,11 +220,7 @@ const schema = i.schema({
       },
     },
     recordsReplies: {
-      forward: {
-        on: 'records',
-        has: 'many',
-        label: 'replies',
-      },
+      forward: { on: 'records', has: 'many', label: 'replies' },
       reverse: {
         on: 'replies',
         has: 'one',
@@ -385,11 +230,7 @@ const schema = i.schema({
       },
     },
     recordsMedia: {
-      forward: {
-        on: 'records',
-        has: 'many',
-        label: 'media',
-      },
+      forward: { on: 'records', has: 'many', label: 'media' },
       reverse: {
         on: 'media',
         has: 'one',
@@ -405,18 +246,10 @@ const schema = i.schema({
         required: true,
         onDelete: 'cascade',
       },
-      reverse: {
-        on: '$users',
-        has: 'many',
-        label: 'roles',
-      },
+      reverse: { on: '$users', has: 'many', label: 'roles' },
     },
     teamsLogs: {
-      forward: {
-        on: 'teams',
-        has: 'many',
-        label: 'logs',
-      },
+      forward: { on: 'teams', has: 'many', label: 'logs' },
       reverse: {
         on: 'logs',
         has: 'one',
@@ -426,11 +259,7 @@ const schema = i.schema({
       },
     },
     teamsRoles: {
-      forward: {
-        on: 'teams',
-        has: 'many',
-        label: 'roles',
-      },
+      forward: { on: 'teams', has: 'many', label: 'roles' },
       reverse: {
         on: 'roles',
         has: 'one',
@@ -440,11 +269,7 @@ const schema = i.schema({
       },
     },
     teamsTags: {
-      forward: {
-        on: 'teams',
-        has: 'many',
-        label: 'tags',
-      },
+      forward: { on: 'teams', has: 'many', label: 'tags' },
       reverse: {
         on: 'tags',
         has: 'one',
@@ -454,28 +279,12 @@ const schema = i.schema({
       },
     },
     uiTags: {
-      forward: {
-        on: 'ui',
-        has: 'many',
-        label: 'tags',
-      },
-      reverse: {
-        on: 'tags',
-        has: 'many',
-        label: 'ui',
-      },
+      forward: { on: 'ui', has: 'many', label: 'tags' },
+      reverse: { on: 'tags', has: 'many', label: 'ui' },
     },
     uiTeams: {
-      forward: {
-        on: 'ui',
-        has: 'one',
-        label: 'team',
-      },
-      reverse: {
-        on: 'teams',
-        has: 'many',
-        label: 'ui',
-      },
+      forward: { on: 'ui', has: 'one', label: 'team' },
+      reverse: { on: 'teams', has: 'many', label: 'ui' },
     },
     uiUsers: {
       forward: {
@@ -485,11 +294,7 @@ const schema = i.schema({
         required: true,
         onDelete: 'cascade',
       },
-      reverse: {
-        on: '$users',
-        has: 'one',
-        label: 'ui',
-      },
+      reverse: { on: '$users', has: 'one', label: 'ui' },
     },
   },
   rooms: {},

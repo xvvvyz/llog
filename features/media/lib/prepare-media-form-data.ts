@@ -25,9 +25,7 @@ export const prepareMediaFormData = async ({
 
       body.append(
         'file',
-        new File([blob], 'recording', {
-          type: blob.type || 'audio/webm',
-        })
+        new File([blob], 'recording', { type: blob.type || 'audio/webm' })
       );
     } else {
       body.append('file', {
@@ -37,9 +35,7 @@ export const prepareMediaFormData = async ({
       });
     }
 
-    if (duration != null) {
-      body.append('duration', String(duration));
-    }
+    if (duration != null) body.append('duration', String(duration));
   } else if (asset) {
     const isAudio = asset.type === 'audio';
     const isVideo = asset.type === 'video';
@@ -55,6 +51,5 @@ export const prepareMediaFormData = async ({
 
   if (mediaId) body.append('mediaId', mediaId);
   if (order != null) body.append('order', String(order));
-
   return body;
 };

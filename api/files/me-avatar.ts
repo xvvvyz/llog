@@ -9,13 +9,6 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
-const queryProfileWithImage = (userId: string) => ({
-  profiles: {
-    $: { fields: ['id'] as ['id'], where: { user: userId } },
-    image: {},
-  },
-});
-
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.put(
@@ -27,7 +20,13 @@ app.put(
     const file = upload.requireUploadedFile(c.req.valid('form').file);
     upload.validateUpload(file, ['image']);
 
-    const result = await c.var.db.query(queryProfileWithImage(c.var.user.id));
+    const result = await c.var.db.query({
+      profiles: {
+        $: { fields: ['id'], where: { user: c.var.user.id } },
+        image: {},
+      },
+    });
+
     const profile = result.profiles?.[0];
 
     if (!profile?.id) {
@@ -62,7 +61,13 @@ app.put(
 );
 
 app.delete('/me/avatar', db({ asUser: true }), async (c) => {
-  const result = await c.var.db.query(queryProfileWithImage(c.var.user.id));
+  const result = await c.var.db.query({
+    profiles: {
+      $: { fields: ['id'], where: { user: c.var.user.id } },
+      image: {},
+    },
+  });
+
   const profile = result.profiles?.[0];
 
   if (profile.image) {

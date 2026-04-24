@@ -9,22 +9,14 @@ const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.delete('/:logId', db({ asUser: true }), async (c) => {
   const logId = c.req.param('logId');
-
-  if (!logId) {
-    throw new HTTPException(400, { message: 'Invalid request' });
-  }
+  if (!logId) throw new HTTPException(400, { message: 'Invalid request' });
 
   const { logs } = await c.var.db.query({
     logs: {
       $: { where: { id: logId } },
       activities: {},
       team: {
-        roles: {
-          $: {
-            fields: ['role'] as ['role'],
-            where: { userId: c.var.user.id },
-          },
-        },
+        roles: { $: { fields: ['role'], where: { userId: c.var.user.id } } },
       },
       records: {
         media: {},
@@ -35,11 +27,7 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
   });
 
   const log = logs[0];
-
-  if (!log) {
-    return c.json({ success: true });
-  }
-
+  if (!log) return c.json({ success: true });
   const callerRole = log.team?.roles?.[0]?.role;
 
   if (!permissions.canManageTeam(callerRole)) {

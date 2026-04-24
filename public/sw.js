@@ -47,20 +47,12 @@ self.addEventListener('notificationclick', (event) => {
       const [client] = clients;
 
       if (client) {
-        if ('focus' in client) {
-          await client.focus();
-        }
-
-        if ('navigate' in client) {
-          await client.navigate(url);
-        }
-
+        if ('focus' in client) await client.focus();
+        if ('navigate' in client) await client.navigate(url);
         return;
       }
 
-      if (self.clients.openWindow) {
-        await self.clients.openWindow(url);
-      }
+      if (self.clients.openWindow) await self.clients.openWindow(url);
     })()
   );
 });

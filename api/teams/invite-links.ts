@@ -24,23 +24,15 @@ app.post(
   async (c) => {
     const user = c.var.user!;
     const teamId = c.req.param('teamId');
-
-    if (!teamId) {
-      throw new HTTPException(400, { message: 'Invalid request' });
-    }
-
+    if (!teamId) throw new HTTPException(400, { message: 'Invalid request' });
     const { role, logIds } = c.req.valid('json');
 
     const [{ roles: callerRoles }, { profiles }] = await Promise.all([
       c.var.db.query({
-        roles: {
-          $: { where: { team: teamId, userId: user.id } },
-        },
+        roles: { $: { where: { team: teamId, userId: user.id } } },
       }),
       c.var.db.query({
-        profiles: {
-          $: { where: { user: user.id }, fields: ['id'] },
-        },
+        profiles: { $: { where: { user: user.id }, fields: ['id'] } },
       }),
     ]);
 

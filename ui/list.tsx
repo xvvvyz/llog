@@ -5,9 +5,7 @@ import { View } from 'react-native';
 import { withUniwind } from 'uniwind';
 
 const StyledLegendList = withUniwind(LegendList, {
-  contentContainerStyle: {
-    fromClassName: 'contentContainerClassName',
-  },
+  contentContainerStyle: { fromClassName: 'contentContainerClassName' },
 }) as typeof LegendList;
 
 export type ListHandle = {
@@ -49,10 +47,10 @@ export const List = <T,>({
   return (
     <View className={cn(!horizontal && 'flex-1', wrapperClassName)}>
       <StyledLegendList<T>
+        ref={innerRef}
         horizontal={horizontal}
         numColumns={numColumns}
         recycleItems
-        ref={innerRef}
         {...props}
       />
     </View>

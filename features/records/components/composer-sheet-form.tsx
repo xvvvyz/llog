@@ -69,7 +69,6 @@ export const ComposerSheetForm = ({
 
   React.useEffect(() => {
     if (isOpen) return;
-
     clearMediaPreviewRestoreTimeout();
     onTextareaFocusChange(false);
   }, [clearMediaPreviewRestoreTimeout, isOpen, onTextareaFocusChange]);
@@ -83,11 +82,7 @@ export const ComposerSheetForm = ({
     (event: unknown) => {
       const rawText = readTextareaBlurText(event, text);
       const nextText = rawText.trim();
-
-      if (nextText !== rawText || nextText !== text) {
-        onChangeText(nextText);
-      }
-
+      if (nextText !== rawText || nextText !== text) onChangeText(nextText);
       clearMediaPreviewRestoreTimeout();
 
       if (Platform.OS !== 'web') {
@@ -109,9 +104,9 @@ export const ComposerSheetForm = ({
   });
 
   return (
-    <View className="mx-auto max-h-full min-h-0 w-full max-w-lg">
-      <View className="max-h-full min-h-0 gap-3 p-4 pb-8 sm:pt-8">
-        <View className="border-border-secondary bg-input min-h-0 shrink overflow-hidden rounded-xl border">
+    <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
+      <View className="max-h-full min-h-0 p-4 pb-8 gap-3 sm:pt-8">
+        <View className="overflow-hidden min-h-0 border-border-secondary rounded-xl bg-input border shrink">
           <Textarea
             autoFocus={shouldAutoFocus}
             className="border-0 bg-transparent"
@@ -126,8 +121,8 @@ export const ComposerSheetForm = ({
           />
           {isComposerCompact ? null : mediaPreview}
         </View>
-        <View className="shrink-0 flex-row items-center gap-3 px-4">
-          <View className="flex-1 flex-row items-center gap-3">
+        <View className="flex-row px-4 gap-3 items-center shrink-0">
+          <View className="flex-1 flex-row gap-3 items-center">
             {isComposerCompact ? (
               <ComposerAttachmentSummary count={attachmentCount} />
             ) : (
@@ -135,7 +130,7 @@ export const ComposerSheetForm = ({
             )}
           </View>
           <Button
-            className="web:hover:opacity-90 active:opacity-90"
+            className="active:opacity-90 web:hover:opacity-90"
             disabled={isBusy || isSubmitting || !hasContent}
             size="xs"
             style={logColor ? { backgroundColor: logColor } : undefined}

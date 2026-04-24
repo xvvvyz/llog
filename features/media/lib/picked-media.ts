@@ -52,7 +52,6 @@ const AUDIO_FILE_EXTENSIONS = new Set([
 
 const getFileExtension = (value?: string | null) => {
   if (!value) return null;
-
   const match = value.toLowerCase().match(/\.([a-z0-9]+)(?:$|[?#])/);
   return match?.[1] ?? null;
 };
@@ -71,18 +70,14 @@ export const inferPickedMediaType = ({
   if (type === 'audio') return 'audio';
   if (type === 'image' || type === 'livePhoto') return 'image';
   if (type === 'pairedVideo' || type === 'video') return 'video';
-
   if (mimeType?.startsWith('audio/')) return 'audio';
   if (mimeType?.startsWith('image/')) return 'image';
   if (mimeType?.startsWith('video/')) return 'video';
-
   const extension = getFileExtension(fileName) ?? getFileExtension(uri);
-
   if (!extension) return null;
   if (AUDIO_FILE_EXTENSIONS.has(extension)) return 'audio';
   if (IMAGE_FILE_EXTENSIONS.has(extension)) return 'image';
   if (VIDEO_FILE_EXTENSIONS.has(extension)) return 'video';
-
   return null;
 };
 

@@ -6,8 +6,7 @@ import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { Pause } from 'phosphor-react-native/lib/module/icons/Pause';
-import { Play } from 'phosphor-react-native/lib/module/icons/Play';
+import { Pause, Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -32,7 +31,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   } = useWebAudioPlayerController(props);
 
   return (
-    <View className="min-w-0 flex-row items-center">
+    <View className="flex-row min-w-0 items-center">
       <audio ref={audioRef} preload="metadata" src={audioSrc ?? undefined} />
       <Button
         className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
@@ -45,22 +44,22 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
         <Icon icon={isPlaying ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
       <div
+        ref={trackRef}
         className={cn(
           'flex flex-1 cursor-pointer touch-none items-center self-stretch',
           compact ? 'h-6' : 'h-8'
         )}
-        ref={trackRef}
       >
-        <div className="bg-progress-track h-1 w-full overflow-hidden rounded-full">
+        <div className="overflow-hidden h-1 w-full rounded-full bg-progress-track">
           <div
-            className="bg-progress-fill h-full origin-left rounded-full will-change-transform"
             ref={setFillElement}
+            className="h-full rounded-full bg-progress-fill origin-left will-change-transform"
           />
         </div>
       </div>
       <span
-        className="text-muted-foreground ml-3 min-w-[40px] text-left text-xs select-none"
         ref={timeTextRef}
+        className="ml-3 min-w-[40px] text-left text-muted-foreground text-xs select-none"
       >
         {formatTime(isPlaying ? displayTime : playerDuration)}
       </span>

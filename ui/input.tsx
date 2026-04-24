@@ -6,15 +6,9 @@ import { Keyboard, Platform, StyleSheet, TextInput } from 'react-native';
 const inputVariants = cva(
   'text-base native:text-base native:leading-5 border border-border-secondary web:placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden',
   {
-    defaultVariants: {
-      size: 'default',
-    },
+    defaultVariants: { size: 'default' },
     variants: {
-      size: {
-        default: 'h-11 px-4',
-        lg: 'h-12 px-5',
-        sm: 'h-10 px-3',
-      },
+      size: { default: 'h-11 px-4', lg: 'h-12 px-5', sm: 'h-10 px-3' },
     },
   }
 );
@@ -73,9 +67,7 @@ const Input = React.forwardRef<
           return;
         }
 
-        if (ref) {
-          ref.current = node;
-        }
+        if (ref) ref.current = node;
       },
       [ref]
     );
@@ -83,10 +75,8 @@ const Input = React.forwardRef<
     const handleSubmitEditing = React.useCallback(
       (event: Parameters<NonNullable<typeof onSubmitEditing>>[0]) => {
         onSubmitEditing?.(event);
-
         if (Platform.OS === 'web') return;
         if (resolvedSubmitBehavior !== 'blurAndSubmit') return;
-
         inputRef.current?.blur();
         Keyboard.dismiss();
       },
@@ -95,24 +85,24 @@ const Input = React.forwardRef<
 
     return (
       <TextInput
+        ref={handleRef}
         autoCapitalize="none"
         autoComplete="off"
         autoCorrect={false}
         blurOnSubmit={resolvedBlurOnSubmit}
+        lineBreakModeIOS="clip"
+        onChangeText={handleChangeText}
+        onSubmitEditing={handleSubmitEditing}
+        placeholderTextColorClassName="accent-placeholder"
+        returnKeyType={returnKeyType}
+        style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
+        submitBehavior={resolvedSubmitBehavior}
+        value={localValue}
         className={cn(
           inputVariants({ size }),
           props.editable === false && 'web:cursor-not-allowed opacity-50',
           className
         )}
-        lineBreakModeIOS="clip"
-        onChangeText={handleChangeText}
-        onSubmitEditing={handleSubmitEditing}
-        placeholderTextColorClassName="accent-placeholder"
-        ref={handleRef}
-        returnKeyType={returnKeyType}
-        style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
-        submitBehavior={resolvedSubmitBehavior}
-        value={localValue}
         {...props}
       />
     );

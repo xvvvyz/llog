@@ -5,8 +5,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { CaretLeft } from 'phosphor-react-native/lib/module/icons/CaretLeft';
-import { CaretRight } from 'phosphor-react-native/lib/module/icons/CaretRight';
+import { CaretLeft, CaretRight } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -48,14 +47,14 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
 
     return (
       <View className={cn('min-w-0 flex-row items-center', className)}>
-        <View className="min-w-0 flex-1">
+        <View className="flex-1 min-w-0">
           {clips.map((clip, index) => {
             const isActive = index === activeIndex;
 
             return (
               <View
-                className={cn('min-w-0 flex-1', !isActive && 'hidden')}
                 key={clip.id}
+                className={cn('min-w-0 flex-1', !isActive && 'hidden')}
               >
                 <AudioPlayer
                   active={isActive}
@@ -64,8 +63,8 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
                   duration={clip.duration}
                   onDidFinish={isActive ? handleDidFinish : undefined}
                   onPause={isActive ? handlePause : undefined}
-                  onPlayStart={isActive ? handlePlayStart : undefined}
                   onPlaybackRateChange={setPlaybackRate}
+                  onPlayStart={isActive ? handlePlayStart : undefined}
                   playbackRate={playbackRate}
                   showPlaybackRate={showPlaybackRate}
                   uri={clip.uri}
@@ -75,7 +74,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
           })}
         </View>
         {hasMultipleClips && (
-          <View className="ml-3 shrink-0 flex-row items-center gap-1">
+          <View className="flex-row ml-3 gap-1 items-center shrink-0">
             <Button
               accessibilityLabel="Previous audio"
               className="w-8 px-0"
@@ -86,7 +85,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
               <Icon icon={CaretLeft} />
             </Button>
             <Text
-              className="text-muted-foreground text-center text-xs"
+              className="text-center text-muted-foreground text-xs"
               numberOfLines={1}
               style={{ width: countWidth }}
             >
@@ -108,6 +107,5 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
   };
 
   AudioPlaylist.displayName = 'AudioPlaylist';
-
   return AudioPlaylist;
 };

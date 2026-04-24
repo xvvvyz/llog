@@ -16,6 +16,10 @@ export const LogDeleteSheet = () => {
   return (
     <DestructiveConfirmSheet
       isPending={isPending}
+      onDismiss={() => sheetManager.close('log-delete')}
+      open={open}
+      portalName="log-delete"
+      title="Delete log?"
       onConfirm={async () => {
         setIsPending(true);
         const logId = sheetManager.getId('log-delete')!;
@@ -29,10 +33,6 @@ export const LogDeleteSheet = () => {
           throw error;
         }
       }}
-      onDismiss={() => sheetManager.close('log-delete')}
-      open={open}
-      portalName="log-delete"
-      title="Delete log?"
     />
   );
 };

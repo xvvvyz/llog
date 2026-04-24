@@ -6,8 +6,7 @@ import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
-import { DotsSixVertical } from 'phosphor-react-native/lib/module/icons/DotsSixVertical';
-import { X } from 'phosphor-react-native/lib/module/icons/X';
+import { DotsSixVertical, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import Sortable from 'react-native-sortables';
@@ -31,7 +30,7 @@ export const LogTagsSheetTag = ({
 
   return (
     <View
-      className="border-border-secondary bg-input h-10 w-40 flex-row items-center rounded-full border"
+      className="flex-row h-10 w-40 border-border-secondary rounded-full bg-input border items-center"
       style={{ borderCurve: 'continuous' }}
     >
       <Checkbox
@@ -41,9 +40,9 @@ export const LogTagsSheetTag = ({
         onCheckedChange={() => toggleTag({ id, isSelected, logId })}
         wrapperClassName="rounded-full"
       />
-      <View className="group relative flex-1">
+      <View className="relative flex-1 group">
         <Input
-          className="border-0 bg-transparent pr-10"
+          className="pr-10 border-0 bg-transparent"
           defaultValue={name}
           maxLength={16}
           onBlur={() => setTimeout(() => setIsDeleteButtonVisible(false), 200)}
@@ -63,7 +62,7 @@ export const LogTagsSheetTag = ({
             <Icon className="text-muted-foreground" icon={X} />
           </Button>
         ) : (
-          <View className="absolute top-0 right-0 size-10 cursor-grab">
+          <View className="absolute right-0 top-0 size-10 cursor-grab">
             <Sortable.Handle>
               <View className="size-10 items-center justify-center">
                 <Icon className="text-placeholder" icon={DotsSixVertical} />

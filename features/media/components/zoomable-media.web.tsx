@@ -100,7 +100,6 @@ export const ZoomableMedia = ({
   const zoomToPoint = React.useCallback((clientX: number, clientY: number) => {
     const zoom = zoomRef.current;
     if (!zoom) return;
-
     const { positionX, positionY, scale } = zoom.state;
 
     if (scale > zoomableMediaConstants.ZOOM_THRESHOLD) {
@@ -111,7 +110,6 @@ export const ZoomableMedia = ({
     const wrapper = zoom.instance.wrapperComponent;
     const content = zoom.instance.contentComponent;
     const maxScale = zoom.instance.setup.maxScale;
-
     if (!wrapper || !content) return;
 
     const nextScale = Math.min(
@@ -122,10 +120,8 @@ export const ZoomableMedia = ({
     const contentRect = content.getBoundingClientRect();
     const contentX = (clientX - contentRect.left) / scale;
     const contentY = (clientY - contentRect.top) / scale;
-
     const targetPositionX = positionX - contentX * (nextScale - scale);
     const targetPositionY = positionY - contentY * (nextScale - scale);
-
     const wrapperWidth = wrapper.offsetWidth;
     const wrapperHeight = wrapper.offsetHeight;
     const contentWidth = content.offsetWidth * nextScale;
@@ -191,7 +187,6 @@ export const ZoomableMedia = ({
       };
 
       if (!lastTouchEnd) return;
-
       const elapsed = now - lastTouchEnd.time;
       const deltaX = touch.clientX - lastTouchEnd.clientX;
       const deltaY = touch.clientY - lastTouchEnd.clientY;
@@ -235,32 +230,32 @@ export const ZoomableMedia = ({
 
   return (
     <TransformWrapper
-      doubleClick={{ disabled: true }}
+      ref={zoomRef}
       centerOnInit
       centerZoomedOut
+      doubleClick={{ disabled: true }}
       maxScale={4}
       minScale={1}
       onPanningStart={handlePanningStart}
       onPanningStop={handlePanningStop}
       onPinchStart={handlePinchStart}
       onPinchStop={handlePinchStop}
-      onTransform={(_, state) =>
-        updateZoomState(state.scale > zoomableMediaConstants.ZOOM_THRESHOLD)
-      }
       onWheelStart={() => updateInteractionState(true)}
       onWheelStop={() => updateInteractionState(false)}
       onZoomStart={() => updateInteractionState(true)}
       onZoomStop={() => updateInteractionState(false)}
       panning={{ disabled: !isZoomed, velocityDisabled: true }}
-      ref={zoomRef}
+      onTransform={(_, state) =>
+        updateZoomState(state.scale > zoomableMediaConstants.ZOOM_THRESHOLD)
+      }
     >
       <TransformComponent
         contentStyle={frameStyle}
+        wrapperStyle={{ ...frameStyle, touchAction: 'none' }}
         wrapperProps={{
           onDoubleClick: handleDoubleClick,
           onTouchEnd: handleTouchEnd,
         }}
-        wrapperStyle={{ ...frameStyle, touchAction: 'none' }}
       >
         <div style={frameStyle}>{children}</div>
       </TransformComponent>

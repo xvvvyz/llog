@@ -7,8 +7,7 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';
-import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { Check, Plus } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const TeamSwitchSheet = () => {
@@ -22,34 +21,34 @@ export const TeamSwitchSheet = () => {
       open={sheetManager.isOpen('team-switch')}
       portalName="team-switch"
     >
-      <View className="mx-auto w-full max-w-md p-8">
-        <Text className="text-center text-2xl">Switch team</Text>
+      <View className="mx-auto max-w-md w-full p-8">
+        <Text className="text-2xl text-center">Switch team</Text>
         <View className="mt-8">
           {teams.map((t) => (
             <Button
-              className="justify-between rounded-none"
               key={t.id}
+              className="rounded-none justify-between"
+              variant="ghost"
+              wrapperClassName="rounded-none"
               onPress={() => {
                 switchTeam({ teamId: t.id, uiId: ui.id });
                 sheetManager.close('team-switch');
               }}
-              variant="ghost"
-              wrapperClassName="rounded-none"
             >
               <Text className="font-normal">{t.name}</Text>
               {t.id === ui.activeTeamId && (
-                <Icon className="text-placeholder -mr-1" icon={Check} />
+                <Icon className="-mr-1 text-placeholder" icon={Check} />
               )}
             </Button>
           ))}
         </View>
         <Button
+          variant="secondary"
+          wrapperClassName="mt-8"
           onPress={() => {
             createTeam({ name: 'Team' });
             sheetManager.close('team-switch');
           }}
-          variant="secondary"
-          wrapperClassName="mt-8"
         >
           <Icon className="text-placeholder" icon={Plus} />
           <Text>New team</Text>

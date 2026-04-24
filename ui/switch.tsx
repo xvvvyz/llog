@@ -7,15 +7,15 @@ export const Switch = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>
 >(({ checked, className, disabled, ...props }, ref) => (
   <SwitchPrimitive.Root
+    ref={ref}
     checked={checked}
+    disabled={disabled}
     className={cn(
       'border-border-secondary web:transition-colors h-7 w-12 justify-center rounded-full border px-0.5',
       checked ? 'border-primary bg-primary' : 'bg-input',
       disabled && 'opacity-50',
       className
     )}
-    disabled={disabled}
-    ref={ref}
     {...props}
   >
     <SwitchPrimitive.Thumb

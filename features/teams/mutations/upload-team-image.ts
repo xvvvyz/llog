@@ -9,7 +9,6 @@ export const uploadTeamImage = async (
   teamId?: string
 ) => {
   if (!teamId) return;
-
   const aspectRatio = asset.width / asset.height;
   const isLandscape = aspectRatio > 1;
   let newHeight = ImageSize.Avatar;
@@ -39,6 +38,5 @@ export const uploadTeamImage = async (
   const body = new FormData();
   const file = await assetToFileLike({ ...asset, mimeType: 'image/jpeg', uri });
   body.append('file', file);
-
   await api(`/files/teams/${teamId}/avatar`, { body, method: 'PUT' });
 };

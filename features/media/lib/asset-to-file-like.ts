@@ -16,9 +16,7 @@ export const assetToFileLike = async (
       new File(
         [await (await fetch(file.uri)).blob()],
         file.fileName || 'blob',
-        {
-          type: file.mimeType || 'application/octet-stream',
-        }
+        { type: file.mimeType || 'application/octet-stream' }
       )
     : {
         name: file.fileName || 'blob',

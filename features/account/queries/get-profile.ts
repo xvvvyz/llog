@@ -5,10 +5,7 @@ export const getProfile = async () => {
   if (!auth) return;
 
   const { data } = await db.queryOnce({
-    profiles: {
-      $: { where: { user: auth.id } },
-      image: {},
-    },
+    profiles: { $: { where: { user: auth.id } }, image: {} },
   });
 
   return data?.profiles?.[0];

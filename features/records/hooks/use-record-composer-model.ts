@@ -20,7 +20,6 @@ export const useRecordComposerModel = () => {
   const isEdit = sheetManager.getContext('record-create') === 'edit';
   const isOpen = sheetManager.isOpen('record-create');
   const sheetId = sheetManager.getId('record-create');
-
   const logId = isEdit ? undefined : sheetId;
   const editRecordId = isEdit ? sheetId : undefined;
   const draft = useRecordDraft({ logId });
@@ -68,12 +67,7 @@ export const useRecordComposerModel = () => {
 
   const handleUploadMedia = React.useCallback(
     async (asset: PickedMediaAsset, mediaId: string, order: number) => {
-      await uploadRecordMedia({
-        asset,
-        mediaId,
-        order,
-        recordId,
-      });
+      await uploadRecordMedia({ asset, mediaId, order, recordId });
     },
     [recordId]
   );
@@ -118,13 +112,7 @@ export const useRecordComposerModel = () => {
     try {
       await updateRecordDraft({ id: recordId, text });
       await publishRecord({ id: recordId });
-
-      requestPostSubmitScroll({
-        id: recordLogId,
-        scope: 'log',
-        target: 'top',
-      });
-
+      requestPostSubmitScroll({ id: recordLogId, scope: 'log', target: 'top' });
       close();
     } finally {
       isSubmittingRef.current = false;

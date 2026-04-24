@@ -40,10 +40,10 @@ export const MediaComposerPendingVideoPreview = ({
 
   if (Platform.OS === 'web') {
     return (
-      <View className="bg-card h-full w-full overflow-hidden">
+      <View className="overflow-hidden h-full w-full bg-card">
         <video
           autoPlay={autoPlay}
-          className="block h-full w-full object-cover"
+          className="block object-cover h-full w-full"
           loop
           muted
           playsInline
@@ -55,7 +55,7 @@ export const MediaComposerPendingVideoPreview = ({
   }
 
   return (
-    <View className="bg-card h-full w-full items-center justify-center overflow-hidden">
+    <View className="overflow-hidden h-full w-full bg-card items-center justify-center">
       <View style={coverFrameStyle}>
         <VideoPlayer
           autoPlay={autoPlay}

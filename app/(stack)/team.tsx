@@ -32,16 +32,19 @@ import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
-import { Check } from 'phosphor-react-native/lib/module/icons/Check';
-import { Copy } from 'phosphor-react-native/lib/module/icons/Copy';
-import { DotsThreeVertical } from 'phosphor-react-native/lib/module/icons/DotsThreeVertical';
-import { LinkBreak } from 'phosphor-react-native/lib/module/icons/LinkBreak';
-import { QrCode } from 'phosphor-react-native/lib/module/icons/QrCode';
-import { SignOut } from 'phosphor-react-native/lib/module/icons/SignOut';
-import { Trash } from 'phosphor-react-native/lib/module/icons/Trash';
-import { UploadSimple } from 'phosphor-react-native/lib/module/icons/UploadSimple';
 import * as React from 'react';
 import { ActivityIndicator, Keyboard, Pressable, View } from 'react-native';
+
+import {
+  Check,
+  Copy,
+  DotsThreeVertical,
+  LinkBreak,
+  QrCode,
+  SignOut,
+  Trash,
+  UploadSimple,
+} from 'phosphor-react-native';
 
 const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
@@ -70,7 +73,6 @@ export default function Team() {
   const logs = useLogs();
   const { members } = useTeamMembers();
   useTeams();
-
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
 
   const activeTeamLogIds = React.useMemo(
@@ -196,20 +198,20 @@ export default function Team() {
   return (
     <Page>
       <Header left={<BackButton />} title={<TeamSwitcher hideSettings />} />
-      <View className="flex-1 items-center justify-center p-3">
+      <View className="flex-1 p-3 items-center justify-center">
         <Pressable className="absolute inset-0" onPress={Keyboard.dismiss} />
-        <Card className="w-full max-w-xs overflow-hidden p-0">
+        <Card className="overflow-hidden max-w-xs w-full p-0">
           <View className="pb-2">
             <View className="px-4">
               {canManage ? (
                 <Menu.Root>
                   <Menu.Trigger asChild>
                     <Button
-                      className="border-border w-full items-end justify-between rounded-none border-b px-0 pt-3 pb-3"
+                      className="w-full pb-3 pt-3 px-0 border-b border-border rounded-none items-end justify-between"
                       variant="link"
                       wrapperClassName="w-full rounded-none"
                     >
-                      <Text className="text-muted-foreground shrink-0 text-base leading-tight">
+                      <Text className="leading-tight text-base text-muted-foreground shrink-0">
                         Avatar
                       </Text>
                       <Avatar
@@ -239,8 +241,8 @@ export default function Team() {
                   </Menu.Content>
                 </Menu.Root>
               ) : (
-                <View className="border-border flex-row items-end justify-between border-b pt-3 pb-3">
-                  <Label className="shrink-0 p-0">Avatar</Label>
+                <View className="flex-row pb-3 pt-3 border-b border-border items-end justify-between">
+                  <Label className="p-0 shrink-0">Avatar</Label>
                   <Avatar
                     avatar={team.image?.uri}
                     fallback="gradient"
@@ -252,22 +254,22 @@ export default function Team() {
             </View>
             <View className="px-4">
               <Pressable
-                className="border-border flex-row items-center justify-between border-b"
+                className="flex-row border-b border-border items-center justify-between"
                 disabled={!canManage}
                 onPress={() => nameInputRef.current?.focus()}
               >
                 <Label
-                  className="shrink-0 p-0"
+                  className="p-0 shrink-0"
                   onPress={() => nameInputRef.current?.focus()}
                 >
                   Name
                 </Label>
                 <Input
+                  ref={nameInputRef}
+                  className="min-w-0 pr-0 border-0 rounded-none bg-transparent text-right shrink"
                   editable={canManage}
                   maxLength={32}
-                  className="min-w-0 shrink rounded-none border-0 bg-transparent pr-0 text-right"
                   onChangeText={(name) => updateTeam({ id: team.id!, name })}
-                  ref={nameInputRef}
                   selectTextOnFocus
                   value={team.name}
                 />
@@ -278,18 +280,18 @@ export default function Team() {
                 .filter((role) => role === Role.Admin || logs.data.length > 0)
                 .map((role) => (
                   <View key={role} className="px-4">
-                    <View className="border-border flex-row items-center justify-between gap-4 border-b py-3">
+                    <View className="flex-row py-3 border-b border-border gap-4 items-center justify-between">
                       <View className="flex-1">
-                        <Text className="text-muted-foreground font-normal">
+                        <Text className="font-normal text-muted-foreground">
                           {ROLE_LABELS[role]} invite link
                         </Text>
-                        <Text className="text-placeholder pb-0.5 text-xs">
+                        <Text className="pb-0.5 text-placeholder text-xs">
                           {role === Role.Admin
                             ? 'Can manage team and logs'
                             : 'Can access selected logs'}
                         </Text>
                       </View>
-                      <View className="-mr-[7px] flex-row items-center gap-1">
+                      <View className="flex-row -mr-[7px] gap-1 items-center">
                         <Button
                           className="size-8"
                           onPress={() => handleCopyLink(role)}
@@ -298,8 +300,8 @@ export default function Team() {
                         >
                           {loadingAction === `copy-${role}` ? (
                             <ActivityIndicator
-                              size={16}
                               color={UI[colorScheme].mutedForeground}
+                              size={16}
                             />
                           ) : (
                             <Icon
@@ -316,8 +318,8 @@ export default function Team() {
                         >
                           {loadingAction === `qr-${role}` ? (
                             <ActivityIndicator
-                              size={16}
                               color={UI[colorScheme].mutedForeground}
+                              size={16}
                             />
                           ) : (
                             <Icon className="text-placeholder" icon={QrCode} />
@@ -378,10 +380,10 @@ export default function Team() {
 
                 return (
                   <View
-                    className="flex-row items-center justify-between py-2.5"
                     key={member.id}
+                    className="flex-row py-2.5 items-center justify-between"
                   >
-                    <View className="flex-1 flex-row items-center gap-3">
+                    <View className="flex-1 flex-row gap-3 items-center">
                       <Avatar
                         avatar={profile?.image?.uri}
                         id={profile?.id}
@@ -390,12 +392,12 @@ export default function Team() {
                       />
                       <View className="flex-1">
                         <Text
-                          className="text-sm leading-tight font-medium"
+                          className="font-medium leading-tight text-sm"
                           numberOfLines={1}
                         >
                           {profile?.name}
                         </Text>
-                        <Text className="text-placeholder text-xs leading-tight">
+                        <Text className="leading-tight text-placeholder text-xs">
                           {ROLE_LABELS[member.role] ?? member.role}
                         </Text>
                       </View>
@@ -405,8 +407,8 @@ export default function Team() {
                         <Menu.Trigger asChild>
                           <Button
                             className="size-8"
-                            variant="ghost"
                             size="icon"
+                            variant="ghost"
                             wrapperClassName="-mr-[7px]"
                           >
                             <Icon
@@ -437,8 +439,8 @@ export default function Team() {
                         <Menu.Trigger asChild>
                           <Button
                             className="size-8"
-                            variant="ghost"
                             size="icon"
+                            variant="ghost"
                             wrapperClassName="-mr-[7px]"
                           >
                             <Icon
@@ -464,17 +466,17 @@ export default function Team() {
             <View>
               {canDeleteTeam && (
                 <>
-                  <View className="border-border mb-2 border-t" />
+                  <View className="mb-2 border-border border-t" />
                   <Button
-                    className="justify-between rounded-none"
+                    className="rounded-none justify-between"
                     onPress={() => sheetManager.open('team-delete')}
                     variant="ghost"
                     wrapperClassName="rounded-none"
                   >
-                    <Text className="text-destructive font-normal">
+                    <Text className="font-normal text-destructive">
                       Delete team
                     </Text>
-                    <Icon className="text-destructive -mr-0.5" icon={Trash} />
+                    <Icon className="-mr-0.5 text-destructive" icon={Trash} />
                   </Button>
                 </>
               )}

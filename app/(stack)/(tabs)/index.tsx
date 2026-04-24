@@ -20,7 +20,7 @@ import { Page } from '@/ui/page';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import MiniSearch from 'minisearch';
-import { Plus } from 'phosphor-react-native/lib/module/icons/Plus';
+import { Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 
@@ -34,7 +34,6 @@ export default function Index() {
   const { canManage } = useMyRole();
   const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const sheetManager = useSheetManager();
-
   const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs();
   const isEmpty = !logs.isLoading && logs.data.length === 0;
@@ -93,24 +92,24 @@ export default function Index() {
             {breakpoints.md && !isEmpty && (
               <LogListActions
                 className={cn(isEmpty && 'md:hidden')}
-                tags={tags.data}
                 query={rawQuery}
                 selectedTagIds={selectedTagIds}
                 setQuery={setRawQuery}
                 setSelectedTagIds={setSelectedTagIds}
+                tags={tags.data}
               />
             )}
             {canManage && (
               <Button
                 className="size-11"
+                size="icon"
+                variant="link"
+                wrapperClassName="md:-mr-4 md:ml-4"
                 onPress={() => {
                   const logId = id();
                   createLog({ color: 7, id: logId, name: 'Log' });
                   router.push(`/${logId}`);
                 }}
-                size="icon"
-                variant="link"
-                wrapperClassName="md:-mr-4 md:ml-4"
               >
                 <Icon className="text-foreground" icon={Plus} size={24} />
               </Button>
@@ -125,18 +124,18 @@ export default function Index() {
       ) : (
         <ScrollView
           className="flex-1"
+          contentContainerClassName="p-2.5 pt-0 md:p-6"
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
-          contentContainerClassName="p-2.5 pt-0 md:p-6"
         >
           {!breakpoints.md && !isEmpty && (
             <LogListActions
               className="p-1.5 pt-4 md:p-2"
-              tags={tags.data}
               query={rawQuery}
               selectedTagIds={selectedTagIds}
               setQuery={setRawQuery}
               setSelectedTagIds={setSelectedTagIds}
+              tags={tags.data}
             />
           )}
           <View className="flex-row flex-wrap">
@@ -150,6 +149,7 @@ export default function Index() {
 
               return (
                 <View
+                  key={item.id}
                   className={cn(
                     columns === 2 && 'w-1/2',
                     columns === 3 && 'w-1/3',
@@ -157,7 +157,6 @@ export default function Index() {
                     columns === 5 && 'w-1/5',
                     columns === 6 && 'w-1/6'
                   )}
-                  key={item.id}
                 >
                   <LogListItem
                     className="p-1.5 md:p-2"

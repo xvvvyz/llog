@@ -23,9 +23,7 @@ app.post('/stream/webhook', async (c) => {
     uid?: string;
   };
 
-  if (!event.uid) {
-    return c.json({ ignored: true, success: true });
-  }
+  if (!event.uid) return c.json({ ignored: true, success: true });
 
   if (event.readyToStream && event.status?.state === 'ready') {
     c.executionCtx.waitUntil(
