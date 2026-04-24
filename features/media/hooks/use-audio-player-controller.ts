@@ -8,7 +8,7 @@ import type { LayoutChangeEvent } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
-export const useNativeAudioPlayerController = ({
+export const useAudioPlayerController = ({
   active = true,
   autoPlayKey,
   duration,
@@ -79,7 +79,7 @@ export const useNativeAudioPlayerController = ({
 
   React.useEffect(() => {
     if (!src) return;
-    player.setPlaybackRate(currentPlaybackRate);
+    player.setPlaybackRate(currentPlaybackRate, 'high');
   }, [currentPlaybackRate, player, src]);
 
   React.useEffect(() => {
