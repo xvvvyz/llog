@@ -33,12 +33,7 @@ export default function RecordDetailRoute() {
   const isNotFound = !routeRecordId || (!record.isLoading && !record.id);
 
   return (
-    <Sheet
-      nativeModal={false}
-      onDismiss={exitRoute}
-      open
-      portalName="record-detail"
-    >
+    <Sheet onDismiss={exitRoute} open portalName="record-detail">
       {isNotFound ? (
         <View className="p-6 gap-4 items-center justify-center">
           <Text className="text-center text-muted-foreground">

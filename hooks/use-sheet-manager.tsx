@@ -1,5 +1,4 @@
 import { SheetName } from '@/types/sheet-names';
-import { usePathname } from 'expo-router';
 import * as React from 'react';
 import { Keyboard } from 'react-native';
 
@@ -12,7 +11,6 @@ const SheetContext = React.createContext<{
   isOpen: (name: SheetName) => boolean;
   open: (name: SheetName, id?: string, context?: string) => void;
   someOpen: () => boolean;
-  suspend: () => void;
 } | null>(null);
 
 export const SheetManagerProvider = ({
@@ -20,20 +18,7 @@ export const SheetManagerProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const pathname = usePathname();
   const [sheetStack, setSheetStack] = React.useState<SheetStackItem[]>([]);
-
-  const suspendedRef = React.useRef<{
-    pathname: string;
-    stack: SheetStackItem[];
-  } | null>(null);
-
-  React.useEffect(() => {
-    if (suspendedRef.current && pathname === suspendedRef.current.pathname) {
-      setSheetStack(suspendedRef.current.stack);
-      suspendedRef.current = null;
-    }
-  }, [pathname]);
 
   const close = React.useCallback((name: SheetName) => {
     setSheetStack((prev) => {
@@ -61,7 +46,6 @@ export const SheetManagerProvider = ({
   const open = React.useCallback(
     (name: SheetName, id?: string, context?: string) => {
       Keyboard.dismiss();
-      suspendedRef.current = null;
 
       setSheetStack((prev) => {
         const index = prev.findIndex((item) => item.name === name);
@@ -74,17 +58,9 @@ export const SheetManagerProvider = ({
 
   const someOpen = React.useCallback(() => !!sheetStack.length, [sheetStack]);
 
-  const suspend = React.useCallback(() => {
-    setSheetStack((prev) => {
-      if (!prev.length) return prev;
-      suspendedRef.current = { pathname, stack: prev };
-      return [];
-    });
-  }, [pathname]);
-
   return (
     <SheetContext.Provider
-      value={{ close, getContext, getId, isOpen, open, someOpen, suspend }}
+      value={{ close, getContext, getId, isOpen, open, someOpen }}
     >
       {children}
     </SheetContext.Provider>

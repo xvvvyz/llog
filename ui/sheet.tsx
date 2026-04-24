@@ -27,7 +27,6 @@ export const Sheet = ({
   children,
   className,
   loading,
-  nativeModal = true,
   onDismiss,
   open,
   portalName,
@@ -36,7 +35,6 @@ export const Sheet = ({
   children: React.ReactNode;
   className?: string;
   loading?: boolean;
-  nativeModal?: boolean;
   onDismiss: () => void;
   open: boolean;
   portalName: string;
@@ -109,8 +107,6 @@ export const Sheet = ({
       </KeyboardAvoidingView>
     </Animated.View>
   );
-
-  if (!nativeModal) return open ? sheet : null;
 
   return (
     <Portal name={portalName}>
