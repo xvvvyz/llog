@@ -62,7 +62,8 @@ export const Item = ({
   );
 
   const hasAudioMedia = mediaSource?.some((m) => m.type === 'audio');
-  const mediaIsLast = hasVisualMedia && !hasAudioMedia;
+  const hasDocumentMedia = mediaSource?.some((m) => m.type === 'document');
+  const mediaIsLast = hasVisualMedia && !hasAudioMedia && !hasDocumentMedia;
 
   const showQuotedRecord =
     (group.type === 'reply_posted' || group.type === 'reaction_added') &&

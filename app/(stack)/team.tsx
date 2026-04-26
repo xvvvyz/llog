@@ -295,9 +295,8 @@ export default function Team() {
                       </View>
                       <View className="flex-row -mr-[7px] gap-1 items-center">
                         <Button
-                          className="size-8"
                           onPress={() => handleCopyLink(role)}
-                          size="icon"
+                          size="icon-sm"
                           variant="ghost"
                         >
                           {loadingAction === `copy-${role}` ? (
@@ -313,9 +312,8 @@ export default function Team() {
                           )}
                         </Button>
                         <Button
-                          className="size-8"
                           onPress={() => handleShowQr(role)}
-                          size="icon"
+                          size="icon-sm"
                           variant="ghost"
                         >
                           {loadingAction === `qr-${role}` ? (
@@ -329,9 +327,8 @@ export default function Team() {
                         </Button>
                         {invites.some((l) => l.role === role) && (
                           <Button
-                            className="size-8"
                             onPress={() => handleDelete(role)}
-                            size="icon"
+                            size="icon-sm"
                             variant="ghost"
                           >
                             <Icon
@@ -409,8 +406,7 @@ export default function Team() {
                       <Menu.Root>
                         <Menu.Trigger asChild>
                           <Button
-                            className="size-8"
-                            size="icon"
+                            size="icon-sm"
                             variant="ghost"
                             wrapperClassName="-mr-[7px]"
                           >
@@ -441,8 +437,7 @@ export default function Team() {
                       <Menu.Root>
                         <Menu.Trigger asChild>
                           <Button
-                            className="size-8"
-                            size="icon"
+                            size="icon-sm"
                             variant="ghost"
                             wrapperClassName="-mr-[7px]"
                           >

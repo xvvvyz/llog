@@ -16,6 +16,17 @@ export const createReplyDraft = async ({
   const resolved = await resolveProfileAndTeam(profileId, teamId);
   if (!resolved) return;
 
+  const { data } = await db.queryOnce({
+    replies: {
+      $: {
+        fields: ['id'],
+        where: { author: resolved.profileId, record: recordId, isDraft: true },
+      },
+    },
+  });
+
+  if (data.replies?.[0]) return;
+
   return db.transact(
     db.tx.replies[replyId]
       .update({

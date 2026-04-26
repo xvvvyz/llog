@@ -9,10 +9,12 @@ import * as React from 'react';
 export const useMediaUploadPreviewState = ({
   mediaCount,
   onUploadMedia,
+  scopeKey,
   visibleMedia,
   visualMedia: visualItems,
 }: Pick<mediaComposer.UseMediaComposerOptions, 'onUploadMedia'> & {
   mediaCount: number;
+  scopeKey: string;
   visibleMedia: Media[];
   visualMedia: Media[];
 }) => {
@@ -33,6 +35,11 @@ export const useMediaUploadPreviewState = ({
     });
   }, []);
 
+  React.useEffect(() => {
+    setPendingUploads([]);
+    setLocalPreviewUris({});
+  }, [scopeKey]);
+
   const uploadAssets = React.useCallback(
     (inputAssets: pickedMedia.PickedMediaAsset[]) => {
       const assets = inputAssets;
@@ -43,10 +50,12 @@ export const useMediaUploadPreviewState = ({
       setPendingUploads((prev) => [
         ...prev,
         ...assets.map((asset, i) => ({
-          fileName: asset.fileName ?? undefined,
           height: asset.height,
           id: mediaIds[i],
+          mimeType: asset.mimeType ?? undefined,
+          name: asset.fileName ?? undefined,
           order: baseOrder + i,
+          size: asset.size ?? undefined,
           type: asset.type,
           uri: asset.uri,
           width: asset.width,
@@ -125,7 +134,7 @@ export const useMediaUploadPreviewState = ({
       const activeIds = new Set([
         ...visualItems.map((item) => item.id),
         ...pendingUploads
-          .filter((item) => item.type !== 'audio')
+          .filter(mediaComposer.isVisualPendingUpload)
           .map((item) => item.id),
       ]);
 
@@ -205,6 +214,14 @@ export const useMediaUploadPreviewState = ({
     [pendingUploads]
   );
 
+  const pendingDocuments = React.useMemo(
+    (): mediaComposer.PendingDocumentUpload[] =>
+      pendingUploads
+        .filter(mediaComposer.isPendingDocumentUpload)
+        .sort((a, b) => a.order - b.order),
+    [pendingUploads]
+  );
+
   const autoPlayPendingVideoId = React.useMemo(
     () =>
       [...pendingUploads]
@@ -220,6 +237,7 @@ export const useMediaUploadPreviewState = ({
     allVisual,
     autoPlayPendingVideoId,
     pendingAudio,
+    pendingDocuments,
     pendingUploads,
     removeLocalPreviewUri,
     uploadAssets,

@@ -29,18 +29,21 @@ export const useMediaComposerState = ({
     [media, pendingDeletions]
   );
 
-  const { audioMedia, visualMedia } = useFilteredMedia(visibleMedia);
+  const { audioMedia, documentMedia, visualMedia } =
+    useFilteredMedia(visibleMedia);
 
   const {
     allVisual,
     autoPlayPendingVideoId,
     pendingAudio,
+    pendingDocuments,
     pendingUploads,
     removeLocalPreviewUri,
     uploadAssets,
   } = useMediaUploadPreviewState({
     mediaCount: media.length,
     onUploadMedia,
+    scopeKey,
     visibleMedia,
     visualMedia,
   });
@@ -55,7 +58,7 @@ export const useMediaComposerState = ({
 
   useClipboardMediaPaste({ enabled: isOpen, onUploadAssets: uploadAssets });
 
-  const { handleBrowseMedia, handleCaptureMedia, handlePickFiles } =
+  const { handleBrowseMedia, handleCaptureMedia, handlePickDocuments } =
     useMediaPickerActions({ onUploadAssets: uploadAssets });
 
   const canAddAudio = true;
@@ -65,13 +68,20 @@ export const useMediaComposerState = ({
     audioMedia,
     autoPlayPendingVideoId,
     canAddAudio,
+    documentMedia,
     handleBrowseMedia,
     handleCaptureMedia,
     handleDeleteMedia,
-    handlePickFiles,
+    handlePickDocuments,
     isBusy: pendingUploads.length > 0 || isDeleteTransitioning,
-    mediaCount: audioMedia.length + pendingAudio.length + allVisual.length,
+    mediaCount:
+      audioMedia.length +
+      documentMedia.length +
+      pendingAudio.length +
+      pendingDocuments.length +
+      allVisual.length,
     pendingAudio,
+    pendingDocuments,
     removeLocalPreviewUri,
   };
 };

@@ -74,7 +74,7 @@ export const useMediaPickerActions = ({
     );
   }, [ensureMediaLibraryPermission, onUploadAssets]);
 
-  const handlePickFiles = React.useCallback(async () => {
+  const handlePickDocuments = React.useCallback(async () => {
     const picker = await getDocumentAsync({
       base64: false,
       copyToCacheDirectory: true,
@@ -90,8 +90,8 @@ export const useMediaPickerActions = ({
 
     if (!assets.length) {
       alert({
-        message: 'Choose an image, video, or audio file.',
-        title: 'Unsupported file',
+        message: 'Choose a document to attach.',
+        title: 'Unsupported document',
       });
 
       return;
@@ -129,5 +129,5 @@ export const useMediaPickerActions = ({
     );
   }, [onUploadAssets, showCapturePermissionAlert]);
 
-  return { handleBrowseMedia, handleCaptureMedia, handlePickFiles };
+  return { handleBrowseMedia, handleCaptureMedia, handlePickDocuments };
 };

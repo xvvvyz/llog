@@ -21,10 +21,12 @@ export const useRecord = ({ id }: { id?: string }) => {
       : null
   );
 
-  const record = data?.records?.[0];
+  const records = data?.records ?? [];
+  const record = records.find((item) => item.id === id);
+  const hasStaleResult = !!id && records.length > 0 && !record;
   const replies = record?.replies ?? [];
   const media = record?.media ?? [];
-  return { ...record, replies, media, isLoading };
+  return { ...record, replies, media, isLoading: isLoading || hasStaleResult };
 };
 
 export type UseRecordResult = ReturnType<typeof useRecord>;

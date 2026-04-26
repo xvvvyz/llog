@@ -41,15 +41,14 @@ export const PlaybackRateButton = ({
   return (
     <Button
       accessibilityLabel={`Playback speed ${label}`}
-      className={cn('ml-2 shrink-0 px-0', compact ? 'h-6 w-6' : 'h-8 w-8')}
+      className={cn('shrink-0 px-0', compact && 'h-6 w-6 rounded-lg')}
       disabled={disabled}
       onPress={handlePress}
-      size="xs"
+      size={compact ? 'icon' : 'icon-sm'}
       variant="ghost"
+      wrapperClassName={cn(compact && 'rounded-lg')}
     >
-      <Text className="font-normal text-muted-foreground text-xs tabular-nums">
-        {label}
-      </Text>
+      <Text className="font-normal text-muted-foreground text-xs">{label}</Text>
     </Button>
   );
 };

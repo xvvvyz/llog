@@ -4,8 +4,10 @@ import { getMediaR2Keys, isR2Key } from '@/api/files/r2-keys';
 
 export const deleteMediaAssets = async (
   env: CloudflareEnv,
-  media: Array<{ assetKey?: string | null; uri?: string | null }>
+  media: Array<{ assetKey?: string | null; uri?: string | null }>,
+  options: { throwOnError?: boolean } = {}
 ) => {
+  const failures: unknown[] = [];
   const r2Keys = [...new Set(media.flatMap((item) => getMediaR2Keys(item)))];
 
   const imageSources = [
@@ -30,14 +32,25 @@ export const deleteMediaAssets = async (
     ),
   ];
 
+  const recordFailure = (error: unknown) => {
+    failures.push(error);
+  };
+
   await Promise.all([
-    r2Keys.length ? env.R2.delete(r2Keys) : undefined,
+    r2Keys.length
+      ? env.R2.delete(r2Keys).catch((error) => {
+          console.error('Failed to delete R2 media assets', { error, r2Keys });
+          recordFailure(error);
+        })
+      : undefined,
     ...imageSources.map((sourceKey) =>
       deleteImage(env, sourceKey).catch((error) => {
         console.error('Failed to delete Cloudflare Image', {
           error,
           sourceKey,
         });
+
+        recordFailure(error);
       })
     ),
     ...streamUids.map((uid) =>
@@ -46,7 +59,13 @@ export const deleteMediaAssets = async (
           error,
           uid,
         });
+
+        recordFailure(error);
       })
     ),
   ]);
+
+  if (options.throwOnError && failures.length) {
+    throw new Error('Failed to delete media assets');
+  }
 };

@@ -73,8 +73,8 @@ export const AudioPreview = ({
   if (!activeItem) return null;
 
   return (
-    <View className="p-4 border-border-secondary border-t shrink-0">
-      <View className="flex-row w-full gap-2 items-center">
+    <View className="px-4 shrink-0">
+      <View className="flex-row min-w-0 items-center">
         <View className="flex-1 min-w-0">
           {items.map((previewItem, index) => {
             const isActive = index === activeIndex;
@@ -95,11 +95,20 @@ export const AudioPreview = ({
                     playbackRate={audioPlaybackRate}
                     showPlaybackRate={false}
                     uri={previewItem.item.uri}
+                    trailingAccessory={
+                      <Button
+                        onPress={() => onDeleteMedia(previewItem.item.id)}
+                        size="icon-sm"
+                        variant="ghost"
+                      >
+                        <Icon icon={X} />
+                      </Button>
+                    }
                   />
                 ) : (
-                  <View className="flex-1 px-3 py-2 rounded-lg bg-card">
+                  <View className="flex-1 h-8 px-3 rounded-lg bg-card justify-center">
                     <Text numberOfLines={1}>
-                      {previewItem.item.fileName?.trim() || 'Audio file'}
+                      {previewItem.item.name?.trim() || 'Audio'}
                     </Text>
                   </View>
                 )}
@@ -107,22 +116,13 @@ export const AudioPreview = ({
             );
           })}
         </View>
-        {activeItem.type === 'media' ? (
-          <Button
-            className="ml-0.5 w-8 px-0"
-            onPress={() => onDeleteMedia(activeItem.item.id)}
-            size="xs"
-            variant="ghost"
-          >
-            <Icon icon={X} />
-          </Button>
-        ) : (
+        {activeItem.type === 'pending' && (
           <View className="w-8 items-center justify-center">
             <Spinner className="scale-[0.8]" size="small" />
           </View>
         )}
         {hasMultipleItems && (
-          <View className="flex-row gap-1 items-center shrink-0">
+          <View className="flex-row -mr-1.5 ml-4 gap-1 items-center shrink-0">
             <Button
               accessibilityLabel="Previous audio"
               className="w-8 px-0"
@@ -133,7 +133,7 @@ export const AudioPreview = ({
               <Icon icon={CaretLeft} />
             </Button>
             <Text
-              className="text-center text-muted-foreground text-xs"
+              className="text-center text-placeholder text-xs"
               numberOfLines={1}
               style={{ width: countWidth }}
             >

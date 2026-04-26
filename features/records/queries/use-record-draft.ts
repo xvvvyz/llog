@@ -4,7 +4,13 @@ import { createRecordDraft } from '@/features/records/mutations/create-record-dr
 import { db } from '@/lib/db';
 import * as React from 'react';
 
-export const useRecordDraft = ({ logId }: { logId?: string }) => {
+export const useRecordDraft = ({
+  ignoredDraftIds,
+  logId,
+}: {
+  ignoredDraftIds?: ReadonlySet<string>;
+  logId?: string;
+}) => {
   const profile = useProfile();
   const log = useLog({ id: logId });
 
@@ -20,13 +26,21 @@ export const useRecordDraft = ({ logId }: { logId?: string }) => {
       : null
   );
 
-  const record = data?.records?.[0];
+  const records = data?.records ?? [];
+
+  const record = records.find(
+    (item) =>
+      item.id && item.log?.id === logId && !ignoredDraftIds?.has(item.id)
+  );
+
+  const hasStaleResult = !!logId && records.length > 0 && !record;
+  const draftIsLoading = isLoading || hasStaleResult;
 
   React.useEffect(() => {
-    if (isLoading || log.isLoading || record || !log.teamId) return;
+    if (draftIsLoading || log.isLoading || record || !log.teamId) return;
     createRecordDraft({ logId, profileId: profile.id, teamId: log.teamId });
-  }, [isLoading, log.isLoading, log.teamId, logId, record, profile.id]);
+  }, [draftIsLoading, log.isLoading, log.teamId, logId, record, profile.id]);
 
   const media = record?.media ?? [];
-  return { ...record, media, isLoading };
+  return { ...record, media, isLoading: draftIsLoading };
 };

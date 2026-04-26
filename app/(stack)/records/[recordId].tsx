@@ -1,12 +1,10 @@
 import { DetailView } from '@/features/records/components/detail-view';
 import { getLogHref } from '@/features/records/lib/route';
 import { useRecord } from '@/features/records/queries/use-record';
-import { Button } from '@/ui/button';
-import { Sheet } from '@/ui/sheet';
-import { Text } from '@/ui/text';
+import { NotFound } from '@/ui/not-found';
+import { Sheet, SHEET_LAYERS } from '@/ui/sheet';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
-import { View } from 'react-native';
 
 const getRouteParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
@@ -33,24 +31,23 @@ export default function RecordDetailRoute() {
   const isNotFound = !routeRecordId || (!record.isLoading && !record.id);
 
   return (
-    <Sheet onDismiss={exitRoute} open portalName="record-detail">
+    <Sheet
+      layer={SHEET_LAYERS.route}
+      loading={record.isLoading}
+      onDismiss={exitRoute}
+      open
+      portalName="record-detail"
+    >
       {isNotFound ? (
-        <View className="p-6 gap-4 items-center justify-center">
-          <Text className="text-center text-muted-foreground">
-            Record not found.
-          </Text>
-          <Button onPress={exitRoute} size="sm" variant="secondary">
-            <Text>Close</Text>
-          </Button>
-        </View>
-      ) : (
+        <NotFound />
+      ) : record.id ? (
         <DetailView
           onClose={exitRoute}
           pageClassName="flex-none max-h-full overflow-hidden bg-popover"
           record={record}
           recordId={routeRecordId ?? ''}
         />
-      )}
+      ) : null}
     </Sheet>
   );
 }

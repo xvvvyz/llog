@@ -14,7 +14,9 @@ export const useLog = ({ id }: { id?: string }) => {
       : null
   );
 
-  const log = data?.logs?.[0];
+  const logs = data?.logs ?? [];
+  const log = logs.find((item) => item.id === id);
+  const hasStaleResult = !!id && logs.length > 0 && !log;
 
   const tagIdsSet = React.useMemo(
     () => new Set(log?.tags?.map((tag) => tag.id)),
@@ -26,5 +28,10 @@ export const useLog = ({ id }: { id?: string }) => {
     [log?.profiles]
   );
 
-  return { ...log, isLoading, tagIdsSet, profileIdsSet };
+  return {
+    ...log,
+    isLoading: isLoading || hasStaleResult,
+    tagIdsSet,
+    profileIdsSet,
+  };
 };

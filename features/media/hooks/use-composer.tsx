@@ -19,13 +19,15 @@ export const useMediaComposer = ({
     audioMedia,
     autoPlayPendingVideoId,
     canAddAudio,
+    documentMedia,
     handleBrowseMedia,
     handleCaptureMedia,
     handleDeleteMedia,
-    handlePickFiles,
+    handlePickDocuments,
     isBusy,
     mediaCount,
     pendingAudio,
+    pendingDocuments,
     removeLocalPreviewUri,
   } = useMediaComposerState({
     isOpen,
@@ -48,10 +50,12 @@ export const useMediaComposer = ({
     <Preview
       audioMedia={audioMedia}
       autoPlayPendingVideoId={autoPlayPendingVideoId}
+      documentMedia={documentMedia}
       onDeleteMedia={handleDeleteMedia}
       onOpenVisual={handleOpenVisual}
       onRemoteReady={removeLocalPreviewUri}
       pendingAudio={pendingAudio}
+      pendingDocuments={pendingDocuments}
       visualItems={allVisual}
     />
   );
@@ -62,7 +66,7 @@ export const useMediaComposer = ({
       onBrowseMedia={handleBrowseMedia}
       onCaptureMedia={handleCaptureMedia}
       onOpenAudio={onOpenAudio}
-      onPickFiles={handlePickFiles}
+      onPickDocuments={handlePickDocuments}
     />
   );
 

@@ -11,6 +11,7 @@
       "assets": {
         "directory": "web",
         "not_found_handling": "single-page-application",
+        "run_worker_first": ["/api/*"],
       },
       "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
       "vars": { "ENV": "production" },

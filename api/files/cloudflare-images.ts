@@ -36,7 +36,8 @@ const readApiError = async (response: Response) => {
 const imagesFetch = async <T>(
   env: CloudflareEnv,
   path: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
+  options: { ignoreNotFound?: boolean } = {}
 ) => {
   const { accountId, apiToken } = getConfig(env);
   const headers = new Headers(init.headers);
@@ -47,6 +48,7 @@ const imagesFetch = async <T>(
     headers,
   });
 
+  if (response.status === 404 && options.ignoreNotFound) return null as T;
   if (!response.ok) throw new Error(await readApiError(response));
   if (response.status === 204) return null as T;
   const body = (await response.json()) as { result: T };
@@ -115,5 +117,11 @@ export const deleteImage = async (
   if (!deliveryUrl) return;
   const imageId = getImageIdFromDeliveryUrl(deliveryUrl);
   if (!imageId) throw new Error('Invalid Cloudflare Images delivery URL');
-  await imagesFetch(env, `/images/v1/${imageId}`, { method: 'DELETE' });
+
+  await imagesFetch(
+    env,
+    `/images/v1/${imageId}`,
+    { method: 'DELETE' },
+    { ignoreNotFound: true }
+  );
 };

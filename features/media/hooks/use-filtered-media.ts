@@ -9,8 +9,8 @@ export const useFilteredMedia = (media: Media[]) => {
     [media]
   );
 
-  const imageMedia = React.useMemo(
-    () => media.filter((m) => m.type === 'image').sort(byOrder),
+  const documentMedia = React.useMemo(
+    () => media.filter((m) => m.type === 'document').sort(byOrder),
     [media]
   );
 
@@ -22,5 +22,5 @@ export const useFilteredMedia = (media: Media[]) => {
     [media]
   );
 
-  return { audioMedia, imageMedia, visualMedia };
+  return { audioMedia, documentMedia, visualMedia };
 };

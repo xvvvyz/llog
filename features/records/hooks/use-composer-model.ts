@@ -2,6 +2,7 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useMediaComposer } from '@/features/media/hooks/use-composer';
 import type { PickedMediaAsset } from '@/features/media/lib/picked';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
+import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { deleteRecordMedia } from '@/features/records/mutations/delete-record-media';
 import { publishRecord } from '@/features/records/mutations/publish-record';
@@ -15,6 +16,7 @@ import * as React from 'react';
 export const useRecordComposerModel = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
+  const { ignoreDraftId, ignoredDraftIds } = useIgnoredDraftIds();
   const isSubmittingRef = React.useRef(false);
   const sheetManager = useSheetManager();
   const isEdit = sheetManager.getContext('record-create') === 'edit';
@@ -22,7 +24,7 @@ export const useRecordComposerModel = () => {
   const sheetId = sheetManager.getId('record-create');
   const logId = isEdit ? undefined : sheetId;
   const editRecordId = isEdit ? sheetId : undefined;
-  const draft = useRecordDraft({ logId });
+  const draft = useRecordDraft({ ignoredDraftIds, logId });
 
   const { data: editData } = db.useQuery(
     editRecordId
@@ -36,7 +38,11 @@ export const useRecordComposerModel = () => {
       : null
   );
 
-  const editRecord = editData?.records?.[0];
+  const queriedEditRecord = editData?.records?.[0];
+
+  const editRecord =
+    queriedEditRecord?.id === editRecordId ? queriedEditRecord : undefined;
+
   const record = isEdit ? editRecord : draft;
   const recordId = record?.id;
   const recordLogId = isEdit ? editRecord?.log?.id : logId;
@@ -112,13 +118,22 @@ export const useRecordComposerModel = () => {
     try {
       await updateRecordDraft({ id: recordId, text });
       await publishRecord({ id: recordId });
+      ignoreDraftId(recordId);
       requestPostSubmitScroll({ id: recordLogId, scope: 'log', target: 'top' });
       close();
     } finally {
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [close, isEdit, latestTextRef, mediaCount, recordId, recordLogId]);
+  }, [
+    close,
+    ignoreDraftId,
+    isEdit,
+    latestTextRef,
+    mediaCount,
+    recordId,
+    recordLogId,
+  ]);
 
   return {
     currentText,
@@ -127,7 +142,7 @@ export const useRecordComposerModel = () => {
     isOpen,
     isSubmitting,
     isTextareaFocused,
-    loading: isEdit ? !editRecord : !!logId && draft.log?.id !== logId,
+    loading: isEdit ? !editRecord : !!logId && !draft.id,
     logColor: logColor.default,
     mediaCount,
     mediaPreview,

@@ -86,7 +86,9 @@ export const createMediaRouter = <const TPath extends string>({
     upload.mediaValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
-      const { duration, file, mediaId, order } = c.req.valid('form');
+
+      const { duration, file, fileName, mediaId, mimeType, order, size } =
+        c.req.valid('form');
 
       await upload.uploadMedia({
         creatorId: c.var.user.id,
@@ -94,12 +96,15 @@ export const createMediaRouter = <const TPath extends string>({
         duration,
         env: c.env,
         file,
+        fileName,
         keyPrefix: target.keyPrefix,
         linkField: target.linkField,
         linkId: target.linkId,
         mediaId,
+        mimeType,
         order,
         recordId: target.recordId,
+        size,
       });
 
       return c.json({ success: true });
@@ -115,8 +120,8 @@ export const createMediaRouter = <const TPath extends string>({
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
+    await deleteMediaAssets(c.env, [item], { throwOnError: true });
     await c.var.db.transact(c.var.db.tx.media[mediaId].delete());
-    await deleteMediaAssets(c.env, [item]);
     return c.json({ success: true });
   });
 

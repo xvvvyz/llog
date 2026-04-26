@@ -1,4 +1,5 @@
 import { AudioPlaylist } from '@/features/media/components/audio-player';
+import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import { EntryMenu } from '@/features/records/components/entry-menu';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
@@ -21,6 +22,7 @@ export const EntryCard = ({
   audioMedia,
   canUnpinRecord,
   className,
+  documentMedia,
   logId,
   numberOfLines,
   onDoubleTapReaction,
@@ -59,12 +61,11 @@ export const EntryCard = ({
         <View className="flex-row -mr-1.5 -mt-1.5 gap-1.5 items-center">
           {'isPinned' in record && record.isPinned && (
             <Button
-              className="size-8 rounded-lg"
               disabled={!canUnpinRecord}
               onPress={onUnpin}
-              size="icon"
+              size="icon-sm"
               variant="ghost"
-              wrapperClassName="rounded-lg opacity-100"
+              wrapperClassName="opacity-100"
             >
               <Icon
                 color={accentColor}
@@ -95,8 +96,15 @@ export const EntryCard = ({
       <MediaGrid recordId={recordId} visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
-          <AudioPlaylist className="-mr-1" clips={audioMedia} />
+          <AudioPlaylist clips={audioMedia} />
         </View>
+      )}
+      {documentMedia.length > 0 && (
+        <DocumentAttachments
+          documents={documentMedia}
+          triggerClassName="pl-3 pr-4"
+          triggerIconClassName="ml-1.5"
+        />
       )}
       <ReactionsRow
         accentColor={accentColor}

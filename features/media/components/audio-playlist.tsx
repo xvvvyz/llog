@@ -74,7 +74,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
           })}
         </View>
         {hasMultipleClips && (
-          <View className="flex-row ml-3 gap-1 items-center shrink-0">
+          <View className="flex-row -mr-1.5 ml-4 gap-1 items-center shrink-0">
             <Button
               accessibilityLabel="Previous audio"
               className="w-8 px-0"
@@ -85,7 +85,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
               <Icon icon={CaretLeft} />
             </Button>
             <Text
-              className="text-center text-muted-foreground text-xs"
+              className="text-center text-placeholder text-xs"
               numberOfLines={1}
               style={{ width: countWidth }}
             >

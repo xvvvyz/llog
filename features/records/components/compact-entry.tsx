@@ -1,4 +1,5 @@
 import { AudioPlaylist } from '@/features/media/components/audio-player';
+import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import { EntryMenu } from '@/features/records/components/entry-menu';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
@@ -15,6 +16,7 @@ export const CompactEntry = ({
   accentColor,
   audioMedia,
   className,
+  documentMedia,
   logId,
   numberOfLines,
   onDoubleTapReaction,
@@ -82,6 +84,14 @@ export const CompactEntry = ({
             <View className="mt-4 gap-2">
               <AudioPlaylist clips={audioMedia} />
             </View>
+          )}
+          {documentMedia.length > 0 && (
+            <DocumentAttachments
+              className="mt-4"
+              documents={documentMedia}
+              triggerClassName="pl-0"
+              triggerIconClassName="ml-1.5"
+            />
           )}
           <ReactionsRow
             accentColor={accentColor}

@@ -2,6 +2,7 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useMediaComposer } from '@/features/media/hooks/use-composer';
 import type { PickedMediaAsset } from '@/features/media/lib/picked';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
+import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { deleteReplyMedia } from '@/features/records/mutations/delete-reply-media';
 import { publishReply } from '@/features/records/mutations/publish-reply';
@@ -15,6 +16,7 @@ import * as React from 'react';
 export const useReplyComposerModel = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
+  const { ignoreDraftId, ignoredDraftIds } = useIgnoredDraftIds();
   const isSubmittingRef = React.useRef(false);
   const sheetManager = useSheetManager();
   const editRecordId = sheetManager.getContext('reply-create');
@@ -24,7 +26,11 @@ export const useReplyComposerModel = () => {
   const editReplyId = isEdit ? sheetId : undefined;
   const record = useRecord({ id: recordId });
   const logColor = useLogColor({ id: record.log?.id });
-  const draft = useReplyDraft({ recordId: isEdit ? undefined : recordId });
+
+  const draft = useReplyDraft({
+    ignoredDraftIds,
+    recordId: isEdit ? undefined : recordId,
+  });
 
   const { data: editData } = db.useQuery(
     editReplyId
@@ -32,7 +38,11 @@ export const useReplyComposerModel = () => {
       : null
   );
 
-  const editReply = editData?.replies?.[0];
+  const queriedEditReply = editData?.replies?.[0];
+
+  const editReply =
+    queriedEditReply?.id === editReplyId ? queriedEditReply : undefined;
+
   const reply = isEdit ? editReply : draft;
   const replyId = reply?.id;
   const isOpen = sheetManager.isOpen('reply-create');
@@ -100,13 +110,22 @@ export const useReplyComposerModel = () => {
 
     try {
       await publishReply({ id: replyId, recordId, text });
+      ignoreDraftId(replyId);
       requestPostSubmitScroll({ id: recordId, scope: 'record', target: 'end' });
       close();
     } finally {
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [close, isEdit, latestTextRef, mediaCount, recordId, replyId]);
+  }, [
+    close,
+    ignoreDraftId,
+    isEdit,
+    latestTextRef,
+    mediaCount,
+    recordId,
+    replyId,
+  ]);
 
   return {
     currentText,

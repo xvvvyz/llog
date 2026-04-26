@@ -1,4 +1,5 @@
 import type { AudioPlaybackRate } from '@/features/media/lib/audio-playback-rate';
+import type * as React from 'react';
 
 export type AudioClip = { duration?: number; id: string; uri: string };
 
@@ -13,5 +14,6 @@ export type AudioPlayerProps = {
   onPlaybackRateChange?: (playbackRate: AudioPlaybackRate) => void;
   playbackRate?: AudioPlaybackRate;
   showPlaybackRate?: boolean;
+  trailingAccessory?: React.ReactNode;
   uri: string;
 };

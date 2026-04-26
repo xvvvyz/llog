@@ -8,7 +8,14 @@ import { Pressable, StyleSheet, View } from 'react-native';
 const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
   defaultVariants: { size: 'default', variant: 'default' },
   variants: {
-    size: { default: '', icon: '', lg: '', sm: '', xs: 'rounded-lg' },
+    size: {
+      default: '',
+      icon: '',
+      'icon-sm': 'rounded-lg',
+      lg: '',
+      sm: '',
+      xs: 'rounded-lg',
+    },
     variant: {
       default: '',
       destructive: '',
@@ -28,6 +35,7 @@ const buttonVariants = cva(
       size: {
         default: 'h-11 px-4 py-2',
         icon: 'h-11 w-11',
+        'icon-sm': 'h-8 w-8 rounded-lg',
         lg: 'h-12 px-5',
         sm: 'h-10 px-4',
         xs: 'h-8 px-2 rounded-lg gap-2',
@@ -52,7 +60,14 @@ const buttonTextVariants = cva(
   {
     defaultVariants: { size: 'default', variant: 'default' },
     variants: {
-      size: { default: '', icon: '', lg: '', sm: '', xs: 'text-sm' },
+      size: {
+        default: '',
+        icon: '',
+        'icon-sm': '',
+        lg: '',
+        sm: '',
+        xs: 'text-sm',
+      },
       variant: {
         default: 'text-primary-foreground',
         destructive: 'text-destructive-foreground',

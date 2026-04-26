@@ -16,6 +16,7 @@ export type EntryRecord = Partial<
 export type EntrySharedProps = {
   accentColor?: string;
   audioMedia: Media[];
+  documentMedia: Media[];
   logId?: string;
   numberOfLines?: number;
   onDoubleTapReaction: () => void;

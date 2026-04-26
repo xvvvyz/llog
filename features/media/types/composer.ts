@@ -2,16 +2,19 @@ import type * as pickedMedia from '@/features/media/lib/picked';
 import type { Media } from '@/features/media/types/media';
 
 export interface PendingUpload {
-  fileName?: string;
   height?: number;
   id: string;
+  mimeType?: string;
+  name?: string;
   order: number;
+  size?: number;
   type: pickedMedia.PickedMediaType;
   uri: string;
   width?: number;
 }
 
 export type PendingAudioUpload = PendingUpload & { type: 'audio' };
+export type PendingDocumentUpload = PendingUpload & { type: 'document' };
 
 export interface VisualPreviewItem {
   height?: number;
@@ -42,6 +45,10 @@ export interface UseMediaComposerOptions {
 export const isPendingAudioUpload = (
   item: PendingUpload
 ): item is PendingAudioUpload => item.type === 'audio';
+
+export const isPendingDocumentUpload = (
+  item: PendingUpload
+): item is PendingDocumentUpload => item.type === 'document';
 
 export const isVisualPendingUpload = (
   item: PendingUpload

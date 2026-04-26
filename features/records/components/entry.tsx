@@ -37,7 +37,10 @@ export const Entry = ({
   const profile = useProfile();
   const sheetManager = useSheetManager();
   const ui = useUi();
-  const { audioMedia, visualMedia } = useFilteredMedia(record.media || []);
+
+  const { audioMedia, documentMedia, visualMedia } = useFilteredMedia(
+    record.media || []
+  );
 
   const handleDoubleTapReaction = React.useCallback(() => {
     if (!record.teamId) return;
@@ -69,6 +72,7 @@ export const Entry = ({
   const sharedProps: EntryTypes.EntrySharedProps = {
     accentColor,
     audioMedia,
+    documentMedia,
     logId,
     numberOfLines,
     onDoubleTapReaction: handleDoubleTapReaction,

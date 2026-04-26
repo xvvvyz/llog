@@ -1,28 +1,42 @@
 import { AudioPreview } from '@/features/media/components/composer/audio-preview';
 import { VisualPreview } from '@/features/media/components/composer/visual-preview';
+import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import type * as mediaComposer from '@/features/media/types/composer';
 import type { Media } from '@/features/media/types/media';
-import * as React from 'react';
+import { View } from 'react-native';
 
 export const Preview = ({
   audioMedia,
   autoPlayPendingVideoId,
+  documentMedia,
   onDeleteMedia,
   onOpenVisual,
   onRemoteReady,
   pendingAudio,
+  pendingDocuments,
   visualItems,
 }: {
   audioMedia: Media[];
   autoPlayPendingVideoId?: string;
+  documentMedia: Media[];
   onDeleteMedia: (mediaId: string) => void;
   onOpenVisual: (mediaId: string) => void;
   onRemoteReady: (mediaId: string) => void;
   pendingAudio: mediaComposer.PendingAudioUpload[];
+  pendingDocuments: mediaComposer.PendingDocumentUpload[];
   visualItems: mediaComposer.VisualPreviewItem[];
 }) => {
+  const hasPreviewItems =
+    visualItems.length > 0 ||
+    audioMedia.length > 0 ||
+    pendingAudio.length > 0 ||
+    documentMedia.length > 0 ||
+    pendingDocuments.length > 0;
+
+  if (!hasPreviewItems) return null;
+
   return (
-    <React.Fragment>
+    <View className="py-4 border-border-secondary border-t gap-4">
       <VisualPreview
         autoPlayPendingVideoId={autoPlayPendingVideoId}
         onDeleteMedia={onDeleteMedia}
@@ -35,6 +49,13 @@ export const Preview = ({
         onDeleteMedia={onDeleteMedia}
         pendingAudio={pendingAudio}
       />
-    </React.Fragment>
+      <DocumentAttachments
+        className="gap-0"
+        documents={documentMedia}
+        onDeleteMedia={onDeleteMedia}
+        pendingDocuments={pendingDocuments}
+        triggerClassName="px-4"
+      />
+    </View>
   );
 };

@@ -37,14 +37,15 @@ export const prepareMediaFormData = async ({
 
     if (duration != null) body.append('duration', String(duration));
   } else if (asset) {
-    const isAudio = asset.type === 'audio';
-    const isVideo = asset.type === 'video';
-
-    if (isAudio || isVideo) {
-      body.append('file', await assetToFileLike(asset));
-    } else {
+    if (asset.type === 'image') {
       body.append('file', await processImageAsset(asset));
+    } else {
+      body.append('file', await assetToFileLike(asset));
     }
+
+    if (asset.fileName?.trim()) body.append('fileName', asset.fileName.trim());
+    if (asset.mimeType?.trim()) body.append('mimeType', asset.mimeType.trim());
+    if (asset.size != null) body.append('size', String(asset.size));
   } else {
     return null;
   }

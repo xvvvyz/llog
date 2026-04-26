@@ -1,19 +1,20 @@
 import type { DocumentPickerAsset } from 'expo-document-picker';
 import type { ImagePickerAsset } from 'expo-image-picker';
 
-export type PickedMediaType = 'audio' | 'image' | 'video';
+export type PickedMediaType = 'audio' | 'document' | 'image' | 'video';
 
 export type PickedMediaAsset = {
   file?: File;
   fileName?: string | null;
   height?: number;
   mimeType?: string | null;
+  size?: number | null;
   type: PickedMediaType;
   uri: string;
   width?: number;
 };
 
-export const FILE_PICKER_MIME_TYPES = ['image/*', 'video/*', 'audio/*'];
+export const FILE_PICKER_MIME_TYPES = '*/*';
 
 const IMAGE_FILE_EXTENSIONS = new Set([
   'avif',
@@ -106,18 +107,18 @@ export const normalizeImagePickerAsset = (
 export const normalizeDocumentPickerAsset = (
   asset: DocumentPickerAsset
 ): PickedMediaAsset | null => {
-  const type = inferPickedMediaType({
-    fileName: asset.name,
-    mimeType: asset.mimeType,
-    uri: asset.uri,
-  });
-
-  if (!type) return null;
+  const type =
+    inferPickedMediaType({
+      fileName: asset.name,
+      mimeType: asset.mimeType,
+      uri: asset.uri,
+    }) ?? 'document';
 
   return {
     file: asset.file,
     fileName: asset.name,
     mimeType: asset.mimeType,
+    size: asset.size,
     type,
     uri: asset.uri,
   };

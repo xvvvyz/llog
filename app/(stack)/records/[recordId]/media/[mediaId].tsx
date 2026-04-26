@@ -2,9 +2,8 @@ import { Lightbox } from '@/features/media/components/lightbox';
 import { useLightboxMedia } from '@/features/media/queries/use-lightbox-items';
 import * as recordRoutes from '@/features/records/lib/route';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
-import { Button } from '@/ui/button';
 import { Loading } from '@/ui/loading';
-import { Text } from '@/ui/text';
+import { NotFound } from '@/ui/not-found';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -87,16 +86,7 @@ export default function MediaLightboxRoute() {
   const hasRouteMedia = media.some((item) => item.id === routeMediaId);
 
   if (!routeMediaId || !routeRecordId || (!isLoading && !hasRouteMedia)) {
-    return (
-      <View className="absolute inset-0 p-6 bg-background gap-4 items-center justify-center">
-        <Text className="text-center text-muted-foreground">
-          Media not found.
-        </Text>
-        <Button onPress={exitRoute} size="sm" variant="secondary">
-          <Text>Close</Text>
-        </Button>
-      </View>
-    );
+    return <NotFound className="absolute inset-0 bg-background" />;
   }
 
   if (isLoading) {

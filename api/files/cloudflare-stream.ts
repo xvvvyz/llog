@@ -37,7 +37,8 @@ const readApiError = async (response: Response) => {
 const streamFetch = async <T>(
   env: CloudflareEnv,
   path: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
+  options: { ignoreNotFound?: boolean } = {}
 ) => {
   const { accountId, apiToken } = getConfig(env);
   const headers = new Headers(init.headers);
@@ -52,6 +53,7 @@ const streamFetch = async <T>(
     headers,
   });
 
+  if (response.status === 404 && options.ignoreNotFound) return null as T;
   if (!response.ok) throw new Error(await readApiError(response));
   if (response.status === 204) return null as T;
   const body = (await response.json()) as { result: T };
@@ -87,7 +89,12 @@ export const createDirectVideoUpload = async (
 };
 
 export const deleteStreamVideo = async (env: CloudflareEnv, uid: string) => {
-  await streamFetch(env, `/stream/${uid}`, { method: 'DELETE' });
+  await streamFetch(
+    env,
+    `/stream/${uid}`,
+    { method: 'DELETE' },
+    { ignoreNotFound: true }
+  );
 };
 
 const parseWebhookSignature = (header: string) => {

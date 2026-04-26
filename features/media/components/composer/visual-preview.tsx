@@ -26,27 +26,18 @@ export const VisualPreview = ({
 
   return (
     <ScrollView
-      className="border-border-secondary border-t grow-0 shrink-0"
+      className="grow-0 shrink-0"
       horizontal
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
       style={{ borderCurve: 'continuous' }}
       testID="scroll-lock-allow"
     >
-      <View className="flex-row p-4 gap-3">
+      <View className="flex-row px-4 gap-3">
         {visualItems.map((item) => (
           <View key={item.id} className="relative size-16">
-            <Pressable
-              className={
-                item.pending
-                  ? 'bg-border flex-1 cursor-default overflow-hidden rounded-lg'
-                  : 'bg-border flex-1 overflow-hidden rounded-lg'
-              }
-              onPress={() => {
-                if (!item.pending) onOpenVisual(item.id);
-              }}
-            >
-              {item.pending ? (
+            {item.pending ? (
+              <View className="flex-1 overflow-hidden rounded-lg bg-border cursor-default">
                 <View className="flex-1 bg-card">
                   {item.type === 'video' ? (
                     <PendingVideoPreview
@@ -63,14 +54,19 @@ export const VisualPreview = ({
                       wrapperClassName="bg-card"
                     />
                   )}
-                  <View className="absolute inset-0 z-[4] items-center justify-center">
+                  <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
                     <Spinner className="scale-[0.8]" size="small" />
                   </View>
                 </View>
-              ) : (
+              </View>
+            ) : (
+              <Pressable
+                className="flex-1 overflow-hidden rounded-lg bg-border"
+                onPress={() => onOpenVisual(item.id)}
+              >
                 <PreviewImage item={item} onRemoteReady={onRemoteReady} />
-              )}
-            </Pressable>
+              </Pressable>
+            )}
             {item.type === 'video' &&
               !item.pending &&
               !visualMedia.isProcessing(item) && (

@@ -14,7 +14,7 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 
 export const AudioPlayer = (props: AudioPlayerProps) => {
-  const { compact, showPlaybackRate = true } = props;
+  const { compact, showPlaybackRate = true, trailingAccessory } = props;
 
   const {
     currentPlaybackRate,
@@ -30,20 +30,31 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   } = useAudioPlayerController(props);
 
   return (
-    <View className="flex-row min-w-0 items-center">
+    <View
+      className={cn(
+        'flex-row min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border-secondary bg-secondary',
+        compact ? 'h-6 px-0' : 'h-8 px-0'
+      )}
+    >
       <Button
-        className={cn('mr-3 rounded-full', compact ? 'size-6' : 'size-8')}
+        className={cn(compact && 'size-6 rounded-lg')}
         disabled={isDisabled}
         onPress={togglePlayback}
-        size="icon"
-        variant="secondary"
+        size={compact ? 'icon' : 'icon-sm'}
+        variant="ghost"
+        wrapperClassName={cn(compact && 'rounded-lg')}
       >
         <Icon icon={isPlaying ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
-      <GestureDetector gesture={gesture}>
-        <Animated.View
+      <View
+        className={cn(
+          'flex-row flex-1 min-w-0 items-center gap-2',
+          compact ? 'h-6' : 'h-8'
+        )}
+      >
+        <View
           className={cn(
-            'flex-1 justify-center self-stretch',
+            'relative flex-1 min-w-0 justify-center',
             compact ? 'h-6' : 'h-8'
           )}
         >
@@ -56,19 +67,23 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
               style={{ width: `${progress * 100}%` }}
             />
           </View>
-        </Animated.View>
-      </GestureDetector>
-      <Text className="ml-3 min-w-[40px] text-left text-muted-foreground text-xs">
-        {formatTime(isPlaying ? displayTime : playerDuration)}
-      </Text>
-      {showPlaybackRate && (
-        <PlaybackRateButton
-          compact={compact}
-          disabled={isDisabled}
-          onPlaybackRateChange={handlePlaybackRateChange}
-          playbackRate={currentPlaybackRate}
-        />
-      )}
+          <GestureDetector gesture={gesture}>
+            <Animated.View className="absolute -bottom-2 -top-2 left-0 right-0" />
+          </GestureDetector>
+        </View>
+        <Text className="leading-tight text-placeholder text-right text-xs shrink-0 tabular-nums">
+          {formatTime(isPlaying ? displayTime : playerDuration)}
+        </Text>
+      </View>
+      {trailingAccessory ??
+        (showPlaybackRate && (
+          <PlaybackRateButton
+            compact={compact}
+            disabled={isDisabled}
+            onPlaybackRateChange={handlePlaybackRateChange}
+            playbackRate={currentPlaybackRate}
+          />
+        ))}
     </View>
   );
 };

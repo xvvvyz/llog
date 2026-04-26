@@ -4,7 +4,6 @@ import { type UseRecordResult } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
-import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { Text } from '@/ui/text';
 import * as React from 'react';
@@ -53,50 +52,44 @@ export const DetailView = ({
 
   renderCacheRef.current = (
     <Page className={cn('min-h-0', pageClassName)}>
-      {record.isLoading ? (
-        <Loading />
-      ) : (
-        <React.Fragment>
-          <ScrollView
-            ref={scrollViewRef}
-            className="-mx-px min-h-0 border-b border-border-secondary border-x rounded-b-4xl"
-            contentContainerClassName="mx-auto w-full max-w-lg sm:py-4"
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="always"
+      <ScrollView
+        ref={scrollViewRef}
+        className="-mx-px min-h-0 border-b border-border-secondary border-x rounded-b-4xl"
+        contentContainerClassName="mx-auto w-full max-w-lg sm:py-4"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="always"
+      >
+        {data.map((item, index) => (
+          <Entry
+            key={item.id ?? index}
+            className="border-t-0"
+            logId={record.log?.id}
+            record={item}
+            recordId={recordId}
+            replyId={index > 0 ? item.id : undefined}
+            variant="compact"
+          />
+        ))}
+      </ScrollView>
+      <View>
+        <View className="flex-row mx-auto max-w-lg w-full p-4 gap-4">
+          <Button
+            onPress={onClose}
+            size="sm"
+            variant="secondary"
+            wrapperClassName="flex-1"
           >
-            {data.map((item, index) => (
-              <Entry
-                key={item.id ?? index}
-                className="border-t-0"
-                logId={record.log?.id}
-                record={item}
-                recordId={recordId}
-                replyId={index > 0 ? item.id : undefined}
-                variant="compact"
-              />
-            ))}
-          </ScrollView>
-          <View>
-            <View className="flex-row mx-auto max-w-lg w-full p-4 gap-4">
-              <Button
-                onPress={onClose}
-                size="sm"
-                variant="secondary"
-                wrapperClassName="flex-1"
-              >
-                <Text>Close</Text>
-              </Button>
-              <Button
-                onPress={() => sheetManager.open('reply-create', recordId)}
-                size="sm"
-                wrapperClassName="flex-1"
-              >
-                <Text>Reply</Text>
-              </Button>
-            </View>
-          </View>
-        </React.Fragment>
-      )}
+            <Text>Close</Text>
+          </Button>
+          <Button
+            onPress={() => sheetManager.open('reply-create', recordId)}
+            size="sm"
+            wrapperClassName="flex-1"
+          >
+            <Text>Reply</Text>
+          </Button>
+        </View>
+      </View>
     </Page>
   );
 

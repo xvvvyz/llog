@@ -1,4 +1,5 @@
 import { AudioPlaylist } from '@/features/media/components/audio-player';
+import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import { useFilteredMedia } from '@/features/media/hooks/use-filtered-media';
 import { useMediaLightbox } from '@/features/media/hooks/use-lightbox';
 import * as visualMedia from '@/features/media/lib/visual-media';
@@ -17,12 +18,17 @@ export const ItemMedia = ({
   media?: Media[];
   recordId?: string;
 }) => {
-  const { audioMedia, visualMedia: visualItems } = useFilteredMedia(
-    media || []
-  );
+  const {
+    audioMedia,
+    documentMedia,
+    visualMedia: visualItems,
+  } = useFilteredMedia(media || []);
 
   const { openMediaLightbox } = useMediaLightbox({ recordId });
-  if (!visualItems.length && !audioMedia.length) return null;
+
+  if (!visualItems.length && !audioMedia.length && !documentMedia.length) {
+    return null;
+  }
 
   const timelineTargetWidth = visualMedia.getThumbnailTargetWidth(
     visualItems.length
@@ -80,6 +86,13 @@ export const ItemMedia = ({
         <View className="px-4 gap-2">
           <AudioPlaylist clips={audioMedia} />
         </View>
+      )}
+      {documentMedia.length > 0 && (
+        <DocumentAttachments
+          documents={documentMedia}
+          triggerClassName="px-4"
+          triggerIconClassName="-ml-px"
+        />
       )}
     </React.Fragment>
   );

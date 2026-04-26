@@ -24,7 +24,10 @@ const schema = i.schema({
     media: i.entity({
       assetKey: i.string().optional(),
       duration: i.number().optional(),
+      mimeType: i.string().optional(),
+      name: i.string().optional(),
       order: i.number().optional(),
+      size: i.number().optional(),
       thumbnailUri: i.string().optional(),
       type: i.string(),
       uri: i.string(),

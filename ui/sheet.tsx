@@ -3,6 +3,7 @@ import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { Loading } from '@/ui/loading';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
+import { useSheetStack } from '@/ui/sheet-stack';
 import { Portal } from '@rn-primitives/portal';
 import * as React from 'react';
 
@@ -23,9 +24,12 @@ import Animated, {
   FadeOutDown,
 } from 'react-native-reanimated';
 
+export const SHEET_LAYERS = { route: 10, action: 20 } as const;
+
 export const Sheet = ({
   children,
   className,
+  layer = SHEET_LAYERS.action,
   loading,
   onDismiss,
   open,
@@ -34,6 +38,7 @@ export const Sheet = ({
 }: {
   children: React.ReactNode;
   className?: string;
+  layer?: number;
   loading?: boolean;
   onDismiss: () => void;
   open: boolean;
@@ -48,6 +53,20 @@ export const Sheet = ({
     open,
     windowHeight: windowDimensions.height,
   });
+
+  useSheetStack({ layer, onDismiss, open });
+
+  const webOverlayStyle = React.useMemo(
+    () => ({
+      bottom: 0,
+      left: 0,
+      position: 'fixed' as const,
+      right: 0,
+      top: 0,
+      zIndex: layer,
+    }),
+    [layer]
+  );
 
   const availableHeight = Math.max(
     1,
@@ -83,6 +102,7 @@ export const Sheet = ({
         <View
           className={cn(
             'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t',
+            loading && 'min-h-32',
             className
           )}
           style={StyleSheet.flatten([
@@ -93,10 +113,10 @@ export const Sheet = ({
           {children}
           {loading && (
             <Animated.View
-              className="absolute inset-0 z-10 rounded-t-4xl bg-popover"
+              className="absolute inset-0 z-10 py-8 rounded-t-4xl bg-popover"
               exiting={animation(FadeOut)}
             >
-              <Loading className="bg-popover" />
+              <Loading className="p-0 bg-popover" />
             </Animated.View>
           )}
         </View>
@@ -110,16 +130,22 @@ export const Sheet = ({
 
   return (
     <Portal name={portalName}>
-      <Modal
-        focusable={false}
-        onRequestClose={onDismiss}
-        presentationStyle="overFullScreen"
-        statusBarTranslucent
-        transparent
-        visible={open}
-      >
-        {sheet}
-      </Modal>
+      {Platform.OS === 'web' ? (
+        open ? (
+          <View style={webOverlayStyle}>{sheet}</View>
+        ) : null
+      ) : (
+        <Modal
+          focusable={false}
+          onRequestClose={onDismiss}
+          presentationStyle="overFullScreen"
+          statusBarTranslucent
+          transparent
+          visible={open}
+        >
+          {sheet}
+        </Modal>
+      )}
     </Portal>
   );
 };

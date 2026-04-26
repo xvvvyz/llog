@@ -1,4 +1,5 @@
 import { AudioPlaylist } from '@/features/media/components/audio-player';
+import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import { useFilteredMedia } from '@/features/media/hooks/use-filtered-media';
 import { useMediaLightbox } from '@/features/media/hooks/use-lightbox';
 import * as visualMedia from '@/features/media/lib/visual-media';
@@ -24,21 +25,34 @@ export const QuotedRecord = ({
   recordId?: string;
   text?: string;
 }) => {
-  const { audioMedia, visualMedia: visualItems } = useFilteredMedia(
-    media || []
-  );
+  const {
+    audioMedia,
+    documentMedia,
+    visualMedia: visualItems,
+  } = useFilteredMedia(media || []);
 
   const displayText = trimDisplayText(text);
   const { openMediaLightbox } = useMediaLightbox({ recordId });
   const hasAudioMedia = audioMedia.length > 0;
-  if (!displayText && !visualItems.length && !hasAudioMedia) return null;
+  const hasDocumentMedia = documentMedia.length > 0;
+
+  if (
+    !displayText &&
+    !visualItems.length &&
+    !hasAudioMedia &&
+    !hasDocumentMedia
+  ) {
+    return null;
+  }
 
   return (
     <React.Fragment>
       <View
         className={cn(
           'bg-input max-w-full min-w-0 overflow-hidden rounded-xl',
-          hasAudioMedia ? 'w-full self-stretch' : 'self-start'
+          hasAudioMedia || hasDocumentMedia
+            ? 'w-full self-stretch'
+            : 'self-start'
         )}
       >
         {!!displayText && (
@@ -114,7 +128,8 @@ export const QuotedRecord = ({
           <View
             className={cn(
               'gap-2 px-3 pb-3',
-              !displayText && !visualItems.length && 'pt-3'
+              !displayText && !visualItems.length && 'pt-3',
+              hasDocumentMedia && 'pb-0'
             )}
           >
             <AudioPlaylist
@@ -123,6 +138,17 @@ export const QuotedRecord = ({
               showPlaybackRate={false}
             />
           </View>
+        )}
+        {hasDocumentMedia && (
+          <DocumentAttachments
+            documents={documentMedia}
+            triggerClassName="px-3"
+            triggerIconClassName="-ml-px"
+            className={cn(
+              'pb-3',
+              !displayText && !visualItems.length && !hasAudioMedia && 'pt-3'
+            )}
+          />
         )}
       </View>
     </React.Fragment>

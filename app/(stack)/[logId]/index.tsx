@@ -17,6 +17,7 @@ import { Icon } from '@/ui/icon';
 import type { ListHandle } from '@/ui/list';
 import { List } from '@/ui/list';
 import { Loading } from '@/ui/loading';
+import { NotFound } from '@/ui/not-found';
 import { Page } from '@/ui/page';
 import { Text } from '@/ui/text';
 import { useLocalSearchParams } from 'expo-router';
@@ -37,6 +38,7 @@ export default function Index() {
   const records = useRecords({ logId: params.logId });
   const recordData = records.data;
   const recordsLoading = records.isLoading;
+  const logNotFound = !params.logId || (!log.isLoading && !log.id);
   const hasRecords = recordData.length > 0;
   const showFab = hasRecords && !breakpoints.md;
   const contentPaddingBottom = insets.bottom + (showFab ? 104 : 0);
@@ -74,43 +76,49 @@ export default function Index() {
         left={<BackButton />}
         title={log.name}
         right={
-          <View className="flex-row items-center">
-            {hasRecords && (
-              <Button
-                className="hidden active:opacity-90 md:flex web:hover:opacity-90"
-                onPress={() => sheetManager.open('record-create', params.logId)}
-                size="xs"
-                style={{ backgroundColor: logColor.default }}
-                variant="secondary"
+          log.id ? (
+            <View className="flex-row items-center">
+              {hasRecords && (
+                <Button
+                  className="hidden active:opacity-90 md:flex web:hover:opacity-90"
+                  size="xs"
+                  style={{ backgroundColor: logColor.default }}
+                  variant="secondary"
+                  onPress={() =>
+                    sheetManager.open('record-create', params.logId)
+                  }
+                >
+                  <Icon
+                    className="-ml-0.5 text-contrast-foreground"
+                    icon={Plus}
+                  />
+                  <Text className="text-contrast-foreground">Record</Text>
+                </Button>
+              )}
+              <DropdownMenu
+                contentClassName="mt-2"
+                id={log.id}
+                triggerWrapperClassName="md:-mr-4 md:ml-4"
+                contentStyle={{
+                  top: Platform.select({
+                    default: headerHeight + insets.top,
+                    web: 0,
+                  }),
+                }}
               >
                 <Icon
-                  className="-ml-0.5 text-contrast-foreground"
-                  icon={Plus}
+                  className="text-foreground"
+                  icon={DotsThreeVertical}
+                  size={24}
                 />
-                <Text className="text-contrast-foreground">Record</Text>
-              </Button>
-            )}
-            <DropdownMenu
-              contentClassName="mt-2"
-              id={log.id}
-              triggerWrapperClassName="md:-mr-4 md:ml-4"
-              contentStyle={{
-                top: Platform.select({
-                  default: headerHeight + insets.top,
-                  web: 0,
-                }),
-              }}
-            >
-              <Icon
-                className="text-foreground"
-                icon={DotsThreeVertical}
-                size={24}
-              />
-            </DropdownMenu>
-          </View>
+              </DropdownMenu>
+            </View>
+          ) : null
         }
       />
-      {recordsLoading ? (
+      {logNotFound ? (
+        <NotFound />
+      ) : log.isLoading || recordsLoading ? (
         <Loading />
       ) : !hasRecords ? (
         <EmptyState logId={params.logId} />
