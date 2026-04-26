@@ -26,6 +26,7 @@ export const ResultRecordCard = ({
       : undefined;
 
   const displayText = trimDisplayText(result.text);
+  const attachmentText = result.attachmentNames?.join('\n');
 
   return (
     <Pressable className={className} onPress={onPress}>
@@ -87,6 +88,15 @@ export const ResultRecordCard = ({
             numberOfLines={2}
             terms={result.terms}
             text={displayText}
+          />
+        )}
+        {!!attachmentText && (
+          <ResultHighlightedText
+            className="leading-tight text-muted-foreground text-sm"
+            highlightClassName="text-sm leading-tight font-medium text-foreground"
+            numberOfLines={result.attachmentNames?.length}
+            terms={result.terms}
+            text={attachmentText}
           />
         )}
       </Card>

@@ -10,6 +10,8 @@ type SearchDocument = {
   id: string;
   type: 'record' | 'reply' | 'log';
   text: string;
+  attachmentNames: string[];
+  attachmentText: string;
   name: string;
   date?: string | number;
   logId?: string;
@@ -34,8 +36,17 @@ const isSearchDocument = (
     result.type === 'reply' ||
     result.type === 'log') &&
   typeof result.text === 'string' &&
+  Array.isArray(result.attachmentNames) &&
+  typeof result.attachmentText === 'string' &&
   typeof result.name === 'string' &&
   typeof result.people === 'string';
+
+const getAttachmentNames = (
+  media?: { name?: string | null }[] | null
+): string[] =>
+  media
+    ?.map((item) => item.name?.trim())
+    .filter((name): name is string => !!name) ?? [];
 
 export const useSearch = ({
   query,
@@ -82,6 +93,8 @@ export const useSearch = ({
         id: `log:${log.id}`,
         type: 'log',
         text: '',
+        attachmentNames: [],
+        attachmentText: '',
         name: log.name,
         logId: log.id,
         logName: log.name,
@@ -101,12 +114,16 @@ export const useSearch = ({
 
     for (const record of data.records ?? []) {
       const text = trimDisplayText(record.text);
-      if (!text) continue;
+      const attachmentNames = getAttachmentNames(record.media);
+      const attachmentText = attachmentNames.join(' ');
+      if (!text && !attachmentText) continue;
 
       docs.push({
         id: `record:${record.id}`,
         type: 'record',
         text,
+        attachmentNames,
+        attachmentText,
         name: '',
         date: record.date,
         logId: record.log?.id,
@@ -119,7 +136,12 @@ export const useSearch = ({
         authorName: record.author?.name,
         authorImage: record.author?.image?.uri,
         media: record.media?.length
-          ? record.media.map((m) => ({ id: m.id, type: m.type, uri: m.uri }))
+          ? record.media.map((m) => ({
+              id: m.id,
+              name: m.name,
+              type: m.type,
+              uri: m.uri,
+            }))
           : undefined,
         tagIds: record.log?.tags?.map((t) => t.id),
       });
@@ -127,12 +149,16 @@ export const useSearch = ({
 
     for (const reply of data.replies ?? []) {
       const text = trimDisplayText(reply.text);
-      if (!text) continue;
+      const attachmentNames = getAttachmentNames(reply.media);
+      const attachmentText = attachmentNames.join(' ');
+      if (!text && !attachmentText) continue;
 
       docs.push({
         id: `reply:${reply.id}`,
         type: 'reply',
         text,
+        attachmentNames,
+        attachmentText,
         name: '',
         date: reply.date,
         logId: reply.record?.log?.id,
@@ -145,7 +171,12 @@ export const useSearch = ({
         authorName: reply.author?.name,
         authorImage: reply.author?.image?.uri,
         media: reply.media?.length
-          ? reply.media.map((m) => ({ id: m.id, type: m.type, uri: m.uri }))
+          ? reply.media.map((m) => ({
+              id: m.id,
+              name: m.name,
+              type: m.type,
+              uri: m.uri,
+            }))
           : undefined,
         tagIds: reply.record?.log?.tags?.map((t) => t.id),
       });
@@ -156,9 +187,11 @@ export const useSearch = ({
 
   const miniSearch = React.useMemo(() => {
     const ms = new MiniSearch<SearchDocument>({
-      fields: ['text', 'name', 'people'],
+      fields: ['text', 'attachmentText', 'name', 'people'],
       storeFields: [
         'text',
+        'attachmentNames',
+        'attachmentText',
         'name',
         'type',
         'date',
@@ -205,6 +238,7 @@ export const useSearch = ({
         terms: result.terms,
         text:
           result.type === 'log' ? (result.logName ?? '') : (result.text ?? ''),
+        attachmentNames: result.attachmentNames,
         date: result.date,
         logId: result.logId,
         logName: result.type === 'log' ? undefined : result.logName,

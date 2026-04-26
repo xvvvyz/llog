@@ -1,5 +1,11 @@
 export type SearchResultType = 'record' | 'reply' | 'log';
-export type SearchMediaItem = { id: string; type: string; uri: string };
+
+export type SearchMediaItem = {
+  id: string;
+  name?: string;
+  type: string;
+  uri: string;
+};
 
 export type SearchProfile = {
   avatarSeedId?: string;
@@ -14,6 +20,7 @@ export type SearchResult = {
   score: number;
   terms: string[];
   text: string;
+  attachmentNames?: string[];
   date?: string | number;
   logId?: string;
   logName?: string;
