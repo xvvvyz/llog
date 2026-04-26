@@ -2,7 +2,9 @@ import * as React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 type SheetPlatformLayoutOptions = {
+  activeElementRootRef?: { current: unknown };
   bottomInset: number;
+  keyboardAvoidingEnabled?: boolean;
   open: boolean;
   windowHeight: number;
 };
@@ -28,25 +30,45 @@ type WebScrollLockSnapshot = {
 };
 
 type WebVisualViewport = { bottomInset: number; height?: number };
+
+const EMPTY_WEB_VISUAL_VIEWPORT: WebVisualViewport = {
+  bottomInset: 0,
+  height: undefined,
+};
+
 let webScrollLockCount = 0;
 let webScrollLockSnapshot: WebScrollLockSnapshot | null = null;
 const SCROLL_LOCK_ALLOW_SELECTOR = '[data-testid="scroll-lock-allow"]';
 const WEB_SHEET_BOTTOM_OVERSCAN = 128;
 
-const getWebVisualViewport = (baselineHeight?: number): WebVisualViewport => {
-  if (typeof window === 'undefined') {
-    return { bottomInset: 0, height: undefined };
-  }
+const isTextEntryElement = (element: HTMLElement | null) => {
+  const tagName = element?.tagName;
 
-  const activeElement = document.activeElement as HTMLElement | null;
-  const tagName = activeElement?.tagName;
-
-  const textEntryFocused =
+  return (
     tagName === 'TEXTAREA' ||
     tagName === 'INPUT' ||
-    !!activeElement?.isContentEditable;
+    !!element?.isContentEditable
+  );
+};
 
-  if (!textEntryFocused) return { bottomInset: 0, height: undefined };
+const isTextEntryInRoot = (root: unknown, target: EventTarget | null) =>
+  root instanceof HTMLElement &&
+  target instanceof HTMLElement &&
+  isTextEntryElement(target) &&
+  root.contains(target);
+
+const getWebVisualViewport = (
+  baselineHeight?: number,
+  activeElementRoot?: unknown
+): WebVisualViewport => {
+  if (typeof window === 'undefined') return EMPTY_WEB_VISUAL_VIEWPORT;
+  const activeElement = document.activeElement as HTMLElement | null;
+  if (!isTextEntryElement(activeElement)) return EMPTY_WEB_VISUAL_VIEWPORT;
+
+  if (!isTextEntryInRoot(activeElementRoot, activeElement)) {
+    return EMPTY_WEB_VISUAL_VIEWPORT;
+  }
+
   const viewport = window.visualViewport;
   const documentHeight = document.documentElement?.clientHeight ?? 0;
 
@@ -65,25 +87,31 @@ const getWebVisualViewport = (baselineHeight?: number): WebVisualViewport => {
   };
 };
 
-const useWebSheetVisualViewport = (open: boolean): WebVisualViewport => {
+const useWebSheetVisualViewport = (
+  open: boolean,
+  activeElementRootRef?: { current: unknown }
+): WebVisualViewport => {
   const baselineHeightRef = React.useRef(0);
   const baselineWidthRef = React.useRef(0);
-  const [viewport, setViewport] = React.useState(getWebVisualViewport);
+
+  const [viewport, setViewport] = React.useState<WebVisualViewport>(
+    EMPTY_WEB_VISUAL_VIEWPORT
+  );
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !open) {
+      setViewport(EMPTY_WEB_VISUAL_VIEWPORT);
+      return;
+    }
 
     const update = () => {
       const documentHeight = document.documentElement?.clientHeight ?? 0;
       const layoutWidth = window.innerWidth;
 
-      if (
-        baselineWidthRef.current &&
-        baselineWidthRef.current !== layoutWidth
-      ) {
-        baselineHeightRef.current = 0;
-      }
+      const layoutWidthChanged =
+        baselineWidthRef.current && baselineWidthRef.current !== layoutWidth;
 
+      if (layoutWidthChanged) baselineHeightRef.current = 0;
       baselineWidthRef.current = layoutWidth;
 
       baselineHeightRef.current = Math.max(
@@ -92,7 +120,12 @@ const useWebSheetVisualViewport = (open: boolean): WebVisualViewport => {
         documentHeight
       );
 
-      setViewport(getWebVisualViewport(baselineHeightRef.current));
+      const nextViewport = getWebVisualViewport(
+        baselineHeightRef.current,
+        activeElementRootRef?.current
+      );
+
+      setViewport(nextViewport);
     };
 
     update();
@@ -112,19 +145,15 @@ const useWebSheetVisualViewport = (open: boolean): WebVisualViewport => {
       window.removeEventListener('focusin', update);
       window.removeEventListener('focusout', update);
     };
-  }, [open]);
+  }, [activeElementRootRef, open]);
 
-  if (!open) return { bottomInset: 0, height: undefined };
+  if (!open) return EMPTY_WEB_VISUAL_VIEWPORT;
   return viewport;
 };
 
 const isEditableElement = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
-  const tagName = target.tagName;
-
-  return (
-    tagName === 'TEXTAREA' || tagName === 'INPUT' || target.isContentEditable
-  );
+  return isTextEntryElement(target);
 };
 
 const canScrollElement = (
@@ -323,11 +352,17 @@ const useWebSheetScrollLock = (open: boolean) => {
 };
 
 export const useSheetPlatformLayout = ({
+  activeElementRootRef,
   bottomInset,
+  keyboardAvoidingEnabled = true,
   open,
   windowHeight,
 }: SheetPlatformLayoutOptions): SheetPlatformLayout => {
-  const webViewport = useWebSheetVisualViewport(open);
+  const webViewport = useWebSheetVisualViewport(
+    open && keyboardAvoidingEnabled,
+    activeElementRootRef
+  );
+
   useWebSheetScrollLock(open);
 
   return {

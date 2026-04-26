@@ -4,6 +4,8 @@ import { useFilteredMedia } from '@/features/media/hooks/use-filtered-media';
 import { useMediaLightbox } from '@/features/media/hooks/use-lightbox';
 import * as visualMedia from '@/features/media/lib/visual-media';
 import { Media } from '@/features/media/types/media';
+import { LinkAttachments } from '@/features/records/components/link-attachments';
+import { Link } from '@/features/records/types/link';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
@@ -13,8 +15,10 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 
 export const ItemMedia = ({
   media,
+  links = [],
   recordId,
 }: {
+  links?: Link[];
   media?: Media[];
   recordId?: string;
 }) => {
@@ -26,7 +30,12 @@ export const ItemMedia = ({
 
   const { openMediaLightbox } = useMediaLightbox({ recordId });
 
-  if (!visualItems.length && !audioMedia.length && !documentMedia.length) {
+  if (
+    !visualItems.length &&
+    !audioMedia.length &&
+    !documentMedia.length &&
+    !links.length
+  ) {
     return null;
   }
 
@@ -90,6 +99,13 @@ export const ItemMedia = ({
       {documentMedia.length > 0 && (
         <DocumentAttachments
           documents={documentMedia}
+          triggerClassName="px-4"
+          triggerIconClassName="-ml-px"
+        />
+      )}
+      {links.length > 0 && (
+        <LinkAttachments
+          links={links}
           triggerClassName="px-4"
           triggerIconClassName="-ml-px"
         />

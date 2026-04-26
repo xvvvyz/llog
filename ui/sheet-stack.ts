@@ -4,4 +4,8 @@ type SheetStackOptions = {
   open: boolean;
 };
 
-export const useSheetStack = (_options: SheetStackOptions) => {};
+type SheetStackState = { isTopSheet: boolean };
+
+export const useSheetStack = ({
+  open,
+}: SheetStackOptions): SheetStackState => ({ isTopSheet: open });

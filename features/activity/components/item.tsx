@@ -50,11 +50,18 @@ export const Item = ({
         ? first.reply?.media
         : undefined;
 
+  const linkSource =
+    group.type === 'record_published'
+      ? first.record?.links
+      : group.type === 'reply_posted'
+        ? first.reply?.links
+        : undefined;
+
   const mediaProps =
     group.type === 'record_published'
-      ? { media: mediaSource, recordId: record?.id }
+      ? { links: linkSource, media: mediaSource, recordId: record?.id }
       : group.type === 'reply_posted'
-        ? { media: mediaSource, recordId: record?.id }
+        ? { links: linkSource, media: mediaSource, recordId: record?.id }
         : null;
 
   const hasVisualMedia = mediaSource?.some(
@@ -63,7 +70,12 @@ export const Item = ({
 
   const hasAudioMedia = mediaSource?.some((m) => m.type === 'audio');
   const hasDocumentMedia = mediaSource?.some((m) => m.type === 'document');
-  const mediaIsLast = hasVisualMedia && !hasAudioMedia && !hasDocumentMedia;
+
+  const mediaIsLast =
+    hasVisualMedia &&
+    !hasAudioMedia &&
+    !hasDocumentMedia &&
+    !linkSource?.length;
 
   const showQuotedRecord =
     (group.type === 'reply_posted' || group.type === 'reaction_added') &&
@@ -140,6 +152,7 @@ export const Item = ({
       {showQuotedRecord && (
         <View className="px-4">
           <QuotedRecord
+            links={record.links}
             logColor={logColor}
             media={record.media}
             recordId={record.id}

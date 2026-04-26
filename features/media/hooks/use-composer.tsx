@@ -8,6 +8,9 @@ import * as React from 'react';
 export const useMediaComposer = ({
   replyId,
   isOpen,
+  extraAttachmentCount = 0,
+  extraPreview,
+  extraToolbarItems,
   media,
   onDeleteMedia,
   onOpenAudio,
@@ -51,6 +54,8 @@ export const useMediaComposer = ({
       audioMedia={audioMedia}
       autoPlayPendingVideoId={autoPlayPendingVideoId}
       documentMedia={documentMedia}
+      extraAttachmentCount={extraAttachmentCount}
+      extraPreview={extraPreview}
       onDeleteMedia={handleDeleteMedia}
       onOpenVisual={handleOpenVisual}
       onRemoteReady={removeLocalPreviewUri}
@@ -63,6 +68,7 @@ export const useMediaComposer = ({
   const toolbar = (
     <Toolbar
       canAddAudio={canAddAudio}
+      leadingItems={extraToolbarItems}
       onBrowseMedia={handleBrowseMedia}
       onCaptureMedia={handleCaptureMedia}
       onOpenAudio={onOpenAudio}
@@ -70,5 +76,10 @@ export const useMediaComposer = ({
     />
   );
 
-  return { isBusy, mediaCount, mediaPreview, toolbar };
+  return {
+    isBusy,
+    mediaCount: mediaCount + extraAttachmentCount,
+    mediaPreview,
+    toolbar,
+  };
 };

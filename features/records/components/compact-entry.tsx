@@ -1,6 +1,7 @@
 import { AudioPlaylist } from '@/features/media/components/audio-player';
 import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import { EntryMenu } from '@/features/records/components/entry-menu';
+import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
 import { TruncatedText } from '@/features/records/components/truncated-text';
@@ -17,6 +18,7 @@ export const CompactEntry = ({
   audioMedia,
   className,
   documentMedia,
+  links,
   logId,
   numberOfLines,
   onDoubleTapReaction,
@@ -89,6 +91,14 @@ export const CompactEntry = ({
             <DocumentAttachments
               className="mt-4"
               documents={documentMedia}
+              triggerClassName="pl-0"
+              triggerIconClassName="ml-1.5"
+            />
+          )}
+          {links.length > 0 && (
+            <LinkAttachments
+              className="mt-4"
+              links={links}
               triggerClassName="pl-0"
               triggerIconClassName="ml-1.5"
             />

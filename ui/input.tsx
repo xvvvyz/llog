@@ -23,8 +23,10 @@ const Input = React.forwardRef<
       blurOnSubmit,
       className,
       defaultValue,
+      editable,
       onChangeText,
       onSubmitEditing,
+      onTouchStart,
       returnKeyType = 'done',
       size,
       style,
@@ -83,6 +85,39 @@ const Input = React.forwardRef<
       [onSubmitEditing, resolvedSubmitBehavior]
     );
 
+    const handleTouchStart = React.useCallback(
+      (event: Parameters<NonNullable<typeof onTouchStart>>[0]) => {
+        onTouchStart?.(event);
+        if (Platform.OS !== 'web' || editable === false) return;
+        if (typeof document === 'undefined') return;
+        const activeElement = document.activeElement as HTMLElement | null;
+        const activeTagName = activeElement?.tagName;
+
+        const isTextEntryActive =
+          activeTagName === 'TEXTAREA' ||
+          activeTagName === 'INPUT' ||
+          !!activeElement?.isContentEditable;
+
+        if (!isTextEntryActive) return;
+
+        const input = inputRef.current as unknown as {
+          focus?: (options?: { preventScroll?: boolean }) => void;
+        } | null;
+
+        if (!input?.focus || document.activeElement === input) return;
+
+        // Mobile web can briefly collapse the keyboard when moving focus
+        // between inputs. Only assist an existing text-entry handoff; fresh
+        // taps should use the browser's normal focus timing.
+        try {
+          input.focus({ preventScroll: true });
+        } catch {
+          input.focus();
+        }
+      },
+      [editable, onTouchStart]
+    );
+
     return (
       <TextInput
         ref={handleRef}
@@ -90,9 +125,11 @@ const Input = React.forwardRef<
         autoComplete="off"
         autoCorrect={false}
         blurOnSubmit={resolvedBlurOnSubmit}
+        editable={editable}
         lineBreakModeIOS="clip"
         onChangeText={handleChangeText}
         onSubmitEditing={handleSubmitEditing}
+        onTouchStart={handleTouchStart}
         placeholderTextColorClassName="accent-placeholder"
         returnKeyType={returnKeyType}
         style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
@@ -100,7 +137,7 @@ const Input = React.forwardRef<
         value={localValue}
         className={cn(
           inputVariants({ size }),
-          props.editable === false && 'web:cursor-not-allowed opacity-50',
+          editable === false && 'web:cursor-not-allowed opacity-50',
           className
         )}
         {...props}

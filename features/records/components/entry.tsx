@@ -73,6 +73,7 @@ export const Entry = ({
     accentColor,
     audioMedia,
     documentMedia,
+    links: record.links ?? [],
     logId,
     numberOfLines,
     onDoubleTapReaction: handleDoubleTapReaction,

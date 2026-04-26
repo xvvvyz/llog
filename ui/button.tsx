@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn';
 import { TextContext } from '@/ui/text';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
   defaultVariants: { size: 'default', variant: 'default' },
@@ -82,9 +82,53 @@ const buttonTextVariants = cva(
 
 type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
   VariantProps<typeof buttonVariants> & {
+    pressOnWebTouchRelease?: boolean;
     ripple?: 'default' | 'inverse';
     wrapperClassName?: string;
   };
+
+type ButtonTouchEvent = Parameters<NonNullable<ButtonProps['onTouchStart']>>[0];
+type ButtonPressEvent = Parameters<NonNullable<ButtonProps['onPress']>>[0];
+type TouchPoint = { x: number; y: number };
+const TOUCH_CANCEL_DISTANCE = 16;
+const SKIP_PRESS_RESET_MS = 500;
+
+const readTouchPoint = (event: ButtonTouchEvent): TouchPoint | null => {
+  const nativeEvent = event.nativeEvent as {
+    changedTouches?: Array<{
+      clientX?: unknown;
+      clientY?: unknown;
+      pageX?: unknown;
+      pageY?: unknown;
+    }>;
+    pageX?: unknown;
+    pageY?: unknown;
+    touches?: Array<{
+      clientX?: unknown;
+      clientY?: unknown;
+      pageX?: unknown;
+      pageY?: unknown;
+    }>;
+  };
+
+  const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent.touches?.[0];
+  const x = touch?.clientX ?? touch?.pageX ?? nativeEvent.pageX;
+  const y = touch?.clientY ?? touch?.pageY ?? nativeEvent.pageY;
+  return typeof x === 'number' && typeof y === 'number' ? { x, y } : null;
+};
+
+const preventFollowUpClick = (event: ButtonTouchEvent) => {
+  event.preventDefault?.();
+  event.stopPropagation?.();
+
+  const nativeEvent = event.nativeEvent as {
+    preventDefault?: () => void;
+    stopPropagation?: () => void;
+  };
+
+  nativeEvent.preventDefault?.();
+  nativeEvent.stopPropagation?.();
+};
 
 const Button = React.forwardRef<
   React.ComponentRef<typeof Pressable>,
@@ -94,6 +138,11 @@ const Button = React.forwardRef<
     {
       className,
       disabled,
+      onPress,
+      pressOnWebTouchRelease,
+      onTouchCancel,
+      onTouchEnd,
+      onTouchStart,
       ripple,
       size,
       style,
@@ -103,6 +152,14 @@ const Button = React.forwardRef<
     },
     ref
   ) => {
+    const skipNextPressRef = React.useRef(false);
+
+    const skipPressResetTimeoutRef = React.useRef<ReturnType<
+      typeof setTimeout
+    > | null>(null);
+
+    const touchStartRef = React.useRef<TouchPoint | null>(null);
+
     const rippleColor = useRippleColor(
       ripple ??
         (variant === 'ghost' || variant === 'outline' || variant === 'secondary'
@@ -111,6 +168,106 @@ const Button = React.forwardRef<
     );
 
     const shouldHaveRipple = variant !== 'link';
+    const shouldPressOnWebTouchRelease = pressOnWebTouchRelease ?? true;
+
+    const clearSkipPressResetTimeout = React.useCallback(() => {
+      if (!skipPressResetTimeoutRef.current) return;
+      clearTimeout(skipPressResetTimeoutRef.current);
+      skipPressResetTimeoutRef.current = null;
+    }, []);
+
+    React.useEffect(
+      () => clearSkipPressResetTimeout,
+      [clearSkipPressResetTimeout]
+    );
+
+    const markNextPressHandled = React.useCallback(() => {
+      clearSkipPressResetTimeout();
+      skipNextPressRef.current = true;
+
+      skipPressResetTimeoutRef.current = setTimeout(() => {
+        skipNextPressRef.current = false;
+        skipPressResetTimeoutRef.current = null;
+      }, SKIP_PRESS_RESET_MS);
+    }, [clearSkipPressResetTimeout]);
+
+    const handlePress = React.useCallback(
+      (event: ButtonPressEvent) => {
+        if (skipNextPressRef.current) {
+          skipNextPressRef.current = false;
+          clearSkipPressResetTimeout();
+          return;
+        }
+
+        onPress?.(event);
+      },
+      [clearSkipPressResetTimeout, onPress]
+    );
+
+    const handleTouchStart = React.useCallback(
+      (event: ButtonTouchEvent) => {
+        onTouchStart?.(event);
+
+        if (
+          !shouldPressOnWebTouchRelease ||
+          Platform.OS !== 'web' ||
+          disabled ||
+          !onPress
+        ) {
+          touchStartRef.current = null;
+          return;
+        }
+
+        touchStartRef.current = readTouchPoint(event);
+      },
+      [disabled, onPress, onTouchStart, shouldPressOnWebTouchRelease]
+    );
+
+    const handleTouchEnd = React.useCallback(
+      (event: ButtonTouchEvent) => {
+        onTouchEnd?.(event);
+        const start = touchStartRef.current;
+        touchStartRef.current = null;
+
+        if (
+          !shouldPressOnWebTouchRelease ||
+          Platform.OS !== 'web' ||
+          disabled ||
+          !onPress ||
+          !start
+        ) {
+          return;
+        }
+
+        const end = readTouchPoint(event) ?? start;
+        const distance = Math.hypot(end.x - start.x, end.y - start.y);
+        if (distance > TOUCH_CANCEL_DISTANCE) return;
+        preventFollowUpClick(event);
+        markNextPressHandled();
+        onPress(event as unknown as ButtonPressEvent);
+      },
+      [
+        disabled,
+        markNextPressHandled,
+        onPress,
+        onTouchEnd,
+        shouldPressOnWebTouchRelease,
+      ]
+    );
+
+    const handleTouchCancel = React.useCallback(
+      (event: ButtonTouchEvent) => {
+        touchStartRef.current = null;
+        onTouchCancel?.(event);
+      },
+      [onTouchCancel]
+    );
+
+    const shouldHandleTouchRelease =
+      shouldPressOnWebTouchRelease ||
+      !!onTouchStart ||
+      !!onTouchEnd ||
+      !!onTouchCancel;
 
     return (
       <TextContext.Provider value={buttonTextVariants({ size, variant })}>
@@ -126,12 +283,20 @@ const Button = React.forwardRef<
             ref={ref}
             className={cn(buttonVariants({ className, size, variant }))}
             disabled={disabled}
+            onPress={onPress ? handlePress : undefined}
+            onTouchEnd={shouldHandleTouchRelease ? handleTouchEnd : undefined}
             role="button"
             style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
             android_ripple={
               shouldHaveRipple
                 ? { color: rippleColor, borderless: false }
                 : undefined
+            }
+            onTouchCancel={
+              shouldHandleTouchRelease ? handleTouchCancel : undefined
+            }
+            onTouchStart={
+              shouldHandleTouchRelease ? handleTouchStart : undefined
             }
             {...props}
           />

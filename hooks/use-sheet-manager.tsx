@@ -2,16 +2,28 @@ import { SheetName } from '@/types/sheet-names';
 import * as React from 'react';
 import { Keyboard } from 'react-native';
 
-type SheetStackItem = { context?: string; id?: string; name: SheetName };
+type SheetStackItem = {
+  context?: string;
+  id?: string;
+  name: SheetName;
+  payload?: unknown;
+};
 
-const SheetContext = React.createContext<{
+export type SheetManager = {
   close: (name: SheetName) => void;
   getContext: (name: SheetName) => string | undefined;
   getId: (name: SheetName) => string | undefined;
+  getPayload: (name: SheetName) => unknown;
   isOpen: (name: SheetName) => boolean;
-  open: (name: SheetName, id?: string, context?: string) => void;
-  someOpen: () => boolean;
-} | null>(null);
+  open: (
+    name: SheetName,
+    id?: string,
+    context?: string,
+    payload?: unknown
+  ) => void;
+};
+
+const SheetContext = React.createContext<SheetManager | null>(null);
 
 export const SheetManagerProvider = ({
   children,
@@ -38,29 +50,32 @@ export const SheetManagerProvider = ({
     [sheetStack]
   );
 
+  const getPayload = React.useCallback(
+    (name: SheetName) => sheetStack.find((item) => item.name === name)?.payload,
+    [sheetStack]
+  );
+
   const isOpen = React.useCallback(
     (name: SheetName) => sheetStack[sheetStack.length - 1]?.name === name,
     [sheetStack]
   );
 
   const open = React.useCallback(
-    (name: SheetName, id?: string, context?: string) => {
+    (name: SheetName, id?: string, context?: string, payload?: unknown) => {
       Keyboard.dismiss();
 
       setSheetStack((prev) => {
         const index = prev.findIndex((item) => item.name === name);
         const newStack = index === -1 ? prev : prev.slice(0, index);
-        return [...newStack, { context, name, id }];
+        return [...newStack, { context, name, id, payload }];
       });
     },
     []
   );
 
-  const someOpen = React.useCallback(() => !!sheetStack.length, [sheetStack]);
-
   return (
     <SheetContext.Provider
-      value={{ close, getContext, getId, isOpen, open, someOpen }}
+      value={{ close, getContext, getId, getPayload, isOpen, open }}
     >
       {children}
     </SheetContext.Provider>

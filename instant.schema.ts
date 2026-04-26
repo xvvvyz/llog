@@ -37,6 +37,12 @@ const schema = i.schema({
       role: i.string(),
       teamId: i.string().indexed(),
     }),
+    links: i.entity({
+      label: i.string().indexed(),
+      order: i.number().optional(),
+      teamId: i.string().indexed(),
+      url: i.string(),
+    }),
     tags: i.entity({
       name: i.string().indexed(),
       order: i.number().indexed(),
@@ -146,6 +152,10 @@ const schema = i.schema({
       forward: { on: 'invites', has: 'one', label: 'creator', required: true },
       reverse: { on: 'profiles', has: 'many', label: 'invites' },
     },
+    repliesLinks: {
+      forward: { on: 'replies', has: 'many', label: 'links' },
+      reverse: { on: 'links', has: 'one', label: 'reply', onDelete: 'cascade' },
+    },
     repliesAuthors: {
       forward: { on: 'replies', has: 'one', label: 'author', required: true },
       reverse: { on: 'profiles', has: 'many', label: 'replies' },
@@ -229,6 +239,15 @@ const schema = i.schema({
         has: 'one',
         label: 'record',
         required: true,
+        onDelete: 'cascade',
+      },
+    },
+    recordsLinks: {
+      forward: { on: 'records', has: 'many', label: 'links' },
+      reverse: {
+        on: 'links',
+        has: 'one',
+        label: 'record',
         onDelete: 'cascade',
       },
     },

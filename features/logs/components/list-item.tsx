@@ -39,6 +39,7 @@ export const ListItem = ({
       <Link key={id} asChild href={`/${id}`}>
         <Button
           className="flex flex-col h-28 w-full p-4 items-start justify-between active:opacity-90"
+          pressOnWebTouchRelease={false}
           ripple="default"
           style={{ backgroundColor: color.default }}
           variant="ghost"

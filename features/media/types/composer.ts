@@ -1,5 +1,6 @@
 import type * as pickedMedia from '@/features/media/lib/picked';
 import type { Media } from '@/features/media/types/media';
+import type * as React from 'react';
 
 export interface PendingUpload {
   height?: number;
@@ -31,6 +32,9 @@ export interface VisualPreviewItem {
 export interface UseMediaComposerOptions {
   replyId?: string;
   isOpen: boolean;
+  extraAttachmentCount?: number;
+  extraPreview?: React.ReactNode;
+  extraToolbarItems?: React.ReactNode;
   media: Media[];
   onDeleteMedia: (mediaId: string) => Promise<void>;
   onOpenAudio: () => void;

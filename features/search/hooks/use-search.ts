@@ -48,6 +48,11 @@ const getAttachmentNames = (
     ?.map((item) => item.name?.trim())
     .filter((name): name is string => !!name) ?? [];
 
+const getLinkLabels = (links?: { label?: string | null }[] | null): string[] =>
+  links
+    ?.map((item) => item.label?.trim())
+    .filter((label): label is string => !!label) ?? [];
+
 export const useSearch = ({
   query,
   logIds,
@@ -68,12 +73,14 @@ export const useSearch = ({
             author: { image: {} },
             log: { tags: { $: { fields: ['id'] } } },
             media: {},
+            links: {},
           },
           replies: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
             record: { log: { tags: { $: { fields: ['id'] } } } },
             media: {},
+            links: {},
           },
           logs: {
             $: { where: { teamId: { $in: teamIds } } },
@@ -114,7 +121,12 @@ export const useSearch = ({
 
     for (const record of data.records ?? []) {
       const text = trimDisplayText(record.text);
-      const attachmentNames = getAttachmentNames(record.media);
+
+      const attachmentNames = [
+        ...getAttachmentNames(record.media),
+        ...getLinkLabels(record.links),
+      ];
+
       const attachmentText = attachmentNames.join(' ');
       if (!text && !attachmentText) continue;
 
@@ -149,7 +161,12 @@ export const useSearch = ({
 
     for (const reply of data.replies ?? []) {
       const text = trimDisplayText(reply.text);
-      const attachmentNames = getAttachmentNames(reply.media);
+
+      const attachmentNames = [
+        ...getAttachmentNames(reply.media),
+        ...getLinkLabels(reply.links),
+      ];
+
       const attachmentText = attachmentNames.join(' ');
       if (!text && !attachmentText) continue;
 

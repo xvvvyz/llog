@@ -4,7 +4,9 @@ import { useFilteredMedia } from '@/features/media/hooks/use-filtered-media';
 import { useMediaLightbox } from '@/features/media/hooks/use-lightbox';
 import * as visualMedia from '@/features/media/lib/visual-media';
 import { Media } from '@/features/media/types/media';
+import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
+import { Link } from '@/features/records/types/link';
 import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
@@ -16,10 +18,12 @@ import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
 export const QuotedRecord = ({
   logColor,
+  links = [],
   media,
   recordId,
   text,
 }: {
+  links?: Link[];
   logColor: { lighter: string; default: string; darker: string } | null;
   media?: Media[];
   recordId?: string;
@@ -35,12 +39,14 @@ export const QuotedRecord = ({
   const { openMediaLightbox } = useMediaLightbox({ recordId });
   const hasAudioMedia = audioMedia.length > 0;
   const hasDocumentMedia = documentMedia.length > 0;
+  const hasLinks = links.length > 0;
 
   if (
     !displayText &&
     !visualItems.length &&
     !hasAudioMedia &&
-    !hasDocumentMedia
+    !hasDocumentMedia &&
+    !hasLinks
   ) {
     return null;
   }
@@ -50,7 +56,7 @@ export const QuotedRecord = ({
       <View
         className={cn(
           'bg-input max-w-full min-w-0 overflow-hidden rounded-xl',
-          hasAudioMedia || hasDocumentMedia
+          hasAudioMedia || hasDocumentMedia || hasLinks
             ? 'w-full self-stretch'
             : 'self-start'
         )}
@@ -129,7 +135,7 @@ export const QuotedRecord = ({
             className={cn(
               'gap-2 px-3 pb-3',
               !displayText && !visualItems.length && 'pt-3',
-              hasDocumentMedia && 'pb-0'
+              (hasDocumentMedia || hasLinks) && 'pb-0'
             )}
           >
             <AudioPlaylist
@@ -145,8 +151,24 @@ export const QuotedRecord = ({
             triggerClassName="px-3"
             triggerIconClassName="-ml-px"
             className={cn(
-              'pb-3',
+              hasLinks ? 'pb-0' : 'pb-3',
               !displayText && !visualItems.length && !hasAudioMedia && 'pt-3'
+            )}
+          />
+        )}
+        {hasLinks && (
+          <LinkAttachments
+            links={links}
+            triggerClassName="px-3"
+            triggerIconClassName="-ml-px"
+            className={cn(
+              'pb-3',
+              hasDocumentMedia && 'pt-4',
+              !displayText &&
+                !visualItems.length &&
+                !hasAudioMedia &&
+                !hasDocumentMedia &&
+                'pt-3'
             )}
           />
         )}

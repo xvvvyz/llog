@@ -6,9 +6,15 @@ type SheetStackOptions = {
   open: boolean;
 };
 
+type SheetStackState = { isTopSheet: boolean };
 type WebSheetStackItem = { id: string; layer: number; order: number };
 let nextWebSheetOrder = 0;
 let webSheetStack: WebSheetStackItem[] = [];
+const webSheetStackListeners = new Set<() => void>();
+
+const emitWebSheetStackChange = () => {
+  for (const listener of webSheetStackListeners) listener();
+};
 
 const registerWebSheet = (id: string, layer: number) => {
   const order = ++nextWebSheetOrder;
@@ -18,8 +24,11 @@ const registerWebSheet = (id: string, layer: number) => {
     { id, layer, order },
   ];
 
+  emitWebSheetStackChange();
+
   return () => {
     webSheetStack = webSheetStack.filter((item) => item.id !== id);
+    emitWebSheetStackChange();
   };
 };
 
@@ -35,12 +44,25 @@ const getTopWebSheet = () =>
     return topSheet;
   }, null);
 
+const subscribeToWebSheetStack = (listener: () => void) => {
+  webSheetStackListeners.add(listener);
+  return () => webSheetStackListeners.delete(listener);
+};
+
+const getTopWebSheetId = () => getTopWebSheet()?.id ?? null;
+
 export const useSheetStack = ({
   layer,
   onDismiss,
   open,
-}: SheetStackOptions) => {
+}: SheetStackOptions): SheetStackState => {
   const sheetId = React.useId();
+
+  const topSheetId = React.useSyncExternalStore(
+    subscribeToWebSheetStack,
+    getTopWebSheetId,
+    () => null
+  );
 
   React.useEffect(() => {
     if (!open) return;
@@ -62,4 +84,6 @@ export const useSheetStack = ({
     document.addEventListener('keyup', handleKeyUp, false);
     return () => document.removeEventListener('keyup', handleKeyUp, false);
   }, [onDismiss, open, sheetId]);
+
+  return { isTopSheet: open && topSheetId === sheetId };
 };

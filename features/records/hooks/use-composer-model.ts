@@ -2,8 +2,10 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useMediaComposer } from '@/features/media/hooks/use-composer';
 import type { PickedMediaAsset } from '@/features/media/lib/picked';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
+import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
+import type { RecordSheetParent } from '@/features/records/lib/sheet-payloads';
 import { deleteRecordMedia } from '@/features/records/mutations/delete-record-media';
 import { publishRecord } from '@/features/records/mutations/publish-record';
 import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
@@ -32,6 +34,7 @@ export const useRecordComposerModel = () => {
           records: {
             $: { where: { id: editRecordId } },
             media: {},
+            links: {},
             log: { $: { fields: ['id'] } },
           },
         }
@@ -48,6 +51,7 @@ export const useRecordComposerModel = () => {
   const recordLogId = isEdit ? editRecord?.log?.id : logId;
   const logColor = useLogColor({ id: recordLogId });
   const currentText = record?.text ?? '';
+  const links = record?.links ?? [];
 
   const { latestTextRef, setLatestText } = useComposerLatestText({
     isTextareaFocused,
@@ -85,7 +89,18 @@ export const useRecordComposerModel = () => {
     [recordId]
   );
 
+  const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
+    () => (recordId ? { id: recordId, type: 'record' } : undefined),
+    [recordId]
+  );
+
+  const { linkAttachmentCount, linkPreview, linkToolbarItems } =
+    useComposerLinkAttachments({ links, parent: attachmentParent });
+
   const { isBusy, mediaCount, mediaPreview, toolbar } = useMediaComposer({
+    extraAttachmentCount: linkAttachmentCount,
+    extraPreview: linkPreview,
+    extraToolbarItems: linkToolbarItems,
     isOpen,
     media: record?.media ?? [],
     onDeleteMedia: handleDeleteMedia,

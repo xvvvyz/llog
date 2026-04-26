@@ -9,7 +9,6 @@ import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
@@ -32,8 +31,6 @@ export default function Index() {
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
   const tags = useTags();
   const { canManage } = useMyRole();
-  const renderCacheRef = React.useRef<React.ReactElement | null>(null);
-  const sheetManager = useSheetManager();
   const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs();
   const isEmpty = !logs.isLoading && logs.data.length === 0;
@@ -79,11 +76,7 @@ export default function Index() {
   const hasLoadedRef = React.useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
 
-  if (sheetManager.someOpen() && renderCacheRef.current) {
-    return renderCacheRef.current;
-  }
-
-  renderCacheRef.current = (
+  return (
     <Page>
       <Header
         title={<TeamSwitcher />}
@@ -174,6 +167,4 @@ export default function Index() {
       )}
     </Page>
   );
-
-  return renderCacheRef.current;
 }

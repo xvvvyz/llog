@@ -44,6 +44,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
         },
       },
       media: { $: { fields: ['id'] } },
+      links: { $: { fields: ['id'] } },
     },
   });
 
@@ -69,7 +70,9 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
   }
 
   const trimmedText = record.text?.trim() ?? '';
-  const hasContent = !!trimmedText || !!record.media?.length;
+
+  const hasContent =
+    !!trimmedText || !!record.media?.length || !!record.links?.length;
 
   if (!hasContent || !record.log?.id || !record.teamId || !record.author?.id) {
     throw new HTTPException(400, { message: 'Invalid record draft' });

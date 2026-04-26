@@ -26,6 +26,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
             media: {},
+            links: {},
             reactions: { author: {} },
           },
         }
@@ -51,6 +52,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
             media: {},
+            links: {},
             reactions: { author: {} },
           },
         }

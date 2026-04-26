@@ -1,7 +1,9 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 
 type SheetPlatformLayoutOptions = {
+  activeElementRootRef?: { current: unknown };
   bottomInset: number;
+  keyboardAvoidingEnabled?: boolean;
   open: boolean;
   windowHeight: number;
 };

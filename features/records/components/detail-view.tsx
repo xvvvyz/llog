@@ -20,7 +20,6 @@ export const DetailView = ({
   record: UseRecordResult;
   recordId: string;
 }) => {
-  const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const scrollViewRef = React.useRef<ScrollView>(null);
   const sheetManager = useSheetManager();
 
@@ -46,11 +45,7 @@ export const DetailView = ({
     return () => cancelAnimationFrame(frame);
   }, [data.length, pendingScroll, record.isLoading, recordId]);
 
-  if (sheetManager.someOpen() && renderCacheRef.current) {
-    return renderCacheRef.current;
-  }
-
-  renderCacheRef.current = (
+  return (
     <Page className={cn('min-h-0', pageClassName)}>
       <ScrollView
         ref={scrollViewRef}
@@ -92,6 +87,4 @@ export const DetailView = ({
       </View>
     </Page>
   );
-
-  return renderCacheRef.current;
 };

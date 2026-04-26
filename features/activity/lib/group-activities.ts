@@ -2,15 +2,16 @@ import { Profile } from '@/features/account/types/profile';
 import { Activity } from '@/features/activity/types/activity';
 import { Log } from '@/features/logs/types/log';
 import { Media } from '@/features/media/types/media';
+import { Link } from '@/features/records/types/link';
 import { Record } from '@/features/records/types/record';
 import { Reply } from '@/features/records/types/reply';
 import { Team } from '@/features/teams/types/team';
 
 export type ActivityWithRelations = Activity & {
   actor?: Profile & { image?: Media; logs?: Pick<Log, 'id'>[] };
-  reply?: Reply & { media?: Media[] };
+  reply?: Reply & { links?: Link[]; media?: Media[] };
   log?: Log;
-  record?: Record & { media?: Media[] };
+  record?: Record & { links?: Link[]; media?: Media[] };
   team?: Team & { image?: Media };
 };
 

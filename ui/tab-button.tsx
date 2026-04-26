@@ -30,6 +30,7 @@ export const TabButton = ({
     <Button
       className={cn(mobileTab && 'h-11 w-full', breakpoints.md && 'size-14')}
       onPress={canGoBack ? onPress : undefined}
+      pressOnWebTouchRelease={false}
       size={breakpoints.md ? 'icon' : 'default'}
       style={buttonStyle}
       variant="link"

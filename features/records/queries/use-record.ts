@@ -11,9 +11,11 @@ export const useRecord = ({ id }: { id?: string }) => {
               $: { where: { isDraft: { $not: true } } },
               author: { image: {} },
               media: {},
+              links: {},
               reactions: { author: {} },
             },
             media: {},
+            links: {},
             log: {},
             reactions: { author: {} },
           },
@@ -26,7 +28,15 @@ export const useRecord = ({ id }: { id?: string }) => {
   const hasStaleResult = !!id && records.length > 0 && !record;
   const replies = record?.replies ?? [];
   const media = record?.media ?? [];
-  return { ...record, replies, media, isLoading: isLoading || hasStaleResult };
+  const links = record?.links ?? [];
+
+  return {
+    ...record,
+    links,
+    replies,
+    media,
+    isLoading: isLoading || hasStaleResult,
+  };
 };
 
 export type UseRecordResult = ReturnType<typeof useRecord>;

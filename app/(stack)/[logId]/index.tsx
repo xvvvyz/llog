@@ -30,7 +30,6 @@ export default function Index() {
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ logId: string }>();
-  const renderCacheRef = React.useRef<React.ReactElement | null>(null);
   const listRef = React.useRef<ListHandle>(null);
   const sheetManager = useSheetManager();
   const log = useLog({ id: params.logId });
@@ -66,11 +65,7 @@ export default function Index() {
     recordsLoading,
   ]);
 
-  if (sheetManager.someOpen() && renderCacheRef.current) {
-    return renderCacheRef.current;
-  }
-
-  renderCacheRef.current = (
+  return (
     <Page>
       <Header
         left={<BackButton />}
@@ -171,6 +166,4 @@ export default function Index() {
       )}
     </Page>
   );
-
-  return renderCacheRef.current;
 }

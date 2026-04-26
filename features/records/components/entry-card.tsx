@@ -1,6 +1,7 @@
 import { AudioPlaylist } from '@/features/media/components/audio-player';
 import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import { EntryMenu } from '@/features/records/components/entry-menu';
+import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
 import { TruncatedText } from '@/features/records/components/truncated-text';
@@ -23,6 +24,7 @@ export const EntryCard = ({
   canUnpinRecord,
   className,
   documentMedia,
+  links,
   logId,
   numberOfLines,
   onDoubleTapReaction,
@@ -102,6 +104,13 @@ export const EntryCard = ({
       {documentMedia.length > 0 && (
         <DocumentAttachments
           documents={documentMedia}
+          triggerClassName="pl-3 pr-4"
+          triggerIconClassName="ml-1.5"
+        />
+      )}
+      {links.length > 0 && (
+        <LinkAttachments
+          links={links}
           triggerClassName="pl-3 pr-4"
           triggerIconClassName="ml-1.5"
         />

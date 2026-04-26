@@ -3,12 +3,15 @@ import { VisualPreview } from '@/features/media/components/composer/visual-previ
 import { DocumentAttachments } from '@/features/media/components/document-attachments';
 import type * as mediaComposer from '@/features/media/types/composer';
 import type { Media } from '@/features/media/types/media';
+import type * as React from 'react';
 import { View } from 'react-native';
 
 export const Preview = ({
   audioMedia,
   autoPlayPendingVideoId,
   documentMedia,
+  extraAttachmentCount = 0,
+  extraPreview,
   onDeleteMedia,
   onOpenVisual,
   onRemoteReady,
@@ -19,6 +22,8 @@ export const Preview = ({
   audioMedia: Media[];
   autoPlayPendingVideoId?: string;
   documentMedia: Media[];
+  extraAttachmentCount?: number;
+  extraPreview?: React.ReactNode;
   onDeleteMedia: (mediaId: string) => void;
   onOpenVisual: (mediaId: string) => void;
   onRemoteReady: (mediaId: string) => void;
@@ -31,7 +36,8 @@ export const Preview = ({
     audioMedia.length > 0 ||
     pendingAudio.length > 0 ||
     documentMedia.length > 0 ||
-    pendingDocuments.length > 0;
+    pendingDocuments.length > 0 ||
+    extraAttachmentCount > 0;
 
   if (!hasPreviewItems) return null;
 
@@ -56,6 +62,7 @@ export const Preview = ({
         pendingDocuments={pendingDocuments}
         triggerClassName="px-4"
       />
+      {extraPreview}
     </View>
   );
 };

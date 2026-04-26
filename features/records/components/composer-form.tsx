@@ -1,5 +1,4 @@
 import { AttachmentSummary } from '@/features/records/components/attachment-summary';
-import { useSubmitOnTouchRelease } from '@/features/records/hooks/use-submit-on-touch-release';
 import { readTextareaBlurText } from '@/features/records/lib/read-textarea-blur-text';
 import { useVirtualKeyboardVisible } from '@/hooks/use-virtual-keyboard-visible';
 import { Button } from '@/ui/button';
@@ -7,8 +6,6 @@ import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
-
-const WEB_MEDIA_PREVIEW_RESTORE_DELAY_MS = 250;
 
 export const ComposerForm = ({
   attachmentCount,
@@ -48,60 +45,27 @@ export const ComposerForm = ({
   toolbar: React.ReactNode;
 }) => {
   const shouldAutoFocus = Platform.OS !== 'web';
-
-  const mediaPreviewRestoreTimeoutRef = React.useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
   const isComposerCompact = isTextareaFocused && isVirtualKeyboardVisible;
 
-  const clearMediaPreviewRestoreTimeout = React.useCallback(() => {
-    if (!mediaPreviewRestoreTimeoutRef.current) return;
-    clearTimeout(mediaPreviewRestoreTimeoutRef.current);
-    mediaPreviewRestoreTimeoutRef.current = null;
-  }, []);
-
-  React.useEffect(
-    () => clearMediaPreviewRestoreTimeout,
-    [clearMediaPreviewRestoreTimeout]
-  );
-
   React.useEffect(() => {
     if (isOpen) return;
-    clearMediaPreviewRestoreTimeout();
     onTextareaFocusChange(false);
-  }, [clearMediaPreviewRestoreTimeout, isOpen, onTextareaFocusChange]);
+  }, [isOpen, onTextareaFocusChange]);
 
   const handleTextareaFocus = React.useCallback(() => {
-    clearMediaPreviewRestoreTimeout();
     onTextareaFocusChange(true);
-  }, [clearMediaPreviewRestoreTimeout, onTextareaFocusChange]);
+  }, [onTextareaFocusChange]);
 
   const handleTextareaBlur = React.useCallback(
     (event: unknown) => {
       const rawText = readTextareaBlurText(event, text);
       const nextText = rawText.trim();
       if (nextText !== rawText || nextText !== text) onChangeText(nextText);
-      clearMediaPreviewRestoreTimeout();
-
-      if (Platform.OS !== 'web') {
-        onTextareaFocusChange(false);
-        return;
-      }
-
-      mediaPreviewRestoreTimeoutRef.current = setTimeout(() => {
-        mediaPreviewRestoreTimeoutRef.current = null;
-        onTextareaFocusChange(false);
-      }, WEB_MEDIA_PREVIEW_RESTORE_DELAY_MS);
+      onTextareaFocusChange(false);
     },
-    [clearMediaPreviewRestoreTimeout, onChangeText, onTextareaFocusChange, text]
+    [onChangeText, onTextareaFocusChange, text]
   );
-
-  const submitHandlers = useSubmitOnTouchRelease({
-    enabled: isTextareaFocused,
-    onSubmit,
-  });
 
   return (
     <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
@@ -132,10 +96,10 @@ export const ComposerForm = ({
           <Button
             className="active:opacity-90 web:hover:opacity-90"
             disabled={isBusy || isSubmitting || !hasContent}
+            onPress={onSubmit}
             size="xs"
             style={logColor ? { backgroundColor: logColor } : undefined}
             variant={submitVariant}
-            {...submitHandlers}
           >
             <Text className={submitTextClassName}>
               {isSubmitting ? 'Saving…' : submitLabel}

@@ -47,14 +47,16 @@ export const Sheet = ({
 }) => {
   const inset = useSafeAreaInsets();
   const windowDimensions = useWindowDimensions();
+  const sheetContentRef = React.useRef<React.ComponentRef<typeof View>>(null);
+  const sheetStack = useSheetStack({ layer, onDismiss, open });
 
   const platformLayout = useSheetPlatformLayout({
+    activeElementRootRef: sheetContentRef,
     bottomInset: inset.bottom,
+    keyboardAvoidingEnabled: sheetStack.isTopSheet,
     open,
     windowHeight: windowDimensions.height,
   });
-
-  useSheetStack({ layer, onDismiss, open });
 
   const webOverlayStyle = React.useMemo(
     () => ({
@@ -100,6 +102,7 @@ export const Sheet = ({
         style={platformLayout.keyboardAvoidingStyle}
       >
         <View
+          ref={sheetContentRef}
           className={cn(
             'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t',
             loading && 'min-h-32',

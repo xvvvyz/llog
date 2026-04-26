@@ -35,6 +35,7 @@ app.post(
           user: { $: { fields: ['id'] } },
         },
         media: { $: { fields: ['id'] } },
+        links: { $: { fields: ['id'] } },
         record: {
           $: { fields: ['id'] },
           log: {
@@ -88,7 +89,9 @@ app.post(
     }
 
     const trimmedText = text.trim();
-    const hasContent = !!trimmedText || !!reply.media?.length;
+
+    const hasContent =
+      !!trimmedText || !!reply.media?.length || !!reply.links?.length;
 
     if (
       !hasContent ||

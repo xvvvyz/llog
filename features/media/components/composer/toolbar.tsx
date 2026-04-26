@@ -1,5 +1,6 @@
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import type * as React from 'react';
 import { Platform } from 'react-native';
 
 import {
@@ -12,19 +13,22 @@ import {
 
 export const Toolbar = ({
   canAddAudio,
+  leadingItems,
   onBrowseMedia,
   onCaptureMedia,
   onOpenAudio,
   onPickDocuments,
 }: {
   canAddAudio: boolean;
+  leadingItems?: React.ReactNode;
   onBrowseMedia: () => void | Promise<void>;
   onCaptureMedia: () => void | Promise<void>;
   onOpenAudio: () => void;
   onPickDocuments: () => void | Promise<void>;
-}) =>
-  Platform.OS === 'web' ? (
+}) => {
+  return Platform.OS === 'web' ? (
     <>
+      {leadingItems}
       <Button onPress={onPickDocuments} size="icon-sm" variant="secondary">
         <Icon icon={Plus} />
       </Button>
@@ -39,6 +43,7 @@ export const Toolbar = ({
     </>
   ) : (
     <>
+      {leadingItems}
       <Button onPress={onPickDocuments} size="icon-sm" variant="secondary">
         <Icon icon={Paperclip} />
       </Button>
@@ -60,3 +65,4 @@ export const Toolbar = ({
       </Button>
     </>
   );
+};

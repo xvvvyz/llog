@@ -2,8 +2,10 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useMediaComposer } from '@/features/media/hooks/use-composer';
 import type { PickedMediaAsset } from '@/features/media/lib/picked';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
+import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
+import type { RecordSheetParent } from '@/features/records/lib/sheet-payloads';
 import { deleteReplyMedia } from '@/features/records/mutations/delete-reply-media';
 import { publishReply } from '@/features/records/mutations/publish-reply';
 import { uploadReplyMedia } from '@/features/records/mutations/upload-reply-media';
@@ -34,7 +36,7 @@ export const useReplyComposerModel = () => {
 
   const { data: editData } = db.useQuery(
     editReplyId
-      ? { replies: { $: { where: { id: editReplyId } }, media: {} } }
+      ? { replies: { $: { where: { id: editReplyId } }, media: {}, links: {} } }
       : null
   );
 
@@ -47,6 +49,7 @@ export const useReplyComposerModel = () => {
   const replyId = reply?.id;
   const isOpen = sheetManager.isOpen('reply-create');
   const currentText = reply?.text ?? '';
+  const links = reply?.links ?? [];
 
   const { latestTextRef, setLatestText } = useComposerLatestText({
     isTextareaFocused,
@@ -67,7 +70,21 @@ export const useReplyComposerModel = () => {
     [recordId, replyId]
   );
 
+  const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
+    () =>
+      replyId && recordId
+        ? { id: replyId, recordId, type: 'reply' }
+        : undefined,
+    [recordId, replyId]
+  );
+
+  const { linkAttachmentCount, linkPreview, linkToolbarItems } =
+    useComposerLinkAttachments({ links, parent: attachmentParent });
+
   const { isBusy, mediaCount, mediaPreview, toolbar } = useMediaComposer({
+    extraAttachmentCount: linkAttachmentCount,
+    extraPreview: linkPreview,
+    extraToolbarItems: linkToolbarItems,
     isOpen,
     media: reply?.media ?? [],
     onDeleteMedia: handleDeleteMedia,

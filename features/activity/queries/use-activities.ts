@@ -35,8 +35,8 @@ export const useActivities = () => {
             },
             actor: { image: {}, logs: { $: { fields: ['id'] } } },
             team: { image: {} },
-            record: { media: {} },
-            reply: { media: {} },
+            record: { media: {}, links: {} },
+            reply: { media: {}, links: {} },
             log: {},
           },
         }

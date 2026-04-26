@@ -20,6 +20,7 @@ export const useRecordDraft = ({
           records: {
             $: { where: { author: profile.id, log: logId, isDraft: true } },
             media: {},
+            links: {},
             log: { $: { fields: ['id'] } },
           },
         }
@@ -42,5 +43,6 @@ export const useRecordDraft = ({
   }, [draftIsLoading, log.isLoading, log.teamId, logId, record, profile.id]);
 
   const media = record?.media ?? [];
-  return { ...record, media, isLoading: draftIsLoading };
+  const links = record?.links ?? [];
+  return { ...record, links, media, isLoading: draftIsLoading };
 };

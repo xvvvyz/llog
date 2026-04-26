@@ -10,6 +10,8 @@ import { LogTagsSheet } from '@/features/logs/components/tags-sheet';
 import { RecordAudioSheet } from '@/features/records/components/audio-sheet';
 import { RecordCreateSheet } from '@/features/records/components/create-sheet';
 import { RecordDeleteSheet } from '@/features/records/components/delete-sheet';
+import { LinkAttachmentsSheet } from '@/features/records/components/link-attachments-sheet';
+import { LinkEditorSheet } from '@/features/records/components/link-editor-sheet';
 import { ReplyCreateSheet } from '@/features/records/components/reply-create-sheet';
 import { ReplyDeleteSheet } from '@/features/records/components/reply-delete-sheet';
 import { TeamDeleteSheet } from '@/features/teams/components/delete-sheet';
@@ -54,6 +56,8 @@ export default function Layout() {
       <RecordAudioSheet />
       <RecordCreateSheet />
       <RecordDeleteSheet />
+      <LinkAttachmentsSheet />
+      <LinkEditorSheet />
       <LogDeleteSheet />
       <TagDeleteSheet />
       <TeamDeleteSheet />

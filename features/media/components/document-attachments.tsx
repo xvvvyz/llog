@@ -96,25 +96,42 @@ const getDocumentAttachmentItems = ({
 
 export const DocumentAttachments = ({
   className,
+  documents,
+  hideTrigger,
+  onDeleteMedia,
+  onSheetOpenChange,
+  pendingDocuments = NO_PENDING_DOCUMENTS,
+  portalName,
+  sheetOpen,
   triggerClassName,
   triggerIconClassName,
-  documents,
-  onDeleteMedia,
-  pendingDocuments = NO_PENDING_DOCUMENTS,
 }: {
   className?: string;
   documents: Media[];
+  hideTrigger?: boolean;
   onDeleteMedia?: (mediaId: string) => void;
+  onSheetOpenChange?: (open: boolean) => void;
   pendingDocuments?: mediaComposer.PendingDocumentUpload[];
+  portalName?: string;
+  sheetOpen?: boolean;
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
-  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
   const sheetId = React.useId();
+  const isSheetOpen = sheetOpen ?? localSheetOpen;
 
   const sheetPortalName = React.useMemo(
-    () => `document-attachments-${sheetId.replace(/:/g, '')}`,
-    [sheetId]
+    () => portalName ?? `document-attachments-${sheetId.replace(/:/g, '')}`,
+    [portalName, sheetId]
+  );
+
+  const setIsSheetOpen = React.useCallback(
+    (open: boolean) => {
+      onSheetOpenChange?.(open);
+      if (sheetOpen === undefined) setLocalSheetOpen(open);
+    },
+    [onSheetOpenChange, sheetOpen]
   );
 
   const items = React.useMemo(
@@ -128,8 +145,13 @@ export const DocumentAttachments = ({
   const singleMediaItem =
     items.length === 1 && firstItem?.type === 'media' ? firstItem.item : null;
 
+  const hasPendingDocuments = pendingDocuments.length > 0;
   const canOpenSingleDocument = !!singleMediaItem && !onDeleteMedia;
   const canDeleteSingleDocument = !!onDeleteMedia && items.length === 1;
+
+  const shouldRenderSheet =
+    !canDeleteSingleDocument || hideTrigger || isSheetOpen;
+
   const showSummarySize = items.length === 1;
   const firstDocumentName = firstItem ? getDocumentName(firstItem.item) : null;
 
@@ -154,6 +176,10 @@ export const DocumentAttachments = ({
     }
   }, []);
 
+  const handleOpenSheet = React.useCallback(() => {
+    setIsSheetOpen(true);
+  }, [setIsSheetOpen]);
+
   const handleDeleteDocument = React.useCallback(
     (mediaId: string) => {
       onDeleteMedia?.(mediaId);
@@ -166,7 +192,7 @@ export const DocumentAttachments = ({
 
   return (
     <View className={cn('gap-2', className)}>
-      {canDeleteSingleDocument && firstItem ? (
+      {hideTrigger ? null : canDeleteSingleDocument && firstItem ? (
         <View
           className={cn(
             'flex-row h-8 w-full -my-2.5 gap-4 justify-between px-4',
@@ -243,7 +269,7 @@ export const DocumentAttachments = ({
         </Button>
       ) : (
         <Button
-          onPress={() => setIsSheetOpen(true)}
+          onPress={handleOpenSheet}
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           className={cn(
@@ -264,13 +290,16 @@ export const DocumentAttachments = ({
             </Text>
           </View>
           {moreDocumentsText ? (
-            <View className="shrink-0">
+            <View className="flex-row gap-2 items-center shrink-0">
               <Text
                 className="font-normal text-placeholder text-sm"
                 numberOfLines={1}
               >
                 {moreDocumentsText}
               </Text>
+              {hasPendingDocuments && (
+                <Spinner className="scale-[0.8]" size="small" />
+              )}
             </View>
           ) : (
             showSummarySize && (
@@ -286,7 +315,7 @@ export const DocumentAttachments = ({
           )}
         </Button>
       )}
-      {!canDeleteSingleDocument && (
+      {shouldRenderSheet && (
         <Sheet
           onDismiss={() => setIsSheetOpen(false)}
           open={isSheetOpen}
