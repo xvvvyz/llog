@@ -1,20 +1,12 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
 import * as videoPreload from '@/features/media/lib/video-preload';
+import type { VideoPlayerHandle } from '@/features/media/types/video-player';
 import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import { Spinner } from '@/ui/spinner';
 import HlsClient, { Events as HlsEvents } from 'hls.js';
 import * as React from 'react';
-
-export interface VideoPlayerHandle {
-  pause: () => void;
-  play: () => void;
-  seekTo: (seconds: number) => void;
-  setScrubbingEnabled: (enabled: boolean) => void;
-  toggleMute: () => boolean;
-  togglePlay: () => boolean;
-}
 
 const isHlsClientSupported = () => HlsClient['isSupported']();
 

@@ -1,5 +1,5 @@
-import type { VideoPlayerHandle } from '@/features/media/components/video-player';
 import { Media } from '@/features/media/types/media';
+import type { VideoPlayerHandle } from '@/features/media/types/video-player';
 import { db } from '@/lib/db';
 import { useUi } from '@/queries/use-ui';
 import * as React from 'react';

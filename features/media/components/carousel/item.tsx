@@ -1,7 +1,8 @@
-import * as video from '@/features/media/components/video-player';
+import { VideoPlayer } from '@/features/media/components/video-player';
 import { ZoomableMedia } from '@/features/media/components/zoomable';
 import * as carouselHelpers from '@/features/media/lib/carousel';
 import { Media } from '@/features/media/types/media';
+import type { VideoPlayerHandle } from '@/features/media/types/video-player';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Play } from 'phosphor-react-native';
@@ -30,7 +31,7 @@ type ItemProps = {
   resetZoomToken: number;
   setIsPlaying: (isPlaying: boolean) => void;
   shouldAutoPlay: boolean;
-  videoHandleRef: React.RefObject<video.VideoPlayerHandle | null>;
+  videoHandleRef: React.RefObject<VideoPlayerHandle | null>;
   visibleIndex: number;
 };
 
@@ -161,7 +162,7 @@ const CarouselVideoItem = ({
   resetZoomToken: number;
   setIsPlaying: (isPlaying: boolean) => void;
   shouldAutoPlay: boolean;
-  videoHandleRef: React.RefObject<video.VideoPlayerHandle | null>;
+  videoHandleRef: React.RefObject<VideoPlayerHandle | null>;
 }) => {
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const hasReportedActiveLoadRef = React.useRef(false);
@@ -209,7 +210,7 @@ const CarouselVideoItem = ({
               onPress={isActive ? onTogglePlay : undefined}
               style={{ width: contentWidth, height: contentHeight }}
             >
-              <video.VideoPlayer
+              <VideoPlayer
                 autoPlay={isActive && shouldAutoPlay}
                 handleRef={isActive ? videoHandleRef : undefined}
                 maxHeight={contentHeight}

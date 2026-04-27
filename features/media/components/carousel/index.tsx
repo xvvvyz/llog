@@ -1,13 +1,13 @@
 import { Dots } from '@/features/media/components/carousel/dots';
 import { Item } from '@/features/media/components/carousel/item';
 import { VideoControls } from '@/features/media/components/carousel/video-controls';
-import type { VideoPlayerHandle } from '@/features/media/components/video-player';
 import { useCarouselLayout } from '@/features/media/hooks/use-carousel-layout';
 import { useCarouselMediaState } from '@/features/media/hooks/use-carousel-media-state';
 import { useCarouselPreloading } from '@/features/media/hooks/use-carousel-preloading';
 import { useCarouselVideoControls } from '@/features/media/hooks/use-carousel-video-controls';
 import * as carouselHelpers from '@/features/media/lib/carousel';
 import { Media } from '@/features/media/types/media';
+import type { VideoPlayerHandle } from '@/features/media/types/video-player';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';

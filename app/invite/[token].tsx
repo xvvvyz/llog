@@ -1,5 +1,6 @@
 import * as storage from '@/features/invites/lib/storage';
 import { redeemInviteLink } from '@/features/invites/mutations/redeem-link';
+import type { InviteLinkInfo } from '@/features/invites/types/invite-link';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { alert } from '@/lib/alert';
@@ -19,22 +20,6 @@ import { ArrowRight, WarningCircle } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
-interface Member {
-  avatarSeedId?: string;
-  id: string;
-  name?: string;
-  image?: string;
-}
-
-interface LinkInfo {
-  isValid: boolean;
-  teamId?: string;
-  teamName?: string;
-  role?: string;
-  logNames?: string[];
-  members?: Member[];
-}
-
 const renderLogNames = (names: string[]) =>
   names.map((name, i) => (
     <React.Fragment key={`${name}-${i}`}>
@@ -47,7 +32,7 @@ export default function InviteLink() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const auth = db.useAuth();
   const { teams, isLoading: teamsLoading } = useTeams();
-  const [linkInfo, setLinkInfo] = React.useState<LinkInfo | null>(null);
+  const [linkInfo, setLinkInfo] = React.useState<InviteLinkInfo | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
 

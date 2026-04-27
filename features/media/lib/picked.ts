@@ -1,7 +1,8 @@
+import type { MediaKind } from '@/features/media/types/media-kind';
 import type { DocumentPickerAsset } from 'expo-document-picker';
 import type { ImagePickerAsset } from 'expo-image-picker';
 
-export type PickedMediaType = 'audio' | 'document' | 'image' | 'video';
+export type PickedMediaType = MediaKind;
 
 export type PickedMediaAsset = {
   file?: File;

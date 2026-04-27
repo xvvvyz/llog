@@ -3,13 +3,13 @@ import * as cloudflareStream from '@/api/files/cloudflare-stream';
 import { deleteMediaAssets } from '@/api/files/delete-media-assets';
 import { type Db } from '@/api/middleware/db';
 import { fileLike } from '@/features/media/types/file-like';
+import type { MediaKind } from '@/features/media/types/media-kind';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { bodyLimit } from 'hono/body-limit';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
-type MediaKind = 'image' | 'audio' | 'document' | 'video';
 type MultipartMediaKind = Exclude<MediaKind, 'video'>;
 const PENDING_STREAM_URI_PREFIX = 'stream-pending:';
 const MAX_STREAM_UPLOAD_DURATION_SECONDS = 36000;

@@ -1,5 +1,6 @@
 import { auth, db } from '@/api/middleware/db';
 import { memberJoinedActivity } from '@/api/teams/member-actions';
+import type { InviteLinkInfo } from '@/features/invites/types/invite-link';
 import * as permissions from '@/features/teams/lib/permissions';
 import { Role } from '@/features/teams/types/role';
 import { id } from '@instantdb/admin';
@@ -56,10 +57,10 @@ app.get('/:token', db(), async (c) => {
     isValid: true,
     teamId: link.team?.id,
     teamName: link.team?.name,
-    role: link.role,
+    role: link.role as Role,
     logNames: link.logs?.map((log) => log.name) ?? [],
     members: uniqueMembers,
-  });
+  } satisfies InviteLinkInfo);
 });
 
 app.post('/:token/redeem', db(), auth(), async (c) => {

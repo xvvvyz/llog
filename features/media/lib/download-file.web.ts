@@ -1,11 +1,5 @@
+import type { DownloadFileOptions } from '@/features/media/types/download-file';
 import { isTouchWeb } from '@/lib/touch-web';
-
-export type DownloadFileOptions = {
-  blob?: Blob;
-  fileName?: string;
-  mimeType?: string;
-  url?: string;
-};
 
 type SaveFilePickerOptions = {
   suggestedName?: string;

@@ -1,6 +1,7 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
 import * as videoPreload from '@/features/media/lib/video-preload';
+import type { VideoPlayerHandle } from '@/features/media/types/video-player';
 import { UI } from '@/theme/ui';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
@@ -21,15 +22,6 @@ const SCRUB_SEEK_TOLERANCE = {
 const SCRUB_PREVIEW_SEEK_INTERVAL_MS = 40;
 const SCRUB_PREVIEW_STEP_SECONDS = 0.05;
 const SCRUB_PREVIEW_MIN_DELTA_SECONDS = 0.03;
-
-export interface VideoPlayerHandle {
-  pause: () => void;
-  play: () => void;
-  seekTo: (seconds: number) => void;
-  setScrubbingEnabled: (enabled: boolean) => void;
-  toggleMute: () => boolean;
-  togglePlay: () => boolean;
-}
 
 export const VideoPlayer = ({
   autoPlay,
