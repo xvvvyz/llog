@@ -62,7 +62,10 @@ function parseOptions(): Options {
 }
 
 function gitFiles(args: string[]) {
-  return execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' })
+  return execFileSync('git', ['-c', `safe.directory=${repoRoot}`, ...args], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
     .split('\n')
     .filter(Boolean);
 }
