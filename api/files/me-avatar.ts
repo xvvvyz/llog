@@ -1,8 +1,8 @@
 import * as cloudflareImages from '@/api/files/cloudflare-images';
-import { deleteMediaAssets } from '@/api/files/delete-media-assets';
-import * as upload from '@/api/files/media-upload';
+import { deleteFileAssets } from '@/api/files/delete-file-assets';
+import * as upload from '@/api/files/file-upload';
 import { db } from '@/api/middleware/db';
-import { fileLike } from '@/features/media/types/file-like';
+import { fileLike } from '@/features/files/types/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
@@ -34,11 +34,11 @@ app.put(
     }
 
     if (profile.image) {
-      await c.var.db.transact(c.var.db.tx.media[profile.image.id].delete());
-      await deleteMediaAssets(c.env, [profile.image]);
+      await c.var.db.transact(c.var.db.tx.files[profile.image.id].delete());
+      await deleteFileAssets(c.env, [profile.image]);
     }
 
-    const mediaId = id();
+    const fileId = id();
 
     const stored = await cloudflareImages.uploadImage({
       creator: c.var.user.id,
@@ -47,7 +47,7 @@ app.put(
     });
 
     await c.var.db.transact(
-      c.var.db.tx.media[mediaId]
+      c.var.db.tx.files[fileId]
         .update({
           assetKey: cloudflareImages.storeImageDeliveryUrl(stored.deliveryUrl),
           type: 'image',
@@ -71,8 +71,8 @@ app.delete('/me/avatar', db({ asUser: true }), async (c) => {
   const profile = result.profiles?.[0];
 
   if (profile.image) {
-    await c.var.db.transact(c.var.db.tx.media[profile.image.id].delete());
-    await deleteMediaAssets(c.env, [profile.image]);
+    await c.var.db.transact(c.var.db.tx.files[profile.image.id].delete());
+    await deleteFileAssets(c.env, [profile.image]);
   }
 
   return c.json({ success: true });

@@ -17,11 +17,11 @@ export const finalizeStreamVideo = async ({
 }) => {
   const adminDb = getAdminDb(env);
 
-  const { media } = await adminDb.query({
-    media: { $: { where: { assetKey: streamUid } } },
+  const { files } = await adminDb.query({
+    files: { $: { where: { assetKey: streamUid } } },
   });
 
-  const items = media.filter((item) => item.id);
+  const items = files.filter((item) => item.id);
   if (!items.length) return;
 
   try {
@@ -36,7 +36,7 @@ export const finalizeStreamVideo = async ({
 
     await adminDb.transact(
       items.map((item) =>
-        adminDb.tx.media[item.id].update({
+        adminDb.tx.files[item.id].update({
           assetKey: streamUid,
           ...(resolvedDuration != null ? { duration: resolvedDuration } : {}),
           thumbnailUri: thumbnailUri ?? undefined,

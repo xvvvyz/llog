@@ -19,7 +19,7 @@ export const useRecordDraft = ({
       ? {
           records: {
             $: { where: { author: profile.id, log: logId, isDraft: true } },
-            media: {},
+            files: {},
             links: {},
             log: { $: { fields: ['id'] } },
           },
@@ -42,7 +42,7 @@ export const useRecordDraft = ({
     createRecordDraft({ logId, profileId: profile.id, teamId: log.teamId });
   }, [draftIsLoading, log.isLoading, log.teamId, logId, record, profile.id]);
 
-  const media = record?.media ?? [];
+  const files = record?.files ?? [];
   const links = record?.links ?? [];
-  return { ...record, links, media, isLoading: draftIsLoading };
+  return { ...record, links, files, isLoading: draftIsLoading };
 };

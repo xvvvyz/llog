@@ -1,5 +1,5 @@
 import { ItemContent } from '@/features/activity/components/item-content';
-import { ItemMedia } from '@/features/activity/components/item-media';
+import { ItemFiles } from '@/features/activity/components/item-files';
 import { ItemName } from '@/features/activity/components/item-name';
 import { QuotedRecord } from '@/features/activity/components/quoted-record';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
@@ -43,11 +43,11 @@ export const Item = ({
     openRecordDetail(record?.id);
   };
 
-  const mediaSource =
+  const fileSource =
     group.type === 'record_published'
-      ? first.record?.media
+      ? first.record?.files
       : group.type === 'reply_posted'
-        ? first.reply?.media
+        ? first.reply?.files
         : undefined;
 
   const linkSource =
@@ -57,24 +57,24 @@ export const Item = ({
         ? first.reply?.links
         : undefined;
 
-  const mediaProps =
+  const fileProps =
     group.type === 'record_published'
-      ? { links: linkSource, media: mediaSource, recordId: record?.id }
+      ? { links: linkSource, files: fileSource, recordId: record?.id }
       : group.type === 'reply_posted'
-        ? { links: linkSource, media: mediaSource, recordId: record?.id }
+        ? { links: linkSource, files: fileSource, recordId: record?.id }
         : null;
 
-  const hasVisualMedia = mediaSource?.some(
+  const hasVisualFiles = fileSource?.some(
     (m) => m.type === 'image' || m.type === 'video'
   );
 
-  const hasAudioMedia = mediaSource?.some((m) => m.type === 'audio');
-  const hasDocumentMedia = mediaSource?.some((m) => m.type === 'document');
+  const hasAudioFiles = fileSource?.some((m) => m.type === 'audio');
+  const hasDocumentFiles = fileSource?.some((m) => m.type === 'document');
 
-  const mediaIsLast =
-    hasVisualMedia &&
-    !hasAudioMedia &&
-    !hasDocumentMedia &&
+  const filesAreLast =
+    hasVisualFiles &&
+    !hasAudioFiles &&
+    !hasDocumentFiles &&
     !linkSource?.length;
 
   const showQuotedRecord =
@@ -84,7 +84,7 @@ export const Item = ({
   const quotedRecordText = trimDisplayText(record?.text);
 
   const content = (
-    <Card className={cn('gap-4', !mediaIsLast && 'pb-4', className)}>
+    <Card className={cn('gap-4', !filesAreLast && 'pb-4', className)}>
       <View className="flex-row p-4 pb-0 gap-3 items-start">
         <Avatar
           avatar={actor?.image?.uri}
@@ -152,16 +152,16 @@ export const Item = ({
       {showQuotedRecord && (
         <View className="px-4">
           <QuotedRecord
+            files={record.files}
             links={record.links}
             logColor={logColor}
-            media={record.media}
             recordId={record.id}
             text={quotedRecordText}
           />
         </View>
       )}
       <ItemContent group={group} logColor={logColor} />
-      {mediaProps && <ItemMedia {...mediaProps} />}
+      {fileProps && <ItemFiles {...fileProps} />}
     </Card>
   );
 

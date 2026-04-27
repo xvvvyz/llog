@@ -13,6 +13,6 @@ export const getFileScope = (uri: string) => {
   return 'unknown';
 };
 
-export const getMediaR2Keys = (item: { assetKey?: string | null }) => [
+export const getFileR2Keys = (item: { assetKey?: string | null }) => [
   ...new Set([item.assetKey].filter(isR2Key)),
 ];

@@ -1,4 +1,4 @@
-import { deleteUnusedMediaAssets } from '@/api/files/delete-media-assets';
+import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db } from '@/api/middleware/db';
 import * as push from '@/api/push/web-push';
 import { deleteActivities } from '@/features/activity/lib/delete-activities';
@@ -45,7 +45,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
           },
         },
       },
-      media: { $: { fields: ['id'] } },
+      files: { $: { fields: ['id'] } },
       links: { $: { fields: ['id'] } },
     },
   });
@@ -74,7 +74,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
   const trimmedText = record.text?.trim() ?? '';
 
   const hasContent =
-    !!trimmedText || !!record.media?.length || !!record.links?.length;
+    !!trimmedText || !!record.files?.length || !!record.links?.length;
 
   if (!hasContent || !record.log?.id || !record.teamId || !record.author?.id) {
     throw new HTTPException(400, { message: 'Invalid record draft' });
@@ -138,7 +138,7 @@ app.post(
         author: { $: { fields: ['id'] }, user: { $: { fields: ['id'] } } },
         log: { $: { fields: ['id'] } },
         links: {},
-        media: {},
+        files: {},
       },
     });
 
@@ -215,24 +215,24 @@ app.post(
             })
             .link({ record: copiedRecordId })
         ),
-        ...(record.media ?? []).map((media) => {
-          if (!media.type || !media.uri) {
-            throw new HTTPException(400, { message: 'Invalid record media' });
+        ...(record.files ?? []).map((file) => {
+          if (!file.type || !file.uri) {
+            throw new HTTPException(400, { message: 'Invalid record file' });
           }
 
-          return c.var.db.tx.media[id()]
+          return c.var.db.tx.files[id()]
             .update({
-              ...(media.assetKey != null ? { assetKey: media.assetKey } : {}),
-              ...(media.duration != null ? { duration: media.duration } : {}),
-              ...(media.mimeType != null ? { mimeType: media.mimeType } : {}),
-              ...(media.name != null ? { name: media.name } : {}),
-              ...(media.order != null ? { order: media.order } : {}),
-              ...(media.size != null ? { size: media.size } : {}),
-              ...(media.thumbnailUri != null
-                ? { thumbnailUri: media.thumbnailUri }
+              ...(file.assetKey != null ? { assetKey: file.assetKey } : {}),
+              ...(file.duration != null ? { duration: file.duration } : {}),
+              ...(file.mimeType != null ? { mimeType: file.mimeType } : {}),
+              ...(file.name != null ? { name: file.name } : {}),
+              ...(file.order != null ? { order: file.order } : {}),
+              ...(file.size != null ? { size: file.size } : {}),
+              ...(file.thumbnailUri != null
+                ? { thumbnailUri: file.thumbnailUri }
                 : {}),
-              type: media.type,
-              uri: media.uri,
+              type: file.type,
+              uri: file.uri,
             })
             .link({ record: copiedRecordId });
         }),
@@ -256,8 +256,8 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
           roles: { $: { fields: ['role'], where: { userId: c.var.user.id } } },
         },
       },
-      media: {},
-      replies: { media: {}, activities: {} },
+      files: {},
+      replies: { files: {}, activities: {} },
       activities: {},
     },
   });
@@ -273,30 +273,30 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
 
   if (!canDelete) throw new HTTPException(403, { message: 'Forbidden' });
 
-  const mediaToDelete: Array<{
+  const filesToDelete: Array<{
     assetKey?: string | null;
     uri?: string | null;
   }> = [];
 
   const activities = [...(record.activities ?? [])];
 
-  for (const item of record.media ?? []) {
-    mediaToDelete.push(item);
+  for (const item of record.files ?? []) {
+    filesToDelete.push(item);
   }
 
   for (const reply of record.replies ?? []) {
     activities.push(...(reply.activities ?? []));
 
-    for (const item of reply.media ?? []) {
-      mediaToDelete.push(item);
+    for (const item of reply.files ?? []) {
+      filesToDelete.push(item);
     }
   }
 
   await c.var.db.transact(c.var.db.tx.records[recordId].delete());
 
   await Promise.all([
-    mediaToDelete.length
-      ? deleteUnusedMediaAssets(c.env, mediaToDelete)
+    filesToDelete.length
+      ? deleteUnusedFileAssets(c.env, filesToDelete)
       : undefined,
     deleteActivities(c.env, activities),
   ]);

@@ -10,11 +10,11 @@ export const useRecord = ({ id }: { id?: string }) => {
             replies: {
               $: { where: { isDraft: { $not: true } } },
               author: { image: {} },
-              media: {},
+              files: {},
               links: {},
               reactions: { author: {} },
             },
-            media: {},
+            files: {},
             links: {},
             log: {},
             reactions: { author: {} },
@@ -26,15 +26,20 @@ export const useRecord = ({ id }: { id?: string }) => {
   const records = data?.records ?? [];
   const record = records.find((item) => item.id === id);
   const hasStaleResult = !!id && records.length > 0 && !record;
-  const replies = record?.replies ?? [];
-  const media = record?.media ?? [];
+
+  const replies = (record?.replies ?? []).map((reply) => ({
+    ...reply,
+    files: reply.files ?? [],
+  }));
+
+  const files = record?.files ?? [];
   const links = record?.links ?? [];
 
   return {
     ...record,
     links,
     replies,
-    media,
+    files,
     isLoading: isLoading || hasStaleResult,
   };
 };

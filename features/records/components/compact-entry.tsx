@@ -1,5 +1,5 @@
-import { AudioPlaylist } from '@/features/media/components/audio-player';
-import { DocumentAttachments } from '@/features/media/components/document-attachments';
+import { AudioPlaylist } from '@/features/files/components/audio-player';
+import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { EntryMenu } from '@/features/records/components/entry-menu';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
@@ -17,7 +17,7 @@ export const CompactEntry = ({
   accentColor,
   audioMedia,
   className,
-  documentMedia,
+  documentFiles,
   links,
   logId,
   numberOfLines,
@@ -87,10 +87,10 @@ export const CompactEntry = ({
               <AudioPlaylist clips={audioMedia} />
             </View>
           )}
-          {documentMedia.length > 0 && (
+          {documentFiles.length > 0 && (
             <DocumentAttachments
               className="mt-4"
-              documents={documentMedia}
+              documents={documentFiles}
               triggerClassName="pl-0"
               triggerIconClassName="ml-1.5"
             />

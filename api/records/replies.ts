@@ -1,4 +1,4 @@
-import { deleteUnusedMediaAssets } from '@/api/files/delete-media-assets';
+import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db } from '@/api/middleware/db';
 import * as push from '@/api/push/web-push';
 import { deleteActivities } from '@/features/activity/lib/delete-activities';
@@ -34,7 +34,7 @@ app.post(
           $: { fields: ['id', 'name'] },
           user: { $: { fields: ['id'] } },
         },
-        media: { $: { fields: ['id'] } },
+        files: { $: { fields: ['id'] } },
         links: { $: { fields: ['id'] } },
         record: {
           $: { fields: ['id'] },
@@ -91,7 +91,7 @@ app.post(
     const trimmedText = text.trim();
 
     const hasContent =
-      !!trimmedText || !!reply.media?.length || !!reply.links?.length;
+      !!trimmedText || !!reply.files?.length || !!reply.links?.length;
 
     if (
       !hasContent ||
@@ -163,7 +163,7 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
           },
         },
       },
-      media: {},
+      files: {},
       activities: {},
     },
   });
@@ -181,20 +181,20 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
 
   if (!canDelete) throw new HTTPException(403, { message: 'Forbidden' });
 
-  const mediaToDelete: Array<{
+  const filesToDelete: Array<{
     assetKey?: string | null;
     uri?: string | null;
   }> = [];
 
-  for (const item of reply.media ?? []) {
-    mediaToDelete.push(item);
+  for (const item of reply.files ?? []) {
+    filesToDelete.push(item);
   }
 
   await c.var.db.transact(c.var.db.tx.replies[replyId].delete());
 
   await Promise.all([
-    mediaToDelete.length
-      ? deleteUnusedMediaAssets(c.env, mediaToDelete)
+    filesToDelete.length
+      ? deleteUnusedFileAssets(c.env, filesToDelete)
       : undefined,
     deleteActivities(c.env, reply.activities ?? []),
   ]);

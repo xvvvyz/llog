@@ -1,5 +1,5 @@
+import * as audioPlaybackRateUtils from '@/features/files/lib/audio-playback-rate';
 import { SortBy, isSortBy } from '@/features/logs/components/list-actions';
-import * as audioPlaybackRateUtils from '@/features/media/lib/audio-playback-rate';
 import { db } from '@/lib/db';
 import { Emoji, isEmoji } from '@/types/emoji';
 import { SortDirection, isSortDirection } from '@/ui/dropdown-menu';

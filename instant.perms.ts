@@ -98,7 +98,7 @@ const rules = {
       },
     },
   },
-  media: {
+  files: {
     bind: [
       'hasOneLink',
       "size(data.ref('record.id')) + size(data.ref('reply.id')) + size(data.ref('profile.id')) + size(data.ref('team.id')) == 1",
@@ -132,15 +132,15 @@ const rules = {
       canManageFor('record.log.team.id'),
       'canManageReply',
       canManageFor('reply.record.log.team.id'),
-      'canViewRecordMedia',
+      'canViewRecordFiles',
       'isRecordTeamMember && (canManageRecord || isRecordLogMember)',
-      'canViewReplyMedia',
+      'canViewReplyFiles',
       'isReplyTeamMember && (canManageReply || isReplyLogMember)',
       'isTeammate',
       "auth.id in data.ref('profile.user.roles.team.roles.user.id')",
     ],
     allow: {
-      view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordMedia || canViewReplyMedia',
+      view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordFiles || canViewReplyFiles',
       create: 'hasOneLink && (isProfileOwner || isTeamImageManager)',
       update:
         'hasOneLink && isDocument && onlyModifiesDocumentName && isValidDocumentName && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)',

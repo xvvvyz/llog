@@ -1,9 +1,9 @@
-import { AudioPlaylist } from '@/features/media/components/audio-player';
-import { DocumentAttachments } from '@/features/media/components/document-attachments';
-import { useFilteredMedia } from '@/features/media/hooks/use-filtered-media';
-import { useMediaLightbox } from '@/features/media/hooks/use-lightbox';
-import * as visualMedia from '@/features/media/lib/visual-media';
-import { Media } from '@/features/media/types/media';
+import { AudioPlaylist } from '@/features/files/components/audio-player';
+import { DocumentAttachments } from '@/features/files/components/document-attachments';
+import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
+import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
+import * as visualMedia from '@/features/files/lib/visual-media';
+import { FileItem } from '@/features/files/types/file';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { Link } from '@/features/records/types/link';
@@ -20,33 +20,33 @@ import { Pressable, ScrollView, View } from 'react-native';
 export const QuotedRecord = ({
   logColor,
   links = [],
-  media,
+  files,
   recordId,
   text,
 }: {
   links?: Link[];
   logColor: { lighter: string; default: string; darker: string } | null;
-  media?: Media[];
+  files?: FileItem[];
   recordId?: string;
   text?: string;
 }) => {
   const {
     audioMedia,
-    documentMedia,
+    documentFiles,
     visualMedia: visualItems,
-  } = useFilteredMedia(media || []);
+  } = useFilteredFiles(files || []);
 
   const displayText = trimDisplayText(text);
   const { openMediaLightbox } = useMediaLightbox({ recordId });
-  const hasAudioMedia = audioMedia.length > 0;
-  const hasDocumentMedia = documentMedia.length > 0;
+  const hasAudioFiles = audioMedia.length > 0;
+  const hasDocumentFiles = documentFiles.length > 0;
   const hasLinks = links.length > 0;
 
   if (
     !displayText &&
     !visualItems.length &&
-    !hasAudioMedia &&
-    !hasDocumentMedia &&
+    !hasAudioFiles &&
+    !hasDocumentFiles &&
     !hasLinks
   ) {
     return null;
@@ -57,7 +57,7 @@ export const QuotedRecord = ({
       <View
         className={cn(
           'bg-input max-w-full min-w-0 overflow-hidden rounded-xl',
-          hasAudioMedia || hasDocumentMedia || hasLinks
+          hasAudioFiles || hasDocumentFiles || hasLinks
             ? 'w-full self-stretch'
             : 'self-start'
         )}
@@ -127,12 +127,12 @@ export const QuotedRecord = ({
             </View>
           </ScrollView>
         )}
-        {hasAudioMedia && (
+        {hasAudioFiles && (
           <View
             className={cn(
               'gap-2 px-3 pb-3',
               !displayText && !visualItems.length && 'pt-3',
-              (hasDocumentMedia || hasLinks) && 'pb-0'
+              (hasDocumentFiles || hasLinks) && 'pb-0'
             )}
           >
             <AudioPlaylist
@@ -142,14 +142,14 @@ export const QuotedRecord = ({
             />
           </View>
         )}
-        {hasDocumentMedia && (
+        {hasDocumentFiles && (
           <DocumentAttachments
-            documents={documentMedia}
+            documents={documentFiles}
             triggerClassName="px-3"
             triggerIconClassName="-ml-px"
             className={cn(
               hasLinks ? 'pb-0' : 'pb-3',
-              !displayText && !visualItems.length && !hasAudioMedia && 'pt-3'
+              !displayText && !visualItems.length && !hasAudioFiles && 'pt-3'
             )}
           />
         )}
@@ -160,11 +160,11 @@ export const QuotedRecord = ({
             triggerIconClassName="-ml-px"
             className={cn(
               'pb-3',
-              hasDocumentMedia && 'pt-4',
+              hasDocumentFiles && 'pt-4',
               !displayText &&
                 !visualItems.length &&
-                !hasAudioMedia &&
-                !hasDocumentMedia &&
+                !hasAudioFiles &&
+                !hasDocumentFiles &&
                 'pt-3'
             )}
           />

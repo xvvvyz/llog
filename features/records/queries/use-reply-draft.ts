@@ -23,7 +23,7 @@ export const useReplyDraft = ({
             $: {
               where: { author: profile.id, record: recordId, isDraft: true },
             },
-            media: {},
+            files: {},
             links: {},
             record: { $: { fields: ['id'] } },
           },
@@ -60,7 +60,7 @@ export const useReplyDraft = ({
     profile.id,
   ]);
 
-  const media = reply?.media ?? [];
+  const files = reply?.files ?? [];
   const links = reply?.links ?? [];
-  return { ...reply, links, media, isLoading: draftIsLoading };
+  return { ...reply, links, files, isLoading: draftIsLoading };
 };

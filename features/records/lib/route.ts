@@ -6,9 +6,9 @@ export const getLogHref = (logId: string) =>
 export const getRecordDetailHref = (recordId: string) =>
   `/records/${encodeURIComponent(recordId)}` as Href;
 
-export const getRecordMediaHref = (recordId: string, mediaId: string) =>
-  `/records/${encodeURIComponent(recordId)}/media/${encodeURIComponent(
-    mediaId
+export const getRecordMediaHref = (recordId: string, fileId: string) =>
+  `/records/${encodeURIComponent(recordId)}/files/${encodeURIComponent(
+    fileId
   )}` as Href;
 
 export const openRecordDetail = (recordId?: string) => {

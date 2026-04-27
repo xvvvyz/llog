@@ -36,7 +36,7 @@ export default function Layout() {
           }}
         />
         <Stack.Screen
-          name="records/[recordId]/media/[mediaId]"
+          name="records/[recordId]/files/[fileId]"
           options={{
             animation: 'none',
             contentStyle: { backgroundColor: 'transparent' },

@@ -1,6 +1,6 @@
 export type SearchResultType = 'record' | 'reply' | 'log';
 
-export type SearchMediaItem = {
+export type SearchFileItem = {
   id: string;
   name?: string;
   type: string;
@@ -32,6 +32,6 @@ export type SearchResult = {
     name: string;
     image?: { uri: string };
   };
-  media?: SearchMediaItem[];
+  files?: SearchFileItem[];
   profiles?: SearchProfile[];
 };

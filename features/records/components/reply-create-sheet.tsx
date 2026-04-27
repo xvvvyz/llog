@@ -14,14 +14,14 @@ export const ReplyCreateSheet = () => {
       topInset={64}
     >
       <ReplyForm
-        attachmentCount={composer.mediaCount}
+        attachmentCount={composer.fileCount}
+        filePreview={composer.filePreview}
         hasContent={composer.hasContent}
         isBusy={composer.isBusy}
         isOpen={composer.isOpen}
         isSubmitting={composer.isSubmitting}
         isTextareaFocused={composer.isTextareaFocused}
         logColor={composer.logColor}
-        mediaPreview={composer.mediaPreview}
         onChangeText={composer.onChangeText}
         onSubmit={composer.onSubmit}
         onTextareaFocusChange={composer.onTextareaFocusChange}

@@ -1,5 +1,5 @@
-import { assetToFileLike } from '@/features/media/lib/asset-to-file-like';
-import { ImageSize } from '@/features/media/types/image-size';
+import { assetToFileLike } from '@/features/files/lib/asset-to-file-like';
+import { ImageSize } from '@/features/files/types/image-size';
 import { api } from '@/lib/api';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { ImagePickerAsset } from 'expo-image-picker';

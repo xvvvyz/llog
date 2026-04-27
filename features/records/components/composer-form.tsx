@@ -15,7 +15,7 @@ export const ComposerForm = ({
   isSubmitting,
   isTextareaFocused,
   logColor,
-  mediaPreview,
+  filePreview,
   onChangeText,
   onSubmit,
   onTextareaFocusChange,
@@ -33,7 +33,7 @@ export const ComposerForm = ({
   isSubmitting: boolean;
   isTextareaFocused: boolean;
   logColor?: string;
-  mediaPreview: React.ReactNode;
+  filePreview: React.ReactNode;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
   onTextareaFocusChange: (isFocused: boolean) => void;
@@ -83,7 +83,7 @@ export const ComposerForm = ({
             placeholder={placeholder}
             value={text}
           />
-          {isComposerCompact ? null : mediaPreview}
+          {isComposerCompact ? null : filePreview}
         </View>
         <View className="flex-row px-4 gap-3 items-center shrink-0">
           <View className="flex-1 flex-row gap-3 items-center">

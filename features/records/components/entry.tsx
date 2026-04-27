@@ -1,6 +1,6 @@
 import { useProfile } from '@/features/account/queries/use-profile';
+import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useLogColor } from '@/features/logs/hooks/use-color';
-import { useFilteredMedia } from '@/features/media/hooks/use-filtered-media';
 import { CompactEntry } from '@/features/records/components/compact-entry';
 import { EntryCard } from '@/features/records/components/entry-card';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
@@ -38,8 +38,8 @@ export const Entry = ({
   const sheetManager = useSheetManager();
   const ui = useUi();
 
-  const { audioMedia, documentMedia, visualMedia } = useFilteredMedia(
-    record.media || []
+  const { audioMedia, documentFiles, visualMedia } = useFilteredFiles(
+    record.files || []
   );
 
   const handleDoubleTapReaction = React.useCallback(() => {
@@ -72,7 +72,7 @@ export const Entry = ({
   const sharedProps: EntryTypes.EntrySharedProps = {
     accentColor,
     audioMedia,
-    documentMedia,
+    documentFiles,
     links: record.links ?? [],
     logId,
     numberOfLines,

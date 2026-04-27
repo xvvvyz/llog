@@ -1,15 +1,15 @@
+import { useFileComposer } from '@/features/files/hooks/use-composer';
+import type { PickedFileAsset } from '@/features/files/lib/picked';
+import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
-import { useMediaComposer } from '@/features/media/hooks/use-composer';
-import type { PickedMediaAsset } from '@/features/media/lib/picked';
-import { updateDocumentName } from '@/features/media/mutations/update-document-name';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import type { RecordSheetParent } from '@/features/records/lib/sheet-payloads';
-import { deleteReplyMedia } from '@/features/records/mutations/delete-reply-media';
+import { deleteReplyFile } from '@/features/records/mutations/delete-reply-file';
 import { publishReply } from '@/features/records/mutations/publish-reply';
-import { uploadReplyMedia } from '@/features/records/mutations/upload-reply-media';
+import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useReplyDraft } from '@/features/records/queries/use-reply-draft';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -37,7 +37,7 @@ export const useReplyComposerModel = () => {
 
   const { data: editData } = db.useQuery(
     editReplyId
-      ? { replies: { $: { where: { id: editReplyId } }, media: {}, links: {} } }
+      ? { replies: { $: { where: { id: editReplyId } }, files: {}, links: {} } }
       : null
   );
 
@@ -57,23 +57,23 @@ export const useReplyComposerModel = () => {
     text: currentText,
   });
 
-  const handleUploadMedia = React.useCallback(
-    async (asset: PickedMediaAsset, mediaId: string, order: number) => {
-      await uploadReplyMedia({ asset, mediaId, order, recordId, replyId });
+  const handleUploadFile = React.useCallback(
+    async (asset: PickedFileAsset, fileId: string, order: number) => {
+      await uploadReplyFile({ asset, fileId, order, recordId, replyId });
     },
     [recordId, replyId]
   );
 
-  const handleDeleteMedia = React.useCallback(
-    async (mediaId: string) => {
-      await deleteReplyMedia({ mediaId, recordId, replyId });
+  const handleDeleteFile = React.useCallback(
+    async (fileId: string) => {
+      await deleteReplyFile({ fileId, recordId, replyId });
     },
     [recordId, replyId]
   );
 
-  const handleRenameMedia = React.useCallback(
-    async (mediaId: string, name: string) => {
-      await updateDocumentName({ id: mediaId, name });
+  const handleRenameFile = React.useCallback(
+    async (fileId: string, name: string) => {
+      await updateDocumentName({ id: fileId, name });
     },
     []
   );
@@ -89,22 +89,22 @@ export const useReplyComposerModel = () => {
   const { linkAttachmentCount, linkPreview, linkToolbarItems } =
     useComposerLinkAttachments({ links, parent: attachmentParent });
 
-  const { isBusy, mediaCount, mediaPreview, toolbar } = useMediaComposer({
+  const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
     extraAttachmentCount: linkAttachmentCount,
     extraPreview: linkPreview,
     extraToolbarItems: linkToolbarItems,
     isOpen,
-    media: reply?.media ?? [],
-    onDeleteMedia: handleDeleteMedia,
+    files: reply?.files ?? [],
+    onDeleteFile: handleDeleteFile,
     onOpenAudio: () =>
       sheetManager.open('record-audio', replyId, `reply:${recordId}`),
-    onRenameMedia: handleRenameMedia,
-    onUploadMedia: handleUploadMedia,
+    onRenameFile: handleRenameFile,
+    onUploadFile: handleUploadFile,
     recordId,
     replyId,
   });
 
-  const hasContent = !!currentText.trim() || mediaCount > 0;
+  const hasContent = !!currentText.trim() || fileCount > 0;
 
   const handleChangeText = React.useCallback(
     (nextText: string) => {
@@ -122,7 +122,7 @@ export const useReplyComposerModel = () => {
 
   const handleSubmit = React.useCallback(async () => {
     const text = latestTextRef.current.trim();
-    if (isBusy || (!text && mediaCount === 0) || !replyId) return;
+    if (isBusy || (!text && fileCount === 0) || !replyId) return;
 
     if (isEdit) {
       await db.transact(db.tx.replies[replyId].update({ text }));
@@ -149,7 +149,7 @@ export const useReplyComposerModel = () => {
     isEdit,
     isBusy,
     latestTextRef,
-    mediaCount,
+    fileCount,
     recordId,
     replyId,
   ]);
@@ -163,8 +163,8 @@ export const useReplyComposerModel = () => {
     isTextareaFocused,
     loading: isEdit ? !editReply : !!recordId && !draft.id,
     logColor: logColor?.default,
-    mediaCount,
-    mediaPreview,
+    fileCount,
+    filePreview,
     onChangeText: handleChangeText,
     onDismiss: close,
     onSubmit: handleSubmit,

@@ -9,7 +9,7 @@ app.get('/:key{.+}', async (c) => {
   const scope = getFileScope(key);
 
   if (scope === 'unknown') {
-    throw new HTTPException(404, { message: 'Media not found' });
+    throw new HTTPException(404, { message: 'File not found' });
   }
 
   c.header('Cache-Control', 'public, max-age=31536000, immutable');
@@ -21,7 +21,7 @@ app.get('/:key{.+}', async (c) => {
     ...(onlyIfHeader ? { onlyIf: c.req.raw.headers } : {}),
   });
 
-  if (!file) throw new HTTPException(404, { message: 'Media not found' });
+  if (!file) throw new HTTPException(404, { message: 'File not found' });
   c.header('Accept-Ranges', 'bytes');
   if (file.etag) c.header('ETag', file.etag);
   if (!('body' in file)) return c.body(null, 304);

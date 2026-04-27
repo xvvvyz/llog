@@ -25,7 +25,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             replies: {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
-            media: {},
+            files: {},
             links: {},
             reactions: { author: {} },
           },
@@ -51,7 +51,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             replies: {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
-            media: {},
+            files: {},
             links: {},
             reactions: { author: {} },
           },
@@ -76,7 +76,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   const data = [
     ...records.filter((record) => !!record.isPinned).sort(compareByDateDesc),
     ...records.filter((record) => !record.isPinned).sort(compareByDateDesc),
-  ];
+  ].map((record) => ({ ...record, files: record.files ?? [] }));
 
   const handleLoadNextPage = useLoadNextPage({
     canLoadNextPage: !!logId && canLoadNextPage,

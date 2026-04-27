@@ -23,7 +23,7 @@ type SearchDocument = {
   authorName?: string;
   authorImage?: string;
   people: string;
-  media?: searchTypes.SearchMediaItem[];
+  files?: searchTypes.SearchFileItem[];
   profiles?: searchTypes.SearchProfile[];
   tagIds?: string[];
 };
@@ -42,9 +42,9 @@ const isSearchDocument = (
   typeof result.people === 'string';
 
 const getAttachmentNames = (
-  media?: { name?: string | null }[] | null
+  files?: { name?: string | null }[] | null
 ): string[] =>
-  media
+  files
     ?.map((item) => item.name?.trim())
     .filter((name): name is string => !!name) ?? [];
 
@@ -72,14 +72,14 @@ export const useSearch = ({
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
             log: { tags: { $: { fields: ['id'] } } },
-            media: {},
+            files: {},
             links: {},
           },
           replies: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
             record: { log: { tags: { $: { fields: ['id'] } } } },
-            media: {},
+            files: {},
             links: {},
           },
           logs: {
@@ -123,7 +123,7 @@ export const useSearch = ({
       const text = trimDisplayText(record.text);
 
       const attachmentNames = [
-        ...getAttachmentNames(record.media),
+        ...getAttachmentNames(record.files),
         ...getLinkLabels(record.links),
       ];
 
@@ -147,8 +147,8 @@ export const useSearch = ({
         authorAvatarSeedId: record.author?.avatarSeedId,
         authorName: record.author?.name,
         authorImage: record.author?.image?.uri,
-        media: record.media?.length
-          ? record.media.map((m) => ({
+        files: record.files?.length
+          ? record.files.map((m) => ({
               id: m.id,
               name: m.name,
               type: m.type,
@@ -163,7 +163,7 @@ export const useSearch = ({
       const text = trimDisplayText(reply.text);
 
       const attachmentNames = [
-        ...getAttachmentNames(reply.media),
+        ...getAttachmentNames(reply.files),
         ...getLinkLabels(reply.links),
       ];
 
@@ -187,8 +187,8 @@ export const useSearch = ({
         authorAvatarSeedId: reply.author?.avatarSeedId,
         authorName: reply.author?.name,
         authorImage: reply.author?.image?.uri,
-        media: reply.media?.length
-          ? reply.media.map((m) => ({
+        files: reply.files?.length
+          ? reply.files.map((m) => ({
               id: m.id,
               name: m.name,
               type: m.type,
@@ -221,7 +221,7 @@ export const useSearch = ({
         'authorName',
         'authorImage',
         'people',
-        'media',
+        'files',
         'profiles',
         'tagIds',
       ],
@@ -271,7 +271,7 @@ export const useSearch = ({
                 : undefined,
             }
           : undefined,
-        media: result.media,
+        files: result.files,
         profiles: result.profiles,
       } satisfies searchTypes.SearchResult;
     });

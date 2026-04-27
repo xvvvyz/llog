@@ -1,16 +1,16 @@
+import { useFileComposer } from '@/features/files/hooks/use-composer';
+import type { PickedFileAsset } from '@/features/files/lib/picked';
+import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
-import { useMediaComposer } from '@/features/media/hooks/use-composer';
-import type { PickedMediaAsset } from '@/features/media/lib/picked';
-import { updateDocumentName } from '@/features/media/mutations/update-document-name';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import type { RecordSheetParent } from '@/features/records/lib/sheet-payloads';
-import { deleteRecordMedia } from '@/features/records/mutations/delete-record-media';
+import { deleteRecordFile } from '@/features/records/mutations/delete-record-file';
 import { publishRecord } from '@/features/records/mutations/publish-record';
 import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
-import { uploadRecordMedia } from '@/features/records/mutations/upload-record-media';
+import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
 import { useRecordDraft } from '@/features/records/queries/use-record-draft';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
@@ -34,7 +34,7 @@ export const useRecordComposerModel = () => {
       ? {
           records: {
             $: { where: { id: editRecordId } },
-            media: {},
+            files: {},
             links: {},
             log: { $: { fields: ['id'] } },
           },
@@ -76,23 +76,23 @@ export const useRecordComposerModel = () => {
     [isEdit, recordId, setLatestText]
   );
 
-  const handleUploadMedia = React.useCallback(
-    async (asset: PickedMediaAsset, mediaId: string, order: number) => {
-      await uploadRecordMedia({ asset, mediaId, order, recordId });
+  const handleUploadFile = React.useCallback(
+    async (asset: PickedFileAsset, fileId: string, order: number) => {
+      await uploadRecordFile({ asset, fileId, order, recordId });
     },
     [recordId]
   );
 
-  const handleDeleteMedia = React.useCallback(
-    async (mediaId: string) => {
-      await deleteRecordMedia({ mediaId, recordId });
+  const handleDeleteFile = React.useCallback(
+    async (fileId: string) => {
+      await deleteRecordFile({ fileId, recordId });
     },
     [recordId]
   );
 
-  const handleRenameMedia = React.useCallback(
-    async (mediaId: string, name: string) => {
-      await updateDocumentName({ id: mediaId, name });
+  const handleRenameFile = React.useCallback(
+    async (fileId: string, name: string) => {
+      await updateDocumentName({ id: fileId, name });
     },
     []
   );
@@ -105,20 +105,20 @@ export const useRecordComposerModel = () => {
   const { linkAttachmentCount, linkPreview, linkToolbarItems } =
     useComposerLinkAttachments({ links, parent: attachmentParent });
 
-  const { isBusy, mediaCount, mediaPreview, toolbar } = useMediaComposer({
+  const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
     extraAttachmentCount: linkAttachmentCount,
     extraPreview: linkPreview,
     extraToolbarItems: linkToolbarItems,
     isOpen,
-    media: record?.media ?? [],
-    onDeleteMedia: handleDeleteMedia,
+    files: record?.files ?? [],
+    onDeleteFile: handleDeleteFile,
     onOpenAudio: () => sheetManager.open('record-audio', recordId, 'record'),
-    onRenameMedia: handleRenameMedia,
-    onUploadMedia: handleUploadMedia,
+    onRenameFile: handleRenameFile,
+    onUploadFile: handleUploadFile,
     recordId,
   });
 
-  const hasContent = !!currentText.trim() || mediaCount > 0;
+  const hasContent = !!currentText.trim() || fileCount > 0;
 
   const close = React.useCallback(() => {
     sheetManager.close('record-create');
@@ -127,7 +127,7 @@ export const useRecordComposerModel = () => {
 
   const handleSubmit = React.useCallback(async () => {
     const text = latestTextRef.current.trim();
-    if (isBusy || (!text && mediaCount === 0) || !recordId) return;
+    if (isBusy || (!text && fileCount === 0) || !recordId) return;
 
     if (isEdit) {
       await db.transact(db.tx.records[recordId].update({ text }));
@@ -155,7 +155,7 @@ export const useRecordComposerModel = () => {
     isEdit,
     isBusy,
     latestTextRef,
-    mediaCount,
+    fileCount,
     recordId,
     recordLogId,
   ]);
@@ -169,8 +169,8 @@ export const useRecordComposerModel = () => {
     isTextareaFocused,
     loading: isEdit ? !editRecord : !!logId && !draft.id,
     logColor: logColor.default,
-    mediaCount,
-    mediaPreview,
+    fileCount,
+    filePreview,
     onChangeText: handleChangeText,
     onDismiss: close,
     onSubmit: handleSubmit,

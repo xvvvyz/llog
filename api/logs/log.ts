@@ -1,4 +1,4 @@
-import { deleteUnusedMediaAssets } from '@/api/files/delete-media-assets';
+import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { db } from '@/api/middleware/db';
 import { deleteActivities } from '@/features/activity/lib/delete-activities';
 import * as permissions from '@/features/teams/lib/permissions';
@@ -19,9 +19,9 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
         roles: { $: { fields: ['role'], where: { userId: c.var.user.id } } },
       },
       records: {
-        media: {},
+        files: {},
         activities: {},
-        replies: { media: {}, activities: {} },
+        replies: { files: {}, activities: {} },
       },
     },
   });
@@ -34,7 +34,7 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 
-  const mediaToDelete: Array<{
+  const filesToDelete: Array<{
     assetKey?: string | null;
     uri?: string | null;
   }> = [];
@@ -44,15 +44,15 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
   for (const record of log.records ?? []) {
     activities.push(...(record.activities ?? []));
 
-    for (const item of record.media ?? []) {
-      mediaToDelete.push(item);
+    for (const item of record.files ?? []) {
+      filesToDelete.push(item);
     }
 
     for (const reply of record.replies ?? []) {
       activities.push(...(reply.activities ?? []));
 
-      for (const item of reply.media ?? []) {
-        mediaToDelete.push(item);
+      for (const item of reply.files ?? []) {
+        filesToDelete.push(item);
       }
     }
   }
@@ -60,8 +60,8 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
   await c.var.db.transact(c.var.db.tx.logs[logId].delete());
 
   await Promise.all([
-    mediaToDelete.length
-      ? deleteUnusedMediaAssets(c.env, mediaToDelete)
+    filesToDelete.length
+      ? deleteUnusedFileAssets(c.env, filesToDelete)
       : undefined,
     deleteActivities(c.env, activities),
   ]);

@@ -1,8 +1,8 @@
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { AudioSheetContent } from '@/features/records/components/audio-sheet-content';
 import { useAudioRecorder } from '@/features/records/hooks/use-audio-recorder';
-import { uploadRecordMedia } from '@/features/records/mutations/upload-record-media';
-import { uploadReplyMedia } from '@/features/records/mutations/upload-reply-media';
+import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
+import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Sheet } from '@/ui/sheet';
@@ -105,14 +105,14 @@ export const RecordAudioSheet = () => {
       const duration = recorder.duration;
 
       if (audioContext.type === 'reply') {
-        await uploadReplyMedia({
+        await uploadReplyFile({
           audioUri: uri,
           replyId: draftId,
           duration,
           recordId: audioContext.recordId,
         });
       } else {
-        await uploadRecordMedia({ audioUri: uri, duration, recordId: draftId });
+        await uploadRecordFile({ audioUri: uri, duration, recordId: draftId });
       }
 
       recorder.reset();

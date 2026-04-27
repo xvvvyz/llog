@@ -21,7 +21,7 @@ const schema = i.schema({
       teamId: i.string().indexed(),
       text: i.string(),
     }),
-    media: i.entity({
+    files: i.entity({
       assetKey: i.string().optional(),
       duration: i.number().optional(),
       mimeType: i.string().optional(),
@@ -160,9 +160,9 @@ const schema = i.schema({
       forward: { on: 'replies', has: 'one', label: 'author', required: true },
       reverse: { on: 'profiles', has: 'many', label: 'replies' },
     },
-    repliesMedia: {
-      forward: { on: 'replies', has: 'many', label: 'media' },
-      reverse: { on: 'media', has: 'one', label: 'reply', onDelete: 'cascade' },
+    repliesFiles: {
+      forward: { on: 'replies', has: 'many', label: 'files' },
+      reverse: { on: 'files', has: 'one', label: 'reply', onDelete: 'cascade' },
     },
     logsRecords: {
       forward: { on: 'logs', has: 'many', label: 'records' },
@@ -182,18 +182,18 @@ const schema = i.schema({
       forward: { on: 'logs', has: 'many', label: 'profiles' },
       reverse: { on: 'profiles', has: 'many', label: 'logs' },
     },
-    profilesMedia: {
+    profilesFiles: {
       forward: { on: 'profiles', has: 'one', label: 'image' },
       reverse: {
-        on: 'media',
+        on: 'files',
         has: 'one',
         label: 'profile',
         onDelete: 'cascade',
       },
     },
-    teamsMedia: {
+    teamsFiles: {
       forward: { on: 'teams', has: 'one', label: 'image' },
-      reverse: { on: 'media', has: 'one', label: 'team', onDelete: 'cascade' },
+      reverse: { on: 'files', has: 'one', label: 'team', onDelete: 'cascade' },
     },
     profilesUsers: {
       forward: {
@@ -251,10 +251,10 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
-    recordsMedia: {
-      forward: { on: 'records', has: 'many', label: 'media' },
+    recordsFiles: {
+      forward: { on: 'records', has: 'many', label: 'files' },
       reverse: {
-        on: 'media',
+        on: 'files',
         has: 'one',
         label: 'record',
         onDelete: 'cascade',

@@ -1,18 +1,18 @@
 import { Profile } from '@/features/account/types/profile';
 import { Activity } from '@/features/activity/types/activity';
+import { FileItem } from '@/features/files/types/file';
 import { Log } from '@/features/logs/types/log';
-import { Media } from '@/features/media/types/media';
 import { Link } from '@/features/records/types/link';
 import { Record } from '@/features/records/types/record';
 import { Reply } from '@/features/records/types/reply';
 import { Team } from '@/features/teams/types/team';
 
 export type ActivityWithRelations = Activity & {
-  actor?: Profile & { image?: Media; logs?: Pick<Log, 'id'>[] };
-  reply?: Reply & { links?: Link[]; media?: Media[] };
+  actor?: Profile & { image?: FileItem; logs?: Pick<Log, 'id'>[] };
+  reply?: Reply & { links?: Link[]; files?: FileItem[] };
   log?: Log;
-  record?: Record & { links?: Link[]; media?: Media[] };
-  team?: Team & { image?: Media };
+  record?: Record & { links?: Link[]; files?: FileItem[] };
+  team?: Team & { image?: FileItem };
 };
 
 export const GROUPED_ACTIVITY_TYPES = [

@@ -1,6 +1,6 @@
-import { useMediaLightbox } from '@/features/media/hooks/use-lightbox';
-import * as visualMedia from '@/features/media/lib/visual-media';
-import { Media } from '@/features/media/types/media';
+import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
+import * as visualMedia from '@/features/files/lib/visual-media';
+import { FileItem } from '@/features/files/types/file';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
@@ -14,7 +14,7 @@ export const MediaGrid = ({
   visualMedia: visualItems,
 }: {
   recordId?: string;
-  visualMedia: Media[];
+  visualMedia: FileItem[];
 }) => {
   const timelineTargetWidth = visualMedia.getThumbnailTargetWidth(
     visualItems.length
@@ -23,14 +23,14 @@ export const MediaGrid = ({
   const { openMediaLightbox } = useMediaLightbox({ recordId });
 
   const handlePress = React.useCallback(
-    (mediaId: string) => {
-      openMediaLightbox(mediaId);
+    (fileId: string) => {
+      openMediaLightbox(fileId);
     },
     [openMediaLightbox]
   );
 
   const renderMediaThumb = React.useCallback(
-    (item: Media) => {
+    (item: FileItem) => {
       const isProcessing = visualMedia.isProcessing(item);
 
       return (
