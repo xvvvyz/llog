@@ -1,5 +1,6 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
+import { getVideoPosterTarget } from '@/features/media/lib/video-poster-target';
 import * as videoPreload from '@/features/media/lib/video-preload';
 import type { VideoPlayerHandle } from '@/features/media/types/video-player';
 import { UI } from '@/theme/ui';
@@ -53,6 +54,7 @@ export const VideoPlayer = ({
   uri: string;
 }) => {
   const source = useFileUriToSrc(uri);
+  const posterTarget = getVideoPosterTarget({ maxHeight, maxWidth });
   const onPlayingChangeRef = React.useRef(onPlayingChange);
   const onTimeChangeRef = React.useRef(onTimeChange);
   const [isBuffering, setIsBuffering] = React.useState(Boolean(source));
@@ -361,6 +363,8 @@ export const VideoPlayer = ({
             contentFit={contentFit}
             fill
             quality={thumbnailQuality}
+            targetHeight={posterTarget.targetHeight}
+            targetWidth={posterTarget.targetWidth}
             uri={thumbnailUri}
             wrapperClassName="bg-transparent"
           />

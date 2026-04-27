@@ -13,7 +13,10 @@ export const PreviewImage = ({
   item: mediaComposer.VisualPreviewItem;
   onRemoteReady: (mediaId: string) => void;
 }) => {
-  const remoteSrc = useFileUriToSrc(visualMedia.getThumbnailUri(item));
+  const remoteSrc = useFileUriToSrc(visualMedia.getThumbnailUri(item), {
+    targetSize: 128,
+  });
+
   const remoteSource = remoteSrc ? { uri: remoteSrc } : null;
   const [isRemoteReady, setIsRemoteReady] = React.useState(false);
   const shouldHoldLocalPreview = item.type === 'image' && !!item.localUri;

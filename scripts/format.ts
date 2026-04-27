@@ -54,16 +54,7 @@ function parseOptions(): Options {
   const help = args.includes('--help') || args.includes('-h');
 
   if (help) {
-    console.log(
-      [
-        'Usage: bun scripts/format.ts [path ...]',
-        '',
-        'Runs Prettier, moves multiline imports to the end of import lists,',
-        'adds blank lines around multiline statements, compacts short if blocks,',
-        'sorts JSX props, and sorts literal JSX className/class strings.',
-      ].join('\n')
-    );
-
+    console.log('Usage: bun scripts/format.ts [path ...]');
     process.exit(0);
   }
 
@@ -371,7 +362,7 @@ function formatIfStatements(filePath: string, text: string) {
   }
 
   visit(source);
-  return applyTextEdits(text, edits);
+  return wrapMultilineIfStatements(filePath, applyTextEdits(text, edits));
 }
 
 function compactIfStatement(
@@ -404,6 +395,95 @@ function canRemoveIfBlock(statement: ts.Statement) {
     !ts.isFunctionDeclaration(statement) &&
     !ts.isClassDeclaration(statement)
   );
+}
+
+function wrapMultilineIfStatements(filePath: string, text: string) {
+  let nextText = text;
+
+  while (true) {
+    const formattedText = wrapMultilineIfStatementsOnce(filePath, nextText);
+    if (formattedText === nextText) return nextText;
+    nextText = formattedText;
+  }
+}
+
+function wrapMultilineIfStatementsOnce(filePath: string, text: string) {
+  const { lineAt, source } = parseSource(filePath, text);
+  const edits: TextEdit[] = [];
+
+  function visit(node: ts.Node) {
+    if (!ts.isIfStatement(node)) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    const wrappedThenStatement = maybeWrapStatement(
+      source,
+      text,
+      node,
+      node.thenStatement
+    );
+
+    if (wrappedThenStatement) {
+      edits.push(wrappedThenStatement);
+    } else {
+      visit(node.thenStatement);
+    }
+
+    if (!node.elseStatement) return;
+
+    const wrappedElseStatement = ts.isIfStatement(node.elseStatement)
+      ? null
+      : maybeWrapStatement(source, text, node, node.elseStatement);
+
+    if (wrappedElseStatement) {
+      edits.push(wrappedElseStatement);
+    } else {
+      visit(node.elseStatement);
+    }
+  }
+
+  function maybeWrapStatement(
+    source: ts.SourceFile,
+    text: string,
+    owner: ts.IfStatement,
+    statement: ts.Statement
+  ) {
+    if (ts.isBlock(statement)) return null;
+    const statementStartLine = lineAt(statement.getStart(source));
+    const statementFullStartLine = lineAt(statement.getFullStart());
+    if (statementStartLine <= statementFullStartLine) return null;
+    const start = statement.getFullStart();
+    const end = statementEndWithTrailingComment(text, statement.getEnd());
+    const indent = indentationAtPosition(text, owner.getStart(source));
+    const newline = text.includes('\r\n') ? '\r\n' : '\n';
+
+    return {
+      end,
+      replacement: ` {${text.slice(start, end)}${newline}${indent}}`,
+      start,
+    };
+  }
+
+  visit(source);
+  return applyTextEdits(text, edits);
+}
+
+function statementEndWithTrailingComment(text: string, end: number) {
+  const lineEndIndex = text.indexOf('\n', end);
+  const lineEnd = lineEndIndex === -1 ? text.length : lineEndIndex;
+  const trailingText = text.slice(end, lineEnd);
+
+  const trailingComment = trailingText.match(
+    /^[ \t]*(\/\/.*|\/\*.*\*\/)[ \t]*$/
+  );
+
+  return trailingComment ? lineEnd : end;
+}
+
+function indentationAtPosition(text: string, position: number) {
+  const lineStart = text.lastIndexOf('\n', position - 1) + 1;
+  return text.slice(lineStart, position).match(/^[ \t]*/)?.[0] ?? '';
 }
 
 function hasComment(text: string) {

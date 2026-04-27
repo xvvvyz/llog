@@ -16,6 +16,7 @@ export const Image = ({
   quality,
   style,
   targetHeight,
+  targetSize,
   targetWidth,
   uri,
   width,
@@ -32,6 +33,7 @@ export const Image = ({
   quality?: number;
   style?: StyleProp<ImageStyle>;
   targetHeight?: number;
+  targetSize?: number;
   targetWidth?: number;
   uri?: string | null;
   width?: number;
@@ -51,7 +53,13 @@ export const Image = ({
     }
   }
 
-  const src = useFileUriToSrc(uri, { quality, targetHeight, targetWidth });
+  const src = useFileUriToSrc(uri, {
+    quality,
+    targetHeight,
+    targetSize,
+    targetWidth,
+  });
+
   const source = src ? { uri: src } : undefined;
   const resolvedClassName = useResolveClassNames(className ?? '');
 

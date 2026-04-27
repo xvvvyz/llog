@@ -102,8 +102,7 @@ export const QuotedRecord = ({
                   <Image
                     contentFit="cover"
                     height={64}
-                    targetHeight={128}
-                    targetWidth={128}
+                    targetSize={128}
                     uri={visualMedia.getThumbnailUri(item)}
                     width={64}
                   />

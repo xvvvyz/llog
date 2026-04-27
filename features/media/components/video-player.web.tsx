@@ -1,5 +1,6 @@
 import { useExclusiveMediaPlayback } from '@/features/media/hooks/use-exclusive-media-playback';
 import { useFileUriToSrc } from '@/features/media/lib/file-uri-to-src';
+import { getVideoPosterTarget } from '@/features/media/lib/video-poster-target';
 import * as videoPreload from '@/features/media/lib/video-preload';
 import type { VideoPlayerHandle } from '@/features/media/types/video-player';
 import { cn } from '@/lib/cn';
@@ -49,7 +50,13 @@ export const VideoPlayer = ({
   uri: string;
 }) => {
   const src = useFileUriToSrc(uri);
-  const poster = useFileUriToSrc(thumbnailUri, { quality: thumbnailQuality });
+  const posterTarget = getVideoPosterTarget({ maxHeight, maxWidth });
+
+  const poster = useFileUriToSrc(thumbnailUri, {
+    quality: thumbnailQuality,
+    ...posterTarget,
+  });
+
   const ref = React.useRef<HTMLVideoElement>(null);
   const onPlayingChangeRef = React.useRef(onPlayingChange);
   const onTimeChangeRef = React.useRef(onTimeChange);

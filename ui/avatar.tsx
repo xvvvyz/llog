@@ -26,8 +26,7 @@ export const Avatar = ({
   return (
     <Image
       height={size}
-      targetHeight={size * 3}
-      targetWidth={size * 3}
+      targetSize={size * 3}
       uri={avatar ?? fallbackUri}
       width={size}
       wrapperClassName={cn('select-none rounded-full', className)}
