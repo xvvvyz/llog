@@ -301,7 +301,7 @@ export const DocumentAttachments = ({
       {hideTrigger ? null : canDeleteSingleDocument && firstItem ? (
         <View
           className={cn(
-            'flex-row h-8 w-full -my-2.5 gap-4 justify-between px-4',
+            'flex-row h-8 w-full -my-2.5 gap-3 justify-between px-4',
             firstItem.type === 'pending' && 'opacity-70',
             triggerClassName
           )}
@@ -326,7 +326,7 @@ export const DocumentAttachments = ({
                 </Text>
               </View>
               <Text
-                className="font-normal text-placeholder text-xs shrink-0"
+                className="font-normal text-placeholder text-xs self-center shrink-0"
                 numberOfLines={1}
               >
                 {getDocumentSizeText(firstItem.item)}
@@ -489,7 +489,7 @@ export const DocumentAttachments = ({
                   return (
                     <View
                       key={previewItem.id}
-                      className="flex-row gap-4 items-center"
+                      className="flex-row gap-3 items-center"
                     >
                       {onRenameFile ? (
                         <Button
@@ -521,7 +521,7 @@ export const DocumentAttachments = ({
                 return (
                   <View
                     key={previewItem.id}
-                    className="flex-row gap-4 items-center"
+                    className="flex-row gap-3 items-center"
                   >
                     {documentDetails}
                     <Button
@@ -550,7 +550,7 @@ export const DocumentAttachments = ({
               return (
                 <View
                   key={previewItem.id}
-                  className="flex-row opacity-70 gap-4 items-center"
+                  className="flex-row opacity-70 gap-3 items-center"
                 >
                   {documentDetails}
                   <View className="-mr-1.5 size-8 items-center justify-center">

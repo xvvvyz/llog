@@ -17,19 +17,7 @@ const MAX_STREAM_UPLOAD_DURATION_SECONDS = 36000;
 const DIRECT_VIDEO_UPLOAD_MAX_DURATION_SECONDS =
   MAX_STREAM_UPLOAD_DURATION_SECONDS;
 
-export const MAX_BYTES_BY_KIND: Record<FileKind, number> = {
-  image: 10 * 1024 * 1024,
-  audio: 25 * 1024 * 1024,
-  document: 25 * 1024 * 1024,
-  video: 100 * 1024 * 1024,
-};
-
-export const MAX_MULTIPART_FILE_BYTES = Math.max(
-  MAX_BYTES_BY_KIND.image,
-  MAX_BYTES_BY_KIND.audio,
-  MAX_BYTES_BY_KIND.document
-);
-
+export const MAX_UPLOAD_BYTES = 90 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 const DEFAULT_DOWNLOAD_FILE_NAME = 'download';
 
@@ -41,20 +29,20 @@ const normalizeDurationSeconds = (duration?: number) => {
   return Math.round(duration);
 };
 
-export const uploadLimit = (maxFileBytes: number) =>
-  bodyLimit({
-    maxSize: maxFileBytes + MULTIPART_OVERHEAD_BYTES,
-    onError: () => {
-      throw new HTTPException(413, { message: 'Upload too large' });
-    },
-  });
-
 const inferFileKind = (file: File) => {
   if (file.type.startsWith('image/')) return 'image' as const;
   if (file.type.startsWith('audio/')) return 'audio' as const;
   if (file.type.startsWith('video/')) return 'video' as const;
   return 'document' as const;
 };
+
+export const uploadLimit = (maxFileBytes = MAX_UPLOAD_BYTES) =>
+  bodyLimit({
+    maxSize: maxFileBytes + MULTIPART_OVERHEAD_BYTES,
+    onError: () => {
+      throw new HTTPException(413, { message: 'Upload too large' });
+    },
+  });
 
 export const requireUploadedFile = (file: z.infer<typeof fileLike>) => {
   if (!(file instanceof File)) {
@@ -71,7 +59,7 @@ export const validateUpload = (file: File, allowed: FileKind[]) => {
     throw new HTTPException(400, { message: 'Invalid upload format' });
   }
 
-  if (file.size > MAX_BYTES_BY_KIND[kind]) {
+  if (file.size > MAX_UPLOAD_BYTES) {
     throw new HTTPException(413, { message: 'Upload too large' });
   }
 

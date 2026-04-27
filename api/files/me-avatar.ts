@@ -13,7 +13,7 @@ const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.put(
   '/me/avatar',
-  upload.uploadLimit(upload.MAX_BYTES_BY_KIND.image),
+  upload.uploadLimit(),
   db({ asUser: true }),
   zValidator('form', z.object({ file: fileLike })),
   async (c) => {

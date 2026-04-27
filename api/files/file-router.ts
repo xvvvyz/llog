@@ -80,7 +80,7 @@ export const createFileRouter = <const TPath extends string>({
 
   app.put(
     basePath,
-    upload.uploadLimit(upload.MAX_MULTIPART_FILE_BYTES),
+    upload.uploadLimit(),
     db(),
     auth(),
     upload.fileValidator,

@@ -181,7 +181,7 @@ export const LinkAttachments = ({
       ) : canDeleteSingleLink ? (
         <View
           className={cn(
-            'flex-row h-8 w-full -my-2.5 gap-4 justify-between px-4',
+            'flex-row h-8 w-full -my-2.5 gap-3 justify-between px-4',
             triggerClassName
           )}
         >
@@ -261,7 +261,7 @@ export const LinkAttachments = ({
               );
 
               return (
-                <View key={item.id} className="flex-row gap-4 items-center">
+                <View key={item.id} className="flex-row gap-3 items-center">
                   <Button
                     className="flex-1 flex-row min-w-0 justify-start"
                     onPress={() => handleEditLink(item.id)}
