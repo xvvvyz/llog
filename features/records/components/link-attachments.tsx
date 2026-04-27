@@ -224,7 +224,7 @@ export const LinkAttachments = ({
           {firstLinkDetails}
           <View className="shrink-0">
             <Text
-              className="font-normal text-placeholder text-sm"
+              className="font-normal text-placeholder text-xs"
               numberOfLines={1}
             >
               {moreLinksText}

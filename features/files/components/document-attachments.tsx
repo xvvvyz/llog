@@ -433,7 +433,7 @@ export const DocumentAttachments = ({
           {moreDocumentsText ? (
             <View className="flex-row gap-2 items-center shrink-0">
               <Text
-                className="font-normal text-placeholder text-sm"
+                className="font-normal text-placeholder text-xs"
                 numberOfLines={1}
               >
                 {moreDocumentsText}
