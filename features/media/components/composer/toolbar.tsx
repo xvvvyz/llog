@@ -13,22 +13,21 @@ import {
 
 export const Toolbar = ({
   canAddAudio,
-  leadingItems,
   onBrowseMedia,
   onCaptureMedia,
   onOpenAudio,
   onPickDocuments,
+  trailingItems,
 }: {
   canAddAudio: boolean;
-  leadingItems?: React.ReactNode;
   onBrowseMedia: () => void | Promise<void>;
   onCaptureMedia: () => void | Promise<void>;
   onOpenAudio: () => void;
   onPickDocuments: () => void | Promise<void>;
+  trailingItems?: React.ReactNode;
 }) => {
   return Platform.OS === 'web' ? (
     <>
-      {leadingItems}
       <Button onPress={onPickDocuments} size="icon-sm" variant="secondary">
         <Icon icon={Plus} />
       </Button>
@@ -40,10 +39,10 @@ export const Toolbar = ({
       >
         <Icon icon={Microphone} />
       </Button>
+      {trailingItems}
     </>
   ) : (
     <>
-      {leadingItems}
       <Button onPress={onPickDocuments} size="icon-sm" variant="secondary">
         <Icon icon={Paperclip} />
       </Button>
@@ -63,6 +62,7 @@ export const Toolbar = ({
       >
         <Icon icon={Microphone} />
       </Button>
+      {trailingItems}
     </>
   );
 };

@@ -2,6 +2,7 @@ import { PendingVideoPreview } from '@/features/media/components/composer/pendin
 import { PreviewImage } from '@/features/media/components/composer/preview-image';
 import * as visualMedia from '@/features/media/lib/visual-media';
 import type * as mediaComposer from '@/features/media/types/composer';
+import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
@@ -55,7 +56,7 @@ export const VisualPreview = ({
                     />
                   )}
                   <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
-                    <Spinner size="xs" />
+                    <Spinner color={UI.light.contrastForeground} size="xs" />
                   </View>
                 </View>
               </View>

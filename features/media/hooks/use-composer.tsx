@@ -70,11 +70,11 @@ export const useMediaComposer = ({
   const toolbar = (
     <Toolbar
       canAddAudio={canAddAudio}
-      leadingItems={extraToolbarItems}
       onBrowseMedia={handleBrowseMedia}
       onCaptureMedia={handleCaptureMedia}
       onOpenAudio={onOpenAudio}
       onPickDocuments={handlePickDocuments}
+      trailingItems={extraToolbarItems}
     />
   );
 
