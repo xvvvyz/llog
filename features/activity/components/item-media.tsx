@@ -9,9 +9,10 @@ import { Link } from '@/features/records/types/link';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
+import { Spinner } from '@/ui/spinner';
 import { Play } from 'phosphor-react-native';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 export const ItemMedia = ({
   media,
@@ -61,7 +62,7 @@ export const ItemMedia = ({
       {item.type === 'video' && (
         <View className="absolute inset-0 pointer-events-none items-center justify-center">
           {visualMedia.isProcessing(item) ? (
-            <ActivityIndicator color={UI.light.contrastForeground} />
+            <Spinner color={UI.light.contrastForeground} />
           ) : (
             <View className="size-10 rounded-full bg-contrast-background/50 items-center justify-center">
               <Icon

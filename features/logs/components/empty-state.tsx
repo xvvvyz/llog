@@ -13,9 +13,10 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 import {
   Check,
@@ -114,10 +115,7 @@ export const EmptyState = ({ logId }: { logId: string }) => {
                   : 'Copy invite link'}
             </Text>
             {loadingAction === 'copy' ? (
-              <ActivityIndicator
-                color={UI[colorScheme].mutedForeground}
-                size={16}
-              />
+              <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
             ) : (
               <Icon className="-mr-0.5" icon={copied ? Check : Copy} />
             )}
@@ -132,10 +130,7 @@ export const EmptyState = ({ logId }: { logId: string }) => {
               {loadingAction === 'qr' ? 'Generating…' : 'Show invite QR'}
             </Text>
             {loadingAction === 'qr' ? (
-              <ActivityIndicator
-                color={UI[colorScheme].mutedForeground}
-                size={16}
-              />
+              <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
             ) : (
               <Icon className="-mr-0.5" icon={QrCode} />
             )}

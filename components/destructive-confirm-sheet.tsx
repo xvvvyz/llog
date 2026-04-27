@@ -1,9 +1,10 @@
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 export const DestructiveConfirmSheet = ({
   isPending,
@@ -31,10 +32,7 @@ export const DestructiveConfirmSheet = ({
           wrapperClassName="mt-12"
         >
           {isPending ? (
-            <ActivityIndicator
-              color={UI.light.contrastForeground}
-              size="small"
-            />
+            <Spinner color={UI.light.contrastForeground} />
           ) : (
             <Text>Delete</Text>
           )}

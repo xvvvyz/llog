@@ -31,6 +31,7 @@ export const MAX_MULTIPART_MEDIA_BYTES = Math.max(
 );
 
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
+const DEFAULT_DOWNLOAD_FILE_NAME = 'download';
 
 const normalizeDurationSeconds = (duration?: number) => {
   if (!Number.isFinite(duration) || duration == null || duration < 0) {
@@ -98,11 +99,25 @@ const normalizeFileSize = (size?: number) =>
 
 const getContentDisposition = (fileName?: string) => {
   const safeName = fileName
-    ?.replace(/[^\x20-\x7e]/g, '_')
+    ?.replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/[\x00-\x1f\x7f]/g, '_')
+    .trim();
+
+  if (!safeName) return undefined;
+
+  const fallbackName = safeName
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7e]/g, '_')
     .replace(/["\\]/g, '_')
     .trim();
 
-  return safeName ? `attachment; filename="${safeName}"` : undefined;
+  const encodedName = encodeURIComponent(safeName).replace(
+    /['()*]/g,
+    (value) => `%${value.charCodeAt(0).toString(16).toUpperCase()}`
+  );
+
+  return `attachment; filename="${fallbackName || DEFAULT_DOWNLOAD_FILE_NAME}"; filename*=UTF-8''${encodedName}`;
 };
 
 const assertCanUploadToOwnedTarget = async ({

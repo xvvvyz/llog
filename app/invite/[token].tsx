@@ -11,12 +11,13 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, WarningCircle } from 'phosphor-react-native';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 interface Member {
   avatarSeedId?: string;
@@ -235,7 +236,7 @@ export default function InviteLink() {
         >
           {isRedeeming ? (
             <>
-              <ActivityIndicator color={UI.light.contrastForeground} />
+              <Spinner color={UI.light.contrastForeground} />
               <Text>Joining{'\u2026'}</Text>
             </>
           ) : linkInfo?.isValid ? (

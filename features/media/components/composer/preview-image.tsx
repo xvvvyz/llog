@@ -53,7 +53,7 @@ export const PreviewImage = ({
       )}
       {showRemoteLoadingIndicator && (
         <View className="absolute inset-0 pointer-events-none items-center justify-center">
-          <Spinner className="scale-[0.8]" size="small" />
+          <Spinner size="xs" />
         </View>
       )}
     </View>

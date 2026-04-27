@@ -7,10 +7,10 @@ import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Redirect } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator } from 'react-native';
 
 export default function NewTeam() {
   const [isTransitioning, startTransition] = React.useTransition();
@@ -48,7 +48,7 @@ export default function NewTeam() {
         wrapperClassName="mt-6"
       >
         {isTransitioning ? (
-          <ActivityIndicator color={UI.light.contrastForeground} />
+          <Spinner color={UI.light.contrastForeground} />
         ) : (
           <Text>Continue</Text>
         )}

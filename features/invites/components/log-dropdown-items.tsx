@@ -10,10 +10,11 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { UI } from '@/theme/ui';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Check, Copy, QrCode } from 'phosphor-react-native';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 export const LogDropdownItems = ({ id }: { id?: string }) => {
   const colorScheme = useColorScheme();
@@ -73,10 +74,7 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
       <Menu.Item closeOnPress={false} onPress={handleCopyLink}>
         {loadingAction === 'copy' ? (
           <View className="size-5 items-center justify-center">
-            <ActivityIndicator
-              color={UI[colorScheme].mutedForeground}
-              size={16}
-            />
+            <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
           </View>
         ) : (
           <Icon className="text-placeholder" icon={copied ? Check : Copy} />
@@ -88,10 +86,7 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
       <Menu.Item closeOnPress={false} onPress={handleShowQr}>
         {loadingAction === 'qr' ? (
           <View className="size-5 items-center justify-center">
-            <ActivityIndicator
-              color={UI[colorScheme].mutedForeground}
-              size={16}
-            />
+            <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
           </View>
         ) : (
           <Icon className="text-placeholder" icon={QrCode} />

@@ -30,10 +30,11 @@ import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import * as React from 'react';
-import { ActivityIndicator, Keyboard, Pressable, View } from 'react-native';
+import { Keyboard, Pressable, View } from 'react-native';
 
 import {
   Check,
@@ -300,9 +301,9 @@ export default function Team() {
                           variant="ghost"
                         >
                           {loadingAction === `copy-${role}` ? (
-                            <ActivityIndicator
+                            <Spinner
                               color={UI[colorScheme].mutedForeground}
-                              size={16}
+                              size="xs"
                             />
                           ) : (
                             <Icon
@@ -317,9 +318,9 @@ export default function Team() {
                           variant="ghost"
                         >
                           {loadingAction === `qr-${role}` ? (
-                            <ActivityIndicator
+                            <Spinner
                               color={UI[colorScheme].mutedForeground}
-                              size={16}
+                              size="xs"
                             />
                           ) : (
                             <Icon className="text-placeholder" icon={QrCode} />

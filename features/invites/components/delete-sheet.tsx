@@ -5,9 +5,10 @@ import { db } from '@/lib/db';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 export const InviteDeleteSheet = () => {
   const sheetManager = useSheetManager();
@@ -56,7 +57,7 @@ export const InviteDeleteSheet = () => {
           wrapperClassName="mt-12"
         >
           {isLoading ? (
-            <ActivityIndicator color={UI.light.contrastForeground} />
+            <Spinner color={UI.light.contrastForeground} />
           ) : (
             <Text>Invalidate</Text>
           )}

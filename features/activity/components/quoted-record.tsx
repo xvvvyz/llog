@@ -11,10 +11,11 @@ import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Play } from 'phosphor-react-native';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 export const QuotedRecord = ({
   logColor,
@@ -109,10 +110,7 @@ export const QuotedRecord = ({
                   {item.type === 'video' && (
                     <View className="absolute inset-0 pointer-events-none items-center justify-center">
                       {visualMedia.isProcessing(item) ? (
-                        <ActivityIndicator
-                          color={UI.light.contrastForeground}
-                          size="small"
-                        />
+                        <Spinner color={UI.light.contrastForeground} />
                       ) : (
                         <View className="size-6 rounded-full bg-contrast-background/50 items-center justify-center">
                           <Icon

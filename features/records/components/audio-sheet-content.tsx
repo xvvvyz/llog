@@ -3,9 +3,10 @@ import { formatTime } from '@/lib/format-time';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Microphone } from 'phosphor-react-native';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 export const AudioSheetContent = ({
   canSave,
@@ -63,10 +64,7 @@ export const AudioSheetContent = ({
           style={logColor ? { backgroundColor: logColor } : undefined}
         >
           {isUploading ? (
-            <ActivityIndicator
-              color={UI.light.contrastForeground}
-              size="small"
-            />
+            <Spinner color={UI.light.contrastForeground} />
           ) : (
             <Text>Save</Text>
           )}

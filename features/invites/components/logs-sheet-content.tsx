@@ -3,9 +3,10 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 type InviteLog = { color?: number | null; id: string; name: string };
 
@@ -69,7 +70,7 @@ export const LogsSheetContent = ({
         wrapperClassName="mt-4"
       >
         {isLoading ? (
-          <ActivityIndicator color={UI.light.contrastForeground} size="small" />
+          <Spinner color={UI.light.contrastForeground} />
         ) : (
           <Text>{buttonLabel}</Text>
         )}

@@ -6,10 +6,10 @@ import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Redirect, router } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator } from 'react-native';
 
 export default function SignIn() {
   const [code, setCode] = React.useState('');
@@ -55,7 +55,7 @@ export default function SignIn() {
           wrapperClassName="mt-6"
         >
           {isTransitioning ? (
-            <ActivityIndicator color={UI.light.contrastForeground} />
+            <Spinner color={UI.light.contrastForeground} />
           ) : (
             <Text>Sign in</Text>
           )}
@@ -97,7 +97,7 @@ export default function SignIn() {
         wrapperClassName="mt-6"
       >
         {isTransitioning ? (
-          <ActivityIndicator color={UI.light.contrastForeground} />
+          <Spinner color={UI.light.contrastForeground} />
         ) : (
           <Text>Confirm</Text>
         )}

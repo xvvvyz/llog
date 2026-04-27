@@ -5,10 +5,11 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { UI } from '@/theme/ui';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Check, SquaresFour, UserMinus } from 'phosphor-react-native';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
@@ -106,10 +107,7 @@ export const TeamMemberMenuContent = ({
           >
             <View className="size-5 items-center justify-center">
               {loadingRole === role ? (
-                <ActivityIndicator
-                  color={UI[colorScheme].mutedForeground}
-                  size={16}
-                />
+                <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
               ) : (
                 memberRole === role && <Icon className="-mr-1" icon={Check} />
               )}

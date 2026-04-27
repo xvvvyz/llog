@@ -1,3 +1,4 @@
+import { downloadFile } from '@/features/media/lib/download-file';
 import { fileUriToSrc } from '@/features/media/lib/file-uri-to-src';
 import type * as mediaComposer from '@/features/media/types/composer';
 import type { Media } from '@/features/media/types/media';
@@ -11,7 +12,7 @@ import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-import { Linking, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import {
   Files as DocumentsIcon,
@@ -129,6 +130,11 @@ export const DocumentAttachments = ({
 
   const [editingName, setEditingName] = React.useState('');
   const [isRenaming, setIsRenaming] = React.useState(false);
+
+  const [downloadingDocumentIds, setDownloadingDocumentIds] = React.useState(
+    () => new Set<string>()
+  );
+
   const sheetId = React.useId();
   const isSheetOpen = sheetOpen ?? localSheetOpen;
 
@@ -185,13 +191,24 @@ export const DocumentAttachments = ({
   const handleOpenDocument = React.useCallback(async (item: Media) => {
     const src = fileUriToSrc(item.uri);
     if (!src) return;
+    setDownloadingDocumentIds((current) => new Set(current).add(item.id));
 
     try {
-      await Linking.openURL(src);
+      await downloadFile({
+        fileName: getDocumentName(item),
+        mimeType: item.mimeType ?? undefined,
+        url: src,
+      });
     } catch {
       showAlert({
-        message: 'Could not open this document.',
+        message: 'Could not download this document.',
         title: 'Document unavailable',
+      });
+    } finally {
+      setDownloadingDocumentIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
       });
     }
   }, []);
@@ -252,6 +269,29 @@ export const DocumentAttachments = ({
     setEditingDocument(null);
     setEditingName('');
   }, [editingDocument, items]);
+
+  React.useEffect(() => {
+    setDownloadingDocumentIds((current) => {
+      const mediaIds = new Set(
+        items
+          .filter((item) => item.type === 'media')
+          .map((item) => item.item.id)
+      );
+
+      const next = new Set(
+        [...current].filter((mediaId) => mediaIds.has(mediaId))
+      );
+
+      if (
+        next.size === current.size &&
+        [...current].every((mediaId) => next.has(mediaId))
+      ) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [items]);
 
   if (!items.length) return null;
 
@@ -326,13 +366,14 @@ export const DocumentAttachments = ({
               </Button>
             ) : (
               <View className="-mr-1.5 size-8 items-center justify-center">
-                <Spinner className="scale-[0.8]" size="small" />
+                <Spinner size="xs" />
               </View>
             )}
           </View>
         </View>
       ) : canOpenSingleDocument ? (
         <Button
+          disabled={downloadingDocumentIds.has(singleMediaItem.id)}
           onPress={() => void handleOpenDocument(singleMediaItem)}
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
@@ -342,10 +383,14 @@ export const DocumentAttachments = ({
           )}
         >
           <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-            <Icon
-              className={cn('text-placeholder', triggerIconClassName)}
-              icon={DownloadSimple}
-            />
+            {downloadingDocumentIds.has(singleMediaItem.id) ? (
+              <Spinner className={triggerIconClassName} size="xs" />
+            ) : (
+              <Icon
+                className={cn('text-placeholder', triggerIconClassName)}
+                icon={DownloadSimple}
+              />
+            )}
             <Text
               className="font-normal text-muted-foreground text-sm shrink"
               numberOfLines={1}
@@ -392,9 +437,7 @@ export const DocumentAttachments = ({
               >
                 {moreDocumentsText}
               </Text>
-              {hasPendingDocuments && (
-                <Spinner className="scale-[0.8]" size="small" />
-              )}
+              {hasPendingDocuments && <Spinner size="xs" />}
             </View>
           ) : (
             showSummarySize && (
@@ -488,18 +531,22 @@ export const DocumentAttachments = ({
                     {documentDetails}
                     <Button
                       accessibilityLabel={`Download ${getDocumentName(item)}`}
+                      disabled={downloadingDocumentIds.has(item.id)}
                       size="icon-sm"
                       variant="ghost"
                       wrapperClassName="-mr-1.5"
                       onPress={() => {
-                        setIsSheetOpen(false);
                         void handleOpenDocument(previewItem.item);
                       }}
                     >
-                      <Icon
-                        className="text-muted-foreground"
-                        icon={DownloadSimple}
-                      />
+                      {downloadingDocumentIds.has(item.id) ? (
+                        <Spinner size="xs" />
+                      ) : (
+                        <Icon
+                          className="text-muted-foreground"
+                          icon={DownloadSimple}
+                        />
+                      )}
                     </Button>
                   </View>
                 );
@@ -512,7 +559,7 @@ export const DocumentAttachments = ({
                 >
                   {documentDetails}
                   <View className="-mr-1.5 size-8 items-center justify-center">
-                    <Spinner className="scale-[0.8]" size="small" />
+                    <Spinner size="xs" />
                   </View>
                 </View>
               );

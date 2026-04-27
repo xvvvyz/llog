@@ -118,7 +118,7 @@ export const AudioPreview = ({
         </View>
         {activeItem.type === 'pending' && (
           <View className="w-8 items-center justify-center">
-            <Spinner className="scale-[0.8]" size="small" />
+            <Spinner size="xs" />
           </View>
         )}
         {hasMultipleItems && (
