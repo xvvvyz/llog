@@ -14,6 +14,7 @@ export const useMediaComposer = ({
   media,
   onDeleteMedia,
   onOpenAudio,
+  onRenameMedia,
   onUploadMedia,
   recordId,
 }: UseMediaComposerOptions) => {
@@ -59,6 +60,7 @@ export const useMediaComposer = ({
       onDeleteMedia={handleDeleteMedia}
       onOpenVisual={handleOpenVisual}
       onRemoteReady={removeLocalPreviewUri}
+      onRenameMedia={onRenameMedia}
       pendingAudio={pendingAudio}
       pendingDocuments={pendingDocuments}
       visualItems={allVisual}

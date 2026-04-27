@@ -38,6 +38,7 @@ export interface UseMediaComposerOptions {
   media: Media[];
   onDeleteMedia: (mediaId: string) => Promise<void>;
   onOpenAudio: () => void;
+  onRenameMedia?: (mediaId: string, name: string) => Promise<void>;
   onUploadMedia: (
     asset: pickedMedia.PickedMediaAsset,
     mediaId: string,

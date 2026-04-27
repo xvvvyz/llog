@@ -5,6 +5,8 @@ import { alert as showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import { Input } from '@/ui/input';
+import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
@@ -99,6 +101,7 @@ export const DocumentAttachments = ({
   documents,
   hideTrigger,
   onDeleteMedia,
+  onRenameMedia,
   onSheetOpenChange,
   pendingDocuments = NO_PENDING_DOCUMENTS,
   portalName,
@@ -110,6 +113,7 @@ export const DocumentAttachments = ({
   documents: Media[];
   hideTrigger?: boolean;
   onDeleteMedia?: (mediaId: string) => void;
+  onRenameMedia?: (mediaId: string, name: string) => Promise<void>;
   onSheetOpenChange?: (open: boolean) => void;
   pendingDocuments?: mediaComposer.PendingDocumentUpload[];
   portalName?: string;
@@ -118,12 +122,24 @@ export const DocumentAttachments = ({
   triggerIconClassName?: string;
 }) => {
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
+
+  const [editingDocument, setEditingDocument] = React.useState<Media | null>(
+    null
+  );
+
+  const [editingName, setEditingName] = React.useState('');
+  const [isRenaming, setIsRenaming] = React.useState(false);
   const sheetId = React.useId();
   const isSheetOpen = sheetOpen ?? localSheetOpen;
 
   const sheetPortalName = React.useMemo(
     () => portalName ?? `document-attachments-${sheetId.replace(/:/g, '')}`,
     [portalName, sheetId]
+  );
+
+  const nameEditorPortalName = React.useMemo(
+    () => `${sheetPortalName}-name-editor`,
+    [sheetPortalName]
   );
 
   const setIsSheetOpen = React.useCallback(
@@ -154,6 +170,10 @@ export const DocumentAttachments = ({
 
   const showSummarySize = items.length === 1;
   const firstDocumentName = firstItem ? getDocumentName(firstItem.item) : null;
+  const trimmedEditingName = editingName.trim();
+
+  const canRenameDocument =
+    !!editingDocument && !!onRenameMedia && !!trimmedEditingName;
 
   const singleDocumentSizeText = singleMediaItem
     ? getDocumentSizeText(singleMediaItem)
@@ -180,6 +200,21 @@ export const DocumentAttachments = ({
     setIsSheetOpen(true);
   }, [setIsSheetOpen]);
 
+  const handleOpenNameEditor = React.useCallback(
+    (item: Media) => {
+      if (!onRenameMedia) return;
+      setEditingDocument(item);
+      setEditingName(getDocumentName(item));
+    },
+    [onRenameMedia]
+  );
+
+  const handleCloseNameEditor = React.useCallback(() => {
+    if (isRenaming) return;
+    setEditingDocument(null);
+    setEditingName('');
+  }, [isRenaming]);
+
   const handleDeleteDocument = React.useCallback(
     (mediaId: string) => {
       onDeleteMedia?.(mediaId);
@@ -187,6 +222,36 @@ export const DocumentAttachments = ({
     },
     [items.length, onDeleteMedia]
   );
+
+  const handleRenameDocument = React.useCallback(async () => {
+    if (!editingDocument || !onRenameMedia || !trimmedEditingName) return;
+    setIsRenaming(true);
+
+    try {
+      await onRenameMedia(editingDocument.id, trimmedEditingName);
+      setEditingDocument(null);
+      setEditingName('');
+    } catch {
+      showAlert({
+        message: 'Could not rename this document.',
+        title: 'Document unavailable',
+      });
+    } finally {
+      setIsRenaming(false);
+    }
+  }, [editingDocument, onRenameMedia, trimmedEditingName]);
+
+  React.useEffect(() => {
+    if (!editingDocument) return;
+
+    const stillExists = items.some(
+      (item) => item.type === 'media' && item.item.id === editingDocument.id
+    );
+
+    if (stillExists) return;
+    setEditingDocument(null);
+    setEditingName('');
+  }, [editingDocument, items]);
 
   if (!items.length) return null;
 
@@ -200,25 +265,55 @@ export const DocumentAttachments = ({
             triggerClassName
           )}
         >
-          <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-            <Icon
-              className={cn('text-placeholder', triggerIconClassName)}
-              icon={FileText}
-            />
-            <Text
-              className="font-normal text-muted-foreground text-sm shrink"
-              numberOfLines={1}
+          {firstItem.type === 'media' && onRenameMedia ? (
+            <Button
+              className="flex-1 flex-row min-w-0 gap-4 justify-between"
+              onPress={() => handleOpenNameEditor(firstItem.item)}
+              variant="link"
+              wrapperClassName="flex-1 overflow-visible rounded-lg"
             >
-              {firstDocumentName}
-            </Text>
-          </View>
+              <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+                <Icon
+                  className={cn('text-placeholder', triggerIconClassName)}
+                  icon={FileText}
+                />
+                <Text
+                  className="font-normal text-muted-foreground text-sm shrink"
+                  numberOfLines={1}
+                >
+                  {firstDocumentName}
+                </Text>
+              </View>
+              <Text
+                className="font-normal text-placeholder text-xs shrink-0"
+                numberOfLines={1}
+              >
+                {getDocumentSizeText(firstItem.item)}
+              </Text>
+            </Button>
+          ) : (
+            <>
+              <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+                <Icon
+                  className={cn('text-placeholder', triggerIconClassName)}
+                  icon={FileText}
+                />
+                <Text
+                  className="font-normal text-muted-foreground text-sm shrink"
+                  numberOfLines={1}
+                >
+                  {firstDocumentName}
+                </Text>
+              </View>
+              <Text
+                className="font-normal text-placeholder text-xs shrink-0"
+                numberOfLines={1}
+              >
+                {getDocumentSizeText(firstItem.item)}
+              </Text>
+            </>
+          )}
           <View className="flex-row gap-2 items-center shrink-0">
-            <Text
-              className="font-normal text-placeholder text-xs"
-              numberOfLines={1}
-            >
-              {getDocumentSizeText(firstItem.item)}
-            </Text>
             {firstItem.type === 'media' ? (
               <Button
                 accessibilityLabel={`Remove ${getDocumentName(firstItem.item)}`}
@@ -358,7 +453,18 @@ export const DocumentAttachments = ({
                       key={previewItem.id}
                       className="flex-row gap-4 items-center"
                     >
-                      {documentDetails}
+                      {onRenameMedia ? (
+                        <Button
+                          className="flex-1 flex-row min-w-0 justify-start"
+                          onPress={() => handleOpenNameEditor(item)}
+                          variant="link"
+                          wrapperClassName="flex-1 overflow-visible rounded-lg"
+                        >
+                          {documentDetails}
+                        </Button>
+                      ) : (
+                        documentDetails
+                      )}
                       <Button
                         accessibilityLabel={`Remove ${getDocumentName(item)}`}
                         size="icon-sm"
@@ -421,6 +527,49 @@ export const DocumentAttachments = ({
                 wrapperClassName="flex-1"
               >
                 <Text>Close</Text>
+              </Button>
+            </View>
+          </View>
+        </Sheet>
+      )}
+      {!!onRenameMedia && (
+        <Sheet
+          onDismiss={handleCloseNameEditor}
+          open={!!editingDocument}
+          portalName={nameEditorPortalName}
+          topInset={64}
+        >
+          <View className="mx-auto max-w-md w-full p-8">
+            <View>
+              <Label>Name</Label>
+              <Input
+                autoFocus
+                maxLength={255}
+                onChangeText={setEditingName}
+                placeholder="Document"
+                value={editingName}
+                onSubmitEditing={() => {
+                  if (canRenameDocument) void handleRenameDocument();
+                }}
+              />
+            </View>
+            <View className="flex-row mt-8 gap-4">
+              <Button
+                disabled={isRenaming}
+                onPress={handleCloseNameEditor}
+                size="sm"
+                variant="secondary"
+                wrapperClassName="flex-1"
+              >
+                <Text>Cancel</Text>
+              </Button>
+              <Button
+                disabled={!canRenameDocument || isRenaming}
+                onPress={handleRenameDocument}
+                size="sm"
+                wrapperClassName="flex-1"
+              >
+                <Text>{isRenaming ? 'Saving...' : 'Save'}</Text>
               </Button>
             </View>
           </View>

@@ -14,6 +14,7 @@ export const Preview = ({
   extraPreview,
   onDeleteMedia,
   onOpenVisual,
+  onRenameMedia,
   onRemoteReady,
   pendingAudio,
   pendingDocuments,
@@ -26,6 +27,7 @@ export const Preview = ({
   extraPreview?: React.ReactNode;
   onDeleteMedia: (mediaId: string) => void;
   onOpenVisual: (mediaId: string) => void;
+  onRenameMedia?: (mediaId: string, name: string) => Promise<void>;
   onRemoteReady: (mediaId: string) => void;
   pendingAudio: mediaComposer.PendingAudioUpload[];
   pendingDocuments: mediaComposer.PendingDocumentUpload[];
@@ -59,6 +61,7 @@ export const Preview = ({
         className="gap-0"
         documents={documentMedia}
         onDeleteMedia={onDeleteMedia}
+        onRenameMedia={onRenameMedia}
         pendingDocuments={pendingDocuments}
         triggerClassName="px-4"
       />

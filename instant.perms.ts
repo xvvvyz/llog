@@ -102,6 +102,12 @@ const rules = {
     bind: [
       'hasOneLink',
       "size(data.ref('record.id')) + size(data.ref('reply.id')) + size(data.ref('profile.id')) + size(data.ref('team.id')) == 1",
+      'isDocument',
+      "data.type == 'document'",
+      'isValidDocumentName',
+      'newData.name != null && size(newData.name) > 0 && size(newData.name) <= 255',
+      'onlyModifiesDocumentName',
+      "request.modifiedFields.all(field, field in ['name'])",
       'isProfileOwner',
       "auth.id in data.ref('profile.user.id')",
       'isTeamImageManager',
@@ -136,6 +142,8 @@ const rules = {
     allow: {
       view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordMedia || canViewReplyMedia',
       create: 'hasOneLink && (isProfileOwner || isTeamImageManager)',
+      update:
+        'hasOneLink && isDocument && onlyModifiesDocumentName && isValidDocumentName && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)',
       delete:
         'isProfileOwner || isTeamImageManager || (isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply',
     },

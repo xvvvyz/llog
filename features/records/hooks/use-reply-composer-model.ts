@@ -1,6 +1,7 @@
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useMediaComposer } from '@/features/media/hooks/use-composer';
 import type { PickedMediaAsset } from '@/features/media/lib/picked';
+import { updateDocumentName } from '@/features/media/mutations/update-document-name';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
@@ -70,6 +71,13 @@ export const useReplyComposerModel = () => {
     [recordId, replyId]
   );
 
+  const handleRenameMedia = React.useCallback(
+    async (mediaId: string, name: string) => {
+      await updateDocumentName({ id: mediaId, name });
+    },
+    []
+  );
+
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
       replyId && recordId
@@ -90,6 +98,7 @@ export const useReplyComposerModel = () => {
     onDeleteMedia: handleDeleteMedia,
     onOpenAudio: () =>
       sheetManager.open('record-audio', replyId, `reply:${recordId}`),
+    onRenameMedia: handleRenameMedia,
     onUploadMedia: handleUploadMedia,
     recordId,
     replyId,
