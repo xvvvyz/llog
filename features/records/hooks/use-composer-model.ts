@@ -127,7 +127,7 @@ export const useRecordComposerModel = () => {
 
   const handleSubmit = React.useCallback(async () => {
     const text = latestTextRef.current.trim();
-    if ((!text && mediaCount === 0) || !recordId) return;
+    if (isBusy || (!text && mediaCount === 0) || !recordId) return;
 
     if (isEdit) {
       await db.transact(db.tx.records[recordId].update({ text }));
@@ -153,6 +153,7 @@ export const useRecordComposerModel = () => {
     close,
     ignoreDraftId,
     isEdit,
+    isBusy,
     latestTextRef,
     mediaCount,
     recordId,

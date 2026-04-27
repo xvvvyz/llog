@@ -5,10 +5,11 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';
+import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
 import { ArrowSquareOut, LinkSimple, X } from 'phosphor-react-native';
 import * as React from 'react';
-import { Linking, ScrollView, View } from 'react-native';
+import { Linking, View } from 'react-native';
 
 import {
   getLinkUrlDisplayText,
@@ -237,13 +238,7 @@ export const LinkAttachments = ({
           open={isSheetOpen}
           portalName={sheetPortalName}
         >
-          <ScrollView
-            className="-mx-px max-h-[19rem] min-h-0 border-b border-border-secondary border-x rounded-b-4xl"
-            contentContainerClassName="mx-auto w-full max-w-lg px-8 py-5"
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="always"
-            showsVerticalScrollIndicator={false}
-          >
+          <SheetListScrollView>
             {items.map((item) => {
               const linkDetails = (
                 <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
@@ -287,19 +282,17 @@ export const LinkAttachments = ({
                 </View>
               );
             })}
-          </ScrollView>
-          <View>
-            <View className="flex-row mx-auto max-w-lg w-full px-8 py-4 gap-4">
-              <Button
-                onPress={() => setIsSheetOpen(false)}
-                size="sm"
-                variant="secondary"
-                wrapperClassName="flex-1"
-              >
-                <Text>Close</Text>
-              </Button>
-            </View>
-          </View>
+          </SheetListScrollView>
+          <SheetFooter contentClassName="flex-row gap-4">
+            <Button
+              onPress={() => setIsSheetOpen(false)}
+              size="sm"
+              variant="secondary"
+              wrapperClassName="flex-1"
+            >
+              <Text>Close</Text>
+            </Button>
+          </SheetFooter>
         </Sheet>
       )}
     </View>

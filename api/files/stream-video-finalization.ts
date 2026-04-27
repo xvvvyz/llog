@@ -21,8 +21,8 @@ export const finalizeStreamVideo = async ({
     media: { $: { where: { assetKey: streamUid } } },
   });
 
-  const item = media[0];
-  if (!item?.id) return;
+  const items = media.filter((item) => item.id);
+  if (!items.length) return;
 
   try {
     if (!hlsUri) {
@@ -35,12 +35,14 @@ export const finalizeStreamVideo = async ({
         : undefined;
 
     await adminDb.transact(
-      adminDb.tx.media[item.id].update({
-        assetKey: streamUid,
-        ...(resolvedDuration != null ? { duration: resolvedDuration } : {}),
-        thumbnailUri: thumbnailUri ?? undefined,
-        uri: hlsUri,
-      })
+      items.map((item) =>
+        adminDb.tx.media[item.id].update({
+          assetKey: streamUid,
+          ...(resolvedDuration != null ? { duration: resolvedDuration } : {}),
+          thumbnailUri: thumbnailUri ?? undefined,
+          uri: hlsUri,
+        })
+      )
     );
   } catch (error) {
     console.error('Video finalization failed', { error, streamUid });

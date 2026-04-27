@@ -9,10 +9,11 @@ import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
+import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import {
   Files as DocumentsIcon,
@@ -459,13 +460,7 @@ export const DocumentAttachments = ({
           open={isSheetOpen}
           portalName={sheetPortalName}
         >
-          <ScrollView
-            className="-mx-px max-h-[19rem] min-h-0 border-b border-border-secondary border-x rounded-b-4xl"
-            contentContainerClassName="mx-auto w-full max-w-lg px-8 py-5"
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="always"
-            showsVerticalScrollIndicator={false}
-          >
+          <SheetListScrollView>
             {items.map((previewItem) => {
               const item = previewItem.item;
 
@@ -564,19 +559,17 @@ export const DocumentAttachments = ({
                 </View>
               );
             })}
-          </ScrollView>
-          <View>
-            <View className="flex-row mx-auto max-w-lg w-full px-8 py-4 gap-4">
-              <Button
-                onPress={() => setIsSheetOpen(false)}
-                size="sm"
-                variant="secondary"
-                wrapperClassName="flex-1"
-              >
-                <Text>Close</Text>
-              </Button>
-            </View>
-          </View>
+          </SheetListScrollView>
+          <SheetFooter contentClassName="flex-row gap-4">
+            <Button
+              onPress={() => setIsSheetOpen(false)}
+              size="sm"
+              variant="secondary"
+              wrapperClassName="flex-1"
+            >
+              <Text>Close</Text>
+            </Button>
+          </SheetFooter>
         </Sheet>
       )}
       {!!onRenameMedia && (

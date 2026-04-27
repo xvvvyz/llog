@@ -7,9 +7,10 @@ import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Checkbox } from '@/ui/checkbox';
 import { Sheet } from '@/ui/sheet';
+import { SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 export const MemberLogsSheet = () => {
   const sheetManager = useSheetManager();
@@ -70,10 +71,7 @@ export const MemberLogsSheet = () => {
       open={sheetManager.isOpen('member-logs')}
       portalName="member-logs"
     >
-      <ScrollView
-        contentContainerClassName="w-full p-8 sm:mx-auto sm:max-w-sm"
-        keyboardShouldPersistTaps="always"
-      >
+      <SheetListScrollView>
         {logs.map((log) => {
           const isSelected = getSelected(log.id);
           const color = SPECTRUM[colorScheme][log.color ?? 11];
@@ -98,7 +96,7 @@ export const MemberLogsSheet = () => {
             </View>
           );
         })}
-      </ScrollView>
+      </SheetListScrollView>
     </Sheet>
   );
 };

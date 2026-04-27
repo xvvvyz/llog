@@ -5,13 +5,16 @@ import { canDeleteOwnOrManagedResource } from '@/features/teams/lib/permissions'
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
+import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
+import * as React from 'react';
 import { View } from 'react-native';
 
 import {
+  CopySimple,
   DotsThreeVertical,
   NotePencil,
   PushPin,
@@ -50,9 +53,22 @@ export const EntryMenu = ({
   });
 
   const canEdit = isAuthor;
+  const canCopyToAnotherLog = !replyId && isAuthor && myRole.canManage;
+
+  const { data: logData } = db.useQuery(
+    canCopyToAnotherLog && teamId
+      ? { logs: { $: { fields: ['id'], where: { team: teamId } } } }
+      : null
+  );
+
+  const canCopy =
+    canCopyToAnotherLog &&
+    !!logId &&
+    !!logData?.logs?.some((log) => log.id !== logId);
+
   const canPin = !replyId && myRole.canPinRecords;
-  const hasActionsAboveDelete = canEdit || canPin;
-  if (!canDelete) return null;
+  const hasActionsAboveDelete = canEdit || canCopy || canPin;
+  if (!canDelete && !canCopy) return null;
 
   return (
     <View className={className}>
@@ -106,23 +122,35 @@ export const EntryMenu = ({
               <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
             </Menu.Item>
           )}
-          {hasActionsAboveDelete && <Menu.Separator />}
-          <Menu.Item
-            onPress={() => {
-              if (replyId) {
-                sheetManager.open('reply-delete', replyId, recordId);
-              } else {
-                sheetManager.open(
-                  'record-delete',
-                  recordId,
-                  isDetail ? `detail:${logId ?? ''}` : undefined
-                );
-              }
-            }}
-          >
-            <Icon className="text-destructive" icon={Trash} />
-            <Text className="text-destructive">Delete</Text>
-          </Menu.Item>
+          {canCopy && (
+            <Menu.Item
+              onPress={() => sheetManager.open('record-copy-to', recordId)}
+            >
+              <Icon className="text-placeholder" icon={CopySimple} />
+              <Text>Copy to</Text>
+            </Menu.Item>
+          )}
+          {canDelete && (
+            <React.Fragment>
+              {hasActionsAboveDelete && <Menu.Separator />}
+              <Menu.Item
+                onPress={() => {
+                  if (replyId) {
+                    sheetManager.open('reply-delete', replyId, recordId);
+                  } else {
+                    sheetManager.open(
+                      'record-delete',
+                      recordId,
+                      isDetail ? `detail:${logId ?? ''}` : undefined
+                    );
+                  }
+                }}
+              >
+                <Icon className="text-destructive" icon={Trash} />
+                <Text className="text-destructive">Delete</Text>
+              </Menu.Item>
+            </React.Fragment>
+          )}
         </Menu.Content>
       </Menu.Root>
     </View>

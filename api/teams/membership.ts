@@ -1,4 +1,4 @@
-import { deleteMediaAssets } from '@/api/files/delete-media-assets';
+import { deleteUnusedMediaAssets } from '@/api/files/delete-media-assets';
 import { auth, db } from '@/api/middleware/db';
 import { removeMember } from '@/api/teams/member-actions';
 import * as permissions from '@/features/teams/lib/permissions';
@@ -79,7 +79,7 @@ app.delete('/:teamId', db({ asUser: true }), async (c) => {
   }
 
   await c.var.db.transact(c.var.db.tx.teams[teamId].delete());
-  if (mediaToDelete.length) await deleteMediaAssets(c.env, mediaToDelete);
+  if (mediaToDelete.length) await deleteUnusedMediaAssets(c.env, mediaToDelete);
   return c.json({ success: true });
 });
 

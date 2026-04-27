@@ -1,11 +1,13 @@
-import { deleteMediaAssets } from '@/api/files/delete-media-assets';
+import { deleteUnusedMediaAssets } from '@/api/files/delete-media-assets';
 import { auth, db } from '@/api/middleware/db';
 import * as push from '@/api/push/web-push';
 import { deleteActivities } from '@/features/activity/lib/delete-activities';
 import * as permissions from '@/features/teams/lib/permissions';
+import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { z } from 'zod/v4';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -114,6 +116,133 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
   return c.json({ success: true });
 });
 
+app.post(
+  '/:recordId/copy',
+  db(),
+  auth(),
+  zValidator('json', z.object({ logIds: z.array(z.string()).min(1).max(100) })),
+  async (c) => {
+    const user = c.var.user!;
+    const recordId = c.req.param('recordId');
+    if (!recordId) throw new HTTPException(400, { message: 'Invalid request' });
+    const { logIds } = c.req.valid('json');
+    const targetLogIds = [...new Set(logIds.map((logId) => logId.trim()))];
+
+    if (targetLogIds.some((logId) => !logId)) {
+      throw new HTTPException(400, { message: 'Invalid request' });
+    }
+
+    const { records } = await c.var.db.query({
+      records: {
+        $: { where: { id: recordId } },
+        author: { $: { fields: ['id'] }, user: { $: { fields: ['id'] } } },
+        log: { $: { fields: ['id'] } },
+        links: {},
+        media: {},
+      },
+    });
+
+    const record = records[0];
+    if (!record) throw new HTTPException(404, { message: 'Record not found' });
+
+    if (record.isDraft) {
+      throw new HTTPException(409, { message: 'Record is still a draft' });
+    }
+
+    if (!record.author?.id || !record.log?.id || !record.teamId) {
+      throw new HTTPException(400, { message: 'Invalid record' });
+    }
+
+    const authorId = record.author.id;
+    const sourceLogId = record.log.id;
+    const teamId = record.teamId;
+
+    if (record.author.user?.id !== user.id) {
+      throw new HTTPException(403, { message: 'Forbidden' });
+    }
+
+    if (targetLogIds.includes(sourceLogId)) {
+      throw new HTTPException(400, { message: 'Invalid target log' });
+    }
+
+    const [{ roles }, { logs }] = await Promise.all([
+      c.var.db.query({
+        roles: { $: { where: { team: teamId, userId: user.id } } },
+      }),
+      c.var.db.query({
+        logs: { $: { fields: ['id'], where: { team: teamId } } },
+      }),
+    ]);
+
+    if (!permissions.canManageTeam(roles[0]?.role)) {
+      throw new HTTPException(403, { message: 'Forbidden' });
+    }
+
+    const validLogIds = new Set(logs.map((log) => log.id));
+
+    if (targetLogIds.some((logId) => !validLogIds.has(logId))) {
+      throw new HTTPException(400, { message: 'Invalid target log' });
+    }
+
+    const now = new Date().toISOString();
+    const copiedRecords = targetLogIds.map((logId) => ({ id: id(), logId }));
+
+    await c.var.db.transact(
+      copiedRecords.flatMap(({ id: copiedRecordId, logId }) => [
+        c.var.db.tx.records[copiedRecordId]
+          .update({
+            date: now,
+            isDraft: false,
+            teamId,
+            ...(record.text != null ? { text: record.text } : {}),
+          })
+          .link({ author: authorId, log: logId }),
+        c.var.db.tx.activities[id()]
+          .update({ date: now, teamId, type: 'record_published' })
+          .link({
+            actor: authorId,
+            log: logId,
+            record: copiedRecordId,
+            team: teamId,
+          }),
+        ...(record.links ?? []).map((link) =>
+          c.var.db.tx.links[id()]
+            .update({
+              label: link.label,
+              ...(link.order != null ? { order: link.order } : {}),
+              teamId,
+              url: link.url,
+            })
+            .link({ record: copiedRecordId })
+        ),
+        ...(record.media ?? []).map((media) => {
+          if (!media.type || !media.uri) {
+            throw new HTTPException(400, { message: 'Invalid record media' });
+          }
+
+          return c.var.db.tx.media[id()]
+            .update({
+              ...(media.assetKey != null ? { assetKey: media.assetKey } : {}),
+              ...(media.duration != null ? { duration: media.duration } : {}),
+              ...(media.mimeType != null ? { mimeType: media.mimeType } : {}),
+              ...(media.name != null ? { name: media.name } : {}),
+              ...(media.order != null ? { order: media.order } : {}),
+              ...(media.size != null ? { size: media.size } : {}),
+              ...(media.thumbnailUri != null
+                ? { thumbnailUri: media.thumbnailUri }
+                : {}),
+              type: media.type,
+              uri: media.uri,
+            })
+            .link({ record: copiedRecordId });
+        }),
+      ])
+    );
+
+    return c.json({ records: copiedRecords });
+  }
+);
+
 app.delete('/:recordId', db({ asUser: true }), async (c) => {
   const recordId = c.req.param('recordId');
   if (!recordId) throw new HTTPException(400, { message: 'Invalid request' });
@@ -166,7 +295,9 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
   await c.var.db.transact(c.var.db.tx.records[recordId].delete());
 
   await Promise.all([
-    mediaToDelete.length ? deleteMediaAssets(c.env, mediaToDelete) : undefined,
+    mediaToDelete.length
+      ? deleteUnusedMediaAssets(c.env, mediaToDelete)
+      : undefined,
     deleteActivities(c.env, activities),
   ]);
 

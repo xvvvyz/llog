@@ -11,6 +11,7 @@ export type SheetNames = readonly [
   'log-tags',
   'member-logs',
   'record-audio',
+  'record-copy-to',
   'record-create',
   'record-delete',
   'record-link-attachments',

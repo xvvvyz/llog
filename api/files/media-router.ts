@@ -1,4 +1,4 @@
-import { deleteMediaAssets } from '@/api/files/delete-media-assets';
+import { deleteUnusedMediaAssets } from '@/api/files/delete-media-assets';
 import * as upload from '@/api/files/media-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
 import * as permissions from '@/features/teams/lib/permissions';
@@ -120,7 +120,11 @@ export const createMediaRouter = <const TPath extends string>({
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
-    await deleteMediaAssets(c.env, [item], { throwOnError: true });
+    await deleteUnusedMediaAssets(c.env, [item], {
+      ignoredMediaIds: [item.id],
+      throwOnError: true,
+    });
+
     await c.var.db.transact(c.var.db.tx.media[mediaId].delete());
     return c.json({ success: true });
   });
