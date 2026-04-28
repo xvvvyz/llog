@@ -22,9 +22,16 @@ import { Switch } from '@/ui/switch';
 import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { router } from 'expo-router';
-import { Shuffle, SignOut, Trash, UploadSimple } from 'phosphor-react-native';
 import * as React from 'react';
 import { Keyboard, Platform, Pressable, View } from 'react-native';
+
+import {
+  PlugsConnected,
+  Shuffle,
+  SignOut,
+  Trash,
+  UploadSimple,
+} from 'phosphor-react-native';
 
 export default function Account() {
   const [isPushPending, setIsPushPending] = React.useState(false);
@@ -184,23 +191,20 @@ export default function Account() {
               <Menu.Root>
                 <Menu.Trigger asChild>
                   <Button
-                    className="w-full pb-3 pt-3 px-0 border-b border-border rounded-none items-end justify-between"
+                    className="w-full px-0 py-3 rounded-none justify-center"
                     variant="link"
-                    wrapperClassName="w-full rounded-none"
+                    wrapperClassName="w-full my-2 rounded-none"
                   >
-                    <Text className="leading-tight text-base text-muted-foreground shrink-0">
-                      Avatar
-                    </Text>
                     <Avatar
                       avatar={profile.image?.uri}
                       className="border-border-secondary border"
                       id={profile.id}
                       seedId={profile.avatarSeedId}
-                      size={42}
+                      size={84}
                     />
                   </Button>
                 </Menu.Trigger>
-                <Menu.Content align="end" className="my-0">
+                <Menu.Content align="center" className="my-0">
                   {!profile.image && (
                     <Menu.Item onPress={handleRandomizeProfileAvatar}>
                       <Icon className="text-placeholder" icon={Shuffle} />
@@ -258,10 +262,10 @@ export default function Account() {
               </View>
             </View>
             {Platform.OS === 'web' && (
-              <View className="px-4">
+              <>
                 <Pressable
                   accessibilityRole="switch"
-                  className="flex-row py-3 border-b border-border gap-4 items-center justify-between"
+                  className="flex-row px-4 py-3 gap-4 items-center justify-between"
                   disabled={isPushToggleDisabled}
                   onPress={handleTogglePush}
                   accessibilityState={{
@@ -286,16 +290,44 @@ export default function Account() {
                     onCheckedChange={handleTogglePush}
                   />
                 </Pressable>
-              </View>
+                <View className="mx-4 border-border border-t" />
+              </>
             )}
+            <Button
+              className="h-auto px-4 py-3 rounded-none gap-4 justify-between"
+              onPress={() => sheetManager.open('mcp')}
+              variant="ghost"
+              wrapperClassName="w-full rounded-none"
+            >
+              <View className="flex-1">
+                <Text className="font-normal leading-normal text-muted-foreground">
+                  Connect AI apps
+                </Text>
+                <Text className="pb-0.5 leading-normal text-placeholder text-xs">
+                  Works with ChatGPT, Claude & more
+                </Text>
+              </View>
+              <Icon
+                className="-mr-0.5 text-placeholder"
+                icon={PlugsConnected}
+              />
+            </Button>
+            <View className="mx-4 border-border border-t" />
             <Menu.Root>
               <Menu.Trigger asChild>
                 <Button
-                  className="rounded-none justify-between"
+                  className="h-auto py-3 rounded-none gap-4 justify-between"
                   variant="ghost"
                   wrapperClassName="rounded-none"
                 >
-                  <Text className="font-normal">Double tap reaction</Text>
+                  <View className="flex-1">
+                    <Text className="font-normal leading-normal">
+                      Double tap reaction
+                    </Text>
+                    <Text className="pb-0.5 leading-normal text-placeholder text-xs">
+                      Applies to the right of reaction buttons
+                    </Text>
+                  </View>
                   <Icon
                     className="-mr-0.5 text-primary"
                     icon={REACTION_ICONS[ui.doubleTapEmoji]}
@@ -328,7 +360,7 @@ export default function Account() {
                 ))}
               </Menu.Content>
             </Menu.Root>
-            <View className="my-2 border-border border-t" />
+            <View className="mx-4 border-border border-t" />
             <Button
               className="rounded-none justify-between"
               disabled={isSigningOut}

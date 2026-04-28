@@ -34,6 +34,7 @@
   "dependencies": {
     "@babel/core": "^7.29.0",
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
+    "@cloudflare/workers-oauth-provider": "^0.4.0",
     "@cloudflare/workers-types": "^4.20260424.1",
     "@expo/metro-runtime": "^55.0.10",
     "@hono/zod-validator": "^0.7.6",
@@ -41,6 +42,7 @@
     "@instantdb/react-native": "1.0.15",
     "@legendapp/list": "^2.0.19",
     "@likashefqet/react-native-image-zoom": "^4.3.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@pushforge/builder": "^2.0.5",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "11.5.2",
@@ -58,6 +60,7 @@
     "@types/chroma-js": "^3.1.2",
     "@types/linkify-it": "^5.0.0",
     "@types/react": "~19.2.14",
+    "agents": "^0.11.6",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "chroma-js": "^3.2.0",
     "class-variance-authority": "^0.7.1",

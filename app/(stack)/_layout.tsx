@@ -1,3 +1,4 @@
+import { McpSheet } from '@/features/account/components/mcp-sheet';
 import { WebPushIosSetupSheet } from '@/features/account/components/web-push-ios-setup-sheet';
 import { InviteDeleteSheet } from '@/features/invites/components/delete-sheet';
 import { InviteLogsSheet } from '@/features/invites/components/logs-sheet';
@@ -65,6 +66,7 @@ export default function Layout() {
       <TeamDeleteSheet />
       <TeamLeaveSheet />
       <TeamSwitchSheet />
+      <McpSheet />
       <WebPushIosSetupSheet />
     </React.Fragment>
   );

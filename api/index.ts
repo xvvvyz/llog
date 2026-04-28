@@ -2,22 +2,25 @@ import files from '@/api/files';
 import internal from '@/api/internal';
 import logs from '@/api/logs';
 import { headers } from '@/api/middleware/headers';
+import oauth from '@/api/oauth';
+import * as oauthProviderModule from '@/api/oauth/provider';
 import push from '@/api/push';
 import records from '@/api/records';
 import teams from '@/api/teams';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
-const app = new Hono().basePath('/api/v1');
-app.use(headers());
-app.route('/files', files);
-app.route('/internal', internal);
-app.route('/logs', logs);
-app.route('/push', push);
-app.route('/records', records);
-app.route('/teams', teams);
+const api = new Hono().basePath('/api/v1');
+api.use(headers());
+api.route('/files', files);
+api.route('/internal', internal);
+api.route('/logs', logs);
+api.route('/oauth', oauth);
+api.route('/push', push);
+api.route('/records', records);
+api.route('/teams', teams);
 
-app.onError((err, c) => {
+api.onError((err, c) => {
   if (err instanceof HTTPException) return err.getResponse();
 
   console.error('Unhandled API error', {
@@ -29,4 +32,27 @@ app.onError((err, c) => {
   return c.json({ message: 'Internal server error' }, 500);
 });
 
-export default app;
+const defaultHandler = {
+  async fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
+    const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/v1/')) {
+      return api.fetch(request, env, ctx);
+    }
+
+    if (env.ASSETS) return env.ASSETS.fetch(request);
+    return new Response('Not found', { status: 404 });
+  },
+};
+
+const oauthProvider = oauthProviderModule.createOAuthProvider(defaultHandler);
+
+export default {
+  fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
+    return oauthProvider.fetch(
+      oauthProviderModule.normalizePublicOrigin(request, env.APP_URL),
+      env,
+      ctx
+    );
+  },
+};

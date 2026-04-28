@@ -10,6 +10,7 @@ export type SheetNames = readonly [
   'log-members',
   'log-tags',
   'member-logs',
+  'mcp',
   'record-audio',
   'record-copy-to',
   'record-create',

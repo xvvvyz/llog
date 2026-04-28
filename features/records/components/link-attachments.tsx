@@ -1,3 +1,5 @@
+import * as linkUrl from '@/features/records/lib/link-url';
+import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert as showAlert } from '@/lib/alert';
@@ -10,17 +12,6 @@ import { Text } from '@/ui/text';
 import { ArrowSquareOut, LinkSimple, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Linking, View } from 'react-native';
-
-import {
-  getLinkUrlDisplayText,
-  normalizeLinkUrl,
-} from '@/features/records/lib/link-url';
-
-import {
-  openRecordLinkAttachmentsSheet,
-  openRecordLinkEditorSheet,
-  type RecordSheetParent,
-} from '@/features/records/lib/sheet-payloads';
 
 const byOrder = (a: Link, b: Link) => (a.order ?? 0) - (b.order ?? 0);
 const getLinkLabel = (item: Link) => item.label?.trim() || 'Link';
@@ -42,7 +33,7 @@ export const LinkAttachments = ({
   links: Link[];
   onDeleteLink?: (linkId: string) => void;
   onSheetOpenChange?: (open: boolean) => void;
-  parent?: RecordSheetParent;
+  parent?: sheetPayloads.RecordSheetParent;
   portalName?: string;
   sheetOpen?: boolean;
   triggerClassName?: string;
@@ -78,7 +69,7 @@ export const LinkAttachments = ({
   const moreLinksText = items.length > 1 ? `+${items.length - 1} more` : null;
 
   const handleOpenLink = React.useCallback(async (item: Link) => {
-    const url = normalizeLinkUrl(item.url);
+    const url = linkUrl.normalizeLinkUrl(item.url);
 
     if (!url) {
       showAlert({
@@ -101,7 +92,7 @@ export const LinkAttachments = ({
 
   const handleOpenSheet = React.useCallback(() => {
     if (parent) {
-      openRecordLinkAttachmentsSheet(sheetManager, { parent });
+      sheetPayloads.openRecordLinkAttachmentsSheet(sheetManager, { parent });
       return;
     }
 
@@ -118,7 +109,10 @@ export const LinkAttachments = ({
 
   const handleEditLink = React.useCallback(
     (linkId: string) => {
-      openRecordLinkEditorSheet(sheetManager, { linkId, mode: 'edit' });
+      sheetPayloads.openRecordLinkEditorSheet(sheetManager, {
+        linkId,
+        mode: 'edit',
+      });
     },
     [sheetManager]
   );
@@ -153,7 +147,7 @@ export const LinkAttachments = ({
           className="font-normal text-placeholder text-xs"
           numberOfLines={1}
         >
-          {getLinkUrlDisplayText(item.url)}
+          {linkUrl.getLinkUrlDisplayText(item.url)}
         </Text>
       </View>
     </Button>
@@ -196,7 +190,7 @@ export const LinkAttachments = ({
               className="font-normal text-placeholder text-xs shrink-0"
               numberOfLines={1}
             >
-              {getLinkUrlDisplayText(firstItem.url)}
+              {linkUrl.getLinkUrlDisplayText(firstItem.url)}
             </Text>
           </Button>
           <View className="flex-row gap-2 items-center shrink-0">
@@ -255,7 +249,7 @@ export const LinkAttachments = ({
                     className="text-placeholder text-xs shrink-0"
                     numberOfLines={1}
                   >
-                    {getLinkUrlDisplayText(item.url)}
+                    {linkUrl.getLinkUrlDisplayText(item.url)}
                   </Text>
                 </View>
               );

@@ -176,6 +176,50 @@ const assertCanUploadToOwnedTarget = async ({
   }
 };
 
+const assertFileIdAvailable = async ({
+  db: dbClient,
+  fileId,
+}: {
+  db: Db;
+  fileId?: string;
+}) => {
+  if (!fileId) return;
+
+  const { files } = await dbClient.query({
+    files: { $: { fields: ['id'], where: { id: fileId } } },
+  });
+
+  if (files[0]?.id) {
+    throw new HTTPException(409, { message: 'File ID already exists' });
+  }
+};
+
+const assertCanCreateFileUpload = async ({
+  creatorId,
+  db: dbClient,
+  fileId,
+  linkField,
+  linkId,
+  recordId,
+}: {
+  creatorId: string;
+  db: Db;
+  fileId?: string;
+  linkField: 'reply' | 'record';
+  linkId: string;
+  recordId: string;
+}) => {
+  await assertCanUploadToOwnedTarget({
+    creatorId,
+    db: dbClient,
+    linkField,
+    linkId,
+    recordId,
+  });
+
+  await assertFileIdAvailable({ db: dbClient, fileId });
+};
+
 export const uploadFile = async ({
   creatorId,
   db: dbClient,
@@ -215,15 +259,17 @@ export const uploadFile = async ({
     'document',
   ]) as MultipartFileKind;
 
-  await assertCanUploadToOwnedTarget({
+  const fileId = clientFileId || id();
+
+  await assertCanCreateFileUpload({
     creatorId,
     db: dbClient,
+    fileId,
     linkField,
     linkId,
     recordId,
   });
 
-  const fileId = clientFileId || id();
   const normalizedDuration = normalizeDurationSeconds(duration);
   const normalizedName = normalizeFileName(fileName ?? upload.name);
   const normalizedMimeType = normalizeMimeType(mimeType ?? upload.type);
@@ -316,15 +362,16 @@ export const createDirectVideoUploadDraft = async ({
   order?: number;
   recordId: string;
 }) => {
-  await assertCanUploadToOwnedTarget({
+  const fileId = clientFileId || id();
+
+  await assertCanCreateFileUpload({
     creatorId,
     db: dbClient,
+    fileId,
     linkField,
     linkId,
     recordId,
   });
-
-  const fileId = clientFileId || id();
 
   const { uid, uploadURL } = await cloudflareStream.createDirectVideoUpload(
     env,

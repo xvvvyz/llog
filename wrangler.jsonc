@@ -4,15 +4,18 @@
   "compatibility_flags": ["nodejs_compat"],
   "name": "llog",
   "main": "api/index.ts",
+  "kv_namespaces": [{ "binding": "OAUTH_KV" }],
   "r2_buckets": [{ "binding": "R2", "bucket_name": "llog", "remote": true }],
   "vars": { "ENV": "development" },
   "env": {
     "production": {
       "assets": {
+        "binding": "ASSETS",
         "directory": "web",
         "not_found_handling": "single-page-application",
-        "run_worker_first": ["/api/*"],
+        "run_worker_first": ["/.well-known/*", "/api/*", "/mcp", "/mcp/*"],
       },
+      "kv_namespaces": [{ "binding": "OAUTH_KV" }],
       "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
       "vars": { "ENV": "production" },
     },

@@ -1,18 +1,20 @@
 import { LinkAttachments } from '@/features/records/components/link-attachments';
+import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import { deleteLink } from '@/features/records/mutations/delete-link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
-import {
-  getRecordLinkAttachmentsSheetPayload,
-  RECORD_LINK_ATTACHMENTS_SHEET,
-} from '@/features/records/lib/sheet-payloads';
-
 export const LinkAttachmentsSheet = () => {
   const sheetManager = useSheetManager();
-  const isOpen = sheetManager.isOpen(RECORD_LINK_ATTACHMENTS_SHEET);
-  const parent = getRecordLinkAttachmentsSheetPayload(sheetManager)?.parent;
+
+  const isOpen = sheetManager.isOpen(
+    sheetPayloads.RECORD_LINK_ATTACHMENTS_SHEET
+  );
+
+  const parent =
+    sheetPayloads.getRecordLinkAttachmentsSheetPayload(sheetManager)?.parent;
+
   const isRecord = parent?.type === 'record';
   const isReply = parent?.type === 'reply';
 
@@ -39,7 +41,7 @@ export const LinkAttachmentsSheet = () => {
       : false;
 
   const close = React.useCallback(() => {
-    sheetManager.close(RECORD_LINK_ATTACHMENTS_SHEET);
+    sheetManager.close(sheetPayloads.RECORD_LINK_ATTACHMENTS_SHEET);
   }, [sheetManager]);
 
   React.useEffect(() => {
@@ -55,7 +57,7 @@ export const LinkAttachmentsSheet = () => {
       hideTrigger
       links={links}
       onDeleteLink={handleDeleteLink}
-      portalName={RECORD_LINK_ATTACHMENTS_SHEET}
+      portalName={sheetPayloads.RECORD_LINK_ATTACHMENTS_SHEET}
       sheetOpen={isOpen}
       onSheetOpenChange={(open) => {
         if (!open) close();

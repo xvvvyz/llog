@@ -1,4 +1,5 @@
-import { normalizeLinkUrl } from '@/features/records/lib/link-url';
+import * as linkUrl from '@/features/records/lib/link-url';
+import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import { createLink } from '@/features/records/mutations/create-link';
 import { updateLink } from '@/features/records/mutations/update-link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -11,18 +12,13 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
 
-import {
-  getRecordLinkEditorSheetPayload,
-  RECORD_LINK_EDITOR_SHEET,
-} from '@/features/records/lib/sheet-payloads';
-
 const getNextOrder = (links?: { order?: number | null }[]) =>
   (links ?? []).reduce((max, item) => Math.max(max, item.order ?? 0), -1) + 1;
 
 export const LinkEditorSheet = () => {
   const sheetManager = useSheetManager();
-  const isOpen = sheetManager.isOpen(RECORD_LINK_EDITOR_SHEET);
-  const payload = getRecordLinkEditorSheetPayload(sheetManager);
+  const isOpen = sheetManager.isOpen(sheetPayloads.RECORD_LINK_EDITOR_SHEET);
+  const payload = sheetPayloads.getRecordLinkEditorSheetPayload(sheetManager);
   const [label, setLabel] = React.useState('');
   const [url, setUrl] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -61,7 +57,12 @@ export const LinkEditorSheet = () => {
 
   const editingLink = linkData?.links?.[0];
   const isLinkLoading = isEditingLink && linkLoading;
-  const normalizedUrl = React.useMemo(() => normalizeLinkUrl(url), [url]);
+
+  const normalizedUrl = React.useMemo(
+    () => linkUrl.normalizeLinkUrl(url),
+    [url]
+  );
+
   const trimmedLabel = label.trim();
 
   const canSubmit = isEditingLink
@@ -69,7 +70,7 @@ export const LinkEditorSheet = () => {
     : !!createParent && !!parent && !!trimmedLabel && !!normalizedUrl;
 
   const close = React.useCallback(() => {
-    sheetManager.close(RECORD_LINK_EDITOR_SHEET);
+    sheetManager.close(sheetPayloads.RECORD_LINK_EDITOR_SHEET);
   }, [sheetManager]);
 
   React.useEffect(() => {
@@ -141,7 +142,7 @@ export const LinkEditorSheet = () => {
       loading={isLinkLoading}
       onDismiss={close}
       open={isOpen}
-      portalName={RECORD_LINK_EDITOR_SHEET}
+      portalName={sheetPayloads.RECORD_LINK_EDITOR_SHEET}
       topInset={64}
     >
       <View className="mx-auto max-w-md w-full p-8">
