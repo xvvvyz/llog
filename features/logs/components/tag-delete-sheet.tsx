@@ -17,7 +17,7 @@ export const TagDeleteSheet = () => {
       open={sheetManager.isOpen('tag-delete')}
       portalName="tag-delete"
     >
-      <View className="mx-auto max-w-md w-full p-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
         <Text className="text-2xl text-center">Delete tag?</Text>
         <Button
           variant="destructive"

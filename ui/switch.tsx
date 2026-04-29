@@ -20,8 +20,10 @@ export const Switch = React.forwardRef<
   >
     <SwitchPrimitive.Thumb
       className={cn(
-        'bg-background web:transition-transform size-5 rounded-full shadow-xs',
-        checked ? 'translate-x-5' : 'translate-x-0'
+        'web:transition-transform size-5 rounded-full shadow-xs',
+        checked
+          ? 'bg-background translate-x-5'
+          : 'bg-progress-track translate-x-0'
       )}
     />
   </SwitchPrimitive.Root>

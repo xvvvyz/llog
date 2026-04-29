@@ -5,9 +5,10 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
+import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { Sheet } from '@/ui/sheet';
-import { SheetListScrollView } from '@/ui/sheet-list';
+import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -97,6 +98,14 @@ export const MemberLogsSheet = () => {
           );
         })}
       </SheetListScrollView>
+      <SheetFooter>
+        <Button
+          onPress={() => sheetManager.close('member-logs')}
+          variant="secondary"
+        >
+          <Text>Done</Text>
+        </Button>
+      </SheetFooter>
     </Sheet>
   );
 };

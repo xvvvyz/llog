@@ -36,9 +36,20 @@ const parseAuthorizeRequest = async (
   }
 };
 
+const requireGrantScopes = (request: { scope: string[] }) => {
+  const [llogScope] = LLOG_OAUTH_SCOPES;
+
+  if (!request.scope.includes(llogScope)) {
+    throw new HTTPException(400, { message: 'Missing required llog scope' });
+  }
+
+  return request.scope;
+};
+
 app.get('/authorize/preview', async (c) => {
   const query = c.req.url.split('?')[1] ?? '';
   const request = await parseAuthorizeRequest(c.env, c.req.raw, query);
+  requireGrantScopes(request);
   const client = await c.env.OAUTH_PROVIDER.lookupClient(request.clientId);
 
   return c.json({
@@ -50,11 +61,7 @@ app.get('/authorize/preview', async (c) => {
           logoUri: client.logoUri,
         }
       : null,
-    request: {
-      clientId: request.clientId,
-      redirectUri: request.redirectUri,
-      scope: LLOG_OAUTH_SCOPES,
-    },
+    request: { clientId: request.clientId, redirectUri: request.redirectUri },
   });
 });
 
@@ -95,7 +102,7 @@ app.post(
       },
       props: { email: user.email, profileId: profile.id, userId: user.id },
       request,
-      scope: LLOG_OAUTH_SCOPES,
+      scope: requireGrantScopes(request),
       userId: user.id,
     });
 

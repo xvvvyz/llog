@@ -127,9 +127,6 @@ export default function Authorize() {
           <Text className="font-medium text-foreground">{clientName}</Text>.
           This allows the app to access llog through MCP.
         </Text>
-        <Text className="-mt-4 max-w-xs text-center text-placeholder text-sm">
-          {preview.request.scope.join(', ') || 'Default access'}
-        </Text>
         <Button
           disabled={isAuthorizing || isPending}
           onPress={handleAuthorize}

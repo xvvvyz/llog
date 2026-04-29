@@ -3,7 +3,7 @@ import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { Loading } from '@/ui/loading';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
-import { useSheetStack } from '@/ui/sheet-stack';
+import { useSheetStack, useSheetStackBackdrop } from '@/ui/sheet-stack';
 import { Portal } from '@rn-primitives/portal';
 import * as React from 'react';
 
@@ -26,6 +26,27 @@ import Animated, {
 
 export const SHEET_LAYERS = { route: 10, action: 20 } as const;
 
+export const SheetBackdrop = () => {
+  const backdrop = useSheetStackBackdrop();
+  if (Platform.OS !== 'web' || !backdrop.open) return null;
+
+  return (
+    <Portal name="sheet-backdrop">
+      <Animated.View
+        className="fixed inset-0 bg-background/90"
+        entering={animation(FadeIn)}
+        exiting={animation(FadeOut)}
+        style={{ zIndex: backdrop.layer }}
+      >
+        <Pressable
+          className="h-full w-full cursor-default"
+          onPress={backdrop.onDismiss}
+        />
+      </Animated.View>
+    </Portal>
+  );
+};
+
 export const Sheet = ({
   children,
   className,
@@ -45,6 +66,7 @@ export const Sheet = ({
   portalName: string;
   topInset?: number;
 }) => {
+  const isWeb = Platform.OS === 'web';
   const inset = useSafeAreaInsets();
   const windowDimensions = useWindowDimensions();
   const sheetContentRef = React.useRef<React.ComponentRef<typeof View>>(null);
@@ -57,18 +79,6 @@ export const Sheet = ({
     open,
     windowHeight: windowDimensions.height,
   });
-
-  const webOverlayStyle = React.useMemo(
-    () => ({
-      bottom: 0,
-      left: 0,
-      position: 'fixed' as const,
-      right: 0,
-      top: 0,
-      zIndex: layer,
-    }),
-    [layer]
-  );
 
   const availableHeight = Math.max(
     1,
@@ -84,17 +94,20 @@ export const Sheet = ({
       className="absolute inset-0"
       entering={animation(FadeInDown)}
       exiting={animation(FadeOutDown)}
+      pointerEvents={isWeb ? 'box-none' : 'auto'}
     >
-      <Animated.View
-        className="absolute inset-0 bg-background/90"
-        entering={animation(FadeIn)}
-        exiting={animation(FadeOut)}
-      >
-        <Pressable
-          className="h-full w-full cursor-default"
-          onPress={onDismiss}
-        />
-      </Animated.View>
+      {isWeb ? null : (
+        <Animated.View
+          className="absolute inset-0 bg-background/90"
+          entering={animation(FadeIn)}
+          exiting={animation(FadeOut)}
+        >
+          <Pressable
+            className="h-full w-full cursor-default"
+            onPress={onDismiss}
+          />
+        </Animated.View>
+      )}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="absolute inset-0 justify-end"
@@ -133,9 +146,15 @@ export const Sheet = ({
 
   return (
     <Portal name={portalName}>
-      {Platform.OS === 'web' ? (
+      {isWeb ? (
         open ? (
-          <View style={webOverlayStyle}>{sheet}</View>
+          <View
+            className="fixed inset-0"
+            pointerEvents="box-none"
+            style={{ zIndex: layer }}
+          >
+            {sheet}
+          </View>
         ) : null
       ) : (
         <Modal

@@ -39,7 +39,7 @@ export const WebPushIosSetupSheet = () => {
       open={sheetManager.isOpen('web-push-ios-setup')}
       portalName="web-push-ios-setup"
     >
-      <View className="mx-auto max-w-md w-full p-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
         <Icon
           className="mb-6 text-primary self-center"
           icon={BellRinging}
@@ -72,7 +72,8 @@ export const WebPushIosSetupSheet = () => {
         <Button
           className="web:hover:opacity-90"
           onPress={() => sheetManager.close('web-push-ios-setup')}
-          wrapperClassName="mt-12"
+          variant="secondary"
+          wrapperClassName="mt-10"
         >
           <Text>Got it</Text>
         </Button>

@@ -7,21 +7,40 @@ type SheetStackOptions = {
 };
 
 type SheetStackState = { isTopSheet: boolean };
-type WebSheetStackItem = { id: string; layer: number; order: number };
+
+type SheetStackBackdropState = {
+  layer: number;
+  onDismiss: () => void;
+  open: boolean;
+};
+
+type WebSheetStackItem = {
+  id: string;
+  layer: number;
+  onDismissRef: React.RefObject<() => void>;
+  order: number;
+};
+
 let nextWebSheetOrder = 0;
+let webSheetStackVersion = 0;
 let webSheetStack: WebSheetStackItem[] = [];
 const webSheetStackListeners = new Set<() => void>();
 
 const emitWebSheetStackChange = () => {
+  webSheetStackVersion += 1;
   for (const listener of webSheetStackListeners) listener();
 };
 
-const registerWebSheet = (id: string, layer: number) => {
+const registerWebSheet = (
+  id: string,
+  layer: number,
+  onDismissRef: React.RefObject<() => void>
+) => {
   const order = ++nextWebSheetOrder;
 
   webSheetStack = [
     ...webSheetStack.filter((item) => item.id !== id),
-    { id, layer, order },
+    { id, layer, onDismissRef, order },
   ];
 
   emitWebSheetStackChange();
@@ -50,6 +69,7 @@ const subscribeToWebSheetStack = (listener: () => void) => {
 };
 
 const getTopWebSheetId = () => getTopWebSheet()?.id ?? null;
+const getWebSheetStackVersion = () => webSheetStackVersion;
 
 export const useSheetStack = ({
   layer,
@@ -57,6 +77,8 @@ export const useSheetStack = ({
   open,
 }: SheetStackOptions): SheetStackState => {
   const sheetId = React.useId();
+  const onDismissRef = React.useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   const topSheetId = React.useSyncExternalStore(
     subscribeToWebSheetStack,
@@ -66,7 +88,7 @@ export const useSheetStack = ({
 
   React.useEffect(() => {
     if (!open) return;
-    return registerWebSheet(sheetId, layer);
+    return registerWebSheet(sheetId, layer, onDismissRef);
   }, [layer, open, sheetId]);
 
   React.useEffect(() => {
@@ -86,4 +108,20 @@ export const useSheetStack = ({
   }, [onDismiss, open, sheetId]);
 
   return { isTopSheet: open && topSheetId === sheetId };
+};
+
+export const useSheetStackBackdrop = (): SheetStackBackdropState => {
+  React.useSyncExternalStore(
+    subscribeToWebSheetStack,
+    getWebSheetStackVersion,
+    () => 0
+  );
+
+  const topSheet = getTopWebSheet();
+
+  return {
+    layer: topSheet ? Math.max(0, topSheet.layer - 1) : 0,
+    onDismiss: () => topSheet?.onDismissRef.current(),
+    open: !!topSheet,
+  };
 };

@@ -11,7 +11,7 @@ export type OAuthAuthorizePreview = {
     clientUri?: string;
     logoUri?: string;
   } | null;
-  request: { clientId: string; redirectUri: string; scope: string[] };
+  request: { clientId: string; redirectUri: string };
 };
 
 const INVALID_AUTHORIZATION_REQUEST = 'Invalid authorization request.';

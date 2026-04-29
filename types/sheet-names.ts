@@ -15,6 +15,7 @@ export type SheetNames = readonly [
   'record-copy-to',
   'record-create',
   'record-delete',
+  'record-detail',
   'record-link-attachments',
   'record-link-editor',
   'tag-delete',

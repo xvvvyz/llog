@@ -4,6 +4,7 @@ import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
+import { SheetBackdrop } from '@/ui/sheet';
 import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
@@ -120,6 +121,7 @@ export default function Layout() {
         <GestureHandlerRootView className="flex-1">
           <SheetManagerProvider>
             <Slot />
+            <SheetBackdrop />
             <PortalHost />
           </SheetManagerProvider>
         </GestureHandlerRootView>

@@ -33,7 +33,7 @@ export const MemberRemoveSheet = () => {
       open={sheetManager.isOpen('member-remove')}
       portalName="member-remove"
     >
-      <View className="mx-auto max-w-md w-full p-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
         <Text className="text-2xl text-center">Remove member?</Text>
         <Button
           disabled={isLoading}

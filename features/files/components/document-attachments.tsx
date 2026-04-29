@@ -579,7 +579,7 @@ export const DocumentAttachments = ({
           portalName={nameEditorPortalName}
           topInset={64}
         >
-          <View className="mx-auto max-w-md w-full p-8">
+          <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
             <View>
               <Label>Name</Label>
               <Input

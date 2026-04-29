@@ -6,9 +6,10 @@ import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Avatar } from '@/ui/avatar';
+import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { Sheet } from '@/ui/sheet';
-import { SheetListScrollView } from '@/ui/sheet-list';
+import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -88,6 +89,14 @@ export const LogMembersSheet = () => {
             );
           })}
       </SheetListScrollView>
+      <SheetFooter>
+        <Button
+          onPress={() => sheetManager.close('log-members')}
+          variant="secondary"
+        >
+          <Text>Done</Text>
+        </Button>
+      </SheetFooter>
     </Sheet>
   );
 };

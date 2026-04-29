@@ -7,6 +7,7 @@ import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
+import { Text } from '@/ui/text';
 import { View } from 'react-native';
 
 export const LogEditSheet = () => {
@@ -22,7 +23,7 @@ export const LogEditSheet = () => {
       open={sheetManager.isOpen('log-edit')}
       portalName="log-edit"
     >
-      <View className="mx-auto max-w-md w-full p-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
         <View>
           <Label>Name</Label>
           <Input
@@ -70,6 +71,13 @@ export const LogEditSheet = () => {
             ))}
           </View>
         </View>
+        <Button
+          onPress={() => sheetManager.close('log-edit')}
+          variant="secondary"
+          wrapperClassName="mt-8"
+        >
+          <Text>Done</Text>
+        </Button>
       </View>
     </Sheet>
   );

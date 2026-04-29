@@ -11,7 +11,7 @@ import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import { Check, Copy, PlugsConnected, Trash } from 'phosphor-react-native';
+import { Check, Copy, Trash } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -83,13 +83,8 @@ export const McpSheet = () => {
       open={isOpen}
       portalName="mcp"
     >
-      <View className="mx-auto max-w-lg w-full p-8 pb-0">
-        <Icon
-          className="mb-6 text-primary self-center"
-          icon={PlugsConnected}
-          size={64}
-        />
-        <View className="flex-row mb-5 items-center justify-between">
+      <SheetListScrollView contentContainerClassName="gap-5">
+        <View className="flex-row items-center justify-between">
           <Label className="p-0 shrink-0">MCP URL</Label>
           <View className="flex-1 flex-row min-w-0 gap-3 items-center justify-end">
             <Input
@@ -107,50 +102,50 @@ export const McpSheet = () => {
             </Button>
           </View>
         </View>
-      </View>
-      {grants.length > 0 && (
-        <SheetListScrollView className="border-t rounded-t-4xl">
-          {grants.map((grant) => {
-            const clientName =
-              grant.metadata?.clientName ??
-              grant.metadata?.clientUri ??
-              grant.clientId;
+        {grants.length > 0 && (
+          <View>
+            {grants.map((grant) => {
+              const clientName =
+                grant.metadata?.clientName ??
+                grant.metadata?.clientUri ??
+                grant.clientId;
 
-            return (
-              <View key={grant.id} className="flex-row gap-3 items-center">
-                <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
-                  <Text
-                    className="text-muted-foreground text-sm shrink"
-                    numberOfLines={1}
+              return (
+                <View key={grant.id} className="flex-row gap-3 items-center">
+                  <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
+                    <Text
+                      className="text-muted-foreground text-sm shrink"
+                      numberOfLines={1}
+                    >
+                      {clientName}
+                    </Text>
+                    <Text
+                      className="text-placeholder text-xs shrink-0"
+                      numberOfLines={1}
+                    >
+                      {getDateLabel(grant.createdAt * 1000)}
+                    </Text>
+                  </View>
+                  <Button
+                    accessibilityLabel={`Revoke ${clientName}`}
+                    disabled={revokingGrantId === grant.id}
+                    onPress={() => revokeGrant(grant.id)}
+                    size="icon-sm"
+                    variant="ghost"
+                    wrapperClassName="-mr-1.5"
                   >
-                    {clientName}
-                  </Text>
-                  <Text
-                    className="text-placeholder text-xs shrink-0"
-                    numberOfLines={1}
-                  >
-                    {getDateLabel(grant.createdAt * 1000)}
-                  </Text>
+                    {revokingGrantId === grant.id ? (
+                      <Spinner size="xs" />
+                    ) : (
+                      <Icon className="text-muted-foreground" icon={Trash} />
+                    )}
+                  </Button>
                 </View>
-                <Button
-                  accessibilityLabel={`Revoke ${clientName}`}
-                  disabled={revokingGrantId === grant.id}
-                  onPress={() => revokeGrant(grant.id)}
-                  size="icon-sm"
-                  variant="ghost"
-                  wrapperClassName="-mr-1.5"
-                >
-                  {revokingGrantId === grant.id ? (
-                    <Spinner size="xs" />
-                  ) : (
-                    <Icon className="text-muted-foreground" icon={Trash} />
-                  )}
-                </Button>
-              </View>
-            );
-          })}
-        </SheetListScrollView>
-      )}
+              );
+            })}
+          </View>
+        )}
+      </SheetListScrollView>
       <SheetFooter contentClassName="flex-row gap-4">
         <Button
           onPress={() => sheetManager.close('mcp')}
