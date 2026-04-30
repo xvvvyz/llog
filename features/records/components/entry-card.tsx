@@ -98,7 +98,7 @@ export const EntryCard = ({
       <MediaGrid recordId={recordId} visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
-          <AudioPlaylist clips={audioMedia} />
+          <AudioPlaylist clips={audioMedia} layout="stacked" />
         </View>
       )}
       {documentFiles.length > 0 && (

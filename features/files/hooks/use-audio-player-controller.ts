@@ -94,7 +94,9 @@ export const useAudioPlayerController = ({
   const seekRequestIdRef = React.useRef(0);
   const lastAutoPlayKeyRef = React.useRef<number | undefined>(undefined);
   const finishNotifiedRef = React.useRef(false);
+  const hasObservedPlaybackRef = React.useRef(false);
   const [displayTime, setDisplayTime] = React.useState(0);
+  const [isPlaybackRequested, setIsPlaybackRequested] = React.useState(false);
 
   const [localPlaybackRate, setLocalPlaybackRate] =
     React.useState<audioPlaybackRate.AudioPlaybackRate>(
@@ -125,6 +127,7 @@ export const useAudioPlayerController = ({
       : playerDuration;
 
   const isPlaying =
+    isPlaybackRequested ||
     status.playing ||
     (isScrubbingRef.current && wasPlayingBeforeScrub.current) ||
     pendingSeekRef.current?.resumePlayback === true;
@@ -143,6 +146,7 @@ export const useAudioPlayerController = ({
   );
 
   const pausePlayback = React.useCallback(() => {
+    setIsPlaybackRequested(false);
     player.pause();
   }, [player]);
 
@@ -170,6 +174,7 @@ export const useAudioPlayerController = ({
 
       await claimPlayback();
       if (seekRequestIdRef.current !== seekId) return;
+      setIsPlaybackRequested(true);
       player.play();
       onPlayStart?.();
     },
@@ -207,6 +212,7 @@ export const useAudioPlayerController = ({
 
   React.useEffect(() => {
     if (!status.playing) return;
+    hasObservedPlaybackRef.current = true;
     pendingSeekRef.current = null;
     clearPendingSeekTimeout();
     isScrubbingRef.current = false;
@@ -226,6 +232,7 @@ export const useAudioPlayerController = ({
   React.useEffect(() => {
     if (active || !status.playing) return;
     setDisplayTime(Math.min(status.currentTime, playerDuration));
+    setIsPlaybackRequested(false);
     player.pause();
   }, [active, player, playerDuration, status.currentTime, status.playing]);
 
@@ -235,7 +242,9 @@ export const useAudioPlayerController = ({
     clearPendingSeekTimeout();
     isScrubbingRef.current = false;
     finishNotifiedRef.current = false;
+    hasObservedPlaybackRef.current = false;
     lastAutoPlayKeyRef.current = undefined;
+    setIsPlaybackRequested(false);
     setDisplayTime(0);
   }, [clearPendingSeekTimeout, src]);
 
@@ -253,8 +262,10 @@ export const useAudioPlayerController = ({
       return;
     }
 
-    if (finishNotifiedRef.current) return;
+    if (!hasObservedPlaybackRef.current || finishNotifiedRef.current) return;
     finishNotifiedRef.current = true;
+    hasObservedPlaybackRef.current = false;
+    setIsPlaybackRequested(false);
     if (active) onDidFinish?.();
   }, [
     active,
@@ -274,6 +285,7 @@ export const useAudioPlayerController = ({
       pendingSeekRef.current = null;
       clearPendingSeekTimeout();
       isScrubbingRef.current = false;
+      setIsPlaybackRequested(true);
       setDisplayTime(startTime);
 
       await player.seekTo(
@@ -326,6 +338,7 @@ export const useAudioPlayerController = ({
     clearPendingSeekTimeout();
     isScrubbingRef.current = false;
     wasPlayingBeforeScrub.current = false;
+    setIsPlaybackRequested(false);
     player.pause();
     onPause?.();
   }, [clearPendingSeekTimeout, onPause, player]);
@@ -372,6 +385,7 @@ export const useAudioPlayerController = ({
       clearPendingSeekTimeout();
       isScrubbingRef.current = false;
       wasPlayingBeforeScrub.current = false;
+      setIsPlaybackRequested(resumePlayback);
       if (status.playing) player.pause();
       void seekToTime(baseTime + secondsDelta, resumePlayback);
     },
@@ -393,6 +407,7 @@ export const useAudioPlayerController = ({
     clearPendingSeekTimeout();
     isScrubbingRef.current = true;
     wasPlayingBeforeScrub.current = status.playing;
+    setIsPlaybackRequested(status.playing);
     if (status.playing) player.pause();
   }, [clearPendingSeekTimeout, player, status.playing]);
 

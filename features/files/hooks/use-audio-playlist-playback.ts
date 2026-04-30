@@ -13,13 +13,11 @@ export const useAudioPlaylistPlayback = <T>(
     key: number;
   } | null>(null);
 
-  const [wantsPlayback, setWantsPlaybackState] = React.useState(false);
   const autoPlayKeyRef = React.useRef(0);
   const wantsPlaybackRef = React.useRef(false);
 
   const setWantsPlayback = React.useCallback((value: boolean) => {
     wantsPlaybackRef.current = value;
-    setWantsPlaybackState(value);
     if (!value) setAutoPlayRequest(null);
   }, []);
 
@@ -82,23 +80,25 @@ export const useAudioPlaylistPlayback = <T>(
     setWantsPlayback(false);
   }, [setWantsPlayback]);
 
-  const handleDidFinish = React.useCallback(() => {
-    const nextPlayableIndex = items.findIndex(
-      (item, index) => index > activeIndex && isPlayable(item)
-    );
+  const handleDidFinish = React.useCallback(
+    (index = activeIndex) => {
+      const nextPlayableIndex = items.findIndex(
+        (item, itemIndex) => itemIndex > index && isPlayable(item)
+      );
 
-    if (nextPlayableIndex === -1) {
-      setWantsPlayback(false);
-      return;
-    }
+      if (nextPlayableIndex === -1) {
+        setWantsPlayback(false);
+        return;
+      }
 
-    setWantsPlayback(true);
-    setCurrentIndex(nextPlayableIndex);
-    requestAutoPlay(nextPlayableIndex);
-  }, [activeIndex, isPlayable, items, requestAutoPlay, setWantsPlayback]);
+      setWantsPlayback(true);
+      setCurrentIndex(nextPlayableIndex);
+      requestAutoPlay(nextPlayableIndex);
+    },
+    [activeIndex, isPlayable, items, requestAutoPlay, setWantsPlayback]
+  );
 
   const activeAutoPlayKey =
-    wantsPlayback &&
     autoPlayRequest?.index === activeIndex &&
     activeItem &&
     isPlayable(activeItem)

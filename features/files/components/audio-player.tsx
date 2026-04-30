@@ -81,6 +81,12 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       {trailingAccessory ??
         (showDefaultPlaybackRate && (
           <View className="flex-row items-center shrink-0">
+            <PlaybackRateButton
+              compact={compact}
+              disabled={isDisabled}
+              onPlaybackRateChange={handlePlaybackRateChange}
+              playbackRate={currentPlaybackRate}
+            />
             <Button
               accessibilityLabel="Back 5 seconds"
               className={cn(compact && 'size-6 rounded-lg')}
@@ -103,12 +109,6 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
             >
               <Icon icon={FastForward} size={compact ? 12 : 16} />
             </Button>
-            <PlaybackRateButton
-              compact={compact}
-              disabled={isDisabled}
-              onPlaybackRateChange={handlePlaybackRateChange}
-              playbackRate={currentPlaybackRate}
-            />
           </View>
         ))}
     </View>

@@ -84,7 +84,7 @@ export const CompactEntry = ({
           )}
           {audioMedia.length > 0 && (
             <View className="mt-4 gap-2">
-              <AudioPlaylist clips={audioMedia} />
+              <AudioPlaylist clips={audioMedia} layout="stacked" />
             </View>
           )}
           {documentFiles.length > 0 && (

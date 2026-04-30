@@ -12,18 +12,24 @@ import { View } from 'react-native';
 type AudioPlayerComponent =
   React.ComponentType<audioPlayerTypes.AudioPlayerProps>;
 
+type AudioPlaylistLayout = 'paged' | 'stacked';
+
+type AudioPlaylistProps = {
+  className?: string;
+  clips: audioPlayerTypes.AudioClip[];
+  compact?: boolean;
+  layout?: AudioPlaylistLayout;
+  showPlaybackRate?: boolean;
+};
+
 export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
   const AudioPlaylist = ({
     className,
     clips,
     compact,
+    layout = 'paged',
     showPlaybackRate = true,
-  }: {
-    className?: string;
-    clips: audioPlayerTypes.AudioClip[];
-    compact?: boolean;
-    showPlaybackRate?: boolean;
-  }) => {
+  }: AudioPlaylistProps) => {
     const {
       activeAutoPlayKey,
       activeIndex,
@@ -44,6 +50,30 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
     } = useUiAudioPlaybackRate();
 
     if (!activeClip) return null;
+
+    if (layout === 'stacked') {
+      return (
+        <View className={cn('min-w-0 gap-2', className)}>
+          {clips.map((clip, index) => (
+            <AudioPlayer
+              key={clip.id}
+              compact={compact}
+              duration={clip.duration}
+              onDidFinish={() => handleDidFinish(index)}
+              onPause={handlePause}
+              onPlaybackRateChange={setPlaybackRate}
+              onPlayStart={handlePlayStart}
+              playbackRate={playbackRate}
+              showPlaybackRate={showPlaybackRate}
+              uri={clip.uri}
+              autoPlayKey={
+                clip.id === activeClip.id ? activeAutoPlayKey : undefined
+              }
+            />
+          ))}
+        </View>
+      );
+    }
 
     return (
       <View className={cn('min-w-0 flex-row items-center', className)}>
