@@ -1,4 +1,5 @@
 import { downloadFile } from '@/features/files/lib/download-file';
+import { getFileTypeIcon } from '@/features/files/lib/file-type-icon';
 import { fileUriToSrc } from '@/features/files/lib/file-uri-to-src';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
@@ -18,7 +19,6 @@ import { View } from 'react-native';
 import {
   Files as DocumentsIcon,
   DownloadSimple,
-  FileText,
   X,
 } from 'phosphor-react-native';
 
@@ -177,6 +177,11 @@ export const DocumentAttachments = ({
 
   const showSummarySize = items.length === 1;
   const firstDocumentName = firstItem ? getDocumentName(firstItem.item) : null;
+
+  const firstDocumentIcon = firstItem
+    ? getFileTypeIcon(firstItem.item)
+    : DocumentsIcon;
+
   const trimmedEditingName = editingName.trim();
 
   const canRenameDocument =
@@ -316,7 +321,7 @@ export const DocumentAttachments = ({
               <View className="flex-1 flex-row min-w-0 gap-2 items-center">
                 <Icon
                   className={cn('text-placeholder', triggerIconClassName)}
-                  icon={FileText}
+                  icon={firstDocumentIcon}
                 />
                 <Text
                   className="font-normal text-muted-foreground text-sm shrink"
@@ -337,7 +342,7 @@ export const DocumentAttachments = ({
               <View className="flex-1 flex-row min-w-0 gap-2 items-center">
                 <Icon
                   className={cn('text-placeholder', triggerIconClassName)}
-                  icon={FileText}
+                  icon={firstDocumentIcon}
                 />
                 <Text
                   className="font-normal text-muted-foreground text-sm shrink"
@@ -389,7 +394,7 @@ export const DocumentAttachments = ({
             ) : (
               <Icon
                 className={cn('text-placeholder', triggerIconClassName)}
-                icon={DownloadSimple}
+                icon={firstDocumentIcon}
               />
             )}
             <Text
@@ -421,7 +426,7 @@ export const DocumentAttachments = ({
           <View className="flex-1 flex-row min-w-0 gap-2 items-center">
             <Icon
               className={cn('text-placeholder', triggerIconClassName)}
-              icon={DocumentsIcon}
+              icon={items.length === 1 ? firstDocumentIcon : DocumentsIcon}
             />
             <Text
               className="font-normal text-muted-foreground text-sm shrink"
@@ -463,11 +468,12 @@ export const DocumentAttachments = ({
           <SheetListScrollView>
             {items.map((previewItem) => {
               const item = previewItem.item;
+              const DocumentIcon = getFileTypeIcon(item);
 
               const documentDetails = (
                 <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
                   <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-                    <Icon className="text-placeholder" icon={FileText} />
+                    <Icon className="text-placeholder" icon={DocumentIcon} />
                     <Text
                       className="text-muted-foreground text-sm shrink"
                       numberOfLines={1}

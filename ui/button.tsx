@@ -92,6 +92,55 @@ type ButtonPressEvent = Parameters<NonNullable<ButtonProps['onPress']>>[0];
 type TouchPoint = { x: number; y: number };
 const TOUCH_CANCEL_DISTANCE = 16;
 const SKIP_PRESS_RESET_MS = 500;
+const FOLLOW_UP_CLICK_SUPPRESSION_MS = 750;
+const FOLLOW_UP_CLICK_RESET_EVENTS = ['pointerdown', 'touchstart'] as const;
+
+let followUpClickSuppressionTimeout: ReturnType<typeof setTimeout> | null =
+  null;
+
+function clearFollowUpClickSuppression() {
+  if (followUpClickSuppressionTimeout) {
+    clearTimeout(followUpClickSuppressionTimeout);
+    followUpClickSuppressionTimeout = null;
+  }
+
+  if (typeof document === 'undefined') return;
+  document.removeEventListener('click', preventSuppressedFollowUpClick, true);
+
+  for (const eventName of FOLLOW_UP_CLICK_RESET_EVENTS) {
+    document.removeEventListener(
+      eventName,
+      clearFollowUpClickSuppression,
+      true
+    );
+  }
+}
+
+function preventSuppressedFollowUpClick(event: MouseEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  clearFollowUpClickSuppression();
+}
+
+// iOS standalone PWAs can retarget this synthetic click after touchend.
+function suppressNextFollowUpClick() {
+  if (typeof document === 'undefined') return;
+  document.addEventListener('click', preventSuppressedFollowUpClick, true);
+
+  for (const eventName of FOLLOW_UP_CLICK_RESET_EVENTS) {
+    document.addEventListener(eventName, clearFollowUpClickSuppression, true);
+  }
+
+  if (followUpClickSuppressionTimeout) {
+    clearTimeout(followUpClickSuppressionTimeout);
+  }
+
+  followUpClickSuppressionTimeout = setTimeout(
+    clearFollowUpClickSuppression,
+    FOLLOW_UP_CLICK_SUPPRESSION_MS
+  );
+}
 
 const readTouchPoint = (event: ButtonTouchEvent): TouchPoint | null => {
   const nativeEvent = event.nativeEvent as {
@@ -128,6 +177,7 @@ const preventFollowUpClick = (event: ButtonTouchEvent) => {
 
   nativeEvent.preventDefault?.();
   nativeEvent.stopPropagation?.();
+  suppressNextFollowUpClick();
 };
 
 const Button = React.forwardRef<

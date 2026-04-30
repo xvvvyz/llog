@@ -151,7 +151,7 @@ export const Sheet = ({
           <View
             className="fixed inset-0"
             pointerEvents="box-none"
-            style={{ zIndex: layer }}
+            style={{ zIndex: sheetStack.zIndex }}
           >
             {sheet}
           </View>

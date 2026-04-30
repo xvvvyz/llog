@@ -7,25 +7,28 @@ import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Pause, Play } from 'phosphor-react-native';
+import { FastForward, Pause, Play, Rewind } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 
+const AUDIO_SEEK_STEP_SECONDS = 5;
+
 export const AudioPlayer = (props: AudioPlayerProps) => {
   const { compact, showPlaybackRate = true, trailingAccessory } = props;
+  const showDefaultPlaybackRate = showPlaybackRate && !trailingAccessory;
 
   const {
     currentPlaybackRate,
-    displayTime,
     gesture,
     handlePlaybackRateChange,
     handleTrackLayout,
     isDisabled,
     isPlaying,
-    playerDuration,
     progress,
+    seekBy,
+    timeLabelTime,
     togglePlayback,
   } = useAudioPlayerController(props);
 
@@ -72,17 +75,41 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           </GestureDetector>
         </View>
         <Text className="leading-tight text-placeholder text-right text-xs shrink-0 tabular-nums">
-          {formatTime(isPlaying ? displayTime : playerDuration)}
+          {formatTime(timeLabelTime)}
         </Text>
       </View>
       {trailingAccessory ??
-        (showPlaybackRate && (
-          <PlaybackRateButton
-            compact={compact}
-            disabled={isDisabled}
-            onPlaybackRateChange={handlePlaybackRateChange}
-            playbackRate={currentPlaybackRate}
-          />
+        (showDefaultPlaybackRate && (
+          <View className="flex-row items-center shrink-0">
+            <Button
+              accessibilityLabel="Back 5 seconds"
+              className={cn(compact && 'size-6 rounded-lg')}
+              disabled={isDisabled}
+              onPress={() => seekBy(-AUDIO_SEEK_STEP_SECONDS)}
+              size={compact ? 'icon' : 'icon-sm'}
+              variant="ghost"
+              wrapperClassName={cn(compact && 'rounded-lg')}
+            >
+              <Icon icon={Rewind} size={compact ? 12 : 16} />
+            </Button>
+            <Button
+              accessibilityLabel="Forward 5 seconds"
+              className={cn(compact && 'size-6 rounded-lg')}
+              disabled={isDisabled}
+              onPress={() => seekBy(AUDIO_SEEK_STEP_SECONDS)}
+              size={compact ? 'icon' : 'icon-sm'}
+              variant="ghost"
+              wrapperClassName={cn(compact && 'rounded-lg')}
+            >
+              <Icon icon={FastForward} size={compact ? 12 : 16} />
+            </Button>
+            <PlaybackRateButton
+              compact={compact}
+              disabled={isDisabled}
+              onPlaybackRateChange={handlePlaybackRateChange}
+              playbackRate={currentPlaybackRate}
+            />
+          </View>
         ))}
     </View>
   );

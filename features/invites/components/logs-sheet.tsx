@@ -88,7 +88,7 @@ export const InviteLogsSheet = () => {
       if (action === 'qr') {
         const url = await getInviteUrlForSelection();
         sheetManager.close('invite-logs');
-        setTimeout(() => sheetManager.open('invite-qr', url), 300);
+        sheetManager.open('invite-qr', url);
         return;
       }
 

@@ -6,7 +6,7 @@ type SheetStackOptions = {
   open: boolean;
 };
 
-type SheetStackState = { isTopSheet: boolean };
+type SheetStackState = { isTopSheet: boolean; zIndex: number };
 
 type SheetStackBackdropState = {
   layer: number;
@@ -21,6 +21,7 @@ type WebSheetStackItem = {
   order: number;
 };
 
+const WEB_SHEET_LAYER_MULTIPLIER = 1_000;
 let nextWebSheetOrder = 0;
 let webSheetStackVersion = 0;
 let webSheetStack: WebSheetStackItem[] = [];
@@ -63,6 +64,17 @@ const getTopWebSheet = () =>
     return topSheet;
   }, null);
 
+const getWebSheetLayerRank = (
+  item: Pick<WebSheetStackItem, 'layer' | 'order'>
+) =>
+  webSheetStack.filter(
+    (stackItem) =>
+      stackItem.layer === item.layer && stackItem.order <= item.order
+  ).length;
+
+const getWebSheetZIndex = (item: Pick<WebSheetStackItem, 'layer' | 'order'>) =>
+  item.layer * WEB_SHEET_LAYER_MULTIPLIER + getWebSheetLayerRank(item) * 2;
+
 const subscribeToWebSheetStack = (listener: () => void) => {
   webSheetStackListeners.add(listener);
   return () => webSheetStackListeners.delete(listener);
@@ -79,6 +91,7 @@ export const useSheetStack = ({
   const sheetId = React.useId();
   const onDismissRef = React.useRef(onDismiss);
   onDismissRef.current = onDismiss;
+  const [sheetOrder, setSheetOrder] = React.useState(0);
 
   const topSheetId = React.useSyncExternalStore(
     subscribeToWebSheetStack,
@@ -88,6 +101,8 @@ export const useSheetStack = ({
 
   React.useEffect(() => {
     if (!open) return;
+    const order = nextWebSheetOrder + 1;
+    setSheetOrder(order);
     return registerWebSheet(sheetId, layer, onDismissRef);
   }, [layer, open, sheetId]);
 
@@ -107,7 +122,10 @@ export const useSheetStack = ({
     return () => document.removeEventListener('keyup', handleKeyUp, false);
   }, [onDismiss, open, sheetId]);
 
-  return { isTopSheet: open && topSheetId === sheetId };
+  return {
+    isTopSheet: open && topSheetId === sheetId,
+    zIndex: getWebSheetZIndex({ layer, order: sheetOrder }),
+  };
 };
 
 export const useSheetStackBackdrop = (): SheetStackBackdropState => {
@@ -120,7 +138,7 @@ export const useSheetStackBackdrop = (): SheetStackBackdropState => {
   const topSheet = getTopWebSheet();
 
   return {
-    layer: topSheet ? Math.max(0, topSheet.layer - 1) : 0,
+    layer: topSheet ? Math.max(0, getWebSheetZIndex(topSheet) - 1) : 0,
     onDismiss: () => topSheet?.onDismissRef.current(),
     open: !!topSheet,
   };

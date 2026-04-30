@@ -56,7 +56,7 @@ export const SheetManagerProvider = ({
   );
 
   const isOpen = React.useCallback(
-    (name: SheetName) => sheetStack[sheetStack.length - 1]?.name === name,
+    (name: SheetName) => sheetStack.some((item) => item.name === name),
     [sheetStack]
   );
 
