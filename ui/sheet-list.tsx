@@ -17,6 +17,7 @@ export const SheetListScrollView = React.forwardRef<
       keyboardDismissMode = 'on-drag',
       keyboardShouldPersistTaps = 'always',
       showsVerticalScrollIndicator = false,
+      style,
       ...props
     },
     ref
@@ -26,12 +27,13 @@ export const SheetListScrollView = React.forwardRef<
       keyboardDismissMode={keyboardDismissMode}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+      style={style}
       className={cn(
-        '-mx-px max-h-[19rem] min-h-0 border-b border-border-secondary border-x rounded-b-4xl',
+        '-mx-px max-h-[19rem] min-h-0 border-b border-border-secondary border-x rounded-b-4xl md:rounded-b-3xl border-continuous',
         className
       )}
       contentContainerClassName={cn(
-        'mx-auto w-full max-w-lg px-8 py-5 md:p-5',
+        'mx-auto w-full max-w-lg px-8 py-5 md:p-4',
         contentContainerClassName
       )}
       {...props}

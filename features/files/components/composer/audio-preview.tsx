@@ -106,7 +106,7 @@ export const AudioPreview = ({
                     }
                   />
                 ) : (
-                  <View className="flex-1 h-8 px-3 rounded-lg bg-card justify-center">
+                  <View className="flex-1 h-8 px-3 border-continuous rounded-lg bg-card justify-center">
                     <Text numberOfLines={1}>
                       {previewItem.item.name?.trim() || 'Audio'}
                     </Text>

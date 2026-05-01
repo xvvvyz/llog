@@ -65,16 +65,12 @@ export const Image = ({
 
   return (
     <View
+      style={fill ? undefined : { height, width }}
       className={cn(
-        'bg-border overflow-hidden',
+        'bg-border overflow-hidden border-continuous',
         fill && 'relative flex-1 self-stretch',
         wrapperClassName
       )}
-      style={
-        fill
-          ? { borderCurve: 'continuous' }
-          : { borderCurve: 'continuous', height, width }
-      }
     >
       <ExpoImage
         contentFit={contentFit ?? (fill ? 'cover' : undefined)}

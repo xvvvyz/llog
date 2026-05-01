@@ -13,7 +13,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  StyleSheet,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -121,20 +120,17 @@ export const Sheet = ({
       >
         <View
           ref={sheetContentRef}
+          style={heightStyle}
           className={cn(
-            'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-[30rem] md:rounded-4xl md:border-b',
+            'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-[30rem] md:rounded-4xl md:border-b border-continuous',
             loading && 'min-h-32',
             className
           )}
-          style={StyleSheet.flatten([
-            { borderCurve: 'continuous' },
-            heightStyle,
-          ])}
         >
           {children}
           {loading && (
             <Animated.View
-              className="absolute inset-0 z-10 py-8 rounded-t-4xl bg-popover md:rounded-4xl"
+              className="absolute inset-0 z-10 py-8 border-continuous rounded-t-4xl bg-popover md:rounded-4xl"
               exiting={animation(FadeOut)}
             >
               <Loading className="p-0 bg-popover" />

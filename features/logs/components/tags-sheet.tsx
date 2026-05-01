@@ -34,6 +34,10 @@ export const LogTagsSheet = () => {
   const tags = useTags({ query });
   const isLoading = log.isLoading || (!query && tags.isLoading);
 
+  const focusSearchInput = React.useCallback(() => {
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  }, []);
+
   const handleCreateTag = React.useCallback(() => {
     if (!query) return;
 
@@ -44,10 +48,12 @@ export const LogTagsSheet = () => {
     }
 
     setRawQuery('');
-  }, [query, log.id, tags.queryExistingTagId]);
+    focusSearchInput();
+  }, [focusSearchInput, query, log.id, tags.queryExistingTagId]);
 
   return (
     <Sheet
+      className="md:max-w-sm"
       loading={isLoading}
       onDismiss={() => sheetManager.close('log-tags')}
       open={sheetManager.isOpen('log-tags')}
@@ -63,7 +69,7 @@ export const LogTagsSheet = () => {
           isEmpty && !rawQuery && 'mx-auto'
         )}
       >
-        <View className="h-10">
+        <View className="h-10 justify-center">
           {isEmpty && !rawQuery && (
             <Icon
               aria-hidden
@@ -95,6 +101,7 @@ export const LogTagsSheet = () => {
                   isSelected={log.tagIdsSet.has(tag.id)}
                   logId={log.id}
                   name={tag.name}
+                  onCheckedChange={focusSearchInput}
                 />
               ))}
               {!!rawQuery && !tags.queryExistingTagId && (
@@ -115,7 +122,7 @@ export const LogTagsSheet = () => {
           )}
         </View>
       </ScrollView>
-      <View className="w-full p-8 pt-0 md:pt-0 sm:mx-auto sm:max-w-sm">
+      <View className="w-full pb-4 pt-0 px-8 md:p-8 md:pt-0 sm:mx-auto sm:max-w-sm">
         <SearchInput
           ref={searchInputRef}
           actionIcon={!tags.queryExistingTagId && query ? Plus : undefined}
@@ -125,10 +132,18 @@ export const LogTagsSheet = () => {
           query={rawQuery}
           setQuery={setRawQuery}
           size="sm"
+          submitBehavior="submit"
           onActionPress={
             !tags.queryExistingTagId && query ? handleCreateTag : undefined
           }
         />
+        <Button
+          onPress={() => sheetManager.close('log-tags')}
+          variant="secondary"
+          wrapperClassName="mt-8"
+        >
+          <Text>Done</Text>
+        </Button>
       </View>
     </Sheet>
   );

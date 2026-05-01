@@ -56,7 +56,7 @@ export const QuotedRecord = ({
     <React.Fragment>
       <View
         className={cn(
-          'bg-input max-w-full min-w-0 overflow-hidden rounded-xl',
+          'bg-input max-w-full min-w-0 overflow-hidden rounded-xl border-continuous',
           hasAudioFiles || hasDocumentFiles || hasLinks
             ? 'w-full self-stretch'
             : 'self-start'
@@ -65,7 +65,7 @@ export const QuotedRecord = ({
         {!!displayText && (
           <View className="flex-row max-w-full min-w-0 p-3 gap-3">
             <View
-              className="w-1 rounded-full bg-border self-stretch"
+              className="w-1 border-continuous rounded-full bg-border self-stretch"
               style={
                 logColor ? { backgroundColor: logColor.default } : undefined
               }
@@ -92,7 +92,7 @@ export const QuotedRecord = ({
               {visualItems.map((item) => (
                 <Pressable
                   key={item.id}
-                  className="overflow-hidden h-16 w-16 rounded-lg shrink-0"
+                  className="overflow-hidden h-16 w-16 border-continuous rounded-lg shrink-0"
                   disabled={visualMedia.isProcessing(item) || !recordId}
                   onPress={() =>
                     !visualMedia.isProcessing(item) &&
@@ -111,7 +111,7 @@ export const QuotedRecord = ({
                       {visualMedia.isProcessing(item) ? (
                         <Spinner color={UI.light.contrastForeground} />
                       ) : (
-                        <View className="size-6 rounded-full bg-contrast-background/50 items-center justify-center">
+                        <View className="size-6 border-continuous rounded-full bg-contrast-background/50 items-center justify-center">
                           <Icon
                             className="text-contrast-foreground"
                             icon={Play}

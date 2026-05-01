@@ -43,13 +43,13 @@ export const ListItem = ({
           ripple="default"
           style={{ backgroundColor: color.default }}
           variant="ghost"
-          wrapperClassName="rounded-2xl"
+          wrapperClassName="rounded-2xl border-continuous"
         >
           <View className="flex-row flex-wrap overflow-hidden -ml-1.5 -mt-1.5 max-h-11 pr-10 gap-0.5">
             {tags.map((tag) => (
               <View
                 key={tag.id}
-                className="px-1.5 py-0.5 rounded-full bg-contrast-background/10"
+                className="px-1.5 py-0.5 border-continuous rounded-full bg-contrast-background/10"
               >
                 <Text
                   className="text-contrast-foreground/90 text-xs"
@@ -74,7 +74,7 @@ export const ListItem = ({
                     key={profile.id}
                     style={{ backgroundColor: color.default }}
                     className={cn(
-                      'size-[24px] items-center justify-center overflow-hidden rounded-full p-px',
+                      'size-[24px] items-center justify-center overflow-hidden rounded-full p-px border-continuous',
                       i > 0 && '-ml-[10px]'
                     )}
                   >
@@ -93,10 +93,7 @@ export const ListItem = ({
       </Link>
       <View className="absolute right-1.5 top-1.5">
         <DropdownMenu contentClassName="my-0 mr-2.5" id={id}>
-          <View
-            className="size-6 rounded-lg bg-contrast-foreground/15 items-center justify-center group-active:bg-contrast-foreground/20 web:transition-colors web:group-hover:bg-contrast-foreground/20"
-            style={{ borderCurve: 'continuous' }}
-          >
+          <View className="size-6 border-continuous rounded-lg bg-contrast-foreground/15 items-center justify-center group-active:bg-contrast-foreground/20 web:transition-colors web:group-hover:bg-contrast-foreground/20">
             <Icon className="text-contrast-foreground" icon={DotsThree} />
           </View>
         </DropdownMenu>

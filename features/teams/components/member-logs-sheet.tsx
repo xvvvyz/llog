@@ -67,7 +67,7 @@ export const MemberLogsSheet = () => {
 
   return (
     <Sheet
-      className="md:rounded-3xl"
+      className="border-continuous md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('member-logs')}
       open={sheetManager.isOpen('member-logs')}
@@ -85,7 +85,7 @@ export const MemberLogsSheet = () => {
             >
               <View className="flex-row gap-3 items-center">
                 <View
-                  className="size-4 rounded-md"
+                  className="size-4 border-continuous rounded-md"
                   style={{ backgroundColor: color.default }}
                 />
                 <Text numberOfLines={1}>{log.name}</Text>

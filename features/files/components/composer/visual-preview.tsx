@@ -31,14 +31,13 @@ export const VisualPreview = ({
       horizontal
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
-      style={{ borderCurve: 'continuous' }}
       testID="scroll-lock-allow"
     >
       <View className="flex-row px-4 gap-3">
         {visualItems.map((item) => (
           <View key={item.id} className="relative size-16">
             {item.pending ? (
-              <View className="flex-1 overflow-hidden rounded-lg bg-border cursor-default">
+              <View className="flex-1 overflow-hidden border-continuous rounded-lg bg-border cursor-default">
                 <View className="flex-1 bg-card">
                   {item.type === 'video' ? (
                     <PendingVideoPreview
@@ -62,7 +61,7 @@ export const VisualPreview = ({
               </View>
             ) : (
               <Pressable
-                className="flex-1 overflow-hidden rounded-lg bg-border"
+                className="flex-1 overflow-hidden border-continuous rounded-lg bg-border"
                 onPress={() => onOpenVisual(item.id)}
               >
                 <PreviewImage item={item} onRemoteReady={onRemoteReady} />

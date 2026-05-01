@@ -57,14 +57,14 @@ export const ItemFiles = ({
         fill
         targetWidth={timelineTargetWidth}
         uri={visualMedia.getThumbnailUri(item)}
-        wrapperClassName="rounded-2xl"
+        wrapperClassName="rounded-2xl border-continuous"
       />
       {item.type === 'video' && (
         <View className="absolute inset-0 pointer-events-none items-center justify-center">
           {visualMedia.isProcessing(item) ? (
             <Spinner color={UI.light.contrastForeground} />
           ) : (
-            <View className="size-10 rounded-full bg-contrast-background/50 items-center justify-center">
+            <View className="size-10 border-continuous rounded-full bg-contrast-background/50 items-center justify-center">
               <Icon
                 className="text-contrast-foreground"
                 icon={Play}

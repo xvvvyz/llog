@@ -34,9 +34,8 @@ const Content = React.forwardRef<
           <Animated.View
             entering={animation(FadeInUp)}
             exiting={animation(FadeOutUp)}
-            style={{ borderCurve: 'continuous' }}
             className={cn(
-              'border-border-secondary bg-popover my-2 min-w-36 overflow-hidden rounded-2xl border py-2',
+              'border-border-secondary bg-popover my-2 min-w-36 overflow-hidden rounded-2xl border py-2 border-continuous',
               className
             )}
           >

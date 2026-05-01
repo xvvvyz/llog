@@ -50,7 +50,7 @@ export const LogsSheetContent = ({
             >
               <View className="flex-row gap-3 items-center">
                 <View
-                  className="size-4 rounded-md"
+                  className="size-4 border-continuous rounded-md"
                   style={{ backgroundColor: color.default }}
                 />
                 <Text numberOfLines={1}>{log.name}</Text>

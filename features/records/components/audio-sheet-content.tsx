@@ -32,7 +32,7 @@ export const AudioSheetContent = ({
       <View className="gap-4 items-center">
         <View
           className={cn(
-            'size-16 items-center justify-center rounded-full border',
+            'size-16 items-center justify-center rounded-full border border-continuous',
             isMicActive
               ? 'border-destructive/20 bg-destructive/10'
               : 'border-border-secondary bg-secondary'

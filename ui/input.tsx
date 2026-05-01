@@ -1,10 +1,10 @@
 import { cn } from '@/lib/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { Keyboard, Platform, StyleSheet, TextInput } from 'react-native';
+import { Keyboard, Platform, TextInput } from 'react-native';
 
 const inputVariants = cva(
-  'text-base native:text-base native:leading-5 border border-border-secondary web:placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden',
+  'text-base native:text-base native:leading-5 border border-border-secondary web:placeholder:text-placeholder rounded-xl bg-input text-foreground web:focus-visible:outline-hidden border-continuous',
   {
     defaultVariants: { size: 'default' },
     variants: {
@@ -132,7 +132,7 @@ const Input = React.forwardRef<
         onTouchStart={handleTouchStart}
         placeholderTextColorClassName="accent-placeholder"
         returnKeyType={returnKeyType}
-        style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
+        style={style}
         submitBehavior={resolvedSubmitBehavior}
         value={localValue}
         className={cn(

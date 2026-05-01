@@ -3,49 +3,52 @@ import { cn } from '@/lib/cn';
 import { TextContext } from '@/ui/text';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
-const buttonWrapperVariants = cva('overflow-hidden rounded-xl', {
-  defaultVariants: { size: 'default', variant: 'default' },
-  variants: {
-    size: {
-      default: '',
-      icon: '',
-      'icon-sm': 'rounded-lg',
-      lg: '',
-      sm: '',
-      xs: 'rounded-lg',
+const buttonWrapperVariants = cva(
+  'overflow-hidden rounded-xl border-continuous',
+  {
+    defaultVariants: { size: 'default', variant: 'default' },
+    variants: {
+      size: {
+        default: '',
+        icon: '',
+        'icon-sm': 'rounded-lg border-continuous',
+        lg: '',
+        sm: '',
+        xs: 'rounded-lg border-continuous',
+      },
+      variant: {
+        default: '',
+        destructive: '',
+        ghost: '',
+        link: 'rounded-none border-continuous',
+        outline: '',
+        secondary: '',
+      },
     },
-    variant: {
-      default: '',
-      destructive: '',
-      ghost: '',
-      link: 'rounded-none',
-      outline: '',
-      secondary: '',
-    },
-  },
-});
+  }
+);
 
 const buttonVariants = cva(
-  'group flex-row items-center rounded-xl gap-3 justify-center web:transition-opacity web:transition-colors web:focus-visible:outline-hidden',
+  'group flex-row items-center rounded-xl gap-3 justify-center web:transition-opacity web:transition-colors web:focus-visible:outline-hidden border-continuous',
   {
     defaultVariants: { size: 'default', variant: 'default' },
     variants: {
       size: {
         default: 'h-11 px-4 py-2',
         icon: 'h-11 w-11',
-        'icon-sm': 'h-8 w-8 rounded-lg',
+        'icon-sm': 'h-8 w-8 rounded-lg border-continuous',
         lg: 'h-12 px-5',
         sm: 'h-10 px-4',
-        xs: 'h-8 px-2 rounded-lg gap-2',
+        xs: 'h-8 px-2 rounded-lg gap-2 border-continuous',
       },
       variant: {
         default: 'bg-primary web:hover:bg-primary/80 active:bg-primary/60',
         destructive:
           'bg-destructive web:hover:bg-destructive/80 active:bg-destructive/60',
         ghost: 'web:hover:bg-accent active:bg-accent',
-        link: 'p-0 h-auto w-auto rounded-none',
+        link: 'p-0 h-auto w-auto rounded-none border-continuous',
         outline:
           'bg-none web:hover:bg-accent active:bg-accent border border-border',
         secondary:
@@ -322,7 +325,6 @@ const Button = React.forwardRef<
     return (
       <TextContext.Provider value={buttonTextVariants({ size, variant })}>
         <View
-          style={{ borderCurve: 'continuous' }}
           className={cn(
             buttonWrapperVariants({ size, variant }),
             disabled && 'opacity-50',
@@ -336,7 +338,7 @@ const Button = React.forwardRef<
             onPress={onPress ? handlePress : undefined}
             onTouchEnd={shouldHandleTouchRelease ? handleTouchEnd : undefined}
             role="button"
-            style={StyleSheet.flatten([{ borderCurve: 'continuous' }, style])}
+            style={style}
             android_ripple={
               shouldHaveRipple
                 ? { color: rippleColor, borderless: false }

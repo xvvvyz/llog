@@ -160,11 +160,11 @@ const VideoScrubber = ({
       <GestureDetector gesture={Gesture.Race(pan, tap)}>
         <Animated.View className="flex-1 h-8 justify-center self-stretch">
           <View
-            className="relative overflow-hidden h-1 rounded-full bg-progress-track"
+            className="relative overflow-hidden h-1 border-continuous rounded-full bg-progress-track"
             onLayout={handleTrackLayout}
           >
             <View
-              className="absolute bottom-0 left-0 top-0 rounded-full bg-progress-fill"
+              className="absolute bottom-0 left-0 top-0 border-continuous rounded-full bg-progress-fill"
               style={{ width: `${progress * 100}%` }}
             />
           </View>

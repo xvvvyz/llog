@@ -93,7 +93,7 @@ export const Lightbox = ({
       <View className="absolute inset-0">
         {!isUiHidden && (
           <Animated.View
-            className="absolute right-4 top-1 z-10 rounded-full md:right-8 md:top-3"
+            className="absolute right-4 top-1 z-10 border-continuous rounded-full md:right-8 md:top-3"
             style={[overlayStyle, { marginTop: insets.top + 1 }]}
           >
             <Button

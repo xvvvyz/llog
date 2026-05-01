@@ -112,7 +112,7 @@ export default function Search() {
                               onCheckedChange={() => toggleLogId(log.id)}
                             >
                               <View
-                                className="size-3 rounded-[2px]"
+                                className="size-3 border-continuous rounded-[2px]"
                                 style={{ backgroundColor: color?.default }}
                               />
                               <Text>{log.name}</Text>

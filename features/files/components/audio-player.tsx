@@ -35,17 +35,17 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   return (
     <View
       className={cn(
-        'flex-row min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border-secondary bg-secondary',
+        'flex-row min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border-secondary bg-secondary border-continuous',
         compact ? 'h-6 px-0' : 'h-8 px-0'
       )}
     >
       <Button
-        className={cn(compact && 'size-6 rounded-lg')}
+        className={cn(compact && 'size-6 rounded-lg border-continuous')}
         disabled={isDisabled}
         onPress={togglePlayback}
         size={compact ? 'icon' : 'icon-sm'}
         variant="ghost"
-        wrapperClassName={cn(compact && 'rounded-lg')}
+        wrapperClassName={cn(compact && 'rounded-lg border-continuous')}
       >
         <Icon icon={isPlaying ? Pause : Play} size={compact ? 12 : 16} />
       </Button>
@@ -62,11 +62,11 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           )}
         >
           <View
-            className="relative overflow-hidden h-1 w-full rounded-full bg-progress-track"
+            className="relative overflow-hidden h-1 w-full border-continuous rounded-full bg-progress-track"
             onLayout={handleTrackLayout}
           >
             <View
-              className="absolute bottom-0 left-0 top-0 rounded-full bg-progress-fill"
+              className="absolute bottom-0 left-0 top-0 border-continuous rounded-full bg-progress-fill"
               style={{ width: `${progress * 100}%` }}
             />
           </View>
@@ -89,23 +89,23 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
             />
             <Button
               accessibilityLabel="Back 5 seconds"
-              className={cn(compact && 'size-6 rounded-lg')}
+              className={cn(compact && 'size-6 rounded-lg border-continuous')}
               disabled={isDisabled}
               onPress={() => seekBy(-AUDIO_SEEK_STEP_SECONDS)}
               size={compact ? 'icon' : 'icon-sm'}
               variant="ghost"
-              wrapperClassName={cn(compact && 'rounded-lg')}
+              wrapperClassName={cn(compact && 'rounded-lg border-continuous')}
             >
               <Icon icon={Rewind} size={compact ? 12 : 16} />
             </Button>
             <Button
               accessibilityLabel="Forward 5 seconds"
-              className={cn(compact && 'size-6 rounded-lg')}
+              className={cn(compact && 'size-6 rounded-lg border-continuous')}
               disabled={isDisabled}
               onPress={() => seekBy(AUDIO_SEEK_STEP_SECONDS)}
               size={compact ? 'icon' : 'icon-sm'}
               variant="ghost"
-              wrapperClassName={cn(compact && 'rounded-lg')}
+              wrapperClassName={cn(compact && 'rounded-lg border-continuous')}
             >
               <Icon icon={FastForward} size={compact ? 12 : 16} />
             </Button>

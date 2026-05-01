@@ -46,10 +46,7 @@ export const WebPushIosSetupSheet = () => {
           size={64}
         />
         <Text className="text-2xl text-center">Web notifications on iOS</Text>
-        <View
-          className="mt-8 px-6 py-5 rounded-2xl bg-input gap-2.5"
-          style={{ borderCurve: 'continuous' }}
-        >
+        <View className="mt-8 px-6 py-5 border-continuous rounded-2xl bg-input gap-2.5">
           {steps.map((step, index) => (
             <View key={step.text} className="flex-row items-start">
               <Text className="w-7 pr-2 text-placeholder">{index + 1}.</Text>

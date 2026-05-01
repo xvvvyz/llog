@@ -97,18 +97,14 @@ const Textarea = React.forwardRef<
         placeholderTextColorClassName="accent-placeholder"
         returnKeyType="default"
         scrollEnabled={scrollEnabled ?? true}
+        style={StyleSheet.flatten([autoSizeStyle, style])}
         submitBehavior="newline"
         textAlignVertical="top"
         value={localValue}
         className={cn(
-          'border-border-secondary bg-input native:text-base text-foreground rounded-xl border px-4 py-2.5 text-base',
+          'border-border-secondary bg-input native:text-base text-foreground rounded-xl border px-4 py-2.5 text-base border-continuous',
           className
         )}
-        style={StyleSheet.flatten([
-          { borderCurve: 'continuous' },
-          autoSizeStyle,
-          style,
-        ])}
         {...props}
       />
     );

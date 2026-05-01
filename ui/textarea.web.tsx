@@ -57,7 +57,7 @@ export const Textarea = React.forwardRef<
         placeholder={placeholder}
         value={localValue}
         className={cn(
-          'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border px-4 py-2.5 focus-visible:outline-hidden',
+          'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border px-4 py-2.5 focus-visible:outline-hidden border-continuous',
           className
         )}
         onKeyDown={(e) => {

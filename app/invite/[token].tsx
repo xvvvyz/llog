@@ -161,7 +161,7 @@ export default function InviteLink() {
               <View
                 key={member.id}
                 className={cn(
-                  'bg-background size-[68px] items-center justify-center overflow-hidden rounded-full p-0.5',
+                  'bg-background size-[68px] items-center justify-center overflow-hidden rounded-full p-0.5 border-continuous',
                   i > 0 && '-ml-[22px]'
                 )}
               >

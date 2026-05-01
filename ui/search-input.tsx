@@ -27,11 +27,28 @@ export const SearchInput = React.forwardRef<
       placeholder = 'Search',
       query,
       setQuery,
+      size,
       wrapperClassName,
       ...props
     },
     ref
   ) => {
+    const resolvedSize = size ?? 'default';
+
+    const actionButtonClassName =
+      resolvedSize === 'lg'
+        ? 'h-10 w-10 rounded-lg'
+        : resolvedSize === 'sm'
+          ? 'h-8 w-8 rounded-lg'
+          : 'h-9 w-9 rounded-lg';
+
+    const inputClassName =
+      resolvedSize === 'lg'
+        ? 'pl-10 pr-12'
+        : resolvedSize === 'sm'
+          ? 'pl-10 pr-10'
+          : 'pl-10 pr-11';
+
     return (
       <View className={cn('relative', wrapperClassName)}>
         <View className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -39,19 +56,20 @@ export const SearchInput = React.forwardRef<
         </View>
         <Input
           ref={ref}
-          className={cn('px-10', className)}
+          className={cn(inputClassName, className)}
           onChangeText={setQuery}
           placeholder={placeholder}
+          size={resolvedSize}
           value={query}
           {...props}
         />
         {!!query.length && (
           <Button
-            className="size-8"
+            className={actionButtonClassName}
             onPress={onActionPress ?? (() => setQuery(''))}
             size="icon"
             variant="ghost"
-            wrapperClassName="rounded-full absolute right-1 top-1/2 -translate-y-1/2"
+            wrapperClassName="absolute right-1 top-1 rounded-lg border-continuous"
           >
             <Icon
               className="text-muted-foreground"

@@ -18,8 +18,8 @@ import Svg, {
 } from 'react-native-svg';
 
 const LogoFrame = ({ children }: { children: React.ReactNode }) => (
-  <View className="overflow-hidden size-[68px] p-0.5 rounded-full bg-background items-center justify-center">
-    <View className="overflow-hidden size-16 rounded-full bg-contrast-foreground items-center justify-center">
+  <View className="overflow-hidden size-[68px] p-0.5 border-continuous rounded-full bg-background items-center justify-center">
+    <View className="overflow-hidden size-16 border-continuous rounded-full bg-contrast-foreground items-center justify-center">
       {children}
     </View>
   </View>

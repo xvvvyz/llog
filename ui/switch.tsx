@@ -5,13 +5,14 @@ import * as React from 'react';
 export const Switch = React.forwardRef<
   React.ComponentRef<typeof SwitchPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>
->(({ checked, className, disabled, ...props }, ref) => (
+>(({ checked, className, disabled, style, ...props }, ref) => (
   <SwitchPrimitive.Root
     ref={ref}
     checked={checked}
     disabled={disabled}
+    style={style}
     className={cn(
-      'border-border-secondary web:transition-colors h-7 w-12 justify-center rounded-full border px-0.5',
+      'border-border-secondary web:transition-colors h-7 w-12 justify-center rounded-full border px-0.5 border-continuous',
       checked ? 'border-primary bg-primary' : 'bg-input',
       disabled && 'opacity-50',
       className
@@ -20,7 +21,7 @@ export const Switch = React.forwardRef<
   >
     <SwitchPrimitive.Thumb
       className={cn(
-        'web:transition-transform size-5 rounded-full shadow-xs',
+        'web:transition-transform size-5 rounded-full shadow-xs border-continuous',
         checked
           ? 'bg-background translate-x-5'
           : 'bg-progress-track translate-x-0'

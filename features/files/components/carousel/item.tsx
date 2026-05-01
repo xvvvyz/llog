@@ -344,7 +344,7 @@ const CarouselImageItem = ({
 const VideoPlayOverlay = () => {
   return (
     <View className="absolute inset-0 pointer-events-none items-center justify-center">
-      <View className="size-16 rounded-full bg-contrast-background/50 items-center justify-center">
+      <View className="size-16 border-continuous rounded-full bg-contrast-background/50 items-center justify-center">
         <Icon
           className="text-contrast-foreground"
           icon={Play}

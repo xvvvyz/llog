@@ -69,8 +69,8 @@ export const ComposerForm = ({
 
   return (
     <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
-      <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-5 sm:pt-8">
-        <View className="overflow-hidden min-h-0 border-border-secondary rounded-xl bg-input border shrink">
+      <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
+        <View className="overflow-hidden min-h-0 border-border-secondary border-continuous rounded-xl bg-input border shrink">
           <Textarea
             autoFocus={shouldAutoFocus}
             className="border-0 bg-transparent"

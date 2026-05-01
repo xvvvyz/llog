@@ -16,11 +16,13 @@ export const TagRow = ({
   isSelected,
   logId,
   name,
+  onCheckedChange,
 }: {
   id: string;
   isSelected: boolean;
   logId?: string;
   name: string;
+  onCheckedChange?: () => void;
 }) => {
   const [isDeleteButtonVisible, setIsDeleteButtonVisible] =
     React.useState(false);
@@ -29,16 +31,16 @@ export const TagRow = ({
   const sheetManager = useSheetManager();
 
   return (
-    <View
-      className="flex-row h-10 w-40 border-border-secondary rounded-full bg-input border items-center"
-      style={{ borderCurve: 'continuous' }}
-    >
+    <View className="flex-row h-10 w-40 border-border-secondary border-continuous rounded-full bg-input border items-center">
       <Checkbox
         checked={isSelected}
         checkedColor={logColor.default}
         className="size-10 border-0"
-        onCheckedChange={() => toggleTag({ id, isSelected, logId })}
-        wrapperClassName="rounded-full"
+        wrapperClassName="rounded-full border-continuous"
+        onCheckedChange={() => {
+          toggleTag({ id, isSelected, logId });
+          onCheckedChange?.();
+        }}
       />
       <View className="relative flex-1 group">
         <Input
@@ -53,11 +55,11 @@ export const TagRow = ({
         />
         {isDeleteButtonVisible ? (
           <Button
-            className="size-8"
+            className="size-8 rounded-2xl"
             onPress={() => sheetManager.open('tag-delete', id)}
             size="icon"
             variant="ghost"
-            wrapperClassName="rounded-full absolute right-1 top-1"
+            wrapperClassName="absolute right-1 top-1 rounded-2xl border-continuous"
           >
             <Icon className="text-muted-foreground" icon={X} />
           </Button>

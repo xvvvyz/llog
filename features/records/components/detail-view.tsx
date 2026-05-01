@@ -49,7 +49,7 @@ export const DetailView = ({
     <Page className={cn('min-h-0', pageClassName)}>
       <ScrollView
         ref={scrollViewRef}
-        className="-mx-px min-h-0 border-b border-border-secondary border-x rounded-b-4xl"
+        className="-mx-px min-h-0 border-b border-border-secondary border-continuous border-x rounded-b-4xl"
         contentContainerClassName="mx-auto w-full max-w-lg sm:py-4"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="always"

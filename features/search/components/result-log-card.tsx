@@ -25,11 +25,8 @@ export const ResultLogCard = ({
   return (
     <Pressable className={className} onPress={onPress}>
       <View
-        className="flex-row p-4 rounded-2xl items-center justify-between"
-        style={{
-          backgroundColor: spectrum?.default,
-          borderCurve: 'continuous',
-        }}
+        className="flex-row p-4 border-continuous rounded-2xl items-center justify-between"
+        style={{ backgroundColor: spectrum?.default }}
       >
         <Text className="flex-1 text-contrast-foreground" numberOfLines={1}>
           {result.text}
