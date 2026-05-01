@@ -21,7 +21,7 @@ export const TeamSwitchSheet = () => {
       open={sheetManager.isOpen('team-switch')}
       portalName="team-switch"
     >
-      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Switch team</Text>
         <View className="mt-8">
           {teams.map((t) => (

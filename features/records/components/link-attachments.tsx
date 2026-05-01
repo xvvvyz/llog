@@ -228,6 +228,7 @@ export const LinkAttachments = ({
       )}
       {shouldRenderSheet && (
         <Sheet
+          className="md:rounded-3xl"
           onDismiss={() => setIsSheetOpen(false)}
           open={isSheetOpen}
           portalName={sheetPortalName}

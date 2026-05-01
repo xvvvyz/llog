@@ -50,6 +50,7 @@ export const LogMembersSheet = () => {
 
   return (
     <Sheet
+      className="md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('log-members')}
       open={sheetManager.isOpen('log-members')}

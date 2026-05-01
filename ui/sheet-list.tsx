@@ -31,7 +31,7 @@ export const SheetListScrollView = React.forwardRef<
         className
       )}
       contentContainerClassName={cn(
-        'mx-auto w-full max-w-lg px-8 py-5',
+        'mx-auto w-full max-w-lg px-8 py-5 md:p-5',
         contentContainerClassName
       )}
       {...props}
@@ -53,7 +53,12 @@ export const SheetFooter = ({
   ...props
 }: SheetFooterProps) => (
   <View className={className} {...props}>
-    <View className={cn('mx-auto max-w-lg w-full px-8 py-4', contentClassName)}>
+    <View
+      className={cn(
+        'mx-auto max-w-lg w-full px-8 py-4 md:p-4',
+        contentClassName
+      )}
+    >
       {children}
     </View>
   </View>

@@ -92,6 +92,7 @@ export const RecordCopyToSheet = () => {
 
   return (
     <Sheet
+      className="md:rounded-3xl"
       loading={open && (recordLoading || logsLoading)}
       onDismiss={close}
       open={open}

@@ -78,6 +78,7 @@ export const McpSheet = () => {
 
   return (
     <Sheet
+      className="md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('mcp')}
       open={isOpen}

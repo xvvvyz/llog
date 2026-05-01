@@ -18,12 +18,13 @@ export const LogEditSheet = () => {
 
   return (
     <Sheet
+      className="md:max-w-sm"
       loading={log.isLoading}
       onDismiss={() => sheetManager.close('log-edit')}
       open={sheetManager.isOpen('log-edit')}
       portalName="log-edit"
     >
-      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <View>
           <Label>Name</Label>
           <Input

@@ -144,7 +144,12 @@ export const RecordAudioSheet = () => {
   }, [close, isUploading, recorder, upload]);
 
   return (
-    <Sheet onDismiss={handleCancel} open={isOpen} portalName="record-audio">
+    <Sheet
+      className="md:max-w-sm"
+      onDismiss={handleCancel}
+      open={isOpen}
+      portalName="record-audio"
+    >
       <AudioSheetContent
         canSave={!!recorder.isRecording || !!recorder.uri}
         duration={duration}

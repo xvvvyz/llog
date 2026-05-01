@@ -29,11 +29,12 @@ export const MemberRemoveSheet = () => {
 
   return (
     <Sheet
+      className="md:max-w-sm"
       onDismiss={() => sheetManager.close('member-remove')}
       open={sheetManager.isOpen('member-remove')}
       portalName="member-remove"
     >
-      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Remove member?</Text>
         <Button
           disabled={isLoading}

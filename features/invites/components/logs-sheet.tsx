@@ -117,7 +117,12 @@ export const InviteLogsSheet = () => {
   }, [sheetManager]);
 
   return (
-    <Sheet onDismiss={handleDismiss} open={open} portalName="invite-logs">
+    <Sheet
+      className="md:rounded-3xl"
+      onDismiss={handleDismiss}
+      open={open}
+      portalName="invite-logs"
+    >
       <LogsSheetContent
         action={action}
         copied={copied}

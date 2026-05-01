@@ -28,7 +28,7 @@ export const AudioSheetContent = ({
   startError?: string | null;
 }) => {
   return (
-    <View className="mx-auto max-w-sm w-full pb-4 pt-8 px-8 gap-12">
+    <View className="mx-auto max-w-sm w-full pb-4 pt-8 px-8 gap-12 md:p-8">
       <View className="gap-4 items-center">
         <View
           className={cn(

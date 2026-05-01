@@ -1,6 +1,7 @@
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
+import { BREAKPOINT_VALUES } from '@/theme/tokens';
 import { Loading } from '@/ui/loading';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
 import { useSheetStack, useSheetStackBackdrop } from '@/ui/sheet-stack';
@@ -69,6 +70,7 @@ export const Sheet = ({
   const isWeb = Platform.OS === 'web';
   const inset = useSafeAreaInsets();
   const windowDimensions = useWindowDimensions();
+  const isDesktopSheet = windowDimensions.width >= BREAKPOINT_VALUES.md;
   const sheetContentRef = React.useRef<React.ComponentRef<typeof View>>(null);
   const sheetStack = useSheetStack({ layer, onDismiss, open });
 
@@ -83,7 +85,10 @@ export const Sheet = ({
   const availableHeight = Math.max(
     1,
     Math.round(
-      platformLayout.viewportHeight - inset.top - topInset - inset.bottom
+      platformLayout.viewportHeight -
+        inset.top -
+        (isDesktopSheet ? topInset * 2 : topInset) -
+        inset.bottom
     )
   );
 
@@ -93,7 +98,7 @@ export const Sheet = ({
     <Animated.View
       className="absolute inset-0"
       entering={animation(FadeInDown)}
-      exiting={animation(FadeOutDown)}
+      exiting={animation(isDesktopSheet ? FadeOut : FadeOutDown)}
       pointerEvents={isWeb ? 'box-none' : 'auto'}
     >
       {isWeb ? null : (
@@ -110,14 +115,14 @@ export const Sheet = ({
       )}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="absolute inset-0 justify-end"
+        className="absolute inset-0 justify-end md:px-6 md:items-center md:justify-center"
         pointerEvents="box-none"
         style={platformLayout.keyboardAvoidingStyle}
       >
         <View
           ref={sheetContentRef}
           className={cn(
-            'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t',
+            'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-[30rem] md:rounded-4xl md:border-b',
             loading && 'min-h-32',
             className
           )}
@@ -129,17 +134,19 @@ export const Sheet = ({
           {children}
           {loading && (
             <Animated.View
-              className="absolute inset-0 z-10 py-8 rounded-t-4xl bg-popover"
+              className="absolute inset-0 z-10 py-8 rounded-t-4xl bg-popover md:rounded-4xl"
               exiting={animation(FadeOut)}
             >
               <Loading className="p-0 bg-popover" />
             </Animated.View>
           )}
         </View>
-        <View
-          className="border-border border-x bg-popover"
-          style={platformLayout.bottomSpacerStyle}
-        />
+        {isDesktopSheet ? null : (
+          <View
+            className="border-border border-x bg-popover"
+            style={platformLayout.bottomSpacerStyle}
+          />
+        )}
       </KeyboardAvoidingView>
     </Animated.View>
   );

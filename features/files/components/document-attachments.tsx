@@ -352,7 +352,7 @@ export const DocumentAttachments = ({
                 </Text>
               </View>
               <Text
-                className="font-normal text-placeholder text-xs shrink-0"
+                className="font-normal text-placeholder text-xs self-center shrink-0"
                 numberOfLines={1}
               >
                 {getDocumentSizeText(firstItem.item)}
@@ -461,6 +461,7 @@ export const DocumentAttachments = ({
       )}
       {shouldRenderSheet && (
         <Sheet
+          className="md:rounded-3xl"
           onDismiss={() => setIsSheetOpen(false)}
           open={isSheetOpen}
           portalName={sheetPortalName}
@@ -580,12 +581,13 @@ export const DocumentAttachments = ({
       )}
       {!!onRenameFile && (
         <Sheet
+          className="md:max-w-sm"
           onDismiss={handleCloseNameEditor}
           open={!!editingDocument}
           portalName={nameEditorPortalName}
           topInset={64}
         >
-          <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
+          <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
             <View>
               <Label>Name</Label>
               <Input

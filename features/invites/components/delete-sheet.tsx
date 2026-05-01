@@ -44,11 +44,12 @@ export const InviteDeleteSheet = () => {
 
   return (
     <Sheet
+      className="md:max-w-sm"
       onDismiss={() => sheetManager.close('invite-delete')}
       open={open}
       portalName="invite-delete"
     >
-      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">{label}</Text>
         <Button
           disabled={isLoading}
