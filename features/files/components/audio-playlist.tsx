@@ -4,6 +4,7 @@ import type * as audioPlayerTypes from '@/features/files/types/audio-player';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import { PressPropagationBoundary } from '@/ui/press-propagation-boundary';
 import { Text } from '@/ui/text';
 import { CaretLeft, CaretRight } from 'phosphor-react-native';
 import * as React from 'react';
@@ -53,7 +54,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
 
     if (layout === 'stacked') {
       return (
-        <View className={cn('min-w-0 gap-2', className)}>
+        <PressPropagationBoundary className={cn('min-w-0 gap-2', className)}>
           {clips.map((clip, index) => (
             <AudioPlayer
               key={clip.id}
@@ -71,12 +72,14 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
               }
             />
           ))}
-        </View>
+        </PressPropagationBoundary>
       );
     }
 
     return (
-      <View className={cn('min-w-0 flex-row items-center', className)}>
+      <PressPropagationBoundary
+        className={cn('min-w-0 flex-row items-center', className)}
+      >
         <View className="flex-1 min-w-0">
           {clips.map((clip, index) => {
             const isActive = index === activeIndex;
@@ -132,7 +135,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
             </Button>
           </View>
         )}
-      </View>
+      </PressPropagationBoundary>
     );
   };
 
