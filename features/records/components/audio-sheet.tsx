@@ -47,6 +47,7 @@ export const RecordAudioSheet = () => {
   });
 
   const logColor = useLogColor({ id: record.log?.id });
+  const saveColor = record.log?.id ? logColor.default : undefined;
   const isMicActive = isRecording && !isUploading;
 
   React.useEffect(() => {
@@ -155,7 +156,7 @@ export const RecordAudioSheet = () => {
         duration={duration}
         isMicActive={isMicActive}
         isUploading={isUploading}
-        logColor={logColor?.default}
+        logColor={saveColor}
         onCancel={handleCancel}
         onSave={handleSave}
         startError={startError}

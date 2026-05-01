@@ -124,6 +124,8 @@ const rules = {
       "auth.id in data.ref('record.log.team.roles.user.id')",
       'isReplyTeamMember',
       "auth.id in data.ref('reply.record.log.team.roles.user.id')",
+      'isLoglessDraftRecordFile',
+      "true in data.ref('record.isDraft') && data.ref('record.log.id') == [] && isRecordAuthor",
       'isRecordLogMember',
       "auth.id in data.ref('record.log.profiles.user.id')",
       'isReplyLogMember',
@@ -140,12 +142,12 @@ const rules = {
       "auth.id in data.ref('profile.user.roles.team.roles.user.id')",
     ],
     allow: {
-      view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordFiles || canViewReplyFiles',
+      view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordFiles || canViewReplyFiles || isLoglessDraftRecordFile',
       create: 'hasOneLink && (isProfileOwner || isTeamImageManager)',
       update:
-        'hasOneLink && isDocument && onlyModifiesDocumentName && isValidDocumentName && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)',
+        'hasOneLink && isDocument && onlyModifiesDocumentName && isValidDocumentName && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply || isLoglessDraftRecordFile)',
       delete:
-        'isProfileOwner || isTeamImageManager || (isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply',
+        'isProfileOwner || isTeamImageManager || (isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply || isLoglessDraftRecordFile',
     },
   },
   invites: {
@@ -176,6 +178,10 @@ const rules = {
       'newData.url != null && size(newData.url) > 0 && size(newData.url) <= 2048',
       'isValidTeamId',
       "newData.teamId in data.ref('record.log.team.id') || newData.teamId in data.ref('reply.record.log.team.id')",
+      'isValidLoglessDraftRecordTeamId',
+      "newData.teamId in data.ref('record.teamId')",
+      'hasLoglessDraftRecordTeamId',
+      "data.teamId in data.ref('record.teamId')",
       'onlyModifiesLinkDetails',
       "request.modifiedFields.all(field, field in ['label', 'url'])",
       'isRecordAuthor',
@@ -200,15 +206,17 @@ const rules = {
       'isRecordTeamMember && (canManageRecord || isRecordLogMember)',
       'canViewReply',
       'isReplyTeamMember && (canManageReply || isReplyLogMember)',
+      'isLoglessDraftRecordLink',
+      "true in data.ref('record.isDraft') && data.ref('record.log.id') == [] && isRecordAuthor",
     ],
     allow: {
-      view: 'canViewRecord || canViewReply || isRecordAuthor || isReplyAuthor',
+      view: 'canViewRecord || canViewReply || isRecordAuthor || isReplyAuthor || (isLoglessDraftRecordLink && hasLoglessDraftRecordTeamId)',
       create:
-        'hasOneLink && isValidLabel && isValidUrl && isValidTeamId && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)',
+        'hasOneLink && isValidLabel && isValidUrl && ((isValidTeamId && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)) || (isLoglessDraftRecordLink && isValidLoglessDraftRecordTeamId))',
       update:
-        'onlyModifiesLinkDetails && isValidLabel && isValidUrl && isValidTeamId && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)',
+        'onlyModifiesLinkDetails && isValidLabel && isValidUrl && ((isValidTeamId && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)) || (isLoglessDraftRecordLink && isValidLoglessDraftRecordTeamId))',
       delete:
-        '(isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply',
+        '(isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply || (isLoglessDraftRecordLink && hasLoglessDraftRecordTeamId)',
     },
   },
   tags: {
@@ -331,6 +339,10 @@ const rules = {
       "request.modifiedFields.all(field, field in ['isPinned'])",
       'isDraft',
       'data.isDraft == true',
+      'hasLog',
+      "size(data.ref('log.id')) > 0",
+      'isAuthorOwnedLoglessDraft',
+      'isAuthor && isDraft && !hasLog',
       'isTeamMember',
       "auth.id in data.ref('log.team.roles.user.id')",
       'isLogMember',
@@ -341,12 +353,12 @@ const rules = {
       'isAuthor && isTeamMember',
     ],
     allow: {
-      view: 'isTeamMember && ((!isDraft && (canManage || isLogMember)) || isAuthor)',
+      view: '(isTeamMember && ((!isDraft && (canManage || isLogMember)) || isAuthor)) || isAuthorOwnedLoglessDraft',
       create:
         'isAuthor && isTeamMember && (canManage || isLogMember) && isValidNewText',
       update:
-        '(isAuthor && isTeamMember && onlyModifiesText && isValidNewText) || (canManage && !isDraft && onlyModifiesPinnedState)',
-      delete: 'canDeleteOwn || canManage',
+        '(isAuthor && isTeamMember && onlyModifiesText && isValidNewText) || (canManage && !isDraft && onlyModifiesPinnedState) || (isAuthorOwnedLoglessDraft && onlyModifiesText && isValidNewText)',
+      delete: 'canDeleteOwn || canManage || isAuthorOwnedLoglessDraft',
       link: {
         links: 'auth.id != null',
         replies: 'auth.id != null',

@@ -20,8 +20,10 @@ const app = fileRouter.createFileRouter({
       files: {
         $: { where: { id: fileId } },
         record: {
+          $: { fields: ['id', 'isDraft'] },
           author: { user: { $: { fields: ['id'] } } },
           log: {
+            $: { fields: ['id'] },
             team: {
               roles: {
                 $: { fields: ['role'], where: { userId: c.var.user.id } },
@@ -40,6 +42,7 @@ const app = fileRouter.createFileRouter({
         fileRouter.canDeleteFile({
           actorRole: item?.record?.log?.team?.roles?.[0]?.role,
           isAuthor: item?.record?.author?.user?.id === c.var.user.id,
+          isLoglessDraft: item?.record?.isDraft && !item.record.log?.id,
         }),
       item,
     };

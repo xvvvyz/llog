@@ -1,4 +1,4 @@
-import { copyRecord } from '@/features/records/mutations/copy-record';
+import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
@@ -77,8 +77,17 @@ export const RecordCopyToSheet = () => {
     setIsSubmitting(true);
 
     try {
-      await copyRecord({ id: recordId, logIds: [...selectedLogIds] });
-      close();
+      const draft = await createRecordCopyDraft({
+        id: recordId,
+        logIds: [...selectedLogIds],
+      });
+
+      if (!draft) return;
+      setIsSubmitting(false);
+
+      sheetManager.open('record-create', draft.draftRecordId, 'copy', {
+        logIds: draft.targetLogIds,
+      });
     } catch (error) {
       setIsSubmitting(false);
 
@@ -88,7 +97,7 @@ export const RecordCopyToSheet = () => {
         title: 'Error',
       });
     }
-  }, [close, recordId, selectedLogIds]);
+  }, [close, recordId, selectedLogIds, sheetManager]);
 
   return (
     <Sheet
@@ -143,7 +152,7 @@ export const RecordCopyToSheet = () => {
           {isSubmitting ? (
             <Spinner color={UI.light.contrastForeground} />
           ) : (
-            <Text>Copy</Text>
+            <Text>Next</Text>
           )}
         </Button>
       </SheetFooter>

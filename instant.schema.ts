@@ -166,13 +166,7 @@ const schema = i.schema({
     },
     logsRecords: {
       forward: { on: 'logs', has: 'many', label: 'records' },
-      reverse: {
-        on: 'records',
-        has: 'one',
-        label: 'log',
-        required: true,
-        onDelete: 'cascade',
-      },
+      reverse: { on: 'records', has: 'one', label: 'log', onDelete: 'cascade' },
     },
     logsTags: {
       forward: { on: 'logs', has: 'many', label: 'tags' },

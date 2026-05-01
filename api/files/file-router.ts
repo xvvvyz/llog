@@ -135,7 +135,14 @@ export const createFileRouter = <const TPath extends string>({
 export const canDeleteFile = ({
   actorRole,
   isAuthor,
+  isLoglessDraft,
 }: {
   actorRole?: string | null;
   isAuthor?: boolean;
-}) => Boolean(permissions.isManagedRole(actorRole) || (isAuthor && actorRole));
+  isLoglessDraft?: boolean;
+}) =>
+  Boolean(
+    permissions.isManagedRole(actorRole) ||
+    (isAuthor && actorRole) ||
+    (isAuthor && isLoglessDraft)
+  );

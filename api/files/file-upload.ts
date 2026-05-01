@@ -124,9 +124,10 @@ const assertCanUploadToOwnedTarget = async ({
   if (linkField === 'record') {
     const { records } = await dbClient.query({
       records: {
-        $: { fields: ['id'], where: { id: recordId } },
+        $: { fields: ['id', 'isDraft', 'teamId'], where: { id: recordId } },
         author: { user: { $: { fields: ['id'] } } },
         log: {
+          $: { fields: ['id'] },
           team: {
             $: { fields: ['id'] },
             roles: { $: { fields: ['id'], where: { userId: creatorId } } },
@@ -136,12 +137,24 @@ const assertCanUploadToOwnedTarget = async ({
     });
 
     const record = records[0];
+    const hasLogTeamRole = !!record?.log?.team?.roles?.[0]?.id;
+    const isLoglessDraft = record?.isDraft && !record.log?.id;
+    let hasTeamRole = hasLogTeamRole;
 
-    if (
-      !record?.id ||
-      record.author?.user?.id !== creatorId ||
-      !record.log?.team?.roles?.[0]?.id
-    ) {
+    if (!hasTeamRole && isLoglessDraft && record.teamId) {
+      const { roles } = await dbClient.query({
+        roles: {
+          $: {
+            fields: ['id'],
+            where: { team: record.teamId, userId: creatorId },
+          },
+        },
+      });
+
+      hasTeamRole = !!roles[0]?.id;
+    }
+
+    if (!record?.id || record.author?.user?.id !== creatorId || !hasTeamRole) {
       denyUploadTarget();
     }
 
