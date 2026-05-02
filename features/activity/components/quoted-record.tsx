@@ -135,11 +135,7 @@ export const QuotedRecord = ({
               (hasDocumentFiles || hasLinks) && 'pb-0'
             )}
           >
-            <AudioPlaylist
-              clips={audioMedia}
-              compact
-              showPlaybackRate={false}
-            />
+            <AudioPlaylist clips={audioMedia} />
           </View>
         )}
         {hasDocumentFiles && (

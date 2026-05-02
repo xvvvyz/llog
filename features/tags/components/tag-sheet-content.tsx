@@ -1,5 +1,6 @@
 import { TagRow } from '@/features/tags/components/tag-row';
 import type { Tag } from '@/features/tags/types/tag';
+import type { Color } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
@@ -16,12 +17,14 @@ import Sortable, {
 
 export const TagSheetContent = ({
   canCreateTag,
+  canManageColor,
   canManageDefinitions = true,
   canToggleTags = true,
-  checkedColor,
+  colorFallback,
   getSelected,
   isLoading,
   onClose,
+  onColorChange,
   onReorder,
   onSelectTag,
   onSubmitTag,
@@ -32,12 +35,14 @@ export const TagSheetContent = ({
   visibleTags,
 }: {
   canCreateTag: boolean;
+  canManageColor?: boolean;
   canManageDefinitions?: boolean;
   canToggleTags?: boolean;
-  checkedColor?: string;
+  colorFallback: Color;
   getSelected: (tagId: string) => boolean;
   isLoading: boolean;
   onClose: () => void;
+  onColorChange?: (tagId: string, color: Color) => void;
   onReorder: (tags: Tag[]) => void;
   onSelectTag: (tagId: string, selected: boolean) => void;
   onSubmitTag: () => void;
@@ -99,9 +104,11 @@ export const TagSheetContent = ({
               sortEnabled={sortEnabled}
               renderItem={({ item: tag }) => (
                 <TagRow
+                  canManageColor={canManageColor}
                   canManageDefinitions={canManageDefinitions}
                   canToggle={canToggleTags}
-                  checkedColor={checkedColor}
+                  color={tag.color}
+                  colorFallback={colorFallback}
                   id={tag.id}
                   isSelected={getSelected(tag.id)}
                   name={tag.name}
@@ -109,6 +116,11 @@ export const TagSheetContent = ({
                     onSelectTag(tag.id, selected);
                     focusSearchInput();
                   }}
+                  onColorChange={
+                    onColorChange
+                      ? (color) => onColorChange(tag.id, color)
+                      : undefined
+                  }
                 />
               )}
             />
@@ -136,7 +148,7 @@ export const TagSheetContent = ({
           maxLength={16}
           onActionPress={canCreateTag ? handleSubmitTag : undefined}
           onSubmitEditing={handleSubmitTag}
-          placeholder="Type in a tag"
+          placeholder={canManageDefinitions ? 'Type in a tag' : 'Search'}
           query={rawQuery}
           setQuery={setRawQuery}
           size="sm"

@@ -22,7 +22,7 @@ export const useRecordTagsTarget = ({
           records: {
             $: { where: { id: recordId } },
             author: { $: { fields: ['id'] } },
-            log: { $: { fields: ['id'] } },
+            log: { $: { fields: ['color', 'id'] } },
             tags: { $: { fields: ['id'] } },
           },
         }
@@ -40,6 +40,7 @@ export const useRecordTagsTarget = ({
 
   return {
     isLoading: isLoading || hasStaleResult,
+    logColor: record?.log?.color,
     logId: record?.log?.id ?? payloadLogId,
     record,
     selectedTagIds,

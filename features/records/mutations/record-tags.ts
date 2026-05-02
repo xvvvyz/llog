@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import type { Color } from '@/theme/spectrum';
 import { id as generateId } from '@instantdb/react-native';
 
 export const addRecordTag = async ({
@@ -38,6 +39,7 @@ export const toggleRecordTag = async ({
 };
 
 export const createRecordTag = async ({
+  color,
   id,
   logId,
   name,
@@ -45,6 +47,7 @@ export const createRecordTag = async ({
   recordId,
   teamId,
 }: {
+  color?: Color | null;
   id?: string;
   logId?: string;
   name: string;
@@ -59,6 +62,7 @@ export const createRecordTag = async ({
   return db.transact([
     db.tx.tags[tagId]
       .update({
+        ...(color !== undefined && { color }),
         name: trimmedName,
         order: order ?? -Date.now(),
         teamId,

@@ -21,7 +21,7 @@ export const Avatar = ({
   const fallbackUri =
     fallback === 'gradient'
       ? `https://api.dicebear.com/9.x/glass/png?seed=${seed}&backgroundType=gradientLinear&size=64`
-      : `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${seed}&backgroundColor=f5f5f5&size=64`;
+      : `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${seed}&backgroundColor=ffffff&size=64`;
 
   return (
     <Image

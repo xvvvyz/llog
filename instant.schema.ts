@@ -44,6 +44,7 @@ const schema = i.schema({
       url: i.string(),
     }),
     tags: i.entity({
+      color: i.number().optional(),
       name: i.string().indexed(),
       order: i.number().indexed(),
       teamId: i.string().indexed(),

@@ -18,6 +18,12 @@ export const useRecord = ({ id }: { id?: string }) => {
             links: {},
             log: {},
             reactions: { author: {} },
+            tags: {
+              $: {
+                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
+                where: { type: 'record' },
+              },
+            },
           },
         }
       : null

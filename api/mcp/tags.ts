@@ -5,6 +5,7 @@ import { recordTagFields, recordTagLogsQuery } from '@/api/mcp/tag-query';
 import type { McpContext, McpLog, McpRecord, McpTag } from '@/api/mcp/types';
 import { requireVisibleLog } from '@/api/mcp/viewer';
 import * as permissions from '@/features/teams/lib/permissions';
+import { resolveSpectrumColor } from '@/theme/spectrum';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
@@ -34,7 +35,12 @@ const getLogForRecordTags = async (ctx: McpContext, logId: string) => {
   const { logs } = (await ctx.db.query({
     logs: {
       $: {
-        fields: ['id' as const, 'name' as const, 'teamId' as const],
+        fields: [
+          'color' as const,
+          'id' as const,
+          'name' as const,
+          'teamId' as const,
+        ],
         where: { id: logId },
       },
     },
@@ -225,12 +231,15 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('Only team owners and admins can create record tags');
     }
 
-    const existingTags = await listRecordTagsForLog({
-      ctx,
-      limit: 100,
-      logId: target.logId,
-      query: trimmedName,
-    });
+    const [existingTags, log] = await Promise.all([
+      listRecordTagsForLog({
+        ctx,
+        limit: 100,
+        logId: target.logId,
+        query: trimmedName,
+      }),
+      getLogForRecordTags(ctx, target.logId),
+    ]);
 
     const normalizedName = trimmedName.toLowerCase();
 
@@ -239,6 +248,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     );
 
     const newTag = {
+      color: resolveSpectrumColor(log.color),
       id: id(),
       logs: [{ id: target.logId, name: record.log?.name ?? '' }],
       name: trimmedName,
@@ -254,6 +264,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
       await ctx.db.transact([
         ctx.db.tx.tags[tag.id]
           .update({
+            color: newTag.color,
             name: tag.name,
             order: newTag.order,
             teamId: target.teamId,

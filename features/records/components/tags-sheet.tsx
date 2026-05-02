@@ -1,13 +1,15 @@
 import { useProfile } from '@/features/account/queries/use-profile';
-import { useLogColor } from '@/features/logs/hooks/use-color';
+import { useLog } from '@/features/logs/queries/use-log';
 import * as recordTags from '@/features/records/mutations/record-tags';
 import { useRecordTagsTarget } from '@/features/records/queries/use-record-tags-target';
 import { TagSheetContent } from '@/features/tags/components/tag-sheet-content';
 import { useTagSheetController } from '@/features/tags/hooks/use-tag-sheet-controller';
 import { reorderTags } from '@/features/tags/mutations/reorder-tags';
+import { updateTag } from '@/features/tags/mutations/update-tag';
 import type { Tag } from '@/features/tags/types/tag';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { resolveSpectrumColor, type Color } from '@/theme/spectrum';
 import { Sheet } from '@/ui/sheet';
 import * as React from 'react';
 
@@ -24,7 +26,9 @@ export const RecordTagsSheet = () => {
   const record = target.record;
   const teamId = target.teamId;
   const logId = target.logId;
-  const logColor = useLogColor({ id: logId });
+  const needsLogColor = !!logId && target.logColor == null;
+  const log = useLog({ id: needsLogColor ? logId : undefined });
+  const logColorIndex = resolveSpectrumColor(target.logColor ?? log.color);
   const myRole = useMyRole({ teamId });
   const canManageDefinitions = !!myRole.canManage;
 
@@ -33,18 +37,34 @@ export const RecordTagsSheet = () => {
     (canManageDefinitions ||
       (!!profile.id && profile.id === record.author?.id));
 
-  const isLoading = target.isLoading || (!!teamId && myRole.isLoading);
+  const isLoading =
+    target.isLoading ||
+    (needsLogColor && log.isLoading) ||
+    (!!teamId && myRole.isLoading);
 
   const tagTeamIds = React.useMemo(
     () => (teamId && logId ? [teamId] : []),
     [logId, teamId]
   );
 
+  const handleColorChange = React.useCallback((tagId: string, color: Color) => {
+    void updateTag({ id: tagId, color });
+  }, []);
+
   const tagSheet = useTagSheetController({
     buildPendingTag: React.useCallback(
       ({ id, name, order }) =>
-        teamId ? ({ id, name, order, teamId, type: 'record' } as Tag) : null,
-      [teamId]
+        teamId
+          ? ({
+              color: logColorIndex,
+              id,
+              name,
+              order,
+              teamId,
+              type: 'record',
+            } as Tag)
+          : null,
+      [logColorIndex, teamId]
     ),
     canCreateDefinitions: canManageDefinitions,
     canCreateNewTag: !!logId && !!record?.id && !!teamId,
@@ -55,6 +75,7 @@ export const RecordTagsSheet = () => {
         if (!logId || !record?.id || !teamId) return;
 
         void recordTags.createRecordTag({
+          color: logColorIndex,
           id,
           logId,
           name,
@@ -63,7 +84,7 @@ export const RecordTagsSheet = () => {
           teamId,
         });
       },
-      [logId, record?.id, teamId]
+      [logColorIndex, logId, record?.id, teamId]
     ),
     onReorder: React.useCallback(
       (orderedTags: Tag[]) => {
@@ -104,12 +125,14 @@ export const RecordTagsSheet = () => {
     >
       <TagSheetContent
         canCreateTag={tagSheet.canCreateTag}
+        canManageColor={canManageDefinitions}
         canManageDefinitions={canManageDefinitions}
         canToggleTags={canManageRecordTags}
-        checkedColor={logColor.default}
+        colorFallback={logColorIndex}
         getSelected={tagSheet.getSelected}
         isLoading={isLoading}
         onClose={() => sheetManager.close('record-tags')}
+        onColorChange={handleColorChange}
         onReorder={tagSheet.handleReorder}
         onSelectTag={tagSheet.handleSelectTag}
         onSubmitTag={tagSheet.handleSubmitTag}

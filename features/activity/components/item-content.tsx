@@ -23,7 +23,7 @@ export const ItemContent = ({
   switch (type) {
     case 'record_published': {
       return recordText ? (
-        <Text className="-my-1 px-4" numberOfLines={2}>
+        <Text className="-mt-1 px-4" numberOfLines={2}>
           {renderLinkifiedText({ text: recordText })}
         </Text>
       ) : null;
@@ -48,11 +48,11 @@ export const ItemContent = ({
       const reactionGroups = groupReactionItems(reactionIcons);
 
       return reactionIcons.length > 0 ? (
-        <View className="flex-row flex-wrap -my-0.5 px-4 gap-1">
+        <View className="flex-row flex-wrap -my-0.5 px-4">
           {reactionGroups.map((group) => (
             <View
               key={group.map(({ emoji }) => emoji).join('-')}
-              className="flex-row gap-1"
+              className="flex-row gap-3"
             >
               {group.map(({ emoji, icon }) => (
                 <Icon

@@ -16,8 +16,11 @@ import Animated from 'react-native-reanimated';
 const AUDIO_SEEK_STEP_SECONDS = 5;
 
 export const AudioPlayer = (props: AudioPlayerProps) => {
-  const { compact, showPlaybackRate = true, trailingAccessory } = props;
+  const { showPlaybackRate = true, trailingAccessory } = props;
   const showDefaultPlaybackRate = showPlaybackRate && !trailingAccessory;
+
+  const hasTrailingControls =
+    trailingAccessory != null || showDefaultPlaybackRate;
 
   const {
     currentPlaybackRate,
@@ -36,31 +39,20 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     <View
       className={cn(
         'flex-row min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border-secondary bg-secondary border-continuous',
-        compact ? 'h-6 px-0' : 'h-8 px-0'
+        'h-8 px-0',
+        !hasTrailingControls && 'pr-3'
       )}
     >
       <Button
-        className={cn(compact && 'size-6 rounded-lg border-continuous')}
         disabled={isDisabled}
         onPress={togglePlayback}
-        size={compact ? 'icon' : 'icon-sm'}
+        size="icon-sm"
         variant="ghost"
-        wrapperClassName={cn(compact && 'rounded-lg border-continuous')}
       >
-        <Icon icon={isPlaying ? Pause : Play} size={compact ? 12 : 16} />
+        <Icon icon={isPlaying ? Pause : Play} size={16} />
       </Button>
-      <View
-        className={cn(
-          'flex-row flex-1 min-w-0 items-center gap-2',
-          compact ? 'h-6' : 'h-8'
-        )}
-      >
-        <View
-          className={cn(
-            'relative flex-1 min-w-0 justify-center',
-            compact ? 'h-6' : 'h-8'
-          )}
-        >
+      <View className="flex-1 flex-row h-8 min-w-0 gap-2 items-center">
+        <View className="relative flex-1 h-8 min-w-0 justify-center">
           <View
             className="relative overflow-hidden h-1 w-full border-continuous rounded-full bg-progress-track"
             onLayout={handleTrackLayout}
@@ -82,32 +74,27 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
         (showDefaultPlaybackRate && (
           <View className="flex-row items-center shrink-0">
             <PlaybackRateButton
-              compact={compact}
               disabled={isDisabled}
               onPlaybackRateChange={handlePlaybackRateChange}
               playbackRate={currentPlaybackRate}
             />
             <Button
               accessibilityLabel="Back 5 seconds"
-              className={cn(compact && 'size-6 rounded-lg border-continuous')}
               disabled={isDisabled}
               onPress={() => seekBy(-AUDIO_SEEK_STEP_SECONDS)}
-              size={compact ? 'icon' : 'icon-sm'}
+              size="icon-sm"
               variant="ghost"
-              wrapperClassName={cn(compact && 'rounded-lg border-continuous')}
             >
-              <Icon icon={Rewind} size={compact ? 12 : 16} />
+              <Icon icon={Rewind} size={16} />
             </Button>
             <Button
               accessibilityLabel="Forward 5 seconds"
-              className={cn(compact && 'size-6 rounded-lg border-continuous')}
               disabled={isDisabled}
               onPress={() => seekBy(AUDIO_SEEK_STEP_SECONDS)}
-              size={compact ? 'icon' : 'icon-sm'}
+              size="icon-sm"
               variant="ghost"
-              wrapperClassName={cn(compact && 'rounded-lg border-continuous')}
             >
-              <Icon icon={FastForward} size={compact ? 12 : 16} />
+              <Icon icon={FastForward} size={16} />
             </Button>
           </View>
         ))}

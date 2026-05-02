@@ -59,22 +59,22 @@
     @variant light {
       --background: 0 0% 92%;
       --foreground: 0 0% 0% / 0.7;
-      --card: 0 0% 95%;
+      --card: 0 0% 96%;
       --card-foreground: 0 0% 0% / 0.7;
       --popover: 0 0% 97%;
       --popover-foreground: 0 0% 0% / 0.5;
       --primary: 211 78% 58%;
       --primary-foreground: 0 0% 100% / 0.99;
-      --secondary: 0 0% 100% / 0.5;
+      --secondary: 0 0% 100%;
       --secondary-foreground: 0 0% 0% / 0.5;
-      --muted: 0 0% 95%;
+      --muted: 0 0% 96%;
       --muted-foreground: 0 0% 0% / 0.5;
       --accent: 0 0% 0% / 0.02;
       --destructive: 7 55% 54%;
       --destructive-foreground: 0 0% 100%;
       --border: 0 0% 0% / 0.06;
       --border-secondary: 0 0% 0% / 0.12;
-      --input: 0 0% 100% / 0.5;
+      --input: 0 0% 100%;
       --placeholder: 0 0% 0% / 0.5;
       --ring: 211 78% 58%;
       --contrast-foreground: 0 0% 100%;

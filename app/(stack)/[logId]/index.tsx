@@ -153,7 +153,7 @@ export default function Index() {
           style={{ marginBottom: insets.bottom }}
         >
           <Button
-            className="size-14 rounded-full active:opacity-90 web:hover:opacity-90"
+            className="size-14 border-0 rounded-full active:opacity-90 web:hover:opacity-90"
             onPress={() => sheetManager.open('record-create', params.logId)}
             size="icon"
             style={{ backgroundColor: logColor.default }}

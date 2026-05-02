@@ -1,7 +1,11 @@
+import { SpectrumSwatchPicker } from '@/features/tags/components/spectrum-swatch-picker';
 import { updateTag } from '@/features/tags/mutations/update-tag';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { SPECTRUM, isColor, type Color } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
+import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
 import { Text } from '@/ui/text';
@@ -11,26 +15,36 @@ import { View } from 'react-native';
 import Sortable from 'react-native-sortables';
 
 export const TagRow = ({
+  canManageColor,
   canToggle = true,
   canManageDefinitions = true,
-  checkedColor,
+  color,
+  colorFallback,
   id,
   isSelected,
   name,
   onCheckedChange,
+  onColorChange,
 }: {
+  canManageColor?: boolean;
   canToggle?: boolean;
   canManageDefinitions?: boolean;
-  checkedColor?: string;
+  color?: number | null;
+  colorFallback: Color;
   id: string;
   isSelected: boolean;
   name: string;
   onCheckedChange?: (selected: boolean) => void;
+  onColorChange?: (color: Color) => void;
 }) => {
   const [isDeleteButtonVisible, setIsDeleteButtonVisible] =
     React.useState(false);
 
+  const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
+  const colorValue = isColor(color) ? color : colorFallback;
+  const accentColor = SPECTRUM[colorScheme][colorValue].default;
+  const canEditColor = !!canManageColor && !!onColorChange;
 
   return (
     <View className="flex-row w-full gap-3 items-center">
@@ -44,8 +58,44 @@ export const TagRow = ({
             </Sortable.Handle>
           </View>
         )}
+        {canEditColor ? (
+          <Menu.Root>
+            <Menu.Trigger asChild>
+              <Button
+                accessibilityLabel="Tag color"
+                className="rounded-full"
+                size="icon-sm"
+                variant="ghost"
+                wrapperClassName="-ml-1 mr-1 rounded-full border-continuous"
+              >
+                <View
+                  className="size-3.5 border-border-secondary border-continuous rounded-full border"
+                  style={{ backgroundColor: accentColor }}
+                />
+              </Button>
+            </Menu.Trigger>
+            <Menu.Content
+              align="start"
+              className="min-w-0 p-3"
+              side="top"
+              sideOffset={4}
+            >
+              <SpectrumSwatchPicker
+                onValueChange={onColorChange}
+                value={colorValue}
+              />
+            </Menu.Content>
+          </Menu.Root>
+        ) : (
+          <View className="mr-1 h-10 w-8 items-center justify-center">
+            <View
+              className="size-3 border-border-secondary border-continuous rounded-full border"
+              style={{ backgroundColor: accentColor }}
+            />
+          </View>
+        )}
         {!canManageDefinitions ? (
-          <View className="flex-1 h-10 min-w-0 pl-4 justify-center">
+          <View className="flex-1 h-10 min-w-0 justify-center">
             <Text numberOfLines={1}>{name}</Text>
           </View>
         ) : (
@@ -75,11 +125,11 @@ export const TagRow = ({
         ) : (
           <Checkbox
             checked={isSelected}
-            checkedColor={checkedColor}
+            checkedColor={accentColor}
             className="size-10 border-0"
             disabled={!canToggle}
             onCheckedChange={(selected) => onCheckedChange?.(selected)}
-            wrapperClassName="rounded-full border-continuous"
+            wrapperClassName="-mr-px rounded-full border-continuous"
           />
         )}
       </View>

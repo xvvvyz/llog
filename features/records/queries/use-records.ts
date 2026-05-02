@@ -30,7 +30,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             reactions: { author: {} },
             tags: {
               $: {
-                fields: ['id', 'name', 'order', 'teamId', 'type'],
+                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
                 where: { type: 'record' },
               },
             },
@@ -62,7 +62,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             reactions: { author: {} },
             tags: {
               $: {
-                fields: ['id', 'name', 'order', 'teamId', 'type'],
+                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
                 where: { type: 'record' },
               },
             },

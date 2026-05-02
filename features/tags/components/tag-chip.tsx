@@ -1,42 +1,52 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
+import { SPECTRUM, isColor } from '@/theme/spectrum';
 import { Text } from '@/ui/text';
 import { View } from 'react-native';
 
-export type TagChipVariant = 'contrast' | 'secondary';
-
-const chipVariantClasses: Record<TagChipVariant, string> = {
-  contrast: 'bg-contrast-background/10',
-  secondary: 'bg-secondary',
-};
-
-const textVariantClasses: Record<TagChipVariant, string> = {
-  contrast: 'text-contrast-foreground/90',
-  secondary: 'text-muted-foreground',
-};
-
 export const TagChip = ({
+  color,
   className,
+  fallbackAccentColor,
   name,
+  showColorAccent = false,
   textClassName,
-  variant = 'secondary',
 }: {
+  color?: number | null;
   className?: string;
+  fallbackAccentColor?: string;
   name: string;
+  showColorAccent?: boolean;
   textClassName?: string;
-  variant?: TagChipVariant;
-}) => (
-  <View
-    className={cn(
-      'max-w-full rounded-full px-1.5 py-0.5 border-continuous',
-      chipVariantClasses[variant],
-      className
-    )}
-  >
-    <Text
-      className={cn('text-xs', textVariantClasses[variant], textClassName)}
-      numberOfLines={1}
+}) => {
+  const colorScheme = useColorScheme();
+
+  const accentColor = isColor(color)
+    ? SPECTRUM[colorScheme][color].default
+    : fallbackAccentColor;
+
+  return (
+    <View
+      className={cn(
+        'max-w-full min-w-0 flex-row items-center gap-1.5 rounded-full bg-secondary px-1.5 py-0.5 border-continuous',
+        className
+      )}
     >
-      {name}
-    </Text>
-  </View>
-);
+      {showColorAccent && accentColor ? (
+        <View
+          className="size-2.5 rounded-full shrink-0"
+          style={{ backgroundColor: accentColor }}
+        />
+      ) : null}
+      <Text
+        numberOfLines={1}
+        className={cn(
+          'shrink font-normal text-muted-foreground text-xs',
+          textClassName
+        )}
+      >
+        {name}
+      </Text>
+    </View>
+  );
+};

@@ -131,3 +131,21 @@ type ToNumber<T> = T extends `${infer N extends number}` ? N : never;
 type SpectrumIndex = Extract<keyof typeof SPECTRUM.light, `${number}`>;
 
 export type Color = ToNumber<SpectrumIndex>;
+
+export const DEFAULT_SPECTRUM_COLOR = 11 satisfies Color;
+
+export function isColor(value: unknown): value is Color {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value < SPECTRUM.light.length
+  );
+}
+
+export function resolveSpectrumColor(
+  value: unknown,
+  fallback: Color = DEFAULT_SPECTRUM_COLOR
+): Color {
+  return isColor(value) ? value : fallback;
+}

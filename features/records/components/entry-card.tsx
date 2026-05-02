@@ -78,13 +78,20 @@ export const EntryCard = ({
   return (
     <Card className={cn('gap-4', className)}>
       {hasRecordTags ? (
-        <View className="pt-4 px-4 gap-2">
-          <View className="flex-row gap-3 items-start justify-between">
+        <View className="pt-4 px-4 gap-4">
+          <View className="relative">
             <RecordTagChips
-              className={cn('flex-1 justify-start', hasHeaderActions && 'pr-2')}
+              fallbackAccentColor={accentColor}
               tags={record.tags}
+              className={cn(
+                'w-full justify-start',
+                hasPinnedAction && 'pr-20',
+                !hasPinnedAction && hasHeaderActions && 'pr-12'
+              )}
             />
-            {headerActions}
+            {headerActions ? (
+              <View className="absolute right-0 top-0">{headerActions}</View>
+            ) : null}
           </View>
           <View className="flex-row gap-3 items-start">
             <Avatar
@@ -135,7 +142,7 @@ export const EntryCard = ({
       <MediaGrid recordId={recordId} visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
-          <AudioPlaylist clips={audioMedia} layout="stacked" />
+          <AudioPlaylist clips={audioMedia} />
         </View>
       )}
       {documentFiles.length > 0 && (

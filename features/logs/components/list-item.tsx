@@ -47,10 +47,12 @@ export const ListItem = ({
           wrapperClassName="rounded-2xl border-continuous"
         >
           <TagChipList
-            className="-ml-1.5 -mt-1.5 pr-10 gap-0.5"
+            chipClassName="max-w-full dark:bg-background"
+            className="-ml-1.5 -mt-1.5 w-full pr-6 gap-0.5"
+            fallbackAccentColor={color.default}
             showEmpty
             tags={tags}
-            variant="contrast"
+            textClassName="text-foreground"
           />
           <View className="flex-row w-full gap-3 items-end justify-between">
             <Text

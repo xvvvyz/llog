@@ -225,8 +225,10 @@ const rules = {
       'newData.name == null || size(newData.name) <= 16',
       'isValidType',
       "newData.type in ['log', 'record']",
+      'isValidColor',
+      "newData.color == null || (newData.type in ['log', 'record'] && newData.color in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])",
       'onlyModifiesTagDetails',
-      "request.modifiedFields.all(field, field in ['name', 'order'])",
+      "request.modifiedFields.all(field, field in ['color', 'name', 'order'])",
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'canManage',
@@ -234,8 +236,9 @@ const rules = {
     ],
     allow: {
       view: 'isTeamMember',
-      create: 'canManage && isValidName && isValidType',
-      update: 'canManage && onlyModifiesTagDetails && isValidName',
+      create: 'canManage && isValidName && isValidType && isValidColor',
+      update:
+        'canManage && onlyModifiesTagDetails && isValidName && isValidColor',
       delete: 'canManage',
     },
   },
