@@ -1,11 +1,12 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { Profile } from '@/features/account/types/profile';
 import { groupReactionItems } from '@/features/records/lib/group-reaction-items';
+import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { toggleReaction } from '@/features/records/mutations/toggle-reaction';
 import { Reaction } from '@/features/records/types/reaction';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
-import { REACTION_EMOJIS, REACTION_ICONS, isEmoji } from '@/types/emoji';
+import { REACTION_EMOJIS, normalizeReactionEmoji } from '@/types/emoji';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
@@ -57,8 +58,8 @@ export const Reactions = ({
     () =>
       Array.from(grouped.entries()).sort(
         ([a], [b]) =>
-          REACTION_EMOJIS.indexOf(isEmoji(a) ? a : '❤️') -
-          REACTION_EMOJIS.indexOf(isEmoji(b) ? b : '❤️')
+          REACTION_EMOJIS.indexOf(normalizeReactionEmoji(a)) -
+          REACTION_EMOJIS.indexOf(normalizeReactionEmoji(b))
       ),
     [grouped]
   );
@@ -81,8 +82,11 @@ export const Reactions = ({
           className={cn('flex-row', index === 0 && leading ? 'gap-1' : 'gap-2')}
         >
           {index === 0 && leading}
-          {reactionGroup.map(
-            ([emoji, { count, userReacted, userReactionId }]) => (
+          {reactionGroup.map(([emoji, reaction]) => {
+            const reactionEmoji = normalizeReactionEmoji(emoji);
+            const { count, userReacted, userReactionId } = reaction;
+
+            return (
               <Animated.View
                 key={emoji}
                 entering={animation(ZoomIn)}
@@ -97,7 +101,7 @@ export const Reactions = ({
                     if (!teamId) return;
 
                     toggleReaction({
-                      emoji,
+                      emoji: reactionEmoji,
                       existingReactionId: userReactionId,
                       logId,
                       profileId: profile.id,
@@ -109,17 +113,13 @@ export const Reactions = ({
                 >
                   <Icon
                     color={userReacted ? color : undefined}
+                    icon={REACTION_ICONS[reactionEmoji]}
                     weight={userReacted ? 'fill' : 'regular'}
                     className={cn(
                       '-ml-0.5',
                       userReacted && !color && 'text-primary',
                       !userReacted && 'text-muted-foreground'
                     )}
-                    icon={
-                      isEmoji(emoji)
-                        ? REACTION_ICONS[emoji]
-                        : REACTION_ICONS['❤️']
-                    }
                   />
                   <Text
                     style={userReacted && color ? { color } : undefined}
@@ -133,8 +133,8 @@ export const Reactions = ({
                   </Text>
                 </Button>
               </Animated.View>
-            )
-          )}
+            );
+          })}
         </View>
       ))}
     </>

@@ -1,7 +1,7 @@
 import * as audioPlaybackRateUtils from '@/features/files/lib/audio-playback-rate';
 import { SortBy, isSortBy } from '@/features/logs/components/list-actions';
 import { db } from '@/lib/db';
-import { Emoji, isEmoji } from '@/types/emoji';
+import { normalizeReactionEmoji } from '@/types/emoji';
 import { SortDirection, isSortDirection } from '@/ui/dropdown-menu';
 
 export const useUi = () => {
@@ -14,10 +14,7 @@ export const useUi = () => {
   );
 
   const ui = data?.ui?.[0];
-
-  const doubleTapEmoji: Emoji = isEmoji(ui?.doubleTapEmoji)
-    ? ui.doubleTapEmoji
-    : '❤️';
+  const doubleTapEmoji = normalizeReactionEmoji(ui?.doubleTapEmoji);
 
   const audioPlaybackRate = audioPlaybackRateUtils.isAudioPlaybackRate(
     ui?.audioPlaybackRate

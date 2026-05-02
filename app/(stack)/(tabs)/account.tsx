@@ -4,11 +4,12 @@ import { randomizeProfileAvatar } from '@/features/account/mutations/randomize-p
 import { updateProfile } from '@/features/account/mutations/update-profile';
 import { uploadProfileImage } from '@/features/account/mutations/upload-profile-image';
 import { useProfile } from '@/features/account/queries/use-profile';
+import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
 import { useUi } from '@/queries/use-ui';
-import { REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
+import { REACTION_EMOJIS } from '@/types/emoji';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';

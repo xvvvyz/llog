@@ -1,9 +1,10 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { Profile } from '@/features/account/types/profile';
+import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { toggleReaction } from '@/features/records/mutations/toggle-reaction';
 import { Reaction } from '@/features/records/types/reaction';
 import { cn } from '@/lib/cn';
-import { REACTION_EMOJIS, REACTION_ICONS } from '@/types/emoji';
+import { REACTION_EMOJIS } from '@/types/emoji';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';

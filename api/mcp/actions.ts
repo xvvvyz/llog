@@ -2,11 +2,13 @@ import { textResult } from '@/api/mcp/fields';
 import { getVisibleRecord } from '@/api/mcp/records';
 import type { McpContext } from '@/api/mcp/types';
 import * as permissions from '@/features/teams/lib/permissions';
+import { REACTION_EMOJIS, type ReactionEmoji } from '@/types/emoji';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
 const recordActionsActionSchema = z.enum(['reaction', 'pin']);
+const reactionEmojiSchema = z.enum(REACTION_EMOJIS);
 
 export const registerActionTools = (server: McpServer, ctx: McpContext) => {
   const setReaction = async ({
@@ -14,7 +16,7 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     recordId,
     replyId,
   }: {
-    emoji?: null | string;
+    emoji?: ReactionEmoji | null;
     recordId?: string;
     replyId?: string;
   }) => {
@@ -127,7 +129,7 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
       description: 'Set record/reply reactions or pin state.',
       inputSchema: {
         action: recordActionsActionSchema,
-        emoji: z.string().min(1).max(32).nullable().optional(),
+        emoji: reactionEmojiSchema.nullable().optional(),
         isPinned: z.boolean().optional(),
         recordId: z.string().min(1).optional(),
         replyId: z.string().min(1).optional(),

@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { resolveProfileAndTeam } from '@/queries/resolve-profile-and-team';
+import type { ReactionEmoji } from '@/types/emoji';
 import { id } from '@instantdb/react-native';
 
 export const toggleReaction = async ({
@@ -11,7 +12,7 @@ export const toggleReaction = async ({
   recordId,
   replyId,
 }: {
-  emoji: string;
+  emoji: ReactionEmoji;
   existingReactionId?: string;
   logId?: string;
   profileId?: string;
