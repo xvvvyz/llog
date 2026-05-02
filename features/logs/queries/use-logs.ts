@@ -22,7 +22,7 @@ export const useLogs = ({
                 ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },
-            tags: { $: { fields: ['id'] } },
+            tags: { $: { fields: ['id'], where: { type: 'log' } } },
             profiles: { image: {} },
           },
         }

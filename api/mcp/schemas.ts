@@ -6,4 +6,13 @@ export const linkInputSchema = z.object({
 });
 
 export const contentStatusSchema = z.enum(['published', 'draft']).optional();
+
+export const recordIncludeSchema = z.enum([
+  'files',
+  'links',
+  'reactions',
+  'replies',
+]);
+
+export const replyIncludeSchema = z.enum(['files', 'links', 'reactions']);
 export const saveModeSchema = z.enum(['publish', 'draft']).optional();

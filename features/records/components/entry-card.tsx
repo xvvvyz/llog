@@ -1,9 +1,10 @@
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
-import { EntryMenu } from '@/features/records/components/entry-menu';
+import { EntryMenuContent } from '@/features/records/components/entry-menu';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
+import { RecordTagChips } from '@/features/records/components/record-tag-chips';
 import { TruncatedText } from '@/features/records/components/truncated-text';
 import { openRecordDetail } from '@/features/records/lib/route';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
@@ -24,6 +25,7 @@ export const EntryCard = ({
   canUnpinRecord,
   className,
   documentFiles,
+  entryMenuState,
   links,
   logId,
   numberOfLines,
@@ -41,55 +43,90 @@ export const EntryCard = ({
   onUnpin: () => void;
 }) => {
   const displayText = trimDisplayText(record.text);
+  const hasPinnedAction = 'isPinned' in record && !!record.isPinned;
+  const hasHeaderActions = hasPinnedAction || entryMenuState.hasMenu;
+  const hasRecordTags = record.tags?.some((tag) => !!tag.name);
+
+  const headerActions = hasHeaderActions ? (
+    <View className="max-w-52 items-end shrink">
+      <View className="flex-row -mr-1.5 -mt-1.5 gap-1.5 items-center justify-end">
+        {hasPinnedAction && (
+          <Button
+            disabled={!canUnpinRecord}
+            onPress={onUnpin}
+            size="icon-sm"
+            variant="ghost"
+            wrapperClassName="opacity-100"
+          >
+            <Icon color={accentColor} icon={PushPin} size={16} weight="fill" />
+          </Button>
+        )}
+        <EntryMenuContent
+          accentColor={accentColor}
+          authorId={record.author?.id}
+          isPinned={'isPinned' in record ? !!record.isPinned : undefined}
+          logId={logId}
+          recordId={recordId}
+          replyId={replyId}
+          state={entryMenuState}
+          teamId={record.teamId}
+        />
+      </View>
+    </View>
+  ) : null;
 
   return (
     <Card className={cn('gap-4', className)}>
-      <View className="flex-row p-4 pb-0 gap-3 items-start">
-        <Avatar
-          avatar={record.author?.image?.uri}
-          className="border-border-secondary border"
-          id={record.author?.id}
-          seedId={record.author?.avatarSeedId}
-          size={42}
-        />
-        <View className="flex-1">
-          <Text className="font-medium leading-snug" numberOfLines={1}>
-            {record.author?.name}
-          </Text>
-          <Text className="leading-snug text-muted-foreground text-sm">
-            {formatDate(record.date)}
-          </Text>
+      {hasRecordTags ? (
+        <View className="pt-4 px-4 gap-2">
+          <View className="flex-row gap-3 items-start justify-between">
+            <RecordTagChips
+              className={cn('flex-1 justify-start', hasHeaderActions && 'pr-2')}
+              tags={record.tags}
+            />
+            {headerActions}
+          </View>
+          <View className="flex-row gap-3 items-start">
+            <Avatar
+              avatar={record.author?.image?.uri}
+              className="border-border-secondary border"
+              id={record.author?.id}
+              seedId={record.author?.avatarSeedId}
+              size={42}
+            />
+            <View className="flex-1 min-w-0">
+              <Text className="font-medium leading-snug" numberOfLines={1}>
+                {record.author?.name}
+              </Text>
+              <Text className="leading-snug text-muted-foreground text-sm">
+                {formatDate(record.date)}
+              </Text>
+            </View>
+          </View>
         </View>
-        <View className="flex-row -mr-1.5 -mt-1.5 gap-1.5 items-center">
-          {'isPinned' in record && record.isPinned && (
-            <Button
-              disabled={!canUnpinRecord}
-              onPress={onUnpin}
-              size="icon-sm"
-              variant="ghost"
-              wrapperClassName="opacity-100"
-            >
-              <Icon
-                color={accentColor}
-                icon={PushPin}
-                size={16}
-                weight="fill"
-              />
-            </Button>
-          )}
-          <EntryMenu
-            accentColor={accentColor}
-            authorId={record.author?.id}
-            isPinned={'isPinned' in record ? !!record.isPinned : undefined}
-            logId={logId}
-            recordId={recordId}
-            teamId={record.teamId}
+      ) : (
+        <View className="flex-row p-4 pb-0 gap-3 items-start">
+          <Avatar
+            avatar={record.author?.image?.uri}
+            className="border-border-secondary border"
+            id={record.author?.id}
+            seedId={record.author?.avatarSeedId}
+            size={42}
           />
+          <View className="flex-1 min-w-0">
+            <Text className="font-medium leading-snug" numberOfLines={1}>
+              {record.author?.name}
+            </Text>
+            <Text className="leading-snug text-muted-foreground text-sm">
+              {formatDate(record.date)}
+            </Text>
+          </View>
+          {headerActions}
         </View>
-      </View>
+      )}
       {!!displayText && (
         <TruncatedText
-          className="px-4 select-text"
+          className="-mt-1 px-4 select-text"
           color={accentColor}
           numberOfLines={numberOfLines}
           text={displayText}
@@ -125,7 +162,7 @@ export const EntryCard = ({
         replyId={replyId}
         trailing={
           !!record.replies && (
-            <View className="flex-row gap-1.5 items-center self-center">
+            <View className="flex-row gap-1.5 items-center self-end">
               {record.replies.length > 0 && (
                 <Button
                   onPress={() => openRecordDetail(recordId)}

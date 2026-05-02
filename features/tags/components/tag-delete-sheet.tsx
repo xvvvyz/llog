@@ -1,5 +1,5 @@
-import { deleteTag } from '@/features/logs/mutations/delete-tag';
-import { useTag } from '@/features/logs/queries/use-tag';
+import { deleteTag } from '@/features/tags/mutations/delete-tag';
+import { useTag } from '@/features/tags/queries/use-tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
@@ -8,12 +8,12 @@ import { View } from 'react-native';
 
 export const TagDeleteSheet = () => {
   const sheetManager = useSheetManager();
-  const logTag = useTag({ id: sheetManager.getId('tag-delete') });
+  const tag = useTag({ id: sheetManager.getId('tag-delete') });
 
   return (
     <Sheet
       className="md:max-w-sm"
-      loading={logTag.isLoading}
+      loading={tag.isLoading}
       onDismiss={() => sheetManager.close('tag-delete')}
       open={sheetManager.isOpen('tag-delete')}
       portalName="tag-delete"
@@ -25,7 +25,7 @@ export const TagDeleteSheet = () => {
           wrapperClassName="mt-12"
           onPress={() => {
             sheetManager.close('tag-delete');
-            deleteTag({ id: logTag.id });
+            deleteTag({ id: tag.id });
           }}
         >
           <Text>Delete</Text>

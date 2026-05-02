@@ -1,8 +1,8 @@
 import { useLogs } from '@/features/logs/queries/use-logs';
-import { useTags } from '@/features/logs/queries/use-tags';
 import { ResultItem } from '@/features/search/components/result-item';
 import { useSearch } from '@/features/search/hooks/use-search';
 import { SearchResult } from '@/features/search/types/search';
+import { useTags } from '@/features/tags/queries/use-tags';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
@@ -22,17 +22,29 @@ import { View } from 'react-native';
 export default function Search() {
   const [query, setQuery] = React.useState('');
   const [selectedLogIds, setSelectedLogIds] = React.useState<string[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
+
+  const [selectedLogTagIds, setSelectedLogTagIds] = React.useState<string[]>(
+    []
+  );
+
+  const [selectedRecordTagIds, setSelectedRecordTagIds] = React.useState<
+    string[]
+  >([]);
+
   const colorScheme = useColorScheme();
   const { teams } = useTeams();
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
   const logs = useLogs({ teamIds });
-  const tags = useTags({ teamIds });
+  const logTags = useTags({ teamIds });
+  const recordTags = useTags({ teamIds, type: 'record' });
 
   const { results } = useSearch({
     query,
     logIds: selectedLogIds.length ? selectedLogIds : undefined,
-    tagIds: selectedTagIds.length ? selectedTagIds : undefined,
+    logTagIds: selectedLogTagIds.length ? selectedLogTagIds : undefined,
+    recordTagIds: selectedRecordTagIds.length
+      ? selectedRecordTagIds
+      : undefined,
   });
 
   const toggle =
@@ -42,19 +54,31 @@ export default function Search() {
       );
 
   const toggleLogId = toggle(setSelectedLogIds);
-  const toggleTagId = toggle(setSelectedTagIds);
+  const toggleLogTagId = toggle(setSelectedLogTagIds);
+  const toggleRecordTagId = toggle(setSelectedRecordTagIds);
 
   const logIdSet = React.useMemo(
     () => new Set(selectedLogIds),
     [selectedLogIds]
   );
 
-  const tagIdSet = React.useMemo(
-    () => new Set(selectedTagIds),
-    [selectedTagIds]
+  const logTagIdSet = React.useMemo(
+    () => new Set(selectedLogTagIds),
+    [selectedLogTagIds]
   );
 
-  const hasFilters = selectedLogIds.length > 0 || selectedTagIds.length > 0;
+  const recordTagIdSet = React.useMemo(
+    () => new Set(selectedRecordTagIds),
+    [selectedRecordTagIds]
+  );
+
+  const hasFilters =
+    selectedLogIds.length > 0 ||
+    selectedLogTagIds.length > 0 ||
+    selectedRecordTagIds.length > 0;
+
+  const hasFilterOptions =
+    !!logs.data.length || !!logTags.data.length || !!recordTags.data.length;
 
   const renderItem = React.useCallback(
     ({ item, index }: { item: SearchResult; index: number }) => (
@@ -88,7 +112,7 @@ export default function Search() {
                 setQuery={setQuery}
                 wrapperClassName="flex-1"
               />
-              {(!!logs.data.length || !!tags.data.length) && (
+              {hasFilterOptions && (
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
                     <Button size="icon" variant="secondary">
@@ -121,15 +145,32 @@ export default function Search() {
                         })}
                       </>
                     )}
-                    {!!tags.data.length && (
+                    {!!logTags.data.length && (
                       <>
                         {!!logs.data.length && <DropdownMenu.Separator />}
-                        <DropdownMenu.Label>Tags</DropdownMenu.Label>
-                        {tags.data.map((tag) => (
+                        <DropdownMenu.Label>Log tags</DropdownMenu.Label>
+                        {logTags.data.map((tag) => (
                           <DropdownMenu.CheckboxItem
                             key={tag.id}
-                            checked={tagIdSet.has(tag.id)}
-                            onCheckedChange={() => toggleTagId(tag.id)}
+                            checked={logTagIdSet.has(tag.id)}
+                            onCheckedChange={() => toggleLogTagId(tag.id)}
+                          >
+                            <Text>{tag.name}</Text>
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </>
+                    )}
+                    {!!recordTags.data.length && (
+                      <>
+                        {(!!logs.data.length || !!logTags.data.length) && (
+                          <DropdownMenu.Separator />
+                        )}
+                        <DropdownMenu.Label>Record tags</DropdownMenu.Label>
+                        {recordTags.data.map((tag) => (
+                          <DropdownMenu.CheckboxItem
+                            key={tag.id}
+                            checked={recordTagIdSet.has(tag.id)}
+                            onCheckedChange={() => toggleRecordTagId(tag.id)}
                           >
                             <Text>{tag.name}</Text>
                           </DropdownMenu.CheckboxItem>
@@ -142,7 +183,8 @@ export default function Search() {
                         <DropdownMenu.Item
                           onPress={() => {
                             setSelectedLogIds([]);
-                            setSelectedTagIds([]);
+                            setSelectedLogTagIds([]);
+                            setSelectedRecordTagIds([]);
                           }}
                         >
                           <Text className="text-destructive">

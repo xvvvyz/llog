@@ -3,7 +3,7 @@ import { ListEmptyState } from '@/features/logs/components/list-empty-state';
 import { ListItem } from '@/features/logs/components/list-item';
 import { createLog } from '@/features/logs/mutations/create-log';
 import { useLogs } from '@/features/logs/queries/use-logs';
-import { useTags } from '@/features/logs/queries/use-tags';
+import { useTags } from '@/features/tags/queries/use-tags';
 import { TeamSwitcher } from '@/features/teams/components/switcher';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';

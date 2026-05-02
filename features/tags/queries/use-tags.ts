@@ -1,11 +1,19 @@
+import type { TagType } from '@/features/tags/types/tag';
 import { useResolvedTeamIds } from '@/features/teams/queries/use-resolved-team-ids';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
 export const useTags = ({
+  logId,
   query,
   teamIds,
-}: { query?: string; teamIds?: string[] } = {}) => {
+  type = 'log',
+}: {
+  logId?: string;
+  query?: string;
+  teamIds?: string[];
+  type?: TagType;
+} = {}) => {
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(
@@ -15,6 +23,8 @@ export const useTags = ({
             $: {
               where: {
                 teamId: { $in: resolvedTeamIds },
+                type,
+                ...(logId && { logs: logId }),
                 ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },

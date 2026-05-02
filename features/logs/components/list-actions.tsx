@@ -1,5 +1,5 @@
 import { updateUiLogsSort } from '@/features/logs/mutations/update-ui-sort';
-import { Tag } from '@/features/logs/types/tag';
+import { Tag } from '@/features/tags/types/tag';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/lib/cn';
 import { useUi } from '@/queries/use-ui';

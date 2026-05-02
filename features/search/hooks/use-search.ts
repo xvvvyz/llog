@@ -25,7 +25,8 @@ type SearchDocument = {
   people: string;
   files?: searchTypes.SearchFileItem[];
   profiles?: searchTypes.SearchProfile[];
-  tagIds?: string[];
+  logTagIds?: string[];
+  recordTagIds?: string[];
 };
 
 const isSearchDocument = (
@@ -56,11 +57,13 @@ const getLinkLabels = (links?: { label?: string | null }[] | null): string[] =>
 export const useSearch = ({
   query,
   logIds,
-  tagIds,
+  logTagIds,
+  recordTagIds,
 }: {
   query: string;
   logIds?: string[];
-  tagIds?: string[];
+  logTagIds?: string[];
+  recordTagIds?: string[];
 }) => {
   const { teams } = useTeams();
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
@@ -71,20 +74,24 @@ export const useSearch = ({
           records: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
-            log: { tags: { $: { fields: ['id'] } } },
+            log: { tags: { $: { fields: ['id'], where: { type: 'log' } } } },
+            tags: { $: { fields: ['id'], where: { type: 'record' } } },
             files: {},
             links: {},
           },
           replies: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
-            record: { log: { tags: { $: { fields: ['id'] } } } },
+            record: {
+              log: { tags: { $: { fields: ['id'], where: { type: 'log' } } } },
+              tags: { $: { fields: ['id'], where: { type: 'record' } } },
+            },
             files: {},
             links: {},
           },
           logs: {
             $: { where: { teamId: { $in: teamIds } } },
-            tags: { $: { fields: ['id'] } },
+            tags: { $: { fields: ['id'], where: { type: 'log' } } },
             profiles: { image: {} },
           },
         }
@@ -115,7 +122,7 @@ export const useSearch = ({
               uri: p.image?.uri,
             }))
           : undefined,
-        tagIds: log.tags?.map((t) => t.id),
+        logTagIds: log.tags?.map((t) => t.id),
       });
     }
 
@@ -155,7 +162,8 @@ export const useSearch = ({
               uri: m.uri,
             }))
           : undefined,
-        tagIds: record.log?.tags?.map((t) => t.id),
+        logTagIds: record.log?.tags?.map((t) => t.id),
+        recordTagIds: record.tags?.map((t) => t.id),
       });
     }
 
@@ -195,7 +203,8 @@ export const useSearch = ({
               uri: m.uri,
             }))
           : undefined,
-        tagIds: reply.record?.log?.tags?.map((t) => t.id),
+        logTagIds: reply.record?.log?.tags?.map((t) => t.id),
+        recordTagIds: reply.record?.tags?.map((t) => t.id),
       });
     }
 
@@ -223,7 +232,8 @@ export const useSearch = ({
         'people',
         'files',
         'profiles',
-        'tagIds',
+        'logTagIds',
+        'recordTagIds',
       ],
       searchOptions: { fuzzy: 0.2, prefix: true, boost: { name: 2 } },
     });
@@ -237,11 +247,20 @@ export const useSearch = ({
     if (!trimmed) return [];
     const raw = miniSearch.search(trimmed).filter(isSearchDocument);
     const logIdSet = logIds?.length ? new Set(logIds) : null;
-    const tagIdSet = tagIds?.length ? new Set(tagIds) : null;
+    const logTagIdSet = logTagIds?.length ? new Set(logTagIds) : null;
+    const recordTagIdSet = recordTagIds?.length ? new Set(recordTagIds) : null;
 
     const filtered = raw.filter((r) => {
       if (logIdSet) if (!r.logId || !logIdSet.has(r.logId)) return false;
-      if (tagIdSet) if (!r.tagIds?.some((t) => tagIdSet.has(t))) return false;
+
+      if (logTagIdSet) {
+        if (!r.logTagIds?.some((t) => logTagIdSet.has(t))) return false;
+      }
+
+      if (recordTagIdSet) {
+        if (!r.recordTagIds?.some((t) => recordTagIdSet.has(t))) return false;
+      }
+
       return true;
     });
 
@@ -275,7 +294,7 @@ export const useSearch = ({
         profiles: result.profiles,
       } satisfies searchTypes.SearchResult;
     });
-  }, [query, logIds, tagIds, miniSearch]);
+  }, [query, logIds, logTagIds, recordTagIds, miniSearch]);
 
   return { results, isLoading };
 };

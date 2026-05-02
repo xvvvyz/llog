@@ -33,6 +33,12 @@ type RecordCopyLink = {
   url?: string | null;
 };
 
+type RecordCopyDraftTag = {
+  id?: string | null;
+  type?: string | null;
+  logs?: { id?: string | null }[];
+};
+
 const normalizeTargetLogIds = (logIds: string[]) => {
   const targetLogIds = [...new Set(logIds.map((logId) => logId.trim()))];
 
@@ -73,6 +79,19 @@ const getClonedLinkData = (link: RecordCopyLink, teamId: string) => {
     url: link.url,
   };
 };
+
+const getCopyDraftTagIdsForLog = (
+  tags: RecordCopyDraftTag[] | undefined,
+  logId: string
+) =>
+  (tags ?? [])
+    .filter(
+      (tag) =>
+        tag.type === 'record' &&
+        !!tag.id &&
+        !!tag.logs?.some((log) => log.id === logId)
+    )
+    .map((tag) => tag.id as string);
 
 const assertManageableTargetLogs = async ({
   dbClient,
@@ -418,6 +437,10 @@ app.post(
         log: { $: { fields: ['id'] } },
         links: {},
         files: {},
+        tags: {
+          $: { fields: ['id', 'type'] },
+          logs: { $: { fields: ['id'] } },
+        },
       },
     });
 
@@ -465,8 +488,19 @@ app.post(
       text: trimmedText,
     });
 
+    const tagTransactions =
+      targetLogIds.length === 1
+        ? getCopyDraftTagIdsForLog(record.tags, targetLogIds[0]).flatMap(
+            (tagId) =>
+              copiedRecords.map((copiedRecord) =>
+                c.var.db.tx.records[copiedRecord.id].link({ tags: tagId })
+              )
+          )
+        : [];
+
     await c.var.db.transact([
       ...transactions,
+      ...tagTransactions,
       c.var.db.tx.records[draftRecordId].delete(),
     ]);
 

@@ -1,5 +1,6 @@
 import { DropdownMenu } from '@/features/logs/components/dropdown-menu';
-import { Tag } from '@/features/logs/types/tag';
+import { TagChipList } from '@/features/tags/components/tag-chip-list';
+import { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
@@ -38,28 +39,19 @@ export const ListItem = ({
     >
       <Link key={id} asChild href={`/${id}`}>
         <Button
-          className="flex flex-col h-28 w-full p-4 items-start justify-between active:opacity-90"
+          className="flex flex-col h-28 w-full p-4 gap-0 items-start justify-between active:opacity-90"
           pressOnWebTouchRelease={false}
           ripple="default"
           style={{ backgroundColor: color.default }}
           variant="ghost"
           wrapperClassName="rounded-2xl border-continuous"
         >
-          <View className="flex-row flex-wrap overflow-hidden -ml-1.5 -mt-1.5 max-h-11 pr-10 gap-0.5">
-            {tags.map((tag) => (
-              <View
-                key={tag.id}
-                className="px-1.5 py-0.5 border-continuous rounded-full bg-contrast-background/10"
-              >
-                <Text
-                  className="text-contrast-foreground/90 text-xs"
-                  numberOfLines={1}
-                >
-                  {tag.name}
-                </Text>
-              </View>
-            ))}
-          </View>
+          <TagChipList
+            className="-ml-1.5 -mt-1.5 pr-10 gap-0.5"
+            showEmpty
+            tags={tags}
+            variant="contrast"
+          />
           <View className="flex-row w-full gap-3 items-end justify-between">
             <Text
               className="flex-1 -mb-[5px] leading-snug text-contrast-foreground"

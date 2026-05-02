@@ -1,6 +1,7 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
+import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { canDeleteOwnOrManagedResource } from '@/features/teams/lib/permissions';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -18,20 +19,11 @@ import {
   DotsThreeVertical,
   NotePencil,
   PushPin,
+  Tag,
   Trash,
 } from 'phosphor-react-native';
 
-export const EntryMenu = ({
-  accentColor,
-  authorId,
-  className,
-  logId,
-  replyId,
-  isDetail,
-  isPinned,
-  recordId,
-  teamId,
-}: {
+type EntryMenuProps = {
   accentColor?: string;
   authorId?: string;
   className?: string;
@@ -41,10 +33,16 @@ export const EntryMenu = ({
   logId?: string;
   recordId: string;
   teamId?: string;
-}) => {
+};
+
+export const useEntryMenuState = ({
+  authorId,
+  logId,
+  replyId,
+  teamId,
+}: Pick<EntryMenuProps, 'authorId' | 'logId' | 'replyId' | 'teamId'>) => {
   const myRole = useMyRole({ teamId });
   const profile = useProfile();
-  const sheetManager = useSheetManager();
   const isAuthor = !!profile.id && profile.id === authorId;
 
   const canDelete = canDeleteOwnOrManagedResource({
@@ -53,6 +51,16 @@ export const EntryMenu = ({
   });
 
   const canEdit = isAuthor;
+
+  const recordTags = useHasRecordTagsForLog({
+    enabled: !replyId && isAuthor && !myRole.canManage,
+    logId,
+    teamId,
+  });
+
+  const canTag =
+    !replyId && (myRole.canManage || (isAuthor && recordTags.hasRecordTags));
+
   const canCopyToAnotherLog = !replyId && isAuthor && myRole.canManage;
 
   const { data: logData } = db.useQuery(
@@ -67,8 +75,45 @@ export const EntryMenu = ({
     !!logData?.logs?.some((log) => log.id !== logId);
 
   const canPin = !replyId && myRole.canPinRecords;
-  const hasActionsAboveDelete = canEdit || canCopy || canPin;
-  if (!canDelete && !canCopy) return null;
+  const hasActionsAboveDelete = canEdit || canTag || canCopy || canPin;
+  const hasMenu = canDelete || canCopy || canTag;
+
+  return {
+    canCopy,
+    canDelete,
+    canEdit,
+    canPin,
+    canTag,
+    hasActionsAboveDelete,
+    hasMenu,
+  };
+};
+
+export type EntryMenuState = ReturnType<typeof useEntryMenuState>;
+
+export const EntryMenuContent = ({
+  accentColor,
+  className,
+  logId,
+  replyId,
+  isDetail,
+  isPinned,
+  recordId,
+  state,
+}: EntryMenuProps & { state: EntryMenuState }) => {
+  const sheetManager = useSheetManager();
+
+  const {
+    canCopy,
+    canDelete,
+    canEdit,
+    canPin,
+    canTag,
+    hasActionsAboveDelete,
+    hasMenu,
+  } = state;
+
+  if (!hasMenu) return null;
 
   return (
     <View className={className}>
@@ -96,6 +141,14 @@ export const EntryMenu = ({
             >
               <Icon className="text-placeholder" icon={NotePencil} />
               <Text>Edit</Text>
+            </Menu.Item>
+          )}
+          {canTag && (
+            <Menu.Item
+              onPress={() => sheetManager.open('record-tags', recordId)}
+            >
+              <Icon className="text-placeholder" icon={Tag} />
+              <Text>Tags</Text>
             </Menu.Item>
           )}
           {canPin && (
@@ -155,4 +208,9 @@ export const EntryMenu = ({
       </Menu.Root>
     </View>
   );
+};
+
+export const EntryMenu = (props: EntryMenuProps) => {
+  const state = useEntryMenuState(props);
+  return <EntryMenuContent {...props} state={state} />;
 };

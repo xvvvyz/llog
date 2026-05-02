@@ -1,7 +1,12 @@
 import { mcpFileUrl } from '@/api/mcp/file-urls';
 import type * as mcpTypes from '@/api/mcp/types';
 
-type McpFieldOptions = { appUrl?: string };
+type McpFieldOptions = {
+  appUrl?: string;
+  includeFiles?: boolean;
+  includeLinks?: boolean;
+  includeReactions?: boolean;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
@@ -97,6 +102,15 @@ export const linkFields = (link: mcpTypes.McpLink) => ({
   url: link.url,
 });
 
+const byTagOrder = (a: mcpTypes.McpTag, b: mcpTypes.McpTag) =>
+  (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name);
+
+export const tagFields = (tag: mcpTypes.McpTag) => ({
+  id: tag.id,
+  name: tag.name,
+  order: tag.order ?? undefined,
+});
+
 export const profileFields = (profile?: mcpTypes.McpProfile | null) =>
   profile ? { id: profile.id, name: profile.name } : undefined;
 
@@ -120,16 +134,26 @@ export const recordFields = (
 ) => ({
   author: profileFields(record.author),
   date: record.date,
-  files: (record.files ?? []).map((file) => fileFields(file, options)),
+  fileCount: record.files?.length,
+  files: options?.includeFiles
+    ? (record.files ?? []).map((file) => fileFields(file, options))
+    : undefined,
   id: record.id,
   isDraft: !!record.isDraft,
   isPinned: !!record.isPinned,
-  links: (record.links ?? []).map(linkFields),
+  linkCount: record.links?.length,
+  links: options?.includeLinks
+    ? (record.links ?? []).map(linkFields)
+    : undefined,
   log: record.log
     ? { color: record.log.color, id: record.log.id, name: record.log.name }
     : undefined,
-  reactionCounts: reactionCounts(record.reactions),
+  reactionCount: record.reactions?.length,
+  reactionCounts: options?.includeReactions
+    ? reactionCounts(record.reactions)
+    : undefined,
   replyCount: (record.replies ?? []).filter((reply) => !reply.isDraft).length,
+  tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
   teamId: record.teamId,
   text: record.text ?? '',
 });
@@ -140,11 +164,20 @@ export const replyFields = (
 ) => ({
   author: profileFields(reply.author),
   date: reply.date,
-  files: (reply.files ?? []).map((file) => fileFields(file, options)),
+  fileCount: reply.files?.length,
+  files: options?.includeFiles
+    ? (reply.files ?? []).map((file) => fileFields(file, options))
+    : undefined,
   id: reply.id,
   isDraft: !!reply.isDraft,
-  links: (reply.links ?? []).map(linkFields),
-  reactionCounts: reactionCounts(reply.reactions),
+  linkCount: reply.links?.length,
+  links: options?.includeLinks
+    ? (reply.links ?? []).map(linkFields)
+    : undefined,
+  reactionCount: reply.reactions?.length,
+  reactionCounts: options?.includeReactions
+    ? reactionCounts(reply.reactions)
+    : undefined,
   text: reply.text,
 });
 
@@ -166,10 +199,9 @@ export const teamFields = (
 
 export const recordSummaryFields = (
   record: mcpTypes.McpRecord,
-  options?: McpFieldOptions
+  _options?: McpFieldOptions
 ) => ({
   date: record.date,
-  files: (record.files ?? []).map((file) => fileFields(file, options)),
   fileCount: record.files?.length,
   id: record.id,
   isDraft: !!record.isDraft,
@@ -178,15 +210,15 @@ export const recordSummaryFields = (
   log: record.log ? { id: record.log.id, name: record.log.name } : undefined,
   reactionCount: record.reactions?.length,
   replyCount: (record.replies ?? []).filter((reply) => !reply.isDraft).length,
+  tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
   text: textPreview(record.text),
 });
 
 export const replySummaryFields = (
   reply: mcpTypes.McpReply,
-  options?: McpFieldOptions
+  _options?: McpFieldOptions
 ) => ({
   date: reply.date,
-  files: (reply.files ?? []).map((file) => fileFields(file, options)),
   fileCount: reply.files?.length,
   id: reply.id,
   isDraft: !!reply.isDraft,
@@ -198,6 +230,7 @@ export const replySummaryFields = (
         log: reply.record.log
           ? { id: reply.record.log.id, name: reply.record.log.name }
           : undefined,
+        tags: [...(reply.record.tags ?? [])].sort(byTagOrder).map(tagFields),
       }
     : undefined,
   text: textPreview(reply.text),

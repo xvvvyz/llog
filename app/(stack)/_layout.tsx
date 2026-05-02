@@ -6,7 +6,6 @@ import { InviteQrSheet } from '@/features/invites/components/qr-sheet';
 import { LogDeleteSheet } from '@/features/logs/components/delete-sheet';
 import { LogEditSheet } from '@/features/logs/components/edit-sheet';
 import { LogMembersSheet } from '@/features/logs/components/members-sheet';
-import { TagDeleteSheet } from '@/features/logs/components/tag-delete-sheet';
 import { LogTagsSheet } from '@/features/logs/components/tags-sheet';
 import { RecordAudioSheet } from '@/features/records/components/audio-sheet';
 import { RecordCopyToSheet } from '@/features/records/components/copy-to-sheet';
@@ -16,6 +15,8 @@ import { LinkAttachmentsSheet } from '@/features/records/components/link-attachm
 import { LinkEditorSheet } from '@/features/records/components/link-editor-sheet';
 import { ReplyCreateSheet } from '@/features/records/components/reply-create-sheet';
 import { ReplyDeleteSheet } from '@/features/records/components/reply-delete-sheet';
+import { RecordTagsSheet } from '@/features/records/components/tags-sheet';
+import { TagDeleteSheet } from '@/features/tags/components/tag-delete-sheet';
 import { TeamDeleteSheet } from '@/features/teams/components/delete-sheet';
 import { TeamLeaveSheet } from '@/features/teams/components/leave-sheet';
 import { MemberLogsSheet } from '@/features/teams/components/member-logs-sheet';
@@ -61,6 +62,7 @@ export default function Layout() {
       <RecordDeleteSheet />
       <LinkAttachmentsSheet />
       <LinkEditorSheet />
+      <RecordTagsSheet />
       <LogDeleteSheet />
       <TagDeleteSheet />
       <TeamDeleteSheet />

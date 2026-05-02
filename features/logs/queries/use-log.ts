@@ -7,7 +7,7 @@ export const useLog = ({ id }: { id?: string }) => {
       ? {
           logs: {
             $: { where: { id: id } },
-            tags: { $: { fields: ['id'] } },
+            tags: { $: { fields: ['id'], where: { type: 'log' } } },
             profiles: { image: {} },
           },
         }

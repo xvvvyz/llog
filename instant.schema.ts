@@ -47,6 +47,7 @@ const schema = i.schema({
       name: i.string().indexed(),
       order: i.number().indexed(),
       teamId: i.string().indexed(),
+      type: i.string().indexed(),
     }),
     logs: i.entity({
       color: i.number().indexed(),
@@ -171,6 +172,10 @@ const schema = i.schema({
     logsTags: {
       forward: { on: 'logs', has: 'many', label: 'tags' },
       reverse: { on: 'tags', has: 'many', label: 'logs' },
+    },
+    recordsTags: {
+      forward: { on: 'records', has: 'many', label: 'tags' },
+      reverse: { on: 'tags', has: 'many', label: 'records' },
     },
     logsProfiles: {
       forward: { on: 'logs', has: 'many', label: 'profiles' },

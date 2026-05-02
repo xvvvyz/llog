@@ -1,5 +1,6 @@
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
 import { renderLinkifiedText } from '@/features/records/components/linkified-text';
+import { groupReactionItems } from '@/features/records/lib/group-reaction-items';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { REACTION_ICONS, isEmoji } from '@/types/emoji';
 import { Icon } from '@/ui/icon';
@@ -40,19 +41,28 @@ export const ItemContent = ({
 
       const reactionIcons = emojis
         .filter(isEmoji)
-        .map((emoji) => REACTION_ICONS[emoji])
+        .map((emoji) => ({ emoji, icon: REACTION_ICONS[emoji] }))
         .filter(Boolean);
 
+      const reactionGroups = groupReactionItems(reactionIcons);
+
       return reactionIcons.length > 0 ? (
-        <View className="flex-row -my-0.5 px-4 gap-1">
-          {reactionIcons.map((icon, i) => (
-            <Icon
-              key={emojis[i]}
-              className="text-muted-foreground"
-              color={logColor?.default}
-              icon={icon}
-              weight="fill"
-            />
+        <View className="flex-row flex-wrap -my-0.5 px-4 gap-1">
+          {reactionGroups.map((group) => (
+            <View
+              key={group.map(({ emoji }) => emoji).join('-')}
+              className="flex-row gap-1"
+            >
+              {group.map(({ emoji, icon }) => (
+                <Icon
+                  key={emoji}
+                  className="text-muted-foreground"
+                  color={logColor?.default}
+                  icon={icon}
+                  weight="fill"
+                />
+              ))}
+            </View>
           ))}
         </View>
       ) : null;

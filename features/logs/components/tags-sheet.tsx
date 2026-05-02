@@ -1,150 +1,79 @@
-import { TagRow } from '@/features/logs/components/tag-row';
 import { useLogColor } from '@/features/logs/hooks/use-color';
-import { addTagToLog } from '@/features/logs/mutations/add-tag';
-import { createTag } from '@/features/logs/mutations/create-tag';
-import { reorderTags } from '@/features/logs/mutations/reorder-tags';
-import { useHasNoTags } from '@/features/logs/queries/use-has-no-tags';
+import { createLogTag } from '@/features/logs/mutations/create-log-tag';
+import { toggleLogTag } from '@/features/logs/mutations/toggle-log-tag';
 import { useLog } from '@/features/logs/queries/use-log';
-import { useTags } from '@/features/logs/queries/use-tags';
+import { TagSheetContent } from '@/features/tags/components/tag-sheet-content';
+import { useTagSheetController } from '@/features/tags/hooks/use-tag-sheet-controller';
+import { reorderTags } from '@/features/tags/mutations/reorder-tags';
+import type { Tag } from '@/features/tags/types/tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { cn } from '@/lib/cn';
-import { Button } from '@/ui/button';
-import { Icon } from '@/ui/icon';
-import { SearchInput } from '@/ui/search-input';
+import { useUi } from '@/queries/use-ui';
 import { Sheet } from '@/ui/sheet';
-import { Text } from '@/ui/text';
-import { Plus, Tag } from 'phosphor-react-native';
 import * as React from 'react';
-import { ScrollView, View } from 'react-native';
-import Animated, { useAnimatedRef } from 'react-native-reanimated';
-import Sortable from 'react-native-sortables';
 
 export const LogTagsSheet = () => {
-  const [rawQuery, setRawQuery] = React.useState('');
-  const isEmpty = useHasNoTags();
-
-  const searchInputRef =
-    React.useRef<React.ComponentRef<typeof SearchInput>>(null);
-
-  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const sheetManager = useSheetManager();
-  const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
+  const ui = useUi();
   const log = useLog({ id: sheetManager.getId('log-tags') });
   const logColor = useLogColor({ id: log.id });
-  const tags = useTags({ query });
-  const isLoading = log.isLoading || (!query && tags.isLoading);
+  const teamId = log.teamId ?? ui.activeTeamId;
 
-  const focusSearchInput = React.useCallback(() => {
-    requestAnimationFrame(() => searchInputRef.current?.focus());
-  }, []);
+  const tagSheet = useTagSheetController({
+    buildPendingTag: React.useCallback(
+      ({ id, name, order }) =>
+        teamId ? ({ id, name, order, teamId, type: 'log' } as Tag) : null,
+      [teamId]
+    ),
+    canCreateNewTag: !!teamId,
+    onCreateTag: React.useCallback(
+      ({ id, name, order }) => {
+        if (!teamId) return;
+        void createLogTag({ id, logId: log.id, name, order, teamId });
+      },
+      [log.id, teamId]
+    ),
+    onReorder: React.useCallback((orderedTags: Tag[]) => {
+      void reorderTags({ orderedIds: orderedTags.map((tag) => tag.id) });
+    }, []),
+    onToggleTag: React.useCallback(
+      async (tagId: string, selected: boolean) => {
+        await toggleLogTag({ tagId, selected, logId: log.id });
+      },
+      [log.id]
+    ),
+    scopeKey: log.id,
+    selectedIds: log.tagIdsSet,
+  });
 
-  const handleCreateTag = React.useCallback(() => {
-    if (!query) return;
-
-    if (tags.queryExistingTagId) {
-      addTagToLog({ logId: log.id, tagId: tags.queryExistingTagId });
-    } else {
-      createTag({ logId: log.id, name: query });
-    }
-
-    setRawQuery('');
-    focusSearchInput();
-  }, [focusSearchInput, query, log.id, tags.queryExistingTagId]);
+  const isLoading =
+    log.isLoading ||
+    (!tagSheet.query &&
+      tagSheet.tagsIsLoading &&
+      !tagSheet.hasPendingCreatedTag);
 
   return (
     <Sheet
-      className="md:max-w-sm"
+      className="md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('log-tags')}
       open={sheetManager.isOpen('log-tags')}
       portalName="log-tags"
     >
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        keyboardShouldPersistTaps="always"
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName={cn(
-          'p-8 sm:mx-auto',
-          isEmpty && !rawQuery && 'mx-auto'
-        )}
-      >
-        <View className="h-10 justify-center">
-          {isEmpty && !rawQuery && (
-            <Icon
-              aria-hidden
-              className="text-primary"
-              color={logColor.default}
-              icon={Tag}
-              size={48}
-            />
-          )}
-          {!isLoading && (
-            <Sortable.Flex
-              activeItemShadowOpacity={0}
-              autoScrollActivationOffset={50}
-              autoScrollDirection="horizontal"
-              customHandle
-              dragActivationDelay={0}
-              flexWrap="nowrap"
-              gap={12}
-              itemEntering={null}
-              itemExiting={null}
-              onDragEnd={reorderTags}
-              scrollableRef={scrollViewRef}
-              sortEnabled={!rawQuery}
-            >
-              {tags.data.map((tag) => (
-                <TagRow
-                  key={tag.id}
-                  id={tag.id}
-                  isSelected={log.tagIdsSet.has(tag.id)}
-                  logId={log.id}
-                  name={tag.name}
-                  onCheckedChange={focusSearchInput}
-                />
-              ))}
-              {!!rawQuery && !tags.queryExistingTagId && (
-                <Button
-                  className="rounded-full"
-                  onPress={handleCreateTag}
-                  size="sm"
-                  variant="secondary"
-                  wrapperClassName="rounded-full"
-                >
-                  <Icon className="text-placeholder" icon={Plus} />
-                  <Text numberOfLines={1}>
-                    Create tag &ldquo;{rawQuery}&rdquo;
-                  </Text>
-                </Button>
-              )}
-            </Sortable.Flex>
-          )}
-        </View>
-      </ScrollView>
-      <View className="w-full pb-4 pt-0 px-8 md:p-8 md:pt-0 sm:mx-auto sm:max-w-sm">
-        <SearchInput
-          ref={searchInputRef}
-          actionIcon={!tags.queryExistingTagId && query ? Plus : undefined}
-          maxLength={16}
-          onSubmitEditing={handleCreateTag}
-          placeholder="Type in a tag"
-          query={rawQuery}
-          setQuery={setRawQuery}
-          size="sm"
-          submitBehavior="submit"
-          onActionPress={
-            !tags.queryExistingTagId && query ? handleCreateTag : undefined
-          }
-        />
-        <Button
-          onPress={() => sheetManager.close('log-tags')}
-          variant="secondary"
-          wrapperClassName="mt-8"
-        >
-          <Text>Done</Text>
-        </Button>
-      </View>
+      <TagSheetContent
+        canCreateTag={tagSheet.canCreateTag}
+        checkedColor={logColor.default}
+        getSelected={tagSheet.getSelected}
+        isLoading={isLoading}
+        onClose={() => sheetManager.close('log-tags')}
+        onReorder={tagSheet.handleReorder}
+        onSelectTag={tagSheet.handleSelectTag}
+        onSubmitTag={tagSheet.handleSubmitTag}
+        query={tagSheet.query}
+        rawQuery={tagSheet.rawQuery}
+        setRawQuery={tagSheet.setRawQuery}
+        sortEnabled={!tagSheet.rawQuery}
+        visibleTags={tagSheet.visibleTags}
+      />
     </Sheet>
   );
 };

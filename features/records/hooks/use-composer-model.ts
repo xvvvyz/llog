@@ -13,9 +13,14 @@ import { finalizeRecordCopy } from '@/features/records/mutations/finalize-record
 import { publishRecord } from '@/features/records/mutations/publish-record';
 import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
 import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
+import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { useRecordDraft } from '@/features/records/queries/use-record-draft';
+import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
+import { Button } from '@/ui/button';
+import { Icon } from '@/ui/icon';
+import { Tag } from 'phosphor-react-native';
 import * as React from 'react';
 
 const getCopyTargetLogIds = (payload: unknown) => {
@@ -58,6 +63,7 @@ export const useRecordComposerModel = () => {
     [copyPayload]
   );
 
+  const isSingleTargetCopy = isCopy && copyTargetLogIds.length === 1;
   const logId = isEdit || isCopy ? undefined : sheetId;
   const editRecordId = isEdit ? sheetId : undefined;
   const copyDraftRecordId = isCopy ? sheetId : undefined;
@@ -108,7 +114,16 @@ export const useRecordComposerModel = () => {
       ? copyTargetLogIds[0]
       : logId;
 
+  const recordTeamId = record?.teamId;
   const logColor = useLogColor({ id: recordLogId });
+  const myRole = useMyRole({ teamId: recordTeamId });
+
+  const recordTags = useHasRecordTagsForLog({
+    enabled: (!isCopy || isSingleTargetCopy) && !myRole.canManage,
+    logId: recordLogId,
+    teamId: recordTeamId,
+  });
+
   const currentText = record?.text ?? '';
   const links = record?.links ?? [];
 
@@ -163,10 +178,36 @@ export const useRecordComposerModel = () => {
   const { linkAttachmentCount, linkPreview, linkToolbarItems } =
     useComposerLinkAttachments({ links, parent: attachmentParent });
 
+  const handleOpenTags = React.useCallback(() => {
+    if (!recordId) return;
+
+    sheetManager.open('record-tags', recordId, undefined, {
+      logId: recordLogId,
+    });
+  }, [recordId, recordLogId, sheetManager]);
+
+  const canOpenTags =
+    (!isCopy || isSingleTargetCopy) &&
+    !!recordId &&
+    (!!myRole.canManage || recordTags.hasRecordTags);
+
+  const tagToolbarItem = canOpenTags
+    ? React.createElement(
+        Button,
+        { onPress: handleOpenTags, size: 'icon-sm', variant: 'secondary' },
+        React.createElement(Icon, { icon: Tag })
+      )
+    : null;
+
   const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
     extraAttachmentCount: linkAttachmentCount,
     extraPreview: linkPreview,
-    extraToolbarItems: linkToolbarItems,
+    extraToolbarItems: React.createElement(
+      React.Fragment,
+      null,
+      linkToolbarItems,
+      tagToolbarItem
+    ),
     isOpen,
     files: record?.files ?? [],
     onDeleteFile: handleDeleteFile,

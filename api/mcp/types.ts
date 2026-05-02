@@ -45,7 +45,14 @@ export type McpProfile = {
   user?: McpUser;
 };
 
-export type McpTag = { id: string; name: string; order?: number | null };
+export type McpTag = {
+  id: string;
+  logs?: Pick<McpLog, 'id' | 'name'>[];
+  name: string;
+  order?: number | null;
+  teamId?: string | null;
+  type?: string | null;
+};
 
 export type McpRole = {
   id: string;
@@ -88,7 +95,9 @@ export type McpReply = {
   isDraft?: boolean | null;
   links?: McpLink[];
   reactions?: McpReaction[];
-  record?: (Pick<McpRecord, 'id' | 'teamId'> & { log?: McpLog }) | null;
+  record?:
+    | (Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog })
+    | null;
   teamId?: string | null;
   text: string;
 };
@@ -104,6 +113,7 @@ export type McpRecord = {
   log?: McpLog;
   reactions?: McpReaction[];
   replies?: McpReply[];
+  tags?: McpTag[];
   teamId?: string | null;
   text?: string | null;
 };

@@ -3,6 +3,7 @@ import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { CompactEntry } from '@/features/records/components/compact-entry';
 import { EntryCard } from '@/features/records/components/entry-card';
+import { useEntryMenuState } from '@/features/records/components/entry-menu';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { toggleReaction } from '@/features/records/mutations/toggle-reaction';
 import type * as EntryTypes from '@/features/records/types/entry';
@@ -42,6 +43,13 @@ export const Entry = ({
     record.files || []
   );
 
+  const entryMenuState = useEntryMenuState({
+    authorId: record.author?.id,
+    logId,
+    replyId,
+    teamId: record.teamId,
+  });
+
   const handleDoubleTapReaction = React.useCallback(() => {
     if (!record.teamId) return;
     const emoji = ui.doubleTapEmoji;
@@ -73,6 +81,7 @@ export const Entry = ({
     accentColor,
     audioMedia,
     documentFiles,
+    entryMenuState,
     links: record.links ?? [],
     logId,
     numberOfLines,

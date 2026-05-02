@@ -1,8 +1,11 @@
+import { registerAccountTool } from '@/api/mcp/account';
 import { registerActionTools } from '@/api/mcp/actions';
 import { registerLogTools } from '@/api/mcp/logs';
-import { registerReadTools } from '@/api/mcp/read';
 import { registerRecordTools } from '@/api/mcp/records';
 import { registerReplyTools } from '@/api/mcp/replies';
+import { registerResources } from '@/api/mcp/resources';
+import { registerSearchTool } from '@/api/mcp/search';
+import { registerTagTools } from '@/api/mcp/tags';
 import type { McpContext, OAuthProps } from '@/api/mcp/types';
 import { createAdminDb } from '@/api/middleware/db';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -31,11 +34,14 @@ const createServer = (ctx: McpContext) => {
     websiteUrl: appUrl,
   });
 
-  registerReadTools(server, ctx);
+  registerAccountTool(server, ctx);
+  registerSearchTool(server, ctx);
   registerLogTools(server, ctx);
   registerRecordTools(server, ctx);
   registerReplyTools(server, ctx);
+  registerTagTools(server, ctx);
   registerActionTools(server, ctx);
+  registerResources(server, ctx);
   return server;
 };
 

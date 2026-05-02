@@ -1,6 +1,6 @@
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
-import { EntryMenu } from '@/features/records/components/entry-menu';
+import { EntryMenuContent } from '@/features/records/components/entry-menu';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
@@ -18,6 +18,7 @@ export const CompactEntry = ({
   audioMedia,
   className,
   documentFiles,
+  entryMenuState,
   links,
   logId,
   numberOfLines,
@@ -57,7 +58,7 @@ export const CompactEntry = ({
                 {formatDate(record.date)}
               </Text>
             </View>
-            <EntryMenu
+            <EntryMenuContent
               accentColor={accentColor}
               authorId={record.author?.id}
               className="-mb-3 -mr-1.5 -mt-1.5"
@@ -66,6 +67,7 @@ export const CompactEntry = ({
               logId={logId}
               recordId={recordId}
               replyId={replyId}
+              state={entryMenuState}
               teamId={record.teamId}
             />
           </View>

@@ -28,6 +28,12 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             files: {},
             links: {},
             reactions: { author: {} },
+            tags: {
+              $: {
+                fields: ['id', 'name', 'order', 'teamId', 'type'],
+                where: { type: 'record' },
+              },
+            },
           },
         }
       : null
@@ -54,6 +60,12 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             files: {},
             links: {},
             reactions: { author: {} },
+            tags: {
+              $: {
+                fields: ['id', 'name', 'order', 'teamId', 'type'],
+                where: { type: 'record' },
+              },
+            },
           },
         }
       : (null as never)

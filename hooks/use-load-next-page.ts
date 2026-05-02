@@ -4,31 +4,43 @@ export const useLoadNextPage = ({
   canLoadNextPage,
   itemCount,
   loadNextPage,
+  requestKey,
 }: {
   canLoadNextPage: boolean;
   itemCount: number;
   loadNextPage: () => void;
+  requestKey?: unknown;
 }) => {
-  const requestedCountRef = React.useRef<number | null>(null);
+  const requestedRef = React.useRef<{
+    itemCount: number;
+    requestKey: unknown;
+  } | null>(null);
 
   React.useEffect(() => {
     if (!canLoadNextPage) {
-      requestedCountRef.current = null;
+      requestedRef.current = null;
       return;
     }
 
     if (
-      requestedCountRef.current != null &&
-      itemCount > requestedCountRef.current
+      requestedRef.current != null &&
+      itemCount > requestedRef.current.itemCount
     ) {
-      requestedCountRef.current = null;
+      requestedRef.current = null;
     }
   }, [canLoadNextPage, itemCount]);
 
   return React.useCallback(() => {
     if (!canLoadNextPage) return;
-    if (requestedCountRef.current === itemCount) return;
-    requestedCountRef.current = itemCount;
+
+    if (
+      requestedRef.current?.itemCount === itemCount &&
+      Object.is(requestedRef.current.requestKey, requestKey)
+    ) {
+      return;
+    }
+
+    requestedRef.current = { itemCount, requestKey };
     loadNextPage();
-  }, [canLoadNextPage, itemCount, loadNextPage]);
+  }, [canLoadNextPage, itemCount, loadNextPage, requestKey]);
 };

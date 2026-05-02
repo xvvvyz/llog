@@ -1,5 +1,6 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { Profile } from '@/features/account/types/profile';
+import { groupReactionItems } from '@/features/records/lib/group-reaction-items';
 import { toggleReaction } from '@/features/records/mutations/toggle-reaction';
 import { Reaction } from '@/features/records/types/reaction';
 import { animation } from '@/lib/animation';
@@ -9,10 +10,12 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
 import * as React from 'react';
+import { View } from 'react-native';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 
 export const Reactions = ({
   color,
+  leading,
   logId,
   reactions,
   recordId,
@@ -20,6 +23,7 @@ export const Reactions = ({
   replyId,
 }: {
   color?: string;
+  leading?: React.ReactNode;
   logId?: string;
   reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
   recordId: string;
@@ -49,69 +53,90 @@ export const Reactions = ({
     return map;
   }, [reactions, profile.id]);
 
-  if (grouped.size === 0) return null;
+  const reactionEntries = React.useMemo(
+    () =>
+      Array.from(grouped.entries()).sort(
+        ([a], [b]) =>
+          REACTION_EMOJIS.indexOf(isEmoji(a) ? a : '❤️') -
+          REACTION_EMOJIS.indexOf(isEmoji(b) ? b : '❤️')
+      ),
+    [grouped]
+  );
+
+  const reactionGroups = React.useMemo(
+    () =>
+      groupReactionItems(reactionEntries, {
+        leadingGroupSize: reactionEntries.length === 3 ? 1 : undefined,
+      }),
+    [reactionEntries]
+  );
+
+  if (reactionEntries.length === 0) return null;
 
   return (
     <>
-      {Array.from(grouped.entries())
-        .sort(
-          ([a], [b]) =>
-            REACTION_EMOJIS.indexOf(isEmoji(a) ? a : '❤️') -
-            REACTION_EMOJIS.indexOf(isEmoji(b) ? b : '❤️')
-        )
-        .map(([emoji, { count, userReacted, userReactionId }]) => (
-          <Animated.View
-            key={emoji}
-            entering={animation(ZoomIn)}
-            exiting={animation(ZoomOut)}
-          >
-            <Button
-              size="xs"
-              variant="ghost"
-              wrapperClassName="rounded-lg"
-              className={cn(
-                'gap-1.5 rounded-lg',
-                userReacted ? 'active:bg-primary/20' : 'active:bg-accent'
-              )}
-              onPress={() => {
-                if (!teamId) return;
-
-                toggleReaction({
-                  emoji,
-                  existingReactionId: userReactionId,
-                  logId,
-                  profileId: profile.id,
-                  teamId,
-                  recordId,
-                  replyId,
-                });
-              }}
-            >
-              <Icon
-                color={userReacted ? color : undefined}
-                weight={userReacted ? 'fill' : 'regular'}
-                className={cn(
-                  '-ml-0.5',
-                  userReacted && !color && 'text-primary',
-                  !userReacted && 'text-muted-foreground'
-                )}
-                icon={
-                  isEmoji(emoji) ? REACTION_ICONS[emoji] : REACTION_ICONS['❤️']
-                }
-              />
-              <Text
-                style={userReacted && color ? { color } : undefined}
-                className={cn(
-                  'text-sm',
-                  userReacted && !color && 'text-primary',
-                  !userReacted && 'text-muted-foreground'
-                )}
+      {reactionGroups.map((reactionGroup, index) => (
+        <View
+          key={reactionGroup.map(([emoji]) => emoji).join('-')}
+          className={cn('flex-row', index === 0 && leading ? 'gap-1' : 'gap-2')}
+        >
+          {index === 0 && leading}
+          {reactionGroup.map(
+            ([emoji, { count, userReacted, userReactionId }]) => (
+              <Animated.View
+                key={emoji}
+                entering={animation(ZoomIn)}
+                exiting={animation(ZoomOut)}
               >
-                {count}
-              </Text>
-            </Button>
-          </Animated.View>
-        ))}
+                <Button
+                  className="rounded-lg gap-1.5"
+                  size="xs"
+                  variant="ghost"
+                  wrapperClassName="rounded-lg"
+                  onPress={() => {
+                    if (!teamId) return;
+
+                    toggleReaction({
+                      emoji,
+                      existingReactionId: userReactionId,
+                      logId,
+                      profileId: profile.id,
+                      teamId,
+                      recordId,
+                      replyId,
+                    });
+                  }}
+                >
+                  <Icon
+                    color={userReacted ? color : undefined}
+                    weight={userReacted ? 'fill' : 'regular'}
+                    className={cn(
+                      '-ml-0.5',
+                      userReacted && !color && 'text-primary',
+                      !userReacted && 'text-muted-foreground'
+                    )}
+                    icon={
+                      isEmoji(emoji)
+                        ? REACTION_ICONS[emoji]
+                        : REACTION_ICONS['❤️']
+                    }
+                  />
+                  <Text
+                    style={userReacted && color ? { color } : undefined}
+                    className={cn(
+                      'text-sm',
+                      userReacted && !color && 'text-primary',
+                      !userReacted && 'text-muted-foreground'
+                    )}
+                  >
+                    {count}
+                  </Text>
+                </Button>
+              </Animated.View>
+            )
+          )}
+        </View>
+      ))}
     </>
   );
 };
