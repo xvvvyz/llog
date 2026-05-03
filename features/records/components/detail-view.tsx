@@ -50,7 +50,7 @@ export const DetailView = ({
       <ScrollView
         ref={scrollViewRef}
         className="-mx-px min-h-0 border-b border-border-secondary border-continuous border-x rounded-b-4xl"
-        contentContainerClassName="mx-auto w-full max-w-lg sm:py-4"
+        contentContainerClassName="mx-auto w-full max-w-lg"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="always"
       >

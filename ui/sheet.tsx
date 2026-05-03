@@ -3,6 +3,7 @@ import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { BREAKPOINT_VALUES } from '@/theme/tokens';
 import { Loading } from '@/ui/loading';
+import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
 import { useSheetStack, useSheetStackBackdrop } from '@/ui/sheet-stack';
 import { Portal } from '@rn-primitives/portal';
@@ -25,7 +26,10 @@ import Animated, {
   FadeOutDown,
 } from 'react-native-reanimated';
 
-export const SHEET_LAYERS = { route: 10, action: 20 } as const;
+export const SHEET_LAYERS = {
+  route: OVERLAY_LAYERS.routeSheet,
+  action: OVERLAY_LAYERS.actionSheet,
+} as const;
 
 const sheetVariants = cva(
   'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-[30rem] md:rounded-4xl md:border-b border-continuous',

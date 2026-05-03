@@ -6,17 +6,12 @@ import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
+import * as Sortable from '@/ui/sortable';
 import { Spinner } from '@/ui/spinner';
 import { Play, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
-
-import {
-  SortableDragHandle,
-  SortableGrid,
-  type SortableGridDragEndParams,
-} from '@/ui/sortable';
 
 const getItemOrderKey = (items: fileComposer.VisualPreviewItem[]) =>
   items.map((item) => item.id).join('\0');
@@ -102,7 +97,9 @@ export const VisualPreview = ({
   }, [displayedVisualItems, localOrderIds, onReorderVisualItems]);
 
   const handleDragEnd = React.useCallback(
-    (params: SortableGridDragEndParams<fileComposer.VisualPreviewItem>) => {
+    (
+      params: Sortable.SortableGridDragEndParams<fileComposer.VisualPreviewItem>
+    ) => {
       if (params.fromIndex === params.toIndex) return;
       const orderedItems = params.data;
       const orderKey = getItemOrderKey(orderedItems);
@@ -161,7 +158,7 @@ export const VisualPreview = ({
           <View className="absolute inset-x-0 top-0 z-10 h-8 rounded-t-lg bg-gradient-to-b from-contrast-background/60 to-contrast-background/0 pointer-events-none" />
         )}
         {canDragItem && (
-          <SortableDragHandle
+          <Sortable.SortableDragHandle
             className="absolute left-0 top-0 z-20 size-6"
             iconClassName="text-contrast-foreground"
             iconSize={16}
@@ -205,7 +202,7 @@ export const VisualPreview = ({
     >
       {canSort ? (
         <View className="px-4">
-          <SortableGrid
+          <Sortable.SortableGrid
             autoScrollDirection="horizontal"
             columnGap={12}
             data={displayedVisualItems}

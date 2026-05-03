@@ -1,11 +1,6 @@
+import * as tagSearch from '@/features/tags/lib/search-tags';
 import type { Tag } from '@/features/tags/types/tag';
 import * as React from 'react';
-
-import {
-  createTagSearchIndex,
-  findExactTagId,
-  searchTagsWithIndex,
-} from '@/features/tags/lib/search-tags';
 
 export const useTagSheetState = ({
   pendingCreatedTag,
@@ -38,13 +33,13 @@ export const useTagSheetState = ({
   }, [pendingCreatedTag, tags.data]);
 
   const tagSearchIndex = React.useMemo(
-    () => createTagSearchIndex(tagsWithPending),
+    () => tagSearch.createTagSearchIndex(tagsWithPending),
     [tagsWithPending]
   );
 
   const visibleTags = React.useMemo(
     () =>
-      searchTagsWithIndex({
+      tagSearch.searchTagsWithIndex({
         index: tagSearchIndex,
         query,
         tags: tagsWithPending,
@@ -53,7 +48,7 @@ export const useTagSheetState = ({
   );
 
   const queryExistingTagId = React.useMemo(
-    () => findExactTagId(tagsWithPending, query),
+    () => tagSearch.findExactTagId(tagsWithPending, query),
     [query, tagsWithPending]
   );
 

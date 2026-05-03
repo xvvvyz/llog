@@ -83,7 +83,6 @@ export const EntryCard = ({
         <View className="pt-4 px-4 gap-4">
           <View className="relative">
             <RecordTagChips
-              fallbackAccentColor={accentColor}
               tags={record.tags}
               className={cn(
                 'w-full justify-start',

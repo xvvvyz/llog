@@ -2,7 +2,7 @@ import { SpectrumSwatchPicker } from '@/features/tags/components/spectrum-swatch
 import { updateTag } from '@/features/tags/mutations/update-tag';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { SPECTRUM, isColor, type Color } from '@/theme/spectrum';
+import { SPECTRUM, resolveSpectrumColor, type Color } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import * as Menu from '@/ui/dropdown-menu';
@@ -19,7 +19,6 @@ export const TagRow = ({
   canToggle = true,
   canManageDefinitions = true,
   color,
-  colorFallback,
   id,
   isSelected,
   name,
@@ -29,8 +28,7 @@ export const TagRow = ({
   canManageColor?: boolean;
   canToggle?: boolean;
   canManageDefinitions?: boolean;
-  color?: number | null;
-  colorFallback: Color;
+  color: number;
   id: string;
   isSelected: boolean;
   name: string;
@@ -42,7 +40,7 @@ export const TagRow = ({
 
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
-  const colorValue = isColor(color) ? color : colorFallback;
+  const colorValue = resolveSpectrumColor(color);
   const accentColor = SPECTRUM[colorScheme][colorValue].default;
   const canEditColor = !!canManageColor && !!onColorChange;
 
@@ -63,7 +61,7 @@ export const TagRow = ({
                 className="rounded-full"
                 size="icon-sm"
                 variant="ghost"
-                wrapperClassName="-ml-1 mr-1 rounded-full border-continuous"
+                wrapperClassName="-ml-2 mr-2 rounded-full border-continuous"
               >
                 <View
                   className="size-3.5 border-border-secondary border-continuous rounded-full border"

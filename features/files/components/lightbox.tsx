@@ -4,7 +4,9 @@ import { useMediaLightboxTransition } from '@/features/files/hooks/use-lightbox-
 import { type FileItem } from '@/features/files/types/file';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { Button } from '@/ui/button';
+import { useDismissStack } from '@/ui/dismiss-stack';
 import { Icon } from '@/ui/icon';
+import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
 import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Modal, Platform, StatusBar, View } from 'react-native';
@@ -73,6 +75,13 @@ export const Lightbox = ({
   }, [media, resolvedMediaId]);
 
   const hasRenderedPreview = defaultIndex !== -1;
+
+  useDismissStack({
+    layer: OVERLAY_LAYERS.modal,
+    onDismiss: handleInstantRequestClose,
+    open: hasRenderedPreview && isModalVisible,
+  });
+
   if (!hasRenderedPreview) return null;
 
   const content = (

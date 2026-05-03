@@ -3,15 +3,11 @@ import type { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
 import { View } from 'react-native';
 
-type TagChipListTag = Pick<Tag, 'id'> & {
-  color?: number | null;
-  name?: string | null;
-};
+type TagChipListTag = Pick<Tag, 'color' | 'id'> & { name?: string | null };
 
 export const TagChipList = ({
   chipClassName,
   className,
-  fallbackAccentColor,
   maxVisible = 2,
   showEmpty = false,
   tags,
@@ -19,7 +15,6 @@ export const TagChipList = ({
 }: {
   chipClassName?: string;
   className?: string;
-  fallbackAccentColor?: string;
   maxVisible?: number;
   showEmpty?: boolean;
   tags?: TagChipListTag[];
@@ -40,7 +35,6 @@ export const TagChipList = ({
           key={tag.id}
           className={chipClassName}
           color={tag.color}
-          fallbackAccentColor={fallbackAccentColor}
           name={tag.name}
           showColorAccent
           textClassName={textClassName}

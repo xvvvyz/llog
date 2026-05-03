@@ -94,7 +94,7 @@ export const MemberLogsSheet = () => {
                 key={log.id}
                 className="flex-row items-center justify-between"
               >
-                <View className="flex-row gap-3 items-center">
+                <View className="flex-row gap-4 items-center">
                   <View
                     className="size-4 border-continuous rounded-md"
                     style={{ backgroundColor: color.default }}

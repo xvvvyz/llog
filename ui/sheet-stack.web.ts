@@ -1,3 +1,4 @@
+import { useDismissStack } from '@/ui/dismiss-stack';
 import * as React from 'react';
 
 type SheetStackOptions = {
@@ -106,21 +107,7 @@ export const useSheetStack = ({
     return registerWebSheet(sheetId, layer, onDismissRef);
   }, [layer, open, sheetId]);
 
-  React.useEffect(() => {
-    if (!open || typeof document === 'undefined') return;
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      if (getTopWebSheet()?.id !== sheetId) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      onDismiss();
-    };
-
-    document.addEventListener('keyup', handleKeyUp, false);
-    return () => document.removeEventListener('keyup', handleKeyUp, false);
-  }, [onDismiss, open, sheetId]);
+  useDismissStack({ id: sheetId, layer, onDismiss, open });
 
   return {
     isTopSheet: open && topSheetId === sheetId,

@@ -1,8 +1,10 @@
 import { updateUiLogsSort } from '@/features/logs/mutations/update-ui-sort';
-import { Tag } from '@/features/tags/types/tag';
+import type { Tag } from '@/features/tags/types/tag';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { useUi } from '@/queries/use-ui';
+import { SPECTRUM, resolveSpectrumColor } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import * as DropdownMenu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -42,6 +44,7 @@ export const ListActions = ({
   setSelectedTagIds: (ids: string[]) => void;
 }) => {
   const breakpoints = useBreakpoints();
+  const colorScheme = useColorScheme();
   const ui = useUi();
   const tagIdSet = new Set(selectedTagIds);
   const hasFilters = selectedTagIds.length > 0;
@@ -70,16 +73,24 @@ export const ListActions = ({
             </Button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content align="end" className="min-w-44">
-            <DropdownMenu.Label>Tags</DropdownMenu.Label>
-            {tags.map((tag) => (
-              <DropdownMenu.CheckboxItem
-                key={tag.id}
-                checked={tagIdSet.has(tag.id)}
-                onCheckedChange={() => toggleTagId(tag.id)}
-              >
-                <Text>{tag.name}</Text>
-              </DropdownMenu.CheckboxItem>
-            ))}
+            {tags.map((tag) => {
+              const color =
+                SPECTRUM[colorScheme][resolveSpectrumColor(tag.color)];
+
+              return (
+                <DropdownMenu.CheckboxItem
+                  key={tag.id}
+                  checked={tagIdSet.has(tag.id)}
+                  onCheckedChange={() => toggleTagId(tag.id)}
+                >
+                  <View
+                    className="size-3 border-border-secondary border-continuous rounded-full border"
+                    style={{ backgroundColor: color.default }}
+                  />
+                  <Text>{tag.name}</Text>
+                </DropdownMenu.CheckboxItem>
+              );
+            })}
             {hasFilters && (
               <>
                 <DropdownMenu.Separator />

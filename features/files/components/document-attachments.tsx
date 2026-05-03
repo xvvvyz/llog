@@ -11,17 +11,12 @@ import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
+import * as Sortable from '@/ui/sortable';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
-
-import {
-  SortableGrid,
-  SortableSheetDragHandle,
-  type SortableGridDragEndParams,
-} from '@/ui/sortable';
 
 import {
   Files as DocumentsIcon,
@@ -262,7 +257,7 @@ export const DocumentAttachments = ({
   );
 
   const handleDragEnd = React.useCallback(
-    (params: SortableGridDragEndParams<DocumentAttachmentItem>) => {
+    (params: Sortable.SortableGridDragEndParams<DocumentAttachmentItem>) => {
       if (params.fromIndex === params.toIndex) return;
 
       const orderedFiles = params.data.flatMap((item) =>
@@ -351,7 +346,7 @@ export const DocumentAttachments = ({
 
     const dragHandle =
       canSortDocuments && previewItem.type === 'files' ? (
-        <SortableSheetDragHandle className="-ml-1.5" />
+        <Sortable.SortableSheetDragHandle className="-ml-1.5" />
       ) : null;
 
     if (previewItem.type === 'files') {
@@ -589,7 +584,7 @@ export const DocumentAttachments = ({
         >
           <SheetListScrollView ref={scrollViewRef}>
             {canSortDocuments ? (
-              <SortableGrid
+              <Sortable.SortableGrid
                 autoScrollDirection="vertical"
                 columns={1}
                 data={items}

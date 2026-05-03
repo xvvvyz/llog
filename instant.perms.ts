@@ -230,7 +230,7 @@ const rules = {
       'isValidType',
       "newData.type in ['log', 'record']",
       'isValidColor',
-      "newData.color == null || (newData.type in ['log', 'record'] && newData.color in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])",
+      "newData.color != null && newData.type in ['log', 'record'] && newData.color in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]",
       'onlyModifiesTagDetails',
       "request.modifiedFields.all(field, field in ['color', 'name', 'order'])",
       'isTeamMember',

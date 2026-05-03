@@ -2,7 +2,7 @@ import { useRippleColor } from '@/hooks/use-ripple-color';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
-import { Text, TextContext } from '@/ui/text';
+import { TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { Check, SortAscending, SortDescending } from 'phosphor-react-native';
 import * as React from 'react';
@@ -170,22 +170,6 @@ const SortItem = <T extends string>({
 };
 
 SortItem.displayName = 'SortItem';
-
-const Label = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <TextContext.Provider value="text-popover-foreground">
-    <View className={cn('px-4 pt-2 pb-1', className)}>
-      <Text className="text-muted-foreground text-xs">{children}</Text>
-    </View>
-  </TextContext.Provider>
-);
-
-Label.displayName = 'Label';
 const Separator = () => <View className="my-2 border-border border-t" />;
 const useContext = DropdownMenuPrimitive.useRootContext;
 
@@ -193,7 +177,6 @@ export {
   CheckboxItem,
   Content,
   Item,
-  Label,
   Root,
   Separator,
   SortItem,

@@ -13,7 +13,7 @@ export const SpectrumSwatchPicker = ({
   value,
 }: {
   onValueChange: (color: Color) => void;
-  value?: Color | null;
+  value?: Color;
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';

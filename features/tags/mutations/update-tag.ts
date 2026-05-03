@@ -6,11 +6,11 @@ export const updateTag = async ({
   id,
   name,
 }: {
-  color?: Color | null;
+  color?: Color;
   id: string;
   name?: string;
 }) => {
-  const updates: { color?: Color | null; name?: string } = {};
+  const updates: { color?: Color; name?: string } = {};
   if (name !== undefined) updates.name = name.trim();
   if (color !== undefined) updates.color = color;
   if (!Object.keys(updates).length) return;

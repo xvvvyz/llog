@@ -8,17 +8,12 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
+import * as Sortable from '@/ui/sortable';
 import { Text } from '@/ui/text';
 import { ArrowSquareOut, LinkSimple, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Linking, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
-
-import {
-  SortableGrid,
-  SortableSheetDragHandle,
-  type SortableGridDragEndParams,
-} from '@/ui/sortable';
 
 const byOrder = (a: Link, b: Link) => (a.order ?? 0) - (b.order ?? 0);
 const getLinkLabel = (item: Link) => item.label?.trim() || 'Link';
@@ -129,7 +124,7 @@ export const LinkAttachments = ({
   );
 
   const handleDragEnd = React.useCallback(
-    (params: SortableGridDragEndParams<Link>) => {
+    (params: Sortable.SortableGridDragEndParams<Link>) => {
       if (params.fromIndex === params.toIndex) return;
       onReorderLinks?.(params.data);
     },
@@ -207,7 +202,9 @@ export const LinkAttachments = ({
 
     return (
       <View key={item.id} className="flex-row gap-3 items-center">
-        {canSortLinks && <SortableSheetDragHandle className="-ml-1.5" />}
+        {canSortLinks && (
+          <Sortable.SortableSheetDragHandle className="-ml-1.5" />
+        )}
         <Button
           className="flex-1 flex-row min-w-0 justify-start"
           onPress={() => handleEditLink(item.id)}
@@ -296,7 +293,7 @@ export const LinkAttachments = ({
         >
           <SheetListScrollView ref={scrollViewRef}>
             {canSortLinks ? (
-              <SortableGrid
+              <Sortable.SortableGrid
                 autoScrollDirection="vertical"
                 columns={1}
                 data={items}

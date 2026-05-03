@@ -1,11 +1,12 @@
 import { TagRow } from '@/features/tags/components/tag-row';
 import type { Tag } from '@/features/tags/types/tag';
-import type { Color } from '@/theme/spectrum';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { SPECTRUM, type Color } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
-import { SortableGrid, type SortableGridDragEndParams } from '@/ui/sortable';
+import * as Sortable from '@/ui/sortable';
 import { Text } from '@/ui/text';
 import { Plus } from 'phosphor-react-native';
 import * as React from 'react';
@@ -17,7 +18,7 @@ export const TagSheetContent = ({
   canManageColor,
   canManageDefinitions = true,
   canToggleTags = true,
-  colorFallback,
+  defaultTagColor,
   getSelected,
   isLoading,
   onClose,
@@ -35,7 +36,7 @@ export const TagSheetContent = ({
   canManageColor?: boolean;
   canManageDefinitions?: boolean;
   canToggleTags?: boolean;
-  colorFallback: Color;
+  defaultTagColor: Color;
   getSelected: (tagId: string) => boolean;
   isLoading: boolean;
   onClose: () => void;
@@ -52,6 +53,7 @@ export const TagSheetContent = ({
   const searchInputRef =
     React.useRef<React.ComponentRef<typeof SearchInput>>(null);
 
+  const colorScheme = useColorScheme();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
 
   const focusSearchInput = React.useCallback(() => {
@@ -64,7 +66,7 @@ export const TagSheetContent = ({
   }, [focusSearchInput, onSubmitTag]);
 
   const handleDragEnd = React.useCallback(
-    (params: SortableGridDragEndParams<Tag>) => {
+    (params: Sortable.SortableGridDragEndParams<Tag>) => {
       onReorder(params.data);
     },
     [onReorder]
@@ -73,6 +75,7 @@ export const TagSheetContent = ({
   const hasVisibleTags = visibleTags.length > 0;
   const showCreateTag = canCreateTag && !hasVisibleTags;
   const showScrollArea = hasVisibleTags || showCreateTag;
+  const defaultTagColorValue = SPECTRUM[colorScheme][defaultTagColor].default;
 
   return (
     <>
@@ -85,20 +88,28 @@ export const TagSheetContent = ({
         >
           {showCreateTag && (
             <Button
-              className="pl-0 pr-4 rounded-full gap-0 justify-start"
+              className="w-full pl-0 pr-0 rounded-full gap-0 justify-between"
               onPress={handleSubmitTag}
               size="sm"
               variant="secondary"
-              wrapperClassName="self-start rounded-full"
+              wrapperClassName="w-full rounded-full"
             >
+              <View className="h-10 w-10 items-center justify-center">
+                <View
+                  className="size-3.5 border-border-secondary border-continuous rounded-full border"
+                  style={{ backgroundColor: defaultTagColorValue }}
+                />
+              </View>
+              <Text className="flex-1 text-left" numberOfLines={1}>
+                Create tag &ldquo;{query}&rdquo;
+              </Text>
               <View className="size-10 items-center justify-center">
                 <Icon className="text-placeholder" icon={Plus} />
               </View>
-              <Text numberOfLines={1}>Create tag &ldquo;{query}&rdquo;</Text>
             </Button>
           )}
           {!isLoading && hasVisibleTags && (
-            <SortableGrid
+            <Sortable.SortableGrid
               autoScrollDirection="vertical"
               columns={1}
               data={visibleTags}
@@ -112,7 +123,6 @@ export const TagSheetContent = ({
                   canManageDefinitions={canManageDefinitions}
                   canToggle={canToggleTags}
                   color={tag.color}
-                  colorFallback={colorFallback}
                   id={tag.id}
                   isSelected={getSelected(tag.id)}
                   name={tag.name}

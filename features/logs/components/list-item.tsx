@@ -49,7 +49,6 @@ export const ListItem = ({
           <TagChipList
             chipClassName="max-w-full dark:bg-background"
             className="-ml-1.5 -mt-1.5 w-full pr-6 gap-0.5"
-            fallbackAccentColor={color.default}
             showEmpty
             tags={tags}
             textClassName="text-foreground"

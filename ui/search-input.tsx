@@ -51,8 +51,12 @@ export const SearchInput = React.forwardRef<
 
     return (
       <View className={cn('relative', wrapperClassName)}>
-        <View className="absolute left-3 top-1/2 -translate-y-1/2">
-          <Icon className="text-placeholder" icon={MagnifyingGlass} size={20} />
+        <View className="absolute bottom-0 left-0 top-0 w-10 items-center justify-center">
+          <Icon
+            className="ml-0.5 text-placeholder"
+            icon={MagnifyingGlass}
+            size={20}
+          />
         </View>
         <Input
           ref={ref}

@@ -90,7 +90,7 @@ export const LogMembersSheet = () => {
                 key={member.id}
                 className="flex-row items-center justify-between"
               >
-                <View className="flex-row gap-3 items-center">
+                <View className="flex-row gap-4 items-center">
                   <Avatar
                     avatar={profile.image?.uri}
                     id={profile.id}

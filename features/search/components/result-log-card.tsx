@@ -32,15 +32,21 @@ export const ResultLogCard = ({
           {result.text}
         </Text>
         {!!result.profiles?.length && (
-          <View className="flex-row">
+          <View className="flex-row -mr-[6px] ml-3">
             {result.profiles.map((profile, index) => (
-              <View key={profile.id} className={cn(index > 0 && '-ml-[8px]')}>
+              <View
+                key={profile.id}
+                style={{ backgroundColor: spectrum?.default }}
+                className={cn(
+                  'size-[24px] items-center justify-center overflow-hidden rounded-full p-px border-continuous',
+                  index > 0 && '-ml-[10px]'
+                )}
+              >
                 <Avatar
                   avatar={profile.uri}
-                  className="border-border-secondary border"
                   id={profile.id}
                   seedId={profile.avatarSeedId}
-                  size={18}
+                  size={22}
                 />
               </View>
             ))}

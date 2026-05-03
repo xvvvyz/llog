@@ -25,8 +25,6 @@ type SearchDocument = {
   people: string;
   files?: searchTypes.SearchFileItem[];
   profiles?: searchTypes.SearchProfile[];
-  logTagIds?: string[];
-  recordTagIds?: string[];
 };
 
 const isSearchDocument = (
@@ -54,17 +52,7 @@ const getLinkLabels = (links?: { label?: string | null }[] | null): string[] =>
     ?.map((item) => item.label?.trim())
     .filter((label): label is string => !!label) ?? [];
 
-export const useSearch = ({
-  query,
-  logIds,
-  logTagIds,
-  recordTagIds,
-}: {
-  query: string;
-  logIds?: string[];
-  logTagIds?: string[];
-  recordTagIds?: string[];
-}) => {
+export const useSearch = ({ query }: { query: string }) => {
   const { teams } = useTeams();
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
 
@@ -74,24 +62,19 @@ export const useSearch = ({
           records: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
-            log: { tags: { $: { fields: ['id'], where: { type: 'log' } } } },
-            tags: { $: { fields: ['id'], where: { type: 'record' } } },
+            log: {},
             files: {},
             links: {},
           },
           replies: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
-            record: {
-              log: { tags: { $: { fields: ['id'], where: { type: 'log' } } } },
-              tags: { $: { fields: ['id'], where: { type: 'record' } } },
-            },
+            record: { log: {} },
             files: {},
             links: {},
           },
           logs: {
             $: { where: { teamId: { $in: teamIds } } },
-            tags: { $: { fields: ['id'], where: { type: 'log' } } },
             profiles: { image: {} },
           },
         }
@@ -122,7 +105,6 @@ export const useSearch = ({
               uri: p.image?.uri,
             }))
           : undefined,
-        logTagIds: log.tags?.map((t) => t.id),
       });
     }
 
@@ -162,8 +144,6 @@ export const useSearch = ({
               uri: m.uri,
             }))
           : undefined,
-        logTagIds: record.log?.tags?.map((t) => t.id),
-        recordTagIds: record.tags?.map((t) => t.id),
       });
     }
 
@@ -203,8 +183,6 @@ export const useSearch = ({
               uri: m.uri,
             }))
           : undefined,
-        logTagIds: reply.record?.log?.tags?.map((t) => t.id),
-        recordTagIds: reply.record?.tags?.map((t) => t.id),
       });
     }
 
@@ -233,8 +211,6 @@ export const useSearch = ({
         'people',
         'files',
         'profiles',
-        'logTagIds',
-        'recordTagIds',
       ],
     });
   }, [documents]);
@@ -243,25 +219,8 @@ export const useSearch = ({
     const trimmed = query.trim();
     if (!trimmed) return [];
     const raw = miniSearch.search(trimmed).filter(isSearchDocument);
-    const logIdSet = logIds?.length ? new Set(logIds) : null;
-    const logTagIdSet = logTagIds?.length ? new Set(logTagIds) : null;
-    const recordTagIdSet = recordTagIds?.length ? new Set(recordTagIds) : null;
 
-    const filtered = raw.filter((r) => {
-      if (logIdSet) if (!r.logId || !logIdSet.has(r.logId)) return false;
-
-      if (logTagIdSet) {
-        if (!r.logTagIds?.some((t) => logTagIdSet.has(t))) return false;
-      }
-
-      if (recordTagIdSet) {
-        if (!r.recordTagIds?.some((t) => recordTagIdSet.has(t))) return false;
-      }
-
-      return true;
-    });
-
-    return filtered.map((result) => {
+    return raw.map((result) => {
       const entityId = String(result.id).split(':')[1] ?? '';
 
       return {
@@ -291,7 +250,7 @@ export const useSearch = ({
         profiles: result.profiles,
       } satisfies searchTypes.SearchResult;
     });
-  }, [query, logIds, logTagIds, recordTagIds, miniSearch]);
+  }, [query, miniSearch]);
 
   return { results, isLoading };
 };

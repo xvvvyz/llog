@@ -11,7 +11,7 @@ export const createLogTag = async ({
   order,
   teamId,
 }: {
-  color?: Color | null;
+  color: Color;
   id?: string;
   logId?: string;
   name: string;
@@ -27,7 +27,7 @@ export const createLogTag = async ({
   return db.transact(
     db.tx.tags[tagId]
       .update({
-        ...(color !== undefined && { color }),
+        color,
         name: trimmedName,
         order: order ?? -Date.now(),
         teamId: resolvedTeamId,

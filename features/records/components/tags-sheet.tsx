@@ -131,7 +131,7 @@ export const RecordTagsSheet = () => {
         canManageColor={canManageDefinitions}
         canManageDefinitions={canManageDefinitions}
         canToggleTags={canManageRecordTags}
-        colorFallback={logColorIndex}
+        defaultTagColor={logColorIndex}
         getSelected={tagSheet.getSelected}
         isLoading={sheetIsLoading}
         onClose={() => sheetManager.close('record-tags')}

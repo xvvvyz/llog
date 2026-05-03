@@ -3,11 +3,9 @@ import type { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
 
 export const RecordTagChips = ({
-  fallbackAccentColor,
   className,
   tags,
 }: {
-  fallbackAccentColor?: string;
   className?: string;
   tags?: Tag[];
 }) => {
@@ -18,7 +16,6 @@ export const RecordTagChips = ({
   return (
     <TagChipList
       className={cn('max-w-full justify-end gap-1', className)}
-      fallbackAccentColor={fallbackAccentColor}
       maxVisible={orderedTags.length}
       tags={orderedTags}
     />
