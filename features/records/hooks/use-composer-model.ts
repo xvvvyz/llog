@@ -347,7 +347,7 @@ export const useRecordComposerModel = () => {
       : isCopy
         ? copyLoading || !copyDraft
         : !!logId && !draft.id,
-    logColor: logColor.default,
+    logColor: isCopy ? undefined : logColor.default,
     fileCount,
     filePreview,
     onChangeText: handleChangeText,

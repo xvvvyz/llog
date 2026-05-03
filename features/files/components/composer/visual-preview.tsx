@@ -1,6 +1,5 @@
 import { PendingVideoPreview } from '@/features/files/components/composer/pending-video-preview';
 import { PreviewImage } from '@/features/files/components/composer/preview-image';
-import * as visualMedia from '@/features/files/lib/visual-media';
 import type * as fileComposer from '@/features/files/types/composer';
 import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
@@ -8,7 +7,7 @@ import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import * as Sortable from '@/ui/sortable';
 import { Spinner } from '@/ui/spinner';
-import { Play, X } from 'phosphor-react-native';
+import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -164,17 +163,6 @@ export const VisualPreview = ({
             iconSize={16}
           />
         )}
-        {item.type === 'video' &&
-          !item.pending &&
-          !visualMedia.isProcessing(item) && (
-            <View className="absolute bottom-0 left-0 z-10 size-6 pointer-events-none items-center justify-center">
-              <Icon
-                className="text-contrast-foreground"
-                icon={Play}
-                size={12}
-              />
-            </View>
-          )}
         {!item.pending && (
           <Pressable
             className="absolute right-0 top-0 z-20 size-6 items-center justify-center"

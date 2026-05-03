@@ -39,6 +39,8 @@ type RecordCopyDraftTag = {
   logs?: { id?: string | null }[];
 };
 
+type RecordCopyTargetLog = { id: string; teamId: string };
+
 const normalizeCopyOrder = (
   order: number | null | undefined,
   fallback: number
@@ -102,33 +104,71 @@ const getCopyDraftTagIdsForLog = (
     )
     .map((tag) => tag.id as string);
 
-const assertManageableTargetLogs = async ({
+const assertTeamMember = async ({
   dbClient,
-  targetLogIds,
   teamId,
   userId,
 }: {
   dbClient: Db;
-  targetLogIds: string[];
   teamId: string;
   userId: string;
 }) => {
-  const [{ roles }, { logs }] = await Promise.all([
-    dbClient.query({ roles: { $: { where: { team: teamId, userId } } } }),
-    dbClient.query({
-      logs: { $: { fields: ['id'], where: { team: teamId } } },
-    }),
-  ]);
+  const { roles } = await dbClient.query({
+    roles: { $: { fields: ['id'], where: { team: teamId, userId } } },
+  });
 
-  if (!permissions.canManageTeam(roles[0]?.role)) {
-    throw new HTTPException(403, { message: 'Forbidden' });
-  }
+  if (!roles[0]?.id) throw new HTTPException(403, { message: 'Forbidden' });
+};
 
-  const validLogIds = new Set(logs.map((log) => log.id));
+const assertAccessibleTargetLogs = async ({
+  dbClient,
+  targetLogIds,
+  userId,
+}: {
+  dbClient: Db;
+  targetLogIds: string[];
+  userId: string;
+}): Promise<RecordCopyTargetLog[]> => {
+  const { logs } = await dbClient.query({
+    logs: {
+      $: { fields: ['id', 'teamId'], where: { id: { $in: targetLogIds } } },
+      team: { roles: { $: { fields: ['role'], where: { userId } } } },
+      profiles: { user: { $: { fields: ['id'] } } },
+    },
+  });
 
-  if (targetLogIds.some((logId) => !validLogIds.has(logId))) {
-    throw new HTTPException(400, { message: 'Invalid target log' });
-  }
+  const logsById = new Map(logs.map((log) => [log.id, log]));
+
+  return targetLogIds.map((logId) => {
+    const log = logsById.get(logId);
+
+    if (!log?.id || !log.teamId) {
+      throw new HTTPException(400, { message: 'Invalid target log' });
+    }
+
+    const role = log.team?.roles?.[0]?.role;
+
+    const isLogMember = !!log.profiles?.some(
+      (profile) => profile.user?.id === userId
+    );
+
+    if (!permissions.canManageTeam(role) && !isLogMember) {
+      throw new HTTPException(403, { message: 'Forbidden' });
+    }
+
+    return { id: log.id, teamId: log.teamId };
+  });
+};
+
+const getCopyDraftTeamId = ({
+  sourceTeamId,
+  targetLogs,
+}: {
+  sourceTeamId: string;
+  targetLogs: RecordCopyTargetLog[];
+}) => {
+  const targetTeamIds = [...new Set(targetLogs.map((log) => log.teamId))];
+  return targetTeamIds.length === 1 ? targetTeamIds[0] : sourceTeamId;
 };
 
 const prepareRecordCopySource = async ({
@@ -167,7 +207,7 @@ const prepareRecordCopySource = async ({
 
   const authorId = record.author.id;
   const sourceLogId = record.log.id;
-  const teamId = record.teamId;
+  const sourceTeamId = record.teamId;
 
   if (record.author.user?.id !== userId) {
     throw new HTTPException(403, { message: 'Forbidden' });
@@ -177,8 +217,15 @@ const prepareRecordCopySource = async ({
     throw new HTTPException(400, { message: 'Invalid target log' });
   }
 
-  await assertManageableTargetLogs({ dbClient, targetLogIds, teamId, userId });
-  return { authorId, record, teamId };
+  await assertTeamMember({ dbClient, teamId: sourceTeamId, userId });
+
+  const targetLogs = await assertAccessibleTargetLogs({
+    dbClient,
+    targetLogIds,
+    userId,
+  });
+
+  return { authorId, record, sourceTeamId, targetLogs };
 };
 
 const buildPublishedRecordCopies = ({
@@ -187,8 +234,7 @@ const buildPublishedRecordCopies = ({
   files,
   links,
   now,
-  targetLogIds,
-  teamId,
+  targetLogs,
   text,
 }: {
   authorId: string;
@@ -196,14 +242,17 @@ const buildPublishedRecordCopies = ({
   files?: RecordCopyFile[];
   links?: RecordCopyLink[];
   now: string;
-  targetLogIds: string[];
-  teamId: string;
+  targetLogs: RecordCopyTargetLog[];
   text?: string | null;
 }) => {
-  const copiedRecords = targetLogIds.map((logId) => ({ id: id(), logId }));
+  const copiedRecords = targetLogs.map((log) => ({
+    id: id(),
+    logId: log.id,
+    teamId: log.teamId,
+  }));
 
   const transactions = copiedRecords.flatMap(
-    ({ id: copiedRecordId, logId }) => [
+    ({ id: copiedRecordId, logId, teamId }) => [
       dbClient.tx.records[copiedRecordId]
         .update({
           date: now,
@@ -352,13 +401,15 @@ app.post(
     const { logIds } = c.req.valid('json');
     const targetLogIds = normalizeTargetLogIds(logIds);
 
-    const { authorId, record, teamId } = await prepareRecordCopySource({
-      dbClient: c.var.db,
-      recordId: sourceRecordId,
-      targetLogIds,
-      userId: user.id,
-    });
+    const { authorId, record, sourceTeamId, targetLogs } =
+      await prepareRecordCopySource({
+        dbClient: c.var.db,
+        recordId: sourceRecordId,
+        targetLogIds,
+        userId: user.id,
+      });
 
+    const draftTeamId = getCopyDraftTeamId({ sourceTeamId, targetLogs });
     const draftRecordId = id();
     const now = new Date().toISOString();
 
@@ -367,13 +418,13 @@ app.post(
         .update({
           date: now,
           isDraft: true,
-          teamId,
+          teamId: draftTeamId,
           ...(record.text != null ? { text: record.text } : {}),
         })
         .link({ author: authorId }),
       ...(record.links ?? []).map((link, order) =>
         c.var.db.tx.links[id()]
-          .update(getClonedLinkData(link, teamId, order))
+          .update(getClonedLinkData(link, draftTeamId, order))
           .link({ record: draftRecordId })
       ),
       ...(record.files ?? []).map((file, order) =>
@@ -383,7 +434,10 @@ app.post(
       ),
     ]);
 
-    return c.json({ draftRecordId, targetLogIds });
+    return c.json({
+      draftRecordId,
+      targetLogIds: targetLogs.map((log) => log.id),
+    });
   }
 );
 
@@ -441,10 +495,15 @@ app.post(
       throw new HTTPException(400, { message: 'Invalid copy draft' });
     }
 
-    await assertManageableTargetLogs({
+    await assertTeamMember({
+      dbClient: c.var.db,
+      teamId: record.teamId,
+      userId: user.id,
+    });
+
+    const targetLogs = await assertAccessibleTargetLogs({
       dbClient: c.var.db,
       targetLogIds,
-      teamId: record.teamId,
       userId: user.id,
     });
 
@@ -456,14 +515,13 @@ app.post(
       files: record.files,
       links: record.links,
       now,
-      targetLogIds,
-      teamId: record.teamId,
+      targetLogs,
       text: trimmedText,
     });
 
     const tagTransactions =
-      targetLogIds.length === 1
-        ? getCopyDraftTagIdsForLog(record.tags, targetLogIds[0]).flatMap(
+      targetLogs.length === 1
+        ? getCopyDraftTagIdsForLog(record.tags, targetLogs[0].id).flatMap(
             (tagId) =>
               copiedRecords.map((copiedRecord) =>
                 c.var.db.tx.records[copiedRecord.id].link({ tags: tagId })

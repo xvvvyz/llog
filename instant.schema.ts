@@ -81,7 +81,7 @@ const schema = i.schema({
       teamId: i.string().indexed(),
       userId: i.string(),
     }),
-    teams: i.entity({ name: i.string() }),
+    teams: i.entity({ name: i.string().indexed() }),
     ui: i.entity({
       activityLastReadDate: i.date().optional(),
       audioPlaybackRate: i.number().optional(),

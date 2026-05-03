@@ -304,7 +304,7 @@ export default function Account() {
                 <Text className="font-normal leading-normal text-muted-foreground">
                   Connect AI apps
                 </Text>
-                <Text className="pb-0.5 leading-normal text-placeholder text-xs">
+                <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
                   Works with ChatGPT, Claude & more
                 </Text>
               </View>
@@ -325,7 +325,7 @@ export default function Account() {
                     <Text className="font-normal leading-normal">
                       Double tap reaction
                     </Text>
-                    <Text className="pb-0.5 leading-normal text-placeholder text-xs">
+                    <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
                       Applies to the right of reaction buttons
                     </Text>
                   </View>

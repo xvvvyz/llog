@@ -2,11 +2,11 @@ import { useProfile } from '@/features/account/queries/use-profile';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
+import { useRecordCopyTargets } from '@/features/records/queries/use-record-copy-targets';
 import { canDeleteOwnOrManagedResource } from '@/features/teams/lib/permissions';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -61,19 +61,14 @@ export const useEntryMenuState = ({
   const canTag =
     !replyId && (myRole.canManage || (isAuthor && recordTags.hasRecordTags));
 
-  const canCopyToAnotherLog = !replyId && isAuthor && myRole.canManage;
+  const canCopyToAnotherLog = !replyId && isAuthor;
 
-  const { data: logData } = db.useQuery(
-    canCopyToAnotherLog && teamId
-      ? { logs: { $: { fields: ['id'], where: { team: teamId } } } }
-      : null
-  );
+  const copyTargets = useRecordCopyTargets({
+    enabled: canCopyToAnotherLog && !!logId,
+    sourceLogId: logId,
+  });
 
-  const canCopy =
-    canCopyToAnotherLog &&
-    !!logId &&
-    !!logData?.logs?.some((log) => log.id !== logId);
-
+  const canCopy = canCopyToAnotherLog && !!logId && copyTargets.logs.length > 0;
   const canPin = !replyId && myRole.canPinRecords;
   const hasActionsAboveDelete = canEdit || canTag || canCopy || canPin;
   const hasMenu = canDelete || canCopy || canTag;
