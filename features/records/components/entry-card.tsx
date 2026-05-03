@@ -43,6 +43,8 @@ export const EntryCard = ({
   onUnpin: () => void;
 }) => {
   const displayText = trimDisplayText(record.text);
+  const hasDocumentFiles = documentFiles.length > 0;
+  const hasLinks = links.length > 0;
   const hasPinnedAction = 'isPinned' in record && !!record.isPinned;
   const hasHeaderActions = hasPinnedAction || entryMenuState.hasMenu;
   const hasRecordTags = record.tags?.some((tag) => !!tag.name);
@@ -145,19 +147,23 @@ export const EntryCard = ({
           <AudioPlaylist clips={audioMedia} />
         </View>
       )}
-      {documentFiles.length > 0 && (
-        <DocumentAttachments
-          documents={documentFiles}
-          triggerClassName="pl-3 pr-4"
-          triggerIconClassName="ml-1.5"
-        />
-      )}
-      {links.length > 0 && (
-        <LinkAttachments
-          links={links}
-          triggerClassName="pl-3 pr-4"
-          triggerIconClassName="ml-1.5"
-        />
+      {(hasDocumentFiles || hasLinks) && (
+        <View className="gap-2">
+          {hasDocumentFiles && (
+            <DocumentAttachments
+              documents={documentFiles}
+              triggerClassName="pl-3 pr-4"
+              triggerIconClassName="ml-1.5"
+            />
+          )}
+          {hasLinks && (
+            <LinkAttachments
+              links={links}
+              triggerClassName="pl-3 pr-4"
+              triggerIconClassName="ml-1.5"
+            />
+          )}
+        </View>
       )}
       <ReactionsRow
         accentColor={accentColor}

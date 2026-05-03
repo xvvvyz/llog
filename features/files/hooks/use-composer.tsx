@@ -15,6 +15,7 @@ export const useFileComposer = ({
   onDeleteFile,
   onOpenAudio,
   onRenameFile,
+  onReorderFiles,
   onUploadFile,
   recordId,
 }: UseFileComposerOptions) => {
@@ -28,6 +29,7 @@ export const useFileComposer = ({
     handleCaptureMedia,
     handleDeleteFile,
     handlePickDocuments,
+    handleReorderFiles,
     isBusy,
     fileCount,
     pendingAudio,
@@ -37,6 +39,7 @@ export const useFileComposer = ({
     isOpen,
     files,
     onDeleteFile,
+    onReorderFiles,
     onUploadFile,
     scopeKey: `${recordId ?? ''}:${replyId ?? ''}`,
   });
@@ -61,6 +64,7 @@ export const useFileComposer = ({
       onOpenVisual={handleOpenVisual}
       onRemoteReady={removeLocalPreviewUri}
       onRenameFile={onRenameFile}
+      onReorderFiles={handleReorderFiles}
       pendingAudio={pendingAudio}
       pendingDocuments={pendingDocuments}
       visualItems={allVisual}

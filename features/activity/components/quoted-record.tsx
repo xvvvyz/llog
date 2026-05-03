@@ -138,32 +138,28 @@ export const QuotedRecord = ({
             <AudioPlaylist clips={audioMedia} />
           </View>
         )}
-        {hasDocumentFiles && (
-          <DocumentAttachments
-            documents={documentFiles}
-            triggerClassName="px-3"
-            triggerIconClassName="-ml-px"
+        {(hasDocumentFiles || hasLinks) && (
+          <View
             className={cn(
-              hasLinks ? 'pb-0' : 'pb-3',
+              'gap-2 pb-3',
               !displayText && !visualItems.length && !hasAudioFiles && 'pt-3'
             )}
-          />
-        )}
-        {hasLinks && (
-          <LinkAttachments
-            links={links}
-            triggerClassName="px-3"
-            triggerIconClassName="-ml-px"
-            className={cn(
-              'pb-3',
-              hasDocumentFiles && 'pt-4',
-              !displayText &&
-                !visualItems.length &&
-                !hasAudioFiles &&
-                !hasDocumentFiles &&
-                'pt-3'
+          >
+            {hasDocumentFiles && (
+              <DocumentAttachments
+                documents={documentFiles}
+                triggerClassName="px-3"
+                triggerIconClassName="-ml-px"
+              />
             )}
-          />
+            {hasLinks && (
+              <LinkAttachments
+                links={links}
+                triggerClassName="px-3"
+                triggerIconClassName="-ml-px"
+              />
+            )}
+          </View>
         )}
       </View>
     </React.Fragment>

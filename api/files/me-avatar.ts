@@ -50,6 +50,7 @@ app.put(
       c.var.db.tx.files[fileId]
         .update({
           assetKey: cloudflareImages.storeImageDeliveryUrl(stored.deliveryUrl),
+          order: 0,
           type: 'image',
           uri: stored.deliveryUrl,
         })

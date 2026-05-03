@@ -1,5 +1,6 @@
 import { useFileComposer } from '@/features/files/hooks/use-composer';
 import type { PickedFileAsset } from '@/features/files/lib/picked';
+import { reorderFiles } from '@/features/files/mutations/reorder-files';
 import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
@@ -11,6 +12,7 @@ import { deleteRecord } from '@/features/records/mutations/delete-record';
 import { deleteRecordFile } from '@/features/records/mutations/delete-record-file';
 import { finalizeRecordCopy } from '@/features/records/mutations/finalize-record-copy';
 import { publishRecord } from '@/features/records/mutations/publish-record';
+import { reorderLinks } from '@/features/records/mutations/reorder-links';
 import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
 import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
@@ -170,13 +172,25 @@ export const useRecordComposerModel = () => {
     []
   );
 
+  const handleReorderFiles = React.useCallback((files: { id: string }[]) => {
+    void reorderFiles(files);
+  }, []);
+
+  const handleReorderLinks = React.useCallback((links: { id: string }[]) => {
+    void reorderLinks(links);
+  }, []);
+
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () => (recordId ? { id: recordId, type: 'record' } : undefined),
     [recordId]
   );
 
   const { linkAttachmentCount, linkPreview, linkToolbarItems } =
-    useComposerLinkAttachments({ links, parent: attachmentParent });
+    useComposerLinkAttachments({
+      links,
+      onReorderLinks: handleReorderLinks,
+      parent: attachmentParent,
+    });
 
   const handleOpenTags = React.useCallback(() => {
     if (!recordId) return;
@@ -213,6 +227,7 @@ export const useRecordComposerModel = () => {
     onDeleteFile: handleDeleteFile,
     onOpenAudio: () => sheetManager.open('record-audio', recordId, 'record'),
     onRenameFile: handleRenameFile,
+    onReorderFiles: handleReorderFiles,
     onUploadFile: handleUploadFile,
     recordId,
   });

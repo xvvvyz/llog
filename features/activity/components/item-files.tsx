@@ -29,13 +29,15 @@ export const ItemFiles = ({
     visualMedia: visualItems,
   } = useFilteredFiles(files || []);
 
+  const hasDocumentFiles = documentFiles.length > 0;
+  const hasLinks = links.length > 0;
   const { openMediaLightbox } = useMediaLightbox({ recordId });
 
   if (
     !visualItems.length &&
     !audioMedia.length &&
-    !documentFiles.length &&
-    !links.length
+    !hasDocumentFiles &&
+    !hasLinks
   ) {
     return null;
   }
@@ -97,19 +99,23 @@ export const ItemFiles = ({
           <AudioPlaylist clips={audioMedia} />
         </View>
       )}
-      {documentFiles.length > 0 && (
-        <DocumentAttachments
-          documents={documentFiles}
-          triggerClassName="px-4"
-          triggerIconClassName="-ml-px"
-        />
-      )}
-      {links.length > 0 && (
-        <LinkAttachments
-          links={links}
-          triggerClassName="px-4"
-          triggerIconClassName="-ml-px"
-        />
+      {(hasDocumentFiles || hasLinks) && (
+        <View className="gap-2">
+          {hasDocumentFiles && (
+            <DocumentAttachments
+              documents={documentFiles}
+              triggerClassName="px-4"
+              triggerIconClassName="-ml-px"
+            />
+          )}
+          {hasLinks && (
+            <LinkAttachments
+              links={links}
+              triggerClassName="px-4"
+              triggerIconClassName="-ml-px"
+            />
+          )}
+        </View>
       )}
     </React.Fragment>
   );

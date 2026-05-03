@@ -15,6 +15,13 @@ import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
+
+import {
+  SortableGrid,
+  SortableSheetDragHandle,
+  type SortableGridDragEndParams,
+} from '@/ui/sortable';
 
 import {
   Files as DocumentsIcon,
@@ -104,6 +111,7 @@ export const DocumentAttachments = ({
   hideTrigger,
   onDeleteFile,
   onRenameFile,
+  onReorderFiles,
   onSheetOpenChange,
   pendingDocuments = NO_PENDING_DOCUMENTS,
   portalName,
@@ -116,6 +124,7 @@ export const DocumentAttachments = ({
   hideTrigger?: boolean;
   onDeleteFile?: (fileId: string) => void;
   onRenameFile?: (fileId: string, name: string) => Promise<void>;
+  onReorderFiles?: (files: { id: string }[]) => void;
   onSheetOpenChange?: (open: boolean) => void;
   pendingDocuments?: fileComposer.PendingDocumentUpload[];
   portalName?: string;
@@ -123,6 +132,7 @@ export const DocumentAttachments = ({
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
+  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
 
   const [editingDocument, setEditingDocument] = React.useState<FileItem | null>(
@@ -171,6 +181,11 @@ export const DocumentAttachments = ({
   const hasPendingDocuments = pendingDocuments.length > 0;
   const canOpenSingleDocument = !!singleMediaItem && !onDeleteFile;
   const canDeleteSingleDocument = !!onDeleteFile && items.length === 1;
+
+  const canSortDocuments =
+    !!onReorderFiles &&
+    items.length > 1 &&
+    items.every((item) => item.type === 'files');
 
   const shouldRenderSheet =
     !canDeleteSingleDocument || hideTrigger || isSheetOpen;
@@ -246,6 +261,20 @@ export const DocumentAttachments = ({
     [items.length, onDeleteFile]
   );
 
+  const handleDragEnd = React.useCallback(
+    (params: SortableGridDragEndParams<DocumentAttachmentItem>) => {
+      if (params.fromIndex === params.toIndex) return;
+
+      const orderedFiles = params.data.flatMap((item) =>
+        item.type === 'files' ? [item.item] : []
+      );
+
+      if (orderedFiles.length !== params.data.length) return;
+      onReorderFiles?.(orderedFiles);
+    },
+    [onReorderFiles]
+  );
+
   const handleRenameDocument = React.useCallback(async () => {
     if (!editingDocument || !onRenameFile || !trimmedEditingName) return;
     setIsRenaming(true);
@@ -299,6 +328,98 @@ export const DocumentAttachments = ({
     });
   }, [items]);
 
+  const renderSheetItem = (previewItem: DocumentAttachmentItem) => {
+    const item = previewItem.item;
+    const DocumentIcon = getFileTypeIcon(item);
+
+    const documentDetails = (
+      <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
+        <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+          <Icon className="text-placeholder" icon={DocumentIcon} />
+          <Text
+            className="text-muted-foreground text-sm shrink"
+            numberOfLines={1}
+          >
+            {getDocumentName(item)}
+          </Text>
+        </View>
+        <Text className="text-placeholder text-xs shrink-0" numberOfLines={1}>
+          {getDocumentSizeText(item)}
+        </Text>
+      </View>
+    );
+
+    const dragHandle =
+      canSortDocuments && previewItem.type === 'files' ? (
+        <SortableSheetDragHandle className="-ml-1.5" />
+      ) : null;
+
+    if (previewItem.type === 'files') {
+      if (onDeleteFile) {
+        return (
+          <View key={previewItem.id} className="flex-row gap-3 items-center">
+            {dragHandle}
+            {onRenameFile ? (
+              <Button
+                className="flex-1 flex-row min-w-0 justify-start"
+                onPress={() => handleOpenNameEditor(item)}
+                variant="link"
+                wrapperClassName="flex-1 overflow-visible rounded-lg"
+              >
+                {documentDetails}
+              </Button>
+            ) : (
+              documentDetails
+            )}
+            <Button
+              accessibilityLabel={`Remove ${getDocumentName(item)}`}
+              onPress={() => handleDeleteDocument(previewItem.item.id)}
+              size="icon-sm"
+              variant="ghost"
+              wrapperClassName="-mr-1.5"
+            >
+              <Icon icon={X} />
+            </Button>
+          </View>
+        );
+      }
+
+      return (
+        <View key={previewItem.id} className="flex-row gap-3 items-center">
+          {documentDetails}
+          <Button
+            accessibilityLabel={`Download ${getDocumentName(item)}`}
+            disabled={downloadingDocumentIds.has(item.id)}
+            size="icon-sm"
+            variant="ghost"
+            wrapperClassName="-mr-1.5"
+            onPress={() => {
+              void handleOpenDocument(previewItem.item);
+            }}
+          >
+            {downloadingDocumentIds.has(item.id) ? (
+              <Spinner size="xs" />
+            ) : (
+              <Icon className="text-muted-foreground" icon={DownloadSimple} />
+            )}
+          </Button>
+        </View>
+      );
+    }
+
+    return (
+      <View
+        key={previewItem.id}
+        className="flex-row opacity-70 gap-3 items-center"
+      >
+        {documentDetails}
+        <View className="-mr-1.5 size-8 items-center justify-center">
+          <Spinner size="xs" />
+        </View>
+      </View>
+    );
+  };
+
   if (!items.length) return null;
 
   return (
@@ -306,7 +427,7 @@ export const DocumentAttachments = ({
       {hideTrigger ? null : canDeleteSingleDocument && firstItem ? (
         <View
           className={cn(
-            'flex-row h-8 w-full -my-2.5 gap-3 justify-between px-4',
+            'flex-row w-full gap-3 justify-between px-4',
             firstItem.type === 'pending' && 'opacity-70',
             triggerClassName
           )}
@@ -384,7 +505,7 @@ export const DocumentAttachments = ({
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           className={cn(
-            'flex-row h-8 w-full -my-2.5 gap-4 justify-between px-4',
+            'flex-row w-full gap-4 justify-between px-4',
             triggerClassName
           )}
         >
@@ -419,7 +540,7 @@ export const DocumentAttachments = ({
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           className={cn(
-            'flex-row h-8 w-full -my-2.5 gap-4 justify-between px-4',
+            'flex-row w-full gap-4 justify-between px-4',
             triggerClassName
           )}
         >
@@ -461,111 +582,25 @@ export const DocumentAttachments = ({
       )}
       {shouldRenderSheet && (
         <Sheet
-          className="md:rounded-3xl"
           onDismiss={() => setIsSheetOpen(false)}
           open={isSheetOpen}
           portalName={sheetPortalName}
+          variant="list"
         >
-          <SheetListScrollView>
-            {items.map((previewItem) => {
-              const item = previewItem.item;
-              const DocumentIcon = getFileTypeIcon(item);
-
-              const documentDetails = (
-                <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
-                  <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-                    <Icon className="text-placeholder" icon={DocumentIcon} />
-                    <Text
-                      className="text-muted-foreground text-sm shrink"
-                      numberOfLines={1}
-                    >
-                      {getDocumentName(item)}
-                    </Text>
-                  </View>
-                  <Text
-                    className="text-placeholder text-xs shrink-0"
-                    numberOfLines={1}
-                  >
-                    {getDocumentSizeText(item)}
-                  </Text>
-                </View>
-              );
-
-              if (previewItem.type === 'files') {
-                if (onDeleteFile) {
-                  return (
-                    <View
-                      key={previewItem.id}
-                      className="flex-row gap-3 items-center"
-                    >
-                      {onRenameFile ? (
-                        <Button
-                          className="flex-1 flex-row min-w-0 justify-start"
-                          onPress={() => handleOpenNameEditor(item)}
-                          variant="link"
-                          wrapperClassName="flex-1 overflow-visible rounded-lg"
-                        >
-                          {documentDetails}
-                        </Button>
-                      ) : (
-                        documentDetails
-                      )}
-                      <Button
-                        accessibilityLabel={`Remove ${getDocumentName(item)}`}
-                        size="icon-sm"
-                        variant="ghost"
-                        wrapperClassName="-mr-1.5"
-                        onPress={() =>
-                          handleDeleteDocument(previewItem.item.id)
-                        }
-                      >
-                        <Icon icon={X} />
-                      </Button>
-                    </View>
-                  );
-                }
-
-                return (
-                  <View
-                    key={previewItem.id}
-                    className="flex-row gap-3 items-center"
-                  >
-                    {documentDetails}
-                    <Button
-                      accessibilityLabel={`Download ${getDocumentName(item)}`}
-                      disabled={downloadingDocumentIds.has(item.id)}
-                      size="icon-sm"
-                      variant="ghost"
-                      wrapperClassName="-mr-1.5"
-                      onPress={() => {
-                        void handleOpenDocument(previewItem.item);
-                      }}
-                    >
-                      {downloadingDocumentIds.has(item.id) ? (
-                        <Spinner size="xs" />
-                      ) : (
-                        <Icon
-                          className="text-muted-foreground"
-                          icon={DownloadSimple}
-                        />
-                      )}
-                    </Button>
-                  </View>
-                );
-              }
-
-              return (
-                <View
-                  key={previewItem.id}
-                  className="flex-row opacity-70 gap-3 items-center"
-                >
-                  {documentDetails}
-                  <View className="-mr-1.5 size-8 items-center justify-center">
-                    <Spinner size="xs" />
-                  </View>
-                </View>
-              );
-            })}
+          <SheetListScrollView ref={scrollViewRef}>
+            {canSortDocuments ? (
+              <SortableGrid
+                autoScrollDirection="vertical"
+                columns={1}
+                data={items}
+                onDragEnd={handleDragEnd}
+                renderItem={({ item }) => renderSheetItem(item)}
+                rowGap={0}
+                scrollableRef={scrollViewRef}
+              />
+            ) : (
+              items.map(renderSheetItem)
+            )}
           </SheetListScrollView>
           <SheetFooter contentClassName="flex-row gap-4">
             <Button

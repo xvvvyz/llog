@@ -67,13 +67,13 @@ export const MemberLogsSheet = () => {
 
   return (
     <Sheet
-      className="border-continuous md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('member-logs')}
       open={sheetManager.isOpen('member-logs')}
       portalName="member-logs"
+      variant="list"
     >
-      <SheetListScrollView>
+      <SheetListScrollView variant="selection">
         {logs.map((log) => {
           const isSelected = getSelected(log.id);
           const color = SPECTRUM[colorScheme][log.color ?? 11];
@@ -81,7 +81,7 @@ export const MemberLogsSheet = () => {
           return (
             <View
               key={log.id}
-              className="flex-row py-2.5 items-center justify-between"
+              className="flex-row items-center justify-between"
             >
               <View className="flex-row gap-3 items-center">
                 <View

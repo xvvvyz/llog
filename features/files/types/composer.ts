@@ -39,6 +39,7 @@ export interface UseFileComposerOptions {
   onDeleteFile: (fileId: string) => Promise<void>;
   onOpenAudio: () => void;
   onRenameFile?: (fileId: string, name: string) => Promise<void>;
+  onReorderFiles?: (files: { id: string }[]) => void;
   onUploadFile: (
     asset: pickedFiles.PickedFileAsset,
     fileId: string,

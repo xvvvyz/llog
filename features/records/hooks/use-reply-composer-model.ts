@@ -1,5 +1,6 @@
 import { useFileComposer } from '@/features/files/hooks/use-composer';
 import type { PickedFileAsset } from '@/features/files/lib/picked';
+import { reorderFiles } from '@/features/files/mutations/reorder-files';
 import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
@@ -9,6 +10,7 @@ import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scro
 import type { RecordSheetParent } from '@/features/records/lib/sheet-payloads';
 import { deleteReplyFile } from '@/features/records/mutations/delete-reply-file';
 import { publishReply } from '@/features/records/mutations/publish-reply';
+import { reorderLinks } from '@/features/records/mutations/reorder-links';
 import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useReplyDraft } from '@/features/records/queries/use-reply-draft';
@@ -78,6 +80,14 @@ export const useReplyComposerModel = () => {
     []
   );
 
+  const handleReorderFiles = React.useCallback((files: { id: string }[]) => {
+    void reorderFiles(files);
+  }, []);
+
+  const handleReorderLinks = React.useCallback((links: { id: string }[]) => {
+    void reorderLinks(links);
+  }, []);
+
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
       replyId && recordId
@@ -87,7 +97,11 @@ export const useReplyComposerModel = () => {
   );
 
   const { linkAttachmentCount, linkPreview, linkToolbarItems } =
-    useComposerLinkAttachments({ links, parent: attachmentParent });
+    useComposerLinkAttachments({
+      links,
+      onReorderLinks: handleReorderLinks,
+      parent: attachmentParent,
+    });
 
   const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
     extraAttachmentCount: linkAttachmentCount,
@@ -99,6 +113,7 @@ export const useReplyComposerModel = () => {
     onOpenAudio: () =>
       sheetManager.open('record-audio', replyId, `reply:${recordId}`),
     onRenameFile: handleRenameFile,
+    onReorderFiles: handleReorderFiles,
     onUploadFile: handleUploadFile,
     recordId,
     replyId,

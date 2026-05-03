@@ -118,10 +118,10 @@ export const InviteLogsSheet = () => {
 
   return (
     <Sheet
-      className="md:rounded-3xl"
       onDismiss={handleDismiss}
       open={open}
       portalName="invite-logs"
+      variant="list"
     >
       <LogsSheetContent
         action={action}

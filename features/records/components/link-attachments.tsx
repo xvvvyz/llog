@@ -12,6 +12,13 @@ import { Text } from '@/ui/text';
 import { ArrowSquareOut, LinkSimple, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Linking, View } from 'react-native';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
+
+import {
+  SortableGrid,
+  SortableSheetDragHandle,
+  type SortableGridDragEndParams,
+} from '@/ui/sortable';
 
 const byOrder = (a: Link, b: Link) => (a.order ?? 0) - (b.order ?? 0);
 const getLinkLabel = (item: Link) => item.label?.trim() || 'Link';
@@ -21,6 +28,7 @@ export const LinkAttachments = ({
   hideTrigger,
   links,
   onDeleteLink,
+  onReorderLinks,
   onSheetOpenChange,
   parent,
   portalName,
@@ -32,6 +40,7 @@ export const LinkAttachments = ({
   hideTrigger?: boolean;
   links: Link[];
   onDeleteLink?: (linkId: string) => void;
+  onReorderLinks?: (links: { id: string }[]) => void;
   onSheetOpenChange?: (open: boolean) => void;
   parent?: sheetPayloads.RecordSheetParent;
   portalName?: string;
@@ -40,6 +49,7 @@ export const LinkAttachments = ({
   triggerIconClassName?: string;
 }) => {
   const sheetManager = useSheetManager();
+  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
   const sheetId = React.useId();
   const isSheetOpen = sheetOpen ?? localSheetOpen;
@@ -60,6 +70,7 @@ export const LinkAttachments = ({
   const items = React.useMemo(() => [...links].sort(byOrder), [links]);
   const firstItem = items[0];
   const canDeleteSingleLink = !!onDeleteLink && items.length === 1;
+  const canSortLinks = !!onReorderLinks && items.length > 1;
   const shouldOpenLinksInline = !onDeleteLink;
 
   const shouldRenderSheet =
@@ -117,6 +128,14 @@ export const LinkAttachments = ({
     [sheetManager]
   );
 
+  const handleDragEnd = React.useCallback(
+    (params: SortableGridDragEndParams<Link>) => {
+      if (params.fromIndex === params.toIndex) return;
+      onReorderLinks?.(params.data);
+    },
+    [onReorderLinks]
+  );
+
   if (!items.length || !firstItem) return null;
 
   const renderOpenLink = (item: Link) => (
@@ -126,7 +145,7 @@ export const LinkAttachments = ({
       variant="link"
       wrapperClassName="w-full overflow-visible rounded-lg"
       className={cn(
-        'flex-row h-8 w-full -my-2.5 gap-4 justify-between px-4',
+        'flex-row w-full gap-4 justify-between px-4',
         triggerClassName
       )}
     >
@@ -168,14 +187,56 @@ export const LinkAttachments = ({
     </View>
   );
 
+  const renderSheetItem = (item: Link) => {
+    const linkDetails = (
+      <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
+        <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+          <Icon className="text-placeholder" icon={LinkSimple} />
+          <Text
+            className="text-muted-foreground text-sm shrink"
+            numberOfLines={1}
+          >
+            {getLinkLabel(item)}
+          </Text>
+        </View>
+        <Text className="text-placeholder text-xs shrink-0" numberOfLines={1}>
+          {linkUrl.getLinkUrlDisplayText(item.url)}
+        </Text>
+      </View>
+    );
+
+    return (
+      <View key={item.id} className="flex-row gap-3 items-center">
+        {canSortLinks && <SortableSheetDragHandle className="-ml-1.5" />}
+        <Button
+          className="flex-1 flex-row min-w-0 justify-start"
+          onPress={() => handleEditLink(item.id)}
+          variant="link"
+          wrapperClassName="flex-1 overflow-visible rounded-lg"
+        >
+          {linkDetails}
+        </Button>
+        <Button
+          accessibilityLabel={`Remove ${getLinkLabel(item)}`}
+          onPress={() => handleDeleteLink(item.id)}
+          size="icon-sm"
+          variant="ghost"
+          wrapperClassName="-mr-1.5"
+        >
+          <Icon icon={X} />
+        </Button>
+      </View>
+    );
+  };
+
   return (
-    <View className={cn(shouldOpenLinksInline ? 'gap-4' : 'gap-2', className)}>
+    <View className={cn('gap-2', className)}>
       {hideTrigger ? null : shouldOpenLinksInline ? (
         items.map(renderOpenLink)
       ) : canDeleteSingleLink ? (
         <View
           className={cn(
-            'flex-row h-8 w-full -my-2.5 gap-3 justify-between px-4',
+            'flex-row w-full gap-3 justify-between px-4',
             triggerClassName
           )}
         >
@@ -211,7 +272,7 @@ export const LinkAttachments = ({
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           className={cn(
-            'flex-row h-8 w-full -my-2.5 gap-4 justify-between px-4',
+            'flex-row w-full gap-4 justify-between px-4',
             triggerClassName
           )}
         >
@@ -228,55 +289,25 @@ export const LinkAttachments = ({
       )}
       {shouldRenderSheet && (
         <Sheet
-          className="md:rounded-3xl"
           onDismiss={() => setIsSheetOpen(false)}
           open={isSheetOpen}
           portalName={sheetPortalName}
+          variant="list"
         >
-          <SheetListScrollView>
-            {items.map((item) => {
-              const linkDetails = (
-                <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
-                  <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-                    <Icon className="text-placeholder" icon={LinkSimple} />
-                    <Text
-                      className="text-muted-foreground text-sm shrink"
-                      numberOfLines={1}
-                    >
-                      {getLinkLabel(item)}
-                    </Text>
-                  </View>
-                  <Text
-                    className="text-placeholder text-xs shrink-0"
-                    numberOfLines={1}
-                  >
-                    {linkUrl.getLinkUrlDisplayText(item.url)}
-                  </Text>
-                </View>
-              );
-
-              return (
-                <View key={item.id} className="flex-row gap-3 items-center">
-                  <Button
-                    className="flex-1 flex-row min-w-0 justify-start"
-                    onPress={() => handleEditLink(item.id)}
-                    variant="link"
-                    wrapperClassName="flex-1 overflow-visible rounded-lg"
-                  >
-                    {linkDetails}
-                  </Button>
-                  <Button
-                    accessibilityLabel={`Remove ${getLinkLabel(item)}`}
-                    onPress={() => handleDeleteLink(item.id)}
-                    size="icon-sm"
-                    variant="ghost"
-                    wrapperClassName="-mr-1.5"
-                  >
-                    <Icon icon={X} />
-                  </Button>
-                </View>
-              );
-            })}
+          <SheetListScrollView ref={scrollViewRef}>
+            {canSortLinks ? (
+              <SortableGrid
+                autoScrollDirection="vertical"
+                columns={1}
+                data={items}
+                onDragEnd={handleDragEnd}
+                renderItem={({ item }) => renderSheetItem(item)}
+                rowGap={0}
+                scrollableRef={scrollViewRef}
+              />
+            ) : (
+              items.map(renderSheetItem)
+            )}
           </SheetListScrollView>
           <SheetFooter contentClassName="flex-row gap-4">
             <Button

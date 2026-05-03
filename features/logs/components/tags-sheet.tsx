@@ -75,11 +75,11 @@ export const LogTagsSheet = () => {
 
   return (
     <Sheet
-      className="md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('log-tags')}
       open={sheetManager.isOpen('log-tags')}
       portalName="log-tags"
+      variant="list"
     >
       <TagSheetContent
         canCreateTag={tagSheet.canCreateTag}

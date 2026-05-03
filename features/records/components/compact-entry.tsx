@@ -29,6 +29,8 @@ export const CompactEntry = ({
   visualMedia,
 }: EntrySharedProps & { className?: string }) => {
   const displayText = trimDisplayText(record.text);
+  const hasDocumentFiles = documentFiles.length > 0;
+  const hasLinks = links.length > 0;
 
   return (
     <View
@@ -89,21 +91,23 @@ export const CompactEntry = ({
               <AudioPlaylist clips={audioMedia} />
             </View>
           )}
-          {documentFiles.length > 0 && (
-            <DocumentAttachments
-              className="mt-4"
-              documents={documentFiles}
-              triggerClassName="pl-0"
-              triggerIconClassName="ml-1.5"
-            />
-          )}
-          {links.length > 0 && (
-            <LinkAttachments
-              className="mt-4"
-              links={links}
-              triggerClassName="pl-0"
-              triggerIconClassName="ml-1.5"
-            />
+          {(hasDocumentFiles || hasLinks) && (
+            <View className="mt-4 gap-2">
+              {hasDocumentFiles && (
+                <DocumentAttachments
+                  documents={documentFiles}
+                  triggerClassName="pl-0"
+                  triggerIconClassName="ml-1.5"
+                />
+              )}
+              {hasLinks && (
+                <LinkAttachments
+                  links={links}
+                  triggerClassName="pl-0"
+                  triggerIconClassName="ml-1.5"
+                />
+              )}
+            </View>
           )}
           <ReactionsRow
             accentColor={accentColor}

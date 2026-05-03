@@ -8,13 +8,14 @@ import * as React from 'react';
 
 type UseFileComposerStateOptions = Pick<
   UseFileComposerOptions,
-  'isOpen' | 'files' | 'onDeleteFile' | 'onUploadFile'
+  'isOpen' | 'files' | 'onDeleteFile' | 'onReorderFiles' | 'onUploadFile'
 > & { scopeKey: string };
 
 export const useFileComposerState = ({
   isOpen,
   files,
   onDeleteFile,
+  onReorderFiles,
   onUploadFile,
   scopeKey,
 }: UseFileComposerStateOptions) => {
@@ -56,6 +57,13 @@ export const useFileComposerState = ({
     [removeLocalPreviewUri, requestDeleteFile]
   );
 
+  const handleReorderFiles = React.useCallback(
+    (files: { id: string }[]) => {
+      onReorderFiles?.(files);
+    },
+    [onReorderFiles]
+  );
+
   useClipboardFilePaste({ enabled: isOpen, onUploadAssets: uploadAssets });
 
   const { handleBrowseMedia, handleCaptureMedia, handlePickDocuments } =
@@ -73,6 +81,7 @@ export const useFileComposerState = ({
     handleCaptureMedia,
     handleDeleteFile,
     handlePickDocuments,
+    handleReorderFiles: onReorderFiles ? handleReorderFiles : undefined,
     isBusy: pendingUploads.length > 0 || isDeleteTransitioning,
     fileCount:
       audioMedia.length +

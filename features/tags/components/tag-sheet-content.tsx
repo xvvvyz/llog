@@ -5,15 +5,12 @@ import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
+import { SortableGrid, type SortableGridDragEndParams } from '@/ui/sortable';
 import { Text } from '@/ui/text';
 import { Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
-
-import Sortable, {
-  type SortableGridDragEndParams,
-} from 'react-native-sortables';
 
 export const TagSheetContent = ({
   canCreateTag,
@@ -81,25 +78,17 @@ export const TagSheetContent = ({
       {showScrollArea && (
         <SheetListScrollView
           ref={scrollViewRef}
+          contentContainerClassName="gap-3"
           keyboardDismissMode="none"
-          contentContainerClassName={
-            hasVisibleTags ? 'gap-3 py-8' : 'gap-3 pt-8 pb-8'
-          }
+          variant="selection"
         >
           {!isLoading && hasVisibleTags && (
-            <Sortable.Grid
-              activeItemShadowOpacity={0}
-              autoScrollActivationOffset={50}
+            <SortableGrid
               autoScrollDirection="vertical"
               columns={1}
-              customHandle
               data={visibleTags}
-              dragActivationDelay={0}
-              itemEntering={null}
-              itemExiting={null}
-              itemsLayoutTransitionMode="reorder"
               onDragEnd={handleDragEnd}
-              rowGap={12}
+              rowGap={8}
               scrollableRef={scrollViewRef}
               sortEnabled={sortEnabled}
               renderItem={({ item: tag }) => (

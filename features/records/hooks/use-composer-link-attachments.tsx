@@ -10,9 +10,11 @@ import * as React from 'react';
 
 export const useComposerLinkAttachments = ({
   links,
+  onReorderLinks,
   parent,
 }: {
   links: Link[];
+  onReorderLinks?: (links: { id: string }[]) => void;
   parent?: sheetPayloads.RecordSheetParent;
 }) => {
   const sheetManager = useSheetManager();
@@ -33,14 +35,14 @@ export const useComposerLinkAttachments = ({
   const linkPreview = React.useMemo(
     () => (
       <LinkAttachments
-        className="gap-0"
         links={links}
         onDeleteLink={handleDeleteLink}
+        onReorderLinks={onReorderLinks}
         parent={parent}
         triggerClassName="px-4"
       />
     ),
-    [handleDeleteLink, links, parent]
+    [handleDeleteLink, links, onReorderLinks, parent]
   );
 
   const linkToolbarItems = (

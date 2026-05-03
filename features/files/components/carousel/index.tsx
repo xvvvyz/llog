@@ -11,6 +11,7 @@ import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
+import { UI } from '@/theme/ui';
 import { Spinner } from '@/ui/spinner';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -504,7 +505,7 @@ export const Carousel = ({
         ) : null}
         {shouldShowImageLoadingIndicator && (
           <View className="absolute inset-0 pointer-events-none items-center justify-center">
-            <Spinner />
+            <Spinner color={UI.light.contrastForeground} />
           </View>
         )}
       </Animated.View>

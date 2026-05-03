@@ -6,6 +6,7 @@ import { Loading } from '@/ui/loading';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
 import { useSheetStack, useSheetStackBackdrop } from '@/ui/sheet-stack';
 import { Portal } from '@rn-primitives/portal';
+import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import {
@@ -25,6 +26,22 @@ import Animated, {
 } from 'react-native-reanimated';
 
 export const SHEET_LAYERS = { route: 10, action: 20 } as const;
+
+const sheetVariants = cva(
+  'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-[30rem] md:rounded-4xl md:border-b border-continuous',
+  {
+    defaultVariants: { variant: 'default' },
+    variants: { variant: { default: '', list: 'md:rounded-3xl' } },
+  }
+);
+
+const sheetLoadingVariants = cva(
+  'absolute inset-0 z-10 py-8 border-continuous rounded-t-4xl bg-popover md:rounded-4xl',
+  {
+    defaultVariants: { variant: 'default' },
+    variants: { variant: { default: '', list: 'md:rounded-3xl' } },
+  }
+);
 
 export const SheetBackdrop = () => {
   const backdrop = useSheetStackBackdrop();
@@ -56,6 +73,7 @@ export const Sheet = ({
   open,
   portalName,
   topInset = 72,
+  variant,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -65,7 +83,7 @@ export const Sheet = ({
   open: boolean;
   portalName: string;
   topInset?: number;
-}) => {
+} & VariantProps<typeof sheetVariants>) => {
   const isWeb = Platform.OS === 'web';
   const inset = useSafeAreaInsets();
   const windowDimensions = useWindowDimensions();
@@ -122,7 +140,7 @@ export const Sheet = ({
           ref={sheetContentRef}
           style={heightStyle}
           className={cn(
-            'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-[30rem] md:rounded-4xl md:border-b border-continuous',
+            sheetVariants({ variant }),
             loading && 'min-h-32',
             className
           )}
@@ -130,7 +148,7 @@ export const Sheet = ({
           {children}
           {loading && (
             <Animated.View
-              className="absolute inset-0 z-10 py-8 border-continuous rounded-t-4xl bg-popover md:rounded-4xl"
+              className={sheetLoadingVariants({ variant })}
               exiting={animation(FadeOut)}
             >
               <Loading className="p-0 bg-popover" />

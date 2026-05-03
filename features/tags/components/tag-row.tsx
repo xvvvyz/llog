@@ -8,11 +8,11 @@ import { Checkbox } from '@/ui/checkbox';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
+import { SortableSheetDragHandle } from '@/ui/sortable';
 import { Text } from '@/ui/text';
-import { DotsSixVertical, X } from 'phosphor-react-native';
+import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
-import Sortable from 'react-native-sortables';
 
 export const TagRow = ({
   canManageColor,
@@ -50,13 +50,10 @@ export const TagRow = ({
     <View className="flex-row w-full gap-3 items-center">
       <View className="flex-1 flex-row h-10 min-w-0 border-border-secondary border-continuous rounded-full bg-input border items-center">
         {canManageDefinitions && (
-          <View className="size-10 cursor-grab">
-            <Sortable.Handle>
-              <View className="size-10 items-center justify-center">
-                <Icon className="text-placeholder" icon={DotsSixVertical} />
-              </View>
-            </Sortable.Handle>
-          </View>
+          <SortableSheetDragHandle
+            className="h-10 w-10"
+            contentClassName="h-10 w-10"
+          />
         )}
         {canEditColor ? (
           <Menu.Root>

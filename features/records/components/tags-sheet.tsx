@@ -117,11 +117,11 @@ export const RecordTagsSheet = () => {
 
   return (
     <Sheet
-      className="md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('record-tags')}
       open={sheetManager.isOpen('record-tags')}
       portalName="record-tags"
+      variant="list"
     >
       <TagSheetContent
         canCreateTag={tagSheet.canCreateTag}

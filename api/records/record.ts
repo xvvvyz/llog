@@ -39,6 +39,11 @@ type RecordCopyDraftTag = {
   logs?: { id?: string | null }[];
 };
 
+const normalizeCopyOrder = (
+  order: number | null | undefined,
+  fallback: number
+) => (Number.isFinite(order) && order != null ? Math.round(order) : fallback);
+
 const normalizeTargetLogIds = (logIds: string[]) => {
   const targetLogIds = [...new Set(logIds.map((logId) => logId.trim()))];
 
@@ -49,7 +54,7 @@ const normalizeTargetLogIds = (logIds: string[]) => {
   return targetLogIds;
 };
 
-const getClonedFileData = (file: RecordCopyFile) => {
+const getClonedFileData = (file: RecordCopyFile, fallbackOrder: number) => {
   if (!file.type || !file.uri) {
     throw new HTTPException(400, { message: 'Invalid record file' });
   }
@@ -59,7 +64,7 @@ const getClonedFileData = (file: RecordCopyFile) => {
     ...(file.duration != null ? { duration: file.duration } : {}),
     ...(file.mimeType != null ? { mimeType: file.mimeType } : {}),
     ...(file.name != null ? { name: file.name } : {}),
-    ...(file.order != null ? { order: file.order } : {}),
+    order: normalizeCopyOrder(file.order, fallbackOrder),
     ...(file.size != null ? { size: file.size } : {}),
     ...(file.thumbnailUri != null ? { thumbnailUri: file.thumbnailUri } : {}),
     type: file.type,
@@ -67,14 +72,18 @@ const getClonedFileData = (file: RecordCopyFile) => {
   };
 };
 
-const getClonedLinkData = (link: RecordCopyLink, teamId: string) => {
+const getClonedLinkData = (
+  link: RecordCopyLink,
+  teamId: string,
+  fallbackOrder: number
+) => {
   if (!link.label || !link.url) {
     throw new HTTPException(400, { message: 'Invalid record link' });
   }
 
   return {
     label: link.label,
-    ...(link.order != null ? { order: link.order } : {}),
+    order: normalizeCopyOrder(link.order, fallbackOrder),
     teamId,
     url: link.url,
   };
@@ -211,14 +220,14 @@ const buildPublishedRecordCopies = ({
           record: copiedRecordId,
           team: teamId,
         }),
-      ...(links ?? []).map((link) =>
+      ...(links ?? []).map((link, order) =>
         dbClient.tx.links[id()]
-          .update(getClonedLinkData(link, teamId))
+          .update(getClonedLinkData(link, teamId, order))
           .link({ record: copiedRecordId })
       ),
-      ...(files ?? []).map((file) =>
+      ...(files ?? []).map((file, order) =>
         dbClient.tx.files[id()]
-          .update(getClonedFileData(file))
+          .update(getClonedFileData(file, order))
           .link({ record: copiedRecordId })
       ),
     ]
@@ -398,14 +407,14 @@ app.post(
           ...(record.text != null ? { text: record.text } : {}),
         })
         .link({ author: authorId }),
-      ...(record.links ?? []).map((link) =>
+      ...(record.links ?? []).map((link, order) =>
         c.var.db.tx.links[id()]
-          .update(getClonedLinkData(link, teamId))
+          .update(getClonedLinkData(link, teamId, order))
           .link({ record: draftRecordId })
       ),
-      ...(record.files ?? []).map((file) =>
+      ...(record.files ?? []).map((file, order) =>
         c.var.db.tx.files[id()]
-          .update(getClonedFileData(file))
+          .update(getClonedFileData(file, order))
           .link({ record: draftRecordId })
       ),
     ]);

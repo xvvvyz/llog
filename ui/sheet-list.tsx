@@ -1,10 +1,23 @@
 import { cn } from '@/lib/cn';
+import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 
+const sheetListContentVariants = cva(
+  'mx-auto w-full max-w-lg px-8 py-5 md:p-4',
+  {
+    defaultVariants: { variant: 'default' },
+    variants: { variant: { default: '', selection: 'gap-2 py-8' } },
+  }
+);
+
 type SheetListScrollViewProps = React.ComponentPropsWithoutRef<
   typeof ScrollView
-> & { className?: string; contentContainerClassName?: string };
+> &
+  VariantProps<typeof sheetListContentVariants> & {
+    className?: string;
+    contentContainerClassName?: string;
+  };
 
 export const SheetListScrollView = React.forwardRef<
   React.ComponentRef<typeof ScrollView>,
@@ -18,6 +31,7 @@ export const SheetListScrollView = React.forwardRef<
       keyboardShouldPersistTaps = 'always',
       showsVerticalScrollIndicator = false,
       style,
+      variant,
       ...props
     },
     ref
@@ -33,7 +47,7 @@ export const SheetListScrollView = React.forwardRef<
         className
       )}
       contentContainerClassName={cn(
-        'mx-auto w-full max-w-lg px-8 py-5 md:p-4',
+        sheetListContentVariants({ variant }),
         contentContainerClassName
       )}
       {...props}

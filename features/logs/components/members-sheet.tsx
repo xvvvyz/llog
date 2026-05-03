@@ -50,13 +50,13 @@ export const LogMembersSheet = () => {
 
   return (
     <Sheet
-      className="md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('log-members')}
       open={sheetManager.isOpen('log-members')}
       portalName="log-members"
+      variant="list"
     >
-      <SheetListScrollView>
+      <SheetListScrollView variant="selection">
         {members
           .filter((member) => isMemberRole(member.role))
           .map((member) => {
@@ -67,7 +67,7 @@ export const LogMembersSheet = () => {
             return (
               <View
                 key={member.id}
-                className="flex-row py-2.5 items-center justify-between"
+                className="flex-row items-center justify-between"
               >
                 <View className="flex-row gap-3 items-center">
                   <Avatar

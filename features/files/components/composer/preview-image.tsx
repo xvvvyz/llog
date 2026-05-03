@@ -1,6 +1,7 @@
 import { useFileUriToSrc } from '@/features/files/lib/file-uri-to-src';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import type * as fileComposer from '@/features/files/types/composer';
+import { UI } from '@/theme/ui';
 import { Spinner } from '@/ui/spinner';
 import { Image as ImagePrimitive } from 'expo-image';
 import * as React from 'react';
@@ -14,7 +15,7 @@ export const PreviewImage = ({
   onRemoteReady: (fileId: string) => void;
 }) => {
   const remoteSrc = useFileUriToSrc(visualMedia.getThumbnailUri(item), {
-    targetSize: 128,
+    targetSize: 192,
   });
 
   const remoteSource = remoteSrc ? { uri: remoteSrc } : null;
@@ -56,7 +57,7 @@ export const PreviewImage = ({
       )}
       {showRemoteLoadingIndicator && (
         <View className="absolute inset-0 pointer-events-none items-center justify-center">
-          <Spinner size="xs" />
+          <Spinner color={UI.light.contrastForeground} size="xs" />
         </View>
       )}
     </View>

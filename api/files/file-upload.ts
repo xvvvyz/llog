@@ -85,6 +85,49 @@ const normalizeFileSize = (size?: number) =>
     ? Math.round(size)
     : undefined;
 
+const normalizeOrder = (order?: number | null) =>
+  Number.isFinite(order) && order != null ? Math.round(order) : undefined;
+
+const getNextAttachmentOrder = async ({
+  db: dbClient,
+  linkField,
+  linkId,
+}: {
+  db: Db;
+  linkField: 'reply' | 'record';
+  linkId: string;
+}) => {
+  if (linkField === 'record') {
+    const { records } = await dbClient.query({
+      records: {
+        $: { fields: ['id'], where: { id: linkId } },
+        files: { $: { fields: ['order'] } },
+      },
+    });
+
+    return (
+      (records[0]?.files ?? []).reduce(
+        (max, file) => Math.max(max, normalizeOrder(file.order) ?? -1),
+        -1
+      ) + 1
+    );
+  }
+
+  const { replies } = await dbClient.query({
+    replies: {
+      $: { fields: ['id'], where: { id: linkId } },
+      files: { $: { fields: ['order'] } },
+    },
+  });
+
+  return (
+    (replies[0]?.files ?? []).reduce(
+      (max, file) => Math.max(max, normalizeOrder(file.order) ?? -1),
+      -1
+    ) + 1
+  );
+};
+
 const getContentDisposition = (fileName?: string) => {
   const safeName = fileName
     ?.replace(/[\\/:*?"<>|]/g, '_')
@@ -286,6 +329,11 @@ export const uploadFile = async ({
   const normalizedDuration = normalizeDurationSeconds(duration);
   const normalizedName = normalizeFileName(fileName ?? upload.name);
   const normalizedMimeType = normalizeMimeType(mimeType ?? upload.type);
+
+  const normalizedOrder =
+    normalizeOrder(order) ??
+    (await getNextAttachmentOrder({ db: dbClient, linkField, linkId }));
+
   const normalizedSize = normalizeFileSize(size ?? upload.size);
   const baseKey = `${keyPrefix}/files/${fileId}`;
   let assetKey: string | undefined;
@@ -336,7 +384,7 @@ export const uploadFile = async ({
           ...(type === 'document' && normalizedSize != null
             ? { size: normalizedSize }
             : {}),
-          ...(order != null ? { order } : {}),
+          order: normalizedOrder,
         })
         .link({ [linkField]: linkId })
     );
@@ -386,6 +434,10 @@ export const createDirectVideoUploadDraft = async ({
     recordId,
   });
 
+  const normalizedOrder =
+    normalizeOrder(order) ??
+    (await getNextAttachmentOrder({ db: dbClient, linkField, linkId }));
+
   const { uid, uploadURL } = await cloudflareStream.createDirectVideoUpload(
     env,
     {
@@ -401,7 +453,7 @@ export const createDirectVideoUploadDraft = async ({
           assetKey: uid,
           type: 'video',
           uri: `${PENDING_STREAM_URI_PREFIX}${uid}`,
-          ...(order != null ? { order } : {}),
+          order: normalizedOrder,
         })
         .link({ [linkField]: linkId })
     );

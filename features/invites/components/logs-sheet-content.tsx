@@ -38,7 +38,7 @@ export const LogsSheetContent = ({
 
   return (
     <>
-      <SheetListScrollView>
+      <SheetListScrollView variant="selection">
         {logs.map((log) => {
           const isSelected = selectedLogIds.has(log.id);
           const color = SPECTRUM[colorScheme][log.color ?? 11];
@@ -46,7 +46,7 @@ export const LogsSheetContent = ({
           return (
             <View
               key={log.id}
-              className="flex-row py-2.5 items-center justify-between"
+              className="flex-row items-center justify-between"
             >
               <View className="flex-row gap-3 items-center">
                 <View

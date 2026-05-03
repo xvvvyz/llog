@@ -26,7 +26,7 @@ const schema = i.schema({
       duration: i.number().optional(),
       mimeType: i.string().optional(),
       name: i.string().optional(),
-      order: i.number().optional(),
+      order: i.number().indexed(),
       size: i.number().optional(),
       thumbnailUri: i.string().optional(),
       type: i.string(),
@@ -39,7 +39,7 @@ const schema = i.schema({
     }),
     links: i.entity({
       label: i.string().indexed(),
-      order: i.number().optional(),
+      order: i.number().indexed(),
       teamId: i.string().indexed(),
       url: i.string(),
     }),

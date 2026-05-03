@@ -108,6 +108,8 @@ const rules = {
       'newData.name != null && size(newData.name) > 0 && size(newData.name) <= 255',
       'onlyModifiesDocumentName',
       "request.modifiedFields.all(field, field in ['name'])",
+      'onlyModifiesFileOrder',
+      "request.modifiedFields.all(field, field in ['order'])",
       'isProfileOwner',
       "auth.id in data.ref('profile.user.id')",
       'isTeamImageManager',
@@ -145,7 +147,7 @@ const rules = {
       view: 'isProfileOwner || isTeammate || isTeamMember || canViewRecordFiles || canViewReplyFiles || isLoglessDraftRecordFile',
       create: 'hasOneLink && (isProfileOwner || isTeamImageManager)',
       update:
-        'hasOneLink && isDocument && onlyModifiesDocumentName && isValidDocumentName && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply || isLoglessDraftRecordFile)',
+        'hasOneLink && ((isDocument && onlyModifiesDocumentName && isValidDocumentName) || onlyModifiesFileOrder) && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply || isLoglessDraftRecordFile)',
       delete:
         'isProfileOwner || isTeamImageManager || (isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply || isLoglessDraftRecordFile',
     },
@@ -184,6 +186,8 @@ const rules = {
       "data.teamId in data.ref('record.teamId')",
       'onlyModifiesLinkDetails',
       "request.modifiedFields.all(field, field in ['label', 'url'])",
+      'onlyModifiesLinkOrder',
+      "request.modifiedFields.all(field, field in ['order'])",
       'isRecordAuthor',
       "auth.id in data.ref('record.author.user.id')",
       'isReplyAuthor',
@@ -214,7 +218,7 @@ const rules = {
       create:
         'hasOneLink && isValidLabel && isValidUrl && ((isValidTeamId && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)) || (isLoglessDraftRecordLink && isValidLoglessDraftRecordTeamId))',
       update:
-        'onlyModifiesLinkDetails && isValidLabel && isValidUrl && ((isValidTeamId && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)) || (isLoglessDraftRecordLink && isValidLoglessDraftRecordTeamId))',
+        '((onlyModifiesLinkDetails && isValidLabel && isValidUrl) || onlyModifiesLinkOrder) && ((isValidTeamId && ((isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || canManageRecord || canManageReply)) || (isLoglessDraftRecordLink && isValidLoglessDraftRecordTeamId))',
       delete:
         '(isRecordAuthor && isRecordTeamMember) || (isReplyAuthor && isReplyTeamMember) || (isReplyRecordAuthor && isReplyTeamMember) || canManageRecord || canManageReply || (isLoglessDraftRecordLink && hasLoglessDraftRecordTeamId)',
     },

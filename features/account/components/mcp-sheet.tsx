@@ -78,11 +78,11 @@ export const McpSheet = () => {
 
   return (
     <Sheet
-      className="md:rounded-3xl"
       loading={isLoading}
       onDismiss={() => sheetManager.close('mcp')}
       open={isOpen}
       portalName="mcp"
+      variant="list"
     >
       <SheetListScrollView contentContainerClassName="gap-5">
         <View className="flex-row items-center justify-between">
