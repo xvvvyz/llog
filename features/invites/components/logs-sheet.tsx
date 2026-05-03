@@ -29,8 +29,11 @@ export const InviteLogsSheet = () => {
     new Set()
   );
 
+  const [query, setQuery] = React.useState('');
+
   React.useEffect(() => {
     if (open) {
+      setQuery('');
       setSelectedLogIds(new Set());
       setIsLoading(false);
     }
@@ -130,7 +133,9 @@ export const InviteLogsSheet = () => {
         logs={logs}
         onConfirm={handleConfirm}
         onToggleLog={toggleLog}
+        query={query}
         selectedLogIds={selectedLogIds}
+        setQuery={setQuery}
       />
     </Sheet>
   );

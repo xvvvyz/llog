@@ -10,6 +10,7 @@ import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
+import { createSearchIndex } from '@/lib/search';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';
@@ -18,10 +19,11 @@ import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
-import MiniSearch from 'minisearch';
 import { Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
+
+type LogSearchDocument = { id: string; name: string; people: string };
 
 export default function Index() {
   const [rawQuery, setRawQuery] = React.useState('');
@@ -36,22 +38,16 @@ export default function Index() {
   const isEmpty = !logs.isLoading && logs.data.length === 0;
 
   const miniSearch = React.useMemo(() => {
-    const ms = new MiniSearch({
-      fields: ['name', 'people'],
-      storeFields: ['id'],
-      searchOptions: { fuzzy: 0.2, prefix: true, boost: { name: 2 } },
-    });
-
-    ms.addAll(
-      logs.data.map((log) => ({
+    return createSearchIndex<LogSearchDocument>({
+      documents: logs.data.map((log) => ({
         id: log.id,
         name: log.name,
         people:
           log.profiles?.map((p: { name: string }) => p.name).join(' ') ?? '',
-      }))
-    );
-
-    return ms;
+      })),
+      fields: ['name', 'people'],
+      storeFields: ['id'],
+    });
   }, [logs.data]);
 
   const filteredLogs = React.useMemo(() => {

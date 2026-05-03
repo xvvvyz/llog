@@ -71,17 +71,32 @@ export const TagSheetContent = ({
   );
 
   const hasVisibleTags = visibleTags.length > 0;
-  const showScrollArea = hasVisibleTags || canCreateTag;
+  const showCreateTag = canCreateTag && !hasVisibleTags;
+  const showScrollArea = hasVisibleTags || showCreateTag;
 
   return (
     <>
       {showScrollArea && (
         <SheetListScrollView
           ref={scrollViewRef}
-          contentContainerClassName="gap-3"
+          contentContainerClassName="gap-2"
           keyboardDismissMode="none"
           variant="selection"
         >
+          {showCreateTag && (
+            <Button
+              className="pl-0 pr-4 rounded-full gap-0 justify-start"
+              onPress={handleSubmitTag}
+              size="sm"
+              variant="secondary"
+              wrapperClassName="self-start rounded-full"
+            >
+              <View className="size-10 items-center justify-center">
+                <Icon className="text-placeholder" icon={Plus} />
+              </View>
+              <Text numberOfLines={1}>Create tag &ldquo;{query}&rdquo;</Text>
+            </Button>
+          )}
           {!isLoading && hasVisibleTags && (
             <SortableGrid
               autoScrollDirection="vertical"
@@ -114,28 +129,14 @@ export const TagSheetContent = ({
               )}
             />
           )}
-          {canCreateTag && (
-            <Button
-              className="pl-0 pr-4 rounded-full gap-0 justify-start"
-              onPress={handleSubmitTag}
-              size="sm"
-              variant="secondary"
-              wrapperClassName="self-start rounded-full"
-            >
-              <View className="size-10 items-center justify-center">
-                <Icon className="text-placeholder" icon={Plus} />
-              </View>
-              <Text numberOfLines={1}>Create tag &ldquo;{query}&rdquo;</Text>
-            </Button>
-          )}
         </SheetListScrollView>
       )}
       <SheetFooter contentClassName="flex-row gap-4">
         <SearchInput
           ref={searchInputRef}
-          actionIcon={canCreateTag ? Plus : undefined}
+          actionIcon={showCreateTag ? Plus : undefined}
           maxLength={16}
-          onActionPress={canCreateTag ? handleSubmitTag : undefined}
+          onActionPress={showCreateTag ? handleSubmitTag : undefined}
           onSubmitEditing={handleSubmitTag}
           placeholder={canManageDefinitions ? 'Type in a tag' : 'Search'}
           query={rawQuery}

@@ -68,10 +68,7 @@ export const LogTagsSheet = () => {
   });
 
   const isLoading =
-    log.isLoading ||
-    (!tagSheet.query &&
-      tagSheet.tagsIsLoading &&
-      !tagSheet.hasPendingCreatedTag);
+    log.isLoading || (tagSheet.tagsIsLoading && !tagSheet.hasPendingCreatedTag);
 
   return (
     <Sheet

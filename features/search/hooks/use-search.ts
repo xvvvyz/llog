@@ -2,8 +2,8 @@ import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import type * as searchTypes from '@/features/search/types/search';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
+import { createSearchIndex } from '@/lib/search';
 import type { SearchResult as MiniSearchResult } from 'minisearch';
-import MiniSearch from 'minisearch';
 import * as React from 'react';
 
 type SearchDocument = {
@@ -212,7 +212,8 @@ export const useSearch = ({
   }, [data]);
 
   const miniSearch = React.useMemo(() => {
-    const ms = new MiniSearch<SearchDocument>({
+    return createSearchIndex<SearchDocument>({
+      documents,
       fields: ['text', 'attachmentText', 'name', 'people'],
       storeFields: [
         'text',
@@ -235,11 +236,7 @@ export const useSearch = ({
         'logTagIds',
         'recordTagIds',
       ],
-      searchOptions: { fuzzy: 0.2, prefix: true, boost: { name: 2 } },
     });
-
-    ms.addAll(documents);
-    return ms;
   }, [documents]);
 
   const results = React.useMemo((): searchTypes.SearchResult[] => {

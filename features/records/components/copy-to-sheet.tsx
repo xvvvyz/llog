@@ -1,5 +1,6 @@
 import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
@@ -7,6 +8,7 @@ import { SPECTRUM } from '@/theme/spectrum';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
+import { SearchInput } from '@/ui/search-input';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Spinner } from '@/ui/spinner';
@@ -20,6 +22,7 @@ export const RecordCopyToSheet = () => {
   const recordId = sheetManager.getId('record-copy-to');
   const open = sheetManager.isOpen('record-copy-to');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [query, setQuery] = React.useState('');
 
   const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
     new Set()
@@ -51,10 +54,13 @@ export const RecordCopyToSheet = () => {
     [logsData?.logs, sourceLogId]
   );
 
+  const visibleLogs = useNameSearch(logs, query);
+
   React.useEffect(() => {
     if (!open) return;
     setIsSubmitting(false);
     setSelectedLogIds(new Set());
+    setQuery('');
   }, [open, recordId]);
 
   const close = React.useCallback(() => {
@@ -82,7 +88,11 @@ export const RecordCopyToSheet = () => {
         logIds: [...selectedLogIds],
       });
 
-      if (!draft) return;
+      if (!draft) {
+        setIsSubmitting(false);
+        return;
+      }
+
       setIsSubmitting(false);
 
       sheetManager.open('record-create', draft.draftRecordId, 'copy', {
@@ -97,7 +107,7 @@ export const RecordCopyToSheet = () => {
         title: 'Error',
       });
     }
-  }, [close, recordId, selectedLogIds, sheetManager]);
+  }, [recordId, selectedLogIds, sheetManager]);
 
   return (
     <Sheet
@@ -107,47 +117,46 @@ export const RecordCopyToSheet = () => {
       portalName="record-copy-to"
       variant="list"
     >
-      <SheetListScrollView variant="selection">
-        {logs.map((log) => {
-          const isSelected = selectedLogIds.has(log.id);
-          const color = SPECTRUM[colorScheme][log.color ?? 11];
+      {!!visibleLogs.length && (
+        <SheetListScrollView variant="selection">
+          {visibleLogs.map((log) => {
+            const isSelected = selectedLogIds.has(log.id);
+            const color = SPECTRUM[colorScheme][log.color ?? 11];
 
-          return (
-            <View
-              key={log.id}
-              className="flex-row items-center justify-between"
-            >
-              <View className="flex-row gap-3 items-center">
-                <View
-                  className="size-4 border-continuous rounded-md"
-                  style={{ backgroundColor: color.default }}
+            return (
+              <View
+                key={log.id}
+                className="flex-row items-center justify-between"
+              >
+                <View className="flex-row gap-3 items-center">
+                  <View
+                    className="size-4 border-continuous rounded-md"
+                    style={{ backgroundColor: color.default }}
+                  />
+                  <Text numberOfLines={1}>{log.name}</Text>
+                </View>
+                <Checkbox
+                  checked={isSelected}
+                  className="size-8 border-0"
+                  onCheckedChange={() => toggleLog(log.id)}
                 />
-                <Text numberOfLines={1}>{log.name}</Text>
               </View>
-              <Checkbox
-                checked={isSelected}
-                className="size-8 border-0"
-                onCheckedChange={() => toggleLog(log.id)}
-              />
-            </View>
-          );
-        })}
-      </SheetListScrollView>
+            );
+          })}
+        </SheetListScrollView>
+      )}
       <SheetFooter contentClassName="flex-row gap-4">
-        <Button
-          disabled={isSubmitting}
-          onPress={close}
+        <SearchInput
+          query={query}
+          setQuery={setQuery}
           size="sm"
-          variant="secondary"
-          wrapperClassName="flex-1"
-        >
-          <Text>Cancel</Text>
-        </Button>
+          wrapperClassName="flex-1 min-w-0"
+        />
         <Button
           disabled={selectedLogIds.size === 0 || isSubmitting}
           onPress={handleSubmit}
           size="sm"
-          wrapperClassName="flex-1"
+          wrapperClassName="shrink-0"
         >
           {isSubmitting ? (
             <Spinner color={UI.light.contrastForeground} />

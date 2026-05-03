@@ -1,5 +1,6 @@
 import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
@@ -7,6 +8,7 @@ import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
+import { SearchInput } from '@/ui/search-input';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
@@ -14,7 +16,9 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export const MemberLogsSheet = () => {
+  const [query, setQuery] = React.useState('');
   const sheetManager = useSheetManager();
+  const open = sheetManager.isOpen('member-logs');
   const roleId = sheetManager.getId('member-logs');
   const { activeTeamId } = useUi();
   const colorScheme = useColorScheme();
@@ -36,6 +40,12 @@ export const MemberLogsSheet = () => {
 
   const logs = React.useMemo(() => data?.logs ?? [], [data?.logs]);
   const profileId = data?.roles?.[0]?.user?.profile?.id;
+
+  React.useEffect(() => {
+    if (open) setQuery('');
+  }, [open, roleId]);
+
+  const visibleLogs = useNameSearch(logs, query);
 
   const profileLogIds = React.useMemo(
     () =>
@@ -69,40 +79,50 @@ export const MemberLogsSheet = () => {
     <Sheet
       loading={isLoading}
       onDismiss={() => sheetManager.close('member-logs')}
-      open={sheetManager.isOpen('member-logs')}
+      open={open}
       portalName="member-logs"
       variant="list"
     >
-      <SheetListScrollView variant="selection">
-        {logs.map((log) => {
-          const isSelected = getSelected(log.id);
-          const color = SPECTRUM[colorScheme][log.color ?? 11];
+      {!!visibleLogs.length && (
+        <SheetListScrollView variant="selection">
+          {visibleLogs.map((log) => {
+            const isSelected = getSelected(log.id);
+            const color = SPECTRUM[colorScheme][log.color ?? 11];
 
-          return (
-            <View
-              key={log.id}
-              className="flex-row items-center justify-between"
-            >
-              <View className="flex-row gap-3 items-center">
-                <View
-                  className="size-4 border-continuous rounded-md"
-                  style={{ backgroundColor: color.default }}
+            return (
+              <View
+                key={log.id}
+                className="flex-row items-center justify-between"
+              >
+                <View className="flex-row gap-3 items-center">
+                  <View
+                    className="size-4 border-continuous rounded-md"
+                    style={{ backgroundColor: color.default }}
+                  />
+                  <Text numberOfLines={1}>{log.name}</Text>
+                </View>
+                <Checkbox
+                  checked={isSelected}
+                  className="size-8 border-0"
+                  onCheckedChange={(selected) => setSelected(log.id, selected)}
                 />
-                <Text numberOfLines={1}>{log.name}</Text>
               </View>
-              <Checkbox
-                checked={isSelected}
-                className="size-8 border-0"
-                onCheckedChange={(selected) => setSelected(log.id, selected)}
-              />
-            </View>
-          );
-        })}
-      </SheetListScrollView>
-      <SheetFooter>
+            );
+          })}
+        </SheetListScrollView>
+      )}
+      <SheetFooter contentClassName="flex-row gap-4">
+        <SearchInput
+          query={query}
+          setQuery={setQuery}
+          size="sm"
+          wrapperClassName="flex-1 min-w-0"
+        />
         <Button
           onPress={() => sheetManager.close('member-logs')}
+          size="sm"
           variant="secondary"
+          wrapperClassName="shrink-0"
         >
           <Text>Done</Text>
         </Button>

@@ -1,6 +1,12 @@
 import type { Tag } from '@/features/tags/types/tag';
 import * as React from 'react';
 
+import {
+  createTagSearchIndex,
+  findExactTagId,
+  searchTagsWithIndex,
+} from '@/features/tags/lib/search-tags';
+
 export const useTagSheetState = ({
   pendingCreatedTag,
   query,
@@ -12,17 +18,8 @@ export const useTagSheetState = ({
   query: string;
   selectedIds: ReadonlySet<string>;
   setPendingCreatedTag: (tag: Tag | null) => void;
-  tags: { data: Tag[]; isLoading: boolean; queryExistingTagId?: string };
+  tags: { data: Tag[] };
 }) => {
-  const previousVisibleTagsRef = React.useRef<Tag[]>([]);
-  const allTagsRef = React.useRef<Tag[]>([]);
-
-  React.useEffect(() => {
-    if (tags.isLoading) return;
-    previousVisibleTagsRef.current = tags.data;
-    if (!query) allTagsRef.current = tags.data;
-  }, [query, tags.data, tags.isLoading]);
-
   React.useEffect(() => {
     if (!pendingCreatedTag) return;
     if (!tags.data.some((tag) => tag.id === pendingCreatedTag.id)) return;
@@ -30,38 +27,34 @@ export const useTagSheetState = ({
     setPendingCreatedTag(null);
   }, [pendingCreatedTag, selectedIds, setPendingCreatedTag, tags.data]);
 
-  const visibleTags = React.useMemo(() => {
-    const sourceTags =
-      tags.isLoading && query
-        ? (allTagsRef.current.length
-            ? allTagsRef.current
-            : previousVisibleTagsRef.current
-          ).filter((tag) =>
-            tag.name.toLowerCase().includes(query.toLowerCase())
-          )
-        : tags.data;
+  const tagsWithPending = React.useMemo(() => {
+    if (!pendingCreatedTag) return tags.data;
 
-    if (
-      !pendingCreatedTag ||
-      (query &&
-        !pendingCreatedTag.name.toLowerCase().includes(query.toLowerCase())) ||
-      sourceTags.some((tag) => tag.id === pendingCreatedTag.id)
-    ) {
-      return sourceTags;
+    if (tags.data.some((tag) => tag.id === pendingCreatedTag.id)) {
+      return tags.data;
     }
 
-    return [pendingCreatedTag, ...sourceTags];
-  }, [pendingCreatedTag, query, tags.data, tags.isLoading]);
+    return [pendingCreatedTag, ...tags.data];
+  }, [pendingCreatedTag, tags.data]);
+
+  const tagSearchIndex = React.useMemo(
+    () => createTagSearchIndex(tagsWithPending),
+    [tagsWithPending]
+  );
+
+  const visibleTags = React.useMemo(
+    () =>
+      searchTagsWithIndex({
+        index: tagSearchIndex,
+        query,
+        tags: tagsWithPending,
+      }),
+    [query, tagSearchIndex, tagsWithPending]
+  );
 
   const queryExistingTagId = React.useMemo(
-    () =>
-      query
-        ? (tags.queryExistingTagId ??
-          visibleTags.find(
-            (tag) => tag.name.toLowerCase() === query.toLowerCase()
-          )?.id)
-        : undefined,
-    [query, tags.queryExistingTagId, visibleTags]
+    () => findExactTagId(tagsWithPending, query),
+    [query, tagsWithPending]
   );
 
   const optimisticSelectedIds = React.useMemo(() => {

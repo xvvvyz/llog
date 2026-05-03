@@ -41,7 +41,7 @@ export const useTagSheetController = ({
   );
 
   const query = React.useMemo(() => rawQuery.trim(), [rawQuery]);
-  const tags = useTags({ logId, query, teamIds, type });
+  const tags = useTags({ logId, teamIds, type });
 
   const { optimisticSelectedIds, queryExistingTagId, visibleTags } =
     useTagSheetState({
@@ -65,7 +65,7 @@ export const useTagSheetController = ({
   });
 
   const handleSubmitTag = React.useCallback(() => {
-    if (!query || !canToggleTags) return;
+    if (!query || !canToggleTags || tags.isLoading) return;
 
     if (queryExistingTagId) {
       void setSelected(queryExistingTagId, true);
@@ -90,6 +90,7 @@ export const useTagSheetController = ({
     query,
     queryExistingTagId,
     setSelected,
+    tags.isLoading,
   ]);
 
   const handleReorder = React.useCallback(
@@ -111,6 +112,7 @@ export const useTagSheetController = ({
     canToggleTags &&
     canCreateDefinitions &&
     canCreateNewTag &&
+    !tags.isLoading &&
     !!query &&
     !queryExistingTagId;
 

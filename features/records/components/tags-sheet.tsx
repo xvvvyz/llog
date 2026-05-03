@@ -115,9 +115,12 @@ export const RecordTagsSheet = () => {
     type: 'record',
   });
 
+  const sheetIsLoading =
+    isLoading || (tagSheet.tagsIsLoading && !tagSheet.hasPendingCreatedTag);
+
   return (
     <Sheet
-      loading={isLoading}
+      loading={sheetIsLoading}
       onDismiss={() => sheetManager.close('record-tags')}
       open={sheetManager.isOpen('record-tags')}
       portalName="record-tags"
@@ -130,7 +133,7 @@ export const RecordTagsSheet = () => {
         canToggleTags={canManageRecordTags}
         colorFallback={logColorIndex}
         getSelected={tagSheet.getSelected}
-        isLoading={isLoading}
+        isLoading={sheetIsLoading}
         onClose={() => sheetManager.close('record-tags')}
         onColorChange={handleColorChange}
         onReorder={tagSheet.handleReorder}

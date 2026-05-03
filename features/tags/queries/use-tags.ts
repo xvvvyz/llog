@@ -5,15 +5,9 @@ import * as React from 'react';
 
 export const useTags = ({
   logId,
-  query,
   teamIds,
   type = 'log',
-}: {
-  logId?: string;
-  query?: string;
-  teamIds?: string[];
-  type?: TagType;
-} = {}) => {
+}: { logId?: string; teamIds?: string[]; type?: TagType } = {}) => {
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(
@@ -25,7 +19,6 @@ export const useTags = ({
                 teamId: { $in: resolvedTeamIds },
                 type,
                 ...(logId && { logs: logId }),
-                ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },
           },
@@ -35,17 +28,9 @@ export const useTags = ({
 
   const tags = React.useMemo(
     // https://discord.com/channels/1031957483243188235/1376250736416919567
-    () => data?.tags?.sort((a, b) => a.order - b.order) ?? [],
+    () => (data?.tags ? [...data.tags].sort((a, b) => a.order - b.order) : []),
     [data?.tags]
   );
 
-  const queryExistingTagId = React.useMemo(
-    () =>
-      query
-        ? tags.find((tag) => tag.name.toLowerCase() === query.toLowerCase())?.id
-        : undefined,
-    [tags, query]
-  );
-
-  return { data: tags, isLoading, queryExistingTagId };
+  return { data: tags, isLoading };
 };

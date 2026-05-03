@@ -4,6 +4,7 @@ import * as mcpSchemas from '@/api/mcp/schemas';
 import { recordTagFields, recordTagLogsQuery } from '@/api/mcp/tag-query';
 import type { McpContext, McpLog, McpRecord, McpTag } from '@/api/mcp/types';
 import { requireVisibleLog } from '@/api/mcp/viewer';
+import { findExactTagId, searchTags } from '@/features/tags/lib/search-tags';
 import * as permissions from '@/features/teams/lib/permissions';
 import { resolveSpectrumColor } from '@/theme/spectrum';
 import { id } from '@instantdb/admin';
@@ -115,7 +116,7 @@ const listRecordTagsForLog = async ({
   query,
 }: {
   ctx: McpContext;
-  limit: number;
+  limit?: number;
   logId: string;
   query?: string;
 }) => {
@@ -125,18 +126,18 @@ const listRecordTagsForLog = async ({
     tags: {
       $: {
         ...recordTagQuery.$,
-        where: {
-          logs: logId,
-          teamId: log.teamId,
-          type: 'record',
-          ...(query ? { name: { $ilike: `%${query}%` } } : {}),
-        },
+        where: { logs: logId, teamId: log.teamId, type: 'record' },
       },
       logs: recordTagQuery.logs,
     },
   })) as { tags?: McpTag[] };
 
-  return (tags ?? []).sort(byTagOrder).slice(0, limit);
+  const orderedTags = [...(tags ?? [])].sort(byTagOrder);
+  const matchingTags = query ? searchTags(orderedTags, query) : orderedTags;
+
+  return typeof limit === 'number'
+    ? matchingTags.slice(0, limit)
+    : matchingTags;
 };
 
 export const registerTagTools = (server: McpServer, ctx: McpContext) => {
@@ -231,21 +232,13 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('Only team owners and admins can create record tags');
     }
 
-    const [existingTags, log] = await Promise.all([
-      listRecordTagsForLog({
-        ctx,
-        limit: 100,
-        logId: target.logId,
-        query: trimmedName,
-      }),
+    const [recordTags, log] = await Promise.all([
+      listRecordTagsForLog({ ctx, logId: target.logId }),
       getLogForRecordTags(ctx, target.logId),
     ]);
 
-    const normalizedName = trimmedName.toLowerCase();
-
-    const existingTag = existingTags.find(
-      (tag) => tag.name.toLowerCase() === normalizedName
-    );
+    const existingTagId = findExactTagId(recordTags, trimmedName);
+    const existingTag = recordTags.find((tag) => tag.id === existingTagId);
 
     const newTag = {
       color: resolveSpectrumColor(log.color),

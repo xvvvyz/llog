@@ -3,11 +3,13 @@ import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
 import { useLog } from '@/features/logs/queries/use-log';
 import { isMemberRole } from '@/features/teams/lib/permissions';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
+import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
+import { SearchInput } from '@/ui/search-input';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
@@ -15,8 +17,11 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export const LogMembersSheet = () => {
+  const [query, setQuery] = React.useState('');
   const sheetManager = useSheetManager();
-  const log = useLog({ id: sheetManager.getId('log-members') });
+  const open = sheetManager.isOpen('log-members');
+  const logId = sheetManager.getId('log-members');
+  const log = useLog({ id: logId });
   const logColor = useLogColor({ id: log.id });
 
   const { members, isLoading: membersLoading } = useTeamMembers({
@@ -24,6 +29,25 @@ export const LogMembersSheet = () => {
   });
 
   const isLoading = log.isLoading || membersLoading;
+
+  React.useEffect(() => {
+    if (open) setQuery('');
+  }, [open, logId]);
+
+  const memberRows = React.useMemo(
+    () =>
+      members.flatMap((member) => {
+        if (!isMemberRole(member.role)) return [];
+        const profile = member.user?.profile;
+
+        return profile
+          ? [{ id: profile.id, member, name: profile.name, profile }]
+          : [];
+      }),
+    [members]
+  );
+
+  const visibleMemberRows = useNameSearch(memberRows, query);
 
   const { getSelected, setSelected } = useOptimisticSelection({
     onChange: React.useCallback(
@@ -52,16 +76,13 @@ export const LogMembersSheet = () => {
     <Sheet
       loading={isLoading}
       onDismiss={() => sheetManager.close('log-members')}
-      open={sheetManager.isOpen('log-members')}
+      open={open}
       portalName="log-members"
       variant="list"
     >
-      <SheetListScrollView variant="selection">
-        {members
-          .filter((member) => isMemberRole(member.role))
-          .map((member) => {
-            const profile = member.user?.profile;
-            if (!profile) return null;
+      {!!visibleMemberRows.length && (
+        <SheetListScrollView variant="selection">
+          {visibleMemberRows.map(({ member, profile }) => {
             const isSelected = getSelected(profile.id);
 
             return (
@@ -89,11 +110,20 @@ export const LogMembersSheet = () => {
               </View>
             );
           })}
-      </SheetListScrollView>
-      <SheetFooter>
+        </SheetListScrollView>
+      )}
+      <SheetFooter contentClassName="flex-row gap-4">
+        <SearchInput
+          query={query}
+          setQuery={setQuery}
+          size="sm"
+          wrapperClassName="flex-1 min-w-0"
+        />
         <Button
           onPress={() => sheetManager.close('log-members')}
+          size="sm"
           variant="secondary"
+          wrapperClassName="shrink-0"
         >
           <Text>Done</Text>
         </Button>
