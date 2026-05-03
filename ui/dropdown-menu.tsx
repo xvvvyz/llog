@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
 import { TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
-import { Check, SortAscending, SortDescending } from 'phosphor-react-native';
+import { SortAscending, SortDescending } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -67,53 +67,7 @@ const Item = React.forwardRef<
 ));
 
 Item.displayName = DropdownMenuPrimitive.Item.displayName;
-
-const CheckboxItem = ({
-  checked,
-  children,
-  className,
-  onCheckedChange,
-  ...props
-}: DropdownMenuPrimitive.CheckboxItemProps & {
-  children?: React.ReactNode;
-  ref?: React.RefObject<DropdownMenuPrimitive.CheckboxItemRef>;
-}) => {
-  const [opChecked, setOpChecked] = React.useState(checked);
-  React.useEffect(() => setOpChecked(checked), [checked]);
-
-  const handleCheckedChange = React.useCallback(
-    (checked: boolean) => {
-      setOpChecked(checked);
-      React.startTransition(() => onCheckedChange?.(checked));
-    },
-    [onCheckedChange]
-  );
-
-  return (
-    <TextContext.Provider value="text-popover-foreground">
-      <DropdownMenuPrimitive.CheckboxItem
-        android_ripple={{ color: useRippleColor('inverse') }}
-        checked={opChecked}
-        closeOnPress={false}
-        onCheckedChange={handleCheckedChange}
-        className={cn(
-          'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative h-10 flex-row items-center justify-between gap-4 px-4',
-          className
-        )}
-        {...props}
-      >
-        <View className="flex-row gap-4 items-center">{children}</View>
-        <DropdownMenuPrimitive.ItemIndicator>
-          <Icon className="-mr-1.5" icon={Check} />
-        </DropdownMenuPrimitive.ItemIndicator>
-      </DropdownMenuPrimitive.CheckboxItem>
-    </TextContext.Provider>
-  );
-};
-
-CheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
-
-export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
+const SORT_DIRECTIONS = ['asc', 'desc'] as const;
 
 export type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
@@ -174,13 +128,4 @@ SortItem.displayName = 'SortItem';
 const Separator = () => <View className="my-2 border-border border-t" />;
 const useContext = DropdownMenuPrimitive.useRootContext;
 
-export {
-  CheckboxItem,
-  Content,
-  Item,
-  Root,
-  Separator,
-  SortItem,
-  Trigger,
-  useContext,
-};
+export { Content, Item, Root, Separator, SortItem, Trigger, useContext };

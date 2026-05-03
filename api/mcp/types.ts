@@ -25,13 +25,13 @@ export type McpLink = {
   url: string;
 };
 
-export type McpStoredPushSubscription = {
+type McpStoredPushSubscription = {
   endpoint?: string | null;
   id: string;
   subscription?: z.infer<typeof push.pushSubscriptionSchema> | null;
 };
 
-export type McpUser = {
+type McpUser = {
   email?: string | null;
   id: string;
   subscriptions?: McpStoredPushSubscription[];
@@ -119,14 +119,7 @@ export type McpRecord = {
   text?: string | null;
 };
 
-export type McpFileWithVisibilityLinks = McpFile & {
-  profile?: McpProfile | null;
-  record?: McpRecord | null;
-  reply?: (McpReply & { record?: McpRecord | null }) | null;
-  team?: McpTeam | null;
-};
-
-export type McpFileFields = {
+type McpFileFields = {
   duration?: number;
   id: string;
   mimeType?: string;

@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import type { Color } from '@/theme/spectrum';
 import { id as generateId } from '@instantdb/react-native';
 
-export const addRecordTag = async ({
+const addRecordTag = async ({
   recordId,
   tagId,
 }: {
@@ -13,7 +13,7 @@ export const addRecordTag = async ({
   return db.transact(db.tx.records[recordId].link({ tags: tagId }));
 };
 
-export const removeRecordTag = async ({
+const removeRecordTag = async ({
   recordId,
   tagId,
 }: {

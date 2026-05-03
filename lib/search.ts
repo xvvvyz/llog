@@ -1,11 +1,11 @@
 import MiniSearch, { type Options, type SearchOptions } from 'minisearch';
 
-export const DEFAULT_SEARCH_OPTIONS = {
+const DEFAULT_SEARCH_OPTIONS = {
   fuzzy: 0.2,
   prefix: true,
 } satisfies SearchOptions;
 
-export const DEFAULT_NAMED_SEARCH_OPTIONS = {
+const DEFAULT_NAMED_SEARCH_OPTIONS = {
   ...DEFAULT_SEARCH_OPTIONS,
   boost: { name: 2 },
 } satisfies SearchOptions;

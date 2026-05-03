@@ -11,9 +11,9 @@ export type RecordSheetParent =
   | { id: string; type: 'record' }
   | { id: string; recordId: string; type: 'reply' };
 
-export type RecordLinkAttachmentsSheetPayload = { parent: RecordSheetParent };
+type RecordLinkAttachmentsSheetPayload = { parent: RecordSheetParent };
 
-export type RecordLinkEditorSheetPayload =
+type RecordLinkEditorSheetPayload =
   | { mode: 'create'; parent: RecordSheetParent }
   | { linkId: string; mode: 'edit' };
 

@@ -1,29 +1,26 @@
-export type SheetNames = readonly [
-  'reply-create',
-  'reply-delete',
-  'invite-delete',
-  'member-remove',
-  'invite-logs',
-  'invite-qr',
-  'log-delete',
-  'log-edit',
-  'log-members',
-  'log-tags',
-  'member-logs',
-  'mcp',
-  'record-audio',
-  'record-copy-to',
-  'record-create',
-  'record-delete',
-  'record-detail',
-  'record-link-attachments',
-  'record-link-editor',
-  'record-tags',
-  'tag-delete',
-  'team-delete',
-  'team-leave',
-  'team-switch',
-  'web-push-ios-setup',
-];
-
-export type SheetName = SheetNames[number];
+export type SheetName =
+  | 'reply-create'
+  | 'reply-delete'
+  | 'invite-delete'
+  | 'member-remove'
+  | 'invite-logs'
+  | 'invite-qr'
+  | 'log-delete'
+  | 'log-edit'
+  | 'log-members'
+  | 'log-tags'
+  | 'member-logs'
+  | 'mcp'
+  | 'record-audio'
+  | 'record-copy-to'
+  | 'record-create'
+  | 'record-delete'
+  | 'record-detail'
+  | 'record-link-attachments'
+  | 'record-link-editor'
+  | 'record-tags'
+  | 'tag-delete'
+  | 'team-delete'
+  | 'team-leave'
+  | 'team-switch'
+  | 'web-push-ios-setup';

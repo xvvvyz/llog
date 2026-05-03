@@ -1,6 +1,6 @@
 import { Role } from '@/features/teams/types/role';
 
-export type InviteLinkMember = {
+type InviteLinkMember = {
   avatarSeedId?: string;
   id: string;
   name?: string;

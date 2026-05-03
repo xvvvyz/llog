@@ -1,10 +1,10 @@
 export const isR2Key = (uri?: string | null): uri is string =>
   !!uri && (isPublicR2Key(uri) || isPrivateR2Key(uri));
 
-export const isPrivateR2Key = (uri: string) =>
+const isPrivateR2Key = (uri: string) =>
   uri.startsWith('records/') || uri.startsWith('replies/');
 
-export const isPublicR2Key = (uri: string) =>
+const isPublicR2Key = (uri: string) =>
   uri.startsWith('profiles/') || uri.startsWith('teams/');
 
 export const getFileScope = (uri: string) => {

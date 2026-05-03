@@ -68,7 +68,7 @@ export const getStoredImageDeliveryUrl = (value?: string | null) =>
     ? value.slice(STORED_IMAGE_URL_PREFIX.length)
     : null;
 
-export const getImageIdFromDeliveryUrl = (uri: string) => {
+const getImageIdFromDeliveryUrl = (uri: string) => {
   const url = new URL(uri);
   const parts = url.pathname.split('/').filter(Boolean);
   if (url.hostname.endsWith('imagedelivery.net')) return parts[1] ?? null;

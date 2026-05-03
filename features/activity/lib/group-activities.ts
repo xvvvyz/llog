@@ -23,7 +23,7 @@ export const GROUPED_ACTIVITY_TYPES = [
   'reply_posted',
 ] as const;
 
-export type GroupedActivityType = (typeof GROUPED_ACTIVITY_TYPES)[number];
+type GroupedActivityType = (typeof GROUPED_ACTIVITY_TYPES)[number];
 
 export type GroupedActivity = {
   key: string;

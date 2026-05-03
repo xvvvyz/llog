@@ -1,6 +1,6 @@
 import { Role } from '@/features/teams/types/role';
 
-export const ROLE_SORT_ORDER: Record<Role, number> = {
+const ROLE_SORT_ORDER: Record<Role, number> = {
   [Role.Owner]: 0,
   [Role.Admin]: 1,
   [Role.Member]: 2,
@@ -9,13 +9,13 @@ export const ROLE_SORT_ORDER: Record<Role, number> = {
 export const isOwnerRole = (role?: string | null): role is Role.Owner =>
   role === Role.Owner;
 
-export const isAdminRole = (role?: string | null): role is Role.Admin =>
+const isAdminRole = (role?: string | null): role is Role.Admin =>
   role === Role.Admin;
 
 export const isMemberRole = (role?: string | null): role is Role.Member =>
   role === Role.Member;
 
-export const isRole = (role?: string | null): role is Role =>
+const isRole = (role?: string | null): role is Role =>
   isOwnerRole(role) || isAdminRole(role) || isMemberRole(role);
 
 export const isManagedRole = (

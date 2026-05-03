@@ -7,42 +7,28 @@ import {
 } from 'react-native-reanimated';
 
 export const CLOSE_ANIMATION_DURATION_MS = 220;
-
-export const CLOSE_CONTENT_FADE_DURATION_MS = 80;
+const CLOSE_CONTENT_FADE_DURATION_MS = 80;
 
 export const DISMISS_OVERLAY_FADE_DURATION_MS = 55;
-
-export const DISMISS_CHROME_FADE_DURATION_MS = 80;
+const DISMISS_CHROME_FADE_DURATION_MS = 80;
 
 export const DISMISS_ACTIVE_OFFSET_Y = 10;
 
 export const DISMISS_FAIL_OFFSET_X = 24;
-
-export const DISMISS_THRESHOLD_MAX_PX = 160;
-
-export const DISMISS_THRESHOLD_MIN_PX = 96;
-
-export const DISMISS_THRESHOLD_RATIO = 0.14;
+const DISMISS_THRESHOLD_MAX_PX = 160;
+const DISMISS_THRESHOLD_MIN_PX = 96;
+const DISMISS_THRESHOLD_RATIO = 0.14;
 
 export const DISMISS_VELOCITY_THRESHOLD = 900;
-
-export const DRAG_FADE_DISTANCE_MIN_PX = 88;
-
-export const DRAG_FADE_DISTANCE_RATIO = 0.12;
-
-export const DRAG_CHROME_FADE_DISTANCE_MULTIPLIER = 0.85;
-
-export const DRAG_FILE_FADE_DISTANCE_MULTIPLIER = 1;
-
-export const EXIT_TRANSLATION_MIN_PX = 240;
-
-export const EXIT_TRANSLATION_RATIO = 0.35;
-
-export const RESET_CHROME_FADE_DURATION_MS = 140;
-
-export const RESET_FILE_FADE_DURATION_MS = 180;
-
-export const SPRING_CONFIG = { damping: 26, mass: 1, stiffness: 260 };
+const DRAG_FADE_DISTANCE_MIN_PX = 88;
+const DRAG_FADE_DISTANCE_RATIO = 0.12;
+const DRAG_CHROME_FADE_DISTANCE_MULTIPLIER = 0.85;
+const DRAG_FILE_FADE_DISTANCE_MULTIPLIER = 1;
+const EXIT_TRANSLATION_MIN_PX = 240;
+const EXIT_TRANSLATION_RATIO = 0.35;
+const RESET_CHROME_FADE_DURATION_MS = 140;
+const RESET_FILE_FADE_DURATION_MS = 180;
+const SPRING_CONFIG = { damping: 26, mass: 1, stiffness: 260 };
 
 export type CloseAnimationMode = 'animated' | 'instant';
 
@@ -71,7 +57,7 @@ export const getExitTranslation = (
   direction *
   Math.max(EXIT_TRANSLATION_MIN_PX, windowHeight * EXIT_TRANSLATION_RATIO);
 
-export const cancelLightboxAnimations = ({
+const cancelLightboxAnimations = ({
   backgroundOpacity,
   mediaOpacity,
   overlayOpacity,

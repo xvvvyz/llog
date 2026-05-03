@@ -95,7 +95,7 @@ export const fileFields = (
   url: mcpFileUrl(file, options),
 });
 
-export const linkFields = (link: mcpTypes.McpLink) => ({
+const linkFields = (link: mcpTypes.McpLink) => ({
   id: link.id,
   label: link.label,
   order: link.order ?? undefined,
@@ -114,7 +114,7 @@ export const tagFields = (tag: mcpTypes.McpTag) => ({
 export const profileFields = (profile?: mcpTypes.McpProfile | null) =>
   profile ? { id: profile.id, name: profile.name } : undefined;
 
-export const reactionCounts = (reactions: mcpTypes.McpReaction[] = []) => {
+const reactionCounts = (reactions: mcpTypes.McpReaction[] = []) => {
   const counts = new Map<string, number>();
 
   for (const reaction of reactions) {

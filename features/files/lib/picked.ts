@@ -58,7 +58,7 @@ const getFileExtension = (value?: string | null) => {
   return match?.[1] ?? null;
 };
 
-export const inferPickedFileType = ({
+const inferPickedFileType = ({
   fileName,
   mimeType,
   type,

@@ -1,4 +1,4 @@
-export const LOG_SORT_VALUES = ['serverCreatedAt', 'name', 'color'] as const;
+const LOG_SORT_VALUES = ['serverCreatedAt', 'name', 'color'] as const;
 
 export type SortBy = (typeof LOG_SORT_VALUES)[number];
 

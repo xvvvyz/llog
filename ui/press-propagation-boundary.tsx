@@ -60,4 +60,4 @@ const PressPropagationBoundary = React.forwardRef<
 
 PressPropagationBoundary.displayName = 'PressPropagationBoundary';
 
-export { PressPropagationBoundary, stopPressPropagation };
+export { PressPropagationBoundary };

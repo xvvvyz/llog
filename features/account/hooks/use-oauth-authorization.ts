@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import * as React from 'react';
 import { Platform } from 'react-native';
 
-export type OAuthAuthorizePreview = {
+type OAuthAuthorizePreview = {
   client: {
     clientId: string;
     clientName?: string;

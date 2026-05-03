@@ -9,7 +9,7 @@ import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
-export const recordQuery = {
+const recordQuery = {
   author: { image: {}, user: {} },
   files: {},
   links: {},

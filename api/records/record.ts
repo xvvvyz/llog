@@ -342,42 +342,6 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
 });
 
 app.post(
-  '/:recordId/copy',
-  db(),
-  auth(),
-  zValidator('json', copyTargetsSchema),
-  async (c) => {
-    const user = c.var.user!;
-    const recordId = c.req.param('recordId');
-    const { logIds } = c.req.valid('json');
-    const targetLogIds = normalizeTargetLogIds(logIds);
-
-    const { authorId, record, teamId } = await prepareRecordCopySource({
-      dbClient: c.var.db,
-      recordId,
-      targetLogIds,
-      userId: user.id,
-    });
-
-    const now = new Date().toISOString();
-
-    const { copiedRecords, transactions } = buildPublishedRecordCopies({
-      authorId,
-      dbClient: c.var.db,
-      files: record.files,
-      links: record.links,
-      now,
-      targetLogIds,
-      teamId,
-      text: record.text,
-    });
-
-    await c.var.db.transact(transactions);
-    return c.json({ records: copiedRecords });
-  }
-);
-
-app.post(
   '/:recordId/copy-draft',
   db(),
   auth(),

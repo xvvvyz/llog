@@ -209,8 +209,3 @@ export const EntryMenuContent = ({
     </View>
   );
 };
-
-export const EntryMenu = (props: EntryMenuProps) => {
-  const state = useEntryMenuState(props);
-  return <EntryMenuContent {...props} state={state} />;
-};

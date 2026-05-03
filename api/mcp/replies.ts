@@ -29,7 +29,7 @@ const replyDetailQuery = ({ include }: { include: Set<ReplyInclude> }) => ({
   },
 });
 
-export const getCallerDraftReply = async (
+const getCallerDraftReply = async (
   ctx: McpContext,
   replyId: string,
   {
@@ -82,7 +82,7 @@ export const getCallerDraftReply = async (
   return { reply, viewer };
 };
 
-export const getVisibleReply = async (
+const getVisibleReply = async (
   ctx: McpContext,
   replyId: string,
   {
