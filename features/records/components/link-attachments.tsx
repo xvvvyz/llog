@@ -17,6 +17,26 @@ import Animated, { useAnimatedRef } from 'react-native-reanimated';
 
 const byOrder = (a: Link, b: Link) => (a.order ?? 0) - (b.order ?? 0);
 const getLinkLabel = (item: Link) => item.label?.trim() || 'Link';
+const linkLabelClassName = 'flex-1 flex-row min-w-0 gap-2 items-center';
+
+const linkUrlClassName =
+  'max-w-[45%] min-w-0 flex-row items-center justify-end shrink-0';
+
+const LinkUrlText = ({
+  className,
+  url,
+}: {
+  className?: string;
+  url: string;
+}) => (
+  <Text
+    className={cn('min-w-0 text-placeholder text-xs shrink', className)}
+    ellipsizeMode="head"
+    numberOfLines={1}
+  >
+    {linkUrl.getLinkUrlDisplayText(url)}
+  </Text>
+);
 
 export const LinkAttachments = ({
   className,
@@ -140,11 +160,11 @@ export const LinkAttachments = ({
       variant="link"
       wrapperClassName="w-full overflow-visible rounded-lg"
       className={cn(
-        'flex-row w-full gap-4 justify-between px-4',
+        'flex-row w-full min-w-0 gap-4 justify-between px-4',
         triggerClassName
       )}
     >
-      <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+      <View className={linkLabelClassName}>
         <Icon
           className={cn('text-placeholder', triggerIconClassName)}
           icon={ArrowSquareOut}
@@ -156,19 +176,14 @@ export const LinkAttachments = ({
           {getLinkLabel(item)}
         </Text>
       </View>
-      <View className="flex-row gap-2 items-center shrink-0">
-        <Text
-          className="font-normal text-placeholder text-xs"
-          numberOfLines={1}
-        >
-          {linkUrl.getLinkUrlDisplayText(item.url)}
-        </Text>
+      <View className={linkUrlClassName}>
+        <LinkUrlText className="font-normal" url={item.url} />
       </View>
     </Button>
   );
 
   const firstLinkDetails = (
-    <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+    <View className={linkLabelClassName}>
       <Icon
         className={cn('text-placeholder', triggerIconClassName)}
         icon={LinkSimple}
@@ -185,7 +200,7 @@ export const LinkAttachments = ({
   const renderSheetItem = (item: Link) => {
     const linkDetails = (
       <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
-        <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+        <View className={linkLabelClassName}>
           <Icon className="text-placeholder" icon={LinkSimple} />
           <Text
             className="text-muted-foreground text-sm shrink"
@@ -194,14 +209,14 @@ export const LinkAttachments = ({
             {getLinkLabel(item)}
           </Text>
         </View>
-        <Text className="text-placeholder text-xs shrink-0" numberOfLines={1}>
-          {linkUrl.getLinkUrlDisplayText(item.url)}
-        </Text>
+        <View className={linkUrlClassName}>
+          <LinkUrlText url={item.url} />
+        </View>
       </View>
     );
 
     return (
-      <View key={item.id} className="flex-row gap-3 items-center">
+      <View key={item.id} className="flex-row min-w-0 gap-3 items-center">
         {canSortLinks && (
           <Sortable.SortableSheetDragHandle className="-ml-1.5" />
         )}
@@ -227,13 +242,13 @@ export const LinkAttachments = ({
   };
 
   return (
-    <View className={cn('gap-2', className)}>
+    <View className={cn('min-w-0 gap-2', className)}>
       {hideTrigger ? null : shouldOpenLinksInline ? (
         items.map(renderOpenLink)
       ) : canDeleteSingleLink ? (
         <View
           className={cn(
-            'flex-row w-full gap-3 justify-between px-4',
+            'flex-row w-full min-w-0 gap-3 justify-between px-4',
             triggerClassName
           )}
         >
@@ -244,12 +259,9 @@ export const LinkAttachments = ({
             wrapperClassName="flex-1 overflow-visible rounded-lg"
           >
             {firstLinkDetails}
-            <Text
-              className="font-normal text-placeholder text-xs shrink-0"
-              numberOfLines={1}
-            >
-              {linkUrl.getLinkUrlDisplayText(firstItem.url)}
-            </Text>
+            <View className={linkUrlClassName}>
+              <LinkUrlText className="font-normal" url={firstItem.url} />
+            </View>
           </Button>
           <View className="flex-row gap-2 items-center shrink-0">
             <Button
@@ -269,7 +281,7 @@ export const LinkAttachments = ({
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           className={cn(
-            'flex-row w-full gap-4 justify-between px-4',
+            'flex-row w-full min-w-0 gap-4 justify-between px-4',
             triggerClassName
           )}
         >

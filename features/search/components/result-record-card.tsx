@@ -42,7 +42,7 @@ export const ResultRecordCard = ({
 
   return (
     <Pressable className={className} onPress={onPress}>
-      <Card className="p-4 gap-3">
+      <Card className="min-w-0 p-4 gap-3">
         <View className="flex-row gap-3 items-start">
           {result.author && (
             <Avatar
@@ -106,11 +106,11 @@ export const ResultRecordCard = ({
           />
         )}
         {!!(attachmentNames?.length || attachmentUrls?.length) && (
-          <View className="gap-1">
+          <View className="min-w-0 gap-1">
             {attachmentNames?.map((name, index) => (
               <ResultHighlightedText
                 key={`${name}:${index}`}
-                className="leading-tight text-muted-foreground text-sm"
+                className="min-w-0 leading-tight text-muted-foreground text-sm"
                 highlightClassName="text-sm leading-tight font-medium text-foreground"
                 numberOfLines={1}
                 terms={result.attachmentTerms ?? result.terms}
@@ -120,7 +120,7 @@ export const ResultRecordCard = ({
             {attachmentUrls?.map((url, index) => (
               <ResultHighlightedText
                 key={`${url}:${index}`}
-                className="leading-tight text-muted-foreground text-sm"
+                className="min-w-0 leading-tight text-muted-foreground text-sm"
                 highlightClassName="text-sm leading-tight font-medium text-foreground"
                 numberOfLines={1}
                 terms={result.attachmentTerms ?? result.terms}
