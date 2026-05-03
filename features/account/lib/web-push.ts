@@ -6,8 +6,11 @@ export type {
 } from '@/features/account/types/web-push';
 
 export const isIosWebDevice = () => false;
+
 export const isSafariBrowser = () => false;
+
 export const isStandaloneWebApp = () => false;
+
 export const registerWebPushServiceWorker = async () => null;
 
 export const getWebPushSupportState = (): webPushTypes.WebPushSupportState =>
@@ -23,4 +26,5 @@ export const enableWebPush = async () => {
 };
 
 export const disableWebPush = async () => getWebPushState();
+
 export const detachWebPushSubscription = async () => {};

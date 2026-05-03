@@ -1,4 +1,5 @@
 export type AssetPlatform = 'android' | 'ios' | 'web';
+
 export type AssetPlatformSelection = Record<AssetPlatform, boolean>;
 
 const platformFlags = {

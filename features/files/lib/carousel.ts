@@ -1,8 +1,11 @@
 import { FileItem } from '@/features/files/types/file';
 
 export const CAROUSEL_FILE_QUALITY = 90;
+
 export const CAROUSEL_PRELOAD_DISTANCE = 2;
+
 export const CAROUSEL_IMAGE_REQUEST_SCALE = 1.5;
+
 export const CAROUSEL_IMAGE_MAX_TARGET_SIZE = 2560;
 
 export const pruneStateMap = <T extends boolean | number>(

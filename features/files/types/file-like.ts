@@ -1,6 +1,7 @@
 import { z } from 'zod/v4';
 
 export type NativeFileLike = { name?: string; type: string; uri: string };
+
 export type FileLike = File | NativeFileLike;
 
 export const fileLike = z.union([

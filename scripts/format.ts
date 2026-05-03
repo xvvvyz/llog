@@ -601,12 +601,16 @@ function formatStatementWhitespace(filePath: string, text: string) {
     for (let index = 0; index < statements.length - 1; index += 1) {
       const previous = statements[index];
       const next = statements[index + 1];
+      const previousIsExport = isExportStatement(previous);
+      const nextIsExport = isExportStatement(next);
+      const needsExportSeparator = previousIsExport && nextIsExport;
 
       const needsSeparator =
+        needsExportSeparator ||
         spansMultipleLines(previous) ||
         spansMultipleLines(next) ||
         (ts.isImportDeclaration(previous) && !ts.isImportDeclaration(next)) ||
-        (isExportStatement(next) && !isExportStatement(previous));
+        (nextIsExport && !previousIsExport);
 
       const previousEndLine = lineAt(previous.getEnd());
 
@@ -621,6 +625,14 @@ function formatStatementWhitespace(filePath: string, text: string) {
       const current = lines.slice(start, end);
 
       if (needsSeparator) {
+        if (needsExportSeparator) {
+          if (current.length !== 1 || !isBlankLine(current[0])) {
+            edits.push({ end, replacement: [''], start });
+          }
+
+          continue;
+        }
+
         if (!current.some(isBlankLine)) {
           edits.push({ end: start, replacement: [''], start });
         }

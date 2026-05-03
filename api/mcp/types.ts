@@ -3,6 +3,7 @@ import type * as push from '@/api/push/web-push';
 import type { z } from 'zod/v4';
 
 export type OAuthProps = { email?: string; profileId: string; userId: string };
+
 export type McpContext = { db: Db; env: CloudflareEnv; props: OAuthProps };
 
 export type McpFile = {

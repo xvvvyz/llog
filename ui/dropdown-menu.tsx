@@ -114,6 +114,7 @@ const CheckboxItem = ({
 CheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
 
 export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
+
 export type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
 export const isSortDirection = (value: unknown): value is SortDirection =>

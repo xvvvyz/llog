@@ -1,4 +1,5 @@
 export type AppleStartupImageOrientation = 'landscape' | 'portrait';
+
 export type AppleStartupImageTheme = 'dark' | 'light';
 
 export interface AppleStartupImageSpec {

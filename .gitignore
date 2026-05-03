@@ -21,12 +21,17 @@ assets/splash-icon-dark.png
 
 public/apple-startup/
 public/index.html
+public/manifest.webmanifest
 public/apple-touch-icon*.png
 public/favicon-32.png
 public/favicon.ico
 public/favicon.svg
 public/badge-72.png
 public/icon-*.png
+
+theme/generated.css
+theme/spectrum.ts
+theme/ui.ts
 
 expo-env.d.ts
 uniwind-types.d.ts

@@ -3,10 +3,15 @@ import type { FileItem } from '@/features/files/types/file';
 import type { Tag } from '@/features/tags/types/tag';
 
 export type SearchResultType = 'record' | 'reply' | 'log';
+
 export type SearchFileItem = Pick<FileItem, 'id' | 'name' | 'type' | 'uri'>;
+
 export type SearchPerson = Pick<Profile, 'avatarSeedId' | 'id' | 'name'>;
+
 export type SearchProfile = SearchPerson & { uri?: string };
+
 export type SearchAuthor = SearchPerson & { image?: { uri: string } };
+
 export type SearchTag = Pick<Tag, 'color' | 'id' | 'name' | 'order'>;
 
 export type SearchResult = {

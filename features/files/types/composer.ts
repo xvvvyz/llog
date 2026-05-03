@@ -15,6 +15,7 @@ export interface PendingUpload {
 }
 
 export type PendingAudioUpload = PendingUpload & { type: 'audio' };
+
 export type PendingDocumentUpload = PendingUpload & { type: 'document' };
 
 export interface VisualPreviewItem {
