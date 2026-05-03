@@ -2,12 +2,19 @@ import { TagChipList } from '@/features/tags/components/tag-chip-list';
 import type { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
 
+type RecordTagChip = {
+  color: Tag['color'];
+  id: Tag['id'];
+  name?: string | null;
+  order?: Tag['order'];
+};
+
 export const RecordTagChips = ({
   className,
   tags,
 }: {
   className?: string;
-  tags?: Tag[];
+  tags?: RecordTagChip[];
 }) => {
   const orderedTags = [...(tags ?? [])]
     .filter((tag) => !!tag.name)

@@ -2,16 +2,19 @@ import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import type * as searchTypes from '@/features/search/types/search';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
-import { createSearchIndex } from '@/lib/search';
+import { createSearchIndex, normalizeSearchText } from '@/lib/search';
 import type { SearchResult as MiniSearchResult } from 'minisearch';
 import * as React from 'react';
 
 type SearchDocument = {
   id: string;
-  type: 'record' | 'reply' | 'log';
+  type: searchTypes.SearchResultType;
   text: string;
   attachmentNames: string[];
+  attachmentUrls: string[];
   attachmentText: string;
+  tagItems: searchTypes.SearchTag[];
+  tagText: string;
   name: string;
   date?: string | number;
   logId?: string;
@@ -36,7 +39,10 @@ const isSearchDocument = (
     result.type === 'log') &&
   typeof result.text === 'string' &&
   Array.isArray(result.attachmentNames) &&
+  Array.isArray(result.attachmentUrls) &&
   typeof result.attachmentText === 'string' &&
+  Array.isArray(result.tagItems) &&
+  typeof result.tagText === 'string' &&
   typeof result.name === 'string' &&
   typeof result.people === 'string';
 
@@ -52,6 +58,64 @@ const getLinkLabels = (links?: { label?: string | null }[] | null): string[] =>
     ?.map((item) => item.label?.trim())
     .filter((label): label is string => !!label) ?? [];
 
+const getLinkUrls = (links?: { url?: string | null }[] | null): string[] =>
+  links
+    ?.map((item) => item.url?.trim())
+    .filter((url): url is string => !!url) ?? [];
+
+const getTagNames = (tags?: { name?: string | null }[] | null): string[] =>
+  tags
+    ?.map((item) => item.name?.trim())
+    .filter((name): name is string => !!name) ?? [];
+
+type SearchTagSource = Pick<searchTypes.SearchTag, 'id'> & {
+  color?: searchTypes.SearchTag['color'] | null;
+  name?: searchTypes.SearchTag['name'] | null;
+  order?: searchTypes.SearchTag['order'] | null;
+};
+
+const getSearchTags = (
+  tags?: SearchTagSource[] | null
+): searchTypes.SearchTag[] =>
+  tags?.flatMap((tag) => {
+    const name = tag.name?.trim();
+    if (!name) return [];
+    return [{ color: tag.color ?? 0, id: tag.id, name, order: tag.order ?? 0 }];
+  }) ?? [];
+
+const getMatchedTermsForField = (
+  match: MiniSearchResult['match'],
+  field: string
+): string[] =>
+  Object.entries(match)
+    .filter(([, fields]) => fields.includes(field))
+    .map(([term]) => term);
+
+const filterMatchingItems = <Item>(
+  items: Item[] | undefined,
+  terms: string[],
+  getText: (item: Item) => string
+): Item[] => {
+  if (!items?.length || terms.length === 0) return [];
+  const normalizedTerms = terms.map(normalizeSearchText).filter(Boolean);
+  if (!normalizedTerms.length) return [];
+
+  return items.filter((item) => {
+    const normalizedText = normalizeSearchText(getText(item));
+    return normalizedTerms.some((term) => normalizedText.includes(term));
+  });
+};
+
+const filterMatchingSearchValues = (
+  values: string[] | undefined,
+  terms: string[]
+) => filterMatchingItems(values, terms, (value) => value);
+
+const filterMatchingTags = (
+  tags: searchTypes.SearchTag[] | undefined,
+  terms: string[]
+) => filterMatchingItems(tags, terms, (tag) => tag.name);
+
 export const useSearch = ({ query }: { query: string }) => {
   const { teams } = useTeams();
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
@@ -65,6 +129,12 @@ export const useSearch = ({ query }: { query: string }) => {
             log: {},
             files: {},
             links: {},
+            tags: {
+              $: {
+                fields: ['color', 'id', 'name', 'order'],
+                where: { type: 'record' },
+              },
+            },
           },
           replies: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
@@ -76,6 +146,12 @@ export const useSearch = ({ query }: { query: string }) => {
           logs: {
             $: { where: { teamId: { $in: teamIds } } },
             profiles: { image: {} },
+            tags: {
+              $: {
+                fields: ['color', 'id', 'name', 'order'],
+                where: { type: 'log' },
+              },
+            },
           },
         }
       : null
@@ -86,12 +162,18 @@ export const useSearch = ({ query }: { query: string }) => {
     const docs: SearchDocument[] = [];
 
     for (const log of data.logs ?? []) {
+      const tagItems = getSearchTags(log.tags);
+      const tagNames = getTagNames(tagItems);
+
       docs.push({
         id: `log:${log.id}`,
         type: 'log',
         text: '',
         attachmentNames: [],
+        attachmentUrls: [],
         attachmentText: '',
+        tagItems,
+        tagText: tagNames.join(' '),
         name: log.name,
         logId: log.id,
         logName: log.name,
@@ -116,15 +198,22 @@ export const useSearch = ({ query }: { query: string }) => {
         ...getLinkLabels(record.links),
       ];
 
-      const attachmentText = attachmentNames.join(' ');
-      if (!text && !attachmentText) continue;
+      const attachmentUrls = getLinkUrls(record.links);
+      const attachmentText = [...attachmentNames, ...attachmentUrls].join(' ');
+      const tagItems = getSearchTags(record.tags);
+      const tagNames = getTagNames(tagItems);
+      const tagText = tagNames.join(' ');
+      if (!text && !attachmentText && !tagText) continue;
 
       docs.push({
         id: `record:${record.id}`,
         type: 'record',
         text,
         attachmentNames,
+        attachmentUrls,
         attachmentText,
+        tagItems,
+        tagText,
         name: '',
         date: record.date,
         logId: record.log?.id,
@@ -155,7 +244,8 @@ export const useSearch = ({ query }: { query: string }) => {
         ...getLinkLabels(reply.links),
       ];
 
-      const attachmentText = attachmentNames.join(' ');
+      const attachmentUrls = getLinkUrls(reply.links);
+      const attachmentText = [...attachmentNames, ...attachmentUrls].join(' ');
       if (!text && !attachmentText) continue;
 
       docs.push({
@@ -163,7 +253,10 @@ export const useSearch = ({ query }: { query: string }) => {
         type: 'reply',
         text,
         attachmentNames,
+        attachmentUrls,
         attachmentText,
+        tagItems: [],
+        tagText: '',
         name: '',
         date: reply.date,
         logId: reply.record?.log?.id,
@@ -192,11 +285,14 @@ export const useSearch = ({ query }: { query: string }) => {
   const miniSearch = React.useMemo(() => {
     return createSearchIndex<SearchDocument>({
       documents,
-      fields: ['text', 'attachmentText', 'name', 'people'],
+      fields: ['text', 'attachmentText', 'tagText', 'name', 'people'],
       storeFields: [
         'text',
         'attachmentNames',
+        'attachmentUrls',
         'attachmentText',
+        'tagItems',
+        'tagText',
         'name',
         'type',
         'date',
@@ -223,14 +319,46 @@ export const useSearch = ({ query }: { query: string }) => {
     return raw.map((result) => {
       const entityId = String(result.id).split(':')[1] ?? '';
 
+      const textTerms =
+        result.type === 'log'
+          ? result.terms
+          : getMatchedTermsForField(result.match, 'text');
+
+      const attachmentTerms = getMatchedTermsForField(
+        result.match,
+        'attachmentText'
+      );
+
+      const attachmentNames = filterMatchingSearchValues(
+        result.attachmentNames,
+        attachmentTerms
+      );
+
+      const attachmentUrls = filterMatchingSearchValues(
+        result.attachmentUrls,
+        attachmentTerms
+      );
+
+      const tagTerms = getMatchedTermsForField(result.match, 'tagText');
+      const tagItems = filterMatchingTags(result.tagItems, tagTerms);
+
       return {
         id: entityId,
         type: result.type,
         score: result.score,
         terms: result.terms,
+        attachmentTerms,
+        tagTerms,
+        textTerms,
         text:
-          result.type === 'log' ? (result.logName ?? '') : (result.text ?? ''),
-        attachmentNames: result.attachmentNames,
+          result.type === 'log'
+            ? (result.logName ?? '')
+            : textTerms.length
+              ? (result.text ?? '')
+              : '',
+        attachmentNames,
+        attachmentUrls,
+        tagItems,
         date: result.date,
         logId: result.logId,
         logName: result.type === 'log' ? undefined : result.logName,

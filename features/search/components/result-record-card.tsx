@@ -1,3 +1,4 @@
+import { RecordTagChips } from '@/features/records/components/record-tag-chips';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { ResultHighlightedText } from '@/features/search/components/result-highlighted-text';
 import { SearchResult } from '@/features/search/types/search';
@@ -26,7 +27,18 @@ export const ResultRecordCard = ({
       : undefined;
 
   const displayText = trimDisplayText(result.text);
-  const attachmentText = result.attachmentNames?.join('\n');
+
+  const attachmentNames = result.attachmentNames?.filter(
+    (name) => !!trimDisplayText(name)
+  );
+
+  const attachmentUrls = result.attachmentUrls?.filter(
+    (url) => !!trimDisplayText(url)
+  );
+
+  const tagItems = result.tagItems?.filter(
+    (tag) => !!trimDisplayText(tag.name ?? '')
+  );
 
   return (
     <Pressable className={className} onPress={onPress}>
@@ -81,23 +93,41 @@ export const ResultRecordCard = ({
             )}
           </View>
         </View>
+        {!!tagItems?.length && (
+          <RecordTagChips className="w-full justify-start" tags={tagItems} />
+        )}
         {!!displayText && (
           <ResultHighlightedText
             className="leading-tight text-muted-foreground text-sm"
             highlightClassName="text-sm leading-tight font-medium text-foreground"
             numberOfLines={2}
-            terms={result.terms}
+            terms={result.textTerms ?? result.terms}
             text={displayText}
           />
         )}
-        {!!attachmentText && (
-          <ResultHighlightedText
-            className="leading-tight text-muted-foreground text-sm"
-            highlightClassName="text-sm leading-tight font-medium text-foreground"
-            numberOfLines={result.attachmentNames?.length}
-            terms={result.terms}
-            text={attachmentText}
-          />
+        {!!(attachmentNames?.length || attachmentUrls?.length) && (
+          <View className="gap-1">
+            {attachmentNames?.map((name, index) => (
+              <ResultHighlightedText
+                key={`${name}:${index}`}
+                className="leading-tight text-muted-foreground text-sm"
+                highlightClassName="text-sm leading-tight font-medium text-foreground"
+                numberOfLines={1}
+                terms={result.attachmentTerms ?? result.terms}
+                text={name}
+              />
+            ))}
+            {attachmentUrls?.map((url, index) => (
+              <ResultHighlightedText
+                key={`${url}:${index}`}
+                className="leading-tight text-muted-foreground text-sm"
+                highlightClassName="text-sm leading-tight font-medium text-foreground"
+                numberOfLines={1}
+                terms={result.attachmentTerms ?? result.terms}
+                text={url}
+              />
+            ))}
+          </View>
         )}
       </Card>
     </Pressable>

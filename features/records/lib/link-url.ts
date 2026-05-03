@@ -9,6 +9,19 @@ const ALLOWED_PROTOCOLS = new Set([
   'tel:',
 ]);
 
+const serializeLinkUrl = (url: URL) => {
+  const serialized = url.toString();
+
+  if (
+    (url.protocol === 'http:' || url.protocol === 'https:') &&
+    url.pathname === '/'
+  ) {
+    return serialized.replace(/\/(?=[?#]|$)/, '');
+  }
+
+  return serialized;
+};
+
 export const normalizeLinkUrl = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -32,7 +45,7 @@ export const normalizeLinkUrl = (value: string) => {
         : !!url.pathname;
 
     if (!hasTarget) return null;
-    return url.toString();
+    return serializeLinkUrl(url);
   } catch {
     return null;
   }

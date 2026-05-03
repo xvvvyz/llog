@@ -1,10 +1,8 @@
+import type { SortBy } from '@/features/logs/lib/sort';
 import { updateUiLogsSort } from '@/features/logs/mutations/update-ui-sort';
-import type { Tag } from '@/features/tags/types/tag';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { useUi } from '@/queries/use-ui';
-import { SPECTRUM, resolveSpectrumColor } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import * as DropdownMenu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -14,48 +12,23 @@ import { View } from 'react-native';
 
 import {
   Calendar,
-  Funnel,
   Palette,
   SortAscending,
   SortDescending,
   TextAa,
 } from 'phosphor-react-native';
 
-export const LOG_SORT_VALUES = ['serverCreatedAt', 'name', 'color'] as const;
-export type SortBy = (typeof LOG_SORT_VALUES)[number];
-
-export const isSortBy = (value: unknown): value is SortBy =>
-  typeof value === 'string' &&
-  LOG_SORT_VALUES.some((sortValue) => sortValue === value);
-
 export const ListActions = ({
   className,
-  tags,
   query,
-  selectedTagIds,
   setQuery,
-  setSelectedTagIds,
 }: {
   className?: string;
-  tags: Tag[];
   query: string;
-  selectedTagIds: string[];
   setQuery: (query: string) => void;
-  setSelectedTagIds: (ids: string[]) => void;
 }) => {
   const breakpoints = useBreakpoints();
-  const colorScheme = useColorScheme();
   const ui = useUi();
-  const tagIdSet = new Set(selectedTagIds);
-  const hasFilters = selectedTagIds.length > 0;
-
-  const toggleTagId = (id: string) => {
-    setSelectedTagIds(
-      tagIdSet.has(id)
-        ? selectedTagIds.filter((t) => t !== id)
-        : [...selectedTagIds, id]
-    );
-  };
 
   return (
     <View className={cn('flex-row gap-3', className)}>
@@ -65,43 +38,6 @@ export const ListActions = ({
         size={breakpoints.md ? 'sm' : 'default'}
         wrapperClassName="shrink w-full md:w-52"
       />
-      {!!tags.length && (
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <Button className="md:size-10" size="icon" variant="secondary">
-              <Icon className="text-secondary-foreground" icon={Funnel} />
-            </Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content align="end" className="min-w-44">
-            {tags.map((tag) => {
-              const color =
-                SPECTRUM[colorScheme][resolveSpectrumColor(tag.color)];
-
-              return (
-                <DropdownMenu.CheckboxItem
-                  key={tag.id}
-                  checked={tagIdSet.has(tag.id)}
-                  onCheckedChange={() => toggleTagId(tag.id)}
-                >
-                  <View
-                    className="size-3 border-border-secondary border-continuous rounded-full border"
-                    style={{ backgroundColor: color.default }}
-                  />
-                  <Text>{tag.name}</Text>
-                </DropdownMenu.CheckboxItem>
-              );
-            })}
-            {hasFilters && (
-              <>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item onPress={() => setSelectedTagIds([])}>
-                  <Text className="text-destructive">Clear filters</Text>
-                </DropdownMenu.Item>
-              </>
-            )}
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      )}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <Button className="md:size-10" size="icon" variant="secondary">

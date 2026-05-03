@@ -23,11 +23,15 @@ import { Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 
-type LogSearchDocument = { id: string; name: string; people: string };
+type LogSearchDocument = {
+  id: string;
+  name: string;
+  people: string;
+  tagText: string;
+};
 
 export default function Index() {
   const [rawQuery, setRawQuery] = React.useState('');
-  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
@@ -37,37 +41,39 @@ export default function Index() {
   const logs = useLogs();
   const isEmpty = !logs.isLoading && logs.data.length === 0;
 
+  const tagsById = React.useMemo(
+    () => new Map(tags.data.map((tag) => [tag.id, tag])),
+    [tags.data]
+  );
+
   const miniSearch = React.useMemo(() => {
     return createSearchIndex<LogSearchDocument>({
-      documents: logs.data.map((log) => ({
-        id: log.id,
-        name: log.name,
-        people:
-          log.profiles?.map((p: { name: string }) => p.name).join(' ') ?? '',
-      })),
-      fields: ['name', 'people'],
+      documents: logs.data.map((log) => {
+        const tagText = log.tags
+          .flatMap((tag: { id: string }) => {
+            const name = tagsById.get(tag.id)?.name?.trim();
+            return name ? [name] : [];
+          })
+          .join(' ');
+
+        return {
+          id: log.id,
+          name: log.name,
+          people:
+            log.profiles?.map((p: { name: string }) => p.name).join(' ') ?? '',
+          tagText,
+        };
+      }),
+      fields: ['name', 'people', 'tagText'],
       storeFields: ['id'],
     });
-  }, [logs.data]);
+  }, [logs.data, tagsById]);
 
   const filteredLogs = React.useMemo(() => {
-    let result = logs.data;
-
-    if (query) {
-      const matchIds = new Set(miniSearch.search(query).map((r) => r.id));
-      result = result.filter((log) => matchIds.has(log.id));
-    }
-
-    if (selectedTagIds.length) {
-      const tagIdSet = new Set(selectedTagIds);
-
-      result = result.filter((log) =>
-        log.tags.some((tag: { id: string }) => tagIdSet.has(tag.id))
-      );
-    }
-
-    return result;
-  }, [query, selectedTagIds, logs.data, miniSearch]);
+    if (!query) return logs.data;
+    const matchIds = new Set(miniSearch.search(query).map((r) => r.id));
+    return logs.data.filter((log) => matchIds.has(log.id));
+  }, [query, logs.data, miniSearch]);
 
   const hasLoadedRef = React.useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
@@ -82,10 +88,7 @@ export default function Index() {
               <ListActions
                 className={cn(isEmpty && 'md:hidden')}
                 query={rawQuery}
-                selectedTagIds={selectedTagIds}
                 setQuery={setRawQuery}
-                setSelectedTagIds={setSelectedTagIds}
-                tags={tags.data}
               />
             )}
             {canManage && (
@@ -121,10 +124,7 @@ export default function Index() {
             <ListActions
               className="p-1.5 pt-4 md:p-2"
               query={rawQuery}
-              selectedTagIds={selectedTagIds}
               setQuery={setRawQuery}
-              setSelectedTagIds={setSelectedTagIds}
-              tags={tags.data}
             />
           )}
           <View className="flex-row flex-wrap">

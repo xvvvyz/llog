@@ -1,8 +1,8 @@
 import * as audioPlaybackRateUtils from '@/features/files/lib/audio-playback-rate';
-import { SortBy, isSortBy } from '@/features/logs/components/list-actions';
+import { isSortBy, type SortBy } from '@/features/logs/lib/sort';
 import { db } from '@/lib/db';
 import { normalizeReactionEmoji } from '@/types/emoji';
-import { SortDirection, isSortDirection } from '@/ui/dropdown-menu';
+import { isSortDirection, type SortDirection } from '@/ui/dropdown-menu';
 
 export const useUi = () => {
   const auth = db.useAuth();

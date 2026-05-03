@@ -1,4 +1,6 @@
+import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { SearchResult } from '@/features/search/types/search';
+import { TagChipList } from '@/features/tags/components/tag-chip-list';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { SPECTRUM } from '@/theme/spectrum';
@@ -22,15 +24,30 @@ export const ResultLogCard = ({
       ? SPECTRUM[colorScheme][result.logColor]
       : undefined;
 
+  const tags = [...(result.tagItems ?? [])]
+    .filter((tag) => !!trimDisplayText(tag.name))
+    .sort((a, b) => a.order - b.order);
+
   return (
     <Pressable className={className} onPress={onPress}>
       <View
         className="flex-row p-4 border-continuous rounded-2xl items-center justify-between"
         style={{ backgroundColor: spectrum?.default }}
       >
-        <Text className="flex-1 text-contrast-foreground" numberOfLines={1}>
-          {result.text}
-        </Text>
+        <View className="flex-1 flex-row min-w-0 gap-4 items-center">
+          <Text className="text-contrast-foreground shrink" numberOfLines={1}>
+            {result.text}
+          </Text>
+          {!!tags.length && (
+            <TagChipList
+              chipClassName="max-w-full dark:bg-background"
+              className="flex-1 min-w-0 gap-0.5"
+              maxVisible={tags.length}
+              tags={tags}
+              textClassName="text-foreground"
+            />
+          )}
+        </View>
         {!!result.profiles?.length && (
           <View className="flex-row -mr-[6px] ml-3">
             {result.profiles.map((profile, index) => (
