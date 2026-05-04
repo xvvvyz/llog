@@ -472,6 +472,91 @@ function wrapMultilineIfStatementsOnce(filePath: string, text: string) {
   return applyTextEdits(text, edits);
 }
 
+function formatSwitchCases(filePath: string, text: string) {
+  let nextText = text;
+
+  while (true) {
+    const formattedText = formatSwitchCasesOnce(filePath, nextText);
+    if (formattedText === nextText) return nextText;
+    nextText = formattedText;
+  }
+}
+
+function formatSwitchCasesOnce(filePath: string, text: string) {
+  const { source } = parseSource(filePath, text);
+  const edits: TextEdit[] = [];
+
+  function visit(node: ts.Node) {
+    if (!ts.isSwitchStatement(node)) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    for (const clause of node.caseBlock.clauses) {
+      const wrappedClause = maybeWrapCaseClause(source, text, clause);
+
+      if (wrappedClause) {
+        edits.push(wrappedClause);
+        continue;
+      }
+
+      for (const statement of clause.statements) visit(statement);
+    }
+  }
+
+  visit(source);
+  return applyTextEdits(text, edits);
+}
+
+function maybeWrapCaseClause(
+  source: ts.SourceFile,
+  text: string,
+  clause: ts.CaseOrDefaultClause
+) {
+  if (clause.statements.length === 0) return null;
+
+  if (clause.statements.length === 1 && ts.isBlock(clause.statements[0])) {
+    return null;
+  }
+
+  const colonIndex = caseClauseColonIndex(source, text, clause);
+  const lastStatement = clause.statements[clause.statements.length - 1];
+  const end = statementEndWithTrailingComment(text, lastStatement.getEnd());
+  const body = text.slice(colonIndex + 1, end);
+  if (body.trim().length === 0) return null;
+  const newline = text.includes('\r\n') ? '\r\n' : '\n';
+  const indent = indentationAtPosition(text, clause.getStart(source));
+
+  const bodyText =
+    body.startsWith('\n') || body.startsWith('\r')
+      ? body
+      : `${newline}${indent}  ${body.trimStart()}`;
+
+  return {
+    end,
+    replacement: ` {${bodyText}${newline}${indent}}`,
+    start: colonIndex + 1,
+  };
+}
+
+function caseClauseColonIndex(
+  source: ts.SourceFile,
+  text: string,
+  clause: ts.CaseOrDefaultClause
+) {
+  const start = ts.isCaseClause(clause)
+    ? clause.expression.getEnd()
+    : clause.getStart(source) + 'default'.length;
+
+  const colonIndex = text.indexOf(':', start);
+
+  if (colonIndex === -1 || colonIndex > clause.getEnd()) {
+    throw new Error(`Could not find switch clause colon in ${source.fileName}`);
+  }
+
+  return colonIndex;
+}
+
 function statementEndWithTrailingComment(text: string, end: number) {
   const lineEndIndex = text.indexOf('\n', end);
   const lineEnd = lineEndIndex === -1 ? text.length : lineEndIndex;
@@ -674,6 +759,57 @@ function formatStatementWhitespace(filePath: string, text: string) {
   return lines.join(newline) + (hadFinalNewline ? newline : '');
 }
 
+function formatSwitchCaseSpacing(filePath: string, text: string) {
+  const newline = text.includes('\r\n') ? '\r\n' : '\n';
+  const hadFinalNewline = text.endsWith('\n');
+  const lines = text.split(/\r?\n/);
+  if (hadFinalNewline) lines.pop();
+  const { lineAt, source } = parseSource(filePath, text);
+  const edits: LineEdit[] = [];
+  const isBlankLine = (line: string | undefined) => /^\s*$/.test(line ?? '');
+
+  function visit(node: ts.Node) {
+    if (ts.isSwitchStatement(node)) {
+      const clauses = node.caseBlock.clauses;
+
+      for (let index = 0; index < clauses.length - 1; index += 1) {
+        const previous = clauses[index];
+        const next = clauses[index + 1];
+        const previousEnd = caseClauseEndWithTrailingComment(text, previous);
+        const previousEndLine = lineAt(previousEnd);
+        const nextStartLine = lineAt(next.getStart(source, false));
+        if (nextStartLine <= previousEndLine) continue;
+        const start = previousEndLine + 1;
+        const end = nextStartLine;
+        const current = lines.slice(start, end);
+        if (current.length === 1 && isBlankLine(current[0])) continue;
+        if (current.some((line) => !isBlankLine(line))) continue;
+        edits.push({ end, replacement: [''], start });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  if (edits.length === 0) return text;
+
+  for (const edit of edits.sort((left, right) => right.start - left.start)) {
+    lines.splice(edit.start, edit.end - edit.start, ...edit.replacement);
+  }
+
+  return lines.join(newline) + (hadFinalNewline ? newline : '');
+}
+
+function caseClauseEndWithTrailingComment(
+  text: string,
+  clause: ts.CaseOrDefaultClause
+) {
+  if (clause.statements.length === 0) return clause.getEnd();
+  const lastStatement = clause.statements[clause.statements.length - 1];
+  return statementEndWithTrailingComment(text, lastStatement.getEnd());
+}
+
 function applyTextEdits(text: string, edits: TextEdit[]) {
   if (edits.length === 0) return text;
   let nextText = text;
@@ -689,11 +825,17 @@ function applyTextEdits(text: string, edits: TextEdit[]) {
 }
 
 function formatSource(filePath: string, text: string) {
-  return formatStatementWhitespace(
+  return formatSwitchCaseSpacing(
     filePath,
-    formatImports(
+    formatStatementWhitespace(
       filePath,
-      formatIfStatements(filePath, formatJsx(filePath, text))
+      formatImports(
+        filePath,
+        formatSwitchCases(
+          filePath,
+          formatIfStatements(filePath, formatJsx(filePath, text))
+        )
+      )
     )
   );
 }
