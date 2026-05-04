@@ -120,6 +120,7 @@ export type McpRecord = {
 };
 
 type McpFileFields = {
+  assetKey?: string;
   duration?: number;
   id: string;
   mimeType?: string;

@@ -227,6 +227,7 @@ export const useSearch = ({ query }: { query: string }) => {
         authorImage: record.author?.image?.uri,
         files: record.files?.length
           ? record.files.map((m) => ({
+              assetKey: m.assetKey,
               id: m.id,
               name: m.name,
               type: m.type,
@@ -270,6 +271,7 @@ export const useSearch = ({ query }: { query: string }) => {
         authorImage: reply.author?.image?.uri,
         files: reply.files?.length
           ? reply.files.map((m) => ({
+              assetKey: m.assetKey,
               id: m.id,
               name: m.name,
               type: m.type,

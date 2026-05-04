@@ -47,7 +47,7 @@ export const VideoPlayer = ({
   resetToken?: number;
   thumbnailQuality?: number;
   thumbnailUri?: string | null;
-  uri: string;
+  uri?: string | null;
 }) => {
   const src = useFileUriToSrc(uri);
   const posterTarget = getVideoPosterTarget({ maxHeight, maxWidth });

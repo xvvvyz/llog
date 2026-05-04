@@ -23,6 +23,8 @@ type RecordCopyFile = {
   order?: number | null;
   size?: number | null;
   thumbnailUri?: string | null;
+  tracks?: unknown;
+  transcript?: string | null;
   type?: string | null;
   uri?: string | null;
 };
@@ -57,7 +59,7 @@ const normalizeTargetLogIds = (logIds: string[]) => {
 };
 
 const getClonedFileData = (file: RecordCopyFile, fallbackOrder: number) => {
-  if (!file.type || !file.uri) {
+  if (!file.type || (!file.uri && !file.assetKey)) {
     throw new HTTPException(400, { message: 'Invalid record file' });
   }
 
@@ -69,8 +71,10 @@ const getClonedFileData = (file: RecordCopyFile, fallbackOrder: number) => {
     order: normalizeCopyOrder(file.order, fallbackOrder),
     ...(file.size != null ? { size: file.size } : {}),
     ...(file.thumbnailUri != null ? { thumbnailUri: file.thumbnailUri } : {}),
+    ...(file.tracks != null ? { tracks: file.tracks } : {}),
+    ...(file.transcript != null ? { transcript: file.transcript } : {}),
     type: file.type,
-    uri: file.uri,
+    ...(file.uri != null ? { uri: file.uri } : {}),
   };
 };
 

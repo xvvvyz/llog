@@ -311,12 +311,17 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
       tagId,
     }) => {
       switch (action) {
-        case 'list':
+        case 'list': {
           return listRecordTags({ limit, logId, query });
-        case 'set':
+        }
+
+        case 'set': {
           return setRecordTag({ recordId, selected, status, tagId });
-        case 'create':
+        }
+
+        case 'create': {
           return createRecordTag({ name, recordId, status });
+        }
       }
     }
   );

@@ -1,6 +1,8 @@
+import * as attachmentItems from '@/features/files/lib/attachment-items';
 import { downloadFile } from '@/features/files/lib/download-file';
+import { formatFileSize } from '@/features/files/lib/file-size';
 import { getFileTypeIcon } from '@/features/files/lib/file-type-icon';
-import { fileUriToSrc } from '@/features/files/lib/file-uri-to-src';
+import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
 import { alert as showAlert } from '@/lib/alert';
@@ -24,37 +26,18 @@ import {
   X,
 } from 'phosphor-react-native';
 
-type DocumentAttachmentItem =
-  | { id: string; item: FileItem; order: number; type: 'files' }
-  | {
-      id: string;
-      item: fileComposer.PendingDocumentUpload;
-      order: number;
-      type: 'pending';
-    };
+type DocumentAttachmentItem = attachmentItems.AttachmentPreviewItem<
+  FileItem,
+  fileComposer.PendingDocumentUpload
+>;
 
 const NO_PENDING_DOCUMENTS: fileComposer.PendingDocumentUpload[] = [];
 
 const getDocumentName = (item: { name?: string | null }) =>
   item.name?.trim() || 'Document';
 
-const formatDocumentSize = (size?: number | null) => {
-  if (!Number.isFinite(size) || size == null || size < 0) return null;
-  if (size < 1024) return `${Math.round(size)} B`;
-  const units = ['KB', 'MB', 'GB', 'TB'];
-  let value = size / 1024;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
-};
-
 const getDocumentSizeText = (item: { size?: number | null }) =>
-  formatDocumentSize(item.size) || 'Unknown size';
+  formatFileSize(item.size) || 'Unknown size';
 
 const getTotalSizeText = (items: DocumentAttachmentItem[]) => {
   const sizes = items
@@ -67,37 +50,7 @@ const getTotalSizeText = (items: DocumentAttachmentItem[]) => {
   if (!sizes.length) return 'Unknown size';
   const total = sizes.reduce((sum, size) => sum + size, 0);
   const hasUnknownSize = sizes.length !== items.length;
-  return `${formatDocumentSize(total)}${hasUnknownSize ? '+' : ''}`;
-};
-
-const getDocumentAttachmentItems = ({
-  documents,
-  pendingDocuments,
-}: {
-  documents: FileItem[];
-  pendingDocuments: fileComposer.PendingDocumentUpload[];
-}) => {
-  const byId = new Map<string, DocumentAttachmentItem>();
-
-  for (const item of pendingDocuments) {
-    byId.set(item.id, {
-      id: item.id,
-      item,
-      order: item.order,
-      type: 'pending',
-    });
-  }
-
-  for (const item of documents) {
-    byId.set(item.id, {
-      id: item.id,
-      item,
-      order: item.order ?? 0,
-      type: 'files',
-    });
-  }
-
-  return [...byId.values()].sort((a, b) => a.order - b.order);
+  return `${formatFileSize(total)}${hasUnknownSize ? '+' : ''}`;
 };
 
 export const DocumentAttachments = ({
@@ -163,24 +116,28 @@ export const DocumentAttachments = ({
   );
 
   const items = React.useMemo(
-    () => getDocumentAttachmentItems({ documents, pendingDocuments }),
+    () =>
+      attachmentItems.getAttachmentPreviewItems({
+        files: documents,
+        pending: pendingDocuments,
+      }),
     [documents, pendingDocuments]
   );
 
   const totalSizeText = React.useMemo(() => getTotalSizeText(items), [items]);
   const firstItem = items[0];
 
-  const singleMediaItem =
-    items.length === 1 && firstItem?.type === 'files' ? firstItem.item : null;
+  const singleDocument =
+    items.length === 1 && firstItem?.kind === 'file' ? firstItem.item : null;
 
   const hasPendingDocuments = pendingDocuments.length > 0;
-  const canOpenSingleDocument = !!singleMediaItem && !onDeleteFile;
+  const canOpenSingleDocument = !!singleDocument && !onDeleteFile;
   const canDeleteSingleDocument = !!onDeleteFile && items.length === 1;
 
   const canSortDocuments =
     !!onReorderFiles &&
     items.length > 1 &&
-    items.every((item) => item.type === 'files');
+    items.every((item) => item.kind === 'file');
 
   const shouldRenderSheet =
     !canDeleteSingleDocument || hideTrigger || isSheetOpen;
@@ -197,15 +154,18 @@ export const DocumentAttachments = ({
   const canRenameDocument =
     !!editingDocument && !!onRenameFile && !!trimmedEditingName;
 
-  const singleDocumentSizeText = singleMediaItem
-    ? getDocumentSizeText(singleMediaItem)
+  const singleDocumentSizeText = singleDocument
+    ? getDocumentSizeText(singleDocument)
     : null;
 
   const moreDocumentsText =
     items.length > 1 ? `+${items.length - 1} more` : null;
 
   const handleOpenDocument = React.useCallback(async (item: FileItem) => {
-    const src = fileUriToSrc(item.uri);
+    const src = fileUriSources.fileUriToSrc(
+      fileUriSources.getFileSourceUri(item)
+    );
+
     if (!src) return;
     setDownloadingDocumentIds((current) => new Set(current).add(item.id));
 
@@ -261,7 +221,7 @@ export const DocumentAttachments = ({
       if (params.fromIndex === params.toIndex) return;
 
       const orderedFiles = params.data.flatMap((item) =>
-        item.type === 'files' ? [item.item] : []
+        item.kind === 'file' ? [item.item] : []
       );
 
       if (orderedFiles.length !== params.data.length) return;
@@ -292,7 +252,7 @@ export const DocumentAttachments = ({
     if (!editingDocument) return;
 
     const stillExists = items.some(
-      (item) => item.type === 'files' && item.item.id === editingDocument.id
+      (item) => item.kind === 'file' && item.item.id === editingDocument.id
     );
 
     if (stillExists) return;
@@ -303,9 +263,7 @@ export const DocumentAttachments = ({
   React.useEffect(() => {
     setDownloadingDocumentIds((current) => {
       const fileIds = new Set(
-        items
-          .filter((item) => item.type === 'files')
-          .map((item) => item.item.id)
+        items.filter((item) => item.kind === 'file').map((item) => item.item.id)
       );
 
       const next = new Set(
@@ -345,11 +303,11 @@ export const DocumentAttachments = ({
     );
 
     const dragHandle =
-      canSortDocuments && previewItem.type === 'files' ? (
+      canSortDocuments && previewItem.kind === 'file' ? (
         <Sortable.SortableSheetDragHandle className="-ml-1.5" />
       ) : null;
 
-    if (previewItem.type === 'files') {
+    if (previewItem.kind === 'file') {
       if (onDeleteFile) {
         return (
           <View key={previewItem.id} className="flex-row gap-3 items-center">
@@ -357,7 +315,7 @@ export const DocumentAttachments = ({
             {onRenameFile ? (
               <Button
                 className="flex-1 flex-row min-w-0 justify-start"
-                onPress={() => handleOpenNameEditor(item)}
+                onPress={() => handleOpenNameEditor(previewItem.item)}
                 variant="link"
                 wrapperClassName="flex-1 overflow-visible rounded-lg"
               >
@@ -423,11 +381,11 @@ export const DocumentAttachments = ({
         <View
           className={cn(
             'flex-row w-full gap-3 justify-between px-4',
-            firstItem.type === 'pending' && 'opacity-70',
+            firstItem.kind === 'pending' && 'opacity-70',
             triggerClassName
           )}
         >
-          {firstItem.type === 'files' && onRenameFile ? (
+          {firstItem.kind === 'file' && onRenameFile ? (
             <Button
               className="flex-1 flex-row min-w-0 gap-4 justify-between"
               onPress={() => handleOpenNameEditor(firstItem.item)}
@@ -476,7 +434,7 @@ export const DocumentAttachments = ({
             </>
           )}
           <View className="flex-row gap-2 items-center shrink-0">
-            {firstItem.type === 'files' ? (
+            {firstItem.kind === 'file' ? (
               <Button
                 accessibilityLabel={`Remove ${getDocumentName(firstItem.item)}`}
                 onPress={() => handleDeleteDocument(firstItem.item.id)}
@@ -495,8 +453,8 @@ export const DocumentAttachments = ({
         </View>
       ) : canOpenSingleDocument ? (
         <Button
-          disabled={downloadingDocumentIds.has(singleMediaItem.id)}
-          onPress={() => void handleOpenDocument(singleMediaItem)}
+          disabled={downloadingDocumentIds.has(singleDocument.id)}
+          onPress={() => void handleOpenDocument(singleDocument)}
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           className={cn(
@@ -505,7 +463,7 @@ export const DocumentAttachments = ({
           )}
         >
           <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-            {downloadingDocumentIds.has(singleMediaItem.id) ? (
+            {downloadingDocumentIds.has(singleDocument.id) ? (
               <Spinner className={triggerIconClassName} size="xs" />
             ) : (
               <Icon

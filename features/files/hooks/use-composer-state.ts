@@ -36,6 +36,8 @@ export const useFileComposerState = ({
   const {
     allVisual,
     autoPlayPendingVideoId,
+    clearFocusedAudioId,
+    focusedAudioId,
     pendingAudio,
     pendingDocuments,
     pendingUploads,
@@ -76,7 +78,9 @@ export const useFileComposerState = ({
     audioMedia,
     autoPlayPendingVideoId,
     canAddAudio,
+    clearFocusedAudioId,
     documentFiles,
+    focusedAudioId,
     handleBrowseMedia,
     handleCaptureMedia,
     handleDeleteFile,

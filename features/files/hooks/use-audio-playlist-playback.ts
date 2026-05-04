@@ -1,3 +1,4 @@
+import { clampIndex } from '@/lib/clamp';
 import * as React from 'react';
 
 const DEFAULT_IS_PLAYABLE = () => true;
@@ -26,19 +27,25 @@ export const useAudioPlaylistPlayback = <T>(
     setAutoPlayRequest({ index, key: autoPlayKeyRef.current });
   }, []);
 
+  const setActiveIndex = React.useCallback(
+    (nextIndex: number) => {
+      if (items.length === 0) return;
+      const clampedIndex = clampIndex(nextIndex, items.length);
+      setWantsPlayback(false);
+      setCurrentIndex(clampedIndex);
+    },
+    [items.length, setWantsPlayback]
+  );
+
   React.useEffect(() => {
-    setCurrentIndex((index) =>
-      items.length > 0 ? Math.min(index, items.length - 1) : 0
-    );
+    setCurrentIndex((index) => clampIndex(index, items.length));
   }, [items.length]);
 
   React.useEffect(() => {
     if (items.length === 0) setWantsPlayback(false);
   }, [items.length, setWantsPlayback]);
 
-  const activeIndex =
-    items.length > 0 ? Math.min(currentIndex, items.length - 1) : 0;
-
+  const activeIndex = clampIndex(currentIndex, items.length);
   const activeItem = items[activeIndex];
 
   const moveToIndex = React.useCallback(
@@ -113,6 +120,7 @@ export const useAudioPlaylistPlayback = <T>(
     handleDidFinish,
     handlePause,
     handlePlayStart,
+    setActiveIndex,
     showNext,
     showPrevious,
   };

@@ -5,6 +5,7 @@ import { uploadRecordFile } from '@/features/records/mutations/upload-record-fil
 import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { durationSecondsToMs } from '@/lib/duration';
 import { Sheet } from '@/ui/sheet';
 import * as React from 'react';
 
@@ -103,7 +104,7 @@ export const RecordAudioSheet = () => {
   const upload = React.useCallback(
     async (uri: string) => {
       if (!draftId) return;
-      const duration = recorder.duration;
+      const duration = durationSecondsToMs(recorder.duration);
 
       if (audioContext.type === 'reply') {
         await uploadReplyFile({

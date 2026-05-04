@@ -7,6 +7,7 @@ export type FileUriToSrcOptions = {
   targetWidth?: number;
 };
 
+export type FileSource = { assetKey?: string | null; uri?: string | null };
 const DEFAULT_CLOUDFLARE_IMAGE_QUALITY = 75;
 const DEFAULT_CLOUDFLARE_IMAGE_FORMAT = 'webp';
 const CLOUDFLARE_STREAM_THUMBNAIL_MIN_SIZE = 10;
@@ -107,6 +108,9 @@ const getCloudflareStreamThumbnailSrc = (
 
   return url.toString();
 };
+
+export const getFileSourceUri = ({ assetKey, uri }: FileSource) =>
+  uri ?? assetKey ?? null;
 
 export const fileUriToSrc = (
   uri?: string | null,

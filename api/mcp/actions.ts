@@ -137,10 +137,13 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     },
     async ({ action, emoji, isPinned, recordId, replyId }) => {
       switch (action) {
-        case 'reaction':
+        case 'reaction': {
           return setReaction({ emoji, recordId, replyId });
-        case 'pin':
+        }
+
+        case 'pin': {
           return setRecordPin({ isPinned, recordId });
+        }
       }
     }
   );

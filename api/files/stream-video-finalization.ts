@@ -1,6 +1,16 @@
 import { createAdminDb } from '@/api/middleware/db';
+import { durationSecondsToMs } from '@/lib/duration';
 
-const getAdminDb = (env: CloudflareEnv) => createAdminDb(env);
+const getStreamVideoFiles = async (
+  adminDb: ReturnType<typeof createAdminDb>,
+  streamUid: string
+) => {
+  const { files } = await adminDb.query({
+    files: { $: { where: { assetKey: streamUid } } },
+  });
+
+  return files.filter((item) => item.id).map((item) => ({ id: item.id }));
+};
 
 export const finalizeStreamVideo = async ({
   duration,
@@ -15,27 +25,19 @@ export const finalizeStreamVideo = async ({
   streamUid: string;
   thumbnailUri?: string | null;
 }) => {
-  const adminDb = getAdminDb(env);
-
-  const { files } = await adminDb.query({
-    files: { $: { where: { assetKey: streamUid } } },
-  });
-
-  const items = files.filter((item) => item.id);
-  if (!items.length) return;
+  const adminDb = createAdminDb(env);
+  const files = await getStreamVideoFiles(adminDb, streamUid);
+  if (!files.length) return;
 
   try {
     if (!hlsUri) {
       throw new Error('Cloudflare Stream webhook missing HLS playback URL');
     }
 
-    const resolvedDuration =
-      Number.isFinite(duration) && duration != null && duration >= 0
-        ? duration
-        : undefined;
+    const resolvedDuration = durationSecondsToMs(duration);
 
     await adminDb.transact(
-      items.map((item) =>
+      files.map((item) =>
         adminDb.tx.files[item.id].update({
           assetKey: streamUid,
           ...(resolvedDuration != null ? { duration: resolvedDuration } : {}),

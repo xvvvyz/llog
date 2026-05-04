@@ -24,7 +24,9 @@ export const useFileComposer = ({
     audioMedia,
     autoPlayPendingVideoId,
     canAddAudio,
+    clearFocusedAudioId,
     documentFiles,
+    focusedAudioId,
     handleBrowseMedia,
     handleCaptureMedia,
     handleDeleteFile,
@@ -60,7 +62,9 @@ export const useFileComposer = ({
       documentFiles={documentFiles}
       extraAttachmentCount={extraAttachmentCount}
       extraPreview={extraPreview}
+      focusedAudioId={focusedAudioId}
       onDeleteFile={handleDeleteFile}
+      onFocusedAudioApplied={clearFocusedAudioId}
       onOpenVisual={handleOpenVisual}
       onRemoteReady={removeLocalPreviewUri}
       onRenameFile={onRenameFile}

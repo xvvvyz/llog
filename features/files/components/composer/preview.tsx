@@ -13,6 +13,8 @@ export const Preview = ({
   documentFiles,
   extraAttachmentCount = 0,
   extraPreview,
+  focusedAudioId,
+  onFocusedAudioApplied,
   onDeleteFile,
   onOpenVisual,
   onRenameFile,
@@ -27,6 +29,8 @@ export const Preview = ({
   documentFiles: FileItem[];
   extraAttachmentCount?: number;
   extraPreview?: React.ReactNode;
+  focusedAudioId?: string | null;
+  onFocusedAudioApplied?: (fileId: string) => void;
   onDeleteFile: (fileId: string) => void;
   onOpenVisual: (fileId: string) => void;
   onRenameFile?: (fileId: string, name: string) => Promise<void>;
@@ -72,7 +76,9 @@ export const Preview = ({
         <View className={cn(padAudioAfterMedia && 'pt-4')}>
           <AudioPreview
             audioMedia={audioMedia}
+            focusedAudioId={focusedAudioId}
             onDeleteFile={onDeleteFile}
+            onFocusedAudioApplied={onFocusedAudioApplied}
             pendingAudio={pendingAudio}
           />
         </View>

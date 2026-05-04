@@ -39,7 +39,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     <View
       className={cn(
         'flex-row min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border-secondary bg-secondary border-continuous',
-        'h-8 px-0',
+        'h-8 min-h-8 max-h-8 px-0',
         !hasTrailingControls && 'pr-3'
       )}
     >

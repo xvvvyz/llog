@@ -28,6 +28,7 @@ export const ItemContent = ({
         </Text>
       ) : null;
     }
+
     case 'reply_posted': {
       return replyText ? (
         <Text className="-my-1 px-4" numberOfLines={2}>
@@ -35,6 +36,7 @@ export const ItemContent = ({
         </Text>
       ) : null;
     }
+
     case 'reaction_added': {
       const emojis = [
         ...new Set(activities.map((a) => a.emoji).filter(Boolean)),
@@ -68,9 +70,11 @@ export const ItemContent = ({
         </View>
       ) : null;
     }
+
     case 'member_joined': {
       return null;
     }
+
     default: {
       return null;
     }

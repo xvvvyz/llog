@@ -34,7 +34,7 @@ app.get('/:key{.+}', async (c) => {
     c.header('Content-Disposition', file.httpMetadata.contentDisposition);
   }
 
-  if ('range' in file && file.range) {
+  if (rangeHeader && 'range' in file && file.range) {
     const range = file.range as { offset: number; length: number };
     c.header('Content-Length', range.length.toString());
 

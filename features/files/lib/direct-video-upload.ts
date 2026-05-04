@@ -45,7 +45,7 @@ export const directVideoUpload = async ({
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileId, order }),
+      body: JSON.stringify({ fileId, order, size: asset.size }),
     },
     'Failed to create video upload'
   );

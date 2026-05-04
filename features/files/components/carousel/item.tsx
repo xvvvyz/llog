@@ -1,6 +1,7 @@
 import { VideoPlayer } from '@/features/files/components/video-player';
 import { ZoomableMedia } from '@/features/files/components/zoomable';
 import * as carouselHelpers from '@/features/files/lib/carousel';
+import { getFileSourceUri } from '@/features/files/lib/file-uri-to-src';
 import { FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { Icon } from '@/ui/icon';
@@ -166,6 +167,7 @@ const CarouselVideoItem = ({
 }) => {
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const hasReportedActiveLoadRef = React.useRef(false);
+  const sourceUri = getFileSourceUri(item);
 
   const shouldRenderVideo =
     isActive || (isAdjacent && (shouldRenderInactiveMedia || hasLoaded));
@@ -173,7 +175,7 @@ const CarouselVideoItem = ({
   React.useEffect(() => {
     setHasLoaded(false);
     hasReportedActiveLoadRef.current = false;
-  }, [item.id, item.thumbnailUri, item.uri]);
+  }, [item.id, item.thumbnailUri, sourceUri]);
 
   React.useEffect(() => {
     if (!isActive) hasReportedActiveLoadRef.current = false;
@@ -222,7 +224,7 @@ const CarouselVideoItem = ({
                 resetToken={resetVideoToken}
                 thumbnailQuality={mediaQuality}
                 thumbnailUri={item.thumbnailUri}
-                uri={item.uri}
+                uri={sourceUri}
               />
             </Pressable>
           </ZoomableMedia>
@@ -266,6 +268,7 @@ const CarouselImageItem = ({
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const [hasDisplayed, setHasDisplayed] = React.useState(false);
   const hasReportedActiveLoadRef = React.useRef(false);
+  const sourceUri = getFileSourceUri(item);
 
   const requestScale =
     Math.min(PixelRatio.get(), 2) *
@@ -288,7 +291,7 @@ const CarouselImageItem = ({
     setHasLoaded(false);
     setHasDisplayed(false);
     hasReportedActiveLoadRef.current = false;
-  }, [item.id, item.uri]);
+  }, [item.id, sourceUri]);
 
   React.useEffect(() => {
     if (!isActive) hasReportedActiveLoadRef.current = false;
@@ -333,7 +336,7 @@ const CarouselImageItem = ({
         quality={mediaQuality}
         targetHeight={targetHeight}
         targetWidth={targetWidth}
-        uri={item.uri}
+        uri={sourceUri}
         width={contentWidth}
         wrapperClassName="bg-transparent"
       />

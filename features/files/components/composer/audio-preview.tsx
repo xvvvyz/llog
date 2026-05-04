@@ -1,9 +1,13 @@
 import { AudioPlayer } from '@/features/files/components/audio-player';
 import { useAudioPlaylistPlayback } from '@/features/files/hooks/use-audio-playlist-playback';
 import { useUiAudioPlaybackRate } from '@/features/files/hooks/use-ui-audio-playback-rate';
+import * as attachmentItems from '@/features/files/lib/attachment-items';
+import { formatFileSize } from '@/features/files/lib/file-size';
+import { getFileTypeIcon } from '@/features/files/lib/file-type-icon';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
 import { cn } from '@/lib/cn';
+import { durationMsToSeconds } from '@/lib/duration';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
@@ -12,49 +16,71 @@ import { CaretLeft, CaretRight, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
-type AudioPreviewItem =
-  | { id: string; item: FileItem; order: number; type: 'files' }
-  | {
-      id: string;
-      item: fileComposer.PendingAudioUpload;
-      order: number;
-      type: 'pending';
-    };
+type AudioPreviewItem = attachmentItems.AttachmentPreviewItem<
+  FileItem,
+  fileComposer.PendingAudioUpload
+>;
 
-const isPlayableAudioPreviewItem = (item: AudioPreviewItem) =>
-  item.type === 'files';
+const getAudioName = (item: { name?: string | null }) =>
+  item.name?.trim() || 'Audio';
+
+const getAudioSizeText = (item: { size?: number | null }) =>
+  formatFileSize(item.size) || 'Uploading';
+
+const PendingAudioPreview = ({
+  item,
+}: {
+  item: fileComposer.PendingAudioUpload;
+}) => {
+  const AudioIcon = getFileTypeIcon(item);
+
+  return (
+    <View className="flex-1 flex-row overflow-hidden h-8 max-h-8 min-h-8 min-w-0 border-border-secondary border-continuous rounded-lg bg-secondary opacity-70 border gap-3 items-center">
+      <View className="size-8 items-center justify-center shrink-0">
+        <Icon className="text-placeholder" icon={AudioIcon} size={16} />
+      </View>
+      <View className="flex-1 flex-row min-w-0 gap-4 items-baseline justify-between">
+        <Text
+          className="flex-1 min-w-0 text-muted-foreground text-sm"
+          numberOfLines={1}
+        >
+          {getAudioName(item)}
+        </Text>
+        <Text className="text-placeholder text-xs shrink-0" numberOfLines={1}>
+          {getAudioSizeText(item)}
+        </Text>
+      </View>
+      <View className="size-8 items-center justify-center shrink-0">
+        <Spinner size="xs" />
+      </View>
+    </View>
+  );
+};
 
 export const AudioPreview = ({
   audioMedia,
+  focusedAudioId,
+  onFocusedAudioApplied,
   onDeleteFile,
   pendingAudio,
 }: {
   audioMedia: FileItem[];
+  focusedAudioId?: string | null;
+  onFocusedAudioApplied?: (fileId: string) => void;
   onDeleteFile: (fileId: string) => void;
   pendingAudio: fileComposer.PendingAudioUpload[];
 }) => {
   const items = React.useMemo(
     () =>
-      [
-        ...audioMedia.map(
-          (item): AudioPreviewItem => ({
-            id: item.id,
-            item,
-            order: item.order ?? 0,
-            type: 'files',
-          })
-        ),
-        ...pendingAudio.map(
-          (item): AudioPreviewItem => ({
-            id: item.id,
-            item,
-            order: item.order,
-            type: 'pending',
-          })
-        ),
-      ].sort((a, b) => a.order - b.order),
+      attachmentItems.getAttachmentPreviewItems({
+        files: audioMedia,
+        pending: pendingAudio,
+      }),
     [audioMedia, pendingAudio]
   );
+
+  const itemIds = React.useMemo(() => items.map((item) => item.id), [items]);
+  const previousItemIdsRef = React.useRef<string[] | null>(null);
 
   const {
     activeAutoPlayKey,
@@ -63,9 +89,31 @@ export const AudioPreview = ({
     handleDidFinish,
     handlePause,
     handlePlayStart,
+    setActiveIndex,
     showNext,
     showPrevious,
-  } = useAudioPlaylistPlayback(items, isPlayableAudioPreviewItem);
+  } = useAudioPlaylistPlayback(items, (item) => item.kind === 'file');
+
+  React.useEffect(() => {
+    const previousItemIds = previousItemIdsRef.current;
+    previousItemIdsRef.current = itemIds;
+    if (!previousItemIds) return;
+    const previousIdSet = new Set(previousItemIds);
+
+    for (let index = itemIds.length - 1; index >= 0; index -= 1) {
+      if (previousIdSet.has(itemIds[index])) continue;
+      setActiveIndex(index);
+      return;
+    }
+  }, [itemIds, setActiveIndex]);
+
+  React.useEffect(() => {
+    if (!focusedAudioId) return;
+    const focusedIndex = itemIds.indexOf(focusedAudioId);
+    if (focusedIndex === -1) return;
+    setActiveIndex(focusedIndex);
+    onFocusedAudioApplied?.(focusedAudioId);
+  }, [focusedAudioId, itemIds, onFocusedAudioApplied, setActiveIndex]);
 
   const hasMultipleItems = items.length > 1;
   const countWidth = String(items.length).length * 14 + 26;
@@ -84,17 +132,20 @@ export const AudioPreview = ({
                 key={previewItem.id}
                 className={cn('min-w-0 flex-1', !isActive && 'hidden')}
               >
-                {previewItem.type === 'files' ? (
+                {previewItem.kind === 'file' ? (
                   <AudioPlayer
                     active={isActive}
+                    assetKey={previewItem.item.assetKey}
                     autoPlayKey={isActive ? activeAutoPlayKey : undefined}
-                    duration={previewItem.item.duration!}
                     onDidFinish={isActive ? handleDidFinish : undefined}
                     onPause={isActive ? handlePause : undefined}
                     onPlayStart={isActive ? handlePlayStart : undefined}
                     playbackRate={audioPlaybackRate}
                     showPlaybackRate={false}
                     uri={previewItem.item.uri}
+                    durationSeconds={durationMsToSeconds(
+                      previewItem.item.duration
+                    )}
                     trailingAccessory={
                       <Button
                         onPress={() => onDeleteFile(previewItem.item.id)}
@@ -106,21 +157,12 @@ export const AudioPreview = ({
                     }
                   />
                 ) : (
-                  <View className="flex-1 h-8 px-3 border-continuous rounded-lg bg-card justify-center">
-                    <Text numberOfLines={1}>
-                      {previewItem.item.name?.trim() || 'Audio'}
-                    </Text>
-                  </View>
+                  <PendingAudioPreview item={previewItem.item} />
                 )}
               </View>
             );
           })}
         </View>
-        {activeItem.type === 'pending' && (
-          <View className="w-8 items-center justify-center">
-            <Spinner size="xs" />
-          </View>
-        )}
         {hasMultipleItems && (
           <View className="flex-row -mr-1.5 ml-4 gap-1 items-center shrink-0">
             <Button

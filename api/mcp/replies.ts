@@ -534,10 +534,13 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
       text,
     }) => {
       switch (action) {
-        case 'get':
+        case 'get': {
           return getReply({ include, replyId, status });
-        case 'save':
+        }
+
+        case 'save': {
           return saveReply({ links, mode, recordId, replyId, text });
+        }
       }
     }
   );

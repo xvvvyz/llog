@@ -123,10 +123,13 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
     },
     async ({ action, name, teamId }) => {
       switch (action) {
-        case 'list':
+        case 'list': {
           return listLogs();
-        case 'create':
+        }
+
+        case 'create': {
           return createLog({ name, teamId });
+        }
       }
     }
   );

@@ -99,6 +99,7 @@ export const normalizeImagePickerAsset = (
     fileName: asset.fileName,
     height: asset.height,
     mimeType: asset.mimeType,
+    size: asset.fileSize,
     type,
     uri: asset.uri,
     width: asset.width,

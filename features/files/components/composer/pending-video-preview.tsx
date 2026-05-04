@@ -14,7 +14,7 @@ export const PendingVideoPreview = ({
 }: {
   autoPlay?: boolean;
   height?: number;
-  uri: string;
+  uri?: string | null;
   width?: number;
 }) => {
   const src = useFileUriToSrc(uri);

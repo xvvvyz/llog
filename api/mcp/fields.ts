@@ -1,5 +1,6 @@
 import { mcpFileUrl } from '@/api/mcp/file-urls';
 import type * as mcpTypes from '@/api/mcp/types';
+import { isRecord } from '@/lib/coerce';
 
 type McpFieldOptions = {
   appUrl?: string;
@@ -7,9 +8,6 @@ type McpFieldOptions = {
   includeLinks?: boolean;
   includeReactions?: boolean;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === 'object' && !Array.isArray(value);
 
 export const compact = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -84,6 +82,7 @@ export const fileFields = (
   file: mcpTypes.McpFile,
   options?: McpFieldOptions
 ) => ({
+  assetKey: file.assetKey ?? undefined,
   duration: file.duration ?? undefined,
   id: file.id,
   mimeType: file.mimeType ?? undefined,

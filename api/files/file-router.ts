@@ -1,3 +1,4 @@
+import { enqueueAudioAnalysis } from '@/api/audio-analysis';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import * as upload from '@/api/files/file-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
@@ -61,7 +62,7 @@ export const createFileRouter = <const TPath extends string>({
     upload.directVideoUploadValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
-      const { fileId, order } = c.req.valid('json');
+      const { fileId, order, size } = c.req.valid('json');
 
       const created = await upload.createDirectVideoUploadDraft({
         creatorId: c.var.user.id,
@@ -72,6 +73,7 @@ export const createFileRouter = <const TPath extends string>({
         fileId,
         order,
         recordId: target.recordId,
+        size,
       });
 
       return c.json(created);
@@ -87,10 +89,18 @@ export const createFileRouter = <const TPath extends string>({
     async (c) => {
       const target = await resolveUploadTarget(c);
 
-      const { duration, file, fileName, fileId, mimeType, order, size } =
-        c.req.valid('form');
+      const {
+        audioOrigin,
+        duration,
+        file,
+        fileName,
+        fileId,
+        mimeType,
+        order,
+        size,
+      } = c.req.valid('form');
 
-      await upload.uploadFile({
+      const uploaded = await upload.uploadFile({
         creatorId: c.var.user.id,
         db: c.var.db,
         duration,
@@ -106,6 +116,21 @@ export const createFileRouter = <const TPath extends string>({
         recordId: target.recordId,
         size,
       });
+
+      if (uploaded.type === 'audio' && audioOrigin) {
+        c.executionCtx.waitUntil(
+          enqueueAudioAnalysis({
+            env: c.env,
+            fileId: uploaded.fileId,
+            origin: audioOrigin,
+          }).catch((error) => {
+            console.error('Failed to enqueue audio analysis', {
+              error,
+              fileId: uploaded.fileId,
+            });
+          })
+        );
+      }
 
       return c.json({ success: true });
     }

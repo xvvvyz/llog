@@ -18,7 +18,7 @@ app.post('/stream/webhook', async (c) => {
     duration?: number;
     playback?: { hls?: string | null };
     readyToStream?: boolean;
-    status?: { errorReasonText?: string; state?: string };
+    status?: { state?: string };
     thumbnail?: string | null;
     uid?: string;
   };

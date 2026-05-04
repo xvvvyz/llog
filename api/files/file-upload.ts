@@ -21,14 +21,6 @@ const MAX_UPLOAD_BYTES = 90 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 const DEFAULT_DOWNLOAD_FILE_NAME = 'download';
 
-const normalizeDurationSeconds = (duration?: number) => {
-  if (!Number.isFinite(duration) || duration == null || duration < 0) {
-    return undefined;
-  }
-
-  return Math.round(duration);
-};
-
 const inferFileKind = (file: File) => {
   if (file.type.startsWith('image/')) return 'image' as const;
   if (file.type.startsWith('audio/')) return 'audio' as const;
@@ -326,7 +318,11 @@ export const uploadFile = async ({
     recordId,
   });
 
-  const normalizedDuration = normalizeDurationSeconds(duration);
+  const normalizedDuration =
+    typeof duration === 'number' && Number.isFinite(duration) && duration >= 0
+      ? Math.round(duration)
+      : undefined;
+
   const normalizedName = normalizeFileName(fileName ?? upload.name);
   const normalizedMimeType = normalizeMimeType(mimeType ?? upload.type);
 
@@ -337,7 +333,7 @@ export const uploadFile = async ({
   const normalizedSize = normalizeFileSize(size ?? upload.size);
   const baseKey = `${keyPrefix}/files/${fileId}`;
   let assetKey: string | undefined;
-  let uri = baseKey;
+  let uri: string | undefined;
 
   if (type === 'image') {
     const uploadedImage = await cloudflareImages.uploadImage({
@@ -371,17 +367,18 @@ export const uploadFile = async ({
         .update({
           ...(assetKey ? { assetKey } : {}),
           type,
-          uri,
+          ...(uri ? { uri } : {}),
           ...(type === 'audio' && normalizedDuration != null
             ? { duration: normalizedDuration }
             : {}),
           ...(type === 'document' && normalizedName
             ? { name: normalizedName }
             : {}),
-          ...(type === 'document' && normalizedMimeType
+          ...((type === 'audio' || type === 'document') && normalizedMimeType
             ? { mimeType: normalizedMimeType }
             : {}),
-          ...(type === 'document' && normalizedSize != null
+          ...((type === 'audio' || type === 'document' || type === 'image') &&
+          normalizedSize != null
             ? { size: normalizedSize }
             : {}),
           order: normalizedOrder,
@@ -413,6 +410,7 @@ export const createDirectVideoUploadDraft = async ({
   fileId: clientFileId,
   order,
   recordId,
+  size,
 }: {
   creatorId: string;
   db: Db;
@@ -422,6 +420,7 @@ export const createDirectVideoUploadDraft = async ({
   fileId?: string;
   order?: number;
   recordId: string;
+  size?: number;
 }) => {
   const fileId = clientFileId || id();
 
@@ -438,6 +437,8 @@ export const createDirectVideoUploadDraft = async ({
     normalizeOrder(order) ??
     (await getNextAttachmentOrder({ db: dbClient, linkField, linkId }));
 
+  const normalizedSize = normalizeFileSize(size);
+
   const { uid, uploadURL } = await cloudflareStream.createDirectVideoUpload(
     env,
     {
@@ -453,6 +454,7 @@ export const createDirectVideoUploadDraft = async ({
           assetKey: uid,
           type: 'video',
           uri: `${PENDING_STREAM_URI_PREFIX}${uid}`,
+          ...(normalizedSize != null ? { size: normalizedSize } : {}),
           order: normalizedOrder,
         })
         .link({ [linkField]: linkId })
@@ -474,6 +476,7 @@ export const createDirectVideoUploadDraft = async ({
 export const fileValidator = zValidator(
   'form',
   z.object({
+    audioOrigin: z.enum(['recorded', 'uploaded']).optional(),
     duration: z.coerce.number().optional(),
     file: fileLike,
     fileName: z.string().optional(),
@@ -489,5 +492,6 @@ export const directVideoUploadValidator = zValidator(
   z.object({
     fileId: z.string().optional(),
     order: z.coerce.number().optional(),
+    size: z.coerce.number().optional(),
   })
 );

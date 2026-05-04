@@ -1,7 +1,9 @@
 import { useExclusiveFilePlayback } from '@/features/files/hooks/use-exclusive-media-playback';
 import * as audioPlaybackRate from '@/features/files/lib/audio-playback-rate';
-import { useFileUriToSrc } from '@/features/files/lib/file-uri-to-src';
+import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
+import { clamp } from '@/lib/clamp';
+import { positiveDurationSeconds } from '@/lib/duration';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as React from 'react';
 import { Platform, type LayoutChangeEvent } from 'react-native';
@@ -12,12 +14,6 @@ const SEEK_SYNC_TOLERANCE_SECONDS = 0.15;
 const SEEK_SETTLE_FALLBACK_MS = 300;
 const EXACT_SEEK_TOLERANCE_MS = 0;
 type PendingSeek = { id: number; resumePlayback: boolean; seconds: number };
-
-const positiveDuration = (value?: number | null) =>
-  typeof value === 'number' && Number.isFinite(value) && value > 0
-    ? value
-    : undefined;
-
 type WebAudioPlayer = { media?: HTMLAudioElement };
 
 const useWebAudioMetadataDuration = (player: unknown, src: string | null) => {
@@ -42,7 +38,7 @@ const useWebAudioMetadataDuration = (player: unknown, src: string | null) => {
     let cancelled = false;
 
     const syncDuration = () => {
-      const nextDuration = positiveDuration(media.duration);
+      const nextDuration = positiveDurationSeconds(media.duration);
       if (!nextDuration || cancelled) return;
       setMetadataDuration({ duration: nextDuration, src });
     };
@@ -52,7 +48,7 @@ const useWebAudioMetadataDuration = (player: unknown, src: string | null) => {
     media.addEventListener('loadeddata', syncDuration);
     media.addEventListener('loadedmetadata', syncDuration);
 
-    if (!positiveDuration(media.duration)) {
+    if (!positiveDurationSeconds(media.duration)) {
       media.preload = 'metadata';
       media.load();
     }
@@ -71,15 +67,19 @@ const useWebAudioMetadataDuration = (player: unknown, src: string | null) => {
 export const useAudioPlayerController = ({
   active = true,
   autoPlayKey,
-  duration,
+  durationSeconds,
   onDidFinish,
   onPause,
   onPlayStart,
   onPlaybackRateChange,
   playbackRate,
+  assetKey,
   uri,
 }: AudioPlayerProps) => {
-  const src = useFileUriToSrc(uri);
+  const src = fileUriSources.useFileUriToSrc(
+    fileUriSources.getFileSourceUri({ assetKey, uri })
+  );
+
   const player = useAudioPlayer(src, { updateInterval: 50 });
   const status = useAudioPlayerStatus(player);
   const trackWidth = useSharedValue(0);
@@ -107,10 +107,10 @@ export const useAudioPlayerController = ({
   const currentPlaybackRate = playbackRate ?? localPlaybackRate;
 
   const playerDuration =
-    positiveDuration(duration) ??
+    positiveDurationSeconds(durationSeconds) ??
     metadataDuration ??
-    positiveDuration(status.duration) ??
-    positiveDuration(player.duration) ??
+    positiveDurationSeconds(status.duration) ??
+    positiveDurationSeconds(player.duration) ??
     0;
 
   const playbackTime = Math.min(status.currentTime, playerDuration);
@@ -133,9 +133,7 @@ export const useAudioPlayerController = ({
     pendingSeekRef.current?.resumePlayback === true;
 
   const progress =
-    playerDuration > 0
-      ? Math.max(0, Math.min(displayTime / playerDuration, 1))
-      : 0;
+    playerDuration > 0 ? clamp(displayTime / playerDuration, 0, 1) : 0;
 
   const handlePlaybackRateChange = React.useCallback(
     (nextPlaybackRate: audioPlaybackRate.AudioPlaybackRate) => {
@@ -279,7 +277,7 @@ export const useAudioPlayerController = ({
   const playFrom = React.useCallback(
     async (seconds: number) => {
       if (!src) return;
-      const startTime = Math.max(0, Math.min(seconds, playerDuration));
+      const startTime = clamp(seconds, 0, playerDuration);
       const seekId = seekRequestIdRef.current + 1;
       seekRequestIdRef.current = seekId;
       pendingSeekRef.current = null;
@@ -349,7 +347,7 @@ export const useAudioPlayerController = ({
 
   const seekToTime = React.useCallback(
     async (seconds: number, resumePlayback: boolean) => {
-      const seekSeconds = Math.max(0, Math.min(seconds, playerDuration));
+      const seekSeconds = clamp(seconds, 0, playerDuration);
       const seekId = seekRequestIdRef.current + 1;
       seekRequestIdRef.current = seekId;
 

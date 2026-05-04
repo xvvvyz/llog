@@ -5,8 +5,8 @@ export const getThumbnailUri = ({
 }: {
   thumbnailUri?: string | null;
   type?: string | null;
-  uri: string;
-}) => (type === 'video' ? (thumbnailUri ?? null) : uri);
+  uri?: string | null;
+}) => (type === 'video' ? (thumbnailUri ?? null) : (uri ?? null));
 
 export const isProcessing = ({
   thumbnailUri,

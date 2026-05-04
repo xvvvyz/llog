@@ -646,12 +646,17 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
       text,
     }) => {
       switch (action) {
-        case 'list':
+        case 'list': {
           return listRecords({ limit, logId, status });
-        case 'get':
+        }
+
+        case 'get': {
           return getRecord({ include, recordId, replyLimit, status });
-        case 'save':
+        }
+
+        case 'save': {
           return saveRecord({ links, logId, mode, recordId, text });
+        }
       }
     }
   );

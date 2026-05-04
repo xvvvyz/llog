@@ -1,3 +1,4 @@
+import { getFileSourceUri } from '@/features/files/lib/file-uri-to-src';
 import * as pickedFiles from '@/features/files/lib/picked';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import * as fileComposer from '@/features/files/types/composer';
@@ -26,6 +27,10 @@ export const useFileUploadPreviewState = ({
     Record<string, string>
   >({});
 
+  const [focusedAudioId, setFocusedAudioId] = React.useState<string | null>(
+    null
+  );
+
   const removeLocalPreviewUri = React.useCallback((fileId: string) => {
     setLocalPreviewUris((prev) => {
       if (!(fileId in prev)) return prev;
@@ -35,9 +40,14 @@ export const useFileUploadPreviewState = ({
     });
   }, []);
 
+  const clearFocusedAudioId = React.useCallback((fileId: string) => {
+    setFocusedAudioId((current) => (current === fileId ? null : current));
+  }, []);
+
   React.useEffect(() => {
     setPendingUploads([]);
     setLocalPreviewUris({});
+    setFocusedAudioId(null);
   }, [scopeKey]);
 
   const uploadAssets = React.useCallback(
@@ -46,6 +56,15 @@ export const useFileUploadPreviewState = ({
       if (!assets.length) return;
       const fileIds = assets.map(() => id());
       const baseOrder = fileCount + pendingUploads.length;
+      let focusedAudioIndex = -1;
+
+      for (let i = assets.length - 1; i >= 0; i -= 1) {
+        if (assets[i].type !== 'audio') continue;
+        focusedAudioIndex = i;
+        break;
+      }
+
+      if (focusedAudioIndex >= 0) setFocusedAudioId(fileIds[focusedAudioIndex]);
 
       setPendingUploads((prev) => [
         ...prev,
@@ -91,6 +110,7 @@ export const useFileUploadPreviewState = ({
             );
 
             removeLocalPreviewUri(fileId);
+            clearFocusedAudioId(fileId);
 
             alert({
               message:
@@ -111,7 +131,13 @@ export const useFileUploadPreviewState = ({
       queue.forEach((item, i) => lanes[i % concurrency].push(item));
       lanes.forEach((lane) => run(lane));
     },
-    [fileCount, onUploadFile, pendingUploads.length, removeLocalPreviewUri]
+    [
+      clearFocusedAudioId,
+      fileCount,
+      onUploadFile,
+      pendingUploads.length,
+      removeLocalPreviewUri,
+    ]
   );
 
   React.useEffect(() => {
@@ -173,6 +199,7 @@ export const useFileUploadPreviewState = ({
             localUri: localPreviewUris[item.id],
             pending: false,
             type: fileComposer.toVisualFileType(item.type),
+            uri: getFileSourceUri(item),
           })),
         ...pendingUploads
           .filter(fileComposer.isVisualPendingUpload)
@@ -187,6 +214,7 @@ export const useFileUploadPreviewState = ({
                 order: item.order,
                 pending: false,
                 type: fileComposer.toVisualFileType(real.type),
+                uri: getFileSourceUri(real),
                 width: item.width,
               };
             }
@@ -236,6 +264,8 @@ export const useFileUploadPreviewState = ({
   return {
     allVisual,
     autoPlayPendingVideoId,
+    clearFocusedAudioId,
+    focusedAudioId,
     pendingAudio,
     pendingDocuments,
     pendingUploads,

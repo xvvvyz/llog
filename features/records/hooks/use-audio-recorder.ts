@@ -1,4 +1,5 @@
 import { alert } from '@/lib/alert';
+import { durationMsToSeconds } from '@/lib/duration';
 import * as React from 'react';
 import { Platform } from 'react-native';
 
@@ -9,7 +10,7 @@ import {
   useAudioRecorder as useExpoAudioRecorder,
 } from 'expo-audio';
 
-const MAX_DURATION = 300;
+const MAX_RECORDING_DURATION_SECONDS = 300;
 
 const MICROPHONE_PERMISSION_ALERT = {
   message: 'Allow access to record audio.',
@@ -54,7 +55,10 @@ export const useAudioRecorder = () => {
     setDuration(0);
 
     timerRef.current = setInterval(() => {
-      const next = Math.round((Date.now() - startTime.current) / 1000);
+      const next = Math.round(
+        durationMsToSeconds(Date.now() - startTime.current) ?? 0
+      );
+
       setDuration((prev) => (prev === next ? prev : next));
     }, 500);
   }, []);
@@ -173,7 +177,7 @@ export const useAudioRecorder = () => {
   }, []);
 
   React.useEffect(() => {
-    if (isRecording && duration >= MAX_DURATION) {
+    if (isRecording && duration >= MAX_RECORDING_DURATION_SECONDS) {
       void (async () => {
         isRecordingRef.current = false;
         stopTimer();

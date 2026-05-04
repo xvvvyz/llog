@@ -26,7 +26,7 @@ export interface VisualPreviewItem {
   pending: boolean;
   thumbnailUri?: string | null;
   type: 'image' | 'video';
-  uri: string;
+  uri?: string | null;
   width?: number;
 }
 

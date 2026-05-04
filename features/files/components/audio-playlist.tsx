@@ -2,6 +2,7 @@ import { useAudioPlaylistPlayback } from '@/features/files/hooks/use-audio-playl
 import { useUiAudioPlaybackRate } from '@/features/files/hooks/use-ui-audio-playback-rate';
 import type * as audioPlayerTypes from '@/features/files/types/audio-player';
 import { cn } from '@/lib/cn';
+import { durationMsToSeconds } from '@/lib/duration';
 import { PressPropagationBoundary } from '@/ui/press-propagation-boundary';
 import type * as React from 'react';
 
@@ -35,7 +36,8 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
         {clips.map((clip, index) => (
           <AudioPlayer
             key={clip.id}
-            duration={clip.duration}
+            assetKey={clip.assetKey}
+            durationSeconds={durationMsToSeconds(clip.duration)}
             onDidFinish={() => handleDidFinish(index)}
             onPause={handlePause}
             onPlaybackRateChange={setPlaybackRate}

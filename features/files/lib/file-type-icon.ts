@@ -3,6 +3,7 @@ import type * as React from 'react';
 
 import {
   FileArchive,
+  FileAudio,
   FileCode,
   FileCss,
   FileCsv,
@@ -25,6 +26,7 @@ type FileIcon = React.ComponentType<PhosphorIconProps>;
 
 const EXTENSION_ICONS = new Map<string, FileIcon>([
   ['7z', FileArchive],
+  ['aac', FileAudio],
   ['bz2', FileArchive],
   ['c', FileCode],
   ['cc', FileCode],
@@ -35,6 +37,7 @@ const EXTENSION_ICONS = new Map<string, FileIcon>([
   ['doc', FileDoc],
   ['docx', FileDoc],
   ['go', FileCode],
+  ['flac', FileAudio],
   ['gz', FileArchive],
   ['h', FileCode],
   ['html', FileHtml],
@@ -44,9 +47,13 @@ const EXTENSION_ICONS = new Map<string, FileIcon>([
   ['jsx', FileJsx],
   ['kt', FileCode],
   ['log', FileTxt],
+  ['m4a', FileAudio],
   ['md', FileText],
+  ['mp3', FileAudio],
   ['odp', FilePpt],
   ['ods', FileXls],
+  ['oga', FileAudio],
+  ['ogg', FileAudio],
   ['odt', FileDoc],
   ['pdf', FilePdf],
   ['php', FileCode],
@@ -65,6 +72,8 @@ const EXTENSION_ICONS = new Map<string, FileIcon>([
   ['ts', FileTs],
   ['tsx', FileTsx],
   ['txt', FileTxt],
+  ['wav', FileAudio],
+  ['weba', FileAudio],
   ['xls', FileXls],
   ['xlsx', FileXls],
   ['xml', FileCode],
@@ -126,11 +135,17 @@ const getFileExtension = (name?: string | null) => {
 export const getFileTypeIcon = ({
   mimeType,
   name,
+  type,
 }: {
   mimeType?: string | null;
   name?: string | null;
+  type?: string | null;
 }): FileIcon => {
   const normalizedMimeType = mimeType?.trim().toLowerCase().split(';')[0];
+
+  if (type === 'audio' || normalizedMimeType?.startsWith('audio/')) {
+    return FileAudio;
+  }
 
   const mimeIcon = normalizedMimeType
     ? MIME_ICONS.get(normalizedMimeType)

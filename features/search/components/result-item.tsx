@@ -18,10 +18,12 @@ export const ResultItem = ({
         router.push(`/${result.id}`);
         break;
       }
+
       case 'record': {
         openRecordDetail(result.id);
         break;
       }
+
       case 'reply': {
         openRecordDetail(result.recordId);
         break;
