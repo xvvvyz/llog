@@ -13,10 +13,27 @@ const requireConfigValue = (value: string | undefined, name: string) => {
 const readResponseJson = async (response: Response) => {
   const text = await response.text();
   if (!text.trim()) return null;
-  return JSON.parse(text) as unknown;
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
 };
 
 const normalizeId = (value: unknown) => asId(value)?.toLocaleLowerCase();
+
+const createAcrCloudError = async (response: Response, message: string) => {
+  const body = await readResponseJson(response);
+
+  return new Error(
+    `${message}: ${JSON.stringify({
+      body,
+      status: response.status,
+      statusText: response.statusText,
+    })}`
+  );
+};
 
 export const submitAudioFileForMusicScan = async ({
   env,
@@ -43,8 +60,9 @@ export const submitAudioFileForMusicScan = async ({
   });
 
   if (!response.ok) {
-    throw new Error(
-      `ACRCloud file submission failed: ${JSON.stringify(await readResponseJson(response))}`
+    throw await createAcrCloudError(
+      response,
+      'ACRCloud file submission failed'
     );
   }
 };
@@ -79,7 +97,13 @@ export const getAcrCloudMetadataTrack = async (
   const body = await readResponseJson(response);
 
   if (!response.ok) {
-    throw new Error(`ACRCloud metadata failed: ${JSON.stringify(body)}`);
+    throw new Error(
+      `ACRCloud metadata failed: ${JSON.stringify({
+        body,
+        status: response.status,
+        statusText: response.statusText,
+      })}`
+    );
   }
 
   const data =
@@ -114,6 +138,7 @@ export const deleteAcrCloudFile = async (
     `${getAcrCloudFilesUrl(env)}/${encodeURIComponent(acrCloudFileId)}`,
     {
       headers: {
+        Accept: 'application/json',
         Authorization: `Bearer ${requireConfigValue(
           env.ACRCLOUD_CONSOLE_TOKEN,
           'ACRCLOUD_CONSOLE_TOKEN'
@@ -124,8 +149,6 @@ export const deleteAcrCloudFile = async (
   );
 
   if (!response.ok && response.status !== 404) {
-    throw new Error(
-      `ACRCloud file delete failed: ${JSON.stringify(await readResponseJson(response))}`
-    );
+    throw await createAcrCloudError(response, 'ACRCloud file delete failed');
   }
 };

@@ -1,6 +1,7 @@
 import * as audioAnalysis from '@/api/audio-analysis';
 import files from '@/api/files';
 import internal from '@/api/internal';
+import { installConsoleErrorSerializer } from '@/api/logging';
 import logs from '@/api/logs';
 import { headers } from '@/api/middleware/headers';
 import oauth from '@/api/oauth';
@@ -11,6 +12,7 @@ import teams from '@/api/teams';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
+installConsoleErrorSerializer();
 const api = new Hono().basePath('/api/v1');
 api.use(headers());
 api.route('/files', files);

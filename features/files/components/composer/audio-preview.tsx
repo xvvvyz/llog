@@ -35,8 +35,8 @@ const PendingAudioPreview = ({
   const AudioIcon = getFileTypeIcon(item);
 
   return (
-    <View className="flex-1 flex-row overflow-hidden h-8 max-h-8 min-h-8 min-w-0 border-border-secondary border-continuous rounded-lg bg-secondary opacity-70 border gap-3 items-center">
-      <View className="size-8 items-center justify-center shrink-0">
+    <View className="flex-1 flex-row overflow-hidden h-8 max-h-8 min-h-8 min-w-0 px-1 border-border-secondary border-continuous rounded-lg bg-secondary opacity-70 border gap-1 items-center">
+      <View className="size-6 items-center justify-center shrink-0">
         <Icon className="text-placeholder" icon={AudioIcon} size={16} />
       </View>
       <View className="flex-1 flex-row min-w-0 gap-4 items-baseline justify-between">
@@ -50,7 +50,7 @@ const PendingAudioPreview = ({
           {getAudioSizeText(item)}
         </Text>
       </View>
-      <View className="size-8 items-center justify-center shrink-0">
+      <View className="ml-0.5 size-6 items-center justify-center shrink-0">
         <Spinner size="xs" />
       </View>
     </View>
