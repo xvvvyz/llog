@@ -42,6 +42,13 @@ type LineEdit = { end: number; replacement: string[]; start: number };
 type TextEdit = { end: number; replacement: string; start: number };
 type Options = { targets: string[] };
 
+type NamespaceImportConversion = {
+  alias: string;
+  exportedNames: Map<string, string>;
+  importDeclaration: ts.ImportDeclaration;
+  isTypeOnly: boolean;
+};
+
 type ParsedSource = {
   lineAt: (position: number) => number;
   source: ts.SourceFile;
@@ -810,6 +817,368 @@ function caseClauseEndWithTrailingComment(
   return statementEndWithTrailingComment(text, lastStatement.getEnd());
 }
 
+function formatLocalNamespaceImports(filePath: string, text: string) {
+  const parsed = parseSource(filePath, text);
+  const { source } = parsed;
+
+  const conversions = namespaceImportConversions(parsed).filter(
+    (conversion) =>
+      !hasUnsupportedNamespaceImportReferences(
+        filePath,
+        text,
+        source,
+        conversion
+      )
+  );
+
+  if (conversions.length === 0) return text;
+  const edits: TextEdit[] = [];
+
+  const usedNames = collectIdentifierNames(
+    source,
+    new Set(
+      importedIdentifierReferences(filePath, text, conversions).map(
+        (reference) => reference.start
+      )
+    )
+  );
+
+  for (const conversion of conversions) {
+    conversion.alias = uniqueIdentifier(conversion.alias, usedNames);
+    usedNames.add(conversion.alias);
+
+    edits.push({
+      end: conversion.importDeclaration.getEnd(),
+      replacement: namespaceImportText(source, conversion),
+      start: conversion.importDeclaration.getStart(source, false),
+    });
+  }
+
+  edits.push(
+    ...namespaceImportReferenceEdits(filePath, text, source, conversions)
+  );
+
+  return applyTextEdits(text, edits);
+}
+
+function namespaceImportConversions(parsed: ParsedSource) {
+  const { lineAt, source } = parsed;
+  const conversions: NamespaceImportConversion[] = [];
+
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement)) continue;
+    const importClause = statement.importClause;
+    if (!importClause || importClause.name) continue;
+    if (!ts.isStringLiteralLike(statement.moduleSpecifier)) continue;
+    if (!isLocalModuleSpecifier(statement.moduleSpecifier.text)) continue;
+
+    if (
+      lineAt(statement.getStart(source, false)) === lineAt(statement.getEnd())
+    ) {
+      continue;
+    }
+
+    const namedBindings = importClause.namedBindings;
+    if (!namedBindings || !ts.isNamedImports(namedBindings)) continue;
+    if (namedBindings.elements.length === 0) continue;
+    if (hasComment(statement.getFullText(source))) continue;
+    const exportedNames = new Map<string, string>();
+
+    for (const element of namedBindings.elements) {
+      const localName = element.name.text;
+      const exportedName = element.propertyName?.text ?? localName;
+      exportedNames.set(localName, exportedName);
+    }
+
+    conversions.push({
+      alias: namespaceImportAlias(statement.moduleSpecifier.text),
+      exportedNames,
+      importDeclaration: statement,
+      isTypeOnly:
+        importClause.isTypeOnly ||
+        namedBindings.elements.every((element) => element.isTypeOnly),
+    });
+  }
+
+  return conversions;
+}
+
+function hasUnsupportedNamespaceImportReferences(
+  filePath: string,
+  text: string,
+  source: ts.SourceFile,
+  conversion: NamespaceImportConversion
+) {
+  const references = importedIdentifierReferences(filePath, text, [conversion]);
+
+  for (const reference of references) {
+    if (isInsideNode(reference.start, conversion.importDeclaration)) continue;
+    const node = identifierAtPosition(source, reference.start);
+    if (!node) continue;
+    if (isUnsupportedNamespaceImportReference(node)) return true;
+  }
+
+  return false;
+}
+
+function isUnsupportedNamespaceImportReference(node: ts.Identifier) {
+  return ts.isExportSpecifier(node.parent);
+}
+
+function isLocalModuleSpecifier(moduleSpecifier: string) {
+  return moduleSpecifier.startsWith('.') || moduleSpecifier.startsWith('@/');
+}
+
+function namespaceImportAlias(moduleSpecifier: string) {
+  const baseName = moduleSpecifier.split('/').filter(Boolean).pop() ?? 'module';
+
+  const words = baseName
+    .replace(/\.[cm]?[jt]sx?$/, '')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean);
+
+  const alias =
+    words
+      .map((word, index) => {
+        const normalized = word.replace(/^[0-9]+/, '');
+        if (normalized.length === 0) return '';
+        const lower = normalized[0].toLowerCase() + normalized.slice(1);
+        if (index === 0) return lower;
+        return lower[0].toUpperCase() + lower.slice(1);
+      })
+      .join('') || 'module';
+
+  const namespaceAlias =
+    alias.startsWith('use') && /^[A-Z]/.test(alias[3] ?? '')
+      ? `${alias[3].toLowerCase()}${alias.slice(4)}`
+      : alias;
+
+  return /^[A-Za-z_$]/.test(namespaceAlias)
+    ? namespaceAlias
+    : `module${namespaceAlias}`;
+}
+
+function uniqueIdentifier(identifier: string, usedNames: Set<string>) {
+  if (!usedNames.has(identifier)) return identifier;
+
+  for (let index = 2; ; index += 1) {
+    const candidate = `${identifier}${index}`;
+    if (!usedNames.has(candidate)) return candidate;
+  }
+}
+
+function collectIdentifierNames(
+  source: ts.SourceFile,
+  ignoredIdentifierStarts = new Set<number>()
+) {
+  const names = new Set<string>();
+
+  function visit(node: ts.Node) {
+    if (
+      ts.isIdentifier(node) &&
+      !ignoredIdentifierStarts.has(node.getStart(source))
+    ) {
+      names.add(node.text);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return names;
+}
+
+function namespaceImportText(
+  source: ts.SourceFile,
+  conversion: NamespaceImportConversion
+) {
+  const moduleSpecifier =
+    conversion.importDeclaration.moduleSpecifier.getText(source);
+
+  const typeKeyword = conversion.isTypeOnly ? ' type' : '';
+  return `import${typeKeyword} * as ${conversion.alias} from ${moduleSpecifier};`;
+}
+
+function namespaceImportReferenceEdits(
+  filePath: string,
+  text: string,
+  source: ts.SourceFile,
+  conversions: NamespaceImportConversion[]
+) {
+  const importsByLocalName = new Map<
+    string,
+    { conversion: NamespaceImportConversion; exportedName: string }
+  >();
+
+  for (const conversion of conversions) {
+    for (const [localName, exportedName] of conversion.exportedNames) {
+      importsByLocalName.set(localName, { conversion, exportedName });
+    }
+  }
+
+  const references = importedIdentifierReferences(filePath, text, conversions);
+  const shorthandEdits = new Set<ts.ShorthandPropertyAssignment>();
+  const edits: TextEdit[] = [];
+
+  for (const reference of references) {
+    const importReference = importsByLocalName.get(reference.name);
+    if (!importReference) continue;
+
+    if (
+      isInsideNode(
+        reference.start,
+        importReference.conversion.importDeclaration
+      )
+    ) {
+      continue;
+    }
+
+    const node = identifierAtPosition(source, reference.start);
+    if (!node) continue;
+    const replacement = `${importReference.conversion.alias}.${importReference.exportedName}`;
+
+    if (
+      ts.isShorthandPropertyAssignment(node.parent) &&
+      node.parent.name === node
+    ) {
+      if (shorthandEdits.has(node.parent)) continue;
+      shorthandEdits.add(node.parent);
+
+      edits.push({
+        end: node.parent.getEnd(),
+        replacement: `${node.text}: ${replacement}`,
+        start: node.parent.getStart(source),
+      });
+
+      continue;
+    }
+
+    edits.push({ end: reference.end, replacement, start: reference.start });
+  }
+
+  return edits;
+}
+
+function importedIdentifierReferences(
+  filePath: string,
+  text: string,
+  conversions: NamespaceImportConversion[]
+) {
+  const references: { end: number; name: string; start: number }[] = [];
+  const seenReferences = new Set<string>();
+  const service = languageServiceForFile(filePath, text);
+
+  for (const conversion of conversions) {
+    for (const localName of conversion.exportedNames.keys()) {
+      const name = importSpecifierLocalName(
+        conversion.importDeclaration,
+        localName
+      );
+
+      if (!name) continue;
+
+      const referencedSymbols = service.findReferences(
+        filePath,
+        name.getStart()
+      );
+
+      for (const symbol of referencedSymbols ?? []) {
+        for (const reference of symbol.references) {
+          if (reference.fileName !== filePath) continue;
+          const key = `${localName}:${reference.textSpan.start}:${reference.textSpan.length}`;
+          if (seenReferences.has(key)) continue;
+          seenReferences.add(key);
+
+          references.push({
+            end: reference.textSpan.start + reference.textSpan.length,
+            name: localName,
+            start: reference.textSpan.start,
+          });
+        }
+      }
+    }
+  }
+
+  return references;
+}
+
+function languageServiceForFile(filePath: string, text: string) {
+  const compilerOptions: ts.CompilerOptions = {
+    allowJs: true,
+    jsx: ts.JsxEmit.ReactJSX,
+    module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    target: ts.ScriptTarget.Latest,
+  };
+
+  return ts.createLanguageService({
+    directoryExists: (requestedDirectory) =>
+      fs.existsSync(path.resolve(repoRoot, requestedDirectory)),
+    fileExists: (requestedFilePath) =>
+      requestedFilePath === filePath ||
+      fs.existsSync(path.resolve(repoRoot, requestedFilePath)),
+    getCompilationSettings: () => compilerOptions,
+    getCurrentDirectory: () => repoRoot,
+    getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
+    getScriptFileNames: () => [filePath],
+    getScriptSnapshot: (requestedFilePath) => {
+      if (requestedFilePath === filePath) {
+        return ts.ScriptSnapshot.fromString(text);
+      }
+
+      const absolutePath = path.resolve(repoRoot, requestedFilePath);
+      if (!fs.existsSync(absolutePath)) return undefined;
+
+      return ts.ScriptSnapshot.fromString(
+        fs.readFileSync(absolutePath, 'utf8')
+      );
+    },
+    getScriptVersion: () => '0',
+    readFile: (requestedFilePath) => {
+      if (requestedFilePath === filePath) return text;
+      const absolutePath = path.resolve(repoRoot, requestedFilePath);
+
+      return fs.existsSync(absolutePath)
+        ? fs.readFileSync(absolutePath, 'utf8')
+        : undefined;
+    },
+  });
+}
+
+function importSpecifierLocalName(
+  importDeclaration: ts.ImportDeclaration,
+  localName: string
+) {
+  const namedBindings = importDeclaration.importClause?.namedBindings;
+  if (!namedBindings || !ts.isNamedImports(namedBindings)) return null;
+
+  return (
+    namedBindings.elements.find((element) => element.name.text === localName)
+      ?.name ?? null
+  );
+}
+
+function isInsideNode(position: number, node: ts.Node) {
+  return position >= node.getFullStart() && position < node.getEnd();
+}
+
+function identifierAtPosition(source: ts.SourceFile, position: number) {
+  let match: ts.Identifier | null = null;
+
+  function visit(node: ts.Node) {
+    if (position < node.getFullStart() || position >= node.getEnd()) return;
+
+    if (ts.isIdentifier(node) && position >= node.getStart(source)) {
+      match = node;
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return match;
+}
+
 function applyTextEdits(text: string, edits: TextEdit[]) {
   if (edits.length === 0) return text;
   let nextText = text;
@@ -829,11 +1198,14 @@ function formatSource(filePath: string, text: string) {
     filePath,
     formatStatementWhitespace(
       filePath,
-      formatImports(
+      formatLocalNamespaceImports(
         filePath,
-        formatSwitchCases(
+        formatImports(
           filePath,
-          formatIfStatements(filePath, formatJsx(filePath, text))
+          formatSwitchCases(
+            filePath,
+            formatIfStatements(filePath, formatJsx(filePath, text))
+          )
         )
       )
     )

@@ -84,7 +84,7 @@ export const MemberLogsSheet = () => {
       variant="list"
     >
       {!!visibleLogs.length && (
-        <SheetListScrollView variant="selection">
+        <SheetListScrollView variant="rows">
           {visibleLogs.map((log) => {
             const isSelected = getSelected(log.id);
             const color = SPECTRUM[colorScheme][log.color ?? 11];

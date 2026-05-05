@@ -327,7 +327,7 @@ export const DocumentAttachments = ({
             <Button
               accessibilityLabel={`Remove ${getDocumentName(item)}`}
               onPress={() => handleDeleteDocument(previewItem.item.id)}
-              size="icon-sm"
+              size="icon-xs"
               variant="ghost"
               wrapperClassName="-mr-1.5"
             >
@@ -343,7 +343,7 @@ export const DocumentAttachments = ({
           <Button
             accessibilityLabel={`Download ${getDocumentName(item)}`}
             disabled={downloadingDocumentIds.has(item.id)}
-            size="icon-sm"
+            size="icon-xs"
             variant="ghost"
             wrapperClassName="-mr-1.5"
             onPress={() => {
@@ -438,7 +438,7 @@ export const DocumentAttachments = ({
               <Button
                 accessibilityLabel={`Remove ${getDocumentName(firstItem.item)}`}
                 onPress={() => handleDeleteDocument(firstItem.item.id)}
-                size="icon-sm"
+                size="icon-xs"
                 variant="ghost"
                 wrapperClassName="-mr-1.5"
               >
@@ -540,7 +540,10 @@ export const DocumentAttachments = ({
           portalName={sheetPortalName}
           variant="list"
         >
-          <SheetListScrollView ref={scrollViewRef}>
+          <SheetListScrollView
+            ref={scrollViewRef}
+            contentContainerClassName="py-5"
+          >
             {canSortDocuments ? (
               <Sortable.SortableGrid
                 autoScrollDirection="vertical"

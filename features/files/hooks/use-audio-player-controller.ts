@@ -4,19 +4,30 @@ import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
 import { clamp } from '@/lib/clamp';
 import { positiveDurationSeconds } from '@/lib/duration';
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as React from 'react';
-import { Platform, type LayoutChangeEvent } from 'react-native';
-import { Gesture } from 'react-native-gesture-handler';
-import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import { Platform } from 'react-native';
+
+import {
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  type AudioPlayer,
+} from 'expo-audio';
 
 const SEEK_SYNC_TOLERANCE_SECONDS = 0.15;
-const SEEK_SETTLE_FALLBACK_MS = 300;
 const EXACT_SEEK_TOLERANCE_MS = 0;
+const PLAYBACK_REQUEST_PAUSE_GRACE_MS = 1500;
 type PendingSeek = { id: number; resumePlayback: boolean; seconds: number };
-type WebAudioPlayer = { media?: HTMLAudioElement };
+type WebAudioPlayer = AudioPlayer & { media?: HTMLAudioElement };
 
-const useWebAudioMetadataDuration = (player: unknown, src: string | null) => {
+const getWebMediaElement = (player: AudioPlayer) => {
+  if (Platform.OS !== 'web') return null;
+  return (player as WebAudioPlayer).media ?? null;
+};
+
+const useWebAudioMetadataDuration = (
+  player: AudioPlayer,
+  src: string | null
+) => {
   const [metadataDuration, setMetadataDuration] = React.useState<{
     duration: number;
     src: string;
@@ -28,7 +39,7 @@ const useWebAudioMetadataDuration = (player: unknown, src: string | null) => {
       return;
     }
 
-    const media = (player as WebAudioPlayer).media;
+    const media = getWebMediaElement(player);
 
     if (!media) {
       setMetadataDuration(null);
@@ -82,21 +93,20 @@ export const useAudioPlayerController = ({
 
   const player = useAudioPlayer(src, { updateInterval: 50 });
   const status = useAudioPlayerStatus(player);
-  const trackWidth = useSharedValue(0);
   const wasPlayingBeforeScrub = React.useRef(false);
   const isScrubbingRef = React.useRef(false);
   const pendingSeekRef = React.useRef<PendingSeek | null>(null);
-
-  const pendingSeekTimeoutRef = React.useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-
   const seekRequestIdRef = React.useRef(0);
   const lastAutoPlayKeyRef = React.useRef<number | undefined>(undefined);
+  const lastPlaybackRequestAtRef = React.useRef(0);
   const finishNotifiedRef = React.useRef(false);
   const hasObservedPlaybackRef = React.useRef(false);
   const [displayTime, setDisplayTime] = React.useState(0);
   const [isPlaybackRequested, setIsPlaybackRequested] = React.useState(false);
+
+  const [pendingPlaybackTime, setPendingPlaybackTime] = React.useState<
+    number | null
+  >(null);
 
   const [localPlaybackRate, setLocalPlaybackRate] =
     React.useState<audioPlaybackRate.AudioPlaybackRate>(
@@ -143,44 +153,42 @@ export const useAudioPlayerController = ({
     [onPlaybackRateChange]
   );
 
+  const requestPlayback = React.useCallback(() => {
+    lastPlaybackRequestAtRef.current = Date.now();
+    setIsPlaybackRequested(true);
+  }, []);
+
   const pausePlayback = React.useCallback(() => {
     setIsPlaybackRequested(false);
+    setPendingPlaybackTime(null);
     player.pause();
   }, [player]);
 
   const { claimPlayback, releasePlayback } =
     useExclusiveFilePlayback(pausePlayback);
 
-  const clearPendingSeekTimeout = React.useCallback(() => {
-    if (pendingSeekTimeoutRef.current == null) return;
-    clearTimeout(pendingSeekTimeoutRef.current);
-    pendingSeekTimeoutRef.current = null;
-  }, []);
-
   const settlePendingSeek = React.useCallback(
     async (seekId: number) => {
       const pendingSeek = pendingSeekRef.current;
       if (!pendingSeek || pendingSeek.id !== seekId) return;
-      clearPendingSeekTimeout();
       setDisplayTime(pendingSeek.seconds);
-
-      if (!pendingSeek.resumePlayback) {
-        pendingSeekRef.current = null;
-        isScrubbingRef.current = false;
-        return;
-      }
-
+      pendingSeekRef.current = null;
+      isScrubbingRef.current = false;
+      setPendingPlaybackTime(null);
+      if (!pendingSeek.resumePlayback) return;
       await claimPlayback();
       if (seekRequestIdRef.current !== seekId) return;
-      setIsPlaybackRequested(true);
+      requestPlayback();
       player.play();
       onPlayStart?.();
     },
-    [claimPlayback, clearPendingSeekTimeout, onPlayStart, player]
+    [claimPlayback, onPlayStart, player, requestPlayback]
   );
 
   React.useEffect(() => {
     if (isScrubbingRef.current) return;
+    if (pendingSeekRef.current) return;
+    if (pendingPlaybackTime != null) return;
 
     if (playerDuration <= 0) {
       setDisplayTime(0);
@@ -193,7 +201,12 @@ export const useAudioPlayerController = ({
     }
 
     setDisplayTime(Math.min(status.currentTime, playerDuration));
-  }, [playerDuration, status.currentTime, status.didJustFinish]);
+  }, [
+    pendingPlaybackTime,
+    playerDuration,
+    status.currentTime,
+    status.didJustFinish,
+  ]);
 
   React.useEffect(() => {
     const pendingSeek = pendingSeekRef.current;
@@ -211,11 +224,56 @@ export const useAudioPlayerController = ({
   React.useEffect(() => {
     if (!status.playing) return;
     hasObservedPlaybackRef.current = true;
-    pendingSeekRef.current = null;
-    clearPendingSeekTimeout();
+    if (pendingPlaybackTime != null) return;
+    if (pendingSeekRef.current) return;
     isScrubbingRef.current = false;
     wasPlayingBeforeScrub.current = false;
-  }, [clearPendingSeekTimeout, status.playing]);
+  }, [pendingPlaybackTime, status.playing]);
+
+  React.useEffect(() => {
+    const shouldClearInterruptedPlaybackRequest = () => {
+      if (status.playing || !isPlaybackRequested) return false;
+      if (!hasObservedPlaybackRef.current) return false;
+      if (pendingPlaybackTime != null) return false;
+      if (pendingSeekRef.current) return false;
+      if (isScrubbingRef.current) return false;
+      if (status.didJustFinish) return false;
+
+      if (status.isBuffering || status.timeControlStatus === 'waiting') {
+        return false;
+      }
+
+      return true;
+    };
+
+    if (!shouldClearInterruptedPlaybackRequest()) return;
+
+    const remainingGraceTime =
+      PLAYBACK_REQUEST_PAUSE_GRACE_MS -
+      (Date.now() - lastPlaybackRequestAtRef.current);
+
+    const clearPlaybackRequest = () => {
+      if (!shouldClearInterruptedPlaybackRequest()) return;
+      setIsPlaybackRequested(false);
+      setPendingPlaybackTime(null);
+      wasPlayingBeforeScrub.current = false;
+    };
+
+    if (remainingGraceTime <= 0) {
+      clearPlaybackRequest();
+      return;
+    }
+
+    const timeout = setTimeout(clearPlaybackRequest, remainingGraceTime);
+    return () => clearTimeout(timeout);
+  }, [
+    isPlaybackRequested,
+    pendingPlaybackTime,
+    status.didJustFinish,
+    status.isBuffering,
+    status.playing,
+    status.timeControlStatus,
+  ]);
 
   React.useEffect(() => {
     if (status.playing || isPlaying) return;
@@ -231,22 +289,22 @@ export const useAudioPlayerController = ({
     if (active || !status.playing) return;
     setDisplayTime(Math.min(status.currentTime, playerDuration));
     setIsPlaybackRequested(false);
+    setPendingPlaybackTime(null);
     player.pause();
   }, [active, player, playerDuration, status.currentTime, status.playing]);
 
   React.useEffect(() => {
     seekRequestIdRef.current += 1;
     pendingSeekRef.current = null;
-    clearPendingSeekTimeout();
     isScrubbingRef.current = false;
     finishNotifiedRef.current = false;
     hasObservedPlaybackRef.current = false;
     lastAutoPlayKeyRef.current = undefined;
+    lastPlaybackRequestAtRef.current = 0;
     setIsPlaybackRequested(false);
+    setPendingPlaybackTime(null);
     setDisplayTime(0);
-  }, [clearPendingSeekTimeout, src]);
-
-  React.useEffect(() => clearPendingSeekTimeout, [clearPendingSeekTimeout]);
+  }, [src]);
 
   React.useEffect(() => {
     if (!status.didJustFinish) {
@@ -280,11 +338,17 @@ export const useAudioPlayerController = ({
       const startTime = clamp(seconds, 0, playerDuration);
       const seekId = seekRequestIdRef.current + 1;
       seekRequestIdRef.current = seekId;
-      pendingSeekRef.current = null;
-      clearPendingSeekTimeout();
+
+      pendingSeekRef.current = {
+        id: seekId,
+        resumePlayback: true,
+        seconds: startTime,
+      };
+
       isScrubbingRef.current = false;
-      setIsPlaybackRequested(true);
+      requestPlayback();
       setDisplayTime(startTime);
+      setPendingPlaybackTime(startTime);
 
       await player.seekTo(
         startTime,
@@ -292,20 +356,11 @@ export const useAudioPlayerController = ({
         EXACT_SEEK_TOLERANCE_MS
       );
 
-      if (seekRequestIdRef.current !== seekId) return;
-      await claimPlayback();
-      if (seekRequestIdRef.current !== seekId) return;
-      player.play();
-      onPlayStart?.();
+      if (pendingSeekRef.current?.id !== seekId) return;
+      if (Platform.OS === 'web') return;
+      void settlePendingSeek(seekId);
     },
-    [
-      claimPlayback,
-      clearPendingSeekTimeout,
-      onPlayStart,
-      player,
-      playerDuration,
-      src,
-    ]
+    [player, playerDuration, requestPlayback, settlePendingSeek, src]
   );
 
   React.useEffect(() => {
@@ -333,13 +388,13 @@ export const useAudioPlayerController = ({
   const handlePause = React.useCallback(() => {
     seekRequestIdRef.current += 1;
     pendingSeekRef.current = null;
-    clearPendingSeekTimeout();
     isScrubbingRef.current = false;
     wasPlayingBeforeScrub.current = false;
     setIsPlaybackRequested(false);
+    setPendingPlaybackTime(null);
     player.pause();
     onPause?.();
-  }, [clearPendingSeekTimeout, onPause, player]);
+  }, [onPause, player]);
 
   const togglePlayback = React.useCallback(() => {
     isPlaying ? handlePause() : void handlePlay();
@@ -357,7 +412,14 @@ export const useAudioPlayerController = ({
         seconds: seekSeconds,
       };
 
+      if (resumePlayback) {
+        requestPlayback();
+      } else {
+        setIsPlaybackRequested(false);
+      }
+
       setDisplayTime(seekSeconds);
+      setPendingPlaybackTime(resumePlayback ? seekSeconds : null);
 
       await player.seekTo(
         seekSeconds,
@@ -366,13 +428,10 @@ export const useAudioPlayerController = ({
       );
 
       if (pendingSeekRef.current?.id !== seekId) return;
-      clearPendingSeekTimeout();
-
-      pendingSeekTimeoutRef.current = setTimeout(() => {
-        void settlePendingSeek(seekId);
-      }, SEEK_SETTLE_FALLBACK_MS);
+      if (Platform.OS === 'web') return;
+      void settlePendingSeek(seekId);
     },
-    [clearPendingSeekTimeout, player, playerDuration, settlePendingSeek]
+    [player, playerDuration, requestPlayback, settlePendingSeek]
   );
 
   const seekBy = React.useCallback(
@@ -380,34 +439,31 @@ export const useAudioPlayerController = ({
       if (!src || playerDuration <= 0) return;
       const baseTime = pendingSeekRef.current?.seconds ?? displayTime;
       const resumePlayback = isPlaying;
-      clearPendingSeekTimeout();
       isScrubbingRef.current = false;
       wasPlayingBeforeScrub.current = false;
-      setIsPlaybackRequested(resumePlayback);
-      if (status.playing) player.pause();
       void seekToTime(baseTime + secondsDelta, resumePlayback);
     },
-    [
-      clearPendingSeekTimeout,
-      displayTime,
-      isPlaying,
-      player,
-      playerDuration,
-      seekToTime,
-      src,
-      status.playing,
-    ]
+    [displayTime, isPlaying, playerDuration, seekToTime, src]
+  );
+
+  const seekTo = React.useCallback(
+    (seconds: number, resumePlayback = isPlaying) => {
+      if (!src || playerDuration <= 0) return;
+      isScrubbingRef.current = false;
+      wasPlayingBeforeScrub.current = false;
+      void seekToTime(seconds, resumePlayback);
+    },
+    [isPlaying, playerDuration, seekToTime, src]
   );
 
   const startScrub = React.useCallback(() => {
     seekRequestIdRef.current += 1;
     pendingSeekRef.current = null;
-    clearPendingSeekTimeout();
     isScrubbingRef.current = true;
     wasPlayingBeforeScrub.current = status.playing;
+    if (status.playing) lastPlaybackRequestAtRef.current = Date.now();
     setIsPlaybackRequested(status.playing);
-    if (status.playing) player.pause();
-  }, [clearPendingSeekTimeout, player, status.playing]);
+  }, [status.playing]);
 
   const commitSeek = React.useCallback(
     async (seconds: number) => {
@@ -416,62 +472,37 @@ export const useAudioPlayerController = ({
     [seekToTime]
   );
 
-  const scrubTo = (x: number) => {
-    'worklet';
-    if (trackWidth.value <= 0 || playerDuration <= 0) return;
-    const fraction = Math.max(0, Math.min(x / trackWidth.value, 1));
-    runOnJS(setDisplayTime)(fraction * playerDuration);
-  };
-
-  const finishScrub = (x: number) => {
-    'worklet';
-    if (trackWidth.value <= 0 || playerDuration <= 0) return;
-    const fraction = Math.max(0, Math.min(x / trackWidth.value, 1));
-    runOnJS(commitSeek)(fraction * playerDuration);
-  };
-
-  const tap = Gesture.Tap().onEnd((e) => {
-    'worklet';
-    runOnJS(startScrub)();
-    scrubTo(e.x);
-    finishScrub(e.x);
-  });
-
-  const pan = Gesture.Pan()
-    .onStart((e) => {
-      'worklet';
-      runOnJS(startScrub)();
-      scrubTo(e.x);
-    })
-    .onUpdate((e) => {
-      'worklet';
-      scrubTo(e.x);
-    })
-    .onEnd((e) => {
-      'worklet';
-      finishScrub(e.x);
-    });
-
-  const gesture = Gesture.Race(pan, tap);
-
-  const handleTrackLayout = React.useCallback(
-    (event: LayoutChangeEvent) => {
-      trackWidth.value = event.nativeEvent.layout.width;
+  const handleScrubMove = React.useCallback(
+    (seconds: number) => {
+      setDisplayTime(clamp(seconds, 0, playerDuration));
     },
-    [trackWidth]
+    [playerDuration]
+  );
+
+  const handleScrubEnd = React.useCallback(
+    (seconds: number) => {
+      void commitSeek(clamp(seconds, 0, playerDuration));
+    },
+    [commitSeek, playerDuration]
   );
 
   return {
     currentPlaybackRate,
     displayTime,
-    gesture,
     handlePlaybackRateChange,
-    handleTrackLayout,
+    handleScrubEnd,
+    handleScrubMove,
+    handleScrubStart: startScrub,
     isDisabled: !src,
     isPlaying,
+    pause: handlePause,
+    pendingPlaybackTime,
     playerDuration,
+    play: handlePlay,
+    playFrom,
     progress,
     seekBy,
+    seekTo,
     timeLabelTime,
     togglePlayback,
   };

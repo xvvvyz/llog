@@ -124,7 +124,7 @@ export const RecordCopyToSheet = () => {
       variant="list"
     >
       {!!visibleLogGroups.length && (
-        <SheetListScrollView variant="selection">
+        <SheetListScrollView variant="rows">
           {visibleLogGroups.map((group, groupIndex) => (
             <React.Fragment key={group.id}>
               {showTeamHeadings && (

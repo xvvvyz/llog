@@ -28,13 +28,13 @@ export const Toolbar = ({
 }) => {
   return Platform.OS === 'web' ? (
     <>
-      <Button onPress={onPickDocuments} size="icon-sm" variant="secondary">
+      <Button onPress={onPickDocuments} size="icon-xs" variant="secondary">
         <Icon icon={Plus} />
       </Button>
       <Button
         disabled={!canAddAudio}
         onPress={onOpenAudio}
-        size="icon-sm"
+        size="icon-xs"
         variant="secondary"
       >
         <Icon icon={Microphone} />
@@ -43,21 +43,21 @@ export const Toolbar = ({
     </>
   ) : (
     <>
-      <Button onPress={onPickDocuments} size="icon-sm" variant="secondary">
+      <Button onPress={onPickDocuments} size="icon-xs" variant="secondary">
         <Icon icon={Paperclip} />
       </Button>
-      <Button onPress={onBrowseMedia} size="icon-sm" variant="secondary">
+      <Button onPress={onBrowseMedia} size="icon-xs" variant="secondary">
         <Icon icon={ImageSquare} />
       </Button>
       {Platform.OS === 'ios' && (
-        <Button onPress={onCaptureMedia} size="icon-sm" variant="secondary">
+        <Button onPress={onCaptureMedia} size="icon-xs" variant="secondary">
           <Icon icon={Camera} />
         </Button>
       )}
       <Button
         disabled={!canAddAudio}
         onPress={onOpenAudio}
-        size="icon-sm"
+        size="icon-xs"
         variant="secondary"
       >
         <Icon icon={Microphone} />

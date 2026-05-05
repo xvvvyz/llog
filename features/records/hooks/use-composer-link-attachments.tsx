@@ -49,7 +49,7 @@ export const useComposerLinkAttachments = ({
     <Button
       disabled={!parent}
       onPress={handleOpenLinkEditor}
-      size="icon-sm"
+      size="icon-xs"
       variant="secondary"
     >
       <Icon icon={LinkSimple} />

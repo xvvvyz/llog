@@ -22,6 +22,8 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
       handleDidFinish,
       handlePause,
       handlePlayStart,
+      showNext,
+      showPrevious,
     } = useAudioPlaylistPlayback(clips);
 
     const {
@@ -38,11 +40,16 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
             key={clip.id}
             assetKey={clip.assetKey}
             durationSeconds={durationMsToSeconds(clip.duration)}
+            name={clip.name}
             onDidFinish={() => handleDidFinish(index)}
+            onNextClip={clips.length > 1 ? showNext : undefined}
             onPause={handlePause}
             onPlaybackRateChange={setPlaybackRate}
-            onPlayStart={handlePlayStart}
+            onPlayStart={() => handlePlayStart(index)}
+            onPreviousClip={clips.length > 1 ? showPrevious : undefined}
             playbackRate={playbackRate}
+            tracks={clip.tracks}
+            transcript={clip.transcript}
             uri={clip.uri}
             autoPlayKey={
               clip.id === activeClip.id ? activeAutoPlayKey : undefined

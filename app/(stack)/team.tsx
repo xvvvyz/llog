@@ -297,7 +297,7 @@ export default function Team() {
                       <View className="flex-row -mr-[7px] gap-1 items-center">
                         <Button
                           onPress={() => handleCopyLink(role)}
-                          size="icon-sm"
+                          size="icon-xs"
                           variant="ghost"
                         >
                           {loadingAction === `copy-${role}` ? (
@@ -314,7 +314,7 @@ export default function Team() {
                         </Button>
                         <Button
                           onPress={() => handleShowQr(role)}
-                          size="icon-sm"
+                          size="icon-xs"
                           variant="ghost"
                         >
                           {loadingAction === `qr-${role}` ? (
@@ -329,7 +329,7 @@ export default function Team() {
                         {invites.some((l) => l.role === role) && (
                           <Button
                             onPress={() => handleDelete(role)}
-                            size="icon-sm"
+                            size="icon-xs"
                             variant="ghost"
                           >
                             <Icon
@@ -407,7 +407,7 @@ export default function Team() {
                       <Menu.Root>
                         <Menu.Trigger asChild>
                           <Button
-                            size="icon-sm"
+                            size="icon-xs"
                             variant="ghost"
                             wrapperClassName="-mr-[7px]"
                           >
@@ -438,7 +438,7 @@ export default function Team() {
                       <Menu.Root>
                         <Menu.Trigger asChild>
                           <Button
-                            size="icon-sm"
+                            size="icon-xs"
                             variant="ghost"
                             wrapperClassName="-mr-[7px]"
                           >

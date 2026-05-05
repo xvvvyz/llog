@@ -13,6 +13,7 @@ const buttonWrapperVariants = cva(
       size: {
         default: '',
         icon: '',
+        'icon-xs': 'rounded-lg border-continuous',
         'icon-sm': 'rounded-lg border-continuous',
         lg: '',
         sm: '',
@@ -38,7 +39,8 @@ const buttonVariants = cva(
       size: {
         default: 'h-11 px-4 py-2',
         icon: 'h-11 w-11',
-        'icon-sm': 'h-8 w-8 rounded-lg border-continuous',
+        'icon-xs': 'h-8 w-8 rounded-lg border-continuous',
+        'icon-sm': 'h-10 w-10 rounded-lg border-continuous',
         lg: 'h-12 px-5',
         sm: 'h-10 px-4',
         xs: 'h-8 px-2 rounded-lg gap-2 border-continuous',
@@ -66,6 +68,7 @@ const buttonTextVariants = cva(
       size: {
         default: '',
         icon: '',
+        'icon-xs': '',
         'icon-sm': '',
         lg: '',
         sm: '',

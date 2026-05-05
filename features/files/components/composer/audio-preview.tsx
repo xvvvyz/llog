@@ -137,19 +137,28 @@ export const AudioPreview = ({
                     active={isActive}
                     assetKey={previewItem.item.assetKey}
                     autoPlayKey={isActive ? activeAutoPlayKey : undefined}
+                    name={previewItem.item.name}
                     onDidFinish={isActive ? handleDidFinish : undefined}
                     onPause={isActive ? handlePause : undefined}
-                    onPlayStart={isActive ? handlePlayStart : undefined}
                     playbackRate={audioPlaybackRate}
                     showPlaybackRate={false}
                     uri={previewItem.item.uri}
                     durationSeconds={durationMsToSeconds(
                       previewItem.item.duration
                     )}
+                    onNextClip={
+                      isActive && hasMultipleItems ? showNext : undefined
+                    }
+                    onPlayStart={
+                      isActive ? () => handlePlayStart(index) : undefined
+                    }
+                    onPreviousClip={
+                      isActive && hasMultipleItems ? showPrevious : undefined
+                    }
                     trailingAccessory={
                       <Button
                         onPress={() => onDeleteFile(previewItem.item.id)}
-                        size="icon-sm"
+                        size="icon-xs"
                         variant="ghost"
                       >
                         <Icon icon={X} />

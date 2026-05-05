@@ -6,7 +6,7 @@ import { TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { SortAscending, SortDescending } from 'phosphor-react-native';
 import * as React from 'react';
-import { View } from 'react-native';
+import { Pressable, View, type GestureResponderEvent } from 'react-native';
 
 import Animated, {
   FadeIn,
@@ -17,19 +17,111 @@ import Animated, {
 
 const Root = DropdownMenuPrimitive.Root;
 const Trigger = DropdownMenuPrimitive.Trigger;
+const OUTSIDE_DISMISS_FOLLOW_UP_SUPPRESSION_MS = 500;
+const OUTSIDE_DISMISS_FOLLOW_UP_EVENTS = ['click'] as const;
+let outsideDismissFollowUpTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const clearOutsideDismissFollowUpSuppression = () => {
+  if (outsideDismissFollowUpTimeout) {
+    clearTimeout(outsideDismissFollowUpTimeout);
+    outsideDismissFollowUpTimeout = null;
+  }
+
+  if (typeof document === 'undefined') return;
+
+  for (const eventName of OUTSIDE_DISMISS_FOLLOW_UP_EVENTS) {
+    document.removeEventListener(
+      eventName,
+      preventOutsideDismissFollowUp,
+      true
+    );
+  }
+};
+
+const preventOutsideDismissFollowUp = (event: Event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation?.();
+  if (event.type === 'click') clearOutsideDismissFollowUpSuppression();
+};
+
+const suppressOutsideDismissFollowUpClick = () => {
+  if (typeof document === 'undefined') return;
+
+  for (const eventName of OUTSIDE_DISMISS_FOLLOW_UP_EVENTS) {
+    document.addEventListener(eventName, preventOutsideDismissFollowUp, true);
+  }
+
+  if (outsideDismissFollowUpTimeout) {
+    clearTimeout(outsideDismissFollowUpTimeout);
+  }
+
+  outsideDismissFollowUpTimeout = setTimeout(
+    clearOutsideDismissFollowUpSuppression,
+    OUTSIDE_DISMISS_FOLLOW_UP_SUPPRESSION_MS
+  );
+};
+
+type ResettableDropdownRootContext = ReturnType<
+  typeof DropdownMenuPrimitive.useRootContext
+> & {
+  setContentLayout?: (layout: null) => void;
+  setTriggerPosition?: (position: null) => void;
+};
+
+const dismissDropdownMenu = (context: ResettableDropdownRootContext) => {
+  // This overlay bypasses the primitive overlay, so clear cached placement
+  // state when these optional internals are present.
+  context.setTriggerPosition?.(null);
+  context.setContentLayout?.(null);
+  context.onOpenChange(false);
+};
+
+const stopOverlayEvent = (event: GestureResponderEvent) => {
+  event.stopPropagation();
+  (event.nativeEvent as { stopPropagation?: () => void }).stopPropagation?.();
+};
 
 const Content = React.forwardRef<
   DropdownMenuPrimitive.ContentRef,
   DropdownMenuPrimitive.ContentProps
 >(({ children, className, ...props }, ref) => {
+  const context =
+    DropdownMenuPrimitive.useRootContext() as ResettableDropdownRootContext;
+
+  const handleOverlayPress = React.useCallback(
+    (event: GestureResponderEvent) => {
+      stopOverlayEvent(event);
+      dismissDropdownMenu(context);
+    },
+    [context]
+  );
+
+  const handleOverlayTouchStart = React.useCallback(
+    (event: GestureResponderEvent) => {
+      stopOverlayEvent(event);
+      suppressOutsideDismissFollowUpClick();
+      dismissDropdownMenu(context);
+    },
+    [context]
+  );
+
   return (
     <DropdownMenuPrimitive.Portal>
-      <DropdownMenuPrimitive.Overlay className="absolute inset-0">
-        <Animated.View
-          className="absolute inset-0 bg-background/90"
-          entering={animation(FadeIn)}
-          exiting={animation(FadeOut)}
-        />
+      <View className="absolute inset-0" pointerEvents="box-none">
+        <Pressable
+          className="absolute inset-0"
+          onPress={handleOverlayPress}
+          onStartShouldSetResponder={() => true}
+          onTouchEnd={stopOverlayEvent}
+          onTouchStart={handleOverlayTouchStart}
+        >
+          <Animated.View
+            className="absolute inset-0 bg-background/90"
+            entering={animation(FadeIn)}
+            exiting={animation(FadeOut)}
+          />
+        </Pressable>
         <DropdownMenuPrimitive.Content ref={ref} {...props}>
           <Animated.View
             entering={animation(FadeInUp)}
@@ -42,7 +134,7 @@ const Content = React.forwardRef<
             {children as React.ReactNode}
           </Animated.View>
         </DropdownMenuPrimitive.Content>
-      </DropdownMenuPrimitive.Overlay>
+      </View>
     </DropdownMenuPrimitive.Portal>
   );
 });

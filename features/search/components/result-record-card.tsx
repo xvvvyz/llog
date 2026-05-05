@@ -98,7 +98,7 @@ export const ResultRecordCard = ({
         )}
         {!!displayText && (
           <ResultHighlightedText
-            className="leading-tight text-muted-foreground text-sm"
+            className="leading-tight text-muted-foreground text-sm web:text-pretty"
             highlightClassName="text-sm leading-tight font-medium text-foreground"
             numberOfLines={2}
             terms={result.textTerms ?? result.terms}

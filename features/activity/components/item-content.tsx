@@ -23,7 +23,7 @@ export const ItemContent = ({
   switch (type) {
     case 'record_published': {
       return recordText ? (
-        <Text className="-mt-1 px-4" numberOfLines={2}>
+        <Text className="-mt-1 px-4 web:text-pretty" numberOfLines={2}>
           {renderLinkifiedText({ text: recordText })}
         </Text>
       ) : null;
@@ -31,7 +31,7 @@ export const ItemContent = ({
 
     case 'reply_posted': {
       return replyText ? (
-        <Text className="-my-1 px-4" numberOfLines={2}>
+        <Text className="-my-1 px-4 web:text-pretty" numberOfLines={2}>
           {renderLinkifiedText({ text: replyText })}
         </Text>
       ) : null;

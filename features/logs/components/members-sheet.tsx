@@ -81,7 +81,7 @@ export const LogMembersSheet = () => {
       variant="list"
     >
       {!!visibleMemberRows.length && (
-        <SheetListScrollView variant="selection">
+        <SheetListScrollView variant="rows">
           {visibleMemberRows.map(({ member, profile }) => {
             const isSelected = getSelected(profile.id);
 

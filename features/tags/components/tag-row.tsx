@@ -59,7 +59,7 @@ export const TagRow = ({
               <Button
                 accessibilityLabel="Tag color"
                 className="rounded-full"
-                size="icon-sm"
+                size="icon-xs"
                 variant="ghost"
                 wrapperClassName="-ml-2 mr-2 rounded-full border-continuous"
               >

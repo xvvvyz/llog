@@ -82,9 +82,8 @@ export const TagSheetContent = ({
       {showScrollArea && (
         <SheetListScrollView
           ref={scrollViewRef}
-          contentContainerClassName="gap-2"
           keyboardDismissMode="none"
-          variant="selection"
+          variant="rows"
         >
           {showCreateTag && (
             <Button

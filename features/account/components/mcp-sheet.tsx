@@ -84,7 +84,7 @@ export const McpSheet = () => {
       portalName="mcp"
       variant="list"
     >
-      <SheetListScrollView contentContainerClassName="gap-5">
+      <SheetListScrollView contentContainerClassName="gap-5 py-5">
         <View className="flex-row items-center justify-between">
           <Label className="p-0 shrink-0">MCP URL</Label>
           <View className="flex-1 flex-row min-w-0 gap-3 items-center justify-end">
@@ -95,7 +95,7 @@ export const McpSheet = () => {
             />
             <Button
               onPress={() => copy(mcpUrl)}
-              size="icon-sm"
+              size="icon-xs"
               variant="ghost"
               wrapperClassName="-mr-1.5"
             >
@@ -131,7 +131,7 @@ export const McpSheet = () => {
                     accessibilityLabel={`Revoke ${clientName}`}
                     disabled={revokingGrantId === grant.id}
                     onPress={() => revokeGrant(grant.id)}
-                    size="icon-sm"
+                    size="icon-xs"
                     variant="ghost"
                     wrapperClassName="-mr-1.5"
                   >

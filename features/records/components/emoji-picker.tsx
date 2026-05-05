@@ -50,7 +50,7 @@ export const EmojiPicker = ({
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
-        <Button size="icon-sm" variant="ghost" wrapperClassName="mr-1">
+        <Button size="icon-xs" variant="ghost" wrapperClassName="mr-1">
           <Icon className="text-muted-foreground" icon={SmileySticker} />
         </Button>
       </Menu.Trigger>

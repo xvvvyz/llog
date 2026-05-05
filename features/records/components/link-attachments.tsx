@@ -231,7 +231,7 @@ export const LinkAttachments = ({
         <Button
           accessibilityLabel={`Remove ${getLinkLabel(item)}`}
           onPress={() => handleDeleteLink(item.id)}
-          size="icon-sm"
+          size="icon-xs"
           variant="ghost"
           wrapperClassName="-mr-1.5"
         >
@@ -267,7 +267,7 @@ export const LinkAttachments = ({
             <Button
               accessibilityLabel={`Remove ${getLinkLabel(firstItem)}`}
               onPress={() => handleDeleteLink(firstItem.id)}
-              size="icon-sm"
+              size="icon-xs"
               variant="ghost"
               wrapperClassName="-mr-1.5"
             >
@@ -303,7 +303,10 @@ export const LinkAttachments = ({
           portalName={sheetPortalName}
           variant="list"
         >
-          <SheetListScrollView ref={scrollViewRef}>
+          <SheetListScrollView
+            ref={scrollViewRef}
+            contentContainerClassName="py-5"
+          >
             {canSortLinks ? (
               <Sortable.SortableGrid
                 autoScrollDirection="vertical"

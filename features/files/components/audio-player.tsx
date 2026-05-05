@@ -1,103 +1,203 @@
+import * as audioMetadata from '@/features/files/components/audio-metadata';
 import { createAudioPlaylist } from '@/features/files/components/audio-playlist';
-import { PlaybackRateButton } from '@/features/files/components/playback-rate-button';
+import { AudioTransport } from '@/features/files/components/audio-transport';
+import * as audioMediaSession from '@/features/files/hooks/use-audio-media-session';
 import { useAudioPlayerController } from '@/features/files/hooks/use-audio-player-controller';
+import * as audioMetadataLib from '@/features/files/lib/audio-metadata';
+import { DEFAULT_AUDIO_PLAYBACK_RATE } from '@/features/files/lib/audio-playback-rate';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
 import { cn } from '@/lib/cn';
-import { formatTime } from '@/lib/format-time';
-import { Button } from '@/ui/button';
-import { Icon } from '@/ui/icon';
-import { Text } from '@/ui/text';
-import { FastForward, Pause, Play, Rewind } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
-
-const AUDIO_SEEK_STEP_SECONDS = 5;
 
 export const AudioPlayer = (props: AudioPlayerProps) => {
-  const { showPlaybackRate = true, trailingAccessory } = props;
-  const showDefaultPlaybackRate = showPlaybackRate && !trailingAccessory;
-
-  const hasTrailingControls =
-    trailingAccessory != null || showDefaultPlaybackRate;
-
   const {
-    currentPlaybackRate,
-    gesture,
-    handlePlaybackRateChange,
-    handleTrackLayout,
-    isDisabled,
-    isPlaying,
-    progress,
-    seekBy,
-    timeLabelTime,
-    togglePlayback,
-  } = useAudioPlayerController(props);
+    name,
+    onNextClip,
+    onPreviousClip,
+    showPlaybackRate = true,
+    trailingAccessory,
+  } = props;
+
+  const tracks = React.useMemo(
+    () => audioMetadataLib.parseAudioTracks(props.tracks),
+    [props.tracks]
+  );
+
+  const hasTracks = tracks.length > 0;
+
+  const controls = useAudioPlayerController(
+    hasTracks
+      ? {
+          ...props,
+          onPlaybackRateChange: undefined,
+          playbackRate: DEFAULT_AUDIO_PLAYBACK_RATE,
+        }
+      : props
+  );
+
+  const transcript = props.transcript?.trim();
+
+  const trackNavigation = React.useMemo(
+    () =>
+      audioMetadataLib.getTrackNavigationState({
+        currentTimeSeconds: controls.displayTime,
+        tracks,
+      }),
+    [controls.displayTime, tracks]
+  );
+
+  const currentTrackIndex = trackNavigation.currentIndex;
+  const currentTrack = trackNavigation.currentTrack;
+
+  const mediaSessionMetadata = React.useMemo(() => {
+    if (currentTrack) {
+      return audioMetadataLib.getTrackMediaSessionMetadata(currentTrack);
+    }
+
+    const title = name?.trim() || 'Audio';
+    return { artist: 'llog', title };
+  }, [currentTrack, name]);
+
+  const adjacentTrackMetadata = React.useMemo(() => {
+    if (!hasTracks) return [];
+
+    return [currentTrackIndex - 1, currentTrackIndex, currentTrackIndex + 1]
+      .flatMap((index) => {
+        const track = tracks[index];
+
+        return track
+          ? [audioMetadataLib.getTrackMediaSessionMetadata(track)]
+          : [];
+      })
+      .filter((metadata) => !!metadata.artwork?.length);
+  }, [currentTrackIndex, hasTracks, tracks]);
+
+  React.useEffect(() => {
+    for (const metadata of adjacentTrackMetadata) {
+      void audioMediaSession.preloadAudioMediaSessionArtwork(metadata);
+    }
+  }, [adjacentTrackMetadata]);
+
+  const handleMediaSessionPrevious = React.useCallback(() => {
+    if (!currentTrack) {
+      onPreviousClip?.();
+      return;
+    }
+
+    const targetTrack = tracks[trackNavigation.previousIndex];
+
+    if (targetTrack) {
+      controls.seekTo(targetTrack.startSeconds, controls.isPlaying);
+      return;
+    }
+
+    onPreviousClip?.();
+  }, [
+    controls.displayTime,
+    controls.isPlaying,
+    controls.seekTo,
+    currentTrack,
+    onPreviousClip,
+    trackNavigation.previousIndex,
+    tracks,
+  ]);
+
+  const handleMediaSessionNext = React.useCallback(() => {
+    const targetTrack = tracks[trackNavigation.nextIndex];
+
+    if (targetTrack) {
+      controls.seekTo(targetTrack.startSeconds, controls.isPlaying);
+      return;
+    }
+
+    onNextClip?.();
+  }, [
+    controls.isPlaying,
+    controls.seekTo,
+    onNextClip,
+    trackNavigation.nextIndex,
+    tracks,
+  ]);
+
+  const hasMediaSessionPrevious =
+    trackNavigation.canSeekPrevious || onPreviousClip != null;
+
+  const hasMediaSessionNext = trackNavigation.canSeekNext || onNextClip != null;
+
+  audioMediaSession.useAudioMediaSession({
+    currentTime: controls.displayTime,
+    disabled: controls.isDisabled,
+    duration: controls.playerDuration,
+    isPlaying: controls.isPlaying,
+    metadata: mediaSessionMetadata,
+    onNextTrack: hasMediaSessionNext ? handleMediaSessionNext : undefined,
+    onPause: controls.pause,
+    onPlay: controls.play,
+    onPreviousTrack: hasMediaSessionPrevious
+      ? handleMediaSessionPrevious
+      : undefined,
+    onSeekBackward: (seconds) => controls.seekBy(-seconds),
+    onSeekForward: controls.seekBy,
+    onSeekTo: (seconds) => controls.seekTo(seconds, controls.isPlaying),
+    playbackRate: controls.currentPlaybackRate,
+  });
+
+  const trackControls = { ...controls, currentTime: controls.displayTime };
+
+  const metadata = hasTracks ? (
+    <audioMetadata.AudioTracksMetadata
+      className="border-b border-border-secondary border-continuous"
+      controls={trackControls}
+      tracks={tracks}
+    />
+  ) : transcript ? (
+    <audioMetadata.AudioTranscriptMetadata
+      className="border-b border-border-secondary border-continuous"
+      controls={controls}
+      transcript={transcript}
+    />
+  ) : null;
+
+  const hasMetadata = metadata != null;
+
+  const trackSkipControls = hasTracks ? (
+    <audioMetadata.AudioTrackSkipControls
+      controls={trackControls}
+      tracks={tracks}
+    />
+  ) : null;
+
+  const transportTrailingAccessory =
+    hasTracks && trailingAccessory ? (
+      <View className="flex-row items-center shrink-0">
+        {trackSkipControls}
+        {trailingAccessory}
+      </View>
+    ) : hasTracks ? (
+      trackSkipControls
+    ) : (
+      trailingAccessory
+    );
 
   return (
     <View
       className={cn(
-        'flex-row min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border-secondary bg-secondary border-continuous',
-        'h-8 min-h-8 max-h-8 px-0',
-        !hasTrailingControls && 'pr-3'
+        'min-w-0',
+        hasMetadata &&
+          'overflow-hidden rounded-lg border border-border-secondary bg-secondary border-continuous'
       )}
     >
-      <Button
-        disabled={isDisabled}
-        onPress={togglePlayback}
-        size="icon-sm"
-        variant="ghost"
-      >
-        <Icon icon={isPlaying ? Pause : Play} size={16} />
-      </Button>
-      <View className="flex-1 flex-row h-8 min-w-0 gap-2 items-center">
-        <View className="relative flex-1 h-8 min-w-0 justify-center">
-          <View
-            className="relative overflow-hidden h-1 w-full border-continuous rounded-full bg-progress-track"
-            onLayout={handleTrackLayout}
-          >
-            <View
-              className="absolute bottom-0 left-0 top-0 border-continuous rounded-full bg-progress-fill"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </View>
-          <GestureDetector gesture={gesture}>
-            <Animated.View className="absolute -bottom-2 -top-2 left-0 right-0" />
-          </GestureDetector>
-        </View>
-        <Text className="leading-tight text-placeholder text-right text-xs shrink-0 tabular-nums">
-          {formatTime(timeLabelTime)}
-        </Text>
-      </View>
-      {trailingAccessory ??
-        (showDefaultPlaybackRate && (
-          <View className="flex-row items-center shrink-0">
-            <PlaybackRateButton
-              disabled={isDisabled}
-              onPlaybackRateChange={handlePlaybackRateChange}
-              playbackRate={currentPlaybackRate}
-            />
-            <Button
-              accessibilityLabel="Back 5 seconds"
-              disabled={isDisabled}
-              onPress={() => seekBy(-AUDIO_SEEK_STEP_SECONDS)}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <Icon icon={Rewind} size={16} />
-            </Button>
-            <Button
-              accessibilityLabel="Forward 5 seconds"
-              disabled={isDisabled}
-              onPress={() => seekBy(AUDIO_SEEK_STEP_SECONDS)}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <Icon icon={FastForward} size={16} />
-            </Button>
-          </View>
-        ))}
+      {metadata}
+      <AudioTransport
+        controls={controls}
+        showPlaybackRate={!hasTracks && showPlaybackRate}
+        trailingAccessory={transportTrailingAccessory}
+        className={cn(
+          !hasMetadata &&
+            'rounded-lg border border-border-secondary bg-secondary border-continuous'
+        )}
+      />
     </View>
   );
 };

@@ -56,7 +56,7 @@ export const EntryCard = ({
           <Button
             disabled={!canUnpinRecord}
             onPress={onUnpin}
-            size="icon-sm"
+            size="icon-xs"
             variant="ghost"
             wrapperClassName="opacity-100"
           >

@@ -45,7 +45,7 @@ export const TruncatedText = ({
     <View>
       <Text
         ref={textRef}
-        className={className}
+        className={cn('web:text-pretty', className)}
         numberOfLines={expanded ? undefined : numberOfLines}
       >
         {renderLinkifiedText({ color, text: displayText })}

@@ -208,7 +208,7 @@ export const useRecordComposerModel = () => {
   const tagToolbarItem = canOpenTags
     ? React.createElement(
         Button,
-        { onPress: handleOpenTags, size: 'icon-sm', variant: 'secondary' },
+        { onPress: handleOpenTags, size: 'icon-xs', variant: 'secondary' },
         React.createElement(Icon, { icon: Tag })
       )
     : null;

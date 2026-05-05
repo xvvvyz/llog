@@ -78,10 +78,14 @@ export const useAudioPlaylistPlayback = <T>(
     moveToIndex(activeIndex + 1);
   }, [activeIndex, moveToIndex]);
 
-  const handlePlayStart = React.useCallback(() => {
-    setAutoPlayRequest(null);
-    setWantsPlayback(true);
-  }, [setWantsPlayback]);
+  const handlePlayStart = React.useCallback(
+    (index?: number) => {
+      if (index != null) setCurrentIndex(clampIndex(index, items.length));
+      setAutoPlayRequest(null);
+      setWantsPlayback(true);
+    },
+    [items.length, setWantsPlayback]
+  );
 
   const handlePause = React.useCallback(() => {
     setWantsPlayback(false);
