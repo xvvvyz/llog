@@ -185,6 +185,19 @@ export const useAudioPlayerController = ({
     [claimPlayback, onPlayStart, player, requestPlayback]
   );
 
+  const shouldSettleSeekAfterNativeCall = React.useCallback(
+    (seconds: number) => {
+      if (Platform.OS !== 'web') return true;
+
+      const currentTime = Number.isFinite(player.currentTime)
+        ? player.currentTime
+        : playbackTime;
+
+      return Math.abs(currentTime - seconds) <= SEEK_SYNC_TOLERANCE_SECONDS;
+    },
+    [playbackTime, player]
+  );
+
   React.useEffect(() => {
     if (isScrubbingRef.current) return;
     if (pendingSeekRef.current) return;
@@ -357,10 +370,19 @@ export const useAudioPlayerController = ({
       );
 
       if (pendingSeekRef.current?.id !== seekId) return;
-      if (Platform.OS === 'web') return;
-      void settlePendingSeek(seekId);
+
+      if (shouldSettleSeekAfterNativeCall(startTime)) {
+        void settlePendingSeek(seekId);
+      }
     },
-    [player, playerDuration, requestPlayback, settlePendingSeek, src]
+    [
+      player,
+      playerDuration,
+      requestPlayback,
+      settlePendingSeek,
+      shouldSettleSeekAfterNativeCall,
+      src,
+    ]
   );
 
   React.useEffect(() => {
@@ -428,10 +450,18 @@ export const useAudioPlayerController = ({
       );
 
       if (pendingSeekRef.current?.id !== seekId) return;
-      if (Platform.OS === 'web') return;
-      void settlePendingSeek(seekId);
+
+      if (shouldSettleSeekAfterNativeCall(seekSeconds)) {
+        void settlePendingSeek(seekId);
+      }
     },
-    [player, playerDuration, requestPlayback, settlePendingSeek]
+    [
+      player,
+      playerDuration,
+      requestPlayback,
+      settlePendingSeek,
+      shouldSettleSeekAfterNativeCall,
+    ]
   );
 
   const seekBy = React.useCallback(

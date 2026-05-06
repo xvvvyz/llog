@@ -40,6 +40,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
             key={clip.id}
             assetKey={clip.assetKey}
             durationSeconds={durationMsToSeconds(clip.duration)}
+            fileId={clip.id}
             name={clip.name}
             onDidFinish={() => handleDidFinish(index)}
             onNextClip={clips.length > 1 ? showNext : undefined}

@@ -137,6 +137,7 @@ export const AudioPreview = ({
                     active={isActive}
                     assetKey={previewItem.item.assetKey}
                     autoPlayKey={isActive ? activeAutoPlayKey : undefined}
+                    fileId={previewItem.item.id}
                     name={previewItem.item.name}
                     onDidFinish={isActive ? handleDidFinish : undefined}
                     onPause={isActive ? handlePause : undefined}

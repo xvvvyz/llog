@@ -6,11 +6,6 @@ export const getAudioFile = async (db: Db, fileId: string) => {
   return files[0] as AudioFile | undefined;
 };
 
-export const getAudioFileByAssetKey = async (db: Db, assetKey: string) => {
-  const { files } = await db.query({ files: { $: { where: { assetKey } } } });
-  return files[0] as AudioFile | undefined;
-};
-
 export const updateAudioFile = (
   db: Db,
   fileId: string,

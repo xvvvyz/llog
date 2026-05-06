@@ -12,6 +12,7 @@ import { View } from 'react-native';
 
 export const AudioPlayer = (props: AudioPlayerProps) => {
   const {
+    fileId,
     name,
     onNextClip,
     onPreviousClip,
@@ -20,8 +21,8 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   } = props;
 
   const tracks = React.useMemo(
-    () => audioMetadataLib.parseAudioTracks(props.tracks),
-    [props.tracks]
+    () => audioMetadataLib.parseAudioTracks(props.tracks, { fileId }),
+    [fileId, props.tracks]
   );
 
   const hasTracks = tracks.length > 0;

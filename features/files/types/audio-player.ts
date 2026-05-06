@@ -16,6 +16,7 @@ export type AudioPlayerProps = {
   assetKey?: string | null;
   autoPlayKey?: number;
   durationSeconds?: number;
+  fileId?: string | null;
   name?: string | null;
   onDidFinish?: () => void;
   onNextClip?: () => void;

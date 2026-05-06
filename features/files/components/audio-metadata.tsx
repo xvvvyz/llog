@@ -2,6 +2,7 @@ import * as audioTransport from '@/features/files/components/audio-transport';
 import * as audioMetadata from '@/features/files/lib/audio-metadata';
 import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format-time';
+import * as musicLinks from '@/lib/music-links';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -22,7 +23,6 @@ import {
 import {
   AppleLogo,
   DotsThree,
-  Equalizer,
   MusicNote,
   Pause,
   Play,
@@ -42,6 +42,7 @@ const TRACK_LIST_PRESS_INITIAL_SCROLL_SUPPRESSION_MS = 750;
 const TRACK_ARTWORK_OVERLAY_CLASS_NAME =
   'absolute inset-0 items-center justify-center overflow-hidden border-continuous rounded-md bg-contrast-background/45';
 
+const TRACK_ARTWORK_TARGET_SIZE = 512;
 type TrackRowLayout = { height: number; y: number };
 
 type TrackListPressScrollSuppression = {
@@ -155,40 +156,10 @@ export const AudioTrackSkipControls = ({
 const getPortalName = (prefix: string, id: string) =>
   `${prefix}-${id.replace(/:/g, '')}`;
 
-const getProviderLabel = (provider: string) => {
-  switch (provider) {
-    case 'applemusic': {
-      return 'Apple Music';
-    }
-
-    case 'deezer': {
-      return 'Deezer';
-    }
-
-    case 'spotify': {
-      return 'Spotify';
-    }
-
-    case 'youtube': {
-      return 'YouTube';
-    }
-
-    default: {
-      const normalized = provider.trim();
-      if (!normalized) return 'Link';
-      return `${normalized[0]?.toUpperCase() ?? ''}${normalized.slice(1)}`;
-    }
-  }
-};
-
 const getProviderIcon = (provider: string) => {
   switch (provider) {
     case 'applemusic': {
       return AppleLogo;
-    }
-
-    case 'deezer': {
-      return Equalizer;
     }
 
     case 'spotify': {
@@ -221,7 +192,7 @@ const TrackArtwork = ({
       <Image
         contentFit="cover"
         height={size}
-        targetSize={size * 2}
+        targetSize={TRACK_ARTWORK_TARGET_SIZE}
         uri={artworkUri}
         width={size}
         wrapperClassName={className}
@@ -325,7 +296,7 @@ const TrackLinksMenu = ({
   className?: string;
   track: audioMetadata.AudioMetadataTrack;
 }) => {
-  const hasLinks = track.links.length > 0;
+  if (track.links.length === 0) return null;
 
   return (
     <View className={className}>
@@ -333,7 +304,6 @@ const TrackLinksMenu = ({
         <Menu.Trigger asChild>
           <Button
             accessibilityLabel={`Streaming links for ${track.title}`}
-            disabled={!hasLinks}
             size="icon-xs"
             variant="ghost"
           >
@@ -352,7 +322,7 @@ const TrackLinksMenu = ({
                 className="text-placeholder"
                 icon={getProviderIcon(link.provider)}
               />
-              <Text>{getProviderLabel(link.provider)}</Text>
+              <Text>{musicLinks.getMusicLinkProviderLabel(link.provider)}</Text>
             </Menu.Item>
           ))}
         </Menu.Content>

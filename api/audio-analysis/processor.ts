@@ -1,4 +1,4 @@
-import { submitAudioFileForMusicScan } from '@/api/audio-analysis/acrcloud-client';
+import { recognizeAudioFileMusicTracks } from '@/api/audio-analysis/audd-client';
 import { transcribeAudioFile } from '@/api/audio-analysis/openai';
 import { getAudioFile, updateAudioFile } from '@/api/audio-analysis/repository';
 import type * as audioAnalysisTypes from '@/api/audio-analysis/types';
@@ -42,7 +42,7 @@ const processAudio = async (
   }
 
   if (job.origin === 'recorded') await transcribeRecordedAudio(db, env, file);
-  else await scanUploadedAudio(env, file);
+  else await scanUploadedAudio(db, env, file);
 };
 
 const transcribeRecordedAudio = async (
@@ -59,9 +59,11 @@ const transcribeRecordedAudio = async (
 };
 
 const scanUploadedAudio = async (
+  db: Db,
   env: CloudflareEnv,
   file: audioAnalysisTypes.AudioFile
 ) => {
-  if (file.tracks || !file.assetKey) return;
-  await submitAudioFileForMusicScan({ env, file });
+  if (file.tracks != null || !file.assetKey) return;
+  const tracks = await recognizeAudioFileMusicTracks({ env, file });
+  await updateAudioFile(db, file.id, { tracks });
 };

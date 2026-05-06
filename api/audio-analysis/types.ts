@@ -14,25 +14,12 @@ export type AudioFile = {
   uri?: string | null;
 };
 
-export type MusicTrackArtwork = {
-  large?: string;
-  medium?: string;
-  original?: string;
-  small?: string;
-};
-
-export type MusicTrackLink = {
-  albumId?: string;
-  provider: string;
-  trackId?: string;
-  url: string;
-};
+export type MusicTrackLink = { provider: string; url: string };
 
 export type MusicTrack = {
-  acrid?: string;
   album?: string;
   artists: string[];
-  artwork?: MusicTrackArtwork;
+  artwork?: string;
   end: number;
   genres?: string[];
   isrc?: string;
