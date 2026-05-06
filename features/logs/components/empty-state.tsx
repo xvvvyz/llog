@@ -1,12 +1,12 @@
+import { isMemberRole } from '@/domain/teams/permissions';
+import { Role } from '@/domain/teams/role';
 import { getInviteUrl } from '@/features/invites/lib/url';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
-import { isMemberRole } from '@/features/teams/lib/permissions';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
-import { Role } from '@/features/teams/types/role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';

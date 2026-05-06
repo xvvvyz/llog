@@ -1,4 +1,4 @@
-import type { FileKind } from '@/features/files/types/file-kind';
+import type { FileKind } from '@/domain/files/file-kind';
 import type { DocumentPickerAsset } from 'expo-document-picker';
 import type { ImagePickerAsset } from 'expo-image-picker';
 

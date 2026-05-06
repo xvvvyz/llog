@@ -1,7 +1,7 @@
 import { fileFields } from '@/api/mcp/fields';
 import type { McpContext, McpLog, McpRole, McpViewer } from '@/api/mcp/types';
 import type { Db } from '@/api/middleware/db';
-import * as permissions from '@/features/teams/lib/permissions';
+import * as permissions from '@/domain/teams/permissions';
 
 export const getViewer = async (db: Db, userId: string): Promise<McpViewer> => {
   const [{ profiles }, { roles }] = await Promise.all([

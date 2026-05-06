@@ -1,5 +1,3 @@
-import { generateHtml } from './lib/generate-html';
-import { generateMedia } from './lib/generate-media';
 import * as generatePlatforms from './lib/generate-platforms';
 import { generateTheme } from './lib/generate-theme';
 
@@ -11,5 +9,11 @@ console.log(
 );
 
 generateTheme();
+
+const [{ generateMedia }, { generateHtml }] = await Promise.all([
+  import('./lib/generate-media'),
+  import('./lib/generate-html'),
+]);
+
 await generateMedia(platforms);
 await generateHtml(platforms);

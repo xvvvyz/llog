@@ -1,9 +1,9 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import { createTeam } from '@/features/teams/mutations/create';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/lib/cn';
-import { useUi } from '@/queries/use-ui';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';

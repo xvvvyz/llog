@@ -1,3 +1,4 @@
+import * as recordReactions from '@/domain/records/reactions';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { Profile } from '@/features/account/types/profile';
 import { groupReactionItems } from '@/features/records/lib/group-reaction-items';
@@ -6,7 +7,6 @@ import { toggleReaction } from '@/features/records/mutations/toggle-reaction';
 import { Reaction } from '@/features/records/types/reaction';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
-import { REACTION_EMOJIS, normalizeReactionEmoji } from '@/types/emoji';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
@@ -58,8 +58,12 @@ export const Reactions = ({
     () =>
       Array.from(grouped.entries()).sort(
         ([a], [b]) =>
-          REACTION_EMOJIS.indexOf(normalizeReactionEmoji(a)) -
-          REACTION_EMOJIS.indexOf(normalizeReactionEmoji(b))
+          recordReactions.REACTION_EMOJIS.indexOf(
+            recordReactions.normalizeReactionEmoji(a)
+          ) -
+          recordReactions.REACTION_EMOJIS.indexOf(
+            recordReactions.normalizeReactionEmoji(b)
+          )
       ),
     [grouped]
   );
@@ -83,7 +87,7 @@ export const Reactions = ({
         >
           {index === 0 && leading}
           {reactionGroup.map(([emoji, reaction]) => {
-            const reactionEmoji = normalizeReactionEmoji(emoji);
+            const reactionEmoji = recordReactions.normalizeReactionEmoji(emoji);
             const { count, userReacted, userReactionId } = reaction;
 
             return (

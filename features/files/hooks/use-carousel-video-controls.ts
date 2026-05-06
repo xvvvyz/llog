@@ -1,7 +1,7 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import { FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { db } from '@/lib/db';
-import { useUi } from '@/queries/use-ui';
 import * as React from 'react';
 
 const VIDEO_TIME_UI_RESOLUTION_SECONDS = 0.1;

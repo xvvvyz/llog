@@ -1,4 +1,4 @@
-import { Role } from '@/features/teams/types/role';
+import { Role } from '@/domain/teams/role';
 
 type InviteLike = { role: string; logs?: { id: string }[] | null };
 

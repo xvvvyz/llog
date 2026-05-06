@@ -1,6 +1,6 @@
-import * as permissions from '@/features/teams/lib/permissions';
+import * as permissions from '@/domain/teams/permissions';
+import { useUi } from '@/features/account/queries/use-ui';
 import { db } from '@/lib/db';
-import { useUi } from '@/queries/use-ui';
 
 export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
   const auth = db.useAuth();

@@ -1,6 +1,7 @@
 import { useRippleColor } from '@/hooks/use-ripple-color';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
+import { type SortDirection } from '@/lib/sort-direction';
 import { Icon } from '@/ui/icon';
 import { TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
@@ -159,13 +160,6 @@ const Item = React.forwardRef<
 ));
 
 Item.displayName = DropdownMenuPrimitive.Item.displayName;
-const SORT_DIRECTIONS = ['asc', 'desc'] as const;
-
-export type SortDirection = (typeof SORT_DIRECTIONS)[number];
-
-export const isSortDirection = (value: unknown): value is SortDirection =>
-  typeof value === 'string' &&
-  SORT_DIRECTIONS.some((direction) => direction === value);
 
 const SortItem = <T extends string>({
   children,

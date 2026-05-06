@@ -1,3 +1,4 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import { createLogTag } from '@/features/logs/mutations/create-log-tag';
 import { toggleLogTag } from '@/features/logs/mutations/toggle-log-tag';
 import { useLog } from '@/features/logs/queries/use-log';
@@ -7,7 +8,6 @@ import { reorderTags } from '@/features/tags/mutations/reorder-tags';
 import { updateTag } from '@/features/tags/mutations/update-tag';
 import type { Tag } from '@/features/tags/types/tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { useUi } from '@/queries/use-ui';
 import { resolveSpectrumColor, type Color } from '@/theme/spectrum';
 import { Sheet } from '@/ui/sheet';
 import * as React from 'react';

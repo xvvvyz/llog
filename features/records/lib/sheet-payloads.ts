@@ -1,5 +1,5 @@
 import type { SheetManager } from '@/hooks/use-sheet-manager';
-import type { SheetName } from '@/types/sheet-names';
+import type { SheetName } from '@/lib/sheet-names';
 
 export const RECORD_LINK_ATTACHMENTS_SHEET =
   'record-link-attachments' satisfies SheetName;

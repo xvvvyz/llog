@@ -1,4 +1,4 @@
-import { Role } from '@/features/teams/types/role';
+import { Role } from '@/domain/teams/role';
 
 const ROLE_SORT_ORDER: Record<Role, number> = {
   [Role.Owner]: 0,

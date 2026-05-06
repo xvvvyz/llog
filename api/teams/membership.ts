@@ -1,8 +1,8 @@
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db } from '@/api/middleware/db';
 import { removeMember } from '@/api/teams/member-actions';
-import * as permissions from '@/features/teams/lib/permissions';
-import { Role } from '@/features/teams/types/role';
+import * as permissions from '@/domain/teams/permissions';
+import { Role } from '@/domain/teams/role';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 

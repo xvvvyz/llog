@@ -1,9 +1,9 @@
+import { canDeleteOwnOrManagedResource } from '@/domain/teams/permissions';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { useRecordCopyTargets } from '@/features/records/queries/use-record-copy-targets';
-import { canDeleteOwnOrManagedResource } from '@/features/teams/lib/permissions';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';

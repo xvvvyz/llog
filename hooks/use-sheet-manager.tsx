@@ -1,4 +1,4 @@
-import { SheetName } from '@/types/sheet-names';
+import { SheetName } from '@/lib/sheet-names';
 import * as React from 'react';
 import { Keyboard } from 'react-native';
 

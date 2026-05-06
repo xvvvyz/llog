@@ -4,10 +4,10 @@
 @plugin 'tailwindcss-animate';
 
 @source "../app";
-@source "../components";
 @source "../features";
 @source "../ui";
 @source "../hooks";
+@source "../domain";
 
 @layer base {
   html,

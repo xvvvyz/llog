@@ -1,8 +1,8 @@
 import { auth, db } from '@/api/middleware/db';
 import { memberJoinedActivity } from '@/api/teams/member-actions';
-import type { InviteLinkInfo } from '@/features/invites/types/invite-link';
-import * as permissions from '@/features/teams/lib/permissions';
-import { Role } from '@/features/teams/types/role';
+import type { InviteLinkInfo } from '@/domain/invites/invite-link';
+import * as permissions from '@/domain/teams/permissions';
+import { Role } from '@/domain/teams/role';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';

@@ -1,10 +1,10 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
-import { useUi } from '@/queries/use-ui';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';

@@ -2,7 +2,7 @@ import { enqueueAudioAnalysis } from '@/api/audio-analysis';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import * as upload from '@/api/files/file-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
-import * as permissions from '@/features/teams/lib/permissions';
+import * as permissions from '@/domain/teams/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 

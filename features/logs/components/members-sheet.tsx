@@ -1,7 +1,7 @@
+import { isMemberRole } from '@/domain/teams/permissions';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
 import { useLog } from '@/features/logs/queries/use-log';
-import { isMemberRole } from '@/features/teams/lib/permissions';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';

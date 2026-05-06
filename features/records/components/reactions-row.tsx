@@ -1,9 +1,9 @@
+import { REACTION_EMOJIS } from '@/domain/records/reactions';
 import { EmojiPicker } from '@/features/records/components/emoji-picker';
 import { ReactionZone } from '@/features/records/components/reaction-zone';
 import { Reactions } from '@/features/records/components/reactions';
 import type { EntryRecord } from '@/features/records/types/entry';
 import { cn } from '@/lib/cn';
-import { REACTION_EMOJIS } from '@/types/emoji';
 import * as React from 'react';
 import { View } from 'react-native';
 

@@ -1,5 +1,5 @@
+import { Role } from '@/domain/teams/role';
 import { DEFAULT_AUDIO_PLAYBACK_RATE } from '@/features/files/lib/audio-playback-rate';
-import { Role } from '@/features/teams/types/role';
 import { db } from '@/lib/db';
 import { id as generateId } from '@instantdb/react-native';
 

@@ -1,7 +1,7 @@
-import * as permissions from '@/features/teams/lib/permissions';
+import * as permissions from '@/domain/teams/permissions';
+import { useUi } from '@/features/account/queries/use-ui';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { db } from '@/lib/db';
-import { useUi } from '@/queries/use-ui';
 import * as React from 'react';
 
 export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {

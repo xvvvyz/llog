@@ -1,4 +1,4 @@
-import type { ReactionEmoji } from '@/types/emoji';
+import type { ReactionEmoji } from '@/domain/records/reactions';
 import type { ComponentType } from 'react';
 
 import {

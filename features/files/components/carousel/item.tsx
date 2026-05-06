@@ -115,6 +115,7 @@ const ItemComponent = ({
 };
 
 export const Item = React.memo(ItemComponent);
+
 Item.displayName = 'Item';
 
 const CarouselVideoItem = ({

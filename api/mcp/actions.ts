@@ -1,14 +1,14 @@
 import { textResult } from '@/api/mcp/fields';
 import { getVisibleRecord } from '@/api/mcp/records';
 import type { McpContext } from '@/api/mcp/types';
-import * as permissions from '@/features/teams/lib/permissions';
-import { REACTION_EMOJIS, type ReactionEmoji } from '@/types/emoji';
+import * as recordReactions from '@/domain/records/reactions';
+import * as permissions from '@/domain/teams/permissions';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
 const recordActionsActionSchema = z.enum(['reaction', 'pin']);
-const reactionEmojiSchema = z.enum(REACTION_EMOJIS);
+const reactionEmojiSchema = z.enum(recordReactions.REACTION_EMOJIS);
 
 export const registerActionTools = (server: McpServer, ctx: McpContext) => {
   const setReaction = async ({
@@ -16,7 +16,7 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     recordId,
     replyId,
   }: {
-    emoji?: ReactionEmoji | null;
+    emoji?: recordReactions.ReactionEmoji | null;
     recordId?: string;
     replyId?: string;
   }) => {

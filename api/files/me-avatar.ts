@@ -2,7 +2,7 @@ import * as cloudflareImages from '@/api/files/cloudflare-images';
 import { deleteFileAssets } from '@/api/files/delete-file-assets';
 import * as upload from '@/api/files/file-upload';
 import { db } from '@/api/middleware/db';
-import { fileLike } from '@/features/files/types/file-like';
+import { fileLike } from '@/domain/files/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';

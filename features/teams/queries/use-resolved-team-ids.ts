@@ -1,4 +1,4 @@
-import { useUi } from '@/queries/use-ui';
+import { useUi } from '@/features/account/queries/use-ui';
 import * as React from 'react';
 
 export const useResolvedTeamIds = (teamIds?: string[]) => {

@@ -40,6 +40,7 @@ export type AudioTrackNavigationState = {
 const UNKNOWN_ARTIST = 'Unknown artist';
 
 export const TRACK_START_THRESHOLD_SECONDS = 2;
+
 const LOCK_SCREEN_ARTWORK_SIZE = 512;
 type ParseAudioTracksOptions = { fileId?: string | null };
 

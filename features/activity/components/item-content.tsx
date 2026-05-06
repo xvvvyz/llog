@@ -1,9 +1,9 @@
+import { isReactionEmoji } from '@/domain/records/reactions';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
 import { renderLinkifiedText } from '@/features/records/components/linkified-text';
 import { groupReactionItems } from '@/features/records/lib/group-reaction-items';
 import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
-import { isReactionEmoji } from '@/types/emoji';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
 import { View } from 'react-native';

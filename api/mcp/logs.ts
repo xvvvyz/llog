@@ -1,7 +1,7 @@
 import { logFields, table, textResult } from '@/api/mcp/fields';
 import type { McpContext, McpRole } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
-import * as permissions from '@/features/teams/lib/permissions';
+import * as permissions from '@/domain/teams/permissions';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';

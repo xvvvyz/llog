@@ -1,6 +1,6 @@
+import type { InviteLinkInfo } from '@/domain/invites/invite-link';
 import * as storage from '@/features/invites/lib/storage';
 import { redeemInviteLink } from '@/features/invites/mutations/redeem-link';
-import type { InviteLinkInfo } from '@/features/invites/types/invite-link';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { alert } from '@/lib/alert';

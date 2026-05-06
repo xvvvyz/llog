@@ -1,10 +1,10 @@
 import { useProfile } from '@/features/account/queries/use-profile';
+import { useUi } from '@/features/account/queries/use-ui';
 import { Item } from '@/features/activity/components/item';
 import * as grouping from '@/features/activity/lib/group-activities';
 import { markActivitiesRead } from '@/features/activity/mutations/mark-activities-read';
 import { useActivities } from '@/features/activity/queries/use-activities';
 import { cn } from '@/lib/cn';
-import { useUi } from '@/queries/use-ui';
 import { Header } from '@/ui/header';
 import { Icon } from '@/ui/icon';
 import { List } from '@/ui/list';

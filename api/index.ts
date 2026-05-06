@@ -1,7 +1,7 @@
 import * as audioAnalysis from '@/api/audio-analysis';
 import files from '@/api/files';
 import internal from '@/api/internal';
-import { installConsoleErrorSerializer } from '@/api/logging';
+import { installConsoleErrorSerializer } from '@/api/lib/logging';
 import logs from '@/api/logs';
 import { headers } from '@/api/middleware/headers';
 import oauth from '@/api/oauth';

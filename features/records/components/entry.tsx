@@ -1,4 +1,5 @@
 import { useProfile } from '@/features/account/queries/use-profile';
+import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { CompactEntry } from '@/features/records/components/compact-entry';
@@ -10,7 +11,6 @@ import type * as EntryTypes from '@/features/records/types/entry';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { useUi } from '@/queries/use-ui';
 import * as React from 'react';
 
 export const Entry = ({

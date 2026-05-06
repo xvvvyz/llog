@@ -1,5 +1,5 @@
+import * as permissions from '@/domain/teams/permissions';
 import * as activityGroups from '@/features/activity/lib/group-activities';
-import * as permissions from '@/features/teams/lib/permissions';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';

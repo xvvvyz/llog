@@ -1,6 +1,6 @@
-import { DestructiveConfirmSheet } from '@/components/destructive-confirm-sheet';
 import { deleteReply } from '@/features/records/mutations/delete-reply';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
 import * as React from 'react';
 
 export const ReplyDeleteSheet = () => {

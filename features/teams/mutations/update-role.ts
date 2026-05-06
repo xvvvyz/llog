@@ -1,4 +1,4 @@
-import { Role } from '@/features/teams/types/role';
+import { Role } from '@/domain/teams/role';
 import { apiOrThrow } from '@/lib/api';
 
 export const updateRole = async ({

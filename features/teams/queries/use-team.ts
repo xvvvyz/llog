@@ -1,5 +1,5 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import { db } from '@/lib/db';
-import { useUi } from '@/queries/use-ui';
 
 export const useTeam = () => {
   const { activeTeamId } = useUi();

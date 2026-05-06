@@ -1,15 +1,15 @@
+import { REACTION_EMOJIS } from '@/domain/records/reactions';
 import * as push from '@/features/account/lib/web-push';
 import { deleteProfileImage } from '@/features/account/mutations/delete-profile-image';
 import { randomizeProfileAvatar } from '@/features/account/mutations/randomize-profile-avatar';
 import { updateProfile } from '@/features/account/mutations/update-profile';
 import { uploadProfileImage } from '@/features/account/mutations/upload-profile-image';
 import { useProfile } from '@/features/account/queries/use-profile';
+import { useUi } from '@/features/account/queries/use-ui';
 import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
-import { useUi } from '@/queries/use-ui';
-import { REACTION_EMOJIS } from '@/types/emoji';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';

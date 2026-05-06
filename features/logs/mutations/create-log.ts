@@ -1,4 +1,4 @@
-import * as permissions from '@/features/teams/lib/permissions';
+import * as permissions from '@/domain/teams/permissions';
 import { getActiveTeamId } from '@/features/teams/queries/get-active-team-id';
 import { db } from '@/lib/db';
 import { Color } from '@/theme/spectrum';

@@ -1,9 +1,9 @@
+import { Role } from '@/domain/teams/role';
 import { findMemberInviteByLogs } from '@/features/invites/lib/matching';
 import { getInviteUrl } from '@/features/invites/lib/url';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLog } from '@/features/logs/queries/use-log';
-import { Role } from '@/features/teams/types/role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';

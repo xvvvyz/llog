@@ -158,9 +158,11 @@ export const AudioPreview = ({
                     }
                     trailingAccessory={
                       <Button
+                        className="rounded-none"
                         onPress={() => onDeleteFile(previewItem.item.id)}
                         size="icon-xs"
                         variant="ghost"
+                        wrapperClassName="rounded-none"
                       >
                         <Icon icon={X} />
                       </Button>

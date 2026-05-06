@@ -1,6 +1,6 @@
-import { DestructiveConfirmSheet } from '@/components/destructive-confirm-sheet';
 import { deleteLog } from '@/features/logs/mutations/delete-log';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
 import { router } from 'expo-router';
 import * as React from 'react';
 

@@ -1,8 +1,8 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import { createTeam } from '@/features/teams/mutations/create';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { useUi } from '@/queries/use-ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';

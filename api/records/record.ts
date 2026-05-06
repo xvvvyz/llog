@@ -1,8 +1,8 @@
+import { deleteActivities } from '@/api/activity/delete-activities';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db, type Db } from '@/api/middleware/db';
 import * as push from '@/api/push/web-push';
-import { deleteActivities } from '@/features/activity/lib/delete-activities';
-import * as permissions from '@/features/teams/lib/permissions';
+import * as permissions from '@/domain/teams/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';

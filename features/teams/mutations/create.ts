@@ -1,6 +1,6 @@
-import { Role } from '@/features/teams/types/role';
+import { Role } from '@/domain/teams/role';
+import { getUi } from '@/features/account/queries/get-ui';
 import { db } from '@/lib/db';
-import { getUi } from '@/queries/get-ui';
 import { id as generateId } from '@instantdb/react-native';
 
 export const createTeam = async ({ name }: { name: string }) => {

@@ -13,6 +13,7 @@ const SOURCE_EXTENSIONS = new Set([
 ]);
 
 const PRINT_WIDTH = 80;
+const FORMAT_IGNORED_DIRECTORIES = new Set(['public']);
 
 const PROP_PRIORITY = new Map([
   ['key', 0],
@@ -94,9 +95,17 @@ function isSourceFile(filePath: string) {
   return SOURCE_EXTENSIONS.has(path.extname(filePath));
 }
 
+function isFormatIgnoredPath(filePath: string) {
+  const [directory] = normalizeRelativePath(filePath).split('/');
+  return FORMAT_IGNORED_DIRECTORIES.has(directory);
+}
+
 function collectTargetFiles(targets: string[]) {
   const args = ['ls-files', '--cached', '--others', '--exclude-standard'];
-  if (targets.length === 0) return gitFiles(args);
+
+  if (targets.length === 0) {
+    return gitFiles(args).filter((filePath) => !isFormatIgnoredPath(filePath));
+  }
 
   const pathspecs = targets.map((target) => {
     const absoluteTarget = path.resolve(repoRoot, target);
@@ -110,23 +119,27 @@ function collectTargetFiles(targets: string[]) {
     );
   });
 
-  return gitFiles([...args, '--', ...pathspecs]);
+  return gitFiles([...args, '--', ...pathspecs]).filter(
+    (filePath) => !isFormatIgnoredPath(filePath)
+  );
 }
 
 function collectPrettierTargets(targets: string[]) {
   if (targets.length === 0) return ['.'];
 
-  return targets.map((target) => {
-    const absoluteTarget = path.resolve(repoRoot, target);
+  return targets
+    .map((target) => {
+      const absoluteTarget = path.resolve(repoRoot, target);
 
-    if (!isInsideRepo(absoluteTarget)) {
-      throw new Error(`Target is outside the repository: ${target}`);
-    }
+      if (!isInsideRepo(absoluteTarget)) {
+        throw new Error(`Target is outside the repository: ${target}`);
+      }
 
-    return (
-      normalizeRelativePath(path.relative(repoRoot, absoluteTarget)) || '.'
-    );
-  });
+      return (
+        normalizeRelativePath(path.relative(repoRoot, absoluteTarget)) || '.'
+      );
+    })
+    .filter((filePath) => !isFormatIgnoredPath(filePath));
 }
 
 function scriptKind(filePath: string) {
@@ -695,10 +708,10 @@ function formatStatementWhitespace(filePath: string, text: string) {
       const next = statements[index + 1];
       const previousIsExport = isExportStatement(previous);
       const nextIsExport = isExportStatement(next);
-      const needsExportSeparator = previousIsExport && nextIsExport;
+      const needsPostExportSeparator = previousIsExport;
 
       const needsSeparator =
-        needsExportSeparator ||
+        needsPostExportSeparator ||
         spansMultipleLines(previous) ||
         spansMultipleLines(next) ||
         (ts.isImportDeclaration(previous) && !ts.isImportDeclaration(next)) ||
@@ -717,7 +730,7 @@ function formatStatementWhitespace(filePath: string, text: string) {
       const current = lines.slice(start, end);
 
       if (needsSeparator) {
-        if (needsExportSeparator) {
+        if (needsPostExportSeparator) {
           if (current.length !== 1 || !isBlankLine(current[0])) {
             edits.push({ end, replacement: [''], start });
           }
@@ -862,7 +875,7 @@ function formatLocalNamespaceImports(filePath: string, text: string) {
 }
 
 function namespaceImportConversions(parsed: ParsedSource) {
-  const { lineAt, source } = parsed;
+  const { source } = parsed;
   const conversions: NamespaceImportConversion[] = [];
 
   for (const statement of source.statements) {
@@ -871,16 +884,10 @@ function namespaceImportConversions(parsed: ParsedSource) {
     if (!importClause || importClause.name) continue;
     if (!ts.isStringLiteralLike(statement.moduleSpecifier)) continue;
     if (!isLocalModuleSpecifier(statement.moduleSpecifier.text)) continue;
-
-    if (
-      lineAt(statement.getStart(source, false)) === lineAt(statement.getEnd())
-    ) {
-      continue;
-    }
-
     const namedBindings = importClause.namedBindings;
     if (!namedBindings || !ts.isNamedImports(namedBindings)) continue;
     if (namedBindings.elements.length === 0) continue;
+    if (!namedImportsWrapMultipleLines(parsed, namedBindings)) continue;
     if (hasComment(statement.getFullText(source))) continue;
     const exportedNames = new Map<string, string>();
 
@@ -901,6 +908,18 @@ function namespaceImportConversions(parsed: ParsedSource) {
   }
 
   return conversions;
+}
+
+function namedImportsWrapMultipleLines(
+  parsed: ParsedSource,
+  namedBindings: ts.NamedImports
+) {
+  const { lineAt, source } = parsed;
+
+  return (
+    lineAt(namedBindings.getStart(source, false)) !==
+    lineAt(namedBindings.getEnd())
+  );
 }
 
 function hasUnsupportedNamespaceImportReferences(

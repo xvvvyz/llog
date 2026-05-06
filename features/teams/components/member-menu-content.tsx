@@ -1,5 +1,5 @@
+import { Role } from '@/domain/teams/role';
 import { updateRole } from '@/features/teams/mutations/update-role';
-import { Role } from '@/features/teams/types/role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { UI } from '@/theme/ui';

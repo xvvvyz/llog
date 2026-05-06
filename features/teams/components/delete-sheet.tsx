@@ -1,9 +1,9 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import { deleteTeam } from '@/features/teams/mutations/delete';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeam } from '@/features/teams/queries/use-team';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { useUi } from '@/queries/use-ui';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';

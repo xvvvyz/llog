@@ -1,6 +1,6 @@
 import { auth, db } from '@/api/middleware/db';
-import * as permissions from '@/features/teams/lib/permissions';
-import { Role } from '@/features/teams/types/role';
+import * as permissions from '@/domain/teams/permissions';
+import { Role } from '@/domain/teams/role';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
 import { Hono } from 'hono';

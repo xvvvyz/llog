@@ -1,5 +1,5 @@
+import { Role } from '@/domain/teams/role';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
-import { Role } from '@/features/teams/types/role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import { UI } from '@/theme/ui';

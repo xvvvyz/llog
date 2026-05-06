@@ -1,13 +1,13 @@
+import { Role } from '@/domain/teams/role';
+import { useUi } from '@/features/account/queries/use-ui';
 import { LogsSheetContent } from '@/features/invites/components/logs-sheet-content';
 import { findMemberInviteByLogs } from '@/features/invites/lib/matching';
 import { getInviteUrl } from '@/features/invites/lib/url';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
-import { Role } from '@/features/teams/types/role';
 import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
-import { useUi } from '@/queries/use-ui';
 import { Sheet } from '@/ui/sheet';
 import * as React from 'react';
 

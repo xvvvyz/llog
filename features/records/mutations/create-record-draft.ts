@@ -1,5 +1,5 @@
+import { resolveProfileAndTeam } from '@/features/account/queries/resolve-profile-and-team';
 import { db } from '@/lib/db';
-import { resolveProfileAndTeam } from '@/queries/resolve-profile-and-team';
 import { id } from '@instantdb/react-native';
 
 export const createRecordDraft = async ({

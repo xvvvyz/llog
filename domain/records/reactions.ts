@@ -1,6 +1,7 @@
 export const REACTION_EMOJIS = ['❤️', '🔥', '🎉', '👍', '👎'] as const;
 
 export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+
 const DEFAULT_REACTION_EMOJI = REACTION_EMOJIS[0];
 const REACTION_EMOJI_SET = new Set<string>(REACTION_EMOJIS);
 

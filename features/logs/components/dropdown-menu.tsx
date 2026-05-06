@@ -1,6 +1,6 @@
+import { isMemberRole } from '@/domain/teams/permissions';
 import { LogDropdownItems } from '@/features/invites/components/log-dropdown-items';
 import { useLog } from '@/features/logs/queries/use-log';
-import { isMemberRole } from '@/features/teams/lib/permissions';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useSheetManager } from '@/hooks/use-sheet-manager';

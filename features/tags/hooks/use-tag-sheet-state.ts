@@ -1,4 +1,4 @@
-import * as tagSearch from '@/features/tags/lib/search-tags';
+import * as tagSearch from '@/domain/tags/search-tags';
 import type { Tag } from '@/features/tags/types/tag';
 import * as React from 'react';
 

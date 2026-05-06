@@ -12,6 +12,7 @@ export type SearchFileItem = Pick<
 type SearchPerson = Pick<Profile, 'avatarSeedId' | 'id' | 'name'>;
 
 export type SearchProfile = SearchPerson & { uri?: string };
+
 type SearchAuthor = SearchPerson & { image?: { uri: string } };
 
 export type SearchTag = Pick<Tag, 'color' | 'id' | 'name' | 'order'>;

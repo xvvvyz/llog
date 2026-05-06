@@ -8,6 +8,7 @@ export type FileUriToSrcOptions = {
 };
 
 export type FileSource = { assetKey?: string | null; uri?: string | null };
+
 const DEFAULT_CLOUDFLARE_IMAGE_QUALITY = 75;
 const DEFAULT_CLOUDFLARE_IMAGE_FORMAT = 'webp';
 const CLOUDFLARE_STREAM_THUMBNAIL_MIN_SIZE = 10;

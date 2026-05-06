@@ -1,4 +1,4 @@
-import { FileLike } from '@/features/files/types/file-like';
+import { FileLike } from '@/domain/files/file-like';
 import { Platform } from 'react-native';
 
 type FileBackedAsset = {

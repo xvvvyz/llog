@@ -1,8 +1,8 @@
+import { useUi } from '@/features/account/queries/use-ui';
 import type { SortBy } from '@/features/logs/lib/sort';
 import { updateUiLogsSort } from '@/features/logs/mutations/update-ui-sort';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { cn } from '@/lib/cn';
-import { useUi } from '@/queries/use-ui';
 import { Button } from '@/ui/button';
 import * as DropdownMenu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';

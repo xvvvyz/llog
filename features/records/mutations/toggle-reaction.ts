@@ -1,6 +1,6 @@
+import type { ReactionEmoji } from '@/domain/records/reactions';
+import { resolveProfileAndTeam } from '@/features/account/queries/resolve-profile-and-team';
 import { db } from '@/lib/db';
-import { resolveProfileAndTeam } from '@/queries/resolve-profile-and-team';
-import type { ReactionEmoji } from '@/types/emoji';
 import { id } from '@instantdb/react-native';
 
 export const toggleReaction = async ({

@@ -1,8 +1,8 @@
+import { normalizeReactionEmoji } from '@/domain/records/reactions';
 import * as audioPlaybackRateUtils from '@/features/files/lib/audio-playback-rate';
 import { isSortBy, type SortBy } from '@/features/logs/lib/sort';
 import { db } from '@/lib/db';
-import { normalizeReactionEmoji } from '@/types/emoji';
-import { isSortDirection, type SortDirection } from '@/ui/dropdown-menu';
+import { isSortDirection, type SortDirection } from '@/lib/sort-direction';
 
 export const useUi = () => {
   const auth = db.useAuth();
