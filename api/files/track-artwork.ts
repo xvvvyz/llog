@@ -53,17 +53,6 @@ const getHttpUrl = (value?: string) => {
   }
 };
 
-const getHexDigest = async (value: string) => {
-  const bytes = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(value)
-  );
-
-  return [...new Uint8Array(bytes)]
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-};
-
 const getTrackArtworkUrl = async ({
   dbClient,
   fileId,
@@ -100,43 +89,22 @@ const getTrackArtworkUrl = async ({
   return sourceUrl;
 };
 
-const getTrackArtworkCacheKey = async ({
-  requestUrl,
-  sourceUrl,
-}: {
-  requestUrl: string;
-  sourceUrl: URL;
-}) => {
-  const url = new URL(requestUrl);
-  url.search = '';
-  url.searchParams.set('source', await getHexDigest(sourceUrl.toString()));
-  return new Request(url.toString(), { method: 'GET' });
-};
-
-const transformTrackArtwork = async (env: CloudflareEnv, sourceUrl: URL) => {
-  const sourceResponse = await fetch(sourceUrl.toString(), {
+const transformTrackArtwork = async (sourceUrl: URL) => {
+  const response = await fetch(sourceUrl.toString(), {
+    cf: {
+      image: {
+        fit: 'cover',
+        format: 'webp',
+        height: LOCK_SCREEN_ARTWORK_DIMENSION,
+        metadata: 'none',
+        quality: LOCK_SCREEN_ARTWORK_QUALITY,
+        width: LOCK_SCREEN_ARTWORK_DIMENSION,
+      },
+    },
     headers: { Accept: 'image/avif,image/webp,image/*,*/*' },
   });
 
-  if (!sourceResponse.ok || !sourceResponse.body) {
-    throw new HTTPException(502, { message: 'Artwork fetch failed' });
-  }
-
-  const output = await env.IMAGES.input(sourceResponse.body)
-    .transform({
-      fit: 'cover',
-      height: LOCK_SCREEN_ARTWORK_DIMENSION,
-      width: LOCK_SCREEN_ARTWORK_DIMENSION,
-    })
-    .output({ format: 'image/webp', quality: LOCK_SCREEN_ARTWORK_QUALITY })
-    .catch((error: unknown) => {
-      console.error('Failed to transform track artwork', { error });
-      throw new HTTPException(502, { message: 'Artwork transform failed' });
-    });
-
-  const response = output.response();
-
-  if (!response.body) {
+  if (!response.ok || !response.body) {
     throw new HTTPException(502, { message: 'Artwork transform failed' });
   }
 
@@ -144,7 +112,6 @@ const transformTrackArtwork = async (env: CloudflareEnv, sourceUrl: URL) => {
   headers.delete('Set-Cookie');
   headers.delete('Vary');
   headers.set('Cache-Control', TRACK_ARTWORK_CACHE_CONTROL);
-  headers.set('Content-Type', 'image/webp');
 
   return new Response(response.body, {
     headers,
@@ -160,28 +127,7 @@ app.get('/:fileId/tracks/:trackIndex/artwork', db(), async (c) => {
     trackIndex: parseTrackIndex(c.req.param('trackIndex')),
   });
 
-  const cache = await caches.open('track-artwork');
-
-  const cacheKey = await getTrackArtworkCacheKey({
-    requestUrl: c.req.url,
-    sourceUrl,
-  });
-
-  const cachedResponse = await cache.match(cacheKey);
-  if (cachedResponse) return cachedResponse;
-  const response = await transformTrackArtwork(c.env, sourceUrl);
-
-  c.executionCtx.waitUntil(
-    cache.put(cacheKey, response.clone()).catch((error: unknown) => {
-      console.error('Failed to cache track artwork', {
-        error,
-        fileId: c.req.param('fileId'),
-        trackIndex: c.req.param('trackIndex'),
-      });
-    })
-  );
-
-  return response;
+  return transformTrackArtwork(sourceUrl);
 });
 
 export default app;
