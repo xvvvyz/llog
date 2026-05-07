@@ -12,6 +12,7 @@ ios/
 web/
 
 /*.d.ts
+expo-env.d.ts
 
 public/apple-startup/
 public/apple-touch-icon*.png

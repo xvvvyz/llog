@@ -2,6 +2,7 @@ import type { AudioFile } from '@/api/audio-analysis/types';
 import { asNumber, asString, isRecord } from '@/lib/coerce';
 
 const OPENAI_STT_MODEL = 'gpt-4o-mini-transcribe';
+const OPENAI_TRANSCRIPTION_UPLOAD_MAX_BYTES = 25 * 1024 * 1024;
 const MIN_AVERAGE_LOGPROB = -1.5;
 
 const readResponseJson = async (response: Response) => {
@@ -49,30 +50,45 @@ const shouldKeepTranscript = ({
   return confidence === undefined || confidence >= MIN_AVERAGE_LOGPROB;
 };
 
-export const transcribeAudioFile = async ({
+const uploadTooLargeError = () =>
+  new Error(
+    "The video's generated audio is larger than OpenAI's 25 MB transcription upload limit."
+  );
+
+const isOpenAiUploadSizeError = (result: unknown) => {
+  const value = JSON.stringify(result ?? '').toLowerCase();
+
+  return (
+    value.includes('25 mb') ||
+    value.includes('26214400') ||
+    value.includes('maximum content size') ||
+    (value.includes('larger') && value.includes('limit'))
+  );
+};
+
+const parseContentLength = (response: Response) => {
+  const value = response.headers.get('content-length');
+  if (!value) return undefined;
+  const length = Number(value);
+  return Number.isFinite(length) && length >= 0 ? length : undefined;
+};
+
+const transcribeAudioUpload = async ({
   env,
-  file,
-  object,
+  failWithUploadLimitError,
+  upload,
 }: {
   env: CloudflareEnv;
-  file: AudioFile;
-  object: R2ObjectBody;
+  failWithUploadLimitError?: boolean;
+  upload: { bytes: ArrayBuffer; contentType: string; fileName: string };
 }) => {
   const apiKey = env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is required');
-
-  const contentType =
-    object.httpMetadata?.contentType || file.mimeType || 'audio/mp4';
-
   const body = new FormData();
 
   body.append(
     'file',
-    new File(
-      [await object.arrayBuffer()],
-      getAudioFileName(file, contentType),
-      { type: contentType }
-    )
+    new File([upload.bytes], upload.fileName, { type: upload.contentType })
   );
 
   body.append('model', OPENAI_STT_MODEL);
@@ -92,6 +108,10 @@ export const transcribeAudioFile = async ({
   const result = await readResponseJson(response);
 
   if (!response.ok) {
+    if (failWithUploadLimitError && isOpenAiUploadSizeError(result)) {
+      throw uploadTooLargeError();
+    }
+
     throw new Error(`OpenAI transcript failed: ${JSON.stringify(result)}`);
   }
 
@@ -99,4 +119,72 @@ export const transcribeAudioFile = async ({
   const text = asString(result.text);
   if (!text || !shouldKeepTranscript({ result, text })) return undefined;
   return text;
+};
+
+export const transcribeAudioFile = async ({
+  env,
+  file,
+  object,
+}: {
+  env: CloudflareEnv;
+  file: AudioFile;
+  object: R2ObjectBody;
+}) => {
+  const contentType =
+    object.httpMetadata?.contentType || file.mimeType || 'audio/mp4';
+
+  return transcribeAudioUpload({
+    env,
+    upload: {
+      bytes: await object.arrayBuffer(),
+      contentType,
+      fileName: getAudioFileName(file, contentType),
+    },
+  });
+};
+
+export const transcribeAudioUrl = async ({
+  contentType,
+  env,
+  fileName,
+  url,
+}: {
+  contentType?: string;
+  env: CloudflareEnv;
+  fileName: string;
+  url: string;
+}) => {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `Cloudflare Stream audio download failed (${response.status})`
+    );
+  }
+
+  const contentLength = parseContentLength(response);
+
+  if (
+    contentLength != null &&
+    contentLength > OPENAI_TRANSCRIPTION_UPLOAD_MAX_BYTES
+  ) {
+    throw uploadTooLargeError();
+  }
+
+  const bytes = await response.arrayBuffer();
+
+  if (bytes.byteLength > OPENAI_TRANSCRIPTION_UPLOAD_MAX_BYTES) {
+    throw uploadTooLargeError();
+  }
+
+  return transcribeAudioUpload({
+    env,
+    failWithUploadLimitError: true,
+    upload: {
+      bytes,
+      contentType:
+        response.headers.get('content-type') || contentType || 'audio/mp4',
+      fileName,
+    },
+  });
 };

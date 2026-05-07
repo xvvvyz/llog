@@ -2,6 +2,8 @@ export type AudioFile = {
   assetKey?: string | null;
   duration?: number | null;
   id: string;
+  isIdentifying?: boolean | null;
+  isTranscribing?: boolean | null;
   mimeType?: string | null;
   name?: string | null;
   tracks?: unknown;

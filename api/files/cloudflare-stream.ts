@@ -1,6 +1,19 @@
 import { Context } from 'hono';
 
 const API_BASE = 'https://api.cloudflare.com/client/v4';
+type StreamDownloadStatus = 'error' | 'inprogress' | 'ready';
+
+type StreamDownload = {
+  percentComplete?: number;
+  status?: StreamDownloadStatus;
+  url?: string;
+};
+
+type StreamDownloads = { audio?: StreamDownload; default?: StreamDownload };
+
+export type StreamAudioDownload =
+  | { status: 'error' | 'inprogress' }
+  | { status: 'ready'; url: string };
 
 const getConfig = (env: CloudflareEnv) => {
   if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_STREAM_API_TOKEN) {
@@ -95,6 +108,59 @@ export const deleteStreamVideo = async (env: CloudflareEnv, uid: string) => {
     { method: 'DELETE' },
     { ignoreNotFound: true }
   );
+};
+
+const getAudioDownload = (
+  result?: StreamDownload | StreamDownloads | null
+): StreamDownload | undefined => {
+  if (!result) return undefined;
+  if ('audio' in result || 'default' in result) return result.audio;
+  return result as StreamDownload;
+};
+
+const normalizeAudioDownload = (
+  download?: StreamDownload
+): StreamAudioDownload => {
+  if (!download) return { status: 'inprogress' };
+  if (download.status === 'error') return { status: 'error' };
+
+  if (download.status === 'ready') {
+    if (!download.url) {
+      throw new Error('Cloudflare Stream audio download is missing a URL');
+    }
+
+    return { status: 'ready', url: download.url };
+  }
+
+  return { status: 'inprogress' };
+};
+
+export const requestStreamAudioDownload = async (
+  env: CloudflareEnv,
+  uid: string
+) => {
+  const result = await streamFetch<StreamDownload | StreamDownloads>(
+    env,
+    `/stream/${uid}/downloads/audio`,
+    { method: 'POST' }
+  );
+
+  return normalizeAudioDownload(getAudioDownload(result));
+};
+
+export const getStreamDownloads = (env: CloudflareEnv, uid: string) =>
+  streamFetch<StreamDownloads>(env, `/stream/${uid}/downloads`);
+
+export const resolveStreamAudioDownload = async (
+  env: CloudflareEnv,
+  uid: string
+): Promise<StreamAudioDownload> => {
+  const existing = normalizeAudioDownload(
+    getAudioDownload(await getStreamDownloads(env, uid))
+  );
+
+  if (existing.status !== 'inprogress') return existing;
+  return requestStreamAudioDownload(env, uid);
 };
 
 const parseWebhookSignature = (header: string) => {

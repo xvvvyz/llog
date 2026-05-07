@@ -24,6 +24,8 @@ const schema = i.schema({
     files: i.entity({
       assetKey: i.string().optional(),
       duration: i.number().optional(),
+      isIdentifying: i.boolean().optional(),
+      isTranscribing: i.boolean().optional(),
       mimeType: i.string().optional(),
       name: i.string().optional(),
       order: i.number().indexed(),

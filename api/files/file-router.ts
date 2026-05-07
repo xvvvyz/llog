@@ -1,7 +1,9 @@
 import * as audioAnalysis from '@/api/audio-analysis';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
+import { assertCanAnalyzeTargetFiles } from '@/api/files/file-analysis-permissions';
 import * as upload from '@/api/files/file-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
+import { isAudioAnalysisFileType } from '@/domain/files/audio-analysis';
 import * as permissions from '@/domain/teams/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -32,14 +34,20 @@ type FileRouteConfig = {
   resolveUploadTarget: (c: FileContext) => Promise<UploadTarget>;
 };
 
-const getAudioFilesForTarget = async (dbClient: Db, target: UploadTarget) => {
+const getAudioAnalysisFilesForTarget = async (
+  dbClient: Db,
+  target: UploadTarget
+) => {
   const where =
     target.linkField === 'record'
-      ? { record: target.linkId, type: 'audio' }
-      : { reply: target.linkId, type: 'audio' };
+      ? { record: target.linkId }
+      : { reply: target.linkId };
 
   const { files } = await dbClient.query({ files: { $: { where } } });
-  return files as audioAnalysis.AudioFile[];
+
+  return files.filter((file) =>
+    isAudioAnalysisFileType(file.type)
+  ) as audioAnalysis.AudioFile[];
 };
 
 export const assertReplyRecord = async (
@@ -126,15 +134,13 @@ export const createFileRouter = <const TPath extends string>({
   app.post(`${basePath}/transcribe`, db(), auth(), async (c) => {
     const target = await resolveUploadTarget(c);
 
-    await upload.assertCanUploadToOwnedTarget({
-      creatorId: c.var.user.id,
-      db: c.var.db,
-      linkField: target.linkField,
-      linkId: target.linkId,
-      recordId: target.recordId,
+    await assertCanAnalyzeTargetFiles({
+      dbClient: c.var.db,
+      target,
+      userId: c.var.user.id,
     });
 
-    const files = await getAudioFilesForTarget(c.var.db, target);
+    const files = await getAudioAnalysisFilesForTarget(c.var.db, target);
 
     const result = await audioAnalysis.transcribeAudioFiles({
       db: c.var.db,
@@ -148,15 +154,13 @@ export const createFileRouter = <const TPath extends string>({
   app.post(`${basePath}/detect-music`, db(), auth(), async (c) => {
     const target = await resolveUploadTarget(c);
 
-    await upload.assertCanUploadToOwnedTarget({
-      creatorId: c.var.user.id,
-      db: c.var.db,
-      linkField: target.linkField,
-      linkId: target.linkId,
-      recordId: target.recordId,
+    await assertCanAnalyzeTargetFiles({
+      dbClient: c.var.db,
+      target,
+      userId: c.var.user.id,
     });
 
-    const files = await getAudioFilesForTarget(c.var.db, target);
+    const files = await getAudioAnalysisFilesForTarget(c.var.db, target);
 
     const result = await audioAnalysis.detectAudioFilesMusicTracks({
       db: c.var.db,

@@ -1,3 +1,4 @@
+import { canTranscribeAudioAnalysisFile } from '@/domain/files/audio-analysis';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
@@ -43,10 +44,32 @@ export const Entry = ({
     record.files || []
   );
 
+  const audioAnalysisMedia = React.useMemo(
+    () => [
+      ...audioMedia,
+      ...visualMedia.filter((file) => file.type === 'video'),
+    ],
+    [audioMedia, visualMedia]
+  );
+
+  const detectableAudioMedia = React.useMemo(
+    () => audioAnalysisMedia.filter((file) => file.tracks == null),
+    [audioAnalysisMedia]
+  );
+
+  const transcribableAudioMedia = React.useMemo(
+    () => audioAnalysisMedia.filter(canTranscribeAudioAnalysisFile),
+    [audioAnalysisMedia]
+  );
+
   const entryMenuState = useEntryMenuState({
     authorId: record.author?.id,
-    hasDetectableAudio: audioMedia.some((file) => file.tracks == null),
-    hasTranscribableAudio: audioMedia.some((file) => file.transcript == null),
+    hasDetectableAudio: detectableAudioMedia.length > 0,
+    hasTranscribableAudio: transcribableAudioMedia.length > 0,
+    isIdentifyingAudio: detectableAudioMedia.some((file) => file.isIdentifying),
+    isTranscribingAudio: transcribableAudioMedia.some(
+      (file) => file.isTranscribing
+    ),
     logId,
     replyId,
     teamId: record.teamId,

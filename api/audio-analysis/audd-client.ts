@@ -25,11 +25,17 @@ const readResponseJson = async (response: Response) => {
 export const recognizeAudioFileMusicTracks = async ({
   env,
   file,
+  url,
 }: {
   env: CloudflareEnv;
   file: AudioFile;
+  url?: string;
 }) => {
-  if (!file.assetKey) return [];
+  const audioUrl =
+    url ??
+    (file.assetKey ? getFileR2Url(file.assetKey, env.APP_URL) : undefined);
+
+  if (!audioUrl) return [];
   const body = new FormData();
 
   body.append(
@@ -37,7 +43,7 @@ export const recognizeAudioFileMusicTracks = async ({
     requireConfigValue(env.AUDD_API_KEY, 'AUDD_API_KEY')
   );
 
-  body.append('url', getFileR2Url(file.assetKey, env.APP_URL));
+  body.append('url', audioUrl);
   body.append('accurate_offsets', 'true');
   body.append('every', auddParams.AUDD_SCAN_EVERY_CHUNKS.toString());
   body.append('skip', auddParams.AUDD_SCAN_SKIP_CHUNKS.toString());
