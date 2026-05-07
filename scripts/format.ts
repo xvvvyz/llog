@@ -630,7 +630,14 @@ function formatImports(filePath: string, text: string) {
     const startLine = lineAt(node.getStart(source, false));
     const endLine = lineAt(node.getEnd());
     const block = lines.slice(startLine, endLine + 1);
-    return { block, endLine, isMultiline: startLine !== endLine, startLine };
+
+    return {
+      block,
+      endLine,
+      isMultiline: startLine !== endLine,
+      node,
+      startLine,
+    };
   });
 
   for (let index = 0; index < importBlocks.length - 1; index += 1) {
@@ -640,23 +647,19 @@ function formatImports(filePath: string, text: string) {
     if (between.some((line) => line.trim() !== '')) return text;
   }
 
-  const singleLineBlocks = importBlocks
-    .filter((block) => !block.isMultiline)
-    .map((block) => block.block);
+  const singleLineBlocks = importBlocks.filter((block) => !block.isMultiline);
+  const multilineBlocks = importBlocks.filter((block) => block.isMultiline);
 
-  const multilineBlocks = importBlocks
-    .filter((block) => block.isMultiline)
-    .map((block) => block.block);
+  const orderedBlocks =
+    singleLineBlocks.length > 0 && multilineBlocks.length > 0
+      ? [...singleLineBlocks, ...multilineBlocks]
+      : importBlocks;
 
-  if (singleLineBlocks.length === 0 || multilineBlocks.length === 0) {
-    return text;
-  }
-
-  const nextImportLines = [
-    ...singleLineBlocks.flat(),
-    '',
-    ...multilineBlocks.flat(),
-  ];
+  const nextImportLines = orderedBlocks.flatMap((block, index) =>
+    index > 0 && isMultilineExternalImport(block.node)
+      ? ['', ...block.block]
+      : block.block
+  );
 
   const start = lineAt(imports[0].getStart(source, false));
   const end = lineAt(imports[imports.length - 1].getEnd()) + 1;
@@ -664,6 +667,17 @@ function formatImports(filePath: string, text: string) {
   if (currentImportLines.join('\n') === nextImportLines.join('\n')) return text;
   lines.splice(start, end - start, ...nextImportLines);
   return lines.join(newline) + (hadFinalNewline ? newline : '');
+}
+
+function isMultilineExternalImport(node: ts.ImportDeclaration) {
+  if (!ts.isStringLiteralLike(node.moduleSpecifier)) return false;
+  if (isLocalModuleSpecifier(node.moduleSpecifier.text)) return false;
+  const source = node.getSourceFile();
+
+  return (
+    source.getLineAndCharacterOfPosition(node.getStart(source, false)).line !==
+    source.getLineAndCharacterOfPosition(node.getEnd()).line
+  );
 }
 
 function formatStatementWhitespace(filePath: string, text: string) {
@@ -708,14 +722,24 @@ function formatStatementWhitespace(filePath: string, text: string) {
       const next = statements[index + 1];
       const previousIsExport = isExportStatement(previous);
       const nextIsExport = isExportStatement(next);
+
+      const bothImports =
+        ts.isImportDeclaration(previous) && ts.isImportDeclaration(next);
+
       const needsPostExportSeparator = previousIsExport;
 
+      const needsImportSeparator =
+        bothImports && isMultilineExternalImport(next);
+
       const needsSeparator =
-        needsPostExportSeparator ||
-        spansMultipleLines(previous) ||
-        spansMultipleLines(next) ||
-        (ts.isImportDeclaration(previous) && !ts.isImportDeclaration(next)) ||
-        (nextIsExport && !previousIsExport);
+        needsImportSeparator ||
+        (!bothImports &&
+          (needsPostExportSeparator ||
+            spansMultipleLines(previous) ||
+            spansMultipleLines(next) ||
+            (ts.isImportDeclaration(previous) &&
+              !ts.isImportDeclaration(next)) ||
+            (nextIsExport && !previousIsExport)));
 
       const previousEndLine = lineAt(previous.getEnd());
 
@@ -1217,13 +1241,16 @@ function formatSource(filePath: string, text: string) {
     filePath,
     formatStatementWhitespace(
       filePath,
-      formatLocalNamespaceImports(
+      formatImports(
         filePath,
-        formatImports(
+        formatLocalNamespaceImports(
           filePath,
-          formatSwitchCases(
+          formatImports(
             filePath,
-            formatIfStatements(filePath, formatJsx(filePath, text))
+            formatSwitchCases(
+              filePath,
+              formatIfStatements(filePath, formatJsx(filePath, text))
+            )
           )
         )
       )
