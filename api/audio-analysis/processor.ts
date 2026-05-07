@@ -1,69 +1,102 @@
 import { recognizeAudioFileMusicTracks } from '@/api/audio-analysis/audd-client';
 import { transcribeAudioFile } from '@/api/audio-analysis/openai';
-import { getAudioFile, updateAudioFile } from '@/api/audio-analysis/repository';
+import { updateAudioFile } from '@/api/audio-analysis/repository';
 import type * as audioAnalysisTypes from '@/api/audio-analysis/types';
-import { createAdminDb, type Db } from '@/api/middleware/db';
+import { type Db } from '@/api/middleware/db';
 
 const MIN_AUDIO_ANALYSIS_DURATION_MS = 2000;
 
-export const handleAudioAnalysisBatch = async (
-  batch: MessageBatch<audioAnalysisTypes.AudioAnalysisJob>,
-  env: CloudflareEnv
-) => {
-  for (const message of batch.messages) {
-    try {
-      await processAudio(message.body, env);
-      message.ack();
-    } catch (error) {
-      console.error('Audio analysis failed', {
-        error,
-        fileId: message.body.fileId,
-      });
-
-      message.retry();
-    }
-  }
+type AudioAssetFile = audioAnalysisTypes.AudioFile & {
+  assetKey: string;
+  type: 'audio';
 };
 
-const processAudio = async (
-  job: audioAnalysisTypes.AudioAnalysisJob,
-  env: CloudflareEnv
-) => {
-  const db = createAdminDb(env);
-  const file = await getAudioFile(db, job.fileId);
-  if (!file?.id || file.type !== 'audio' || !file.assetKey) return;
+const hasAudioAssetFile = (
+  file?: audioAnalysisTypes.AudioFile
+): file is AudioAssetFile =>
+  !!file?.id && file.type === 'audio' && !!file.assetKey;
 
-  if (
-    typeof file.duration === 'number' &&
-    Number.isFinite(file.duration) &&
-    file.duration < MIN_AUDIO_ANALYSIS_DURATION_MS
-  ) {
-    return;
+const isTooShortForAnalysis = (file: audioAnalysisTypes.AudioFile) =>
+  typeof file.duration === 'number' &&
+  Number.isFinite(file.duration) &&
+  file.duration < MIN_AUDIO_ANALYSIS_DURATION_MS;
+
+export const transcribeAudioFileTranscript = async ({
+  db,
+  env,
+  file,
+}: {
+  db: Db;
+  env: CloudflareEnv;
+  file?: audioAnalysisTypes.AudioFile;
+}) => {
+  if (!hasAudioAssetFile(file) || file.transcript != null) return false;
+
+  if (isTooShortForAnalysis(file)) {
+    await updateAudioFile(db, file.id, { transcript: '' });
+    return true;
   }
 
-  if (job.origin === 'recorded') await transcribeRecordedAudio(db, env, file);
-  else await scanUploadedAudio(db, env, file);
-};
-
-const transcribeRecordedAudio = async (
-  db: Db,
-  env: CloudflareEnv,
-  file: audioAnalysisTypes.AudioFile
-) => {
-  if (file.transcript || !file.assetKey) return;
   const object = await env.R2.get(file.assetKey);
   if (!object) throw new Error('Audio file not found in R2');
   const transcript = await transcribeAudioFile({ env, file, object });
-  if (!transcript) return;
-  await updateAudioFile(db, file.id, { transcript });
+  await updateAudioFile(db, file.id, { transcript: transcript ?? '' });
+  return true;
 };
 
-const scanUploadedAudio = async (
-  db: Db,
-  env: CloudflareEnv,
-  file: audioAnalysisTypes.AudioFile
-) => {
-  if (file.tracks != null || !file.assetKey) return;
+export const transcribeAudioFiles = async ({
+  db,
+  env,
+  files,
+}: {
+  db: Db;
+  env: CloudflareEnv;
+  files: audioAnalysisTypes.AudioFile[];
+}) => {
+  let updated = 0;
+
+  for (const file of files) {
+    if (await transcribeAudioFileTranscript({ db, env, file })) updated += 1;
+  }
+
+  return { updated };
+};
+
+export const detectAudioFileMusicTracks = async ({
+  db,
+  env,
+  file,
+}: {
+  db: Db;
+  env: CloudflareEnv;
+  file?: audioAnalysisTypes.AudioFile;
+}) => {
+  if (!hasAudioAssetFile(file) || file.tracks != null) return false;
+
+  if (isTooShortForAnalysis(file)) {
+    await updateAudioFile(db, file.id, { tracks: [] });
+    return true;
+  }
+
   const tracks = await recognizeAudioFileMusicTracks({ env, file });
   await updateAudioFile(db, file.id, { tracks });
+  return true;
+};
+
+export const detectAudioFilesMusicTracks = async ({
+  db,
+  env,
+  files,
+}: {
+  db: Db;
+  env: CloudflareEnv;
+  files: audioAnalysisTypes.AudioFile[];
+}) => {
+  let updated = 0;
+
+  for (const file of files) {
+    if (await detectAudioFileMusicTracks({ db, env, file })) updated += 1;
+  }
+
+  return { updated };
 };

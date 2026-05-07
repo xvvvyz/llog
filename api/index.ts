@@ -1,4 +1,3 @@
-import * as audioAnalysis from '@/api/audio-analysis';
 import files from '@/api/files';
 import internal from '@/api/internal';
 import { installConsoleErrorSerializer } from '@/api/lib/logging';
@@ -57,11 +56,5 @@ export default {
       env,
       ctx
     );
-  },
-  queue(
-    batch: MessageBatch<audioAnalysis.AudioAnalysisJob>,
-    env: CloudflareEnv
-  ) {
-    return audioAnalysis.handleAudioAnalysisBatch(batch, env);
   },
 };

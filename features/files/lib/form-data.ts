@@ -20,8 +20,6 @@ export const prepareFileFormData = async ({
   const body = new FormData();
 
   if (audioUri) {
-    body.append('audioOrigin', 'recorded');
-
     if (Platform.OS === 'web') {
       const response = await fetch(audioUri);
       const blob = await response.blob();
@@ -40,8 +38,6 @@ export const prepareFileFormData = async ({
 
     if (duration != null) body.append('duration', String(duration));
   } else if (asset) {
-    if (asset.type === 'audio') body.append('audioOrigin', 'uploaded');
-
     const assetDuration =
       asset.type === 'audio'
         ? (duration ?? (await getAudioAssetDuration(asset)))

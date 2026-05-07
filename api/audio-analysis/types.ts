@@ -1,7 +1,3 @@
-export type AudioOrigin = 'recorded' | 'uploaded';
-
-export type AudioAnalysisJob = { fileId: string; origin: AudioOrigin };
-
 export type AudioFile = {
   assetKey?: string | null;
   duration?: number | null;

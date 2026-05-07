@@ -26,9 +26,10 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   );
 
   const hasTracks = tracks.length > 0;
+  const hasMultipleTracks = tracks.length > 1;
 
   const controls = useAudioPlayerController(
-    hasTracks
+    hasMultipleTracks
       ? {
           ...props,
           onPlaybackRateChange: undefined,
@@ -146,13 +147,15 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const trackControls = { ...controls, currentTime: controls.displayTime };
 
-  const metadata = hasTracks ? (
+  const trackMetadata = hasTracks ? (
     <audioMetadata.AudioTracksMetadata
       className="border-b border-border-secondary border-continuous"
       controls={trackControls}
       tracks={tracks}
     />
-  ) : transcript ? (
+  ) : null;
+
+  const transcriptMetadata = transcript ? (
     <audioMetadata.AudioTranscriptMetadata
       className="border-b border-border-secondary border-continuous"
       controls={controls}
@@ -160,9 +163,17 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     />
   ) : null;
 
+  const metadata =
+    trackMetadata || transcriptMetadata ? (
+      <React.Fragment>
+        {trackMetadata}
+        {transcriptMetadata}
+      </React.Fragment>
+    ) : null;
+
   const hasMetadata = metadata != null;
 
-  const trackSkipControls = hasTracks ? (
+  const trackSkipControls = hasMultipleTracks ? (
     <audioMetadata.AudioTrackSkipControls
       controls={trackControls}
       tracks={tracks}
@@ -170,12 +181,12 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   ) : null;
 
   const transportTrailingAccessory =
-    hasTracks && trailingAccessory ? (
+    hasMultipleTracks && trailingAccessory ? (
       <View className="flex-row items-center shrink-0">
         {trackSkipControls}
         {trailingAccessory}
       </View>
-    ) : hasTracks ? (
+    ) : hasMultipleTracks ? (
       trackSkipControls
     ) : (
       trailingAccessory
@@ -192,7 +203,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       {metadata}
       <AudioTransport
         controls={controls}
-        showPlaybackRate={!hasTracks && showPlaybackRate}
+        showPlaybackRate={!hasMultipleTracks && showPlaybackRate}
         trailingAccessory={transportTrailingAccessory}
         className={cn(
           !hasMetadata &&

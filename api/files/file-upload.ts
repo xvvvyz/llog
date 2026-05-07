@@ -143,7 +143,7 @@ const getContentDisposition = (fileName?: string) => {
   return `attachment; filename="${fallbackName || DEFAULT_DOWNLOAD_FILE_NAME}"; filename*=UTF-8''${encodedName}`;
 };
 
-const assertCanUploadToOwnedTarget = async ({
+export const assertCanUploadToOwnedTarget = async ({
   creatorId,
   db: dbClient,
   linkField,
@@ -476,7 +476,6 @@ export const createDirectVideoUploadDraft = async ({
 export const fileValidator = zValidator(
   'form',
   z.object({
-    audioOrigin: z.enum(['recorded', 'uploaded']).optional(),
     duration: z.coerce.number().optional(),
     file: fileLike,
     fileName: z.string().optional(),

@@ -1,4 +1,4 @@
-import { enqueueAudioAnalysis } from '@/api/audio-analysis';
+import * as audioAnalysis from '@/api/audio-analysis';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import * as upload from '@/api/files/file-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
@@ -30,6 +30,16 @@ type DeleteTarget = { canDelete: boolean; item?: FileAsset };
 type FileRouteConfig = {
   resolveDeleteTarget: (c: FileContext) => Promise<DeleteTarget>;
   resolveUploadTarget: (c: FileContext) => Promise<UploadTarget>;
+};
+
+const getAudioFilesForTarget = async (dbClient: Db, target: UploadTarget) => {
+  const where =
+    target.linkField === 'record'
+      ? { record: target.linkId, type: 'audio' }
+      : { reply: target.linkId, type: 'audio' };
+
+  const { files } = await dbClient.query({ files: { $: { where } } });
+  return files as audioAnalysis.AudioFile[];
 };
 
 export const assertReplyRecord = async (
@@ -89,18 +99,10 @@ export const createFileRouter = <const TPath extends string>({
     async (c) => {
       const target = await resolveUploadTarget(c);
 
-      const {
-        audioOrigin,
-        duration,
-        file,
-        fileName,
-        fileId,
-        mimeType,
-        order,
-        size,
-      } = c.req.valid('form');
+      const { duration, file, fileName, fileId, mimeType, order, size } =
+        c.req.valid('form');
 
-      const uploaded = await upload.uploadFile({
+      await upload.uploadFile({
         creatorId: c.var.user.id,
         db: c.var.db,
         duration,
@@ -117,24 +119,53 @@ export const createFileRouter = <const TPath extends string>({
         size,
       });
 
-      if (uploaded.type === 'audio' && audioOrigin) {
-        c.executionCtx.waitUntil(
-          enqueueAudioAnalysis({
-            env: c.env,
-            fileId: uploaded.fileId,
-            origin: audioOrigin,
-          }).catch((error) => {
-            console.error('Failed to enqueue audio analysis', {
-              error,
-              fileId: uploaded.fileId,
-            });
-          })
-        );
-      }
-
       return c.json({ success: true });
     }
   );
+
+  app.post(`${basePath}/transcribe`, db(), auth(), async (c) => {
+    const target = await resolveUploadTarget(c);
+
+    await upload.assertCanUploadToOwnedTarget({
+      creatorId: c.var.user.id,
+      db: c.var.db,
+      linkField: target.linkField,
+      linkId: target.linkId,
+      recordId: target.recordId,
+    });
+
+    const files = await getAudioFilesForTarget(c.var.db, target);
+
+    const result = await audioAnalysis.transcribeAudioFiles({
+      db: c.var.db,
+      env: c.env,
+      files,
+    });
+
+    return c.json({ success: true, ...result });
+  });
+
+  app.post(`${basePath}/detect-music`, db(), auth(), async (c) => {
+    const target = await resolveUploadTarget(c);
+
+    await upload.assertCanUploadToOwnedTarget({
+      creatorId: c.var.user.id,
+      db: c.var.db,
+      linkField: target.linkField,
+      linkId: target.linkId,
+      recordId: target.recordId,
+    });
+
+    const files = await getAudioFilesForTarget(c.var.db, target);
+
+    const result = await audioAnalysis.detectAudioFilesMusicTracks({
+      db: c.var.db,
+      env: c.env,
+      files,
+    });
+
+    return c.json({ success: true, ...result });
+  });
 
   app.delete(`${basePath}/:fileId`, db(), auth(), async (c) => {
     const fileId = c.req.param('fileId');

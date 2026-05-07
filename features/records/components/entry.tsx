@@ -45,6 +45,8 @@ export const Entry = ({
 
   const entryMenuState = useEntryMenuState({
     authorId: record.author?.id,
+    hasDetectableAudio: audioMedia.some((file) => file.tracks == null),
+    hasTranscribableAudio: audioMedia.some((file) => file.transcript == null),
     logId,
     replyId,
     teamId: record.teamId,
