@@ -1,6 +1,7 @@
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db } from '@/api/middleware/db';
 import { removeMember } from '@/api/teams/member-actions';
+import { fileAssetQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import { Role } from '@/domain/teams/role';
 import { Hono } from 'hono';
@@ -46,7 +47,9 @@ app.delete('/:teamId', db({ asUser: true }), async (c) => {
       $: { where: { id: teamId } },
       image: {},
       roles: { $: { fields: ['role'], where: { userId: c.var.user.id } } },
-      logs: { records: { files: {}, replies: { files: {} } } },
+      logs: {
+        records: { files: fileAssetQuery, replies: { files: fileAssetQuery } },
+      },
     },
   });
 

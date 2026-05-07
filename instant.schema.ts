@@ -22,6 +22,7 @@ const schema = i.schema({
       text: i.string(),
     }),
     files: i.entity({
+      audd: i.any().optional(),
       assetKey: i.string().optional(),
       duration: i.number().optional(),
       isIdentifying: i.boolean().optional(),

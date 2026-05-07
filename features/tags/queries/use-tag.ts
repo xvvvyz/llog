@@ -1,3 +1,4 @@
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
 export const useTag = ({ id }: { id?: string }) => {
@@ -5,6 +6,17 @@ export const useTag = ({ id }: { id?: string }) => {
     id ? { tags: { $: { where: { id } } } } : null
   );
 
-  const tag = data?.tags?.[0];
-  return { id: tag?.id, isLoading, name: tag?.name };
+  const hasCurrentResult = useCurrentQueryResult(id, data);
+
+  const tag = hasCurrentResult
+    ? id
+      ? data?.tags?.find((item) => item.id === id)
+      : undefined
+    : undefined;
+
+  return {
+    id: tag?.id,
+    isLoading: !!id && (isLoading || !hasCurrentResult),
+    name: tag?.name,
+  };
 };

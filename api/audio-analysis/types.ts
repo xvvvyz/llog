@@ -1,4 +1,5 @@
 export type AudioFile = {
+  audd?: unknown;
   assetKey?: string | null;
   duration?: number | null;
   id: string;

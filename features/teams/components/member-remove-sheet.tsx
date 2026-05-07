@@ -30,6 +30,7 @@ export const MemberRemoveSheet = () => {
   return (
     <Sheet
       className="md:max-w-sm"
+      loading={team.isLoading}
       onDismiss={() => sheetManager.close('member-remove')}
       open={sheetManager.isOpen('member-remove')}
       portalName="member-remove"

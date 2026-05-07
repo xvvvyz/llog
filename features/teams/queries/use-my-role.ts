@@ -1,5 +1,6 @@
 import * as permissions from '@/domain/teams/permissions';
 import { useUi } from '@/features/account/queries/use-ui';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
 export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
@@ -17,11 +18,17 @@ export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
       : null
   );
 
-  const role = data?.roles?.[0];
+  const queryKey =
+    auth.user && resolvedTeamId
+      ? `${auth.user.id}:${resolvedTeamId}`
+      : undefined;
+
+  const hasCurrentResult = useCurrentQueryResult(queryKey, data);
+  const role = queryKey && hasCurrentResult ? data?.roles?.[0] : undefined;
 
   return {
     ...role,
     ...permissions.getTeamPermissionFlags(role?.role),
-    isLoading,
+    isLoading: !!queryKey && (isLoading || !hasCurrentResult),
   };
 };

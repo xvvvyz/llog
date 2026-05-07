@@ -1,4 +1,4 @@
-import { recognizeAudioFileMusicTracks } from '@/api/audio-analysis/audd-client';
+import { recognizeAudioFileMusic } from '@/api/audio-analysis/audd-client';
 import * as openai from '@/api/audio-analysis/openai';
 import { updateAudioFile } from '@/api/audio-analysis/repository';
 import * as audioSource from '@/api/audio-analysis/source';
@@ -144,10 +144,6 @@ export const detectAudioFileMusicTracks = async ({
       return true;
     }
 
-    if (audioAnalysis.isIdentificationDurationTooLong(file.duration)) {
-      return false;
-    }
-
     const sourceResult = await audioSource.resolveAudioAnalysisSource({
       env,
       file,
@@ -157,13 +153,18 @@ export const detectAudioFileMusicTracks = async ({
     await updateAudioFile(db, file.id, { isIdentifying: true });
     didStart = true;
 
-    const tracks = await recognizeAudioFileMusicTracks({
+    const recognition = await recognizeAudioFileMusic({
       env,
       file,
       url: sourceResult.source.url,
     });
 
-    await updateAudioFile(db, file.id, { isIdentifying: false, tracks });
+    await updateAudioFile(db, file.id, {
+      audd: recognition.audd,
+      isIdentifying: false,
+      tracks: recognition.tracks,
+    });
+
     return true;
   } catch (error) {
     if (didStart) await clearIdentifying(db, file.id);

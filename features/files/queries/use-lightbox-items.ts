@@ -1,4 +1,6 @@
+import { visibleFileQuery } from '@/domain/files/query';
 import { type FileItem } from '@/features/files/types/file';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
@@ -21,14 +23,19 @@ export const useLightboxMedia = ({
       ? {
           records: {
             $: { where: { id: recordId } },
-            files: {},
-            replies: { files: {} },
+            files: visibleFileQuery,
+            replies: { files: visibleFileQuery },
           },
         }
       : null
   );
 
-  const record = data?.records?.[0];
+  const hasCurrentResult = useCurrentQueryResult(recordId, data);
+
+  const record =
+    recordId && hasCurrentResult
+      ? data?.records?.find((item) => item.id === recordId)
+      : undefined;
 
   const media = React.useMemo(() => {
     if (!mediaId || !record) return [];
@@ -43,5 +50,5 @@ export const useLightboxMedia = ({
     return [];
   }, [mediaId, record]);
 
-  return { isLoading: !!recordId && isLoading, media };
+  return { isLoading: !!recordId && (isLoading || !hasCurrentResult), media };
 };

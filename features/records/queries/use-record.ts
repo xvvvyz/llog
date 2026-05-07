@@ -1,3 +1,5 @@
+import { visibleFileQuery } from '@/domain/files/query';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
 export const useRecord = ({ id }: { id?: string }) => {
@@ -10,11 +12,11 @@ export const useRecord = ({ id }: { id?: string }) => {
             replies: {
               $: { where: { isDraft: { $not: true } } },
               author: { image: {} },
-              files: {},
+              files: visibleFileQuery,
               links: {},
               reactions: { author: {} },
             },
-            files: {},
+            files: visibleFileQuery,
             links: {},
             log: {},
             reactions: { author: {} },
@@ -29,9 +31,12 @@ export const useRecord = ({ id }: { id?: string }) => {
       : null
   );
 
-  const records = data?.records ?? [];
+  const hasCurrentResult = useCurrentQueryResult(id, data);
+  const records = id && hasCurrentResult ? (data?.records ?? []) : [];
   const record = records.find((item) => item.id === id);
-  const hasStaleResult = !!id && records.length > 0 && !record;
+
+  const hasStaleResult =
+    !!id && hasCurrentResult && records.length > 0 && !record;
 
   const replies = (record?.replies ?? []).map((reply) => ({
     ...reply,
@@ -46,7 +51,7 @@ export const useRecord = ({ id }: { id?: string }) => {
     links,
     replies,
     files,
-    isLoading: isLoading || hasStaleResult,
+    isLoading: !!id && (isLoading || !hasCurrentResult || hasStaleResult),
   };
 };
 

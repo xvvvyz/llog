@@ -4,13 +4,19 @@ import type * as audioAnalysisTypes from '@/api/audio-analysis/types';
 import { asId, asNumber, asString, isRecord } from '@/lib/coerce';
 
 const MAX_RUN_GAP_MS = auddParams.AUDD_SCAN_INTERVAL_MS + 15000;
-const MIN_RUN_CHUNKS = 2;
+const MIN_RUN_CHUNKS = 3;
 const SHORT_AUDIO_MAX_DURATION_MS = 5 * 60 * 1000;
 const MIN_SINGLE_DETECTION_DURATION_MS = 6000;
 const MIN_SINGLE_DETECTION_SCORE = 80;
+const MIN_SHORT_AUDIO_SINGLE_DETECTION_DURATION_MS = 3000;
+const SHORT_AUDIO_EDGE_DETECTION_WINDOW_MS = 15000;
 const VARIANT_OVERLAP_RATIO = 0.35;
 const ALTERNATIVE_OVERLAP_RATIO = 0.8;
 const ALTERNATIVE_START_THRESHOLD_MS = 15000;
+const CONTAINED_ALTERNATIVE_OVERLAP_RATIO = 0.9;
+const CONTAINED_ALTERNATIVE_DURATION_RATIO = 1.5;
+const CONTAINED_ALTERNATIVE_CHUNK_RATIO = 2;
+const DETAILED_TITLE_MIN_COUNT_RATIO = 0.5;
 
 const MAX_ADJACENT_REPEAT_GAP_MS = Math.min(
   45000,
@@ -42,10 +48,15 @@ type TrackCandidate = audioAnalysisTypes.MusicTrack & {
 
 type AuddTrackOptions = { audioDurationMs?: number | null };
 
+export const parseAuddMusicTracks = (
+  results: unknown,
+  options: AuddTrackOptions = {}
+) => getAuddTrackCandidates(results, options);
+
 export const getAuddMusicTracks = async (
   results: unknown,
   options: AuddTrackOptions = {}
-) => enrichMusicTracks(getAuddTrackCandidates(results, options));
+) => enrichMusicTracks(parseAuddMusicTracks(results, options));
 
 const getAuddTrackCandidates = (
   results: unknown,
@@ -79,6 +90,7 @@ const getAuddTrackCandidates = (
     .flat()
     .map((detections) =>
       getTrackCandidate(detections, {
+        audioDurationMs: options.audioDurationMs,
         allowSingleDetection: isShortAudio(options.audioDurationMs),
       })
     )
@@ -147,7 +159,10 @@ const getAuddDetection = (
 
 const getTrackCandidate = (
   detections: AuddDetection[],
-  { allowSingleDetection = false }: { allowSingleDetection?: boolean } = {}
+  {
+    allowSingleDetection = false,
+    audioDurationMs,
+  }: { allowSingleDetection?: boolean; audioDurationMs?: number | null } = {}
 ): TrackCandidate | undefined => {
   const chunkCount = new Set(detections.map((item) => item.chunkStart)).size;
   const start = Math.min(...detections.map((item) => item.start));
@@ -162,7 +177,14 @@ const getTrackCandidate = (
     );
 
   const canUseSingleDetection =
-    allowSingleDetection && duration >= MIN_SINGLE_DETECTION_DURATION_MS;
+    allowSingleDetection &&
+    isCredibleShortAudioSingleDetection({
+      audioDurationMs,
+      detections,
+      duration,
+      end,
+      start,
+    });
 
   if (
     chunkCount < MIN_RUN_CHUNKS &&
@@ -172,12 +194,14 @@ const getTrackCandidate = (
     return;
   }
 
-  const title = mostCommon(detections.map((item) => item.title));
+  const title = mostRepresentativeTitle(detections.map((item) => item.title));
   if (!title) return;
+  const metadataDetections = detections.filter((item) => item.title === title);
+  if (!metadataDetections.length) return;
 
-  const artists = mostCommonArray(detections.map((item) => item.artists)) ?? [
-    'Unknown artist',
-  ];
+  const artists = mostCommonArray(
+    metadataDetections.map((item) => item.artists)
+  ) ?? ['Unknown artist'];
 
   const coverageScore = getCoverageScore({ chunkCount, end, start });
 
@@ -194,17 +218,21 @@ const getTrackCandidate = (
     title,
   };
 
-  const album = mostCommon(detections.map((item) => item.album));
+  const album = mostCommon(metadataDetections.map((item) => item.album));
   if (album) track.album = album;
-  const label = mostCommon(detections.map((item) => item.label));
+  const label = mostCommon(metadataDetections.map((item) => item.label));
   if (label) track.label = label;
-  const releaseDate = mostCommon(detections.map((item) => item.releaseDate));
+
+  const releaseDate = mostCommon(
+    metadataDetections.map((item) => item.releaseDate)
+  );
+
   if (releaseDate) track.releaseDate = releaseDate;
-  const isrc = mostCommon(detections.map((item) => item.isrc));
+  const isrc = mostCommon(metadataDetections.map((item) => item.isrc));
   if (isrc) track.isrc = isrc;
-  const upc = mostCommon(detections.map((item) => item.upc));
+  const upc = mostCommon(metadataDetections.map((item) => item.upc));
   if (upc) track.upc = upc;
-  const link = mostCommon(detections.map((item) => item.link));
+  const link = mostCommon(metadataDetections.map((item) => item.link));
   if (link) track.links = [{ provider: 'audd', url: link }];
   return track;
 };
@@ -240,7 +268,7 @@ const pruneOverlappingAlternatives = (tracks: TrackCandidate[]) => {
 
   for (const track of tracks) {
     const targetIndex = pruned.findIndex((candidate) =>
-      isOverlappingAlternative(candidate, track)
+      isAlternativeCandidate(candidate, track)
     );
 
     if (targetIndex === -1) {
@@ -248,9 +276,7 @@ const pruneOverlappingAlternatives = (tracks: TrackCandidate[]) => {
       continue;
     }
 
-    if (compareTrackQuality(track, pruned[targetIndex]) > 0) {
-      pruned[targetIndex] = track;
-    }
+    pruned[targetIndex] = getPreferredAlternative(pruned[targetIndex], track);
   }
 
   return pruned.sort((a, b) => a.start - b.start);
@@ -290,6 +316,33 @@ const stripCandidateFields = ({
 
 const getDetectionRunEnd = (detections: AuddDetection[]) =>
   Math.max(...detections.map((item) => item.end));
+
+const isCredibleShortAudioSingleDetection = ({
+  audioDurationMs,
+  detections,
+  duration,
+  end,
+  start,
+}: {
+  audioDurationMs?: number | null;
+  detections: AuddDetection[];
+  duration: number;
+  end: number;
+  start: number;
+}) => {
+  if (duration < MIN_SHORT_AUDIO_SINGLE_DETECTION_DURATION_MS) return false;
+  if (detections.length > 1) return true;
+  const isNearStart = start <= SHORT_AUDIO_EDGE_DETECTION_WINDOW_MS;
+
+  const isNearEnd =
+    typeof audioDurationMs === 'number' &&
+    Number.isFinite(audioDurationMs) &&
+    audioDurationMs - end <= SHORT_AUDIO_EDGE_DETECTION_WINDOW_MS;
+
+  return (
+    duration >= MIN_SINGLE_DETECTION_DURATION_MS && (isNearStart || isNearEnd)
+  );
+};
 
 const getCoverageScore = ({
   chunkCount,
@@ -343,6 +396,47 @@ const isOverlappingAlternative = (
 ) =>
   Math.abs(first.start - second.start) <= ALTERNATIVE_START_THRESHOLD_MS &&
   getOverlapRatio(first, second) >= ALTERNATIVE_OVERLAP_RATIO;
+
+const isAlternativeCandidate = (
+  first: TrackCandidate,
+  second: TrackCandidate
+) =>
+  isOverlappingAlternative(first, second) ||
+  getContainedDominantTrack(first, second) != null;
+
+const getPreferredAlternative = (
+  first: TrackCandidate,
+  second: TrackCandidate
+) =>
+  getContainedDominantTrack(first, second) ??
+  (compareTrackQuality(first, second) >= 0 ? first : second);
+
+const getContainedDominantTrack = (
+  first: TrackCandidate,
+  second: TrackCandidate
+) => {
+  if (getOverlapRatio(first, second) < CONTAINED_ALTERNATIVE_OVERLAP_RATIO) {
+    return;
+  }
+
+  if (isDominantTrack(first, second)) return first;
+  if (isDominantTrack(second, first)) return second;
+};
+
+const isDominantTrack = (
+  dominant: TrackCandidate,
+  alternative: TrackCandidate
+) => {
+  const dominantDuration = dominant.end - dominant.start;
+  const alternativeDuration = Math.max(1, alternative.end - alternative.start);
+
+  return (
+    dominantDuration / alternativeDuration >=
+      CONTAINED_ALTERNATIVE_DURATION_RATIO &&
+    dominant.chunkCount >=
+      alternative.chunkCount * CONTAINED_ALTERNATIVE_CHUNK_RATIO
+  );
+};
 
 const isAdjacentRepeat = (first: TrackCandidate, second: TrackCandidate) => {
   const gap = second.start - first.end;
@@ -448,6 +542,44 @@ const mostCommon = (values: Array<string | undefined>) => {
   }
 
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+};
+
+const mostRepresentativeTitle = (values: string[]) => {
+  const counts = new Map<string, number>();
+
+  for (const value of values) {
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+
+  const entries = [...counts.entries()];
+  const topCount = Math.max(...entries.map(([, count]) => count));
+
+  const minimumDetailedCount = Math.max(
+    2,
+    Math.ceil(topCount * DETAILED_TITLE_MIN_COUNT_RATIO)
+  );
+
+  return entries
+    .filter(
+      ([title, count]) =>
+        count === topCount ||
+        (count >= minimumDetailedCount && getTitleSpecificity(title) > 0)
+    )
+    .sort(
+      (a, b) =>
+        getTitleSpecificity(b[0]) - getTitleSpecificity(a[0]) ||
+        b[1] - a[1] ||
+        b[0].length - a[0].length
+    )[0]?.[0];
+};
+
+const getTitleSpecificity = (value: string) => {
+  const qualifierCount = [
+    ...value.matchAll(/\([^)]*\)|\[[^\]]*\]/g),
+    ...value.matchAll(/\b(remix|mix|edit|extended|original|dub)\b/gi),
+  ].length;
+
+  return qualifierCount;
 };
 
 const mostCommonArray = (values: string[][]) => {

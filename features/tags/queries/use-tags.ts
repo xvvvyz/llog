@@ -1,5 +1,6 @@
 import type { TagType } from '@/features/tags/types/tag';
 import { useResolvedTeamIds } from '@/features/teams/queries/use-resolved-team-ids';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
@@ -26,11 +27,27 @@ export const useTags = ({
       : null
   );
 
-  const tags = React.useMemo(
-    // https://discord.com/channels/1031957483243188235/1376250736416919567
-    () => (data?.tags ? [...data.tags].sort((a, b) => a.order - b.order) : []),
-    [data?.tags]
+  const queryKey = React.useMemo(
+    () =>
+      resolvedTeamIds.length
+        ? `${type}:${logId ?? ''}:${resolvedTeamIds.join(',')}`
+        : undefined,
+    [logId, resolvedTeamIds, type]
   );
 
-  return { data: tags, isLoading };
+  const hasCurrentResult = useCurrentQueryResult(queryKey, data);
+
+  const tags = React.useMemo(
+    // https://discord.com/channels/1031957483243188235/1376250736416919567
+    () =>
+      queryKey && hasCurrentResult && data?.tags
+        ? [...data.tags].sort((a, b) => a.order - b.order)
+        : [],
+    [data?.tags, hasCurrentResult, queryKey]
+  );
+
+  return {
+    data: tags,
+    isLoading: !!queryKey && (isLoading || !hasCurrentResult),
+  };
 };

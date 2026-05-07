@@ -11,23 +11,6 @@ const TRACK_ARTWORK_CACHE_CONTROL =
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-const parseInteger = (value?: string | null) => {
-  const text = value?.trim();
-  if (!text || !/^\d+$/.test(text)) return;
-  const parsed = Number.parseInt(text, 10);
-  return Number.isSafeInteger(parsed) ? parsed : undefined;
-};
-
-const parseTrackIndex = (value?: string) => {
-  const index = parseInteger(value);
-
-  if (index == null || index < 0) {
-    throw new HTTPException(400, { message: 'Invalid track index' });
-  }
-
-  return index;
-};
-
 const getArtworkSourceUrl = (value: unknown) => {
   const directUrl = asString(value);
   if (directUrl) return directUrl;
@@ -53,16 +36,21 @@ const getHttpUrl = (value?: string) => {
   }
 };
 
-const getTrackArtworkUrl = async ({
+const getTrackArtworkUrlFromSource = async ({
   dbClient,
   fileId,
-  trackIndex,
+  source,
 }: {
   dbClient: Db;
   fileId?: string;
-  trackIndex: number;
+  source?: string | null;
 }) => {
   if (!fileId) throw new HTTPException(400, { message: 'Invalid file' });
+  const sourceUrl = getHttpUrl(source ?? undefined);
+
+  if (!sourceUrl) {
+    throw new HTTPException(400, { message: 'Invalid artwork source' });
+  }
 
   const { files } = await dbClient.query({
     files: { $: { fields: ['id', 'tracks'], where: { id: fileId } } },
@@ -74,15 +62,13 @@ const getTrackArtworkUrl = async ({
     throw new HTTPException(404, { message: 'Artwork not found' });
   }
 
-  const track = tracks[trackIndex];
+  const isKnownArtworkSource = tracks.some((track) => {
+    if (!isRecord(track)) return false;
+    const trackSourceUrl = getHttpUrl(getArtworkSourceUrl(track.artwork));
+    return trackSourceUrl?.toString() === sourceUrl.toString();
+  });
 
-  if (!isRecord(track)) {
-    throw new HTTPException(404, { message: 'Artwork not found' });
-  }
-
-  const sourceUrl = getHttpUrl(getArtworkSourceUrl(track.artwork));
-
-  if (!sourceUrl) {
+  if (!isKnownArtworkSource) {
     throw new HTTPException(404, { message: 'Artwork not found' });
   }
 
@@ -120,11 +106,11 @@ const transformTrackArtwork = async (sourceUrl: URL) => {
   });
 };
 
-app.get('/:fileId/tracks/:trackIndex/artwork', db(), async (c) => {
-  const sourceUrl = await getTrackArtworkUrl({
+app.get('/:fileId/track-artwork', db(), async (c) => {
+  const sourceUrl = await getTrackArtworkUrlFromSource({
     dbClient: c.var.db,
     fileId: c.req.param('fileId'),
-    trackIndex: parseTrackIndex(c.req.param('trackIndex')),
+    source: c.req.query('source'),
   });
 
   return transformTrackArtwork(sourceUrl);

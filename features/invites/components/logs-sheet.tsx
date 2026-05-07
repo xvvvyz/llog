@@ -6,6 +6,7 @@ import { getInviteUrl } from '@/features/invites/lib/url';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useCopy } from '@/hooks/use-copy';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import { Sheet } from '@/ui/sheet';
@@ -23,7 +24,7 @@ export const InviteLogsSheet = () => {
   const open = sheetManager.isOpen('invite-logs');
   const { activeTeamId } = useUi();
   const { copy, copied } = useCopy();
-  const { invites } = useTeamInvites();
+  const { invites, isLoading: invitesLoading } = useTeamInvites();
 
   const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
     new Set()
@@ -39,8 +40,8 @@ export const InviteLogsSheet = () => {
     }
   }, [open]);
 
-  const { data } = db.useQuery(
-    activeTeamId
+  const { data, isLoading: logsLoading } = db.useQuery(
+    open && activeTeamId
       ? {
           logs: {
             $: { order: { name: 'asc' }, where: { team: activeTeamId } },
@@ -49,7 +50,9 @@ export const InviteLogsSheet = () => {
       : null
   );
 
-  const logs = data?.logs ?? [];
+  const logsQueryKey = open && activeTeamId ? activeTeamId : undefined;
+  const hasCurrentLogsResult = useCurrentQueryResult(logsQueryKey, data);
+  const logs = hasCurrentLogsResult ? (data?.logs ?? []) : [];
 
   const toggleLog = React.useCallback((logId: string) => {
     setSelectedLogIds((prev) => {
@@ -125,6 +128,10 @@ export const InviteLogsSheet = () => {
       open={open}
       portalName="invite-logs"
       variant="list"
+      loading={
+        (!!logsQueryKey && (logsLoading || !hasCurrentLogsResult)) ||
+        invitesLoading
+      }
     >
       <LogsSheetContent
         action={action}

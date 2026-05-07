@@ -1,5 +1,6 @@
 import * as mcpFields from '@/api/mcp/fields';
 import { recordSearchQuery } from '@/api/mcp/records';
+import { registerMcpTool } from '@/api/mcp/register-tool';
 import type * as mcpTypes from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -60,7 +61,8 @@ export const registerSearchTool = (
 ) => {
   const fieldOptions = { appUrl: ctx.env.APP_URL };
 
-  server.registerTool(
+  registerMcpTool(
+    server,
     'search',
     {
       description: 'Search logs, records, and replies.',

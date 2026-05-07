@@ -1,3 +1,4 @@
+import { visibleFileQuery } from '@/domain/files/query';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import type * as searchTypes from '@/features/search/types/search';
 import { useTeams } from '@/features/teams/queries/use-teams';
@@ -127,7 +128,7 @@ export const useSearch = ({ query }: { query: string }) => {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
             log: {},
-            files: {},
+            files: visibleFileQuery,
             links: {},
             tags: {
               $: {
@@ -140,7 +141,7 @@ export const useSearch = ({ query }: { query: string }) => {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
             author: { image: {} },
             record: { log: {} },
-            files: {},
+            files: visibleFileQuery,
             links: {},
           },
           logs: {

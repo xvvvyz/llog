@@ -1,3 +1,5 @@
+import { visibleFileQuery } from '@/domain/files/query';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 
@@ -25,7 +27,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             replies: {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
-            files: {},
+            files: visibleFileQuery,
             links: {},
             reactions: { author: {} },
             tags: {
@@ -57,7 +59,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             replies: {
               $: { fields: ['id'], where: { isDraft: { $not: true } } },
             },
-            files: {},
+            files: visibleFileQuery,
             links: {},
             reactions: { author: {} },
             tags: {
@@ -71,8 +73,17 @@ export const useRecords = ({ logId }: { logId?: string }) => {
       : (null as never)
   );
 
-  const pinnedRecords = pinnedData?.records ?? [];
-  const pagedRecords = pagedData?.records ?? [];
+  const hasCurrentPinnedResult = useCurrentQueryResult(logId, pinnedData);
+  const hasCurrentPagedResult = useCurrentQueryResult(logId, pagedData);
+
+  const pinnedRecords =
+    logId && hasCurrentPinnedResult ? (pinnedData?.records ?? []) : [];
+
+  const pagedRecords =
+    logId && hasCurrentPagedResult ? (pagedData?.records ?? []) : [];
+
+  const hasPinnedResult = !logId || hasCurrentPinnedResult;
+  const hasPagedResult = !logId || hasCurrentPagedResult;
   const merged = new Map<string, (typeof pinnedRecords)[number]>();
 
   for (const record of pinnedRecords) {
@@ -90,16 +101,21 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     ...records.filter((record) => !record.isPinned).sort(compareByDateDesc),
   ].map((record) => ({ ...record, files: record.files ?? [] }));
 
+  const currentCanLoadNextPage =
+    !!logId && hasCurrentPagedResult && canLoadNextPage;
+
   const handleLoadNextPage = useLoadNextPage({
-    canLoadNextPage: !!logId && canLoadNextPage,
+    canLoadNextPage: currentCanLoadNextPage,
     itemCount: pagedRecords.length,
     loadNextPage,
   });
 
   return {
-    canLoadNextPage: logId ? canLoadNextPage : false,
+    canLoadNextPage: currentCanLoadNextPage,
     data,
-    isLoading: !!logId && (pinnedLoading || pagedLoading),
+    isLoading:
+      !!logId &&
+      (pinnedLoading || pagedLoading || !hasPinnedResult || !hasPagedResult),
     loadNextPage: handleLoadNextPage,
   };
 };

@@ -97,8 +97,12 @@ export const useEntryMenuState = ({
 
   const canCopy = canCopyToAnotherLog && !!logId && copyTargets.logs.length > 0;
   const canPin = !replyId && myRole.canPinRecords;
-  const canDetectMusic = !!hasDetectableAudio || !!isIdentifyingAudio;
-  const canTranscribe = !!hasTranscribableAudio || !!isTranscribingAudio;
+
+  const canDetectMusic =
+    myRole.canManage && (!!hasDetectableAudio || !!isIdentifyingAudio);
+
+  const canTranscribe =
+    myRole.canManage && (!!hasTranscribableAudio || !!isTranscribingAudio);
 
   const hasActionsAboveDelete =
     canEdit || canTag || canCopy || canPin || canDetectMusic || canTranscribe;

@@ -142,6 +142,7 @@ export const AudioPreview = ({
                     onDidFinish={isActive ? handleDidFinish : undefined}
                     onPause={isActive ? handlePause : undefined}
                     playbackRate={audioPlaybackRate}
+                    showMetadata={false}
                     showPlaybackRate={false}
                     transcript={previewItem.item.transcript}
                     uri={previewItem.item.uri}

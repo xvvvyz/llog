@@ -22,7 +22,7 @@ const readResponseJson = async (response: Response) => {
   }
 };
 
-export const recognizeAudioFileMusicTracks = async ({
+export const recognizeAudioFileMusic = async ({
   env,
   file,
   url,
@@ -35,7 +35,7 @@ export const recognizeAudioFileMusicTracks = async ({
     url ??
     (file.assetKey ? getFileR2Url(file.assetKey, env.APP_URL) : undefined);
 
-  if (!audioUrl) return [];
+  if (!audioUrl) return { audd: null, tracks: [] };
   const body = new FormData();
 
   body.append(
@@ -64,7 +64,10 @@ export const recognizeAudioFileMusicTracks = async ({
     );
   }
 
-  return getAuddMusicTracks(responseBody.result, {
-    audioDurationMs: file.duration,
-  });
+  const audd = responseBody.result;
+
+  return {
+    audd,
+    tracks: await getAuddMusicTracks(audd, { audioDurationMs: file.duration }),
+  };
 };

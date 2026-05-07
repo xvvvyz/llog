@@ -2,6 +2,7 @@ import { deleteActivities } from '@/api/activity/delete-activities';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db } from '@/api/middleware/db';
 import * as push from '@/api/push/web-push';
+import { fileAssetQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -163,7 +164,7 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
           },
         },
       },
-      files: {},
+      files: fileAssetQuery,
       activities: {},
     },
   });

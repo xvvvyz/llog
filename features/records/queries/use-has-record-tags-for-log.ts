@@ -1,3 +1,4 @@
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
 export const useHasRecordTagsForLog = ({
@@ -23,5 +24,13 @@ export const useHasRecordTagsForLog = ({
       : null
   );
 
-  return { hasRecordTags: !!data?.tags?.length, isLoading };
+  const queryKey =
+    enabled && logId && teamId ? `${teamId}:${logId}` : undefined;
+
+  const hasCurrentResult = useCurrentQueryResult(queryKey, data);
+
+  return {
+    hasRecordTags: !!queryKey && hasCurrentResult && !!data?.tags?.length,
+    isLoading: !!queryKey && (isLoading || !hasCurrentResult),
+  };
 };

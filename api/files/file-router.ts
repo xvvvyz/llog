@@ -4,6 +4,7 @@ import { assertCanAnalyzeTargetFiles } from '@/api/files/file-analysis-permissio
 import * as upload from '@/api/files/file-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
 import { isAudioAnalysisFileType } from '@/domain/files/audio-analysis';
+import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -43,7 +44,9 @@ const getAudioAnalysisFilesForTarget = async (
       ? { record: target.linkId }
       : { reply: target.linkId };
 
-  const { files } = await dbClient.query({ files: { $: { where } } });
+  const { files } = await dbClient.query({
+    files: { $: { ...visibleFileQuery.$, where } },
+  });
 
   return files.filter((file) =>
     isAudioAnalysisFileType(file.type)

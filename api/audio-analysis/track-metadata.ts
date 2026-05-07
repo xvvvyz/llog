@@ -1,10 +1,12 @@
 import type * as audioAnalysisTypes from '@/api/audio-analysis/types';
-import { asString } from '@/lib/coerce';
+import { asString, isRecord } from '@/lib/coerce';
 import * as musicLinks from '@/lib/music-links';
 
 type TrackMetadata = {
+  artists?: string[];
   artwork?: string;
   links: audioAnalysisTypes.MusicTrackLink[];
+  title?: string;
 };
 
 const LISTENTO_HOSTS = new Set(['lis.tn', 'www.lis.tn']);
@@ -86,15 +88,25 @@ const getTrackMetadata = async (
   return parseListentoTrackMetadata(await response.text(), sourceUrl);
 };
 
-const parseListentoTrackMetadata = (
+export const parseListentoTrackMetadata = (
   html: string,
   sourceUrl: URL
 ): TrackMetadata | null => {
   const links = getListentoMusicLinks(html);
   const artworkUrl = getListentoArtworkUrl(html, sourceUrl);
   const artwork = artworkUrl?.toString();
-  if (!links.length && !artwork) return null;
-  return { ...(artwork ? { artwork } : {}), links };
+  const identity = getListentoTrackIdentity(html);
+
+  if (
+    !links.length &&
+    !artwork &&
+    !identity.title &&
+    !identity.artists?.length
+  ) {
+    return null;
+  }
+
+  return { ...identity, ...(artwork ? { artwork } : {}), links };
 };
 
 const getSongLink = (track: audioAnalysisTypes.MusicTrack) => {
@@ -113,9 +125,90 @@ const mergeTrackMetadata = (
 
   return {
     ...track,
+    ...(metadata.artists?.length ? { artists: metadata.artists } : {}),
     ...(metadata.artwork ? { artwork: metadata.artwork } : {}),
     ...(links.length ? { links } : {}),
+    ...(metadata.title ? { title: metadata.title } : {}),
   };
+};
+
+const getListentoTrackIdentity = (
+  html: string
+): Pick<TrackMetadata, 'artists' | 'title'> => {
+  const previewTracks = getListentoPreviewTracks(html);
+  if (previewTracks.length !== 1) return {};
+  const track = previewTracks[0];
+  if (!isRecord(track)) return {};
+  const title = asString(track.track)?.trim();
+  const artistText = asString(track.artist)?.trim();
+
+  const artists = artistText
+    ? artistText
+        .split(/;|\s+\/\s+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
+
+  return {
+    ...(artists.length ? { artists } : {}),
+    ...(title ? { title } : {}),
+  };
+};
+
+const getListentoPreviewTracks = (html: string) => {
+  const marker = 'var tracks';
+  const markerIndex = html.indexOf(marker);
+  if (markerIndex === -1) return [];
+  const arrayStart = html.indexOf('[', markerIndex + marker.length);
+  if (arrayStart === -1) return [];
+  const literal = getJsonArrayLiteral(html, arrayStart);
+  if (!literal) return [];
+
+  try {
+    const tracks = JSON.parse(literal) as unknown;
+    return Array.isArray(tracks) ? tracks : [];
+  } catch {
+    return [];
+  }
+};
+
+const getJsonArrayLiteral = (text: string, startIndex: number) => {
+  let depth = 0;
+  let quote: '"' | null = null;
+  let isEscaped = false;
+
+  for (let index = startIndex; index < text.length; index += 1) {
+    const character = text[index];
+
+    if (quote) {
+      if (isEscaped) {
+        isEscaped = false;
+        continue;
+      }
+
+      if (character === '\\') {
+        isEscaped = true;
+        continue;
+      }
+
+      if (character === quote) quote = null;
+      continue;
+    }
+
+    if (character === '"') {
+      quote = character;
+      continue;
+    }
+
+    if (character === '[') {
+      depth += 1;
+      continue;
+    }
+
+    if (character !== ']') continue;
+    depth -= 1;
+    if (depth === 0) return text.slice(startIndex, index + 1);
+  }
 };
 
 const getListentoArtworkUrl = (html: string, sourceUrl: URL) => {

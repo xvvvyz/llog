@@ -1,6 +1,7 @@
 import * as permissions from '@/domain/teams/permissions';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
@@ -21,7 +22,8 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
       : null
   );
 
-  const members = data?.roles ?? [];
+  const hasCurrentResult = useCurrentQueryResult(resolvedTeamId, data);
+  const members = resolvedTeamId && hasCurrentResult ? (data?.roles ?? []) : [];
 
   const sortedMembers = React.useMemo(
     () =>
@@ -55,5 +57,10 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
     });
   }, [sortedMembers, myRole.canManage, myRole.role, auth.user?.id]);
 
-  return { members: filteredMembers, allMembers: sortedMembers, isLoading };
+  return {
+    members: filteredMembers,
+    allMembers: sortedMembers,
+    isLoading:
+      !!resolvedTeamId && (isLoading || !hasCurrentResult || myRole.isLoading),
+  };
 };

@@ -1,3 +1,4 @@
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
@@ -29,9 +30,12 @@ export const useRecordTagsTarget = ({
       : null
   );
 
-  const records = data?.records ?? [];
+  const hasCurrentResult = useCurrentQueryResult(recordId, data);
+  const records = recordId && hasCurrentResult ? (data?.records ?? []) : [];
   const record = records.find((item) => item.id === recordId);
-  const hasStaleResult = !!recordId && records.length > 0 && !record;
+
+  const hasStaleResult =
+    !!recordId && hasCurrentResult && records.length > 0 && !record;
 
   const selectedTagIds = React.useMemo(
     () => new Set(record?.tags?.map((tag) => tag.id) ?? []),
@@ -39,7 +43,7 @@ export const useRecordTagsTarget = ({
   );
 
   return {
-    isLoading: isLoading || hasStaleResult,
+    isLoading: !!recordId && (isLoading || !hasCurrentResult || hasStaleResult),
     logColor: record?.log?.color,
     logId: record?.log?.id ?? payloadLogId,
     record,

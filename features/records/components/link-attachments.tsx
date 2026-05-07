@@ -47,6 +47,7 @@ export const LinkAttachments = ({
   onSheetOpenChange,
   parent,
   portalName,
+  sheetLoading,
   sheetOpen,
   triggerClassName,
   triggerIconClassName,
@@ -59,6 +60,7 @@ export const LinkAttachments = ({
   onSheetOpenChange?: (open: boolean) => void;
   parent?: sheetPayloads.RecordSheetParent;
   portalName?: string;
+  sheetLoading?: boolean;
   sheetOpen?: boolean;
   triggerClassName?: string;
   triggerIconClassName?: string;
@@ -298,6 +300,7 @@ export const LinkAttachments = ({
       )}
       {shouldRenderSheet && (
         <Sheet
+          loading={sheetLoading}
           onDismiss={() => setIsSheetOpen(false)}
           open={isSheetOpen}
           portalName={sheetPortalName}

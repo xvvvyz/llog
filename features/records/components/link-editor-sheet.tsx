@@ -2,6 +2,7 @@ import * as linkUrl from '@/features/records/lib/link-url';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import { createLink } from '@/features/records/mutations/create-link';
 import { updateLink } from '@/features/records/mutations/update-link';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
@@ -39,24 +40,56 @@ export const LinkEditorSheet = () => {
     isOpen && linkId ? { links: { $: { where: { id: linkId } } } } : null
   );
 
-  const { data: recordData } = db.useQuery(
+  const { data: recordData, isLoading: recordLoading } = db.useQuery(
     isOpen && createParent && isRecordLink
       ? { records: { $: { where: { id: createParent.id } }, links: {} } }
       : null
   );
 
-  const { data: replyData } = db.useQuery(
+  const { data: replyData, isLoading: replyLoading } = db.useQuery(
     isOpen && createParent && isReplyLink
       ? { replies: { $: { where: { id: createParent.id } }, links: {} } }
       : null
   );
 
-  const parent = isRecordLink
-    ? recordData?.records?.[0]
-    : replyData?.replies?.[0];
+  const linkQueryKey = isOpen && linkId ? linkId : undefined;
 
-  const editingLink = linkData?.links?.[0];
-  const isLinkLoading = isEditingLink && linkLoading;
+  const recordQueryKey =
+    isOpen && createParent && isRecordLink ? createParent.id : undefined;
+
+  const replyQueryKey =
+    isOpen && createParent && isReplyLink ? createParent.id : undefined;
+
+  const hasCurrentLinkResult = useCurrentQueryResult(linkQueryKey, linkData);
+
+  const hasCurrentRecordResult = useCurrentQueryResult(
+    recordQueryKey,
+    recordData
+  );
+
+  const hasCurrentReplyResult = useCurrentQueryResult(replyQueryKey, replyData);
+
+  const parent = isRecordLink
+    ? hasCurrentRecordResult
+      ? recordData?.records?.find((item) => item.id === createParent?.id)
+      : undefined
+    : isReplyLink && hasCurrentReplyResult
+      ? replyData?.replies?.find((item) => item.id === createParent?.id)
+      : undefined;
+
+  const editingLink = hasCurrentLinkResult
+    ? linkData?.links?.find((item) => item.id === linkId)
+    : undefined;
+
+  const isLinkLoading =
+    isOpen &&
+    (isEditingLink
+      ? !!linkQueryKey && (linkLoading || !hasCurrentLinkResult)
+      : isRecordLink
+        ? !!recordQueryKey && (recordLoading || !hasCurrentRecordResult)
+        : isReplyLink
+          ? !!replyQueryKey && (replyLoading || !hasCurrentReplyResult)
+          : false);
 
   const normalizedUrl = React.useMemo(
     () => linkUrl.normalizeLinkUrl(url),

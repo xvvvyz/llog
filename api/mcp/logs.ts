@@ -1,4 +1,5 @@
 import { logFields, table, textResult } from '@/api/mcp/fields';
+import { registerMcpTool } from '@/api/mcp/register-tool';
 import type { McpContext, McpRole } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import * as permissions from '@/domain/teams/permissions';
@@ -111,7 +112,8 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
     return textResult({ log }, `Created log: ${trimmedName} (${logId})`);
   };
 
-  server.registerTool(
+  registerMcpTool(
+    server,
     'logs',
     {
       description: 'List or create logs.',

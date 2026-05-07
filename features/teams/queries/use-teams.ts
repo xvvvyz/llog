@@ -1,3 +1,4 @@
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
 export const useTeams = () => {
@@ -7,5 +8,10 @@ export const useTeams = () => {
     auth.user ? { teams: { $: { order: { name: 'asc' } }, image: {} } } : null
   );
 
-  return { teams: data?.teams ?? [], isLoading };
+  const hasCurrentResult = useCurrentQueryResult(auth.user?.id, data);
+
+  return {
+    teams: auth.user && hasCurrentResult ? (data?.teams ?? []) : [],
+    isLoading: !!auth.user && (isLoading || !hasCurrentResult),
+  };
 };

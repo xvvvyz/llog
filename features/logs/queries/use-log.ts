@@ -1,3 +1,4 @@
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
@@ -14,9 +15,10 @@ export const useLog = ({ id }: { id?: string }) => {
       : null
   );
 
-  const logs = data?.logs ?? [];
+  const hasCurrentResult = useCurrentQueryResult(id, data);
+  const logs = id && hasCurrentResult ? (data?.logs ?? []) : [];
   const log = logs.find((item) => item.id === id);
-  const hasStaleResult = !!id && logs.length > 0 && !log;
+  const hasStaleResult = !!id && hasCurrentResult && logs.length > 0 && !log;
 
   const tagIdsSet = React.useMemo(
     () => new Set(log?.tags?.map((tag) => tag.id)),
@@ -30,7 +32,7 @@ export const useLog = ({ id }: { id?: string }) => {
 
   return {
     ...log,
-    isLoading: isLoading || hasStaleResult,
+    isLoading: !!id && (isLoading || !hasCurrentResult || hasStaleResult),
     tagIdsSet,
     profileIdsSet,
   };

@@ -1,9 +1,11 @@
 import { ComposerForm } from '@/features/records/components/composer-form';
+import { RecordTagChips } from '@/features/records/components/record-tag-chips';
 import { useRecordComposerModel } from '@/features/records/hooks/use-composer-model';
 import { Sheet } from '@/ui/sheet';
 
 export const RecordCreateSheet = () => {
   const composer = useRecordComposerModel();
+  const hasSelectedTags = composer.selectedTags.some((tag) => !!tag.name);
 
   return (
     <Sheet
@@ -29,6 +31,14 @@ export const RecordCreateSheet = () => {
         submitLabel={composer.submitLabel}
         text={composer.currentText}
         toolbar={composer.toolbar}
+        inputHeader={
+          hasSelectedTags ? (
+            <RecordTagChips
+              className="justify-start"
+              tags={composer.selectedTags}
+            />
+          ) : null
+        }
       />
     </Sheet>
   );

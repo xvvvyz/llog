@@ -480,7 +480,7 @@ export async function generateMedia(
           width: markSize,
         })
       ),
-      { height, width }
+      { fonts: [], height, width }
     );
 
     return renderSvgToPng(svg);

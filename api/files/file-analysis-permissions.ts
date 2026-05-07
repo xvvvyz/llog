@@ -24,18 +24,16 @@ const assertCanAnalyzeSharedLogFiles = ({
   actorRole,
   isAuthor,
   isDraft,
-  isLogMember,
 }: {
   actorRole?: string | null;
   isAuthor: boolean;
   isDraft?: boolean | null;
-  isLogMember: boolean;
 }) => {
   if (isDraft && !isAuthor) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 
-  if (!permissions.canManageTeam(actorRole) && !isLogMember) {
+  if (!permissions.canManageTeam(actorRole)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 };
@@ -55,7 +53,6 @@ const assertCanAnalyzeRecordFiles = async ({
       author: { user: { $: { fields: ['id'] } } },
       log: {
         $: { fields: ['id'] },
-        profiles: { user: { $: { fields: ['id'] } } },
         team: {
           $: { fields: ['id'] },
           roles: { $: { fields: ['role'], where: { userId } } },
@@ -79,15 +76,10 @@ const assertCanAnalyzeRecordFiles = async ({
       ? await getTeamRoleForUser(dbClient, record.teamId, userId)
       : undefined);
 
-  const isLogMember = !!record.log?.profiles?.some(
-    (profile) => profile.user?.id === userId
-  );
-
   assertCanAnalyzeSharedLogFiles({
     actorRole,
     isAuthor,
     isDraft: record.isDraft,
-    isLogMember: isLoglessDraft && isAuthor && !!actorRole ? true : isLogMember,
   });
 };
 
@@ -112,7 +104,6 @@ const assertCanAnalyzeReplyFiles = async ({
       record: {
         $: { fields: ['id'] },
         log: {
-          profiles: { user: { $: { fields: ['id'] } } },
           team: {
             $: { fields: ['id'] },
             roles: { $: { fields: ['role'], where: { userId } } },
@@ -131,15 +122,10 @@ const assertCanAnalyzeReplyFiles = async ({
   const isAuthor = reply.author?.user?.id === userId;
   const actorRole = reply.record?.log?.team?.roles?.[0]?.role;
 
-  const isLogMember = !!reply.record?.log?.profiles?.some(
-    (profile) => profile.user?.id === userId
-  );
-
   assertCanAnalyzeSharedLogFiles({
     actorRole,
     isAuthor,
     isDraft: reply.isDraft,
-    isLogMember,
   });
 };
 

@@ -110,15 +110,6 @@ const getCloudflareStreamThumbnailSrc = (
   return url.toString();
 };
 
-const isAudioTrackArtworkProxyUrl = (url: URL) =>
-  /\/files\/[^/]+\/tracks\/\d+\/artwork$/i.test(url.pathname);
-
-const getAudioTrackArtworkProxySrc = (url: URL) => {
-  if (!isAudioTrackArtworkProxyUrl(url)) return null;
-  url.search = '';
-  return url.toString();
-};
-
 export const getFileSourceUri = ({ assetKey, uri }: FileSource) =>
   uri ?? assetKey ?? null;
 
@@ -140,7 +131,6 @@ export const fileUriToSrc = (
     return (
       getCloudflareFlexibleVariantSrc(url, options) ??
       getCloudflareStreamThumbnailSrc(url, options) ??
-      getAudioTrackArtworkProxySrc(url) ??
       uri
     );
   }

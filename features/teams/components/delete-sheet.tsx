@@ -13,12 +13,13 @@ import { View } from 'react-native';
 export const TeamDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const team = useTeam();
-  const { teams } = useTeams();
+  const { teams, isLoading: teamsLoading } = useTeams();
   const ui = useUi();
 
   return (
     <Sheet
       className="md:max-w-sm"
+      loading={team.isLoading || teamsLoading || ui.isLoading}
       onDismiss={() => sheetManager.close('team-delete')}
       open={sheetManager.isOpen('team-delete')}
       portalName="team-delete"

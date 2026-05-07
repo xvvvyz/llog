@@ -1,3 +1,4 @@
+import { visibleFileQuery } from '@/domain/files/query';
 import { useFileComposer } from '@/features/files/hooks/use-composer';
 import type { PickedFileAsset } from '@/features/files/lib/picked';
 import { reorderFiles } from '@/features/files/mutations/reorder-files';
@@ -76,9 +77,15 @@ export const useRecordComposerModel = () => {
       ? {
           records: {
             $: { where: { id: editRecordId } },
-            files: {},
+            files: visibleFileQuery,
             links: {},
             log: { $: { fields: ['id'] } },
+            tags: {
+              $: {
+                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
+                where: { type: 'record' },
+              },
+            },
           },
         }
       : null
@@ -94,9 +101,15 @@ export const useRecordComposerModel = () => {
       ? {
           records: {
             $: { where: { id: copyDraftRecordId } },
-            files: {},
+            files: visibleFileQuery,
             links: {},
             log: { $: { fields: ['id'] } },
+            tags: {
+              $: {
+                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
+                where: { type: 'record' },
+              },
+            },
           },
         }
       : null
@@ -354,6 +367,7 @@ export const useRecordComposerModel = () => {
     onDismiss: handleDismiss,
     onSubmit: handleSubmit,
     onTextareaFocusChange: setIsTextareaFocused,
+    selectedTags: record?.tags ?? [],
     submitLabel: isEdit ? 'Done' : 'Record',
     toolbar,
   };

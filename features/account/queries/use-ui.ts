@@ -1,6 +1,7 @@
 import { normalizeReactionEmoji } from '@/domain/records/reactions';
 import * as audioPlaybackRateUtils from '@/features/files/lib/audio-playback-rate';
 import { isSortBy, type SortBy } from '@/features/logs/lib/sort';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import { isSortDirection, type SortDirection } from '@/lib/sort-direction';
 
@@ -13,7 +14,8 @@ export const useUi = () => {
       : null
   );
 
-  const ui = data?.ui?.[0];
+  const hasCurrentResult = useCurrentQueryResult(auth.user?.id, data);
+  const ui = auth.user && hasCurrentResult ? data?.ui?.[0] : undefined;
   const doubleTapEmoji = normalizeReactionEmoji(ui?.doubleTapEmoji);
 
   const audioPlaybackRate = audioPlaybackRateUtils.isAudioPlaybackRate(
@@ -38,7 +40,7 @@ export const useUi = () => {
     audioPlaybackRate,
     doubleTapEmoji,
     id: ui?.id,
-    isLoading,
+    isLoading: !!auth.user && (isLoading || !hasCurrentResult),
     logsSortBy,
     logsSortDirection,
     videoMuted: ui?.videoMuted ?? true,

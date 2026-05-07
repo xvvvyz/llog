@@ -1,11 +1,13 @@
 import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
 import { getVisibleRecord } from '@/api/mcp/records';
+import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import { recordTagsQuery } from '@/api/mcp/tag-query';
 import type { McpContext, McpLog, McpRecord, McpReply } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import * as push from '@/api/push/web-push';
+import { visibleFileQuery } from '@/domain/files/query';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
@@ -19,7 +21,7 @@ const summaryProfileQuery = { $: { fields: ['id' as const, 'name' as const] } };
 
 const replyDetailQuery = ({ include }: { include: Set<ReplyInclude> }) => ({
   author: summaryProfileQuery,
-  files: include.has('files') ? {} : countFileQuery,
+  files: include.has('files') ? visibleFileQuery : countFileQuery,
   links: include.has('links') ? {} : countLinkQuery,
   reactions: countReactionQuery,
   record: {
@@ -43,7 +45,7 @@ const getCallerDraftReply = async (
         $: { where: { id: replyId, isDraft: true } },
         ...(query ?? {
           author: { image: {}, user: {} },
-          files: {},
+          files: visibleFileQuery,
           links: {},
           record: {
             $: { fields: ['id', 'teamId'] },
@@ -96,7 +98,7 @@ const getVisibleReply = async (
         $: { where: { id: replyId, isDraft: false } },
         ...(query ?? {
           author: { image: {}, user: {} },
-          files: {},
+          files: visibleFileQuery,
           links: {},
           reactions: { author: {} },
           record: {
@@ -151,7 +153,7 @@ export const getReadableReply = async (
         $: { where: { id: replyId } },
         ...(query ?? {
           author: { image: {}, user: {} },
-          files: {},
+          files: visibleFileQuery,
           links: {},
           reactions: { author: {} },
           record: {
@@ -508,7 +510,8 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     );
   };
 
-  server.registerTool(
+  registerMcpTool(
+    server,
     'replies',
     {
       description: 'Get, save, or publish replies.',

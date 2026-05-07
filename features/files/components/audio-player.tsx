@@ -16,6 +16,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     name,
     onNextClip,
     onPreviousClip,
+    showMetadata = true,
     showPlaybackRate = true,
     trailingAccessory,
   } = props;
@@ -150,16 +151,17 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const trackControls = { ...controls, currentTime: controls.displayTime };
 
-  const trackMetadata = hasTracks ? (
-    <audioMetadata.AudioTracksMetadata
-      className="border-b border-border-secondary border-continuous"
-      controls={trackControls}
-      tracks={tracks}
-    />
-  ) : null;
+  const trackMetadata =
+    showMetadata && hasTracks ? (
+      <audioMetadata.AudioTracksMetadata
+        className="border-b border-border-secondary border-continuous"
+        controls={trackControls}
+        tracks={tracks}
+      />
+    ) : null;
 
   const transcriptMetadata =
-    transcript.length > 0 ? (
+    showMetadata && transcript.length > 0 ? (
       <audioMetadata.AudioTranscriptMetadata
         className="border-b border-border-secondary border-continuous"
         controls={trackControls}

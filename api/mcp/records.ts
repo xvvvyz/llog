@@ -1,17 +1,19 @@
 import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
+import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import { recordTagsQuery } from '@/api/mcp/tag-query';
 import type { McpContext, McpLog, McpRecord } from '@/api/mcp/types';
 import { getViewer, requireVisibleLog } from '@/api/mcp/viewer';
 import * as push from '@/api/push/web-push';
+import { visibleFileQuery } from '@/domain/files/query';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
 const recordQuery = {
   author: { image: {}, user: {} },
-  files: {},
+  files: visibleFileQuery,
   links: {},
   log: { team: { $: { fields: ['id' as const] } } },
   reactions: { author: {} },
@@ -19,7 +21,7 @@ const recordQuery = {
   replies: {
     $: { order: { date: 'asc' as const }, where: { isDraft: { $not: true } } },
     author: { image: {} },
-    files: {},
+    files: visibleFileQuery,
     links: {},
     reactions: { author: {} },
   },
@@ -92,7 +94,7 @@ const recordDetailQuery = ({
 
   return {
     author: summaryProfileQuery,
-    files: includeFiles ? {} : countFileQuery,
+    files: includeFiles ? visibleFileQuery : countFileQuery,
     links: includeLinks ? {} : countLinkQuery,
     log: { $: { fields: ['color' as const, 'id' as const, 'name' as const] } },
     reactions: countReactionQuery,
@@ -109,7 +111,7 @@ const recordDetailQuery = ({
         where: { isDraft: { $not: true } },
       },
       author: summaryProfileQuery,
-      files: includeFiles ? {} : countFileQuery,
+      files: includeFiles ? visibleFileQuery : countFileQuery,
       links: includeLinks ? {} : countLinkQuery,
       reactions: countReactionQuery,
     },
@@ -616,7 +618,8 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     );
   };
 
-  server.registerTool(
+  registerMcpTool(
+    server,
     'records',
     {
       description: 'List, get, save, or publish records.',

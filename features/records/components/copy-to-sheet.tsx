@@ -1,13 +1,14 @@
 import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { useRecordCopyTargets } from '@/features/records/queries/use-record-copy-targets';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
-import { cn } from '@/lib/cn';
 import { db } from '@/lib/db';
 import { SPECTRUM } from '@/theme/spectrum';
 import { UI } from '@/theme/ui';
+import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { SearchInput } from '@/ui/search-input';
@@ -41,7 +42,17 @@ export const RecordCopyToSheet = () => {
       : null
   );
 
-  const record = recordData?.records?.[0];
+  const recordQueryKey = open && recordId ? recordId : undefined;
+
+  const hasCurrentRecordResult = useCurrentQueryResult(
+    recordQueryKey,
+    recordData
+  );
+
+  const record = hasCurrentRecordResult
+    ? recordData?.records?.find((item) => item.id === recordId)
+    : undefined;
+
   const sourceLogId = record?.log?.id;
 
   const copyTargets = useRecordCopyTargets({
@@ -50,17 +61,6 @@ export const RecordCopyToSheet = () => {
   });
 
   const visibleLogs = useNameSearch(copyTargets.logs, query);
-
-  const visibleLogGroups = React.useMemo(() => {
-    const visibleLogIds = new Set(visibleLogs.map((log) => log.id));
-
-    return copyTargets.groups.flatMap((group) => {
-      const logs = group.logs.filter((log) => visibleLogIds.has(log.id));
-      return logs.length ? [{ ...group, logs }] : [];
-    });
-  }, [copyTargets.groups, visibleLogs]);
-
-  const showTeamHeadings = visibleLogGroups.length > 1;
 
   React.useEffect(() => {
     if (!open) return;
@@ -117,54 +117,52 @@ export const RecordCopyToSheet = () => {
 
   return (
     <Sheet
-      loading={open && (recordLoading || copyTargets.isLoading)}
       onDismiss={close}
       open={open}
       portalName="record-copy-to"
       variant="list"
+      loading={
+        open &&
+        ((!!recordQueryKey && (recordLoading || !hasCurrentRecordResult)) ||
+          copyTargets.isLoading)
+      }
     >
-      {!!visibleLogGroups.length && (
+      {!!visibleLogs.length && (
         <SheetListScrollView variant="rows">
-          {visibleLogGroups.map((group, groupIndex) => (
-            <React.Fragment key={group.id}>
-              {showTeamHeadings && (
-                <View
-                  className={cn(
-                    'flex-row items-center gap-3 mb-1',
-                    groupIndex > 0 && 'pt-4'
-                  )}
-                >
-                  <Text className="font-medium text-muted-foreground text-xs">
-                    {group.name}
+          {visibleLogs.map((log) => {
+            const isSelected = selectedLogIds.has(log.id);
+            const color = SPECTRUM[colorScheme][log.color ?? 11];
+
+            return (
+              <View
+                key={log.id}
+                className="flex-row items-center justify-between"
+              >
+                <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+                  <Avatar
+                    avatar={log.team.image?.uri ?? undefined}
+                    className="border-border-secondary border"
+                    fallback="gradient"
+                    id={log.team.id}
+                    size={19}
+                  />
+                  <Text className="text-placeholder">/</Text>
+                  <View
+                    className="size-4 border-continuous rounded-md shrink-0"
+                    style={{ backgroundColor: color.default }}
+                  />
+                  <Text className="flex-1 min-w-0" numberOfLines={1}>
+                    {log.name}
                   </Text>
                 </View>
-              )}
-              {group.logs.map((log) => {
-                const isSelected = selectedLogIds.has(log.id);
-                const color = SPECTRUM[colorScheme][log.color ?? 11];
-
-                return (
-                  <View
-                    key={log.id}
-                    className="flex-row items-center justify-between"
-                  >
-                    <View className="flex-row gap-3 items-center">
-                      <View
-                        className="size-4 border-continuous rounded-md"
-                        style={{ backgroundColor: color.default }}
-                      />
-                      <Text numberOfLines={1}>{log.name}</Text>
-                    </View>
-                    <Checkbox
-                      checked={isSelected}
-                      className="size-8 border-0"
-                      onCheckedChange={() => toggleLog(log.id)}
-                    />
-                  </View>
-                );
-              })}
-            </React.Fragment>
-          ))}
+                <Checkbox
+                  checked={isSelected}
+                  className="size-8 border-0 shrink-0"
+                  onCheckedChange={() => toggleLog(log.id)}
+                />
+              </View>
+            );
+          })}
         </SheetListScrollView>
       )}
       <SheetFooter contentClassName="flex-row gap-4">

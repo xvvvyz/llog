@@ -17,6 +17,7 @@ export const ComposerForm = ({
   logColor,
   filePreview,
   onChangeText,
+  inputHeader,
   onSubmit,
   onTextareaFocusChange,
   placeholder,
@@ -34,6 +35,7 @@ export const ComposerForm = ({
   isTextareaFocused: boolean;
   logColor?: string;
   filePreview: React.ReactNode;
+  inputHeader?: React.ReactNode;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
   onTextareaFocusChange: (isFocused: boolean) => void;
@@ -47,6 +49,7 @@ export const ComposerForm = ({
   const shouldAutoFocus = Platform.OS !== 'web';
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
   const isComposerCompact = isTextareaFocused && isVirtualKeyboardVisible;
+  const visibleInputHeader = !isTextareaFocused ? inputHeader : null;
 
   React.useEffect(() => {
     if (isOpen) return;
@@ -71,9 +74,11 @@ export const ComposerForm = ({
     <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
       <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
         <View className="overflow-hidden min-h-0 border-border-secondary border-continuous rounded-xl bg-input border shrink">
+          {visibleInputHeader ? (
+            <View className="pb-2 pt-3 px-4">{visibleInputHeader}</View>
+          ) : null}
           <Textarea
             autoFocus={shouldAutoFocus}
-            className="border-0 bg-transparent"
             maxLength={10240}
             maxRows={7}
             minRows={1}
@@ -82,6 +87,11 @@ export const ComposerForm = ({
             onFocus={handleTextareaFocus}
             placeholder={placeholder}
             value={text}
+            className={
+              visibleInputHeader
+                ? 'border-0 bg-transparent pt-0'
+                : 'border-0 bg-transparent'
+            }
           />
           {isComposerCompact ? null : filePreview}
         </View>

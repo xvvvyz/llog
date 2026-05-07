@@ -1,3 +1,4 @@
+import { visibleFileQuery } from '@/domain/files/query';
 import { useFileComposer } from '@/features/files/hooks/use-composer';
 import type { PickedFileAsset } from '@/features/files/lib/picked';
 import { reorderFiles } from '@/features/files/mutations/reorder-files';
@@ -39,7 +40,13 @@ export const useReplyComposerModel = () => {
 
   const { data: editData } = db.useQuery(
     editReplyId
-      ? { replies: { $: { where: { id: editReplyId } }, files: {}, links: {} } }
+      ? {
+          replies: {
+            $: { where: { id: editReplyId } },
+            files: visibleFileQuery,
+            links: {},
+          },
+        }
       : null
   );
 

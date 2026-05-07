@@ -56,25 +56,32 @@ const LOCK_SCREEN_ARTWORK_SIZE = 512;
 type ParseAudioTracksOptions = { fileId?: string | null };
 
 const getTrackArtworkProxyUri = ({
+  artworkSource,
   fileId,
-  trackIndex,
 }: {
+  artworkSource: string;
   fileId?: string | null;
-  trackIndex: number;
 }) => {
   if (!fileId || !process.env.EXPO_PUBLIC_API_URL) return;
 
   return `${process.env.EXPO_PUBLIC_API_URL}/files/${encodeURIComponent(
     fileId
-  )}/tracks/${trackIndex}/artwork`;
+  )}/track-artwork?source=${encodeURIComponent(artworkSource)}`;
 };
 
 const getArtwork = (
   value: unknown,
-  options: { fileId?: string | null; trackIndex: number }
+  options: { fileId?: string | null }
 ): string | undefined => {
   const url = asString(value);
-  if (url) return getTrackArtworkProxyUri(options) ?? url;
+
+  if (url) {
+    return (
+      getTrackArtworkProxyUri({ artworkSource: url, fileId: options.fileId }) ??
+      url
+    );
+  }
+
   if (!isRecord(value)) return;
 
   const legacyUrl =
@@ -84,7 +91,10 @@ const getArtwork = (
     asString(value.original);
 
   return legacyUrl
-    ? (getTrackArtworkProxyUri(options) ?? legacyUrl)
+    ? (getTrackArtworkProxyUri({
+        artworkSource: legacyUrl,
+        fileId: options.fileId,
+      }) ?? legacyUrl)
     : undefined;
 };
 
@@ -160,7 +170,7 @@ export const parseAudioTracks = (
   if (!Array.isArray(value)) return [];
 
   return value
-    .flatMap((item, trackIndex) => {
+    .flatMap((item) => {
       if (!isRecord(item)) return [];
       const title = asString(item.title);
       const start = asNumber(item.start);
@@ -171,10 +181,7 @@ export const parseAudioTracks = (
         {
           ...(album ? { album } : {}),
           artistText: getArtistText(item.artists),
-          artwork: getArtwork(item.artwork, {
-            fileId: options.fileId,
-            trackIndex,
-          }),
+          artwork: getArtwork(item.artwork, { fileId: options.fileId }),
           links: getTrackLinks(item.links),
           startSeconds: durationMsToSeconds(start) ?? 0,
           title,

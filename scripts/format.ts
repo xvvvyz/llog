@@ -606,21 +606,19 @@ function formatImports(filePath: string, text: string) {
   const { lineAt, source } = parseSource(filePath, text);
   let statementIndex = 0;
 
-  while (
-    statementIndex < source.statements.length &&
-    ts.isExpressionStatement(source.statements[statementIndex]) &&
-    ts.isStringLiteralLike(source.statements[statementIndex].expression)
-  ) {
+  while (statementIndex < source.statements.length) {
+    const statement = source.statements[statementIndex];
+    if (!ts.isExpressionStatement(statement)) break;
+    if (!ts.isStringLiteralLike(statement.expression)) break;
     statementIndex += 1;
   }
 
   const imports: ts.ImportDeclaration[] = [];
 
-  while (
-    statementIndex < source.statements.length &&
-    ts.isImportDeclaration(source.statements[statementIndex])
-  ) {
-    imports.push(source.statements[statementIndex]);
+  while (statementIndex < source.statements.length) {
+    const statement = source.statements[statementIndex];
+    if (!ts.isImportDeclaration(statement)) break;
+    imports.push(statement);
     statementIndex += 1;
   }
 
@@ -696,9 +694,10 @@ function formatStatementWhitespace(filePath: string, text: string) {
   const isExportStatement = (node: ts.Statement) =>
     ts.isExportDeclaration(node) ||
     ts.isExportAssignment(node) ||
-    ts
-      .getModifiers(node)
-      ?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);
+    (ts.canHaveModifiers(node) &&
+      ts
+        .getModifiers(node)
+        ?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword));
 
   function firstLeadingLineAfterPrevious(
     previousEnd: number,
@@ -1205,7 +1204,10 @@ function isInsideNode(position: number, node: ts.Node) {
   return position >= node.getFullStart() && position < node.getEnd();
 }
 
-function identifierAtPosition(source: ts.SourceFile, position: number) {
+function identifierAtPosition(
+  source: ts.SourceFile,
+  position: number
+): ts.Identifier | null {
   let match: ts.Identifier | null = null;
 
   function visit(node: ts.Node) {

@@ -1,3 +1,4 @@
+import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import * as activityGroups from '@/features/activity/lib/group-activities';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
@@ -67,8 +68,8 @@ export const useActivities = () => {
             },
             actor: { image: {}, logs: { $: { fields: ['id' as const] } } },
             team: { image: {} },
-            record: { files: {}, links: {} },
-            reply: { files: {}, links: {} },
+            record: { files: visibleFileQuery, links: {} },
+            reply: { files: visibleFileQuery, links: {} },
             log: {},
           },
         }

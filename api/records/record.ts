@@ -2,6 +2,7 @@ import { deleteActivities } from '@/api/activity/delete-activities';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db, type Db } from '@/api/middleware/db';
 import * as push from '@/api/push/web-push';
+import { copyFileQuery, fileAssetQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -16,6 +17,7 @@ const copyTargetsSchema = z.object({
 });
 
 type RecordCopyFile = {
+  audd?: unknown;
   assetKey?: string | null;
   duration?: number | null;
   mimeType?: string | null;
@@ -64,6 +66,7 @@ const getClonedFileData = (file: RecordCopyFile, fallbackOrder: number) => {
   }
 
   return {
+    ...(file.audd != null ? { audd: file.audd } : {}),
     ...(file.assetKey != null ? { assetKey: file.assetKey } : {}),
     ...(file.duration != null ? { duration: file.duration } : {}),
     ...(file.mimeType != null ? { mimeType: file.mimeType } : {}),
@@ -194,7 +197,7 @@ const prepareRecordCopySource = async ({
       author: { $: { fields: ['id'] }, user: { $: { fields: ['id'] } } },
       log: { $: { fields: ['id'] } },
       links: {},
-      files: {},
+      files: copyFileQuery,
     },
   });
 
@@ -467,7 +470,7 @@ app.post(
         author: { $: { fields: ['id'] }, user: { $: { fields: ['id'] } } },
         log: { $: { fields: ['id'] } },
         links: {},
-        files: {},
+        files: copyFileQuery,
         tags: {
           $: { fields: ['id', 'type'] },
           logs: { $: { fields: ['id'] } },
@@ -556,8 +559,8 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
           roles: { $: { fields: ['role'], where: { userId: c.var.user.id } } },
         },
       },
-      files: {},
-      replies: { files: {}, activities: {} },
+      files: fileAssetQuery,
+      replies: { files: fileAssetQuery, activities: {} },
       activities: {},
     },
   });

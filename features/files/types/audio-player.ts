@@ -25,6 +25,7 @@ export type AudioPlayerProps = {
   onPreviousClip?: () => void;
   onPlaybackRateChange?: (playbackRate: AudioPlaybackRate) => void;
   playbackRate?: AudioPlaybackRate;
+  showMetadata?: boolean;
   showPlaybackRate?: boolean;
   trailingAccessory?: React.ReactNode;
   tracks?: unknown;

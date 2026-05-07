@@ -1,5 +1,6 @@
 import { textResult } from '@/api/mcp/fields';
 import { getVisibleRecord } from '@/api/mcp/records';
+import { registerMcpTool } from '@/api/mcp/register-tool';
 import type { McpContext } from '@/api/mcp/types';
 import * as recordReactions from '@/domain/records/reactions';
 import * as permissions from '@/domain/teams/permissions';
@@ -123,7 +124,8 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     );
   };
 
-  server.registerTool(
+  registerMcpTool(
+    server,
     'record_actions',
     {
       description: 'Set record/reply reactions or pin state.',

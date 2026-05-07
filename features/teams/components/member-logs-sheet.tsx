@@ -1,6 +1,7 @@
 import { useUi } from '@/features/account/queries/use-ui';
 import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -24,7 +25,7 @@ export const MemberLogsSheet = () => {
   const colorScheme = useColorScheme();
 
   const { data, isLoading } = db.useQuery(
-    activeTeamId && roleId
+    open && activeTeamId && roleId
       ? {
           logs: {
             $: { order: { name: 'asc' }, where: { team: activeTeamId } },
@@ -38,8 +39,19 @@ export const MemberLogsSheet = () => {
       : null
   );
 
-  const logs = React.useMemo(() => data?.logs ?? [], [data?.logs]);
-  const profileId = data?.roles?.[0]?.user?.profile?.id;
+  const queryKey =
+    open && activeTeamId && roleId ? `${activeTeamId}:${roleId}` : undefined;
+
+  const hasCurrentResult = useCurrentQueryResult(queryKey, data);
+
+  const logs = React.useMemo(
+    () => (hasCurrentResult ? (data?.logs ?? []) : []),
+    [data?.logs, hasCurrentResult]
+  );
+
+  const profileId = hasCurrentResult
+    ? data?.roles?.find((role) => role.id === roleId)?.user?.profile?.id
+    : undefined;
 
   React.useEffect(() => {
     if (open) setQuery('');
@@ -77,7 +89,7 @@ export const MemberLogsSheet = () => {
 
   return (
     <Sheet
-      loading={isLoading}
+      loading={!!queryKey && (isLoading || !hasCurrentResult)}
       onDismiss={() => sheetManager.close('member-logs')}
       open={open}
       portalName="member-logs"

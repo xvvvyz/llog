@@ -1,4 +1,5 @@
 import { useUi } from '@/features/account/queries/use-ui';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
 export const useTeamInvites = ({ teamId }: { teamId?: string } = {}) => {
@@ -17,5 +18,10 @@ export const useTeamInvites = ({ teamId }: { teamId?: string } = {}) => {
       : null
   );
 
-  return { invites: data?.invites ?? [], isLoading };
+  const hasCurrentResult = useCurrentQueryResult(resolvedTeamId, data);
+
+  return {
+    invites: resolvedTeamId && hasCurrentResult ? (data?.invites ?? []) : [],
+    isLoading: !!resolvedTeamId && (isLoading || !hasCurrentResult),
+  };
 };

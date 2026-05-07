@@ -1,5 +1,6 @@
 import * as mcpFields from '@/api/mcp/fields';
 import { getCallerDraftRecord, getVisibleRecord } from '@/api/mcp/records';
+import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import { recordTagFields, recordTagLogsQuery } from '@/api/mcp/tag-query';
 import type { McpContext, McpLog, McpRecord, McpTag } from '@/api/mcp/types';
@@ -283,7 +284,8 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     );
   };
 
-  server.registerTool(
+  registerMcpTool(
+    server,
     'record_tags',
     {
       description: 'List, apply, remove, or create record tags.',
