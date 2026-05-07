@@ -33,6 +33,7 @@ export const apiOrThrow = async (
       if (typeof parsed?.message === 'string') throw new Error(parsed.message);
       if (typeof parsed === 'string') throw new Error(parsed);
     } catch (error) {
+      if (error instanceof SyntaxError) throw new Error(body);
       if (error instanceof Error) throw error;
       throw new Error(body);
     }

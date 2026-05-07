@@ -7,7 +7,7 @@ export type AudioClip = {
   id: string;
   name?: string | null;
   tracks?: unknown;
-  transcript?: string | null;
+  transcript?: unknown;
   uri?: string | null;
 };
 
@@ -28,6 +28,6 @@ export type AudioPlayerProps = {
   showPlaybackRate?: boolean;
   trailingAccessory?: React.ReactNode;
   tracks?: unknown;
-  transcript?: string | null;
+  transcript?: unknown;
   uri?: string | null;
 };

@@ -4,7 +4,7 @@ import { updateAudioFile } from '@/api/audio-analysis/repository';
 import * as audioSource from '@/api/audio-analysis/source';
 import type * as audioAnalysisTypes from '@/api/audio-analysis/types';
 import { type Db } from '@/api/middleware/db';
-import { isTranscriptionDurationTooLong } from '@/domain/files/audio-analysis';
+import * as audioAnalysis from '@/domain/files/audio-analysis';
 
 const MIN_AUDIO_ANALYSIS_DURATION_MS = 2000;
 
@@ -58,11 +58,20 @@ export const transcribeAudioFileTranscript = async ({
 
   try {
     if (isTooShortForAnalysis(file)) {
-      await updateAudioFile(db, file.id, { transcript: '' });
+      await updateAudioFile(db, file.id, { transcript: [] });
       return true;
     }
 
-    if (isTranscriptionDurationTooLong(file.duration)) return false;
+    if (audioAnalysis.isTranscriptionDurationTooLong(file.duration)) {
+      return false;
+    }
+
+    if (
+      file.type === 'audio' &&
+      audioAnalysis.isTranscriptionUploadTooLarge(file.size)
+    ) {
+      return false;
+    }
 
     const sourceResult = await audioSource.resolveAudioAnalysisSource({
       env,
@@ -78,17 +87,13 @@ export const transcribeAudioFileTranscript = async ({
       source: sourceResult.source,
     });
 
-    await updateAudioFile(db, file.id, {
-      isTranscribing: false,
-      transcript: transcript ?? '',
-    });
-
+    await updateAudioFile(db, file.id, { isTranscribing: false, transcript });
     return true;
   } catch (error) {
     if (didStart || file.type === 'video') {
       await updateAudioFile(db, file.id, {
         ...(didStart ? { isTranscribing: false } : {}),
-        ...(file.type === 'video' ? { transcript: '' } : {}),
+        ...(file.type === 'video' ? { transcript: [] } : {}),
       });
     }
 
@@ -137,6 +142,10 @@ export const detectAudioFileMusicTracks = async ({
     if (isTooShortForAnalysis(file)) {
       await updateAudioFile(db, file.id, { tracks: [] });
       return true;
+    }
+
+    if (audioAnalysis.isIdentificationDurationTooLong(file.duration)) {
+      return false;
     }
 
     const sourceResult = await audioSource.resolveAudioAnalysisSource({

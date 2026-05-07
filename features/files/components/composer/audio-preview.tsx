@@ -143,6 +143,7 @@ export const AudioPreview = ({
                     onPause={isActive ? handlePause : undefined}
                     playbackRate={audioPlaybackRate}
                     showPlaybackRate={false}
+                    transcript={previewItem.item.transcript}
                     uri={previewItem.item.uri}
                     durationSeconds={durationMsToSeconds(
                       previewItem.item.duration

@@ -6,11 +6,14 @@ export type AudioFile = {
   isTranscribing?: boolean | null;
   mimeType?: string | null;
   name?: string | null;
+  size?: number | null;
   tracks?: unknown;
-  transcript?: string | null;
+  transcript?: unknown;
   type?: string | null;
   uri?: string | null;
 };
+
+export type TranscriptSegment = { end: number; start: number; text: string };
 
 export type MusicTrackLink = { provider: string; url: string };
 

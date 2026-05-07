@@ -24,7 +24,7 @@ type RecordCopyFile = {
   size?: number | null;
   thumbnailUri?: string | null;
   tracks?: unknown;
-  transcript?: string | null;
+  transcript?: unknown;
   type?: string | null;
   uri?: string | null;
 };

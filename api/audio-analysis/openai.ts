@@ -1,9 +1,9 @@
-import type { AudioFile } from '@/api/audio-analysis/types';
+import type { AudioFile, TranscriptSegment } from '@/api/audio-analysis/types';
+import * as audioAnalysis from '@/domain/files/audio-analysis';
 import { asNumber, asString, isRecord } from '@/lib/coerce';
+import { HTTPException } from 'hono/http-exception';
 
-const OPENAI_STT_MODEL = 'gpt-4o-mini-transcribe';
-const OPENAI_TRANSCRIPTION_UPLOAD_MAX_BYTES = 25 * 1024 * 1024;
-const MIN_AVERAGE_LOGPROB = -1.5;
+const OPENAI_STT_MODEL = 'whisper-1';
 
 const readResponseJson = async (response: Response) => {
   const text = await response.text();
@@ -26,34 +26,11 @@ const getAudioFileName = (file: AudioFile, contentType?: string | null) => {
   return 'recording.m4a';
 };
 
-const averageLogprob = (result: Record<string, unknown>) => {
-  const logprobs = result.logprobs;
-  if (!Array.isArray(logprobs) || logprobs.length === 0) return undefined;
-
-  const values = logprobs
-    .map((item) => (isRecord(item) ? asNumber(item.logprob) : undefined))
-    .filter((value): value is number => value !== undefined);
-
-  if (values.length === 0) return undefined;
-  return values.reduce((total, value) => total + value, 0) / values.length;
-};
-
-const shouldKeepTranscript = ({
-  result,
-  text,
-}: {
-  result: Record<string, unknown>;
-  text: string;
-}) => {
-  if (!/[\p{L}\p{N}]/u.test(text)) return false;
-  const confidence = averageLogprob(result);
-  return confidence === undefined || confidence >= MIN_AVERAGE_LOGPROB;
-};
-
 const uploadTooLargeError = () =>
-  new Error(
-    "The video's generated audio is larger than OpenAI's 25 MB transcription upload limit."
-  );
+  new HTTPException(413, {
+    message:
+      "The audio is larger than OpenAI's 25 MB transcription upload limit.",
+  });
 
 const isOpenAiUploadSizeError = (result: unknown) => {
   const value = JSON.stringify(result ?? '').toLowerCase();
@@ -72,6 +49,24 @@ const parseContentLength = (response: Response) => {
   const length = Number(value);
   return Number.isFinite(length) && length >= 0 ? length : undefined;
 };
+
+const parseTranscriptSegments = (result: unknown): TranscriptSegment[] => {
+  if (!isRecord(result) || !Array.isArray(result.segments)) return [];
+
+  return result.segments
+    .flatMap((segment): TranscriptSegment[] => {
+      if (!isRecord(segment)) return [];
+      const start = asNumber(segment.start);
+      const end = asNumber(segment.end);
+      const text = asString(segment.text);
+      if (start == null || end == null || !text || end < start) return [];
+      return [{ end, start, text }];
+    })
+    .sort((a, b) => a.start - b.start);
+};
+
+const shouldKeepTranscriptSegments = (segments: TranscriptSegment[]) =>
+  segments.some((segment) => /[\p{L}\p{N}]/u.test(segment.text));
 
 const transcribeAudioUpload = async ({
   env,
@@ -93,12 +88,8 @@ const transcribeAudioUpload = async ({
 
   body.append('model', OPENAI_STT_MODEL);
   body.append('temperature', '0');
-  body.append('response_format', 'json');
-  body.append('include[]', 'logprobs');
-  body.append('chunking_strategy[type]', 'server_vad');
-  body.append('chunking_strategy[prefix_padding_ms]', '300');
-  body.append('chunking_strategy[silence_duration_ms]', '500');
-  body.append('chunking_strategy[threshold]', '0.6');
+  body.append('response_format', 'verbose_json');
+  body.append('timestamp_granularities[]', 'segment');
 
   const response = await fetch(
     'https://api.openai.com/v1/audio/transcriptions',
@@ -115,10 +106,8 @@ const transcribeAudioUpload = async ({
     throw new Error(`OpenAI transcript failed: ${JSON.stringify(result)}`);
   }
 
-  if (!isRecord(result)) return undefined;
-  const text = asString(result.text);
-  if (!text || !shouldKeepTranscript({ result, text })) return undefined;
-  return text;
+  const segments = parseTranscriptSegments(result);
+  return shouldKeepTranscriptSegments(segments) ? segments : [];
 };
 
 export const transcribeAudioFile = async ({
@@ -132,6 +121,10 @@ export const transcribeAudioFile = async ({
 }) => {
   const contentType =
     object.httpMetadata?.contentType || file.mimeType || 'audio/mp4';
+
+  if (audioAnalysis.isTranscriptionUploadTooLarge(object.size)) {
+    throw uploadTooLargeError();
+  }
 
   return transcribeAudioUpload({
     env,
@@ -166,14 +159,14 @@ export const transcribeAudioUrl = async ({
 
   if (
     contentLength != null &&
-    contentLength > OPENAI_TRANSCRIPTION_UPLOAD_MAX_BYTES
+    contentLength > audioAnalysis.MAX_TRANSCRIPTION_UPLOAD_BYTES
   ) {
     throw uploadTooLargeError();
   }
 
   const bytes = await response.arrayBuffer();
 
-  if (bytes.byteLength > OPENAI_TRANSCRIPTION_UPLOAD_MAX_BYTES) {
+  if (bytes.byteLength > audioAnalysis.MAX_TRANSCRIPTION_UPLOAD_BYTES) {
     throw uploadTooLargeError();
   }
 

@@ -32,7 +32,7 @@ const schema = i.schema({
       size: i.number().optional(),
       thumbnailUri: i.string().optional(),
       tracks: i.any().optional(),
-      transcript: i.string().optional(),
+      transcript: i.any().optional(),
       type: i.string(),
       uri: i.string().optional(),
     }),

@@ -98,38 +98,31 @@ export const createFileRouter = <const TPath extends string>({
     }
   );
 
-  app.put(
-    basePath,
-    upload.uploadLimit(),
-    db(),
-    auth(),
-    upload.fileValidator,
-    async (c) => {
-      const target = await resolveUploadTarget(c);
+  app.put(basePath, db(), auth(), upload.fileValidator, async (c) => {
+    const target = await resolveUploadTarget(c);
 
-      const { duration, file, fileName, fileId, mimeType, order, size } =
-        c.req.valid('form');
+    const { duration, file, fileName, fileId, mimeType, order, size } =
+      c.req.valid('form');
 
-      await upload.uploadFile({
-        creatorId: c.var.user.id,
-        db: c.var.db,
-        duration,
-        env: c.env,
-        file,
-        fileName,
-        keyPrefix: target.keyPrefix,
-        linkField: target.linkField,
-        linkId: target.linkId,
-        fileId,
-        mimeType,
-        order,
-        recordId: target.recordId,
-        size,
-      });
+    await upload.uploadFile({
+      creatorId: c.var.user.id,
+      db: c.var.db,
+      duration,
+      env: c.env,
+      file,
+      fileName,
+      keyPrefix: target.keyPrefix,
+      linkField: target.linkField,
+      linkId: target.linkId,
+      fileId,
+      mimeType,
+      order,
+      recordId: target.recordId,
+      size,
+    });
 
-      return c.json({ success: true });
-    }
-  );
+    return c.json({ success: true });
+  });
 
   app.post(`${basePath}/transcribe`, db(), auth(), async (c) => {
     const target = await resolveUploadTarget(c);

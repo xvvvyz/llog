@@ -25,6 +25,11 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     [fileId, props.tracks]
   );
 
+  const transcript = React.useMemo(
+    () => audioMetadataLib.parseTranscriptSegments(props.transcript),
+    [props.transcript]
+  );
+
   const hasTracks = tracks.length > 0;
   const hasMultipleTracks = tracks.length > 1;
 
@@ -37,8 +42,6 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
         }
       : props
   );
-
-  const transcript = props.transcript?.trim();
 
   const trackNavigation = React.useMemo(
     () =>
@@ -155,13 +158,14 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     />
   ) : null;
 
-  const transcriptMetadata = transcript ? (
-    <audioMetadata.AudioTranscriptMetadata
-      className="border-b border-border-secondary border-continuous"
-      controls={controls}
-      transcript={transcript}
-    />
-  ) : null;
+  const transcriptMetadata =
+    transcript.length > 0 ? (
+      <audioMetadata.AudioTranscriptMetadata
+        className="border-b border-border-secondary border-continuous"
+        controls={trackControls}
+        segments={transcript}
+      />
+    ) : null;
 
   const metadata =
     trackMetadata || transcriptMetadata ? (

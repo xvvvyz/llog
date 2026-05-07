@@ -13,6 +13,12 @@ export type AudioMetadataTrack = {
   title: string;
 };
 
+export type AudioTranscriptSegment = {
+  endSeconds: number;
+  startSeconds: number;
+  text: string;
+};
+
 export type AudioMediaSessionArtwork = {
   sizes?: string;
   src: string;
@@ -35,6 +41,11 @@ export type AudioTrackNavigationState = {
   nextIndex: number;
   pendingIndex: number;
   previousIndex: number;
+};
+
+export type AudioTranscriptNavigationState = {
+  currentIndex: number;
+  pendingIndex: number;
 };
 
 const UNKNOWN_ARTIST = 'Unknown artist';
@@ -173,6 +184,23 @@ export const parseAudioTracks = (
     .sort((a, b) => a.startSeconds - b.startSeconds);
 };
 
+export const parseTranscriptSegments = (
+  value: unknown
+): AudioTranscriptSegment[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .flatMap((item): AudioTranscriptSegment[] => {
+      if (!isRecord(item)) return [];
+      const start = asNumber(item.start);
+      const end = asNumber(item.end);
+      const text = asString(item.text);
+      if (start == null || end == null || !text || end < start) return [];
+      return [{ endSeconds: end, startSeconds: start, text }];
+    })
+    .sort((a, b) => a.startSeconds - b.startSeconds);
+};
+
 export const getCurrentTrackIndex = (
   tracks: readonly AudioMetadataTrack[],
   currentTimeSeconds: number
@@ -223,5 +251,41 @@ export const getTrackNavigationState = ({
     nextIndex: currentIndex >= 0 ? currentIndex + 1 : -1,
     pendingIndex,
     previousIndex,
+  };
+};
+
+export const getCurrentTranscriptSegmentIndex = (
+  segments: readonly AudioTranscriptSegment[],
+  currentTimeSeconds: number
+) => {
+  if (!segments.length) return -1;
+
+  const currentIndex = segments.findLastIndex(
+    (segment) => currentTimeSeconds >= segment.startSeconds
+  );
+
+  return currentIndex === -1 ? 0 : currentIndex;
+};
+
+export const getTranscriptNavigationState = ({
+  currentTimeSeconds,
+  pendingTimeSeconds,
+  segments,
+}: {
+  currentTimeSeconds: number;
+  pendingTimeSeconds?: number | null;
+  segments: readonly AudioTranscriptSegment[];
+}): AudioTranscriptNavigationState => {
+  const currentIndex = getCurrentTranscriptSegmentIndex(
+    segments,
+    currentTimeSeconds
+  );
+
+  return {
+    currentIndex,
+    pendingIndex:
+      pendingTimeSeconds == null
+        ? -1
+        : getCurrentTranscriptSegmentIndex(segments, pendingTimeSeconds),
   };
 };

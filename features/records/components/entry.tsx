@@ -1,4 +1,3 @@
-import { canTranscribeAudioAnalysisFile } from '@/domain/files/audio-analysis';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
@@ -13,6 +12,7 @@ import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import * as React from 'react';
+import * as audioAnalysis from '@/domain/files/audio-analysis';
 
 export const Entry = ({
   className,
@@ -53,12 +53,12 @@ export const Entry = ({
   );
 
   const detectableAudioMedia = React.useMemo(
-    () => audioAnalysisMedia.filter((file) => file.tracks == null),
+    () => audioAnalysisMedia.filter(audioAnalysis.canIdentifyAudioAnalysisFile),
     [audioAnalysisMedia]
   );
 
   const transcribableAudioMedia = React.useMemo(
-    () => audioAnalysisMedia.filter(canTranscribeAudioAnalysisFile),
+    () => audioAnalysisMedia.filter(audioAnalysis.canTranscribeAudioAnalysisFile),
     [audioAnalysisMedia]
   );
 
@@ -66,10 +66,8 @@ export const Entry = ({
     authorId: record.author?.id,
     hasDetectableAudio: detectableAudioMedia.length > 0,
     hasTranscribableAudio: transcribableAudioMedia.length > 0,
-    isIdentifyingAudio: detectableAudioMedia.some((file) => file.isIdentifying),
-    isTranscribingAudio: transcribableAudioMedia.some(
-      (file) => file.isTranscribing
-    ),
+    isIdentifyingAudio: audioAnalysisMedia.some((file) => file.isIdentifying),
+    isTranscribingAudio: audioAnalysisMedia.some((file) => file.isTranscribing),
     logId,
     replyId,
     teamId: record.teamId,

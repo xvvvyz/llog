@@ -6,7 +6,6 @@ import type { FileKind } from '@/domain/files/file-kind';
 import { fileLike } from '@/domain/files/file-like';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
-import { bodyLimit } from 'hono/body-limit';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
@@ -17,8 +16,6 @@ const MAX_STREAM_UPLOAD_DURATION_SECONDS = 36000;
 const DIRECT_VIDEO_UPLOAD_MAX_DURATION_SECONDS =
   MAX_STREAM_UPLOAD_DURATION_SECONDS;
 
-const MAX_UPLOAD_BYTES = 90 * 1024 * 1024;
-const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 const DEFAULT_DOWNLOAD_FILE_NAME = 'download';
 
 const inferFileKind = (file: File) => {
@@ -27,14 +24,6 @@ const inferFileKind = (file: File) => {
   if (file.type.startsWith('video/')) return 'video' as const;
   return 'document' as const;
 };
-
-export const uploadLimit = (maxFileBytes = MAX_UPLOAD_BYTES) =>
-  bodyLimit({
-    maxSize: maxFileBytes + MULTIPART_OVERHEAD_BYTES,
-    onError: () => {
-      throw new HTTPException(413, { message: 'Upload too large' });
-    },
-  });
 
 export const requireUploadedFile = (file: z.infer<typeof fileLike>) => {
   if (!(file instanceof File)) {
@@ -49,10 +38,6 @@ export const validateUpload = (file: File, allowed: FileKind[]) => {
 
   if (!allowed.includes(kind)) {
     throw new HTTPException(400, { message: 'Invalid upload format' });
-  }
-
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw new HTTPException(413, { message: 'Upload too large' });
   }
 
   return kind;
