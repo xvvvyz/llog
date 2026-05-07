@@ -98,6 +98,134 @@ export const createFileRouter = <const TPath extends string>({
     }
   );
 
+  app.post(
+    `${basePath}/multipart-upload`,
+    db(),
+    auth(),
+    upload.r2MultipartUploadValidator,
+    async (c) => {
+      const target = await resolveUploadTarget(c);
+
+      const { duration, fileName, fileId, mimeType, order, size, type } =
+        c.req.valid('json');
+
+      const created = await upload.createR2MultipartUploadDraft({
+        creatorId: c.var.user.id,
+        db: c.var.db,
+        duration,
+        env: c.env,
+        fileName,
+        keyPrefix: target.keyPrefix,
+        linkField: target.linkField,
+        linkId: target.linkId,
+        fileId,
+        mimeType,
+        order,
+        recordId: target.recordId,
+        size,
+        type,
+      });
+
+      return c.json(created);
+    }
+  );
+
+  app.put(
+    `${basePath}/multipart-upload/part`,
+    db(),
+    auth(),
+    upload.r2MultipartUploadPartValidator,
+    async (c) => {
+      const target = await resolveUploadTarget(c);
+      const { encoding, fileId, partNumber, uploadId } = c.req.valid('query');
+
+      const part = await upload.uploadR2MultipartPart({
+        creatorId: c.var.user.id,
+        db: c.var.db,
+        encoding,
+        env: c.env,
+        keyPrefix: target.keyPrefix,
+        linkField: target.linkField,
+        linkId: target.linkId,
+        fileId,
+        partNumber,
+        recordId: target.recordId,
+        request: c.req.raw,
+        uploadId,
+      });
+
+      return c.json(part);
+    }
+  );
+
+  app.post(
+    `${basePath}/multipart-upload/complete`,
+    db(),
+    auth(),
+    upload.r2MultipartUploadCompleteValidator,
+    async (c) => {
+      const target = await resolveUploadTarget(c);
+
+      const {
+        duration,
+        fileName,
+        fileId,
+        mimeType,
+        order,
+        parts,
+        size,
+        type,
+        uploadId,
+      } = c.req.valid('json');
+
+      await upload.completeR2MultipartUpload({
+        creatorId: c.var.user.id,
+        db: c.var.db,
+        duration,
+        env: c.env,
+        fileName,
+        keyPrefix: target.keyPrefix,
+        linkField: target.linkField,
+        linkId: target.linkId,
+        fileId,
+        mimeType,
+        order,
+        parts,
+        recordId: target.recordId,
+        size,
+        type,
+        uploadId,
+      });
+
+      return c.json({ success: true });
+    }
+  );
+
+  app.post(
+    `${basePath}/multipart-upload/abort`,
+    db(),
+    auth(),
+    upload.r2MultipartUploadAbortValidator,
+    async (c) => {
+      const target = await resolveUploadTarget(c);
+      const { fileId, uploadId } = c.req.valid('json');
+
+      await upload.abortR2MultipartUpload({
+        creatorId: c.var.user.id,
+        db: c.var.db,
+        env: c.env,
+        keyPrefix: target.keyPrefix,
+        linkField: target.linkField,
+        linkId: target.linkId,
+        fileId,
+        recordId: target.recordId,
+        uploadId,
+      });
+
+      return c.json({ success: true });
+    }
+  );
+
   app.put(basePath, db(), auth(), upload.fileValidator, async (c) => {
     const target = await resolveUploadTarget(c);
 

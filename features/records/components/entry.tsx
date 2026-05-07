@@ -1,3 +1,4 @@
+import * as audioAnalysis from '@/domain/files/audio-analysis';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
@@ -12,7 +13,6 @@ import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import * as React from 'react';
-import * as audioAnalysis from '@/domain/files/audio-analysis';
 
 export const Entry = ({
   className,
@@ -58,7 +58,8 @@ export const Entry = ({
   );
 
   const transcribableAudioMedia = React.useMemo(
-    () => audioAnalysisMedia.filter(audioAnalysis.canTranscribeAudioAnalysisFile),
+    () =>
+      audioAnalysisMedia.filter(audioAnalysis.canTranscribeAudioAnalysisFile),
     [audioAnalysisMedia]
   );
 

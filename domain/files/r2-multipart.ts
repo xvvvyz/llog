@@ -1,0 +1,5 @@
+export const R2_MULTIPART_MIN_PART_SIZE = 5 * 1024 * 1024;
+
+export const R2_MULTIPART_PART_SIZE = 8 * 1024 * 1024;
+
+export const R2_MULTIPART_MAX_PARTS = 10_000;
