@@ -300,6 +300,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
         status: mcpSchemas.contentStatusSchema,
         tagId: z.string().min(1).optional(),
       },
+      outputSchema: mcpSchemas.recordTagsOutputSchema,
     },
     async ({
       action,

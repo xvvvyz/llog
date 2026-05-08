@@ -1,6 +1,7 @@
 import { textResult } from '@/api/mcp/fields';
 import { getVisibleRecord } from '@/api/mcp/records';
 import { registerMcpTool } from '@/api/mcp/register-tool';
+import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext } from '@/api/mcp/types';
 import * as recordReactions from '@/domain/records/reactions';
 import * as permissions from '@/domain/teams/permissions';
@@ -136,6 +137,7 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
         recordId: z.string().min(1).optional(),
         replyId: z.string().min(1).optional(),
       },
+      outputSchema: mcpSchemas.recordActionsOutputSchema,
     },
     async ({ action, emoji, isPinned, recordId, replyId }) => {
       switch (action) {

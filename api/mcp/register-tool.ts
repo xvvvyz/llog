@@ -6,14 +6,25 @@ type McpToolHandler<Shape extends z.ZodRawShape> = (
   args: z.output<z.ZodObject<Shape>>
 ) => CallToolResult | Promise<CallToolResult>;
 
-export const registerMcpTool = <Shape extends z.ZodRawShape>(
+export const registerMcpTool = <
+  InputShape extends z.ZodRawShape,
+  OutputShape extends z.ZodRawShape,
+>(
   server: McpServer,
   name: string,
-  config: { description: string; inputSchema: Shape },
-  handler: McpToolHandler<Shape>
+  config: {
+    description: string;
+    inputSchema: InputShape;
+    outputSchema?: OutputShape;
+  },
+  handler: McpToolHandler<InputShape>
 ): ReturnType<McpServer['registerTool']> =>
   server.registerTool(
     name,
-    { ...config, inputSchema: config.inputSchema as never },
+    {
+      ...config,
+      inputSchema: config.inputSchema as never,
+      outputSchema: config.outputSchema as never,
+    },
     handler as never
   );

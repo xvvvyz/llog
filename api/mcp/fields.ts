@@ -79,6 +79,9 @@ export const textPreview = (text?: string | null, max = 160) => {
   return `${value.slice(0, max - 3).trimEnd()}...`;
 };
 
+const dateField = (value: string | number | Date) =>
+  value instanceof Date ? value.toISOString() : value;
+
 export const fileFields = (
   file: mcpTypes.McpFile,
   options?: McpFieldOptions
@@ -146,7 +149,7 @@ export const recordFields = (
   options?: McpFieldOptions
 ) => ({
   author: profileFields(record.author),
-  date: record.date,
+  date: dateField(record.date),
   fileCount: record.files?.length,
   files: options?.includeFiles
     ? (record.files ?? []).map((file) => fileFields(file, options))
@@ -176,7 +179,7 @@ export const replyFields = (
   options?: McpFieldOptions
 ) => ({
   author: profileFields(reply.author),
-  date: reply.date,
+  date: dateField(reply.date),
   fileCount: reply.files?.length,
   files: options?.includeFiles
     ? (reply.files ?? []).map((file) => fileFields(file, options))
@@ -214,7 +217,7 @@ export const recordSummaryFields = (
   record: mcpTypes.McpRecord,
   _options?: McpFieldOptions
 ) => ({
-  date: record.date,
+  date: dateField(record.date),
   fileCount: record.files?.length,
   id: record.id,
   isDraft: !!record.isDraft,
@@ -231,7 +234,7 @@ export const replySummaryFields = (
   reply: mcpTypes.McpReply,
   _options?: McpFieldOptions
 ) => ({
-  date: reply.date,
+  date: dateField(reply.date),
   fileCount: reply.files?.length,
   id: reply.id,
   isDraft: !!reply.isDraft,

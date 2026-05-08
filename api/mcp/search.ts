@@ -1,6 +1,7 @@
 import * as mcpFields from '@/api/mcp/fields';
 import { recordSearchQuery } from '@/api/mcp/records';
 import { registerMcpTool } from '@/api/mcp/register-tool';
+import * as mcpSchemas from '@/api/mcp/schemas';
 import type * as mcpTypes from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import * as mediaMetadata from '@/domain/files/media-metadata';
@@ -155,6 +156,7 @@ export const registerSearchTool = (
         query: z.string().trim().min(1),
         recordTagIds: z.array(z.string().min(1)).max(20).optional(),
       },
+      outputSchema: mcpSchemas.searchOutputSchema,
     },
     async ({ cursor, limit = 25, query, recordTagIds }) => {
       const q = query.toLowerCase();

@@ -4,6 +4,7 @@ import { installConsoleErrorSerializer } from '@/api/lib/logging';
 import logs from '@/api/logs';
 import { headers } from '@/api/middleware/headers';
 import oauth from '@/api/oauth';
+import { handleAuthorizationCodeReplay } from '@/api/oauth/authorization-code-replay';
 import * as oauthProviderModule from '@/api/oauth/provider';
 import push from '@/api/push';
 import records from '@/api/records';
@@ -51,10 +52,15 @@ const oauthProvider = oauthProviderModule.createOAuthProvider(defaultHandler);
 
 export default {
   fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
-    return oauthProvider.fetch(
-      oauthProviderModule.normalizePublicOrigin(request, env.APP_URL),
+    const normalizedRequest = oauthProviderModule.normalizePublicOrigin(
+      request,
+      env.APP_URL
+    );
+
+    return handleAuthorizationCodeReplay(
+      normalizedRequest,
       env,
-      ctx
+      (nextRequest) => oauthProvider.fetch(nextRequest, env, ctx)
     );
   },
 };

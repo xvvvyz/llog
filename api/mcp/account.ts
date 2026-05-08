@@ -1,12 +1,19 @@
 import * as mcpFields from '@/api/mcp/fields';
+import { registerMcpTool } from '@/api/mcp/register-tool';
+import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 export const registerAccountTool = (server: McpServer, ctx: McpContext) => {
-  server.registerTool(
+  registerMcpTool(
+    server,
     'account',
-    { description: 'Current user and teams.' },
+    {
+      description: 'Current user and teams.',
+      inputSchema: {},
+      outputSchema: mcpSchemas.accountOutputSchema,
+    },
     async () => {
       const viewer = await getViewer(ctx.db, ctx.props.userId);
 

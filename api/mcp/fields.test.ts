@@ -68,3 +68,14 @@ describe('textResult', () => {
     });
   });
 });
+
+describe('recordSummaryFields', () => {
+  test('serializes Date values for structured output', () => {
+    expect(
+      mcpFields.recordSummaryFields({
+        date: new Date('2026-01-02T03:04:05.000Z'),
+        id: 'record-1',
+      })
+    ).toMatchObject({ date: '2026-01-02T03:04:05.000Z', id: 'record-1' });
+  });
+});

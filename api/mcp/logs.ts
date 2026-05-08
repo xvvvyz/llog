@@ -1,5 +1,6 @@
 import { logFields, table, textResult } from '@/api/mcp/fields';
 import { registerMcpTool } from '@/api/mcp/register-tool';
+import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext, McpRole } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import * as permissions from '@/domain/teams/permissions';
@@ -122,6 +123,7 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
         name: z.string().trim().min(1).max(32).optional(),
         teamId: z.string().min(1).optional(),
       },
+      outputSchema: mcpSchemas.logsOutputSchema,
     },
     async ({ action, name, teamId }) => {
       switch (action) {

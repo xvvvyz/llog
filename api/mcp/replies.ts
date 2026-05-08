@@ -525,6 +525,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
         status: mcpSchemas.contentStatusSchema,
         text: z.string().max(10240).optional(),
       },
+      outputSchema: mcpSchemas.repliesOutputSchema,
     },
     async ({
       action,
