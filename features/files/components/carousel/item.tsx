@@ -26,6 +26,7 @@ type ItemProps = {
     nextIsInteracting: boolean
   ) => void;
   onZoomStateChange: (fileId: string, nextIsZoomed: boolean) => void;
+  playbackRate: number;
   resetVideoToken: number;
   resetZoomToken: number;
   setIsPlaying: (isPlaying: boolean) => void;
@@ -49,6 +50,7 @@ const ItemComponent = ({
   onVideoTimeChange,
   onZoomInteractionStateChange,
   onZoomStateChange,
+  playbackRate,
   resetVideoToken,
   resetZoomToken,
   setIsPlaying,
@@ -85,6 +87,7 @@ const ItemComponent = ({
           onVideoTimeChange={onVideoTimeChange}
           onZoomInteractionStateChange={onZoomInteractionStateChange}
           onZoomStateChange={onZoomStateChange}
+          playbackRate={playbackRate}
           resetVideoToken={resetVideoToken}
           resetZoomToken={resetZoomToken}
           setIsPlaying={setIsPlaying}
@@ -133,6 +136,7 @@ const CarouselVideoItem = ({
   onVideoTimeChange,
   onZoomInteractionStateChange,
   onZoomStateChange,
+  playbackRate,
   resetVideoToken,
   resetZoomToken,
   setIsPlaying,
@@ -158,6 +162,7 @@ const CarouselVideoItem = ({
     nextIsInteracting: boolean
   ) => void;
   onZoomStateChange: (fileId: string, nextIsZoomed: boolean) => void;
+  playbackRate: number;
   resetVideoToken: number;
   resetZoomToken: number;
   setIsPlaying: (isPlaying: boolean) => void;
@@ -220,6 +225,7 @@ const CarouselVideoItem = ({
                 onPlayingChange={isActive ? setIsPlaying : undefined}
                 onReady={handleLoaded}
                 onTimeChange={isActive ? onVideoTimeChange : undefined}
+                playbackRate={playbackRate}
                 resetToken={resetVideoToken}
                 thumbnailQuality={mediaQuality}
                 thumbnailUri={item.thumbnailUri}

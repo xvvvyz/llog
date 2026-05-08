@@ -27,7 +27,7 @@ export const ReplyCreateSheet = () => {
         onTextareaFocusChange={composer.onTextareaFocusChange}
         placeholder="Add a reply"
         submitLabel={composer.submitLabel}
-        submitTextClassName="text-contrast-foreground"
+        submitTextClassName="text-white"
         submitVariant="secondary"
         text={composer.currentText}
         toolbar={composer.toolbar}

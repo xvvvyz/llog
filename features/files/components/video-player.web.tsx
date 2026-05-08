@@ -4,7 +4,6 @@ import { getVideoPosterTarget } from '@/features/files/lib/video-poster-target';
 import * as videoPreload from '@/features/files/lib/video-preload';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { cn } from '@/lib/cn';
-import { UI } from '@/theme/ui';
 import { Spinner } from '@/ui/spinner';
 import HlsClient, { Events as HlsEvents } from 'hls.js';
 import * as React from 'react';
@@ -30,6 +29,7 @@ export const VideoPlayer = ({
   onReady,
   onPlayingChange,
   onTimeChange,
+  playbackRate = 1,
   resetToken = 0,
   thumbnailQuality,
   thumbnailUri,
@@ -44,6 +44,7 @@ export const VideoPlayer = ({
   onReady?: () => void;
   onPlayingChange?: (isPlaying: boolean) => void;
   onTimeChange?: (currentTime: number, duration: number) => void;
+  playbackRate?: number;
   resetToken?: number;
   thumbnailQuality?: number;
   thumbnailUri?: string | null;
@@ -163,6 +164,29 @@ export const VideoPlayer = ({
   }, [claimPlayback, releasePlayback, src]);
 
   React.useImperativeHandle(handleRef, () => ({
+    enterFullscreen: () => {
+      const video = ref.current;
+      if (!video) return;
+
+      if (video.requestFullscreen) {
+        void video.requestFullscreen();
+        return;
+      }
+
+      const webkitVideo = video as HTMLVideoElement & {
+        webkitEnterFullScreen?: () => void;
+        webkitRequestFullscreen?: () => Promise<void>;
+        msRequestFullscreen?: () => Promise<void>;
+      };
+
+      if (webkitVideo.webkitRequestFullscreen) {
+        void webkitVideo.webkitRequestFullscreen();
+      } else if (webkitVideo.webkitEnterFullScreen) {
+        webkitVideo.webkitEnterFullScreen();
+      } else if (webkitVideo.msRequestFullscreen) {
+        void webkitVideo.msRequestFullscreen();
+      }
+    },
     pause: () => {
       ref.current?.pause();
     },
@@ -245,6 +269,12 @@ export const VideoPlayer = ({
       }
     },
   }));
+
+  React.useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    video.playbackRate = playbackRate;
+  }, [playbackRate]);
 
   React.useEffect(() => {
     const video = ref.current;
@@ -448,7 +478,7 @@ export const VideoPlayer = ({
       )}
       {showLoadingIndicator && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <Spinner color={UI.light.contrastForeground} />
+          <Spinner />
         </div>
       )}
     </div>

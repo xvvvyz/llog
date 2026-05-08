@@ -21,6 +21,7 @@ export type EntryRecord = Partial<
 export type EntrySharedProps = {
   accentColor?: string;
   audioMedia: FileItem[];
+  canAnalyzeAudio: boolean;
   documentFiles: FileItem[];
   entryMenuState: EntryMenuState;
   links: Link[];

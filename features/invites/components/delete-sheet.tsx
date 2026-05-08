@@ -2,7 +2,6 @@ import { Role } from '@/domain/teams/role';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -57,11 +56,7 @@ export const InviteDeleteSheet = () => {
           variant="destructive"
           wrapperClassName="mt-12"
         >
-          {isLoading ? (
-            <Spinner color={UI.light.contrastForeground} />
-          ) : (
-            <Text>Invalidate</Text>
-          )}
+          {isLoading ? <Spinner /> : <Text>Invalidate</Text>}
         </Button>
         <Button
           onPress={() => sheetManager.close('invite-delete')}

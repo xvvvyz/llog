@@ -22,8 +22,9 @@ export const useLightboxMedia = ({
     recordId
       ? {
           records: {
-            $: { where: { id: recordId } },
+            $: { fields: ['id', 'teamId'], where: { id: recordId } },
             files: visibleFileQuery,
+            log: { team: { $: { fields: ['id'] } } },
             replies: { files: visibleFileQuery },
           },
         }
@@ -50,5 +51,9 @@ export const useLightboxMedia = ({
     return [];
   }, [mediaId, record]);
 
-  return { isLoading: !!recordId && (isLoading || !hasCurrentResult), media };
+  return {
+    isLoading: !!recordId && (isLoading || !hasCurrentResult),
+    media,
+    teamId: record?.log?.team?.id ?? record?.teamId,
+  };
 };

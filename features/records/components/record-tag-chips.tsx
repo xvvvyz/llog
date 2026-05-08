@@ -10,9 +10,11 @@ type RecordTagChip = {
 };
 
 export const RecordTagChips = ({
+  chipClassName,
   className,
   tags,
 }: {
+  chipClassName?: string;
   className?: string;
   tags?: RecordTagChip[];
 }) => {
@@ -22,6 +24,7 @@ export const RecordTagChips = ({
 
   return (
     <TagChipList
+      chipClassName={chipClassName}
       className={cn('max-w-full justify-end gap-1', className)}
       maxVisible={orderedTags.length}
       tags={orderedTags}

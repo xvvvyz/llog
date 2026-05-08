@@ -6,7 +6,6 @@ import { useTeams } from '@/features/teams/queries/use-teams';
 import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { db } from '@/lib/db';
-import { UI } from '@/theme/ui';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
@@ -221,16 +220,13 @@ export default function InviteLink() {
         >
           {isRedeeming ? (
             <>
-              <Spinner color={UI.light.contrastForeground} />
+              <Spinner />
               <Text>Joining{'\u2026'}</Text>
             </>
           ) : linkInfo?.isValid ? (
             <>
               <Text>Let{'\u2019'}s go</Text>
-              <Icon
-                className="-mr-0.5 text-contrast-foreground"
-                icon={ArrowRight}
-              />
+              <Icon className="-mr-0.5" icon={ArrowRight} />
             </>
           ) : (
             <>

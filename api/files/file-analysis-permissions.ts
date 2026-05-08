@@ -2,12 +2,6 @@ import { type Db } from '@/api/middleware/db';
 import * as permissions from '@/domain/teams/permissions';
 import { HTTPException } from 'hono/http-exception';
 
-export type FileAnalysisTarget = {
-  linkField: 'record' | 'reply';
-  linkId: string;
-  recordId: string;
-};
-
 const getTeamRoleForUser = async (
   dbClient: Db,
   teamId: string,
@@ -129,29 +123,46 @@ const assertCanAnalyzeReplyFiles = async ({
   });
 };
 
-export const assertCanAnalyzeTargetFiles = async ({
+export const assertCanAnalyzeFile = async ({
   dbClient,
-  target,
+  fileId,
   userId,
 }: {
   dbClient: Db;
-  target: FileAnalysisTarget;
+  fileId: string;
   userId: string;
 }) => {
-  if (target.linkField === 'record') {
+  const { files } = await dbClient.query({
+    files: {
+      $: { fields: ['id'], where: { id: fileId } },
+      record: { $: { fields: ['id'] } },
+      reply: { $: { fields: ['id'] }, record: { $: { fields: ['id'] } } },
+    },
+  });
+
+  const file = files[0];
+  if (!file?.id) throw new HTTPException(404, { message: 'File not found' });
+
+  if (file.record?.id) {
     await assertCanAnalyzeRecordFiles({
       dbClient,
-      recordId: target.recordId,
+      recordId: file.record.id,
       userId,
     });
 
     return;
   }
 
-  await assertCanAnalyzeReplyFiles({
-    dbClient,
-    recordId: target.recordId,
-    replyId: target.linkId,
-    userId,
-  });
+  if (file.reply?.id && file.reply.record?.id) {
+    await assertCanAnalyzeReplyFiles({
+      dbClient,
+      recordId: file.reply.record.id,
+      replyId: file.reply.id,
+      userId,
+    });
+
+    return;
+  }
+
+  throw new HTTPException(404, { message: 'File not found' });
 };

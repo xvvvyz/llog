@@ -24,7 +24,7 @@ export const ListEmptyState = ({ canManage }: { canManage?: boolean }) => {
               router.push(`/${logId}`);
             }}
           >
-            <Icon className="-ml-0.5 text-contrast-foreground" icon={Plus} />
+            <Icon className="-ml-0.5" icon={Plus} />
             <Text>New log</Text>
           </Button>
         </>

@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'bun:test';
 import * as audioMetadata from '@/features/files/lib/audio-metadata';
+import { describe, expect, test } from 'bun:test';
 
 describe('parseAudioTracks', () => {
   test('filters invalid rows, sorts by start time, and normalizes display metadata', () => {
@@ -148,7 +148,10 @@ describe('getTranscriptNavigationState', () => {
 
   test('uses the first segment before transcript playback has reached it', () => {
     expect(
-      audioMetadata.getTranscriptNavigationState({ currentTimeSeconds: -1, segments })
+      audioMetadata.getTranscriptNavigationState({
+        currentTimeSeconds: -1,
+        segments,
+      })
     ).toEqual({ currentIndex: 0, pendingIndex: -1 });
   });
 });

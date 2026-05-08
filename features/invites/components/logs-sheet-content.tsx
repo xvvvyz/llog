@@ -1,7 +1,6 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { SPECTRUM } from '@/theme/spectrum';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { SearchInput } from '@/ui/search-input';
@@ -86,11 +85,7 @@ export const LogsSheetContent = ({
           size="sm"
           wrapperClassName="shrink-0"
         >
-          {isLoading ? (
-            <Spinner color={UI.light.contrastForeground} />
-          ) : (
-            <Text>{buttonLabel}</Text>
-          )}
+          {isLoading ? <Spinner /> : <Text>{buttonLabel}</Text>}
         </Button>
       </SheetFooter>
     </>

@@ -46,7 +46,7 @@ export const TagRow = ({
 
   return (
     <View className="flex-row w-full gap-3 items-center">
-      <View className="flex-1 flex-row h-10 min-w-0 border-border-secondary border-continuous rounded-full bg-input border items-center">
+      <View className="flex-1 flex-row overflow-hidden h-10 min-w-0 border-border-secondary border-continuous rounded-full bg-input border items-center">
         {canManageDefinitions && (
           <SortableSheetDragHandle
             className="h-10 w-10"
@@ -121,10 +121,10 @@ export const TagRow = ({
           <Checkbox
             checked={isSelected}
             checkedColor={accentColor}
-            className="size-10 border-0"
+            className="size-[38px] border-0"
             disabled={!canToggle}
             onCheckedChange={(selected) => onCheckedChange?.(selected)}
-            wrapperClassName="-mr-px rounded-full border-continuous"
+            wrapperClassName="rounded-full border-continuous"
           />
         )}
       </View>

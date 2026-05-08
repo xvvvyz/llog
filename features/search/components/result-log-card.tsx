@@ -35,7 +35,7 @@ export const ResultLogCard = ({
         style={{ backgroundColor: spectrum?.default }}
       >
         <View className="flex-1 flex-row min-w-0 gap-4 items-center">
-          <Text className="text-contrast-foreground shrink" numberOfLines={1}>
+          <Text className="text-white shrink" numberOfLines={1}>
             {result.text}
           </Text>
           {!!tags.length && (

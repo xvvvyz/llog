@@ -1,7 +1,6 @@
 import { removeMember } from '@/features/teams/mutations/remove-member';
 import { useTeam } from '@/features/teams/queries/use-team';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -43,11 +42,7 @@ export const MemberRemoveSheet = () => {
           variant="destructive"
           wrapperClassName="mt-12"
         >
-          {isLoading ? (
-            <Spinner color={UI.light.contrastForeground} />
-          ) : (
-            <Text>Remove</Text>
-          )}
+          {isLoading ? <Spinner /> : <Text>Remove</Text>}
         </Button>
         <Button
           onPress={() => sheetManager.close('member-remove')}

@@ -7,7 +7,6 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
 import { SPECTRUM } from '@/theme/spectrum';
-import { UI } from '@/theme/ui';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
@@ -178,11 +177,7 @@ export const RecordCopyToSheet = () => {
           size="sm"
           wrapperClassName="shrink-0"
         >
-          {isSubmitting ? (
-            <Spinner color={UI.light.contrastForeground} />
-          ) : (
-            <Text>Next</Text>
-          )}
+          {isSubmitting ? <Spinner /> : <Text>Next</Text>}
         </Button>
       </SheetFooter>
     </Sheet>

@@ -1,4 +1,3 @@
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -36,11 +35,7 @@ export const DestructiveConfirmSheet = ({
           variant="destructive"
           wrapperClassName="mt-12"
         >
-          {isPending ? (
-            <Spinner color={UI.light.contrastForeground} />
-          ) : (
-            <Text>Delete</Text>
-          )}
+          {isPending ? <Spinner /> : <Text>Delete</Text>}
         </Button>
         <Button
           disabled={isPending}

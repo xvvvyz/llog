@@ -153,8 +153,7 @@ const ICON_RADIUS = 0.48;
 const MASKABLE_PADDING = 0.1;
 const MASKABLE_RADIUS = ICON_RADIUS;
 const ANDROID_ADAPTIVE_CONTENT_SCALE = 0.61;
-const contrastBackground = UI.light.contrastBackground;
-const contrastForeground = UI.light.contrastForeground;
+const lightBackground = UI.light.background;
 
 const sharedNativeIconOutputs = [
   {
@@ -249,9 +248,9 @@ const androidNativeAssetOutputs = [
     render: () =>
       renderAppIconPng({
         backgroundColor: 'transparent',
-        colors: [contrastBackground, contrastBackground, contrastBackground],
+        colors: [lightBackground, lightBackground, lightBackground],
         contentScale: ANDROID_ADAPTIVE_CONTENT_SCALE,
-        dotColors: [contrastBackground, contrastBackground, contrastBackground],
+        dotColors: [lightBackground, lightBackground, lightBackground],
         size: 1024,
       }),
   },
@@ -378,9 +377,9 @@ export async function generateMedia(
       badgeOutputPath,
       await renderAppIconPng({
         backgroundColor: 'transparent',
-        colors: [contrastForeground, contrastForeground, contrastForeground],
+        colors: [lightBackground, lightBackground, lightBackground],
         cropToContent: true,
-        dotColors: [contrastForeground, contrastForeground, contrastForeground],
+        dotColors: [lightBackground, lightBackground, lightBackground],
         fitToWidth: 72,
         size: 72,
       })

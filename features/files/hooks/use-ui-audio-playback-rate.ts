@@ -1,5 +1,5 @@
 import { useUi } from '@/features/account/queries/use-ui';
-import * as audioPlaybackRateUtils from '@/features/files/lib/audio-playback-rate';
+import * as audioPlaybackRateUtils from '@/features/files/lib/media-playback-rate';
 import { db } from '@/lib/db';
 import * as React from 'react';
 

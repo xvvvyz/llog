@@ -1,6 +1,7 @@
 import { Lightbox } from '@/features/files/components/lightbox';
 import { useLightboxMedia } from '@/features/files/queries/use-lightbox-items';
 import * as recordRoutes from '@/features/records/lib/route';
+import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { Loading } from '@/ui/loading';
 import { NotFound } from '@/ui/not-found';
@@ -16,11 +17,12 @@ export default function MediaLightboxRoute() {
   const routeFileId = getRouteParam(params.fileId);
   const routeRecordId = getRouteParam(params.recordId);
 
-  const { isLoading, media } = useLightboxMedia({
+  const { isLoading, media, teamId } = useLightboxMedia({
     mediaId: routeFileId,
     recordId: routeRecordId,
   });
 
+  const myRole = useMyRole({ teamId });
   const [visibleMediaId, setVisibleMediaId] = React.useState(routeFileId);
   const shouldShowLoadingIndicator = useDelayedTrue(isLoading);
   const addressMediaIdRef = React.useRef(routeFileId);
@@ -82,19 +84,20 @@ export default function MediaLightboxRoute() {
   const hasRouteMedia = media.some((item) => item.id === routeFileId);
 
   if (!routeFileId || !routeRecordId || (!isLoading && !hasRouteMedia)) {
-    return <NotFound className="absolute inset-0 bg-background" />;
+    return <NotFound className="absolute inset-0 bg-popover" />;
   }
 
   if (isLoading) {
     return (
-      <View className="absolute inset-0 bg-background">
-        {shouldShowLoadingIndicator ? <Loading /> : null}
+      <View className="absolute inset-0 bg-popover">
+        {shouldShowLoadingIndicator ? <Loading className="bg-popover" /> : null}
       </View>
     );
   }
 
   return (
     <Lightbox
+      canAnalyzeAudio={myRole.canManage}
       media={media}
       mediaId={visibleMediaId}
       onActiveMediaChange={handleActiveMediaChange}

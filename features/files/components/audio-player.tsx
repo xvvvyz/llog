@@ -1,10 +1,10 @@
+import * as audioAnalysisMenuItems from '@/features/files/components/audio-analysis-menu-items';
 import * as audioMetadata from '@/features/files/components/audio-metadata';
 import { createAudioPlaylist } from '@/features/files/components/audio-playlist';
 import { AudioTransport } from '@/features/files/components/audio-transport';
 import * as audioMediaSession from '@/features/files/hooks/use-audio-media-session';
 import { useAudioPlayerController } from '@/features/files/hooks/use-audio-player-controller';
 import * as audioMetadataLib from '@/features/files/lib/audio-metadata';
-import { DEFAULT_AUDIO_PLAYBACK_RATE } from '@/features/files/lib/audio-playback-rate';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
 import { cn } from '@/lib/cn';
 import * as React from 'react';
@@ -13,12 +13,17 @@ import { View } from 'react-native';
 export const AudioPlayer = (props: AudioPlayerProps) => {
   const {
     fileId,
+    canAnalyzeAudio,
+    isIdentifying,
+    isTranscribing,
     name,
     onNextClip,
     onPreviousClip,
+    size,
     showMetadata = true,
     showPlaybackRate = true,
     trailingAccessory,
+    type,
   } = props;
 
   const tracks = React.useMemo(
@@ -33,16 +38,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const hasTracks = tracks.length > 0;
   const hasMultipleTracks = tracks.length > 1;
-
-  const controls = useAudioPlayerController(
-    hasMultipleTracks
-      ? {
-          ...props,
-          onPlaybackRateChange: undefined,
-          playbackRate: DEFAULT_AUDIO_PLAYBACK_RATE,
-        }
-      : props
-  );
+  const controls = useAudioPlayerController(props);
 
   const trackNavigation = React.useMemo(
     () =>
@@ -198,6 +194,32 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       trailingAccessory
     );
 
+  const audioFile = fileId
+    ? {
+        duration: props.durationSeconds
+          ? props.durationSeconds * 1000
+          : undefined,
+        id: fileId,
+        isIdentifying: isIdentifying ?? undefined,
+        isTranscribing: isTranscribing ?? undefined,
+        size: size ?? undefined,
+        tracks: props.tracks,
+        transcript: props.transcript,
+        type: type ?? 'audio',
+      }
+    : undefined;
+
+  const audioOptionsMenuContent =
+    audioAnalysisMenuItems.shouldShowAudioAnalysisMenu({
+      canAnalyze: canAnalyzeAudio,
+      file: audioFile,
+    }) ? (
+      <audioAnalysisMenuItems.AudioAnalysisMenuItems
+        canAnalyze={canAnalyzeAudio}
+        file={audioFile}
+      />
+    ) : null;
+
   return (
     <View
       className={cn(
@@ -209,7 +231,8 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       {metadata}
       <AudioTransport
         controls={controls}
-        showPlaybackRate={!hasMultipleTracks && showPlaybackRate}
+        optionsMenuContent={audioOptionsMenuContent}
+        showPlaybackRate={showPlaybackRate}
         trailingAccessory={transportTrailingAccessory}
         className={cn(
           !hasMetadata &&

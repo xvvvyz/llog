@@ -1,5 +1,5 @@
 import { normalizeReactionEmoji } from '@/domain/records/reactions';
-import * as audioPlaybackRateUtils from '@/features/files/lib/audio-playback-rate';
+import * as audioPlaybackRateUtils from '@/features/files/lib/media-playback-rate';
 import { isSortBy, type SortBy } from '@/features/logs/lib/sort';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';

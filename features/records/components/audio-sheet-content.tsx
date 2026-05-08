@@ -1,6 +1,5 @@
 import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format-time';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
@@ -63,11 +62,7 @@ export const AudioSheetContent = ({
           onPress={onSave}
           style={logColor ? { backgroundColor: logColor } : undefined}
         >
-          {isUploading ? (
-            <Spinner color={UI.light.contrastForeground} />
-          ) : (
-            <Text>Save</Text>
-          )}
+          {isUploading ? <Spinner /> : <Text>Save</Text>}
         </Button>
         <Button disabled={isUploading} onPress={onCancel} variant="secondary">
           <Text>Cancel</Text>

@@ -1,22 +1,33 @@
-import { PlaybackRateButton } from '@/features/files/components/playback-rate-button';
-import type { AudioPlaybackRate } from '@/features/files/lib/audio-playback-rate';
+import * as mediaPlaybackRate from '@/features/files/lib/media-playback-rate';
 import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
+import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { FastForward, Pause, Play, Rewind } from 'phosphor-react-native';
 import * as React from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue } from 'react-native-reanimated';
 
+import {
+  Check,
+  DotsThree,
+  FastForward,
+  Pause,
+  Play,
+  Rewind,
+  Speedometer,
+} from 'phosphor-react-native';
+
 const AUDIO_SEEK_STEP_SECONDS = 5;
 type AudioTransportSize = 'compact' | 'default';
 
 export type AudioTransportControls = {
-  currentPlaybackRate: AudioPlaybackRate;
-  handlePlaybackRateChange: (playbackRate: AudioPlaybackRate) => void;
+  currentPlaybackRate: mediaPlaybackRate.AudioPlaybackRate;
+  handlePlaybackRateChange: (
+    playbackRate: mediaPlaybackRate.AudioPlaybackRate
+  ) => void;
   handleScrubEnd: (seconds: number) => void;
   handleScrubMove: (seconds: number) => void;
   handleScrubStart: () => void;
@@ -30,11 +41,17 @@ export type AudioTransportControls = {
   togglePlayback: () => void;
 };
 
+const formatAudioPlaybackRate = (
+  playbackRate: mediaPlaybackRate.AudioPlaybackRate
+) => `${playbackRate}× speed`;
+
 export const AudioTransport = ({
   className,
   controlButtonClassName = 'rounded-none',
   controlButtonWrapperClassName = 'rounded-none',
   controls,
+  optionsMenuContent,
+  showOptionsMenu = true,
   showPlaybackRate = true,
   size = 'compact',
   trailingAccessory,
@@ -43,6 +60,8 @@ export const AudioTransport = ({
   controlButtonClassName?: string;
   controlButtonWrapperClassName?: string;
   controls: AudioTransportControls;
+  optionsMenuContent?: React.ReactNode;
+  showOptionsMenu?: boolean;
   showPlaybackRate?: boolean;
   size?: AudioTransportSize;
   trailingAccessory?: React.ReactNode;
@@ -59,10 +78,13 @@ export const AudioTransport = ({
   const gapClassName = isDefaultSize ? 'gap-3' : 'gap-2';
   const timeTextClassName = isDefaultSize ? 'text-sm' : 'text-xs';
   const trailingPaddingClassName = isDefaultSize ? 'pr-4' : 'pr-3';
-  const showDefaultPlaybackRate = showPlaybackRate && !trailingAccessory;
+  const hasOptionsMenuContent = optionsMenuContent != null;
+
+  const shouldShowOptionsMenu =
+    showOptionsMenu && (showPlaybackRate || hasOptionsMenuContent);
 
   const hasTrailingControls =
-    trailingAccessory != null || showDefaultPlaybackRate;
+    trailingAccessory != null || showPlaybackRate || shouldShowOptionsMenu;
 
   const {
     currentPlaybackRate,
@@ -179,42 +201,76 @@ export const AudioTransport = ({
           {formatTime(timeLabelTime)}
         </Text>
       </View>
-      {trailingAccessory ??
-        (showDefaultPlaybackRate && (
-          <View className="flex-row items-center shrink-0">
-            <PlaybackRateButton
-              buttonSize={buttonSize}
-              className={controlButtonClassName}
-              disabled={isDisabled}
-              onPlaybackRateChange={handlePlaybackRateChange}
-              playbackRate={currentPlaybackRate}
-              textClassName={timeTextClassName}
-              wrapperClassName={controlButtonWrapperClassName}
-            />
-            <Button
-              accessibilityLabel="Back 5 seconds"
-              className={controlButtonClassName}
-              disabled={isDisabled}
-              onPress={() => seekBy(-AUDIO_SEEK_STEP_SECONDS)}
-              size={buttonSize}
-              variant="ghost"
-              wrapperClassName={controlButtonWrapperClassName}
-            >
-              <Icon icon={Rewind} size={iconSize} />
-            </Button>
-            <Button
-              accessibilityLabel="Forward 5 seconds"
-              className={controlButtonClassName}
-              disabled={isDisabled}
-              onPress={() => seekBy(AUDIO_SEEK_STEP_SECONDS)}
-              size={buttonSize}
-              variant="ghost"
-              wrapperClassName={controlButtonWrapperClassName}
-            >
-              <Icon icon={FastForward} size={iconSize} />
-            </Button>
-          </View>
-        ))}
+      {hasTrailingControls && (
+        <View className="flex-row items-center shrink-0">
+          {trailingAccessory ??
+            (showPlaybackRate && (
+              <React.Fragment>
+                <Button
+                  accessibilityLabel="Back 5 seconds"
+                  className={controlButtonClassName}
+                  disabled={isDisabled}
+                  onPress={() => seekBy(-AUDIO_SEEK_STEP_SECONDS)}
+                  size={buttonSize}
+                  variant="ghost"
+                  wrapperClassName={controlButtonWrapperClassName}
+                >
+                  <Icon icon={Rewind} size={iconSize} />
+                </Button>
+                <Button
+                  accessibilityLabel="Forward 5 seconds"
+                  className={controlButtonClassName}
+                  disabled={isDisabled}
+                  onPress={() => seekBy(AUDIO_SEEK_STEP_SECONDS)}
+                  size={buttonSize}
+                  variant="ghost"
+                  wrapperClassName={controlButtonWrapperClassName}
+                >
+                  <Icon icon={FastForward} size={iconSize} />
+                </Button>
+              </React.Fragment>
+            ))}
+          {shouldShowOptionsMenu && (
+            <Menu.Root>
+              <Menu.Trigger asChild>
+                <Button
+                  accessibilityLabel="Audio options"
+                  className={controlButtonClassName}
+                  disabled={isDisabled}
+                  size={buttonSize}
+                  variant="ghost"
+                  wrapperClassName={controlButtonWrapperClassName}
+                >
+                  <Icon icon={DotsThree} size={iconSize} />
+                </Button>
+              </Menu.Trigger>
+              <Menu.Content align="end" className="min-w-48">
+                {showPlaybackRate &&
+                  mediaPlaybackRate.PLAYBACK_RATES.map((playbackRate) => {
+                    const isSelected = playbackRate === currentPlaybackRate;
+
+                    return (
+                      <Menu.Item
+                        key={playbackRate}
+                        onPress={() => handlePlaybackRateChange(playbackRate)}
+                      >
+                        <Icon
+                          className="text-placeholder"
+                          icon={isSelected ? Check : Speedometer}
+                        />
+                        <Text>{formatAudioPlaybackRate(playbackRate)}</Text>
+                      </Menu.Item>
+                    );
+                  })}
+                {showPlaybackRate && hasOptionsMenuContent && (
+                  <Menu.Separator />
+                )}
+                {optionsMenuContent}
+              </Menu.Content>
+            </Menu.Root>
+          )}
+        </View>
+      )}
     </View>
   );
 };

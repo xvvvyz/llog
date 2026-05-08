@@ -12,7 +12,6 @@ import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
-import { UI } from '@/theme/ui';
 import { Spinner } from '@/ui/spinner';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -40,6 +39,8 @@ export const Carousel = ({
   onActiveMediaChange,
   onDismissLockChange,
   onUiHiddenChange,
+  videoHandleRef: externalVideoHandleRef,
+  videoPlaybackRate = 1,
 }: {
   defaultIndex?: number;
   dismissMediaOpacity?: SharedValue<number>;
@@ -51,10 +52,13 @@ export const Carousel = ({
   onActiveMediaChange?: (fileId: string) => void;
   onDismissLockChange?: (isLocked: boolean) => void;
   onUiHiddenChange?: (isHidden: boolean) => void;
+  videoHandleRef?: React.RefObject<VideoPlayerHandle | null>;
+  videoPlaybackRate?: number;
 }) => {
   const insets = useSafeAreaInsets();
   const carouselRef = React.useRef<ICarouselInstance>(null);
-  const videoHandleRef = React.useRef<VideoPlayerHandle | null>(null);
+  const localVideoHandleRef = React.useRef<VideoPlayerHandle | null>(null);
+  const videoHandleRef = externalVideoHandleRef ?? localVideoHandleRef;
 
   const getClampedIndex = React.useCallback(
     (index: number) => clampIndex(index, files.length),
@@ -475,6 +479,7 @@ export const Carousel = ({
           onVideoTimeChange={handleVideoTimeChange}
           onZoomInteractionStateChange={handleZoomInteractionStateChange}
           onZoomStateChange={handleZoomStateChange}
+          playbackRate={videoPlaybackRate}
           resetVideoToken={videoResetTokens[item.id] ?? 0}
           resetZoomToken={zoomResetTokens[item.id] ?? 0}
           setIsPlaying={setIsPlaying}
@@ -498,6 +503,7 @@ export const Carousel = ({
       isPlaying,
       isScrubbingVideo,
       setIsPlaying,
+      videoPlaybackRate,
       videoPlaybackIntentState,
       videoResetTokens,
       zoomResetTokens,
@@ -529,7 +535,7 @@ export const Carousel = ({
         ) : null}
         {shouldShowImageLoadingIndicator && (
           <View className="absolute inset-0 pointer-events-none items-center justify-center">
-            <Spinner color={UI.light.contrastForeground} />
+            <Spinner />
           </View>
         )}
       </Animated.View>

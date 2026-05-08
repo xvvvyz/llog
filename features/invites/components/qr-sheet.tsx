@@ -32,7 +32,7 @@ export const InviteQrSheet = () => {
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 items-center md:p-8">
         {url && (
-          <View className="w-full p-4 border-continuous rounded-xl bg-contrast-foreground">
+          <View className="w-full p-4 border-continuous rounded-xl bg-background">
             <View
               className="aspect-square w-full items-center justify-center"
               onLayout={handleQrLayout}

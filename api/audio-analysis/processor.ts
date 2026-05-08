@@ -37,7 +37,7 @@ const transcribeAudioSource = async ({
   return openai.transcribeAudioFile({ env, file: source.file, object });
 };
 
-export const transcribeAudioFileTranscript = async ({
+export const transcribeAudioFile = async ({
   db,
   env,
   file,
@@ -73,14 +73,18 @@ export const transcribeAudioFileTranscript = async ({
       return false;
     }
 
+    await updateAudioFile(db, file.id, { isTranscribing: true });
+    didStart = true;
+
     const sourceResult = await audioSource.resolveAudioAnalysisSource({
       env,
       file,
     });
 
-    if (sourceResult.status === 'pending') return false;
-    await updateAudioFile(db, file.id, { isTranscribing: true });
-    didStart = true;
+    if (sourceResult.status === 'pending') {
+      await updateAudioFile(db, file.id, { isTranscribing: false });
+      return false;
+    }
 
     const transcript = await transcribeAudioSource({
       env,
@@ -101,25 +105,7 @@ export const transcribeAudioFileTranscript = async ({
   }
 };
 
-export const transcribeAudioFiles = async ({
-  db,
-  env,
-  files,
-}: {
-  db: Db;
-  env: CloudflareEnv;
-  files: audioAnalysisTypes.AudioFile[];
-}) => {
-  let updated = 0;
-
-  for (const file of files) {
-    if (await transcribeAudioFileTranscript({ db, env, file })) updated += 1;
-  }
-
-  return { updated };
-};
-
-export const detectAudioFileMusicTracks = async ({
+export const detectAudioFileMusic = async ({
   db,
   env,
   file,
@@ -144,14 +130,18 @@ export const detectAudioFileMusicTracks = async ({
       return true;
     }
 
+    await updateAudioFile(db, file.id, { isIdentifying: true });
+    didStart = true;
+
     const sourceResult = await audioSource.resolveAudioAnalysisSource({
       env,
       file,
     });
 
-    if (sourceResult.status === 'pending') return false;
-    await updateAudioFile(db, file.id, { isIdentifying: true });
-    didStart = true;
+    if (sourceResult.status === 'pending') {
+      await clearIdentifying(db, file.id);
+      return false;
+    }
 
     const recognition = await recognizeAudioFileMusic({
       env,
@@ -170,22 +160,4 @@ export const detectAudioFileMusicTracks = async ({
     if (didStart) await clearIdentifying(db, file.id);
     throw error;
   }
-};
-
-export const detectAudioFilesMusicTracks = async ({
-  db,
-  env,
-  files,
-}: {
-  db: Db;
-  env: CloudflareEnv;
-  files: audioAnalysisTypes.AudioFile[];
-}) => {
-  let updated = 0;
-
-  for (const file of files) {
-    if (await detectAudioFileMusicTracks({ db, env, file })) updated += 1;
-  }
-
-  return { updated };
 };

@@ -1,7 +1,6 @@
 import { createTeam } from '@/features/teams/mutations/create';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
@@ -47,11 +46,7 @@ export default function NewTeam() {
         onPress={handleSubmit}
         wrapperClassName="mt-6"
       >
-        {isTransitioning ? (
-          <Spinner color={UI.light.contrastForeground} />
-        ) : (
-          <Text>Continue</Text>
-        )}
+        {isTransitioning ? <Spinner /> : <Text>Continue</Text>}
       </Button>
     </Page>
   );

@@ -61,7 +61,7 @@ const getContinuousRoundedSquarePath = ({
 };
 
 const PILL_WIDTH_RATIOS = [0.8, 0.68, 0.56] as const;
-const APP_ICON_BG = UI.light.contrastForeground;
+const APP_ICON_BG = UI.light.background;
 
 const getSquirclePillPath = ({
   exponent = 4.5,

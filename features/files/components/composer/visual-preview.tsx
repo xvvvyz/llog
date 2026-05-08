@@ -2,7 +2,6 @@ import { PendingVideoPreview } from '@/features/files/components/composer/pendin
 import { PreviewImage } from '@/features/files/components/composer/preview-image';
 import type * as fileComposer from '@/features/files/types/composer';
 import { cn } from '@/lib/cn';
-import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import * as Sortable from '@/ui/sortable';
@@ -141,7 +140,7 @@ export const VisualPreview = ({
                 />
               )}
               <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
-                <Spinner color={UI.light.contrastForeground} size="xs" />
+                <Spinner size="xs" />
               </View>
             </View>
           </View>
@@ -154,12 +153,12 @@ export const VisualPreview = ({
           </Pressable>
         )}
         {(canDragItem || !item.pending) && (
-          <View className="absolute inset-x-0 top-0 z-10 h-8 rounded-t-lg bg-gradient-to-b from-contrast-background/60 to-contrast-background/0 pointer-events-none" />
+          <View className="absolute inset-x-0 top-0 z-10 h-8 rounded-t-lg bg-gradient-to-b from-background/60 to-background/0 pointer-events-none" />
         )}
         {canDragItem && (
           <Sortable.SortableDragHandle
             className="absolute left-0 top-0 z-20 size-6"
-            iconClassName="text-contrast-foreground"
+            iconClassName="text-foreground"
             iconSize={16}
           />
         )}
@@ -168,7 +167,7 @@ export const VisualPreview = ({
             className="absolute right-0 top-0 z-20 size-6 items-center justify-center"
             onPress={() => onDeleteFile(item.id)}
           >
-            <Icon className="text-contrast-foreground" icon={X} size={16} />
+            <Icon className="text-foreground" icon={X} size={16} />
           </Pressable>
         )}
       </View>

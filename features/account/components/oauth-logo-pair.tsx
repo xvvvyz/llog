@@ -19,7 +19,7 @@ import Svg, {
 
 const LogoFrame = ({ children }: { children: React.ReactNode }) => (
   <View className="overflow-hidden size-[68px] p-0.5 border-continuous rounded-full bg-background items-center justify-center">
-    <View className="overflow-hidden size-16 border-continuous rounded-full bg-contrast-foreground items-center justify-center">
+    <View className="overflow-hidden size-16 border-continuous rounded-full bg-background items-center justify-center">
       {children}
     </View>
   </View>
@@ -27,7 +27,7 @@ const LogoFrame = ({ children }: { children: React.ReactNode }) => (
 
 const LineLogo = () => (
   <Svg fill="none" height={64} viewBox="0 0 64 64" width={64}>
-    <Rect fill={UI.light.contrastForeground} height={64} width={64} />
+    <Rect fill={UI.light.background} height={64} width={64} />
     <Rect
       fill={SPECTRUM.light[6].lighter}
       height={8}

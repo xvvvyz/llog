@@ -158,6 +158,7 @@ export const AudioTranscriptMetadata = ({
               className={SHEET_AUDIO_TRANSPORT_CLASS_NAME}
               controlButtonClassName={SHEET_AUDIO_TRANSPORT_BUTTON_CLASS_NAME}
               controls={controls}
+              showOptionsMenu={false}
               size="default"
               controlButtonWrapperClassName={
                 SHEET_AUDIO_TRANSPORT_BUTTON_WRAPPER_CLASS_NAME
@@ -225,6 +226,7 @@ export const AudioTracksMetadata = ({
               className={SHEET_AUDIO_TRANSPORT_CLASS_NAME}
               controlButtonClassName={SHEET_AUDIO_TRANSPORT_BUTTON_CLASS_NAME}
               controls={controls}
+              showOptionsMenu={false}
               size="default"
               trailingAccessory={sheetTransportTrailingAccessory}
               controlButtonWrapperClassName={

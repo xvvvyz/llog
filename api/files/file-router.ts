@@ -1,10 +1,6 @@
-import * as audioAnalysis from '@/api/audio-analysis';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
-import { assertCanAnalyzeTargetFiles } from '@/api/files/file-analysis-permissions';
 import * as upload from '@/api/files/file-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
-import { isAudioAnalysisFileType } from '@/domain/files/audio-analysis';
-import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -33,24 +29,6 @@ type DeleteTarget = { canDelete: boolean; item?: FileAsset };
 type FileRouteConfig = {
   resolveDeleteTarget: (c: FileContext) => Promise<DeleteTarget>;
   resolveUploadTarget: (c: FileContext) => Promise<UploadTarget>;
-};
-
-const getAudioAnalysisFilesForTarget = async (
-  dbClient: Db,
-  target: UploadTarget
-) => {
-  const where =
-    target.linkField === 'record'
-      ? { record: target.linkId }
-      : { reply: target.linkId };
-
-  const { files } = await dbClient.query({
-    files: { $: { ...visibleFileQuery.$, where } },
-  });
-
-  return files.filter((file) =>
-    isAudioAnalysisFileType(file.type)
-  ) as audioAnalysis.AudioFile[];
 };
 
 export const assertReplyRecord = async (
@@ -253,46 +231,6 @@ export const createFileRouter = <const TPath extends string>({
     });
 
     return c.json({ success: true });
-  });
-
-  app.post(`${basePath}/transcribe`, db(), auth(), async (c) => {
-    const target = await resolveUploadTarget(c);
-
-    await assertCanAnalyzeTargetFiles({
-      dbClient: c.var.db,
-      target,
-      userId: c.var.user.id,
-    });
-
-    const files = await getAudioAnalysisFilesForTarget(c.var.db, target);
-
-    const result = await audioAnalysis.transcribeAudioFiles({
-      db: c.var.db,
-      env: c.env,
-      files,
-    });
-
-    return c.json({ success: true, ...result });
-  });
-
-  app.post(`${basePath}/detect-music`, db(), auth(), async (c) => {
-    const target = await resolveUploadTarget(c);
-
-    await assertCanAnalyzeTargetFiles({
-      dbClient: c.var.db,
-      target,
-      userId: c.var.user.id,
-    });
-
-    const files = await getAudioAnalysisFilesForTarget(c.var.db, target);
-
-    const result = await audioAnalysis.detectAudioFilesMusicTracks({
-      db: c.var.db,
-      env: c.env,
-      files,
-    });
-
-    return c.json({ success: true, ...result });
   });
 
   app.delete(`${basePath}/:fileId`, db(), auth(), async (c) => {

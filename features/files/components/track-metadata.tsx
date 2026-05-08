@@ -12,7 +12,7 @@ import * as React from 'react';
 import { ScrollView, View, type LayoutChangeEvent } from 'react-native';
 
 const TRACK_ARTWORK_OVERLAY_CLASS_NAME =
-  'absolute inset-0 items-center justify-center overflow-hidden border-continuous rounded-md bg-contrast-background/45';
+  'absolute inset-0 items-center justify-center overflow-hidden border-continuous rounded-md bg-background/45';
 
 type TrackListPressScrollSuppression = {
   hasMatchedTrack: boolean;
@@ -69,7 +69,7 @@ const TrackArtworkButton = ({
           pointerEvents="none"
         >
           <Icon
-            className="text-contrast-foreground"
+            className="text-foreground"
             icon={showPauseIcon ? Pause : Play}
             size={18}
             weight="fill"
@@ -84,7 +84,7 @@ const TrackArtworkButton = ({
           )}
         >
           <Icon
-            className="text-contrast-foreground"
+            className="text-foreground"
             icon={Play}
             size={18}
             weight="fill"

@@ -38,8 +38,6 @@ export const VideoControls = ({
 }: VideoControlsProps) => {
   return (
     <React.Fragment>
-      <View className="absolute inset-x-0 top-0 z-[5] h-32 bg-gradient-to-b from-[#0d0d0d] to-[#0d0d0d]/0 via-[#0d0d0d]/55 pointer-events-none" />
-      <View className="absolute bottom-0 inset-x-0 z-[5] h-32 bg-gradient-to-t from-[#0d0d0d] to-[#0d0d0d]/0 via-[#0d0d0d]/55 pointer-events-none" />
       {duration > 0 && (
         <View
           style={{ bottom: scrubberBottomOffset }}
@@ -56,7 +54,7 @@ export const VideoControls = ({
             wrapperClassName="md:-ml-4 md:mr-4"
           >
             <Icon
-              className="text-white/80"
+              className="text-popover-foreground"
               icon={isPlaying ? Pause : Play}
               size={Platform.select({ default: 24, ios: 22 })}
               weight={isPlaying ? 'regular' : 'fill'}
@@ -79,7 +77,7 @@ export const VideoControls = ({
             wrapperClassName="md:ml-4 md:-mr-4"
           >
             <Icon
-              className="text-white/80"
+              className="text-popover-foreground"
               icon={isMuted ? SpeakerSlash : SpeakerHigh}
               size={Platform.select({ default: 24, ios: 22 })}
             />
@@ -165,23 +163,23 @@ const VideoScrubber = ({
 
   return (
     <View className="flex-row items-center">
-      <Text className="min-w-[40px] leading-4 text-white/60 text-xs">
+      <Text className="min-w-[40px] font-medium leading-4 text-popover-foreground text-xs">
         {formatTime(currentTime)}
       </Text>
       <GestureDetector gesture={Gesture.Race(pan, tap)}>
         <Animated.View className="flex-1 h-8 justify-center self-stretch">
           <View
-            className="relative overflow-hidden h-1 border-continuous rounded-full bg-white/10"
+            className="relative overflow-hidden h-1 border-continuous rounded-full bg-popover-foreground/10"
             onLayout={handleTrackLayout}
           >
             <View
-              className="absolute bottom-0 left-0 top-0 border-continuous rounded-full bg-white/80"
+              className="absolute bottom-0 left-0 top-0 border-continuous rounded-full bg-popover-foreground"
               style={{ width: `${progress * 100}%` }}
             />
           </View>
         </Animated.View>
       </GestureDetector>
-      <Text className="min-w-[40px] leading-4 text-right text-white/60 text-xs">
+      <Text className="min-w-[40px] font-medium leading-4 text-popover-foreground text-right text-xs">
         {formatTime(duration)}
       </Text>
     </View>

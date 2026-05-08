@@ -1,4 +1,3 @@
-import * as audioAnalysis from '@/domain/files/audio-analysis';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
@@ -44,31 +43,8 @@ export const Entry = ({
     record.files || []
   );
 
-  const audioAnalysisMedia = React.useMemo(
-    () => [
-      ...audioMedia,
-      ...visualMedia.filter((file) => file.type === 'video'),
-    ],
-    [audioMedia, visualMedia]
-  );
-
-  const detectableAudioMedia = React.useMemo(
-    () => audioAnalysisMedia.filter(audioAnalysis.canIdentifyAudioAnalysisFile),
-    [audioAnalysisMedia]
-  );
-
-  const transcribableAudioMedia = React.useMemo(
-    () =>
-      audioAnalysisMedia.filter(audioAnalysis.canTranscribeAudioAnalysisFile),
-    [audioAnalysisMedia]
-  );
-
   const entryMenuState = useEntryMenuState({
     authorId: record.author?.id,
-    hasDetectableAudio: detectableAudioMedia.length > 0,
-    hasTranscribableAudio: transcribableAudioMedia.length > 0,
-    isIdentifyingAudio: audioAnalysisMedia.some((file) => file.isIdentifying),
-    isTranscribingAudio: audioAnalysisMedia.some((file) => file.isTranscribing),
     logId,
     replyId,
     teamId: record.teamId,
@@ -104,6 +80,7 @@ export const Entry = ({
   const sharedProps: EntryTypes.EntrySharedProps = {
     accentColor,
     audioMedia,
+    canAnalyzeAudio: myRole.canManage,
     documentFiles,
     entryMenuState,
     links: record.links ?? [],

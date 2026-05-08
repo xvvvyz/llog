@@ -1,6 +1,6 @@
 import { useExclusiveFilePlayback } from '@/features/files/hooks/use-exclusive-media-playback';
-import * as audioPlaybackRate from '@/features/files/lib/audio-playback-rate';
 import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
+import * as audioPlaybackRate from '@/features/files/lib/media-playback-rate';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
 import { clamp } from '@/lib/clamp';
 import { positiveDurationSeconds } from '@/lib/duration';
@@ -128,8 +128,11 @@ export const useAudioPlayerController = ({
   const isPreviewingScrubTime =
     !status.playing && Math.abs(displayTime - playbackTime) > 0.05;
 
+  const hasPausedProgress = !status.playing && displayTime > 0.05;
+
   const timeLabelTime =
     status.playing ||
+    hasPausedProgress ||
     isPreviewingScrubTime ||
     isScrubbingRef.current ||
     pendingSeekRef.current

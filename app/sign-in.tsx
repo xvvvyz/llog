@@ -1,6 +1,5 @@
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
@@ -54,11 +53,7 @@ export default function SignIn() {
           onPress={handleSubmit}
           wrapperClassName="mt-6"
         >
-          {isTransitioning ? (
-            <Spinner color={UI.light.contrastForeground} />
-          ) : (
-            <Text>Sign in</Text>
-          )}
+          {isTransitioning ? <Spinner /> : <Text>Sign in</Text>}
         </Button>
       </Page>
     );
@@ -96,11 +91,7 @@ export default function SignIn() {
         onPress={handleSubmit}
         wrapperClassName="mt-6"
       >
-        {isTransitioning ? (
-          <Spinner color={UI.light.contrastForeground} />
-        ) : (
-          <Text>Confirm</Text>
-        )}
+        {isTransitioning ? <Spinner /> : <Text>Confirm</Text>}
       </Button>
     </Page>
   );

@@ -16,6 +16,7 @@ import { View } from 'react-native';
 export const CompactEntry = ({
   accentColor,
   audioMedia,
+  canAnalyzeAudio,
   className,
   documentFiles,
   entryMenuState,
@@ -88,7 +89,10 @@ export const CompactEntry = ({
           )}
           {audioMedia.length > 0 && (
             <View className="mt-4 gap-2">
-              <AudioPlaylist clips={audioMedia} />
+              <AudioPlaylist
+                canAnalyzeAudio={canAnalyzeAudio}
+                clips={audioMedia}
+              />
             </View>
           )}
           {(hasDocumentFiles || hasLinks) && (

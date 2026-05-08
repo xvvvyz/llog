@@ -83,11 +83,8 @@ export default function Index() {
                     sheetManager.open('record-create', params.logId)
                   }
                 >
-                  <Icon
-                    className="-ml-0.5 text-contrast-foreground"
-                    icon={Plus}
-                  />
-                  <Text className="text-contrast-foreground">Record</Text>
+                  <Icon className="-ml-0.5 text-white" icon={Plus} />
+                  <Text className="text-white">Record</Text>
                 </Button>
               )}
               <DropdownMenu
@@ -160,7 +157,7 @@ export default function Index() {
             variant="secondary"
             wrapperClassName="rounded-full"
           >
-            <Icon className="text-contrast-foreground" icon={Plus} />
+            <Icon className="text-white" icon={Plus} />
           </Button>
         </View>
       )}

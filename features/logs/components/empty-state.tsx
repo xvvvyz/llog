@@ -154,8 +154,8 @@ export const EmptyState = ({ logId }: { logId: string }) => {
         size="xs"
         style={{ backgroundColor: logColor.default }}
       >
-        <Icon className="-ml-0.5 text-contrast-foreground" icon={Plus} />
-        <Text className="text-contrast-foreground">Record</Text>
+        <Icon className="-ml-0.5 text-white" icon={Plus} />
+        <Text className="text-white">Record</Text>
       </Button>
     </View>
   );

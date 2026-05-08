@@ -17,10 +17,6 @@ import Animated, { useAnimatedRef } from 'react-native-reanimated';
 
 const byOrder = (a: Link, b: Link) => (a.order ?? 0) - (b.order ?? 0);
 const getLinkLabel = (item: Link) => item.label?.trim() || 'Link';
-const linkLabelClassName = 'flex-1 flex-row min-w-0 gap-2 items-center';
-
-const linkUrlClassName =
-  'max-w-[45%] min-w-0 flex-row items-center justify-end shrink-0';
 
 const LinkUrlText = ({
   className,
@@ -166,7 +162,7 @@ export const LinkAttachments = ({
         triggerClassName
       )}
     >
-      <View className={linkLabelClassName}>
+      <View className="flex-1 flex-row min-w-0 gap-2 items-center">
         <Icon
           className={cn('text-placeholder', triggerIconClassName)}
           icon={ArrowSquareOut}
@@ -178,14 +174,14 @@ export const LinkAttachments = ({
           {getLinkLabel(item)}
         </Text>
       </View>
-      <View className={linkUrlClassName}>
+      <View className="flex-row max-w-[45%] min-w-0 items-center justify-end shrink-0">
         <LinkUrlText className="font-normal" url={item.url} />
       </View>
     </Button>
   );
 
   const firstLinkDetails = (
-    <View className={linkLabelClassName}>
+    <View className="flex-1 flex-row min-w-0 gap-2 items-center">
       <Icon
         className={cn('text-placeholder', triggerIconClassName)}
         icon={LinkSimple}
@@ -202,7 +198,7 @@ export const LinkAttachments = ({
   const renderSheetItem = (item: Link) => {
     const linkDetails = (
       <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
-        <View className={linkLabelClassName}>
+        <View className="flex-1 flex-row min-w-0 gap-2 items-center">
           <Icon className="text-placeholder" icon={LinkSimple} />
           <Text
             className="text-muted-foreground text-sm shrink"
@@ -211,7 +207,7 @@ export const LinkAttachments = ({
             {getLinkLabel(item)}
           </Text>
         </View>
-        <View className={linkUrlClassName}>
+        <View className="flex-row max-w-[45%] min-w-0 items-center justify-end shrink-0">
           <LinkUrlText url={item.url} />
         </View>
       </View>
@@ -261,7 +257,7 @@ export const LinkAttachments = ({
             wrapperClassName="flex-1 overflow-visible rounded-lg"
           >
             {firstLinkDetails}
-            <View className={linkUrlClassName}>
+            <View className="flex-row max-w-[45%] min-w-0 items-center justify-end shrink-0">
               <LinkUrlText className="font-normal" url={firstItem.url} />
             </View>
           </Button>

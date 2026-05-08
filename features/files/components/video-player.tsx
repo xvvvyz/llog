@@ -3,7 +3,6 @@ import { useFileUriToSrc } from '@/features/files/lib/file-uri-to-src';
 import { getVideoPosterTarget } from '@/features/files/lib/video-poster-target';
 import * as videoPreload from '@/features/files/lib/video-preload';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
-import { UI } from '@/theme/ui';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -34,6 +33,7 @@ export const VideoPlayer = ({
   onReady,
   onPlayingChange,
   onTimeChange,
+  playbackRate = 1,
   resetToken = 0,
   thumbnailQuality,
   thumbnailUri,
@@ -48,6 +48,7 @@ export const VideoPlayer = ({
   onReady?: () => void;
   onPlayingChange?: (isPlaying: boolean) => void;
   onTimeChange?: (currentTime: number, duration: number) => void;
+  playbackRate?: number;
   resetToken?: number;
   thumbnailQuality?: number;
   thumbnailUri?: string | null;
@@ -69,6 +70,7 @@ export const VideoPlayer = ({
   const previousResetTokenRef = React.useRef(resetToken);
   const readyNotifiedRef = React.useRef(false);
   const wasAutoPlayRef = React.useRef(false);
+  const videoViewRef = React.useRef<React.ElementRef<typeof VideoView>>(null);
 
   const [hasRenderedFirstFrame, setHasRenderedFirstFrame] =
     React.useState(false);
@@ -99,6 +101,7 @@ export const VideoPlayer = ({
   const player = useVideoPlayer(source, (player) => {
     player.loop = true;
     player.muted = muted;
+    player.playbackRate = playbackRate;
     player.timeUpdateEventInterval = 1 / 60;
     player.seekTolerance = DEFAULT_SEEK_TOLERANCE;
   });
@@ -122,6 +125,9 @@ export const VideoPlayer = ({
   }, [claimPlayback, player, releasePlayback, source]);
 
   React.useImperativeHandle(handleRef, () => ({
+    enterFullscreen: () => {
+      void videoViewRef.current?.enterFullscreen();
+    },
     pause: () => {
       player.pause();
     },
@@ -222,6 +228,10 @@ export const VideoPlayer = ({
   React.useEffect(() => {
     player.muted = muted;
   }, [muted, player]);
+
+  React.useEffect(() => {
+    player.playbackRate = playbackRate;
+  }, [playbackRate, player]);
 
   React.useEffect(() => {
     if (previousResetTokenRef.current === resetToken) return;
@@ -346,10 +356,11 @@ export const VideoPlayer = ({
       style={{ width: maxWidth, height: maxHeight }}
     >
       <VideoView
+        ref={videoViewRef}
         allowsPictureInPicture={false}
         allowsVideoFrameAnalysis={false}
         contentFit={contentFit}
-        fullscreenOptions={{ enable: false }}
+        fullscreenOptions={{ enable: true }}
         nativeControls={false}
         onFirstFrameRender={markFirstFrameRendered}
         player={player}
@@ -372,7 +383,7 @@ export const VideoPlayer = ({
       )}
       {showLoadingIndicator && (
         <View className="absolute inset-0 items-center justify-center">
-          <Spinner color={UI.light.contrastForeground} />
+          <Spinner />
         </View>
       )}
     </View>

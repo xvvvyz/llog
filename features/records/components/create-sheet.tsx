@@ -34,6 +34,7 @@ export const RecordCreateSheet = () => {
         inputHeader={
           hasSelectedTags ? (
             <RecordTagChips
+              chipClassName="light:bg-muted"
               className="justify-start"
               tags={composer.selectedTags}
             />

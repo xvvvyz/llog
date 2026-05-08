@@ -189,8 +189,8 @@ export const VideoMetadataOverlay = ({
                     track={currentTrack}
                   />
                   <mediaMetadataPrimitives.TrackText
-                    artistClassName="text-white/60"
-                    titleClassName="text-white/90"
+                    artistClassName="text-popover-foreground/60"
+                    titleClassName="text-popover-foreground/90"
                     track={currentTrack}
                   />
                 </Pressable>
@@ -202,7 +202,7 @@ export const VideoMetadataOverlay = ({
                   triggerButtonSize="icon"
                   triggerButtonVariant="link"
                   triggerButtonWrapperClassName="md:ml-4 md:-mr-4"
-                  triggerIconClassName="text-white/70"
+                  triggerIconClassName="text-popover-foreground/70"
                   triggerIconSize={24}
                 />
               </View>
@@ -243,7 +243,7 @@ export const VideoMetadataOverlay = ({
                   {captionLines.map((line, index) => (
                     <Text
                       key={`${line}:${index}`}
-                      className="max-w-full px-1.5 py-0.5 bg-contrast-background/75 font-medium leading-snug text-balance text-base text-center text-contrast-foreground rounded md:text-lg"
+                      className="max-w-full px-1.5 py-0.5 bg-background/75 font-medium leading-snug text-balance text-base text-center text-foreground rounded md:text-lg"
                       numberOfLines={1}
                     >
                       {line}

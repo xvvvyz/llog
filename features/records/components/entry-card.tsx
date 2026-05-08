@@ -22,6 +22,7 @@ import { View } from 'react-native';
 export const EntryCard = ({
   accentColor,
   audioMedia,
+  canAnalyzeAudio,
   canUnpinRecord,
   className,
   documentFiles,
@@ -143,7 +144,7 @@ export const EntryCard = ({
       <MediaGrid recordId={recordId} visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
-          <AudioPlaylist clips={audioMedia} />
+          <AudioPlaylist canAnalyzeAudio={canAnalyzeAudio} clips={audioMedia} />
         </View>
       )}
       {(hasDocumentFiles || hasLinks) && (

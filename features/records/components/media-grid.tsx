@@ -1,7 +1,6 @@
 import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
-import { UI } from '@/theme/ui';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
@@ -49,11 +48,11 @@ export const MediaGrid = ({
           {item.type === 'video' && (
             <View className="absolute inset-0 pointer-events-none items-center justify-center">
               {isProcessing ? (
-                <Spinner color={UI.light.contrastForeground} />
+                <Spinner />
               ) : (
-                <View className="size-10 border-continuous rounded-full bg-contrast-background/50 items-center justify-center">
+                <View className="size-10 border-continuous rounded-full bg-background/50 items-center justify-center">
                   <Icon
-                    className="text-contrast-foreground"
+                    className="text-foreground"
                     icon={Play}
                     size={20}
                     weight="fill"

@@ -55,7 +55,7 @@ export const ListItem = ({
           />
           <View className="flex-row w-full gap-3 items-end justify-between">
             <Text
-              className="flex-1 -mb-[5px] leading-snug text-contrast-foreground"
+              className="flex-1 -mb-[5px] leading-snug text-white"
               numberOfLines={1}
             >
               {name}
@@ -86,8 +86,8 @@ export const ListItem = ({
       </Link>
       <View className="absolute right-1.5 top-1.5">
         <DropdownMenu contentClassName="my-0 mr-2.5" id={id}>
-          <View className="size-6 border-continuous rounded-lg bg-contrast-foreground/15 items-center justify-center group-active:bg-contrast-foreground/20 web:transition-colors web:group-hover:bg-contrast-foreground/20">
-            <Icon className="text-contrast-foreground" icon={DotsThree} />
+          <View className="size-6 border-continuous rounded-lg bg-white/15 items-center justify-center group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20">
+            <Icon className="text-white" icon={DotsThree} />
           </View>
         </DropdownMenu>
       </View>

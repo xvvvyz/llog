@@ -1,6 +1,5 @@
 import { OAuthLogoPair } from '@/features/account/components/oauth-logo-pair';
 import { useOAuthAuthorization } from '@/features/account/hooks/use-oauth-authorization';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
@@ -77,11 +76,7 @@ export default function Authorize() {
               onPress={handleEmailSubmit}
               wrapperClassName="mt-6"
             >
-              {isPending ? (
-                <Spinner color={UI.light.contrastForeground} />
-              ) : (
-                <Text>Sign in</Text>
-              )}
+              {isPending ? <Spinner /> : <Text>Sign in</Text>}
             </Button>
           </>
         ) : (
@@ -103,11 +98,7 @@ export default function Authorize() {
               onPress={handleCodeSubmit}
               wrapperClassName="mt-6"
             >
-              {isPending ? (
-                <Spinner color={UI.light.contrastForeground} />
-              ) : (
-                <Text>Confirm</Text>
-              )}
+              {isPending ? <Spinner /> : <Text>Confirm</Text>}
             </Button>
           </>
         )}
@@ -134,7 +125,7 @@ export default function Authorize() {
         >
           {isAuthorizing || isPending ? (
             <>
-              <Spinner color={UI.light.contrastForeground} />
+              <Spinner />
               <Text>Authorizing...</Text>
             </>
           ) : (
