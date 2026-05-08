@@ -21,12 +21,87 @@ type SearchResult =
         id: string;
         log?: mcpTypes.McpLog | null;
         tags?: mcpTypes.McpTag[];
+        url?: string;
       };
       reply: ReturnType<typeof mcpFields.replySummaryFields>;
       type: 'reply';
     };
 
-const SEARCH_RECORD_SCAN_LIMIT = 500;
+type ReplySearchRecord = Extract<SearchResult, { type: 'reply' }>['record'];
+
+const searchTagFields = (tag: { name: string; order?: number | null }) => ({
+  name: tag.name,
+  order: tag.order ?? undefined,
+});
+
+const searchLogFields = (
+  log?: {
+    name: string;
+    tags?: Array<{ name: string; order?: number | null }>;
+  } | null
+) =>
+  log ? { name: log.name, tags: log.tags?.map(searchTagFields) } : undefined;
+
+const searchMediaMatchFields = ({
+  fileId: _fileId,
+  ...match
+}: mcpTypes.McpMediaSearchMatch) => match;
+
+const searchRecordFields = (
+  record: ReturnType<typeof mcpFields.recordSummaryFields>
+) => ({
+  date: record.date,
+  fileCount: record.fileCount,
+  isPinned: record.isPinned,
+  linkCount: record.linkCount,
+  log: searchLogFields(record.log),
+  reactionCount: record.reactionCount,
+  replyCount: record.replyCount,
+  tags: record.tags?.map(searchTagFields),
+  text: record.text,
+  url: record.url,
+});
+
+const searchRecordRefFields = (record: ReplySearchRecord) => ({
+  log: searchLogFields(record.log),
+  tags: record.tags?.map(searchTagFields),
+  url: record.url,
+});
+
+const searchReplyFields = (
+  reply: ReturnType<typeof mcpFields.replySummaryFields>
+) => ({
+  date: reply.date,
+  fileCount: reply.fileCount,
+  linkCount: reply.linkCount,
+  reactionCount: reply.reactionCount,
+  text: reply.text,
+});
+
+const searchResultFields = (result: SearchResult) => {
+  if (result.type === 'log') {
+    return { log: searchLogFields(result.log), type: result.type };
+  }
+
+  const matches = result.matches?.map(searchMediaMatchFields);
+
+  if (result.type === 'record') {
+    return {
+      matches,
+      record: searchRecordFields(result.record),
+      type: result.type,
+    };
+  }
+
+  return {
+    matches,
+    record: searchRecordRefFields(result.record),
+    reply: searchReplyFields(result.reply),
+    type: result.type,
+  };
+};
+
+const SEARCH_RECORD_SCAN_LIMIT = 1000;
 type SearchCursor = { offset: number; skip: number };
 const initialSearchCursor: SearchCursor = { offset: 0, skip: 0 };
 
@@ -107,15 +182,15 @@ const resultText = (result: SearchResult) => {
 
 const searchResultsTable = (results: SearchResult[]) =>
   mcpFields.table(
-    ['Type', 'Where', 'Text/Name', 'Tags', 'ID'],
+    ['Type', 'Where', 'Text/Name', 'Tags', 'URL'],
     results.map((result) => {
       if (result.type === 'log') {
         return [
           'log',
-          result.log.teamId,
+          '',
           result.log.name,
           result.log.tags?.map((tag) => tag.name).join(', '),
-          result.log.id,
+          '',
         ];
       }
 
@@ -125,16 +200,16 @@ const searchResultsTable = (results: SearchResult[]) =>
           result.record.log?.name,
           mcpFields.textPreview(resultText(result)),
           result.record.tags?.map((tag) => tag.name).join(', '),
-          result.record.id,
+          result.record.url,
         ];
       }
 
       return [
         'reply',
-        result.record.id,
+        result.record.log?.name,
         mcpFields.textPreview(resultText(result)),
         result.record.tags?.map((tag) => tag.name).join(', '),
-        result.reply.id,
+        result.record.url,
       ];
     })
   );
@@ -149,17 +224,17 @@ export const registerSearchTool = (
     server,
     'search',
     {
-      description: 'Search logs, records, and replies.',
+      description: 'Keyword search logs, records, and replies.',
       inputSchema: {
         cursor: z.string().trim().min(1).optional(),
+        keyword: z.string().trim().min(1),
         limit: z.number().int().min(1).max(100).optional(),
-        query: z.string().trim().min(1),
         recordTagIds: z.array(z.string().min(1)).max(20).optional(),
       },
       outputSchema: mcpSchemas.searchOutputSchema,
     },
-    async ({ cursor, limit = 25, query, recordTagIds }) => {
-      const q = query.toLowerCase();
+    async ({ cursor, keyword, limit = 25, recordTagIds }) => {
+      const q = keyword.toLowerCase();
       const searchCursor = parseSearchCursor(cursor);
 
       const recordTagIdSet = recordTagIds?.length
@@ -189,10 +264,7 @@ export const registerSearchTool = (
         }
       }
 
-      const recordScanLimit = Math.min(
-        SEARCH_RECORD_SCAN_LIMIT,
-        Math.max(limit * 10, 50)
-      );
+      const recordScanLimit = SEARCH_RECORD_SCAN_LIMIT;
 
       const { records } = (await ctx.db.query({
         records: {
@@ -272,7 +344,7 @@ export const registerSearchTool = (
               ...(replyMediaMatches.length
                 ? { matches: replyMediaMatches }
                 : {}),
-              record: { id: record.id, log: record.log, tags: record.tags },
+              record: mcpFields.recordRefFields(record, fieldOptions),
               reply: mcpFields.replySummaryFields(reply, fieldOptions),
               type: 'reply',
             });
@@ -309,7 +381,7 @@ export const registerSearchTool = (
             scanned: recordPage.length,
             scanLimit: recordScanLimit,
           },
-          results: limited,
+          results: limited.map(searchResultFields),
         },
         limited.length
           ? searchResultsTable(limited)

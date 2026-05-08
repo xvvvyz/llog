@@ -93,6 +93,21 @@ const recordQueryWithSubscriptions = {
 const recordsActionSchema = z.enum(['list', 'get', 'save']);
 type RecordInclude = z.infer<typeof mcpSchemas.recordIncludeSchema>;
 
+const recordIdFromUrl = (recordUrl?: string) => {
+  if (!recordUrl) return undefined;
+
+  try {
+    const url = new URL(recordUrl);
+    const [, resource, recordId] = url.pathname.split('/');
+
+    return resource === 'records' && recordId
+      ? decodeURIComponent(recordId)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const recordDetailQuery = ({
   include,
   replyLimit,
@@ -285,19 +300,19 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     })) as { records?: McpRecord[] };
 
     const items = (records ?? []).map((record) =>
-      mcpFields.recordSummaryFields(record)
+      mcpFields.recordSummaryFields(record, fieldOptions)
     );
 
     return mcpFields.textResult(
       { records: items },
       mcpFields.table(
-        ['Date', 'Text', 'Tags', 'Replies', 'ID'],
+        ['Date', 'Text', 'Tags', 'Replies', 'URL'],
         items.map((record) => [
           String(record.date),
           record.text,
           record.tags?.map((tag) => tag.name).join(', '),
           record.replyCount,
-          record.id,
+          record.url,
         ])
       )
     );
@@ -306,24 +321,37 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   const getRecord = async ({
     include = [],
     recordId,
+    recordUrl,
     replyLimit = 25,
     status,
   }: {
     include?: RecordInclude[];
     recordId?: string;
+    recordUrl?: string;
     replyLimit?: number;
     status?: 'draft' | 'published';
   }) => {
-    if (!recordId) throw new Error('recordId is required to get a record');
+    const resolvedRecordId = recordId ?? recordIdFromUrl(recordUrl);
+
+    if (!resolvedRecordId) {
+      throw new Error('recordId or recordUrl is required to get a record');
+    }
+
     const includeSet = new Set(include);
     const detailQuery = recordDetailQuery({ include: includeSet, replyLimit });
 
     const { record } =
       status === 'draft'
-        ? await getCallerDraftRecord(ctx, recordId, { query: detailQuery })
+        ? await getCallerDraftRecord(ctx, resolvedRecordId, {
+            query: detailQuery,
+          })
         : status === 'published'
-          ? await getVisibleRecord(ctx, recordId, { query: detailQuery })
-          : await getReadableRecord(ctx, recordId, { query: detailQuery });
+          ? await getVisibleRecord(ctx, resolvedRecordId, {
+              query: detailQuery,
+            })
+          : await getReadableRecord(ctx, resolvedRecordId, {
+              query: detailQuery,
+            });
 
     const replyCount = await getPublishedReplyCount(ctx, record.id);
 
@@ -349,22 +377,23 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     return mcpFields.textResult(
       { record: item },
       [
-        `Record ${item.id}`,
+        'Record',
         item.log?.name ? `Log: ${item.log.name}` : undefined,
+        item.url ? `URL: ${item.url}` : undefined,
         item.text
           ? `Text: ${mcpFields.textPreview(item.text, 600)}`
           : undefined,
         item.tags?.length
           ? mcpFields.table(
-              ['Tag', 'ID'],
-              item.tags.map((tag) => [tag.name, tag.id])
+              ['Tag'],
+              item.tags.map((tag) => [tag.name])
             )
           : undefined,
         item.files?.length
           ? mcpFields.table(
               ['File', 'Type', 'URL'],
               item.files.map((file) => [
-                file.name ?? file.id,
+                file.name ?? 'File',
                 file.type,
                 file.url,
               ])
@@ -378,9 +407,8 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
           : undefined,
         item.replies?.length
           ? mcpFields.table(
-              ['Reply', 'Text'],
+              ['Reply'],
               item.replies.map((reply) => [
-                reply.id,
                 mcpFields.textPreview(reply.text, 120),
               ])
             )
@@ -642,6 +670,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         logId: z.string().min(1).optional(),
         mode: mcpSchemas.saveModeSchema,
         recordId: z.string().min(1).optional(),
+        recordUrl: z.string().url().optional(),
         replyLimit: z.number().int().min(1).max(100).optional(),
         status: mcpSchemas.contentStatusSchema,
         text: z.string().max(10240).optional(),
@@ -656,6 +685,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
       logId,
       mode,
       recordId,
+      recordUrl,
       replyLimit,
       status,
       text,
@@ -666,7 +696,13 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         }
 
         case 'get': {
-          return getRecord({ include, recordId, replyLimit, status });
+          return getRecord({
+            include,
+            recordId,
+            recordUrl,
+            replyLimit,
+            status,
+          });
         }
 
         case 'save': {

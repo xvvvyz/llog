@@ -70,11 +70,7 @@ export const registerResources = (server: McpServer, ctx: McpContext) => {
       const item = {
         ...mcpFields.replyFields(reply, fieldOptions),
         record: record
-          ? {
-              id: record.id,
-              log: record.log,
-              tags: (record.tags ?? []).map(mcpFields.tagFields),
-            }
+          ? mcpFields.recordRefFields(record, fieldOptions)
           : undefined,
       };
 

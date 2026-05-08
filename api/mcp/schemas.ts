@@ -79,6 +79,7 @@ const recordRefOutputSchema = z.object({
   id: z.string(),
   log: logOutputSchema.optional(),
   tags: z.array(tagOutputSchema).optional(),
+  url: z.string().url().optional(),
 });
 
 const replySummaryOutputSchema = z.object({
@@ -111,6 +112,7 @@ const recordSummaryOutputSchema = z.object({
   replyCount: z.number().optional(),
   tags: z.array(tagOutputSchema).optional(),
   text: z.string().optional(),
+  url: z.string().url().optional(),
 });
 
 const recordOutputSchema = recordSummaryOutputSchema.extend({
@@ -167,7 +169,6 @@ export const recordActionsOutputSchema = {
 
 const mediaSearchMatchOutputSchema = z.object({
   endSeconds: z.number().optional(),
-  fileId: z.string(),
   fileName: z.string().optional(),
   kind: z.enum(['track', 'transcript']),
   snippet: z.string(),
@@ -175,17 +176,54 @@ const mediaSearchMatchOutputSchema = z.object({
   trackDurationSeconds: z.number().optional(),
 });
 
+const searchTagOutputSchema = z.object({
+  name: z.string(),
+  order: z.number().optional(),
+});
+
+const searchLogOutputSchema = z.object({
+  name: z.string(),
+  tags: z.array(searchTagOutputSchema).optional(),
+});
+
+const searchRecordRefOutputSchema = z.object({
+  log: searchLogOutputSchema.optional(),
+  tags: z.array(searchTagOutputSchema).optional(),
+  url: z.string().url().optional(),
+});
+
+const searchRecordSummaryOutputSchema = z.object({
+  date: dateOutputSchema.optional(),
+  fileCount: z.number().optional(),
+  isPinned: z.boolean().optional(),
+  linkCount: z.number().optional(),
+  log: searchLogOutputSchema.optional(),
+  reactionCount: z.number().optional(),
+  replyCount: z.number().optional(),
+  tags: z.array(searchTagOutputSchema).optional(),
+  text: z.string().optional(),
+  url: z.string().url().optional(),
+});
+
+const searchReplySummaryOutputSchema = z.object({
+  date: dateOutputSchema.optional(),
+  fileCount: z.number().optional(),
+  linkCount: z.number().optional(),
+  reactionCount: z.number().optional(),
+  text: z.string().optional(),
+});
+
 const searchResultOutputSchema = z.discriminatedUnion('type', [
-  z.object({ log: logOutputSchema, type: z.literal('log') }),
+  z.object({ log: searchLogOutputSchema, type: z.literal('log') }),
   z.object({
     matches: z.array(mediaSearchMatchOutputSchema).optional(),
-    record: recordSummaryOutputSchema,
+    record: searchRecordSummaryOutputSchema,
     type: z.literal('record'),
   }),
   z.object({
     matches: z.array(mediaSearchMatchOutputSchema).optional(),
-    record: recordRefOutputSchema,
-    reply: replySummaryOutputSchema,
+    record: searchRecordRefOutputSchema,
+    reply: searchReplySummaryOutputSchema,
     type: z.literal('reply'),
   }),
 ]);

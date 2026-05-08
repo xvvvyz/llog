@@ -236,23 +236,19 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
 
     const item = {
       ...mcpFields.replyFields(reply, detailFieldOptions),
-      record: {
-        id: record.id,
-        log: record.log,
-        tags: (record.tags ?? []).map(mcpFields.tagFields),
-      },
+      record: mcpFields.recordRefFields(record, detailFieldOptions),
     };
 
     return mcpFields.textResult(
       { reply: item },
       [
-        `Reply ${item.id}`,
-        `Record: ${record.id}`,
+        'Reply',
+        item.record.url ? `Record: ${item.record.url}` : undefined,
         record.log?.name ? `Log: ${record.log.name}` : undefined,
         item.record.tags?.length
           ? mcpFields.table(
-              ['Record tag', 'ID'],
-              item.record.tags.map((tag) => [tag.name, tag.id])
+              ['Record tag'],
+              item.record.tags.map((tag) => [tag.name])
             )
           : undefined,
         item.text
@@ -262,7 +258,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
           ? mcpFields.table(
               ['File', 'Type', 'URL'],
               item.files.map((file) => [
-                file.name ?? file.id,
+                file.name ?? 'File',
                 file.type,
                 file.url,
               ])

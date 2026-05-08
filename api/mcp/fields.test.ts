@@ -78,4 +78,13 @@ describe('recordSummaryFields', () => {
       })
     ).toMatchObject({ date: '2026-01-02T03:04:05.000Z', id: 'record-1' });
   });
+
+  test('includes record URLs when appUrl is available', () => {
+    expect(
+      mcpFields.recordSummaryFields(
+        { date: new Date('2026-01-02T03:04:05.000Z'), id: 'record 1' },
+        { appUrl: 'https://llog.example' }
+      )
+    ).toMatchObject({ url: 'https://llog.example/records/record%201' });
+  });
 });

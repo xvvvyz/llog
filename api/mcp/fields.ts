@@ -82,6 +82,19 @@ export const textPreview = (text?: string | null, max = 160) => {
 const dateField = (value: string | number | Date) =>
   value instanceof Date ? value.toISOString() : value;
 
+const appUrl = (path: string, options?: McpFieldOptions) => {
+  if (!options?.appUrl) return undefined;
+
+  try {
+    return new URL(path, options.appUrl).toString();
+  } catch {
+    return undefined;
+  }
+};
+
+export const recordUrl = (recordId: string, options?: McpFieldOptions) =>
+  appUrl(`/records/${encodeURIComponent(recordId)}`, options);
+
 export const fileFields = (
   file: mcpTypes.McpFile,
   options?: McpFieldOptions
@@ -130,6 +143,16 @@ export const tagFields = (tag: mcpTypes.McpTag) => ({
 export const profileFields = (profile?: mcpTypes.McpProfile | null) =>
   profile ? { id: profile.id, name: profile.name } : undefined;
 
+export const recordRefFields = (
+  record: Pick<mcpTypes.McpRecord, 'id' | 'log' | 'tags'>,
+  options?: McpFieldOptions
+) => ({
+  id: record.id,
+  log: record.log ? { id: record.log.id, name: record.log.name } : undefined,
+  tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
+  url: recordUrl(record.id, options),
+});
+
 const reactionCounts = (reactions: mcpTypes.McpReaction[] = []) => {
   const counts = new Map<string, number>();
 
@@ -172,6 +195,7 @@ export const recordFields = (
   tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
   teamId: record.teamId,
   text: record.text ?? '',
+  url: recordUrl(record.id, options),
 });
 
 export const replyFields = (
@@ -215,7 +239,7 @@ export const teamFields = (
 
 export const recordSummaryFields = (
   record: mcpTypes.McpRecord,
-  _options?: McpFieldOptions
+  options?: McpFieldOptions
 ) => ({
   date: dateField(record.date),
   fileCount: record.files?.length,
@@ -228,11 +252,12 @@ export const recordSummaryFields = (
   replyCount: (record.replies ?? []).filter((reply) => !reply.isDraft).length,
   tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
   text: textPreview(record.text),
+  url: recordUrl(record.id, options),
 });
 
 export const replySummaryFields = (
   reply: mcpTypes.McpReply,
-  _options?: McpFieldOptions
+  options?: McpFieldOptions
 ) => ({
   date: dateField(reply.date),
   fileCount: reply.files?.length,
@@ -240,14 +265,6 @@ export const replySummaryFields = (
   isDraft: !!reply.isDraft,
   linkCount: reply.links?.length,
   reactionCount: reply.reactions?.length,
-  record: reply.record
-    ? {
-        id: reply.record.id,
-        log: reply.record.log
-          ? { id: reply.record.log.id, name: reply.record.log.name }
-          : undefined,
-        tags: [...(reply.record.tags ?? [])].sort(byTagOrder).map(tagFields),
-      }
-    : undefined,
+  record: reply.record ? recordRefFields(reply.record, options) : undefined,
   text: textPreview(reply.text),
 });

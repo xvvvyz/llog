@@ -33,12 +33,10 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
     return textResult(
       { logs },
       table(
-        ['Name', 'Team', 'Tags', 'ID'],
+        ['Name', 'Tags'],
         logs.map((log) => [
           log.name,
-          log.teamId,
           log.tags?.map((tag) => tag.name).join(', '),
-          log.id,
         ])
       )
     );
