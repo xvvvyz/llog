@@ -1,5 +1,6 @@
 import { McpSheet } from '@/features/account/components/mcp-sheet';
 import { WebPushIosSetupSheet } from '@/features/account/components/web-push-ios-setup-sheet';
+import { useSignInHref } from '@/features/account/lib/auth-redirect';
 import { InviteDeleteSheet } from '@/features/invites/components/delete-sheet';
 import { InviteLogsSheet } from '@/features/invites/components/logs-sheet';
 import { InviteQrSheet } from '@/features/invites/components/qr-sheet';
@@ -22,10 +23,16 @@ import { TeamLeaveSheet } from '@/features/teams/components/leave-sheet';
 import { MemberLogsSheet } from '@/features/teams/components/member-logs-sheet';
 import { MemberRemoveSheet } from '@/features/teams/components/member-remove-sheet';
 import { TeamSwitchSheet } from '@/features/teams/components/switch-sheet';
-import { Stack } from 'expo-router';
+import { db } from '@/lib/db';
+import { Redirect, Stack } from 'expo-router';
 import * as React from 'react';
 
 export default function Layout() {
+  const auth = db.useAuth();
+  const isSignedOut = !auth.isLoading && !auth.user;
+  const signInHref = useSignInHref();
+  if (isSignedOut) return <Redirect href={signInHref} />;
+
   return (
     <React.Fragment>
       <Stack screenOptions={{ headerShown: false }}>

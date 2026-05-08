@@ -27,10 +27,17 @@ const SheetContext = React.createContext<SheetManager | null>(null);
 
 export const SheetManagerProvider = ({
   children,
+  disabled,
 }: {
   children: React.ReactNode;
+  disabled?: boolean;
 }) => {
   const [sheetStack, setSheetStack] = React.useState<SheetStackItem[]>([]);
+
+  React.useEffect(() => {
+    if (!disabled) return;
+    setSheetStack((prev) => (prev.length === 0 ? prev : []));
+  }, [disabled]);
 
   const close = React.useCallback((name: SheetName) => {
     setSheetStack((prev) => {
@@ -62,6 +69,7 @@ export const SheetManagerProvider = ({
 
   const open = React.useCallback(
     (name: SheetName, id?: string, context?: string, payload?: unknown) => {
+      if (disabled) return;
       Keyboard.dismiss();
 
       setSheetStack((prev) => {
@@ -70,7 +78,7 @@ export const SheetManagerProvider = ({
         return [...newStack, { context, name, id, payload }];
       });
     },
-    []
+    [disabled]
   );
 
   return (

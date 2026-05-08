@@ -73,7 +73,6 @@ export default function Layout() {
     };
   }, [auth.user, profile.isLoading, profile.id]);
 
-  if (!auth.isLoading && !auth.user) return <Redirect href="/sign-in" />;
   if (!profile.isLoading && !profile.id) return <Redirect href="/onboarding" />;
   if (profile.isLoading || teamsLoading || !checkedPending) return <Loading />;
   if (profile.id && teams.length === 0) return <Redirect href="/new-team" />;

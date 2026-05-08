@@ -1,4 +1,5 @@
 import type { InviteLinkInfo } from '@/domain/invites/invite-link';
+import { getSignInHref } from '@/features/account/lib/auth-redirect';
 import * as storage from '@/features/invites/lib/storage';
 import { redeemInviteLink } from '@/features/invites/mutations/redeem-link';
 import { switchTeam } from '@/features/teams/mutations/switch';
@@ -115,7 +116,7 @@ export default function InviteLink() {
       [storage.PENDING_INVITE_AUTO_JOIN_KEY, token],
     ]);
 
-    router.replace('/sign-in');
+    router.replace(getSignInHref(`/invite/${encodeURIComponent(token)}`));
   }, [token]);
 
   const isExistingTeamMember =

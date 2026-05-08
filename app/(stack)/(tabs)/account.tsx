@@ -1,4 +1,5 @@
 import { REACTION_EMOJIS } from '@/domain/records/reactions';
+import * as authRedirect from '@/features/account/lib/auth-redirect';
 import * as push from '@/features/account/lib/web-push';
 import { deleteProfileImage } from '@/features/account/mutations/delete-profile-image';
 import { randomizeProfileAvatar } from '@/features/account/mutations/randomize-profile-avatar';
@@ -51,6 +52,7 @@ export default function Account() {
   const auth = db.useAuth();
   const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
   const profile = useProfile();
+  const redirectHref = authRedirect.useCurrentRedirectHref();
   const sheetManager = useSheetManager();
   const ui = useUi();
 
@@ -383,7 +385,7 @@ export default function Account() {
                   }
 
                   await db.auth.signOut();
-                  router.navigate('/sign-in');
+                  router.navigate(authRedirect.getSignInHref(redirectHref));
                 } finally {
                   setIsSigningOut(false);
                 }

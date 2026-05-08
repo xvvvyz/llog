@@ -1,3 +1,4 @@
+import { useSignInHref } from '@/features/account/lib/auth-redirect';
 import { createTeam } from '@/features/teams/mutations/create';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
@@ -15,8 +16,9 @@ export default function NewTeam() {
   const [isTransitioning, startTransition] = React.useTransition();
   const [rawName, setRawName] = React.useState('');
   const auth = db.useAuth();
+  const signInHref = useSignInHref();
   const { teams, isLoading } = useTeams();
-  if (!auth.isLoading && !auth.user) return <Redirect href="/sign-in" />;
+  if (!auth.isLoading && !auth.user) return <Redirect href={signInHref} />;
   if (!isLoading && teams.length > 0) return <Redirect href="/" />;
   if (isLoading) return <Loading />;
   const name = rawName.trim();

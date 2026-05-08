@@ -1,3 +1,4 @@
+import { getSafeRedirectHref } from '@/features/account/lib/auth-redirect';
 import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
@@ -7,7 +8,7 @@ import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 
 export default function SignIn() {
@@ -16,7 +17,9 @@ export default function SignIn() {
   const [isTransitioning, startTransition] = React.useTransition();
   const [step, setStep] = React.useState<'email' | 'code'>('email');
   const auth = db.useAuth();
-  if (auth.user) return <Redirect href="/" />;
+  const params = useLocalSearchParams<{ redirect?: string }>();
+  const redirectHref = getSafeRedirectHref(params.redirect) ?? '/';
+  if (auth.user) return <Redirect href={redirectHref} />;
   if (auth.isLoading) return <Loading />;
 
   if (step === 'email') {
@@ -70,7 +73,7 @@ export default function SignIn() {
         return;
       }
 
-      router.replace('/');
+      router.replace(redirectHref);
     });
 
   return (

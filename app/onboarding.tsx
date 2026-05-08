@@ -1,3 +1,4 @@
+import { useSignInHref } from '@/features/account/lib/auth-redirect';
 import { onboardUser } from '@/features/account/mutations/onboard-user';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { db } from '@/lib/db';
@@ -15,8 +16,9 @@ export default function Onboarding() {
   const [isTransitioning, startTransition] = React.useTransition();
   const [rawName, setRawName] = React.useState('');
   const auth = db.useAuth();
+  const signInHref = useSignInHref();
   const profile = useProfile();
-  if (!auth.isLoading && !auth.user) return <Redirect href="/sign-in" />;
+  if (!auth.isLoading && !auth.user) return <Redirect href={signInHref} />;
   if (profile.id) return <Redirect href="/" />;
   if (profile.isLoading) return <Loading />;
   const name = rawName.trim();

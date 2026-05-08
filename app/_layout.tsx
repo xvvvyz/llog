@@ -73,6 +73,7 @@ export default function Layout() {
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
   const userId = auth.user?.id;
+  const isSignedOut = !auth.isLoading && !auth.user;
 
   React.useEffect(() => {
     setBackgroundColorAsync(UI[colorScheme].background);
@@ -119,7 +120,7 @@ export default function Layout() {
         }}
       >
         <GestureHandlerRootView className="flex-1">
-          <SheetManagerProvider>
+          <SheetManagerProvider disabled={isSignedOut}>
             <Slot />
             <SheetBackdrop />
             <PortalHost />
