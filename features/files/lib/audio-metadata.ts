@@ -1,8 +1,7 @@
-import { asNumber, asString, isRecord } from '@/lib/coerce';
-import { durationMsToSeconds } from '@/lib/duration';
+import * as mediaMetadata from '@/domain/files/media-metadata';
 import * as musicLinks from '@/lib/music-links';
 
-export type AudioTrackLink = { provider: string; url: string };
+export type AudioTrackLink = mediaMetadata.NormalizedTrackLink;
 
 export type AudioMetadataTrack = {
   album?: string;
@@ -70,54 +69,30 @@ const getTrackArtworkProxyUri = ({
 };
 
 const getArtwork = (
-  value: unknown,
+  artworkSource: string | undefined,
   options: { fileId?: string | null }
 ): string | undefined => {
-  const url = asString(value);
-
-  if (url) {
+  if (artworkSource) {
     return (
-      getTrackArtworkProxyUri({ artworkSource: url, fileId: options.fileId }) ??
-      url
+      getTrackArtworkProxyUri({ artworkSource, fileId: options.fileId }) ??
+      artworkSource
     );
   }
-
-  if (!isRecord(value)) return;
-
-  const legacyUrl =
-    asString(value.small) ??
-    asString(value.medium) ??
-    asString(value.large) ??
-    asString(value.original);
-
-  return legacyUrl
-    ? (getTrackArtworkProxyUri({
-        artworkSource: legacyUrl,
-        fileId: options.fileId,
-      }) ?? legacyUrl)
-    : undefined;
 };
 
-const getArtistText = (value: unknown) => {
-  const artists = Array.isArray(value)
-    ? value
-        .map((artist) => asString(artist))
-        .filter((artist): artist is string => !!artist)
-    : [];
+const getArtistText = (artists: string[] | undefined) =>
+  artists?.length ? artists.join(', ') : UNKNOWN_ARTIST;
 
-  return artists.length ? artists.join(', ') : UNKNOWN_ARTIST;
-};
-
-const getTrackLinks = (value: unknown): AudioTrackLink[] => {
-  if (!Array.isArray(value)) return [];
+const getTrackLinks = (
+  links: mediaMetadata.NormalizedTrackLink[] | undefined
+): AudioTrackLink[] => {
+  if (!links?.length) return [];
   const linksByProvider = new Map<string, AudioTrackLink>();
   let sourceLink: AudioTrackLink | undefined;
 
-  for (const item of value) {
-    if (!isRecord(item)) continue;
-    const provider = asString(item.provider)?.trim().toLowerCase();
-    const url = asString(item.url);
-    if (!provider || !url) continue;
+  for (const item of links) {
+    const provider = item.provider.trim().toLowerCase();
+    const url = item.url;
 
     if (musicLinks.isSourceMusicLinkProvider(provider)) {
       sourceLink ??= { provider, url };
@@ -167,46 +142,22 @@ export const parseAudioTracks = (
   value: unknown,
   options: ParseAudioTracksOptions = {}
 ): AudioMetadataTrack[] => {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .flatMap((item) => {
-      if (!isRecord(item)) return [];
-      const title = asString(item.title);
-      const start = asNumber(item.start);
-      const album = asString(item.album);
-      if (!title || start == null) return [];
-
-      return [
-        {
-          ...(album ? { album } : {}),
-          artistText: getArtistText(item.artists),
-          artwork: getArtwork(item.artwork, { fileId: options.fileId }),
-          links: getTrackLinks(item.links),
-          startSeconds: durationMsToSeconds(start) ?? 0,
-          title,
-        },
-      ];
-    })
-    .sort((a, b) => a.startSeconds - b.startSeconds);
+  return mediaMetadata
+    .parseStoredTracks(value)
+    .map((track) => ({
+      ...(track.album ? { album: track.album } : {}),
+      artistText: getArtistText(track.artists),
+      artwork: getArtwork(track.artwork, { fileId: options.fileId }),
+      links: getTrackLinks(track.links),
+      startSeconds: track.startSeconds,
+      title: track.title,
+    }));
 };
 
 export const parseTranscriptSegments = (
   value: unknown
-): AudioTranscriptSegment[] => {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .flatMap((item): AudioTranscriptSegment[] => {
-      if (!isRecord(item)) return [];
-      const start = asNumber(item.start);
-      const end = asNumber(item.end);
-      const text = asString(item.text);
-      if (start == null || end == null || !text || end < start) return [];
-      return [{ endSeconds: end, startSeconds: start, text }];
-    })
-    .sort((a, b) => a.startSeconds - b.startSeconds);
-};
+): AudioTranscriptSegment[] =>
+  mediaMetadata.parseStoredTranscriptSegments(value);
 
 export const getCurrentTrackIndex = (
   tracks: readonly AudioMetadataTrack[],

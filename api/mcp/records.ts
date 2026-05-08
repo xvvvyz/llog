@@ -30,7 +30,18 @@ const recordQuery = {
 const countFileQuery = { $: { fields: ['id' as const] } };
 const countLinkQuery = { $: { fields: ['id' as const] } };
 const countReactionQuery = { $: { fields: ['emoji' as const, 'id' as const] } };
-const searchFileQuery = { $: { fields: ['id' as const, 'name' as const] } };
+
+const searchFileQuery = {
+  $: {
+    fields: [
+      'id' as const,
+      'name' as const,
+      'tracks' as const,
+      'transcript' as const,
+    ],
+  },
+};
+
 const searchLinkQuery = { $: { fields: ['id' as const, 'label' as const] } };
 const summaryProfileQuery = { $: { fields: ['id' as const, 'name' as const] } };
 

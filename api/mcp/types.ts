@@ -1,5 +1,6 @@
 import type { Db } from '@/api/middleware/db';
 import type * as push from '@/api/push/web-push';
+import type * as mediaMetadata from '@/domain/files/media-metadata';
 import type { z } from 'zod/v4';
 
 export type OAuthProps = { email?: string; profileId: string; userId: string };
@@ -14,8 +15,20 @@ export type McpFile = {
   name?: string | null;
   size?: number | null;
   thumbnailUri?: string | null;
+  tracks?: unknown;
+  transcript?: unknown;
   type: string;
   uri?: string | null;
+};
+
+export type McpMediaSearchMatch = {
+  endSeconds?: number;
+  fileId: string;
+  fileName?: string;
+  kind: 'track' | 'transcript';
+  snippet: string;
+  startSeconds?: number;
+  trackDurationSeconds?: number;
 };
 
 export type McpLink = {
@@ -127,6 +140,10 @@ type McpFileFields = {
   name?: string;
   size?: number;
   thumbnailUri?: string;
+  trackCount?: number;
+  tracks?: mediaMetadata.NormalizedTrack[];
+  transcript?: mediaMetadata.NormalizedTranscriptSegment[];
+  transcriptSegmentCount?: number;
   type: string;
   uri?: string;
   url?: string;

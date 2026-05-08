@@ -10,6 +10,12 @@ import { Card } from '@/ui/card';
 import { Text } from '@/ui/text';
 import { Pressable, View } from 'react-native';
 
+const RESULT_TEXT_CLASS_NAME =
+  'min-w-0 leading-tight text-muted-foreground text-sm';
+
+const RESULT_HIGHLIGHT_CLASS_NAME =
+  'text-sm leading-tight font-medium text-foreground';
+
 export const ResultRecordCard = ({
   className,
   onPress,
@@ -40,6 +46,17 @@ export const ResultRecordCard = ({
     (tag) => !!trimDisplayText(tag.name ?? '')
   );
 
+  const mediaSnippets = result.mediaSnippets?.filter(
+    (snippet) => !!trimDisplayText(snippet)
+  );
+
+  const hasMatchedText = !!(
+    displayText ||
+    attachmentNames?.length ||
+    attachmentUrls?.length ||
+    mediaSnippets?.length
+  );
+
   return (
     <Pressable className={className} onPress={onPress}>
       <Card className="min-w-0 p-4 gap-3">
@@ -53,7 +70,7 @@ export const ResultRecordCard = ({
               size={32}
             />
           )}
-          <View className="flex-1 -mt-0.5">
+          <View className="flex-1 -mt-0.5 gap-0.5">
             <View className="flex-row gap-2 items-baseline justify-between">
               {result.author && (
                 <Text
@@ -96,22 +113,22 @@ export const ResultRecordCard = ({
         {!!tagItems?.length && (
           <RecordTagChips className="w-full justify-start" tags={tagItems} />
         )}
-        {!!displayText && (
-          <ResultHighlightedText
-            className="leading-tight text-muted-foreground text-sm web:text-pretty"
-            highlightClassName="text-sm leading-tight font-medium text-foreground"
-            numberOfLines={2}
-            terms={result.textTerms ?? result.terms}
-            text={displayText}
-          />
-        )}
-        {!!(attachmentNames?.length || attachmentUrls?.length) && (
-          <View className="min-w-0 gap-1">
+        {hasMatchedText && (
+          <View className="min-w-0 gap-1.5">
+            {!!displayText && (
+              <ResultHighlightedText
+                className="min-w-0 leading-tight text-muted-foreground text-sm web:text-pretty"
+                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                numberOfLines={2}
+                terms={result.textTerms ?? result.terms}
+                text={displayText}
+              />
+            )}
             {attachmentNames?.map((name, index) => (
               <ResultHighlightedText
                 key={`${name}:${index}`}
-                className="min-w-0 leading-tight text-muted-foreground text-sm"
-                highlightClassName="text-sm leading-tight font-medium text-foreground"
+                className={RESULT_TEXT_CLASS_NAME}
+                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
                 numberOfLines={1}
                 terms={result.attachmentTerms ?? result.terms}
                 text={name}
@@ -120,11 +137,21 @@ export const ResultRecordCard = ({
             {attachmentUrls?.map((url, index) => (
               <ResultHighlightedText
                 key={`${url}:${index}`}
-                className="min-w-0 leading-tight text-muted-foreground text-sm"
-                highlightClassName="text-sm leading-tight font-medium text-foreground"
+                className={RESULT_TEXT_CLASS_NAME}
+                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
                 numberOfLines={1}
                 terms={result.attachmentTerms ?? result.terms}
                 text={url}
+              />
+            ))}
+            {mediaSnippets?.map((snippet, index) => (
+              <ResultHighlightedText
+                key={`${snippet}:${index}`}
+                className={RESULT_TEXT_CLASS_NAME}
+                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                numberOfLines={1}
+                terms={result.mediaTerms ?? result.terms}
+                text={snippet}
               />
             ))}
           </View>

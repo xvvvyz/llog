@@ -28,6 +28,8 @@ export type SearchResult = {
   text: string;
   attachmentNames?: string[];
   attachmentUrls?: string[];
+  mediaSnippets?: string[];
+  mediaTerms?: string[];
   tagItems?: SearchTag[];
   date?: string | number;
   logId?: string;

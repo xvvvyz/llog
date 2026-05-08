@@ -1,5 +1,6 @@
 import { mcpFileUrl } from '@/api/mcp/file-urls';
 import type * as mcpTypes from '@/api/mcp/types';
+import * as mediaMetadata from '@/domain/files/media-metadata';
 import { isRecord } from '@/lib/coerce';
 
 type McpFieldOptions = {
@@ -81,18 +82,31 @@ export const textPreview = (text?: string | null, max = 160) => {
 export const fileFields = (
   file: mcpTypes.McpFile,
   options?: McpFieldOptions
-) => ({
-  assetKey: file.assetKey ?? undefined,
-  duration: file.duration ?? undefined,
-  id: file.id,
-  mimeType: file.mimeType ?? undefined,
-  name: file.name ?? undefined,
-  size: file.size ?? undefined,
-  thumbnailUri: file.thumbnailUri ?? undefined,
-  type: file.type,
-  uri: file.uri ?? undefined,
-  url: mcpFileUrl(file, options),
-});
+) => {
+  const tracks = mediaMetadata.parseStoredTracks(file.tracks);
+
+  const transcript = mediaMetadata.parseStoredTranscriptSegments(
+    file.transcript
+  );
+
+  return {
+    assetKey: file.assetKey ?? undefined,
+    duration: file.duration ?? undefined,
+    id: file.id,
+    mimeType: file.mimeType ?? undefined,
+    name: file.name ?? undefined,
+    size: file.size ?? undefined,
+    thumbnailUri: file.thumbnailUri ?? undefined,
+    trackCount: file.tracks != null ? tracks.length : undefined,
+    tracks: file.tracks != null ? tracks : undefined,
+    transcript: file.transcript != null ? transcript : undefined,
+    transcriptSegmentCount:
+      file.transcript != null ? transcript.length : undefined,
+    type: file.type,
+    uri: file.uri ?? undefined,
+    url: mcpFileUrl(file, options),
+  };
+};
 
 const linkFields = (link: mcpTypes.McpLink) => ({
   id: link.id,

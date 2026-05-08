@@ -119,7 +119,7 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     await ctx.db.transact(ctx.db.tx.records[recordId].update({ isPinned }));
 
     return textResult(
-      { isPinned },
+      { pinned: isPinned },
       isPinned ? 'Record pinned.' : 'Record unpinned.'
     );
   };
