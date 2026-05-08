@@ -75,6 +75,7 @@ export const Sheet = ({
   loading,
   onDismiss,
   open,
+  portalHostName,
   portalName,
   topInset = 72,
   variant,
@@ -85,6 +86,7 @@ export const Sheet = ({
   loading?: boolean;
   onDismiss: () => void;
   open: boolean;
+  portalHostName?: string;
   portalName: string;
   topInset?: number;
 } & VariantProps<typeof sheetVariants>) => {
@@ -114,6 +116,7 @@ export const Sheet = ({
   );
 
   const heightStyle = { maxHeight: availableHeight };
+  const shouldRenderInlineBackdrop = !isWeb || portalHostName != null;
 
   const sheet = (
     <Animated.View
@@ -122,7 +125,7 @@ export const Sheet = ({
       exiting={animation(isDesktopSheet ? FadeOut : FadeOutDown)}
       pointerEvents={isWeb ? 'box-none' : 'auto'}
     >
-      {isWeb ? null : (
+      {shouldRenderInlineBackdrop && (
         <Animated.View
           className="absolute inset-0 bg-background/90"
           entering={animation(FadeIn)}
@@ -170,7 +173,7 @@ export const Sheet = ({
   );
 
   return (
-    <Portal name={portalName}>
+    <Portal hostName={portalHostName} name={portalName}>
       {isWeb ? (
         open ? (
           <View

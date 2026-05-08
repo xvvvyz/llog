@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { Button } from '@/ui/button';
 import { useDismissStack } from '@/ui/dismiss-stack';
 import { Icon } from '@/ui/icon';
-import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
+import * as overlayLayers from '@/ui/overlay-layers';
+import { PortalHost } from '@rn-primitives/portal';
 import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Modal, Platform, StatusBar, View } from 'react-native';
@@ -77,7 +78,7 @@ export const Lightbox = ({
   const hasRenderedPreview = defaultIndex !== -1;
 
   useDismissStack({
-    layer: OVERLAY_LAYERS.modal,
+    layer: overlayLayers.OVERLAY_LAYERS.modal,
     onDismiss: handleInstantRequestClose,
     open: hasRenderedPreview && isModalVisible,
   });
@@ -95,7 +96,7 @@ export const Lightbox = ({
     >
       {Platform.OS !== 'web' ? <StatusBar animated hidden /> : null}
       <Animated.View
-        className="absolute inset-0 bg-background"
+        className="absolute inset-0 bg-[#0d0d0d]"
         pointerEvents="none"
         style={backgroundStyle}
       />
@@ -112,7 +113,7 @@ export const Lightbox = ({
               variant="link"
               wrapperClassName="md:ml-4 md:-mr-4"
             >
-              <Icon className="color-foreground" icon={X} size={24} />
+              <Icon className="text-white/80" icon={X} size={24} />
             </Button>
           </Animated.View>
         )}
@@ -128,6 +129,7 @@ export const Lightbox = ({
           onDismissLockChange={setIsDismissLocked}
           onUiHiddenChange={setIsUiHidden}
         />
+        <PortalHost name={overlayLayers.MEDIA_LIGHTBOX_PORTAL_HOST} />
       </View>
     </Animated.View>
   );

@@ -4,9 +4,7 @@ import * as carouselHelpers from '@/features/files/lib/carousel';
 import { getFileSourceUri } from '@/features/files/lib/file-uri-to-src';
 import { FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
-import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
-import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { PixelRatio, Pressable, View } from 'react-native';
 
@@ -229,7 +227,6 @@ const CarouselVideoItem = ({
               />
             </Pressable>
           </ZoomableMedia>
-          {isActive && !isPlaying && !isScrubbingVideo && <VideoPlayOverlay />}
         </React.Fragment>
       ) : null}
     </View>
@@ -342,20 +339,5 @@ const CarouselImageItem = ({
         wrapperClassName="bg-transparent"
       />
     </ZoomableMedia>
-  );
-};
-
-const VideoPlayOverlay = () => {
-  return (
-    <View className="absolute inset-0 pointer-events-none items-center justify-center">
-      <View className="size-16 border-continuous rounded-full bg-contrast-background/50 items-center justify-center">
-        <Icon
-          className="text-contrast-foreground"
-          icon={Play}
-          size={28}
-          weight="fill"
-        />
-      </View>
-    </View>
   );
 };

@@ -1,6 +1,7 @@
 import { Dots } from '@/features/files/components/carousel/dots';
 import { Item } from '@/features/files/components/carousel/item';
 import { VideoControls } from '@/features/files/components/carousel/video-controls';
+import { VideoMetadataOverlay } from '@/features/files/components/carousel/video-metadata-overlay';
 import { useCarouselLayout } from '@/features/files/hooks/use-carousel-layout';
 import { useCarouselMediaState } from '@/features/files/hooks/use-carousel-media-state';
 import { useCarouselPreloading } from '@/features/files/hooks/use-carousel-preloading';
@@ -17,6 +18,8 @@ import * as React from 'react';
 import { Platform, View } from 'react-native';
 
 import Animated, {
+  Extrapolation,
+  interpolate,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
@@ -78,6 +81,10 @@ export const Carousel = ({
     React.useState(safeDefaultIndex);
 
   const [isSwiping, setIsSwiping] = React.useState(false);
+  const [isTrackSheetOpen, setIsTrackSheetOpen] = React.useState(false);
+
+  const [isTranscriptSheetOpen, setIsTranscriptSheetOpen] =
+    React.useState(false);
 
   const {
     handleHiddenMedia,
@@ -98,6 +105,8 @@ export const Carousel = ({
     handleVideoTimeChange,
     isMuted,
     isScrubbingVideo,
+    pauseVideo,
+    playVideoFrom,
     previewVideoScrub,
     resetVideoUiState,
     startVideoScrub,
@@ -143,9 +152,9 @@ export const Carousel = ({
 
   const dotsBottomOffset = 12 + insets.bottom;
   const scrubberBottomOffset = 44 + insets.bottom;
-  const videoButtonsBottomOffset = 88 + insets.bottom;
   const activeMedia = files[activeIndexState];
   const isActiveVideo = activeMedia?.type === 'video';
+  const isOverlaySheetOpen = isTrackSheetOpen || isTranscriptSheetOpen;
 
   const showImageLoadingIndicator =
     activeMedia?.type === 'image' && isActiveMediaLoading;
@@ -169,6 +178,21 @@ export const Carousel = ({
     opacity: dismissOverlayOpacity?.value ?? 1,
   }));
 
+  const activeMediaOverlayProgressStyle = useAnimatedStyle(() => {
+    const distanceFromActiveIndex = Math.abs(
+      activeIndex.value - activeIndexState
+    );
+
+    return {
+      opacity: interpolate(
+        distanceFromActiveIndex,
+        [0, 0.45],
+        [1, 0],
+        Extrapolation.CLAMP
+      ),
+    };
+  }, [activeIndexState]);
+
   React.useEffect(() => {
     onUiHiddenChange?.(false);
 
@@ -178,8 +202,8 @@ export const Carousel = ({
   }, [onUiHiddenChange]);
 
   React.useEffect(() => {
-    onDismissLockChange?.(isNavigationLocked);
-  }, [isNavigationLocked, onDismissLockChange]);
+    onDismissLockChange?.(isNavigationLocked || isOverlaySheetOpen);
+  }, [isNavigationLocked, isOverlaySheetOpen, onDismissLockChange]);
 
   React.useEffect(
     () => () => {
@@ -514,20 +538,49 @@ export const Carousel = ({
         pointerEvents="box-none"
         style={overlayOpacityStyle}
       >
-        {isActiveVideo && (
-          <VideoControls
-            currentTime={videoCurrentTime}
-            duration={videoDuration}
-            isMuted={isMuted}
-            isSwiping={isSwiping}
-            onScrubEnd={commitVideoScrub}
-            onScrubMove={previewVideoScrub}
-            onScrubStart={startVideoScrub}
-            onToggleMute={handleToggleMute}
-            scrubberBottomOffset={scrubberBottomOffset}
-            videoButtonsBottomOffset={videoButtonsBottomOffset}
-          />
-        )}
+        <Animated.View
+          className="absolute inset-0"
+          pointerEvents="box-none"
+          style={activeMediaOverlayProgressStyle}
+        >
+          {isActiveVideo && (
+            <React.Fragment>
+              <VideoMetadataOverlay
+                currentTime={videoCurrentTime}
+                file={activeMedia}
+                isHidden={isActiveMediaLoading}
+                onTrackOpenChange={setIsTrackSheetOpen}
+                onTranscriptOpenChange={setIsTranscriptSheetOpen}
+                scrubberBottomOffset={scrubberBottomOffset}
+                trackControls={{
+                  currentTime: videoCurrentTime,
+                  isPlaying,
+                  pause: pauseVideo,
+                  playFrom: playVideoFrom,
+                }}
+                transcriptControls={{
+                  currentTime: videoCurrentTime,
+                  isPlaying,
+                  pause: pauseVideo,
+                  playFrom: playVideoFrom,
+                }}
+              />
+              <VideoControls
+                currentTime={videoCurrentTime}
+                duration={videoDuration}
+                isMuted={isMuted}
+                isPlaying={isPlaying}
+                isSwiping={isSwiping}
+                onScrubEnd={commitVideoScrub}
+                onScrubMove={previewVideoScrub}
+                onScrubStart={startVideoScrub}
+                onToggleMute={handleToggleMute}
+                onTogglePlay={handleTogglePlay}
+                scrubberBottomOffset={scrubberBottomOffset}
+              />
+            </React.Fragment>
+          )}
+        </Animated.View>
       </Animated.View>
       <Animated.View
         className="absolute left-4 right-4 z-10 pointer-events-none items-center md:left-8 md:right-8"

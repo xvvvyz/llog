@@ -102,6 +102,61 @@ export const useCarouselVideoControls = ({
     videoHandleRef,
   ]);
 
+  const pauseVideo = React.useCallback(() => {
+    const activeMedia = files[activeIndexState];
+    if (activeMedia?.type !== 'video') return;
+    videoHandleRef.current?.pause();
+    setVideoPlaybackIntent(activeMedia.id, false);
+    setIsPlaying(false);
+  }, [
+    activeIndexState,
+    files,
+    setIsPlaying,
+    setVideoPlaybackIntent,
+    videoHandleRef,
+  ]);
+
+  const playVideoFrom = React.useCallback(
+    (seconds: number) => {
+      const activeMedia = files[activeIndexState];
+      const handle = videoHandleRef.current;
+      if (activeMedia?.type !== 'video' || !handle) return;
+
+      if (scrubPreviewFrameRef.current != null) {
+        cancelAnimationFrame(scrubPreviewFrameRef.current);
+        scrubPreviewFrameRef.current = null;
+      }
+
+      scrubPreviewTargetRef.current = null;
+      isScrubbingVideoRef.current = false;
+      setIsScrubbingVideo(false);
+      handle.setScrubbingEnabled(false);
+
+      const nextTime =
+        videoDuration > 0
+          ? Math.max(0, Math.min(seconds, videoDuration))
+          : Math.max(0, seconds);
+
+      setVideoUiState((currentState) => ({
+        ...currentState,
+        videoCurrentTime: nextTime,
+      }));
+
+      setVideoPlaybackIntent(activeMedia.id, true);
+      setIsPlaying(true);
+      handle.seekTo(nextTime);
+      handle.play();
+    },
+    [
+      activeIndexState,
+      files,
+      setIsPlaying,
+      setVideoPlaybackIntent,
+      videoDuration,
+      videoHandleRef,
+    ]
+  );
+
   const handleVideoTimeChange = React.useCallback(
     (currentTime: number, duration: number) => {
       if (isScrubbingVideoRef.current) return;
@@ -209,6 +264,8 @@ export const useCarouselVideoControls = ({
     handleVideoTimeChange,
     isMuted,
     isScrubbingVideo,
+    pauseVideo,
+    playVideoFrom,
     previewVideoScrub,
     resetVideoUiState,
     startVideoScrub,

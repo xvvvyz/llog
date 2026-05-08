@@ -3,6 +3,7 @@ import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { type SortDirection } from '@/lib/sort-direction';
 import { Icon } from '@/ui/icon';
+import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
 import { TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { SortAscending, SortDescending } from 'phosphor-react-native';
@@ -85,8 +86,8 @@ const stopOverlayEvent = (event: GestureResponderEvent) => {
 
 const Content = React.forwardRef<
   DropdownMenuPrimitive.ContentRef,
-  DropdownMenuPrimitive.ContentProps
->(({ children, className, ...props }, ref) => {
+  DropdownMenuPrimitive.ContentProps & { portalHostName?: string }
+>(({ children, className, portalHostName, ...props }, ref) => {
   const context =
     DropdownMenuPrimitive.useRootContext() as ResettableDropdownRootContext;
 
@@ -108,8 +109,12 @@ const Content = React.forwardRef<
   );
 
   return (
-    <DropdownMenuPrimitive.Portal>
-      <View className="absolute inset-0" pointerEvents="box-none">
+    <DropdownMenuPrimitive.Portal hostName={portalHostName}>
+      <View
+        className="absolute inset-0"
+        pointerEvents="box-none"
+        style={{ zIndex: OVERLAY_LAYERS.dropdownMenu }}
+      >
         <Pressable
           className="absolute inset-0"
           onPress={handleOverlayPress}

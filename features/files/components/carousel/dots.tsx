@@ -70,7 +70,7 @@ const CarouselDot = ({
 
   return (
     <AnimatedDotView className="size-2" style={style}>
-      <View className="h-full w-full border-continuous rounded-full bg-foreground shadow-xl" />
+      <View className="h-full w-full border-continuous rounded-full bg-white/80 shadow-xl" />
     </AnimatedDotView>
   );
 };
