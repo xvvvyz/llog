@@ -33,7 +33,7 @@ export const ReactionsRow = ({
 
   const reactionPicker = REACTION_EMOJIS.some(
     (emoji) => !usedEmojis.has(emoji)
-  ) ? (
+  ) && (
     <EmojiPicker
       color={accentColor}
       logId={logId}
@@ -42,7 +42,7 @@ export const ReactionsRow = ({
       replyId={replyId}
       teamId={record.teamId}
     />
-  ) : null;
+  );
 
   const hasReactions = !!record.reactions?.length;
 

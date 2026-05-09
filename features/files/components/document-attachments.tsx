@@ -302,15 +302,14 @@ export const DocumentAttachments = ({
       </View>
     );
 
-    const dragHandle =
-      canSortDocuments && previewItem.kind === 'file' ? (
-        <Sortable.SortableSheetDragHandle className="-ml-1.5" />
-      ) : null;
+    const dragHandle = canSortDocuments && previewItem.kind === 'file' && (
+      <Sortable.SortableSheetDragHandle className="-ml-1.5" />
+    );
 
     if (previewItem.kind === 'file') {
       if (onDeleteFile) {
         return (
-          <View key={previewItem.id} className="flex-row gap-3 items-center">
+          <View key={previewItem.id} className="flex-row gap-2 items-center">
             {dragHandle}
             {onRenameFile ? (
               <Button
@@ -338,7 +337,7 @@ export const DocumentAttachments = ({
       }
 
       return (
-        <View key={previewItem.id} className="flex-row gap-3 items-center">
+        <View key={previewItem.id} className="flex-row gap-2 items-center">
           {documentDetails}
           <Button
             accessibilityLabel={`Download ${getDocumentName(item)}`}
@@ -363,7 +362,7 @@ export const DocumentAttachments = ({
     return (
       <View
         key={previewItem.id}
-        className="flex-row opacity-70 gap-3 items-center"
+        className="flex-row opacity-70 gap-2 items-center"
       >
         {documentDetails}
         <View className="-mr-1.5 size-8 items-center justify-center">
@@ -380,7 +379,7 @@ export const DocumentAttachments = ({
       {hideTrigger ? null : canDeleteSingleDocument && firstItem ? (
         <View
           className={cn(
-            'flex-row w-full gap-3 justify-between px-4',
+            'flex-row w-full gap-2 justify-between px-4',
             firstItem.kind === 'pending' && 'opacity-70',
             triggerClassName
           )}

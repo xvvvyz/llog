@@ -30,12 +30,12 @@ export const TagChip = ({
         className
       )}
     >
-      {showColorAccent && accentColor ? (
+      {showColorAccent && !!accentColor && (
         <View
           className="size-2.5 rounded-full shrink-0"
           style={{ backgroundColor: accentColor }}
         />
-      ) : null}
+      )}
       <Text
         numberOfLines={1}
         className={cn(

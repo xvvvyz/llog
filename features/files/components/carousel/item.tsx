@@ -197,7 +197,7 @@ const CarouselVideoItem = ({
 
   return (
     <View className="relative flex-1 w-full items-center justify-center">
-      {shouldRenderVideo ? (
+      {shouldRenderVideo && (
         <React.Fragment>
           <ZoomableMedia
             height={contentHeight}
@@ -234,7 +234,7 @@ const CarouselVideoItem = ({
             </Pressable>
           </ZoomableMedia>
         </React.Fragment>
-      ) : null}
+      )}
     </View>
   );
 };

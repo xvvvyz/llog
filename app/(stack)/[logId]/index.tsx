@@ -71,7 +71,7 @@ export default function Index() {
         left={<BackButton />}
         title={log.name}
         right={
-          log.id ? (
+          !!log.id && (
             <View className="flex-row items-center">
               {hasRecords && (
                 <Button
@@ -105,7 +105,7 @@ export default function Index() {
                 />
               </DropdownMenu>
             </View>
-          ) : null
+          )
         }
       />
       {logNotFound ? (

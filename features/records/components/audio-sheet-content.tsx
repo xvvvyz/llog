@@ -49,11 +49,11 @@ export const AudioSheetContent = ({
         <Text className="font-medium text-2xl tabular-nums">
           {formatTime(duration)}
         </Text>
-        {startError ? (
+        {!!startError && (
           <Text className="text-center text-muted-foreground text-sm">
             {startError}
           </Text>
-        ) : null}
+        )}
       </View>
       <View className="gap-3">
         <Button

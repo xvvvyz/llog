@@ -513,7 +513,7 @@ export const Carousel = ({
   return (
     <View className="relative flex-1" onLayout={handleLayout}>
       <Animated.View className="flex-1" style={mediaLayerStyle}>
-        {contentWidth > 0 && contentHeight > 0 ? (
+        {contentWidth > 0 && contentHeight > 0 && (
           <ReanimatedCarousel
             ref={carouselRef}
             data={files}
@@ -532,7 +532,7 @@ export const Carousel = ({
               !isNavigationLocked && !isDismissGestureActive && files.length > 1
             }
           />
-        ) : null}
+        )}
         {shouldShowImageLoadingIndicator && (
           <View className="absolute inset-0 pointer-events-none items-center justify-center">
             <Spinner />

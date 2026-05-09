@@ -32,13 +32,13 @@ export const RecordCreateSheet = () => {
         text={composer.currentText}
         toolbar={composer.toolbar}
         inputHeader={
-          hasSelectedTags ? (
+          hasSelectedTags && (
             <RecordTagChips
               chipClassName="light:bg-muted"
               className="justify-start"
               tags={composer.selectedTags}
             />
-          ) : null
+          )
         }
       />
     </Sheet>

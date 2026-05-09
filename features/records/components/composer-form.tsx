@@ -49,7 +49,7 @@ export const ComposerForm = ({
   const shouldAutoFocus = Platform.OS !== 'web';
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
   const isComposerCompact = isTextareaFocused && isVirtualKeyboardVisible;
-  const visibleInputHeader = !isTextareaFocused ? inputHeader : null;
+  const showInputHeader = !isComposerCompact && !!inputHeader;
 
   React.useEffect(() => {
     if (isOpen) return;
@@ -74,9 +74,7 @@ export const ComposerForm = ({
     <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
       <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
         <View className="overflow-hidden min-h-0 border-border-secondary border-continuous rounded-xl bg-input border shrink">
-          {visibleInputHeader ? (
-            <View className="pb-2 pt-3 px-4">{visibleInputHeader}</View>
-          ) : null}
+          {showInputHeader && <View className="p-2.5">{inputHeader}</View>}
           <Textarea
             autoFocus={shouldAutoFocus}
             maxLength={10240}
@@ -88,7 +86,7 @@ export const ComposerForm = ({
             placeholder={placeholder}
             value={text}
             className={
-              visibleInputHeader
+              showInputHeader
                 ? 'border-0 bg-transparent pt-0'
                 : 'border-0 bg-transparent'
             }

@@ -51,14 +51,16 @@ export default function RecordDetailRoute() {
     >
       {isNotFound ? (
         <NotFound />
-      ) : record.id ? (
-        <DetailView
-          onClose={exitRoute}
-          pageClassName="flex-none max-h-full overflow-hidden bg-popover"
-          record={record}
-          recordId={routeRecordId ?? ''}
-        />
-      ) : null}
+      ) : (
+        !!record.id && (
+          <DetailView
+            onClose={exitRoute}
+            pageClassName="flex-none max-h-full overflow-hidden bg-popover"
+            record={record}
+            recordId={routeRecordId ?? ''}
+          />
+        )
+      )}
     </Sheet>
   );
 }

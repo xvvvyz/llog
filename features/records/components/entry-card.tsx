@@ -50,7 +50,7 @@ export const EntryCard = ({
   const hasHeaderActions = hasPinnedAction || entryMenuState.hasMenu;
   const hasRecordTags = record.tags?.some((tag) => !!tag.name);
 
-  const headerActions = hasHeaderActions ? (
+  const headerActions = hasHeaderActions && (
     <View className="max-w-52 items-end shrink">
       <View className="flex-row -mr-1.5 -mt-1.5 gap-1.5 items-center justify-end">
         {hasPinnedAction && (
@@ -76,7 +76,7 @@ export const EntryCard = ({
         />
       </View>
     </View>
-  ) : null;
+  );
 
   return (
     <Card className={cn('gap-4', className)}>
@@ -91,9 +91,9 @@ export const EntryCard = ({
                 !hasPinnedAction && hasHeaderActions && 'pr-12'
               )}
             />
-            {headerActions ? (
+            {headerActions && (
               <View className="absolute right-0 top-0">{headerActions}</View>
-            ) : null}
+            )}
           </View>
           <View className="flex-row gap-3 items-start">
             <Avatar

@@ -147,23 +147,21 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const trackControls = { ...controls, currentTime: controls.displayTime };
 
-  const trackMetadata =
-    showMetadata && hasTracks ? (
-      <audioMetadata.AudioTracksMetadata
-        className="border-b border-border-secondary border-continuous"
-        controls={trackControls}
-        tracks={tracks}
-      />
-    ) : null;
+  const trackMetadata = showMetadata && hasTracks && (
+    <audioMetadata.AudioTracksMetadata
+      className="border-b border-border-secondary border-continuous"
+      controls={trackControls}
+      tracks={tracks}
+    />
+  );
 
-  const transcriptMetadata =
-    showMetadata && transcript.length > 0 ? (
-      <audioMetadata.AudioTranscriptMetadata
-        className="border-b border-border-secondary border-continuous"
-        controls={trackControls}
-        segments={transcript}
-      />
-    ) : null;
+  const transcriptMetadata = showMetadata && transcript.length > 0 && (
+    <audioMetadata.AudioTranscriptMetadata
+      className="border-b border-border-secondary border-continuous"
+      controls={trackControls}
+      segments={transcript}
+    />
+  );
 
   const metadata =
     trackMetadata || transcriptMetadata ? (
@@ -175,12 +173,12 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   const hasMetadata = metadata != null;
 
-  const trackSkipControls = hasMultipleTracks ? (
+  const trackSkipControls = hasMultipleTracks && (
     <audioMetadata.AudioTrackSkipControls
       controls={trackControls}
       tracks={tracks}
     />
-  ) : null;
+  );
 
   const transportTrailingAccessory =
     hasMultipleTracks && trailingAccessory ? (

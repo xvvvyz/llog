@@ -42,6 +42,9 @@ export const Preview = ({
 }) => {
   const hasAudioAttachments = audioMedia.length > 0 || pendingAudio.length > 0;
 
+  const documentAttachmentCount =
+    documentFiles.length + pendingDocuments.length;
+
   const hasDocumentAttachments =
     documentFiles.length > 0 || pendingDocuments.length > 0;
 
@@ -91,6 +94,7 @@ export const Preview = ({
           )}
         >
           <DocumentAttachments
+            className={cn(documentAttachmentCount === 1 && '-my-1')}
             documents={documentFiles}
             onDeleteFile={onDeleteFile}
             onRenameFile={onRenameFile}

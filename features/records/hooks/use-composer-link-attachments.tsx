@@ -35,6 +35,7 @@ export const useComposerLinkAttachments = ({
   const linkPreview = React.useMemo(
     () => (
       <LinkAttachments
+        className={links.length === 1 ? '-my-1' : undefined}
         links={links}
         onDeleteLink={handleDeleteLink}
         onReorderLinks={onReorderLinks}

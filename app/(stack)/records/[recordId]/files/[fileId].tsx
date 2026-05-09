@@ -90,7 +90,7 @@ export default function MediaLightboxRoute() {
   if (isLoading) {
     return (
       <View className="absolute inset-0 bg-popover">
-        {shouldShowLoadingIndicator ? <Loading className="bg-popover" /> : null}
+        {shouldShowLoadingIndicator && <Loading className="bg-popover" />}
       </View>
     );
   }

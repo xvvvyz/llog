@@ -125,7 +125,7 @@ export const Lightbox = ({
       onTouchStart={webTouchHandlers.onTouchStart}
       pointerEvents={isClosing ? 'none' : 'auto'}
     >
-      {Platform.OS !== 'web' ? <StatusBar animated hidden /> : null}
+      {Platform.OS !== 'web' && <StatusBar animated hidden />}
       <Animated.View
         className="absolute inset-0 bg-popover"
         pointerEvents="none"

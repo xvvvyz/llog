@@ -214,7 +214,7 @@ export const LinkAttachments = ({
     );
 
     return (
-      <View key={item.id} className="flex-row min-w-0 gap-3 items-center">
+      <View key={item.id} className="flex-row min-w-0 gap-2 items-center">
         {canSortLinks && (
           <Sortable.SortableSheetDragHandle className="-ml-1.5" />
         )}
@@ -246,7 +246,7 @@ export const LinkAttachments = ({
       ) : canDeleteSingleLink ? (
         <View
           className={cn(
-            'flex-row w-full min-w-0 gap-3 justify-between px-4',
+            'flex-row w-full min-w-0 gap-2 justify-between px-4',
             triggerClassName
           )}
         >
