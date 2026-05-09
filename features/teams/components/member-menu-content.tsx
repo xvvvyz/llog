@@ -127,7 +127,7 @@ export const TeamMemberMenuContent = ({
             onPress={() => onOpenMemberLogs(memberId)}
           >
             <Icon icon={SquaresFour} />
-            <Text>Logs</Text>
+            <Text>Manage logs</Text>
           </Menu.Item>
         </>
       )}

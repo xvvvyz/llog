@@ -68,7 +68,7 @@ export const TeamSwitcher = ({
           <View className="w-5 items-center">
             <Icon className="text-placeholder" icon={Plus} />
           </View>
-          <Text>New team</Text>
+          <Text>Create team</Text>
         </Menu.Item>
         {!hideSettings && (
           <>
@@ -77,7 +77,7 @@ export const TeamSwitcher = ({
               <View className="w-5 items-center">
                 <Icon className="text-placeholder" icon={GearSix} />
               </View>
-              <Text>Team settings</Text>
+              <Text>Manage team</Text>
             </Menu.Item>
           </>
         )}

@@ -133,7 +133,7 @@ const Content = React.forwardRef<
             entering={animation(FadeInUp)}
             exiting={animation(FadeOutUp)}
             className={cn(
-              'border-border-secondary bg-popover my-2 min-w-36 overflow-hidden rounded-2xl border py-2 border-continuous',
+              'border-border-secondary bg-popover m-2 min-w-36 overflow-hidden rounded-2xl border py-2 border-continuous',
               className
             )}
           >
