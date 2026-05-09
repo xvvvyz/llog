@@ -2,6 +2,7 @@ import { recordListItemQuery } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
+import * as React from 'react';
 
 const RECORDS_PAGE_SIZE = 25;
 
@@ -60,22 +61,32 @@ export const useRecords = ({ logId }: { logId?: string }) => {
 
   const hasPinnedResult = !logId || hasCurrentPinnedResult;
   const hasPagedResult = !logId || hasCurrentPagedResult;
-  const merged = new Map<string, (typeof pinnedRecords)[number]>();
 
-  for (const record of pinnedRecords) {
-    merged.set(record.id, record);
-  }
+  const data = React.useMemo(() => {
+    const merged = new Map<string, (typeof pinnedRecords)[number]>();
 
-  for (const record of pagedRecords) {
-    merged.set(record.id, record);
-  }
+    for (const record of pinnedRecords) {
+      merged.set(record.id, record);
+    }
 
-  const records = Array.from(merged.values());
+    for (const record of pagedRecords) {
+      merged.set(record.id, record);
+    }
 
-  const data = [
-    ...records.filter((record) => !!record.isPinned).sort(compareByDateDesc),
-    ...records.filter((record) => !record.isPinned).sort(compareByDateDesc),
-  ].map((record) => ({ ...record, files: record.files ?? [] }));
+    type RecordListItem = (typeof pinnedRecords)[number];
+    const pinned: RecordListItem[] = [];
+    const unpinned: RecordListItem[] = [];
+
+    for (const record of merged.values()) {
+      if (record.isPinned) pinned.push(record);
+      else unpinned.push(record);
+    }
+
+    return [
+      ...pinned.sort(compareByDateDesc),
+      ...unpinned.sort(compareByDateDesc),
+    ].map((record) => (record.files ? record : { ...record, files: [] }));
+  }, [pagedRecords, pinnedRecords]);
 
   const currentCanLoadNextPage =
     !!logId && hasCurrentPagedResult && canLoadNextPage;

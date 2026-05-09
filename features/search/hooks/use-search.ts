@@ -142,28 +142,35 @@ const uniqueStrings = (values: string[]) => {
 };
 
 export const useSearch = ({ query }: { query: string }) => {
+  const trimmedQuery = query.trim();
+  const deferredQuery = React.useDeferredValue(trimmedQuery);
   const { teams } = useTeams();
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
+  const shouldLoadSearchData = teamIds.length > 0 && !!deferredQuery;
 
-  const { data, isLoading } = db.useQuery(
-    teamIds.length
-      ? {
-          records: {
-            $: { where: { teamId: { $in: teamIds }, isDraft: false } },
-            ...recordQueries.recordSearchDocumentQuery,
-          },
-          replies: {
-            $: { where: { teamId: { $in: teamIds }, isDraft: false } },
-            ...recordQueries.replySearchDocumentQuery,
-          },
-          logs: {
-            $: { where: { teamId: { $in: teamIds } } },
-            profiles: { image: {} },
-            tags: logTagsQuery,
-          },
-        }
-      : null
+  const searchDataQuery = React.useMemo(
+    () =>
+      shouldLoadSearchData
+        ? {
+            records: {
+              $: { where: { teamId: { $in: teamIds }, isDraft: false } },
+              ...recordQueries.recordSearchDocumentQuery,
+            },
+            replies: {
+              $: { where: { teamId: { $in: teamIds }, isDraft: false } },
+              ...recordQueries.replySearchDocumentQuery,
+            },
+            logs: {
+              $: { where: { teamId: { $in: teamIds } } },
+              profiles: { image: {} },
+              tags: logTagsQuery,
+            },
+          }
+        : null,
+    [shouldLoadSearchData, teamIds]
   );
+
+  const { data, isLoading } = db.useQuery(searchDataQuery);
 
   const documents = React.useMemo(() => {
     if (!data) return [];
@@ -341,9 +348,8 @@ export const useSearch = ({ query }: { query: string }) => {
   }, [documents]);
 
   const results = React.useMemo((): searchTypes.SearchResult[] => {
-    const trimmed = query.trim();
-    if (!trimmed) return [];
-    const raw = miniSearch.search(trimmed).filter(isSearchDocument);
+    if (!deferredQuery) return [];
+    const raw = miniSearch.search(deferredQuery).filter(isSearchDocument);
 
     return raw.map((result) => {
       const entityId = String(result.id).split(':')[1] ?? '';
@@ -416,7 +422,7 @@ export const useSearch = ({ query }: { query: string }) => {
         profiles: result.profiles,
       } satisfies searchTypes.SearchResult;
     });
-  }, [query, miniSearch]);
+  }, [deferredQuery, miniSearch]);
 
   return { results, isLoading };
 };
