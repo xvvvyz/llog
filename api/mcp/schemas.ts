@@ -138,6 +138,7 @@ export const accountOutputSchema = {
 export const logsOutputSchema = {
   log: logOutputSchema.optional(),
   logs: z.array(logOutputSchema).optional(),
+  records: z.array(recordSummaryOutputSchema).optional(),
 };
 
 export const recordsOutputSchema = {
@@ -182,6 +183,7 @@ const searchTagOutputSchema = z.object({
 });
 
 const searchLogOutputSchema = z.object({
+  id: z.string(),
   name: z.string(),
   tags: z.array(searchTagOutputSchema).optional(),
 });

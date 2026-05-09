@@ -36,11 +36,14 @@ const searchTagFields = (tag: { name: string; order?: number | null }) => ({
 
 const searchLogFields = (
   log?: {
+    id: string;
     name: string;
     tags?: Array<{ name: string; order?: number | null }>;
   } | null
 ) =>
-  log ? { name: log.name, tags: log.tags?.map(searchTagFields) } : undefined;
+  log
+    ? { id: log.id, name: log.name, tags: log.tags?.map(searchTagFields) }
+    : undefined;
 
 const searchMediaMatchFields = ({
   fileId: _fileId,
@@ -182,7 +185,7 @@ const resultText = (result: SearchResult) => {
 
 const searchResultsTable = (results: SearchResult[]) =>
   mcpFields.table(
-    ['Type', 'Where', 'Text/Name', 'Tags', 'URL'],
+    ['Type', 'Where', 'Text/Name', 'Tags', 'URL/ID'],
     results.map((result) => {
       if (result.type === 'log') {
         return [
@@ -190,7 +193,7 @@ const searchResultsTable = (results: SearchResult[]) =>
           '',
           result.log.name,
           result.log.tags?.map((tag) => tag.name).join(', '),
-          '',
+          result.log.id,
         ];
       }
 
