@@ -1,29 +1,27 @@
 import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
-import { getVisibleRecord } from '@/api/mcp/records';
+import { getNotificationLog, getVisibleRecord } from '@/api/mcp/records';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
-import { recordTagsQuery } from '@/api/mcp/tag-query';
 import type { McpContext, McpLog, McpRecord, McpReply } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import * as push from '@/api/push/web-push';
 import { visibleFileQuery } from '@/domain/files/query';
+import * as recordPublish from '@/domain/records/publish';
+import * as recordQueries from '@/domain/records/query';
+import { recordTagsQuery } from '@/domain/tags/query';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
 const repliesActionSchema = z.enum(['get', 'save']);
 type ReplyInclude = z.infer<typeof mcpSchemas.replyIncludeSchema>;
-const countFileQuery = { $: { fields: ['id' as const] } };
-const countLinkQuery = { $: { fields: ['id' as const] } };
-const countReactionQuery = { $: { fields: ['emoji' as const, 'id' as const] } };
-const summaryProfileQuery = { $: { fields: ['id' as const, 'name' as const] } };
 
 const replyDetailQuery = ({ include }: { include: Set<ReplyInclude> }) => ({
-  author: summaryProfileQuery,
-  files: include.has('files') ? visibleFileQuery : countFileQuery,
-  links: include.has('links') ? {} : countLinkQuery,
-  reactions: countReactionQuery,
+  author: recordQueries.summaryProfileQuery,
+  files: include.has('files') ? visibleFileQuery : recordQueries.countFileQuery,
+  links: include.has('links') ? {} : recordQueries.countLinkQuery,
+  reactions: recordQueries.countReactionQuery,
   record: {
     $: { fields: ['id' as const, 'teamId' as const] },
     log: { $: { fields: ['color' as const, 'id' as const, 'name' as const] } },
@@ -31,13 +29,30 @@ const replyDetailQuery = ({ include }: { include: Set<ReplyInclude> }) => ({
   },
 });
 
+const replyPublishQuery = {
+  author: { image: {}, user: {} },
+  files: visibleFileQuery,
+  links: {},
+  record: {
+    $: { fields: ['id' as const, 'teamId' as const] },
+    log: { $: { fields: ['id' as const, 'name' as const] } },
+    tags: recordTagsQuery,
+  },
+};
+
+const replyTargetRecordQuery = {
+  author: recordQueries.summaryProfileQuery,
+  files: recordQueries.countFileQuery,
+  links: recordQueries.countLinkQuery,
+  log: { $: { fields: ['id' as const, 'name' as const] } },
+  reactions: recordQueries.countReactionQuery,
+  tags: recordTagsQuery,
+};
+
 const getCallerDraftReply = async (
   ctx: McpContext,
   replyId: string,
-  {
-    query,
-    withSubscriptions = false,
-  }: { query?: object; withSubscriptions?: boolean } = {}
+  { query }: { query?: object } = {}
 ) => {
   const [{ replies }, viewer] = await Promise.all([
     ctx.db.query({
@@ -49,12 +64,7 @@ const getCallerDraftReply = async (
           links: {},
           record: {
             $: { fields: ['id', 'teamId'] },
-            log: withSubscriptions
-              ? {
-                  profiles: { user: { subscriptions: {} } },
-                  team: { roles: { user: { subscriptions: {} } } },
-                }
-              : { team: { $: { fields: ['id' as const] } } },
+            log: { team: { $: { fields: ['id' as const] } } },
             tags: recordTagsQuery,
           },
         }),
@@ -75,8 +85,7 @@ const getCallerDraftReply = async (
     !reply?.record?.id ||
     !reply.record.log?.id ||
     !viewer.profile?.id ||
-    reply.author?.id !== viewer.profile.id ||
-    !viewer.visibleLogIds.has(reply.record.log.id)
+    reply.author?.id !== viewer.profile.id
   ) {
     throw new Error('Draft reply not found or not visible');
   }
@@ -87,10 +96,7 @@ const getCallerDraftReply = async (
 const getVisibleReply = async (
   ctx: McpContext,
   replyId: string,
-  {
-    query,
-    withSubscriptions = false,
-  }: { query?: object; withSubscriptions?: boolean } = {}
+  { query }: { query?: object } = {}
 ) => {
   const [{ replies }, viewer] = await Promise.all([
     ctx.db.query({
@@ -103,16 +109,9 @@ const getVisibleReply = async (
           reactions: { author: {} },
           record: {
             $: { fields: ['id', 'teamId'] },
-            log: withSubscriptions
-              ? {
-                  profiles: { user: { subscriptions: {} } },
-                  team: { roles: { user: { subscriptions: {} } } },
-                }
-              : {
-                  $: {
-                    fields: ['color' as const, 'id' as const, 'name' as const],
-                  },
-                },
+            log: {
+              $: { fields: ['color' as const, 'id' as const, 'name' as const] },
+            },
             tags: recordTagsQuery,
           },
         }),
@@ -129,10 +128,7 @@ const getVisibleReply = async (
 
   const reply = replies?.[0];
 
-  if (
-    !reply?.record?.log?.id ||
-    !viewer.visibleLogIds.has(reply.record.log.id)
-  ) {
+  if (!reply?.record?.log?.id) {
     throw new Error('Reply not found or not visible');
   }
 
@@ -142,10 +138,7 @@ const getVisibleReply = async (
 export const getReadableReply = async (
   ctx: McpContext,
   replyId: string,
-  {
-    query,
-    withSubscriptions = false,
-  }: { query?: object; withSubscriptions?: boolean } = {}
+  { query }: { query?: object } = {}
 ) => {
   const [{ replies }, viewer] = await Promise.all([
     ctx.db.query({
@@ -158,16 +151,9 @@ export const getReadableReply = async (
           reactions: { author: {} },
           record: {
             $: { fields: ['id', 'teamId'] },
-            log: withSubscriptions
-              ? {
-                  profiles: { user: { subscriptions: {} } },
-                  team: { roles: { user: { subscriptions: {} } } },
-                }
-              : {
-                  $: {
-                    fields: ['color' as const, 'id' as const, 'name' as const],
-                  },
-                },
+            log: {
+              $: { fields: ['color' as const, 'id' as const, 'name' as const] },
+            },
             tags: recordTagsQuery,
           },
         }),
@@ -184,10 +170,7 @@ export const getReadableReply = async (
 
   const reply = replies?.[0];
 
-  if (
-    !reply?.record?.log?.id ||
-    !viewer.visibleLogIds.has(reply.record.log.id)
-  ) {
+  if (!reply?.record?.log?.id) {
     throw new Error('Reply not found or not visible');
   }
 
@@ -368,7 +351,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
 
     if (replyId) {
       const { reply } = await getCallerDraftReply(ctx, replyId, {
-        withSubscriptions: true,
+        query: replyPublishQuery,
       });
 
       const nextText = (text ?? reply.text ?? '').trim();
@@ -389,23 +372,25 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
         throw new Error('Invalid reply draft');
       }
 
+      const notificationLog = await getNotificationLog(
+        ctx,
+        reply.record.log.id
+      );
+
       const now = new Date().toISOString();
 
       await ctx.db.transact([
-        ctx.db.tx.replies[replyId].update({
-          date: now,
-          isDraft: false,
+        ...recordPublish.buildPublishDraftReplyTransactions({
+          activityDate: now,
+          activityId: id(),
+          actorId: reply.author.id,
+          db: ctx.db,
+          logId: reply.record.log.id,
+          recordId: reply.record.id,
+          replyId,
+          teamId: reply.teamId,
           text: nextText,
         }),
-        ctx.db.tx.activities[id()]
-          .update({ date: now, teamId: reply.teamId, type: 'reply_posted' })
-          .link({
-            actor: reply.author.id,
-            log: reply.record.log.id,
-            record: reply.record.id,
-            reply: replyId,
-            team: reply.teamId,
-          }),
         ...(links
           ? replaceLinkTransactions({
               db: ctx.db,
@@ -422,16 +407,17 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
         ctx.env,
         push.collectRecipientSubscriptions({
           actorUserId: ctx.props.userId,
-          logProfiles: reply.record.log.profiles,
-          roles: reply.record.log.team?.roles,
+          logProfiles: notificationLog.profiles,
+          roles: notificationLog.team?.roles,
         }),
         push.buildReplyNotification({
           authorName: reply.author.name,
-          logName: reply.record.log.name,
+          logName: reply.record.log.name ?? notificationLog.name,
           recordId: reply.record.id,
           replyId,
           text: nextText,
-        })
+        }),
+        { staleSubscriptionDb: ctx.notificationDb }
       );
 
       return mcpFields.textResult(
@@ -449,7 +435,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     }
 
     const { record, viewer } = await getVisibleRecord(ctx, recordId, {
-      withSubscriptions: true,
+      query: replyTargetRecordQuery,
     });
 
     const profile = viewer.profile;
@@ -458,23 +444,23 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('Invalid reply target');
     }
 
+    const notificationLog = await getNotificationLog(ctx, record.log.id);
     const teamId = record.teamId;
     const newReplyId = id();
     const now = new Date().toISOString();
 
     await ctx.db.transact([
-      ctx.db.tx.replies[newReplyId]
-        .update({ date: now, isDraft: false, teamId, text: trimmedText })
-        .link({ author: profile.id, record: recordId }),
-      ctx.db.tx.activities[id()]
-        .update({ date: now, teamId, type: 'reply_posted' })
-        .link({
-          actor: profile.id,
-          log: record.log.id,
-          record: recordId,
-          reply: newReplyId,
-          team: teamId,
-        }),
+      ...recordPublish.buildCreatePublishedReplyTransactions({
+        activityId: id(),
+        authorId: profile.id,
+        db: ctx.db,
+        logId: record.log.id,
+        now,
+        recordId,
+        replyId: newReplyId,
+        teamId,
+        text: trimmedText,
+      }),
       ...replaceLinkTransactions({
         db: ctx.db,
         links: nextLinks,
@@ -488,16 +474,17 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
       ctx.env,
       push.collectRecipientSubscriptions({
         actorUserId: ctx.props.userId,
-        logProfiles: record.log.profiles,
-        roles: record.log.team?.roles,
+        logProfiles: notificationLog.profiles,
+        roles: notificationLog.team?.roles,
       }),
       push.buildReplyNotification({
         authorName: profile.name,
-        logName: record.log.name,
+        logName: record.log.name ?? notificationLog.name,
         recordId,
         replyId: newReplyId,
         text: trimmedText,
-      })
+      }),
+      { staleSubscriptionDb: ctx.notificationDb }
     );
 
     return mcpFields.textResult(

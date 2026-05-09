@@ -1,5 +1,6 @@
 import * as mediaMetadata from '@/domain/files/media-metadata';
-import { visibleFileQuery } from '@/domain/files/query';
+import * as recordQueries from '@/domain/records/query';
+import { logTagsQuery } from '@/domain/tags/query';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import type * as searchTypes from '@/features/search/types/search';
 import { useTeams } from '@/features/teams/queries/use-teams';
@@ -149,33 +150,16 @@ export const useSearch = ({ query }: { query: string }) => {
       ? {
           records: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
-            author: { image: {} },
-            log: {},
-            files: visibleFileQuery,
-            links: {},
-            tags: {
-              $: {
-                fields: ['color', 'id', 'name', 'order'],
-                where: { type: 'record' },
-              },
-            },
+            ...recordQueries.recordSearchDocumentQuery,
           },
           replies: {
             $: { where: { teamId: { $in: teamIds }, isDraft: false } },
-            author: { image: {} },
-            record: { log: {} },
-            files: visibleFileQuery,
-            links: {},
+            ...recordQueries.replySearchDocumentQuery,
           },
           logs: {
             $: { where: { teamId: { $in: teamIds } } },
             profiles: { image: {} },
-            tags: {
-              $: {
-                fields: ['color', 'id', 'name', 'order'],
-                where: { type: 'log' },
-              },
-            },
+            tags: logTagsQuery,
           },
         }
       : null

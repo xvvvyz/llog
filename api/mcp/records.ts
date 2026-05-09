@@ -2,11 +2,14 @@ import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
-import { recordTagsQuery } from '@/api/mcp/tag-query';
 import type { McpContext, McpLog, McpRecord } from '@/api/mcp/types';
 import { getViewer, requireVisibleLog } from '@/api/mcp/viewer';
+import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as push from '@/api/push/web-push';
 import { visibleFileQuery } from '@/domain/files/query';
+import * as recordPublish from '@/domain/records/publish';
+import * as recordQueries from '@/domain/records/query';
+import { recordTagsQuery } from '@/domain/tags/query';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
@@ -27,29 +30,11 @@ const recordQuery = {
   },
 };
 
-const countFileQuery = { $: { fields: ['id' as const] } };
-const countLinkQuery = { $: { fields: ['id' as const] } };
-const countReactionQuery = { $: { fields: ['emoji' as const, 'id' as const] } };
-
-const searchFileQuery = {
-  $: {
-    fields: [
-      'id' as const,
-      'name' as const,
-      'tracks' as const,
-      'transcript' as const,
-    ],
-  },
-};
-
-const searchLinkQuery = { $: { fields: ['id' as const, 'label' as const] } };
-const summaryProfileQuery = { $: { fields: ['id' as const, 'name' as const] } };
-
 const recordSummaryQuery = {
-  files: countFileQuery,
-  links: countLinkQuery,
+  files: recordQueries.countFileQuery,
+  links: recordQueries.countLinkQuery,
   log: { $: { fields: ['id' as const, 'name' as const] } },
-  reactions: countReactionQuery,
+  reactions: recordQueries.countReactionQuery,
   replies: {
     $: {
       fields: ['id' as const, 'isDraft' as const],
@@ -59,35 +44,9 @@ const recordSummaryQuery = {
   tags: recordTagsQuery,
 };
 
-export const recordSearchQuery = {
-  files: searchFileQuery,
-  links: searchLinkQuery,
-  log: { $: { fields: ['id' as const, 'name' as const] } },
-  reactions: countReactionQuery,
-  replies: {
-    $: {
-      fields: [
-        'date' as const,
-        'id' as const,
-        'isDraft' as const,
-        'text' as const,
-      ],
-      order: { date: 'asc' as const },
-      where: { isDraft: { $not: true } },
-    },
-    files: searchFileQuery,
-    links: searchLinkQuery,
-    reactions: countReactionQuery,
-  },
-  tags: recordTagsQuery,
-};
-
-const recordQueryWithSubscriptions = {
+const recordPublishQuery = {
   ...recordQuery,
-  log: {
-    profiles: { user: { subscriptions: {} } },
-    team: { roles: { user: { subscriptions: {} } } },
-  },
+  log: { $: { fields: ['id' as const, 'name' as const, 'teamId' as const] } },
 };
 
 const recordsActionSchema = z.enum(['list', 'get', 'save']);
@@ -119,11 +78,11 @@ const recordDetailQuery = ({
   const includeLinks = include.has('links');
 
   return {
-    author: summaryProfileQuery,
-    files: includeFiles ? visibleFileQuery : countFileQuery,
-    links: includeLinks ? {} : countLinkQuery,
+    author: recordQueries.summaryProfileQuery,
+    files: includeFiles ? visibleFileQuery : recordQueries.countFileQuery,
+    links: includeLinks ? {} : recordQueries.countLinkQuery,
     log: { $: { fields: ['color' as const, 'id' as const, 'name' as const] } },
-    reactions: countReactionQuery,
+    reactions: recordQueries.countReactionQuery,
     replies: {
       $: {
         fields: [
@@ -136,10 +95,10 @@ const recordDetailQuery = ({
         order: { date: 'asc' as const },
         where: { isDraft: { $not: true } },
       },
-      author: summaryProfileQuery,
-      files: includeFiles ? visibleFileQuery : countFileQuery,
-      links: includeLinks ? {} : countLinkQuery,
-      reactions: countReactionQuery,
+      author: recordQueries.summaryProfileQuery,
+      files: includeFiles ? visibleFileQuery : recordQueries.countFileQuery,
+      links: includeLinks ? {} : recordQueries.countLinkQuery,
+      reactions: recordQueries.countReactionQuery,
     },
     tags: recordTagsQuery,
   };
@@ -161,13 +120,9 @@ const getPublishedReplyCount = async (ctx: McpContext, recordId: string) => {
 export const getVisibleRecord = async (
   ctx: McpContext,
   recordId: string,
-  {
-    query,
-    withSubscriptions = false,
-  }: { query?: object; withSubscriptions?: boolean } = {}
+  { query }: { query?: object } = {}
 ) => {
-  const queryShape =
-    query ?? (withSubscriptions ? recordQueryWithSubscriptions : recordQuery);
+  const queryShape = query ?? recordQuery;
 
   const [{ records }, viewer] = await Promise.all([
     ctx.db.query({
@@ -180,24 +135,16 @@ export const getVisibleRecord = async (
   ]);
 
   const record = records?.[0];
-
-  if (!record?.log?.id || !viewer.visibleLogIds.has(record.log.id)) {
-    throw new Error('Record not found or not visible');
-  }
-
+  if (!record?.log?.id) throw new Error('Record not found or not visible');
   return { record, viewer };
 };
 
 export const getCallerDraftRecord = async (
   ctx: McpContext,
   recordId: string,
-  {
-    query,
-    withSubscriptions = false,
-  }: { query?: object; withSubscriptions?: boolean } = {}
+  { query }: { query?: object } = {}
 ) => {
-  const queryShape =
-    query ?? (withSubscriptions ? recordQueryWithSubscriptions : recordQuery);
+  const queryShape = query ?? recordQuery;
 
   const [{ records }, viewer] = await Promise.all([
     ctx.db.query({
@@ -214,8 +161,7 @@ export const getCallerDraftRecord = async (
   if (
     !record?.log?.id ||
     !viewer.profile?.id ||
-    record.author?.id !== viewer.profile.id ||
-    !viewer.visibleLogIds.has(record.log.id)
+    record.author?.id !== viewer.profile.id
   ) {
     throw new Error('Draft record not found or not visible');
   }
@@ -226,13 +172,9 @@ export const getCallerDraftRecord = async (
 export const getReadableRecord = async (
   ctx: McpContext,
   recordId: string,
-  {
-    query,
-    withSubscriptions = false,
-  }: { query?: object; withSubscriptions?: boolean } = {}
+  { query }: { query?: object } = {}
 ) => {
-  const queryShape =
-    query ?? (withSubscriptions ? recordQueryWithSubscriptions : recordQuery);
+  const queryShape = query ?? recordQuery;
 
   const [{ records }, viewer] = await Promise.all([
     ctx.db.query({
@@ -245,10 +187,7 @@ export const getReadableRecord = async (
   ]);
 
   const record = records?.[0];
-
-  if (!record?.log?.id || !viewer.visibleLogIds.has(record.log.id)) {
-    throw new Error('Record not found or not visible');
-  }
+  if (!record?.log?.id) throw new Error('Record not found or not visible');
 
   if (
     record.isDraft &&
@@ -258,6 +197,22 @@ export const getReadableRecord = async (
   }
 
   return { record, viewer };
+};
+
+export const getNotificationLog = async (ctx: McpContext, logId: string) => {
+  const { logs } = (await ctx.notificationDb.query({
+    logs: {
+      $: {
+        fields: ['id' as const, 'name' as const, 'teamId' as const],
+        where: { id: logId },
+      },
+      ...notificationRecipientLogQuery,
+    },
+  })) as { logs?: McpLog[] };
+
+  const log = logs?.[0];
+  if (!log?.id) throw new Error('Notification log not found');
+  return log;
 };
 
 export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
@@ -297,7 +252,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         },
         ...recordSummaryQuery,
       },
-    })) as { records?: McpRecord[] };
+    })) as unknown as { records?: McpRecord[] };
 
     const items = (records ?? []).map((record) =>
       mcpFields.recordSummaryFields(record, fieldOptions)
@@ -516,7 +471,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
 
     if (recordId) {
       const { record } = await getCallerDraftRecord(ctx, recordId, {
-        withSubscriptions: true,
+        query: recordPublishQuery,
       });
 
       const nextText = (text ?? record.text ?? '').trim();
@@ -536,26 +491,20 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         throw new Error('Invalid record draft');
       }
 
+      const notificationLog = await getNotificationLog(ctx, record.log.id);
       const now = new Date().toISOString();
 
       await ctx.db.transact([
-        ctx.db.tx.records[recordId].update({
-          date: now,
-          isDraft: false,
+        ...recordPublish.buildPublishDraftRecordTransactions({
+          activityDate: now,
+          activityId: id(),
+          actorId: record.author.id,
+          db: ctx.db,
+          logId: record.log.id,
+          recordId,
+          teamId: record.teamId,
           text: nextText,
         }),
-        ctx.db.tx.activities[id()]
-          .update({
-            date: now,
-            teamId: record.teamId,
-            type: 'record_published',
-          })
-          .link({
-            actor: record.author.id,
-            log: record.log.id,
-            record: recordId,
-            team: record.teamId,
-          }),
         ...(links
           ? replaceLinkTransactions({
               db: ctx.db,
@@ -572,15 +521,16 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         ctx.env,
         push.collectRecipientSubscriptions({
           actorUserId: ctx.props.userId,
-          logProfiles: record.log.profiles,
-          roles: record.log.team?.roles,
+          logProfiles: notificationLog.profiles,
+          roles: notificationLog.team?.roles,
         }),
         push.buildRecordNotification({
           authorName: record.author.name,
-          logName: record.log.name,
+          logName: record.log.name ?? notificationLog.name,
           recordId,
           text: nextText,
-        })
+        }),
+        { staleSubscriptionDb: ctx.notificationDb }
       );
 
       return mcpFields.textResult(
@@ -600,33 +550,23 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     const viewer = await requireVisibleLog(ctx, logId);
     const profile = viewer.profile;
     if (!profile?.id) throw new Error('Profile not found');
-
-    const { logs } = (await ctx.db.query({
-      logs: {
-        $: { where: { id: logId } },
-        profiles: { user: { subscriptions: {} } },
-        team: { roles: { user: { subscriptions: {} } } },
-      },
-    })) as { logs?: McpLog[] };
-
-    const log = logs?.[0];
+    const log = await getNotificationLog(ctx, logId);
     if (!log?.teamId) throw new Error('Invalid log');
     const teamId = log.teamId;
     const newRecordId = id();
     const now = new Date().toISOString();
 
     await ctx.db.transact([
-      ctx.db.tx.records[newRecordId]
-        .update({ date: now, isDraft: false, teamId, text: trimmedText })
-        .link({ author: profile.id, log: logId }),
-      ctx.db.tx.activities[id()]
-        .update({ date: now, teamId, type: 'record_published' })
-        .link({
-          actor: profile.id,
-          log: logId,
-          record: newRecordId,
-          team: teamId,
-        }),
+      ...recordPublish.buildCreatePublishedRecordTransactions({
+        activityId: id(),
+        authorId: profile.id,
+        db: ctx.db,
+        logId,
+        now,
+        recordId: newRecordId,
+        teamId,
+        text: trimmedText,
+      }),
       ...replaceLinkTransactions({
         db: ctx.db,
         links: nextLinks,
@@ -648,7 +588,8 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         logName: log.name,
         recordId: newRecordId,
         text: trimmedText,
-      })
+      }),
+      { staleSubscriptionDb: ctx.notificationDb }
     );
 
     return mcpFields.textResult(

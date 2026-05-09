@@ -1,16 +1,12 @@
 import { logFields, table, textResult } from '@/api/mcp/fields';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
-import type { McpContext, McpRole } from '@/api/mcp/types';
+import type { McpContext } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import * as permissions from '@/domain/teams/permissions';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-
-type RoleWithProfile = McpRole & {
-  user?: { profile?: { id?: string | null } | null } | null;
-};
 
 const DEFAULT_LOG_COLOR = 7;
 const logsActionSchema = z.enum(['list', 'create']);
@@ -73,33 +69,18 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('Only team owners and admins can create logs');
     }
 
-    const { roles } = (await ctx.db.query({
-      roles: {
-        $: { where: { team: resolvedTeamId } },
-        user: { profile: { $: { fields: ['id' as const] } } },
-      },
-    })) as { roles?: RoleWithProfile[] };
-
-    const profileIds = (roles ?? [])
-      .filter((role) => permissions.isManagedRole(role.role))
-      .map((role) => role.user?.profile?.id)
-      .filter((profileId): profileId is string => !!profileId);
-
     const logId = id();
     const trimmedName = name.trim();
 
-    await ctx.db.transact([
+    await ctx.db.transact(
       ctx.db.tx.logs[logId]
         .update({
           color: DEFAULT_LOG_COLOR,
           name: trimmedName,
           teamId: resolvedTeamId,
         })
-        .link({ team: resolvedTeamId }),
-      ...profileIds.map((profileId) =>
-        ctx.db.tx.logs[logId].link({ profiles: profileId })
-      ),
-    ]);
+        .link({ team: resolvedTeamId })
+    );
 
     const log = logFields({
       color: DEFAULT_LOG_COLOR,

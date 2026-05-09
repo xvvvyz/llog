@@ -1,3 +1,4 @@
+import { logTagsQuery } from '@/domain/tags/query';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useResolvedTeamIds } from '@/features/teams/queries/use-resolved-team-ids';
 import { db } from '@/lib/db';
@@ -22,7 +23,7 @@ export const useLogs = ({
                 ...(query && { name: { $ilike: `%${query}%` } }),
               },
             },
-            tags: { $: { fields: ['id'], where: { type: 'log' } } },
+            tags: logTagsQuery,
             profiles: { image: {} },
           },
         }

@@ -1,4 +1,4 @@
-import { createAdminDb, type Db } from '@/api/middleware/db';
+import type { Db } from '@/api/middleware/db';
 import * as permissions from '@/domain/teams/permissions';
 import { buildPushHTTPRequest } from '@pushforge/builder';
 import { z } from 'zod/v4';
@@ -195,15 +195,14 @@ export const deletePushSubscriptionByEndpoint = async (
 };
 
 const deletePushSubscriptionsById = async (
-  env: CloudflareEnv,
+  db: Db | undefined,
   subscriptionIds: string[]
 ) => {
-  if (!subscriptionIds.length) return;
-  const adminDb = createAdminDb(env);
+  if (!db || !subscriptionIds.length) return;
 
-  await adminDb.transact(
+  await db.transact(
     subscriptionIds.map((subscriptionId) =>
-      adminDb.tx.subscriptions[subscriptionId].delete()
+      db.tx.subscriptions[subscriptionId].delete()
     )
   );
 };
@@ -218,7 +217,8 @@ export const sendPushNotifications = async (
     title: string;
     type: 'reply_posted' | 'record_published';
     url: string;
-  }
+  },
+  options: { staleSubscriptionDb?: Db } = {}
 ) => {
   if (!subscriptions.length) return;
   const privateJwk = getPrivateJwk(env);
@@ -276,5 +276,8 @@ export const sendPushNotifications = async (
     })
   );
 
-  await deletePushSubscriptionsById(env, staleSubscriptionIds);
+  await deletePushSubscriptionsById(
+    options.staleSubscriptionDb,
+    staleSubscriptionIds
+  );
 };

@@ -1,3 +1,4 @@
+import { tagFields } from '@/domain/tags/query';
 import type { TagType } from '@/features/tags/types/tag';
 import { useResolvedTeamIds } from '@/features/teams/queries/use-resolved-team-ids';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
@@ -16,6 +17,7 @@ export const useTags = ({
       ? {
           tags: {
             $: {
+              fields: tagFields,
               where: {
                 teamId: { $in: resolvedTeamIds },
                 type,

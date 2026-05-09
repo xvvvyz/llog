@@ -67,29 +67,20 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     const reactionId = id();
     const activityId = id();
 
-    await ctx.db.transact([
-      ctx.db.tx.reactions[reactionId]
-        .update({ emoji, teamId: record.teamId })
-        .link({
-          activity: activityId,
-          author: profile.id,
-          ...(replyId ? { reply: replyId } : { record: recordId }),
-        }),
-      ctx.db.tx.activities[activityId]
-        .update({
-          date: new Date().toISOString(),
-          emoji,
-          teamId: record.teamId,
-          type: 'reaction_added',
-        })
-        .link({
-          actor: profile.id,
-          log: record.log.id,
-          record: recordId,
-          ...(replyId ? { reply: replyId } : {}),
-          team: record.teamId,
-        }),
-    ]);
+    await ctx.db.transact(
+      recordReactions.buildAddReactionTransactions({
+        activityId,
+        db: ctx.db,
+        emoji,
+        logId: record.log.id,
+        now: new Date().toISOString(),
+        profileId: profile.id,
+        reactionId,
+        recordId,
+        replyId,
+        teamId: record.teamId,
+      })
+    );
 
     return textResult({ reactionId }, `Reaction added: ${reactionId}`);
   };

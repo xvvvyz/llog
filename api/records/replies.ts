@@ -1,8 +1,10 @@
 import { deleteActivities } from '@/api/activity/delete-activities';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db } from '@/api/middleware/db';
+import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as push from '@/api/push/web-push';
 import { fileAssetQuery } from '@/domain/files/query';
+import * as recordPublish from '@/domain/records/publish';
 import * as permissions from '@/domain/teams/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -41,25 +43,7 @@ app.post(
           $: { fields: ['id'] },
           log: {
             $: { fields: ['id', 'name'] },
-            profiles: {
-              user: {
-                $: { fields: ['id'] },
-                subscriptions: {
-                  $: { fields: ['id', 'endpoint', 'subscription'] },
-                },
-              },
-            },
-            team: {
-              roles: {
-                $: { fields: ['id', 'role', 'userId'] },
-                user: {
-                  $: { fields: ['id'] },
-                  subscriptions: {
-                    $: { fields: ['id', 'endpoint', 'subscription'] },
-                  },
-                },
-              },
-            },
+            ...notificationRecipientLogQuery,
           },
         },
       },
@@ -105,22 +89,20 @@ app.post(
 
     const now = new Date().toISOString();
 
-    await c.var.db.transact([
-      c.var.db.tx.replies[replyId].update({
-        date: now,
-        isDraft: false,
+    await c.var.db.transact(
+      recordPublish.buildPublishDraftReplyTransactions({
+        activityDate: now,
+        activityId: id(),
+        actorId: reply.author.id,
+        contentDate: now,
+        db: c.var.db,
+        logId: reply.record.log.id,
+        recordId,
+        replyId,
+        teamId: reply.teamId,
         text: trimmedText,
-      }),
-      c.var.db.tx.activities[id()]
-        .update({ type: 'reply_posted', date: now, teamId: reply.teamId })
-        .link({
-          actor: reply.author.id,
-          team: reply.teamId,
-          record: recordId,
-          reply: replyId,
-          log: reply.record.log.id,
-        }),
-    ]);
+      })
+    );
 
     await push.sendPushNotifications(
       c.env,
@@ -135,7 +117,8 @@ app.post(
         logName: reply.record.log.name,
         recordId,
         text: trimmedText,
-      })
+      }),
+      { staleSubscriptionDb: c.var.db }
     );
 
     return c.json({ success: true });

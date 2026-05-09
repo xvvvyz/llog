@@ -1,3 +1,4 @@
+import { recordTagTargetQuery } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -19,14 +20,7 @@ export const useRecordTagsTarget = ({
 
   const { data, isLoading } = db.useQuery(
     recordId
-      ? {
-          records: {
-            $: { where: { id: recordId } },
-            author: { $: { fields: ['id'] } },
-            log: { $: { fields: ['color', 'id'] } },
-            tags: { $: { fields: ['id'] } },
-          },
-        }
+      ? { records: { $: { where: { id: recordId } }, ...recordTagTargetQuery } }
       : null
   );
 

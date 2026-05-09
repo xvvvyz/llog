@@ -1,4 +1,5 @@
-export const recordTagFields = [
+export const tagFields = [
+  'color' as const,
   'id' as const,
   'name' as const,
   'order' as const,
@@ -6,8 +7,16 @@ export const recordTagFields = [
   'type' as const,
 ];
 
+export const logTagFields = tagFields;
+
+export const recordTagFields = tagFields;
+
 export const recordTagLogsQuery = {
   $: { fields: ['id' as const, 'name' as const] },
+};
+
+export const logTagsQuery = {
+  $: { fields: logTagFields, where: { type: 'log' as const } },
 };
 
 export const recordTagsQuery = {

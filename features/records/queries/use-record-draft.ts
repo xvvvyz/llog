@@ -1,4 +1,4 @@
-import { visibleFileQuery } from '@/domain/files/query';
+import { recordDraftQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useLog } from '@/features/logs/queries/use-log';
 import { createRecordDraft } from '@/features/records/mutations/create-record-draft';
@@ -21,15 +21,7 @@ export const useRecordDraft = ({
       ? {
           records: {
             $: { where: { author: profile.id, log: logId, isDraft: true } },
-            files: visibleFileQuery,
-            links: {},
-            log: { $: { fields: ['id'] } },
-            tags: {
-              $: {
-                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
-                where: { type: 'record' },
-              },
-            },
+            ...recordDraftQuery,
           },
         }
       : null

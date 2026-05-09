@@ -1,34 +1,10 @@
-import { visibleFileQuery } from '@/domain/files/query';
+import { recordDetailQuery } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
 export const useRecord = ({ id }: { id?: string }) => {
   const { data, isLoading } = db.useQuery(
-    id
-      ? {
-          records: {
-            $: { where: { id } },
-            author: { image: {} },
-            replies: {
-              $: { where: { isDraft: { $not: true } } },
-              author: { image: {} },
-              files: visibleFileQuery,
-              links: {},
-              reactions: { author: {} },
-            },
-            files: visibleFileQuery,
-            links: {},
-            log: {},
-            reactions: { author: {} },
-            tags: {
-              $: {
-                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
-                where: { type: 'record' },
-              },
-            },
-          },
-        }
-      : null
+    id ? { records: { $: { where: { id } }, ...recordDetailQuery } } : null
   );
 
   const hasCurrentResult = useCurrentQueryResult(id, data);

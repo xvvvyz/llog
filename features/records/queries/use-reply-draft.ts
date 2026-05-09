@@ -1,4 +1,4 @@
-import { visibleFileQuery } from '@/domain/files/query';
+import { replyDraftQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { createReplyDraft } from '@/features/records/mutations/create-reply-draft';
 import { useRecord } from '@/features/records/queries/use-record';
@@ -25,9 +25,7 @@ export const useReplyDraft = ({
             $: {
               where: { author: profile.id, record: recordId, isDraft: true },
             },
-            files: visibleFileQuery,
-            links: {},
-            record: { $: { fields: ['id'] } },
+            ...replyDraftQuery,
           },
         }
       : null

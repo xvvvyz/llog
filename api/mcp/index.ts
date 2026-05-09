@@ -53,11 +53,19 @@ export const mcpHandler = {
   fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
     const props = ctx.props as OAuthProps | undefined;
 
-    if (!props?.userId || !props.profileId) {
+    if (!props?.userId || !props.profileId || !props.email) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const server = createServer({ db: createAdminDb(env), env, props });
+    const adminDb = createAdminDb(env);
+
+    const server = createServer({
+      db: adminDb.asUser({ email: props.email }),
+      env,
+      notificationDb: adminDb,
+      props,
+    });
+
     return createMcpHandler(server)(request, env, ctx);
   },
 };

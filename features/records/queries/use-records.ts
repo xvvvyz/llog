@@ -1,4 +1,4 @@
-import { visibleFileQuery } from '@/domain/files/query';
+import { recordListItemQuery } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
@@ -23,19 +23,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
               order: { date: 'desc' },
               where: { isDraft: false, isPinned: true, log: logId },
             },
-            author: { image: {} },
-            replies: {
-              $: { fields: ['id'], where: { isDraft: { $not: true } } },
-            },
-            files: visibleFileQuery,
-            links: {},
-            reactions: { author: {} },
-            tags: {
-              $: {
-                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
-                where: { type: 'record' },
-              },
-            },
+            ...recordListItemQuery,
           },
         }
       : null
@@ -55,19 +43,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
               order: { date: 'desc' },
               where: { isDraft: false, log: logId },
             },
-            author: { image: {} },
-            replies: {
-              $: { fields: ['id'], where: { isDraft: { $not: true } } },
-            },
-            files: visibleFileQuery,
-            links: {},
-            reactions: { author: {} },
-            tags: {
-              $: {
-                fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
-                where: { type: 'record' },
-              },
-            },
+            ...recordListItemQuery,
           },
         }
       : (null as never)

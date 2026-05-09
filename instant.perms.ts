@@ -118,6 +118,13 @@ const rules = {
       "data.ref('author.user.id') == auth.ref('$user.id')",
       'isRecordAuthor',
       "data.ref('record.author.user.id') == auth.ref('$user.id')",
+      'onlyModifiesText',
+      "request.modifiedFields.all(field, field in ['text'])",
+      'onlyPublishesDraft',
+      and(
+        "request.modifiedFields.all(field, field in ['isDraft', 'text'])",
+        'newData.isDraft == false'
+      ),
       'isDraft',
       'data.isDraft == true',
       'isTeamMember',
@@ -133,8 +140,23 @@ const rules = {
     ],
     allow: {
       view: 'isTeamMember && ((!isDraft && (canManage || isLogMember)) || isAuthor)',
-      create: 'isAuthor && isTeamMember && (canManage || isLogMember)',
-      update: 'isAuthor && isTeamMember && isValidNewText',
+      create:
+        'isAuthor && isTeamMember && (canManage || isLogMember) && isValidNewText',
+      update: or(
+        group(
+          and('isAuthor', 'isTeamMember', 'onlyModifiesText', 'isValidNewText')
+        ),
+        group(
+          and(
+            'isAuthor',
+            'isTeamMember',
+            'isDraft',
+            group(or('canManage', 'isLogMember')),
+            'onlyPublishesDraft',
+            'isValidNewText'
+          )
+        )
+      ),
       delete: 'canDeleteOwn || canDeleteFromOwnRecord || canManage',
       link: {
         links: 'auth.id != null',
@@ -504,6 +526,11 @@ const rules = {
       "request.modifiedFields.all(field, field in ['text'])",
       'onlyModifiesPinnedState',
       "request.modifiedFields.all(field, field in ['isPinned'])",
+      'onlyPublishesDraft',
+      and(
+        "request.modifiedFields.all(field, field in ['isDraft', 'text'])",
+        'newData.isDraft == false'
+      ),
       'isDraft',
       'data.isDraft == true',
       'hasLog',
@@ -551,6 +578,16 @@ const rules = {
       update: or(
         group(
           and('isAuthor', 'isTeamMember', 'onlyModifiesText', 'isValidNewText')
+        ),
+        group(
+          and(
+            'isAuthor',
+            'isTeamMember',
+            'isDraft',
+            group(or('canManage', 'isLogMember')),
+            'onlyPublishesDraft',
+            'isValidNewText'
+          )
         ),
         group(and('canManage', '!isDraft', 'onlyModifiesPinnedState')),
         group(

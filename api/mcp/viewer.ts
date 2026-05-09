@@ -1,6 +1,7 @@
 import { fileFields } from '@/api/mcp/fields';
 import type { McpContext, McpLog, McpRole, McpViewer } from '@/api/mcp/types';
 import type { Db } from '@/api/middleware/db';
+import { logTagsQuery } from '@/domain/tags/query';
 import * as permissions from '@/domain/teams/permissions';
 
 export const getViewer = async (db: Db, userId: string): Promise<McpViewer> => {
@@ -9,17 +10,14 @@ export const getViewer = async (db: Db, userId: string): Promise<McpViewer> => {
       profiles: {
         $: { where: { user: userId } },
         image: {},
-        logs: {
-          tags: { $: { where: { type: 'log' } } },
-          team: { $: { fields: ['id', 'name'] } },
-        },
+        logs: { tags: logTagsQuery, team: { $: { fields: ['id', 'name'] } } },
         user: { $: { fields: ['id', 'email'] } },
       },
     }),
     db.query({
       roles: {
         $: { where: { userId } },
-        team: { image: {}, logs: { tags: { $: { where: { type: 'log' } } } } },
+        team: { image: {}, logs: { tags: logTagsQuery } },
       },
     }),
   ]);
@@ -58,11 +56,13 @@ export const getViewer = async (db: Db, userId: string): Promise<McpViewer> => {
 };
 
 export const requireVisibleLog = async (ctx: McpContext, logId: string) => {
-  const viewer = await getViewer(ctx.db, ctx.props.userId);
+  const [{ logs }, viewer] = await Promise.all([
+    ctx.db.query({
+      logs: { $: { fields: ['id' as const], where: { id: logId } } },
+    }) as Promise<{ logs?: Array<{ id: string }> }>,
+    getViewer(ctx.db, ctx.props.userId),
+  ]);
 
-  if (!viewer.visibleLogIds.has(logId)) {
-    throw new Error('Log not found or not visible');
-  }
-
+  if (!logs?.[0]?.id) throw new Error('Log not found or not visible');
   return viewer;
 };

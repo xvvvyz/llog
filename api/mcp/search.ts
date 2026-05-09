@@ -1,10 +1,10 @@
 import * as mcpFields from '@/api/mcp/fields';
-import { recordSearchQuery } from '@/api/mcp/records';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type * as mcpTypes from '@/api/mcp/types';
-import { getViewer } from '@/api/mcp/viewer';
 import * as mediaMetadata from '@/domain/files/media-metadata';
+import { recordSearchQuery } from '@/domain/records/query';
+import { logTagsQuery } from '@/domain/tags/query';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
@@ -241,17 +241,14 @@ export const registerSearchTool = (
         ? new Set(recordTagIds)
         : undefined;
 
-      const viewer = await getViewer(ctx.db, ctx.props.userId);
-      const visibleLogIds = Array.from(viewer.visibleLogIds);
-
-      if (!visibleLogIds.length) {
-        return mcpFields.textResult({ results: [] }, 'No results.');
-      }
-
       const pageResults: SearchResult[] = [];
 
       if (!recordTagIdSet && searchCursor.offset === 0) {
-        for (const log of viewer.visibleLogs) {
+        const { logs } = (await ctx.db.query({
+          logs: { tags: logTagsQuery },
+        })) as { logs?: mcpTypes.McpLog[] };
+
+        for (const log of logs ?? []) {
           const haystack = [
             log.name,
             ...(log.tags ?? []).map((tag) => tag.name),
@@ -272,19 +269,17 @@ export const registerSearchTool = (
             limit: recordScanLimit + 1,
             offset: searchCursor.offset,
             order: { date: 'desc' },
-            where: { isDraft: false, log: { $in: visibleLogIds } },
+            where: { isDraft: false },
           },
           ...recordSearchQuery,
         },
-      })) as { records?: mcpTypes.McpRecord[] };
+      })) as unknown as { records?: mcpTypes.McpRecord[] };
 
       const recordPage = (records ?? []).slice(0, recordScanLimit);
       const hasMoreRecords = (records ?? []).length > recordScanLimit;
 
       for (const record of recordPage) {
-        if (!record.log?.id || !viewer.visibleLogIds.has(record.log.id)) {
-          continue;
-        }
+        if (!record.log?.id) continue;
 
         const hasSelectedRecordTag =
           !recordTagIdSet ||
@@ -297,6 +292,7 @@ export const registerSearchTool = (
           record.log?.name,
           ...(record.tags ?? []).map((tag) => tag.name),
           ...(record.links ?? []).map((link) => link.label),
+          ...(record.links ?? []).map((link) => link.url),
           ...(record.files ?? []).map((file) => file.name),
           getFileMediaSearchText(recordMediaItems),
         ]
@@ -327,6 +323,7 @@ export const registerSearchTool = (
             record.log?.name,
             ...(record.tags ?? []).map((tag) => tag.name),
             ...(reply.links ?? []).map((link) => link.label),
+            ...(reply.links ?? []).map((link) => link.url),
             ...(reply.files ?? []).map((file) => file.name),
             getFileMediaSearchText(replyMediaItems),
           ]

@@ -1,8 +1,10 @@
 import { deleteActivities } from '@/api/activity/delete-activities';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, db, type Db } from '@/api/middleware/db';
+import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as push from '@/api/push/web-push';
 import { copyFileQuery, fileAssetQuery } from '@/domain/files/query';
+import * as recordPublish from '@/domain/records/publish';
 import * as permissions from '@/domain/teams/permissions';
 import { zValidator } from '@hono/zod-validator';
 import { id } from '@instantdb/admin';
@@ -260,22 +262,16 @@ const buildPublishedRecordCopies = ({
 
   const transactions = copiedRecords.flatMap(
     ({ id: copiedRecordId, logId, teamId }) => [
-      dbClient.tx.records[copiedRecordId]
-        .update({
-          date: now,
-          isDraft: false,
-          teamId,
-          ...(text != null ? { text } : {}),
-        })
-        .link({ author: authorId, log: logId }),
-      dbClient.tx.activities[id()]
-        .update({ date: now, teamId, type: 'record_published' })
-        .link({
-          actor: authorId,
-          log: logId,
-          record: copiedRecordId,
-          team: teamId,
-        }),
+      ...recordPublish.buildCreatePublishedRecordTransactions({
+        activityId: id(),
+        authorId,
+        db: dbClient,
+        logId,
+        now,
+        recordId: copiedRecordId,
+        teamId,
+        text,
+      }),
       ...(links ?? []).map((link, order) =>
         dbClient.tx.links[id()]
           .update(getClonedLinkData(link, teamId, order))
@@ -304,28 +300,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
         $: { fields: ['id', 'name'] },
         user: { $: { fields: ['id'] } },
       },
-      log: {
-        $: { fields: ['id', 'name'] },
-        profiles: {
-          user: {
-            $: { fields: ['id'] },
-            subscriptions: {
-              $: { fields: ['id', 'endpoint', 'subscription'] },
-            },
-          },
-        },
-        team: {
-          roles: {
-            $: { fields: ['id', 'role', 'userId'] },
-            user: {
-              $: { fields: ['id'] },
-              subscriptions: {
-                $: { fields: ['id', 'endpoint', 'subscription'] },
-              },
-            },
-          },
-        },
-      },
+      log: { $: { fields: ['id', 'name'] }, ...notificationRecipientLogQuery },
       files: { $: { fields: ['id'] } },
       links: { $: { fields: ['id'] } },
     },
@@ -363,21 +338,19 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
 
   const now = new Date().toISOString();
 
-  await c.var.db.transact([
-    c.var.db.tx.records[recordId].update({
-      date: now,
-      isDraft: false,
+  await c.var.db.transact(
+    recordPublish.buildPublishDraftRecordTransactions({
+      activityDate: now,
+      activityId: id(),
+      actorId: record.author.id,
+      contentDate: now,
+      db: c.var.db,
+      logId: record.log.id,
+      recordId,
+      teamId: record.teamId,
       text: trimmedText,
-    }),
-    c.var.db.tx.activities[id()]
-      .update({ type: 'record_published', date: now, teamId: record.teamId })
-      .link({
-        actor: record.author.id,
-        team: record.teamId,
-        record: recordId,
-        log: record.log.id,
-      }),
-  ]);
+    })
+  );
 
   await push.sendPushNotifications(
     c.env,
@@ -391,7 +364,8 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
       logName: record.log.name,
       recordId,
       text: trimmedText,
-    })
+    }),
+    { staleSubscriptionDb: c.var.db }
   );
 
   return c.json({ success: true });
