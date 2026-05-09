@@ -6,6 +6,7 @@ import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { useRecords } from '@/features/records/queries/use-records';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
+import { useDeferredEmpty } from '@/hooks/use-deferred-empty';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -39,6 +40,13 @@ export default function Index() {
   const recordsLoading = records.isLoading;
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
   const hasRecords = recordData.length > 0;
+
+  const queryState = useDeferredEmpty({
+    isEmpty: !hasRecords,
+    isLoading: log.isLoading || recordsLoading,
+    resetKey: params.logId,
+  });
+
   const showFab = hasRecords && !breakpoints.md;
   const contentPaddingBottom = insets.bottom + (showFab ? 104 : 0);
 
@@ -110,9 +118,9 @@ export default function Index() {
       />
       {logNotFound ? (
         <NotFound />
-      ) : log.isLoading || recordsLoading ? (
+      ) : queryState.showLoading ? (
         <Loading />
-      ) : !hasRecords ? (
+      ) : queryState.showEmpty ? (
         <EmptyState logId={params.logId} />
       ) : (
         <List

@@ -9,6 +9,7 @@ import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useDeferredEmpty } from '@/hooks/use-deferred-empty';
 import { cn } from '@/lib/cn';
 import { createSearchIndex } from '@/lib/search';
 import { SPECTRUM } from '@/theme/spectrum';
@@ -39,7 +40,7 @@ export default function Index() {
   const { canManage } = useMyRole();
   const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs();
-  const isEmpty = !logs.isLoading && logs.data.length === 0;
+  const hasNoLogs = logs.data.length === 0;
 
   const tagsById = React.useMemo(
     () => new Map(tags.data.map((tag) => [tag.id, tag])),
@@ -78,18 +79,19 @@ export default function Index() {
   const hasLoadedRef = React.useRef(false);
   if (!logs.isLoading) hasLoadedRef.current = true;
 
+  const queryState = useDeferredEmpty({
+    isEmpty: !logs.isLoading && hasNoLogs,
+    isLoading: logs.isLoading && !hasLoadedRef.current,
+  });
+
   return (
     <Page>
       <Header
         title={<TeamSwitcher />}
         right={
           <View className="flex-row items-center">
-            {breakpoints.md && !isEmpty && (
-              <ListActions
-                className={cn(isEmpty && 'md:hidden')}
-                query={rawQuery}
-                setQuery={setRawQuery}
-              />
+            {breakpoints.md && !hasNoLogs && (
+              <ListActions query={rawQuery} setQuery={setRawQuery} />
             )}
             {canManage && (
               <Button
@@ -109,9 +111,9 @@ export default function Index() {
           </View>
         }
       />
-      {logs.isLoading && !hasLoadedRef.current ? (
+      {queryState.showLoading ? (
         <Loading />
-      ) : isEmpty ? (
+      ) : queryState.showEmpty ? (
         <ListEmptyState canManage={canManage} />
       ) : (
         <ScrollView
@@ -120,7 +122,7 @@ export default function Index() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
-          {!breakpoints.md && !isEmpty && (
+          {!breakpoints.md && !hasNoLogs && (
             <ListActions
               className="p-1.5 pt-4 md:p-2"
               query={rawQuery}
