@@ -4,6 +4,7 @@ import { auth, db, type Db } from '@/api/middleware/db';
 import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as push from '@/api/push/web-push';
 import { copyFileQuery, fileAssetQuery } from '@/domain/files/query';
+import * as copyTags from '@/domain/records/copy-tags';
 import * as recordPublish from '@/domain/records/publish';
 import * as permissions from '@/domain/teams/permissions';
 import { zValidator } from '@hono/zod-validator';
@@ -37,12 +38,6 @@ type RecordCopyLink = {
   label?: string | null;
   order?: number | null;
   url?: string | null;
-};
-
-type RecordCopyDraftTag = {
-  id?: string | null;
-  type?: string | null;
-  logs?: { id?: string | null }[];
 };
 
 type RecordCopyTargetLog = { id: string; teamId: string };
@@ -100,18 +95,30 @@ const getClonedLinkData = (
   };
 };
 
-const getCopyDraftTagIdsForLog = (
-  tags: RecordCopyDraftTag[] | undefined,
-  logId: string
-) =>
-  (tags ?? [])
-    .filter(
-      (tag) =>
-        tag.type === 'record' &&
-        !!tag.id &&
-        !!tag.logs?.some((log) => log.id === logId)
-    )
-    .map((tag) => tag.id as string);
+const getCopyDraftTagIdsForTargetLog = async ({
+  dbClient,
+  sourceTags,
+  targetLog,
+}: {
+  dbClient: Db;
+  sourceTags: copyTags.CopyRecordTag[] | undefined;
+  targetLog: RecordCopyTargetLog;
+}) => {
+  const { tags } = await dbClient.query({
+    tags: {
+      $: {
+        fields: ['id', 'name'],
+        where: { logs: targetLog.id, teamId: targetLog.teamId, type: 'record' },
+      },
+    },
+  });
+
+  return copyTags.resolveCopyDraftTagIdsForTargetLog({
+    sourceTags,
+    targetLogId: targetLog.id,
+    targetTags: tags,
+  });
+};
 
 const assertTeamMember = async ({
   dbClient,
@@ -200,6 +207,10 @@ const prepareRecordCopySource = async ({
       log: { $: { fields: ['id'] } },
       links: {},
       files: copyFileQuery,
+      tags: {
+        $: { fields: ['id', 'name', 'type'] },
+        logs: { $: { fields: ['id'] } },
+      },
     },
   });
 
@@ -394,6 +405,15 @@ app.post(
     const draftRecordId = id();
     const now = new Date().toISOString();
 
+    const draftTagIds =
+      targetLogs.length === 1
+        ? await getCopyDraftTagIdsForTargetLog({
+            dbClient: c.var.db,
+            sourceTags: record.tags,
+            targetLog: targetLogs[0],
+          })
+        : [];
+
     await c.var.db.transact([
       c.var.db.tx.records[draftRecordId]
         .update({
@@ -412,6 +432,9 @@ app.post(
         c.var.db.tx.files[id()]
           .update(getClonedFileData(file, order))
           .link({ record: draftRecordId })
+      ),
+      ...draftTagIds.map((tagId) =>
+        c.var.db.tx.records[draftRecordId].link({ tags: tagId })
       ),
     ]);
 
@@ -502,12 +525,16 @@ app.post(
 
     const tagTransactions =
       targetLogs.length === 1
-        ? getCopyDraftTagIdsForLog(record.tags, targetLogs[0].id).flatMap(
-            (tagId) =>
+        ? copyTags
+            .resolveCopyDraftTagIdsForTargetLog({
+              sourceTags: record.tags,
+              targetLogId: targetLogs[0].id,
+            })
+            .flatMap((tagId) =>
               copiedRecords.map((copiedRecord) =>
                 c.var.db.tx.records[copiedRecord.id].link({ tags: tagId })
               )
-          )
+            )
         : [];
 
     await c.var.db.transact([
