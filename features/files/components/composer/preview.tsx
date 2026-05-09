@@ -59,13 +59,13 @@ export const Preview = ({
   const showMediaAttachmentDivider =
     visualItems.length > 0 && hasLowerAttachments;
 
-  const padLowerAttachmentsAfterMedia =
-    showMediaAttachmentDivider && !hasAudioAttachments;
-
   const padAudioAfterMedia = visualItems.length > 0 && hasAudioAttachments;
 
+  const padLowerAttachmentsAfterPrevious =
+    hasLowerAttachments && (visualItems.length > 0 || hasAudioAttachments);
+
   return (
-    <View className="py-4 border-border-secondary border-t gap-4">
+    <View className="py-2.5 border-border-secondary border-t">
       <VisualPreview
         autoPlayPendingVideoId={autoPlayPendingVideoId}
         onDeleteFile={onDeleteFile}
@@ -76,7 +76,7 @@ export const Preview = ({
         visualItems={visualItems}
       />
       {hasAudioAttachments && (
-        <View className={cn(padAudioAfterMedia && 'pt-4')}>
+        <View className={cn(padAudioAfterMedia && 'pt-2.5')}>
           <AudioPreview
             audioMedia={audioMedia}
             focusedAudioId={focusedAudioId}
@@ -90,7 +90,7 @@ export const Preview = ({
         <View
           className={cn(
             hasDocumentAttachments && hasExtraAttachments ? 'gap-2' : 'gap-4',
-            padLowerAttachmentsAfterMedia && 'pt-4'
+            padLowerAttachmentsAfterPrevious && 'pt-2.5'
           )}
         >
           <DocumentAttachments

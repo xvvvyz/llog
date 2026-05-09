@@ -226,15 +226,10 @@ const prepareRecordCopySource = async ({
   }
 
   const authorId = record.author.id;
-  const sourceLogId = record.log.id;
   const sourceTeamId = record.teamId;
 
   if (record.author.user?.id !== userId) {
     throw new HTTPException(403, { message: 'Forbidden' });
-  }
-
-  if (targetLogIds.includes(sourceLogId)) {
-    throw new HTTPException(400, { message: 'Invalid target log' });
   }
 
   await assertTeamMember({ dbClient, teamId: sourceTeamId, userId });

@@ -1,11 +1,9 @@
 import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { useRecordCopyTargets } from '@/features/records/queries/use-record-copy-targets';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
-import { db } from '@/lib/db';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
@@ -30,35 +28,7 @@ export const RecordCopyToSheet = () => {
     new Set()
   );
 
-  const { data: recordData, isLoading: recordLoading } = db.useQuery(
-    open && recordId
-      ? {
-          records: {
-            $: { where: { id: recordId } },
-            log: { $: { fields: ['id'] } },
-          },
-        }
-      : null
-  );
-
-  const recordQueryKey = open && recordId ? recordId : undefined;
-
-  const hasCurrentRecordResult = useCurrentQueryResult(
-    recordQueryKey,
-    recordData
-  );
-
-  const record = hasCurrentRecordResult
-    ? recordData?.records?.find((item) => item.id === recordId)
-    : undefined;
-
-  const sourceLogId = record?.log?.id;
-
-  const copyTargets = useRecordCopyTargets({
-    enabled: open && !!sourceLogId,
-    sourceLogId,
-  });
-
+  const copyTargets = useRecordCopyTargets({ enabled: open && !!recordId });
   const visibleLogs = useNameSearch(copyTargets.logs, query);
 
   React.useEffect(() => {
@@ -116,15 +86,11 @@ export const RecordCopyToSheet = () => {
 
   return (
     <Sheet
+      loading={open && copyTargets.isLoading}
       onDismiss={close}
       open={open}
       portalName="record-copy-to"
       variant="list"
-      loading={
-        open &&
-        ((!!recordQueryKey && (recordLoading || !hasCurrentRecordResult)) ||
-          copyTargets.isLoading)
-      }
     >
       {!!visibleLogs.length && (
         <SheetListScrollView variant="rows">

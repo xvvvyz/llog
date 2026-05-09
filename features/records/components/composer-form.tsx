@@ -74,9 +74,14 @@ export const ComposerForm = ({
     <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
       <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
         <View className="overflow-hidden min-h-0 border-border-secondary border-continuous rounded-xl bg-input border shrink">
-          {showInputHeader && <View className="p-2.5">{inputHeader}</View>}
+          {showInputHeader && (
+            <View className="p-2.5 border-b border-border-secondary border-continuous">
+              {inputHeader}
+            </View>
+          )}
           <Textarea
             autoFocus={shouldAutoFocus}
+            className="border-0 bg-transparent"
             maxLength={10240}
             maxRows={7}
             minRows={1}
@@ -85,11 +90,6 @@ export const ComposerForm = ({
             onFocus={handleTextareaFocus}
             placeholder={placeholder}
             value={text}
-            className={
-              showInputHeader
-                ? 'border-0 bg-transparent pt-0'
-                : 'border-0 bg-transparent'
-            }
           />
           {isComposerCompact ? null : filePreview}
         </View>

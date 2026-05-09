@@ -177,13 +177,13 @@ export const VisualPreview = ({
   return (
     <Animated.ScrollView
       ref={scrollViewRef}
-      contentContainerClassName="py-4"
+      contentContainerClassName="pb-2.5"
       horizontal
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
       testID="scroll-lock-allow"
       className={cn(
-        '-my-4 grow-0 shrink-0',
+        'grow-0 shrink-0',
         showBottomBorder && 'border-border-secondary border-b'
       )}
     >

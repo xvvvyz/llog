@@ -22,8 +22,7 @@ type RecordCopyTargetGroup = RecordCopyTargetTeam & {
 
 export const useRecordCopyTargets = ({
   enabled = true,
-  sourceLogId,
-}: { enabled?: boolean; sourceLogId?: string } = {}) => {
+}: { enabled?: boolean } = {}) => {
   const auth = db.useAuth();
 
   const { data: teamsData, isLoading: teamsLoading } = db.useQuery(
@@ -71,7 +70,7 @@ export const useRecordCopyTargets = ({
     const logsByTeamId = new Map<string, Omit<RecordCopyTargetLog, 'team'>[]>();
 
     for (const log of queryLogs) {
-      if (log.id === sourceLogId || !log.teamId) continue;
+      if (!log.teamId) continue;
       const logs = logsByTeamId.get(log.teamId) ?? [];
       logs.push(log);
       logsByTeamId.set(log.teamId, logs);
@@ -94,7 +93,7 @@ export const useRecordCopyTargets = ({
         },
       ];
     });
-  }, [queryLogs, sourceLogId, teams]);
+  }, [queryLogs, teams]);
 
   const logs = React.useMemo(
     () => groups.flatMap((group) => group.logs),

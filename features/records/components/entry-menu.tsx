@@ -1,24 +1,27 @@
 import { canDeleteOwnOrManagedResource } from '@/domain/teams/permissions';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
+import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { useRecordCopyTargets } from '@/features/records/queries/use-record-copy-targets';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
 
 import {
-  CopySimple,
   DotsThreeVertical,
   NotePencil,
   PushPin,
+  StackSimple,
   Tag,
   Trash,
 } from 'phosphor-react-native';
@@ -61,24 +64,26 @@ export const useEntryMenuState = ({
   const canTag =
     !replyId && (myRole.canManage || (isAuthor && recordTags.hasRecordTags));
 
-  const canCopyToAnotherLog = !replyId && isAuthor;
+  const canDuplicateRecord = !replyId && isAuthor;
 
   const copyTargets = useRecordCopyTargets({
-    enabled: canCopyToAnotherLog && !!logId,
-    sourceLogId: logId,
+    enabled: canDuplicateRecord && !!logId,
   });
 
-  const canCopy = canCopyToAnotherLog && !!logId && copyTargets.logs.length > 0;
+  const canDuplicate =
+    canDuplicateRecord && !!logId && copyTargets.logs.length > 0;
+
   const canPin = !replyId && myRole.canPinRecords;
-  const hasActionsAboveDelete = canEdit || canTag || canCopy || canPin;
-  const hasMenu = canDelete || canCopy || canEdit || canPin || canTag;
+  const hasActionsAboveDelete = canEdit || canTag || canDuplicate || canPin;
+  const hasMenu = canDelete || canDuplicate || canEdit || canPin || canTag;
 
   return {
-    canCopy,
     canDelete,
+    canDuplicate,
     canEdit,
     canPin,
     canTag,
+    copyTargetLogs: copyTargets.logs,
     hasActionsAboveDelete,
     hasMenu,
   };
@@ -96,18 +101,60 @@ const EntryMenuDropdownContent = ({
   state,
 }: Omit<EntryMenuProps, 'className'> & { state: EntryMenuState }) => {
   const sheetManager = useSheetManager();
+  const menu = Menu.useContext();
+  const [isDuplicating, setIsDuplicating] = React.useState(false);
 
   const {
-    canCopy,
     canDelete,
+    canDuplicate,
     canEdit,
     canPin,
     canTag,
+    copyTargetLogs,
     hasActionsAboveDelete,
     hasMenu,
   } = state;
 
   if (!hasMenu) return null;
+
+  const duplicateRecord = async () => {
+    const [targetLog] = copyTargetLogs;
+    if (isDuplicating) return;
+
+    if (!targetLog || copyTargetLogs.length > 1) {
+      sheetManager.open('record-copy-to', recordId);
+      return;
+    }
+
+    setIsDuplicating(true);
+
+    try {
+      const draft = await createRecordCopyDraft({
+        id: recordId,
+        logIds: [targetLog.id],
+      });
+
+      if (!draft) {
+        setIsDuplicating(false);
+        return;
+      }
+
+      sheetManager.open('record-create', draft.draftRecordId, 'copy', {
+        logIds: draft.targetLogIds,
+      });
+
+      setIsDuplicating(false);
+      menu.onOpenChange(false);
+    } catch (error) {
+      setIsDuplicating(false);
+
+      alert({
+        message:
+          error instanceof Error ? error.message : 'Failed to copy record',
+        title: 'Error',
+      });
+    }
+  };
 
   return (
     <React.Fragment>
@@ -166,12 +213,18 @@ const EntryMenuDropdownContent = ({
             <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
           </Menu.Item>
         )}
-        {canCopy && (
+        {canDuplicate && (
           <Menu.Item
-            onPress={() => sheetManager.open('record-copy-to', recordId)}
+            closeOnPress={copyTargetLogs.length !== 1}
+            disabled={isDuplicating}
+            onPress={() => void duplicateRecord()}
           >
-            <Icon className="text-placeholder" icon={CopySimple} />
-            <Text>Copy</Text>
+            {isDuplicating ? (
+              <Spinner className="text-placeholder" size="xs" />
+            ) : (
+              <Icon className="text-placeholder" icon={StackSimple} />
+            )}
+            <Text>Duplicate</Text>
           </Menu.Item>
         )}
         {canDelete && (

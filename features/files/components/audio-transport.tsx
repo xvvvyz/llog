@@ -41,10 +41,6 @@ export type AudioTransportControls = {
   togglePlayback: () => void;
 };
 
-const formatAudioPlaybackRate = (
-  playbackRate: mediaPlaybackRate.AudioPlaybackRate
-) => `${playbackRate}× speed`;
-
 export const AudioTransport = ({
   className,
   controlButtonClassName = 'rounded-none',
@@ -258,7 +254,9 @@ export const AudioTransport = ({
                           className="text-placeholder"
                           icon={isSelected ? Check : Speedometer}
                         />
-                        <Text>{formatAudioPlaybackRate(playbackRate)}</Text>
+                        <Text className="tabular-nums">
+                          {playbackRate.toFixed(1)}×
+                        </Text>
                       </Menu.Item>
                     );
                   })}
