@@ -14,8 +14,6 @@ type ItemProps = {
   index: number;
   isActiveMediaLoading: boolean;
   isMuted: boolean;
-  isPlaying: boolean;
-  isScrubbingVideo: boolean;
   onActiveMediaLoad: (fileId: string, index: number) => void;
   item: FileItem;
   mediaQuality: number;
@@ -41,8 +39,6 @@ const ItemComponent = ({
   index,
   isActiveMediaLoading,
   isMuted,
-  isPlaying,
-  isScrubbingVideo,
   onActiveMediaLoad,
   item,
   mediaQuality,
@@ -78,8 +74,6 @@ const ItemComponent = ({
           isActive={isActive}
           isAdjacent={isAdjacent}
           isMuted={isMuted}
-          isPlaying={isPlaying}
-          isScrubbingVideo={isScrubbingVideo}
           item={item}
           mediaQuality={mediaQuality}
           onActiveMediaLoad={onActiveMediaLoad}
@@ -126,8 +120,6 @@ const CarouselVideoItem = ({
   isAdjacent,
   shouldRenderInactiveMedia,
   isMuted,
-  isPlaying,
-  isScrubbingVideo,
   index,
   item,
   mediaQuality,
@@ -149,8 +141,6 @@ const CarouselVideoItem = ({
   isAdjacent: boolean;
   shouldRenderInactiveMedia: boolean;
   isMuted: boolean;
-  isPlaying: boolean;
-  isScrubbingVideo: boolean;
   index: number;
   item: FileItem;
   mediaQuality: number;

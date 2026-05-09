@@ -108,7 +108,6 @@ export const Carousel = ({
     handleTogglePlay,
     handleVideoTimeChange,
     isMuted,
-    isScrubbingVideo,
     pauseVideo,
     playVideoFrom,
     previewVideoScrub,
@@ -470,8 +469,6 @@ export const Carousel = ({
           index={index}
           isActiveMediaLoading={isActiveMediaLoading}
           isMuted={isMuted}
-          isPlaying={isPlaying}
-          isScrubbingVideo={isScrubbingVideo}
           item={item}
           mediaQuality={carouselHelpers.CAROUSEL_FILE_QUALITY}
           onActiveMediaLoad={handleActiveMediaLoad}
@@ -500,8 +497,6 @@ export const Carousel = ({
       handleZoomStateChange,
       isActiveMediaLoading,
       isMuted,
-      isPlaying,
-      isScrubbingVideo,
       setIsPlaying,
       videoPlaybackRate,
       videoPlaybackIntentState,

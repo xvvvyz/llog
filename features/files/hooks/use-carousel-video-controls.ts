@@ -23,7 +23,6 @@ export const useCarouselVideoControls = ({
 }) => {
   const { id: uiId, videoMuted } = useUi();
   const [isMuted, setIsMuted] = React.useState(videoMuted);
-  const [isScrubbingVideo, setIsScrubbingVideo] = React.useState(false);
 
   const [{ videoCurrentTime, videoDuration }, setVideoUiState] = React.useState(
     { videoCurrentTime: 0, videoDuration: 0 }
@@ -55,7 +54,6 @@ export const useCarouselVideoControls = ({
     scrubPreviewTargetRef.current = null;
     videoHandleRef.current?.setScrubbingEnabled(false);
     isScrubbingVideoRef.current = false;
-    setIsScrubbingVideo(false);
     wasPlayingBeforeVideoScrubRef.current = false;
 
     setVideoUiState((currentState) => {
@@ -129,7 +127,6 @@ export const useCarouselVideoControls = ({
 
       scrubPreviewTargetRef.current = null;
       isScrubbingVideoRef.current = false;
-      setIsScrubbingVideo(false);
       handle.setScrubbingEnabled(false);
 
       const nextTime =
@@ -197,7 +194,6 @@ export const useCarouselVideoControls = ({
     const handle = videoHandleRef.current;
     if (!handle || videoDuration <= 0) return;
     isScrubbingVideoRef.current = true;
-    setIsScrubbingVideo(true);
     wasPlayingBeforeVideoScrubRef.current = isPlaying;
     handle.setScrubbingEnabled(true);
     if (isPlaying) handle.pause();
@@ -247,7 +243,6 @@ export const useCarouselVideoControls = ({
       handle?.setScrubbingEnabled(false);
       handle?.seekTo(nextTime);
       isScrubbingVideoRef.current = false;
-      setIsScrubbingVideo(false);
 
       if (shouldResumePlayback) {
         setIsPlaying(true);
@@ -263,7 +258,6 @@ export const useCarouselVideoControls = ({
     handleTogglePlay,
     handleVideoTimeChange,
     isMuted,
-    isScrubbingVideo,
     pauseVideo,
     playVideoFrom,
     previewVideoScrub,

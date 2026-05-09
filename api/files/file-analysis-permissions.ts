@@ -14,20 +14,25 @@ const getTeamRoleForUser = async (
   return roles[0]?.role;
 };
 
-const assertCanAnalyzeSharedLogFiles = ({
-  actorRole,
-  isAuthor,
-  isDraft,
-}: {
+type SharedLogFileAnalysisPolicyInput = {
   actorRole?: string | null;
   isAuthor: boolean;
   isDraft?: boolean | null;
-}) => {
-  if (isDraft && !isAuthor) {
-    throw new HTTPException(403, { message: 'Forbidden' });
-  }
+};
 
-  if (!permissions.canManageTeam(actorRole)) {
+export const canAnalyzeSharedLogFile = ({
+  actorRole,
+  isAuthor,
+  isDraft,
+}: SharedLogFileAnalysisPolicyInput) => {
+  if (isDraft && !isAuthor) return false;
+  return permissions.canManageTeam(actorRole);
+};
+
+const assertCanAnalyzeSharedLogFile = (
+  input: SharedLogFileAnalysisPolicyInput
+) => {
+  if (!canAnalyzeSharedLogFile(input)) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 };
@@ -70,7 +75,7 @@ const assertCanAnalyzeRecordFiles = async ({
       ? await getTeamRoleForUser(dbClient, record.teamId, userId)
       : undefined);
 
-  assertCanAnalyzeSharedLogFiles({
+  assertCanAnalyzeSharedLogFile({
     actorRole,
     isAuthor,
     isDraft: record.isDraft,
@@ -116,7 +121,7 @@ const assertCanAnalyzeReplyFiles = async ({
   const isAuthor = reply.author?.user?.id === userId;
   const actorRole = reply.record?.log?.team?.roles?.[0]?.role;
 
-  assertCanAnalyzeSharedLogFiles({
+  assertCanAnalyzeSharedLogFile({
     actorRole,
     isAuthor,
     isDraft: reply.isDraft,

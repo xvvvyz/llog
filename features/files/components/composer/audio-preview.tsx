@@ -16,11 +16,6 @@ import { CaretLeft, CaretRight, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
-type AudioPreviewItem = attachmentItems.AttachmentPreviewItem<
-  FileItem,
-  fileComposer.PendingAudioUpload
->;
-
 const getAudioName = (item: { name?: string | null }) =>
   item.name?.trim() || 'Audio';
 
