@@ -5,8 +5,10 @@ import { getFileTypeIcon } from '@/features/files/lib/file-type-icon';
 import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { alert as showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
+import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
@@ -16,15 +18,10 @@ import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import * as Sortable from '@/ui/sortable';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
+import { Files as DocumentsIcon, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
-
-import {
-  Files as DocumentsIcon,
-  DownloadSimple,
-  X,
-} from 'phosphor-react-native';
 
 type DocumentAttachmentItem = attachmentItems.AttachmentPreviewItem<
   FileItem,
@@ -80,6 +77,7 @@ export const DocumentAttachments = ({
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
+  const colorScheme = useColorScheme();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
 
@@ -96,6 +94,7 @@ export const DocumentAttachments = ({
 
   const sheetId = React.useId();
   const isSheetOpen = sheetOpen ?? localSheetOpen;
+  const placeholderColor = UI[colorScheme].placeholder;
 
   const sheetPortalName = React.useMemo(
     () => portalName ?? `document-attachments-${sheetId.replace(/:/g, '')}`,
@@ -126,13 +125,9 @@ export const DocumentAttachments = ({
 
   const totalSizeText = React.useMemo(() => getTotalSizeText(items), [items]);
   const firstItem = items[0];
-
-  const singleDocument =
-    items.length === 1 && firstItem?.kind === 'file' ? firstItem.item : null;
-
   const hasPendingDocuments = pendingDocuments.length > 0;
-  const canOpenSingleDocument = !!singleDocument && !onDeleteFile;
   const canDeleteSingleDocument = !!onDeleteFile && items.length === 1;
+  const shouldOpenDocumentsInline = !onDeleteFile;
 
   const canSortDocuments =
     !!onReorderFiles &&
@@ -140,7 +135,8 @@ export const DocumentAttachments = ({
     items.every((item) => item.kind === 'file');
 
   const shouldRenderSheet =
-    !canDeleteSingleDocument || hideTrigger || isSheetOpen;
+    !shouldOpenDocumentsInline &&
+    (!canDeleteSingleDocument || hideTrigger || isSheetOpen);
 
   const showSummarySize = items.length === 1;
   const firstDocumentName = firstItem ? getDocumentName(firstItem.item) : null;
@@ -153,10 +149,6 @@ export const DocumentAttachments = ({
 
   const canRenameDocument =
     !!editingDocument && !!onRenameFile && !!trimmedEditingName;
-
-  const singleDocumentSizeText = singleDocument
-    ? getDocumentSizeText(singleDocument)
-    : null;
 
   const moreDocumentsText =
     items.length > 1 ? `+${items.length - 1} more` : null;
@@ -285,31 +277,41 @@ export const DocumentAttachments = ({
     const item = previewItem.item;
     const DocumentIcon = getFileTypeIcon(item);
 
+    const isDownloading =
+      previewItem.kind === 'file' && downloadingDocumentIds.has(item.id);
+
     const documentDetails = (
       <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
         <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-          <Icon className="text-placeholder" icon={DocumentIcon} />
+          {isDownloading ? (
+            <Spinner color={placeholderColor} size="xs" />
+          ) : (
+            <Icon className="text-placeholder" icon={DocumentIcon} />
+          )}
           <Text
-            className="text-muted-foreground text-sm shrink"
+            className="font-normal text-muted-foreground text-sm shrink"
             numberOfLines={1}
           >
             {getDocumentName(item)}
           </Text>
         </View>
-        <Text className="text-placeholder text-xs shrink-0" numberOfLines={1}>
+        <Text
+          className="font-normal text-placeholder text-xs shrink-0"
+          numberOfLines={1}
+        >
           {getDocumentSizeText(item)}
         </Text>
       </View>
     );
 
     const dragHandle = canSortDocuments && previewItem.kind === 'file' && (
-      <Sortable.SortableSheetDragHandle className="-ml-1.5" />
+      <Sortable.SortableSheetDragHandle className="-ml-1.5 mr-1" />
     );
 
     if (previewItem.kind === 'file') {
       if (onDeleteFile) {
         return (
-          <View key={previewItem.id} className="flex-row gap-2 items-center">
+          <View key={previewItem.id} className="flex-row items-center">
             {dragHandle}
             {onRenameFile ? (
               <Button
@@ -328,7 +330,7 @@ export const DocumentAttachments = ({
               onPress={() => handleDeleteDocument(previewItem.item.id)}
               size="icon-xs"
               variant="ghost"
-              wrapperClassName="-mr-1.5"
+              wrapperClassName="ml-2 -mr-1.5"
             >
               <Icon icon={X} />
             </Button>
@@ -337,25 +339,18 @@ export const DocumentAttachments = ({
       }
 
       return (
-        <View key={previewItem.id} className="flex-row gap-2 items-center">
+        <Button
+          key={previewItem.id}
+          className="flex-row w-full justify-start"
+          disabled={downloadingDocumentIds.has(item.id)}
+          variant="link"
+          wrapperClassName="w-full overflow-visible rounded-lg"
+          onPress={() => {
+            void handleOpenDocument(previewItem.item);
+          }}
+        >
           {documentDetails}
-          <Button
-            accessibilityLabel={`Download ${getDocumentName(item)}`}
-            disabled={downloadingDocumentIds.has(item.id)}
-            size="icon-xs"
-            variant="ghost"
-            wrapperClassName="-mr-1.5"
-            onPress={() => {
-              void handleOpenDocument(previewItem.item);
-            }}
-          >
-            {downloadingDocumentIds.has(item.id) ? (
-              <Spinner size="xs" />
-            ) : (
-              <Icon className="text-muted-foreground" icon={DownloadSimple} />
-            )}
-          </Button>
-        </View>
+        </Button>
       );
     }
 
@@ -372,11 +367,88 @@ export const DocumentAttachments = ({
     );
   };
 
+  const renderOpenDocument = (previewItem: DocumentAttachmentItem) => {
+    const item = previewItem.item;
+    const DocumentIcon = getFileTypeIcon(item);
+
+    const isDownloading =
+      previewItem.kind === 'file' && downloadingDocumentIds.has(item.id);
+
+    if (previewItem.kind !== 'file') {
+      return (
+        <View
+          key={previewItem.id}
+          className={cn(
+            'flex-row w-full min-w-0 gap-4 justify-between px-4 opacity-70',
+            triggerClassName
+          )}
+        >
+          <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+            <Icon
+              className={cn('text-placeholder', triggerIconClassName)}
+              icon={DocumentIcon}
+            />
+            <Text
+              className="font-normal text-muted-foreground text-sm shrink"
+              numberOfLines={1}
+            >
+              {getDocumentName(item)}
+            </Text>
+          </View>
+          <Spinner size="xs" />
+        </View>
+      );
+    }
+
+    return (
+      <Button
+        key={previewItem.id}
+        disabled={downloadingDocumentIds.has(item.id)}
+        onPress={() => void handleOpenDocument(item)}
+        variant="link"
+        wrapperClassName="w-full overflow-visible rounded-lg"
+        className={cn(
+          'flex-row w-full min-w-0 gap-4 justify-between px-4',
+          triggerClassName
+        )}
+      >
+        <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+          {isDownloading ? (
+            <Spinner
+              className={triggerIconClassName}
+              color={placeholderColor}
+              size="xs"
+            />
+          ) : (
+            <Icon
+              className={cn('text-placeholder', triggerIconClassName)}
+              icon={DocumentIcon}
+            />
+          )}
+          <Text
+            className="font-normal text-muted-foreground text-sm shrink"
+            numberOfLines={1}
+          >
+            {getDocumentName(item)}
+          </Text>
+        </View>
+        <Text
+          className="font-normal text-placeholder text-xs self-center shrink-0"
+          numberOfLines={1}
+        >
+          {getDocumentSizeText(item)}
+        </Text>
+      </Button>
+    );
+  };
+
   if (!items.length) return null;
 
   return (
     <View className={cn('gap-2', className)}>
-      {hideTrigger ? null : canDeleteSingleDocument && firstItem ? (
+      {hideTrigger ? null : shouldOpenDocumentsInline ? (
+        items.map(renderOpenDocument)
+      ) : canDeleteSingleDocument && firstItem ? (
         <View
           className={cn(
             'flex-row w-full gap-2 justify-between px-4',
@@ -450,42 +522,6 @@ export const DocumentAttachments = ({
             )}
           </View>
         </View>
-      ) : canOpenSingleDocument ? (
-        <Button
-          disabled={downloadingDocumentIds.has(singleDocument.id)}
-          onPress={() => void handleOpenDocument(singleDocument)}
-          variant="link"
-          wrapperClassName="w-full overflow-visible rounded-lg"
-          className={cn(
-            'flex-row w-full gap-4 justify-between px-4',
-            triggerClassName
-          )}
-        >
-          <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-            {downloadingDocumentIds.has(singleDocument.id) ? (
-              <Spinner className={triggerIconClassName} size="xs" />
-            ) : (
-              <Icon
-                className={cn('text-placeholder', triggerIconClassName)}
-                icon={firstDocumentIcon}
-              />
-            )}
-            <Text
-              className="font-normal text-muted-foreground text-sm shrink"
-              numberOfLines={1}
-            >
-              {firstDocumentName}
-            </Text>
-          </View>
-          <View className="flex-row gap-2 items-center shrink-0">
-            <Text
-              className="font-normal text-placeholder text-xs"
-              numberOfLines={1}
-            >
-              {singleDocumentSizeText}
-            </Text>
-          </View>
-        </Button>
       ) : (
         <Button
           onPress={handleOpenSheet}
@@ -607,7 +643,7 @@ export const DocumentAttachments = ({
                 size="sm"
                 wrapperClassName="flex-1"
               >
-                <Text>{isRenaming ? 'Saving...' : 'Save'}</Text>
+                <Text>{isRenaming ? 'Saving…' : 'Save'}</Text>
               </Button>
             </View>
           </View>

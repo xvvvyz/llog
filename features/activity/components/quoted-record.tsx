@@ -130,8 +130,7 @@ export const QuotedRecord = ({
           <View
             className={cn(
               'gap-2 px-3 pb-3',
-              !displayText && !visualItems.length && 'pt-3',
-              (hasDocumentFiles || hasLinks) && 'pb-0'
+              !displayText && !visualItems.length && 'pt-3'
             )}
           >
             <AudioPlaylist clips={audioMedia} />

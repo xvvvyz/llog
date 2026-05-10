@@ -226,7 +226,7 @@ export const LinkEditorSheet = () => {
             wrapperClassName="flex-1"
           >
             <Text>
-              {isSubmitting ? 'Saving...' : isEditingLink ? 'Save' : 'Add'}
+              {isSubmitting ? 'Saving…' : isEditingLink ? 'Save' : 'Add'}
             </Text>
           </Button>
         </View>

@@ -188,7 +188,9 @@ export const Lightbox = ({
                             className="text-placeholder"
                             icon={isSelected ? Check : Speedometer}
                           />
-                          <Text>{playbackRate}× speed</Text>
+                          <Text className="tabular-nums">
+                            {playbackRate.toFixed(1)}×
+                          </Text>
                         </Menu.Item>
                       );
                     })}

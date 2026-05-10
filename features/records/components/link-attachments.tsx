@@ -10,7 +10,7 @@ import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import * as Sortable from '@/ui/sortable';
 import { Text } from '@/ui/text';
-import { ArrowSquareOut, LinkSimple, X } from 'phosphor-react-native';
+import { LinkSimple, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Linking, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -26,9 +26,12 @@ const LinkUrlText = ({
   url: string;
 }) => (
   <Text
-    className={cn('min-w-0 text-placeholder text-xs shrink', className)}
     ellipsizeMode="head"
     numberOfLines={1}
+    className={cn(
+      'min-w-0 font-normal text-placeholder text-xs shrink',
+      className
+    )}
   >
     {linkUrl.getLinkUrlDisplayText(url)}
   </Text>
@@ -165,7 +168,7 @@ export const LinkAttachments = ({
       <View className="flex-1 flex-row min-w-0 gap-2 items-center">
         <Icon
           className={cn('text-placeholder', triggerIconClassName)}
-          icon={ArrowSquareOut}
+          icon={LinkSimple}
         />
         <Text
           className="font-normal text-muted-foreground text-sm shrink"
@@ -201,7 +204,7 @@ export const LinkAttachments = ({
         <View className="flex-1 flex-row min-w-0 gap-2 items-center">
           <Icon className="text-placeholder" icon={LinkSimple} />
           <Text
-            className="text-muted-foreground text-sm shrink"
+            className="font-normal text-muted-foreground text-sm shrink"
             numberOfLines={1}
           >
             {getLinkLabel(item)}
@@ -214,9 +217,9 @@ export const LinkAttachments = ({
     );
 
     return (
-      <View key={item.id} className="flex-row min-w-0 gap-2 items-center">
+      <View key={item.id} className="flex-row min-w-0 items-center">
         {canSortLinks && (
-          <Sortable.SortableSheetDragHandle className="-ml-1.5" />
+          <Sortable.SortableSheetDragHandle className="-ml-1.5 mr-1" />
         )}
         <Button
           className="flex-1 flex-row min-w-0 justify-start"
@@ -231,7 +234,7 @@ export const LinkAttachments = ({
           onPress={() => handleDeleteLink(item.id)}
           size="icon-xs"
           variant="ghost"
-          wrapperClassName="-mr-1.5"
+          wrapperClassName="ml-2 -mr-1.5"
         >
           <Icon icon={X} />
         </Button>

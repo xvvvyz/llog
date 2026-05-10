@@ -4,6 +4,7 @@ import type * as React from 'react';
 import {
   FileArchive,
   FileAudio,
+  File as FileBlank,
   FileCode,
   FileCss,
   FileCsv,
@@ -153,5 +154,5 @@ export const getFileTypeIcon = ({
 
   if (mimeIcon) return mimeIcon;
   const extension = getFileExtension(name);
-  return (extension ? EXTENSION_ICONS.get(extension) : undefined) ?? FileText;
+  return (extension ? EXTENSION_ICONS.get(extension) : undefined) ?? FileBlank;
 };
