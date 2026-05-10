@@ -119,8 +119,8 @@ export const LogTemplatesSheet = () => {
               )}
             />
           ) : (
-            <Text className="mx-auto max-w-56 py-6 text-center text-muted-foreground">
-              Create reusable starting points for new records.
+            <Text className="mx-auto max-w-56 text-center text-muted-foreground">
+              Create reusable templates for new records in this log.
             </Text>
           )}
         </SheetListScrollView>

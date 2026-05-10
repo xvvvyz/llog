@@ -82,6 +82,7 @@ export const LogTagsSheet = () => {
         canCreateTag={tagSheet.canCreateTag}
         canManageColor
         defaultTagColor={logColorIndex}
+        emptyStateText="Create reusable tags for logs."
         getSelected={tagSheet.getSelected}
         isLoading={isLoading}
         onClose={() => sheetManager.close('log-tags')}

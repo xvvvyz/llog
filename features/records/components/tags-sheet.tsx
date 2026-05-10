@@ -132,6 +132,7 @@ export const RecordTagsSheet = () => {
         canManageDefinitions={canManageDefinitions}
         canToggleTags={canManageRecordTags}
         defaultTagColor={logColorIndex}
+        emptyStateText="Create reusable tags for records in this log."
         getSelected={tagSheet.getSelected}
         isLoading={sheetIsLoading}
         onClose={() => sheetManager.close('record-tags')}

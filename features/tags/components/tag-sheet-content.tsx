@@ -19,6 +19,7 @@ export const TagSheetContent = ({
   canManageDefinitions = true,
   canToggleTags = true,
   defaultTagColor,
+  emptyStateText,
   getSelected,
   isLoading,
   onClose,
@@ -37,6 +38,7 @@ export const TagSheetContent = ({
   canManageDefinitions?: boolean;
   canToggleTags?: boolean;
   defaultTagColor: Color;
+  emptyStateText?: string;
   getSelected: (tagId: string) => boolean;
   isLoading: boolean;
   onClose: () => void;
@@ -74,7 +76,11 @@ export const TagSheetContent = ({
 
   const hasVisibleTags = visibleTags.length > 0;
   const showCreateTag = canCreateTag && !hasVisibleTags;
-  const showScrollArea = hasVisibleTags || showCreateTag;
+
+  const showEmptyState =
+    !isLoading && !rawQuery && !hasVisibleTags && !showCreateTag;
+
+  const showScrollArea = hasVisibleTags || showCreateTag || showEmptyState;
   const defaultTagColorValue = SPECTRUM[colorScheme][defaultTagColor].default;
 
   return (
@@ -137,6 +143,11 @@ export const TagSheetContent = ({
                 />
               )}
             />
+          )}
+          {showEmptyState && !!emptyStateText && (
+            <Text className="mx-auto max-w-56 text-center text-muted-foreground">
+              {emptyStateText}
+            </Text>
           )}
         </SheetListScrollView>
       )}
