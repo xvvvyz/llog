@@ -177,7 +177,7 @@ export const VisualPreview = ({
   return (
     <Animated.ScrollView
       ref={scrollViewRef}
-      contentContainerClassName="pb-2.5"
+      contentContainerClassName="p-3"
       horizontal
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
@@ -188,7 +188,7 @@ export const VisualPreview = ({
       )}
     >
       {canSort ? (
-        <View className="px-4">
+        <View>
           <Sortable.SortableGrid
             autoScrollDirection="horizontal"
             columnGap={12}
@@ -202,7 +202,7 @@ export const VisualPreview = ({
           />
         </View>
       ) : (
-        <View className="flex-row px-4 gap-3">
+        <View className="flex-row gap-3">
           {displayedVisualItems.map(renderItem)}
         </View>
       )}

@@ -1,7 +1,8 @@
+import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { ComposerForm } from '@/features/records/components/composer-form';
-import { RecordTagChips } from '@/features/records/components/record-tag-chips';
 import { useRecordComposerModel } from '@/features/records/hooks/use-composer-model';
+import { AddTagsInput } from '@/features/tags/components/add-tags-input';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
@@ -31,8 +32,10 @@ const TemplatePickerSheet = ({
 
     return templates.filter(
       (template) =>
-        template.name.toLowerCase().includes(normalizedQuery) ||
-        template.text.toLowerCase().includes(normalizedQuery)
+        template.text.toLowerCase().includes(normalizedQuery) ||
+        template.tags?.some((tag) =>
+          tag.name.toLowerCase().includes(normalizedQuery)
+        )
     );
   }, [normalizedQuery, templates]);
 
@@ -65,16 +68,14 @@ const TemplatePickerSheet = ({
               variant="secondary"
               wrapperClassName="w-full"
             >
-              <View className="flex-1 flex-row min-w-0 gap-4 items-baseline">
-                <Text className="font-normal text-foreground shrink-0">
-                  {template.name}
-                </Text>
+              <View className="flex-1 flex-row min-w-0 gap-3 items-center">
                 <Text
                   className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
                   numberOfLines={1}
                 >
                   {template.text}
                 </Text>
+                <TemplateTagSummary tags={template.tags} />
               </View>
               <Icon className="-mr-1 text-muted-foreground" icon={ArrowRight} />
             </Button>
@@ -119,7 +120,7 @@ export const RecordCreateSheet = () => {
 
   const handleSelectTemplate = React.useCallback(
     (template: LogTemplate) => {
-      composer.onApplyTemplate(template.text);
+      composer.onApplyTemplate(template);
       setIsTemplatePickerOpen(false);
     },
     [composer]
@@ -151,26 +152,26 @@ export const RecordCreateSheet = () => {
           submitLabel={composer.submitLabel}
           text={composer.currentText}
           toolbar={composer.toolbar}
+          inputAccessory={
+            composer.canOpenTags &&
+            hasSelectedTags && (
+              <AddTagsInput
+                onPress={composer.onOpenTags}
+                tags={composer.selectedTags}
+              />
+            )
+          }
           inputAction={
             composer.canOpenTemplates && (
               <Button
-                className="h-9 px-2.5 rounded-lg"
+                className="rounded-lg"
                 onPress={() => setIsTemplatePickerOpen(true)}
                 size="xs"
                 variant="ghost"
                 wrapperClassName="rounded-lg border-continuous"
               >
-                <Text className="mt-0.5">Use a template</Text>
+                <Text>Use a template</Text>
               </Button>
-            )
-          }
-          inputHeader={
-            hasSelectedTags && (
-              <RecordTagChips
-                chipClassName="light:bg-muted"
-                className="justify-start"
-                tags={composer.selectedTags}
-              />
             )
           }
         />

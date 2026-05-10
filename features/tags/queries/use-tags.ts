@@ -6,14 +6,20 @@ import { db } from '@/lib/db';
 import * as React from 'react';
 
 export const useTags = ({
+  enabled = true,
   logId,
   teamIds,
   type = 'log',
-}: { logId?: string; teamIds?: string[]; type?: TagType } = {}) => {
+}: {
+  enabled?: boolean;
+  logId?: string;
+  teamIds?: string[];
+  type?: TagType;
+} = {}) => {
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(
-    resolvedTeamIds.length
+    enabled && resolvedTeamIds.length
       ? {
           tags: {
             $: {
@@ -31,10 +37,10 @@ export const useTags = ({
 
   const queryKey = React.useMemo(
     () =>
-      resolvedTeamIds.length
+      enabled && resolvedTeamIds.length
         ? `${type}:${logId ?? ''}:${resolvedTeamIds.join(',')}`
         : undefined,
-    [logId, resolvedTeamIds, type]
+    [enabled, logId, resolvedTeamIds, type]
   );
 
   const hasCurrentResult = useCurrentQueryResult(queryKey, data);

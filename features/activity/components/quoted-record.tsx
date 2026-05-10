@@ -62,7 +62,7 @@ export const QuotedRecord = ({
         )}
       >
         {!!displayText && (
-          <View className="flex-row max-w-full min-w-0 p-3 gap-3">
+          <View className="flex-row max-w-full min-w-0 p-3 gap-2.5">
             <View
               className="w-1 border-continuous rounded-full bg-border self-stretch"
               style={

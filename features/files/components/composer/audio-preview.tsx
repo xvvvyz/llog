@@ -116,7 +116,7 @@ export const AudioPreview = ({
   if (!activeItem) return null;
 
   return (
-    <View className="px-4 shrink-0">
+    <View className="shrink-0">
       <View className="flex-row min-w-0 items-center">
         <View className="flex-1 min-w-0">
           {items.map((previewItem, index) => {
@@ -173,7 +173,7 @@ export const AudioPreview = ({
           })}
         </View>
         {hasMultipleItems && (
-          <View className="flex-row -mr-1.5 ml-4 gap-1 items-center shrink-0">
+          <View className="flex-row -mr-1.5 ml-3 gap-1 items-center shrink-0">
             <Button
               accessibilityLabel="Previous audio"
               className="w-8 px-0"

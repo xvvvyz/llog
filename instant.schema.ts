@@ -56,7 +56,6 @@ const schema = i.schema({
       type: i.string().indexed(),
     }),
     templates: i.entity({
-      name: i.string().indexed(),
       order: i.number().indexed(),
       teamId: i.string().indexed(),
       text: i.string(),
@@ -194,6 +193,10 @@ const schema = i.schema({
         required: true,
         onDelete: 'cascade',
       },
+    },
+    templatesTags: {
+      forward: { on: 'templates', has: 'many', label: 'tags' },
+      reverse: { on: 'tags', has: 'many', label: 'templates' },
     },
     recordsTags: {
       forward: { on: 'records', has: 'many', label: 'tags' },

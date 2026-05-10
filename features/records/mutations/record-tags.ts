@@ -72,3 +72,36 @@ export const createRecordTag = async ({
     db.tx.records[recordId].link({ tags: tagId }),
   ]);
 };
+
+export const createRecordTagDefinition = async ({
+  color,
+  id,
+  logId,
+  name,
+  order,
+  teamId,
+}: {
+  color: Color;
+  id?: string;
+  logId?: string;
+  name: string;
+  order?: number;
+  teamId?: string;
+}) => {
+  if (!logId || !teamId) return;
+  const trimmedName = name.trim();
+  if (!trimmedName) return;
+  const tagId = id ?? generateId();
+
+  return db.transact(
+    db.tx.tags[tagId]
+      .update({
+        color,
+        name: trimmedName,
+        order: order ?? -Date.now(),
+        teamId,
+        type: 'record',
+      })
+      .link({ logs: logId, team: teamId })
+  );
+};

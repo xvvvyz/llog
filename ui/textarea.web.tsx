@@ -10,6 +10,7 @@ export const Textarea = React.forwardRef<
     numberOfLines?: number;
     onChangeText?: (text: string) => void;
     onSubmitEditing?: () => void;
+    size?: 'default' | 'sm';
   }
 >(
   (
@@ -26,6 +27,7 @@ export const Textarea = React.forwardRef<
       onTouchStart,
       placeholder,
       readOnly,
+      size = 'default',
       value,
       ...props
     },
@@ -111,7 +113,8 @@ export const Textarea = React.forwardRef<
         readOnly={readOnly}
         value={localValue}
         className={cn(
-          'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border px-4 py-2.5 focus-visible:outline-hidden border-continuous',
+          'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border focus-visible:outline-hidden border-continuous',
+          size === 'sm' ? 'px-3 py-2' : 'px-4 py-2.5',
           className
         )}
         onKeyDown={(e) => {

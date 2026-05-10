@@ -5,6 +5,7 @@ import { reorderFiles } from '@/features/files/mutations/reorder-files';
 import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
+import type { LogTemplate } from '@/features/logs/types/template';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
@@ -21,6 +22,7 @@ import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-recor
 import { useRecordDraft } from '@/features/records/queries/use-record-draft';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
@@ -168,11 +170,26 @@ export const useRecordComposerModel = () => {
   );
 
   const handleApplyTemplate = React.useCallback(
-    (templateText: string) => {
+    (template: LogTemplate) => {
       if (latestTextRef.current.trim()) return;
-      handleChangeText(templateText);
+      const text = template.text;
+      setLatestText(text);
+
+      if (isEdit) {
+        if (recordId) {
+          void db.transact(db.tx.records[recordId].update({ text }));
+        }
+
+        return;
+      }
+
+      void updateRecordDraft({
+        id: recordId,
+        tagIds: template.tags?.map((tag) => tag.id) ?? [],
+        text,
+      });
     },
-    [handleChangeText, latestTextRef]
+    [isEdit, latestTextRef, recordId, setLatestText]
   );
 
   const handleUploadFile = React.useCallback(
@@ -218,10 +235,13 @@ export const useRecordComposerModel = () => {
 
   const handleOpenTags = React.useCallback(() => {
     if (!recordId) return;
+    blurActiveTextInput();
 
-    sheetManager.open('record-tags', recordId, undefined, {
-      logId: recordLogId,
-    });
+    requestAnimationFrame(() =>
+      sheetManager.open('record-tags', recordId, undefined, {
+        logId: recordLogId,
+      })
+    );
   }, [recordId, recordLogId, sheetManager]);
 
   const canOpenTags =
@@ -364,6 +384,7 @@ export const useRecordComposerModel = () => {
     hasContent: hasContent && (!isCopy || copyTargetLogIds.length > 0),
     canOpenTemplates:
       isCreate && templates.data.length > 0 && !currentText.trim(),
+    canOpenTags,
     isBusy,
     isOpen,
     isSubmitting,
@@ -380,6 +401,7 @@ export const useRecordComposerModel = () => {
     onDismiss: handleDismiss,
     onApplyTemplate: handleApplyTemplate,
     onSubmit: handleSubmit,
+    onOpenTags: handleOpenTags,
     onTextareaFocusChange: setIsTextareaFocused,
     selectedTags: record?.tags ?? [],
     submitLabel: isEdit ? 'Done' : 'Record',

@@ -19,32 +19,34 @@ const getNextTemplateOrder = async (logId: string) => {
 export const createTemplate = async ({
   id,
   logId,
-  name,
   order,
+  tagIds,
   teamId,
   text,
 }: {
   id?: string;
   logId?: string;
-  name: string;
   order?: number;
+  tagIds?: string[];
   teamId?: string;
   text: string;
 }) => {
   if (!logId || !teamId) return;
   const templateId = id ?? generateId();
-  const trimmedName = name.trim();
   const trimmedText = text.trim();
-  if (!trimmedName || !trimmedText) return;
+  if (!trimmedText) return;
+  const uniqueTagIds = [...new Set(tagIds ?? [])];
 
-  return db.transact(
+  return db.transact([
     db.tx.templates[templateId]
       .update({
-        name: trimmedName,
         order: order ?? (await getNextTemplateOrder(logId)),
         teamId,
         text: trimmedText,
       })
-      .link({ log: logId })
-  );
+      .link({ log: logId }),
+    ...uniqueTagIds.map((tagId) =>
+      db.tx.templates[templateId].link({ tags: tagId })
+    ),
+  ]);
 };

@@ -1,3 +1,4 @@
+import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { reorderTemplates } from '@/features/logs/mutations/reorder-templates';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
@@ -37,28 +38,22 @@ const TemplateRow = ({
         variant="link"
         wrapperClassName="self-stretch flex-1 mr-1 rounded-none border-continuous"
       >
-        <View className="flex-1 flex-row min-w-0 gap-4 items-baseline">
+        <View className="flex-1 flex-row min-w-0 gap-3 items-center">
           <Text
-            className="font-normal text-foreground shrink"
-            numberOfLines={1}
-          >
-            {template.name}
-          </Text>
-          <Text
-            className="flex-1 min-w-0 font-normal text-muted-foreground text-sm shrink"
+            className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
             numberOfLines={1}
           >
             {template.text}
           </Text>
+          <TemplateTagSummary tags={template.tags} />
         </View>
       </Button>
       <Button
-        accessibilityLabel={`Delete ${template.name}`}
-        className="rounded-none"
+        accessibilityLabel="Delete template"
         onPress={onDelete}
         size="icon-sm"
         variant="ghost"
-        wrapperClassName="rounded-none border-continuous"
+        wrapperClassName="border-continuous"
       >
         <Icon className="text-muted-foreground" icon={Trash} size={18} />
       </Button>

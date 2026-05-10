@@ -1,13 +1,16 @@
+import { TemplateTagsPickerSheet } from '@/features/logs/components/template-tags-picker-sheet';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import * as limits from '@/features/logs/lib/limits';
 import { createTemplate } from '@/features/logs/mutations/create-template';
 import { updateTemplate } from '@/features/logs/mutations/update-template';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useLogTemplate } from '@/features/logs/queries/use-templates';
+import { AddTagsInput } from '@/features/tags/components/add-tags-input';
+import { useTags } from '@/features/tags/queries/use-tags';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { blurActiveTextInput } from '@/lib/blur-active-text-input';
+import { resolveSpectrumColor } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
@@ -21,23 +24,40 @@ export const LogTemplateEditorSheet = () => {
   const logId = sheetManager.getContext('log-template-editor');
   const isEditingTemplate = !!templateId;
   const template = useLogTemplate({ enabled: isOpen, id: templateId });
-  const log = useLog({ id: isEditingTemplate ? undefined : logId });
+  const log = useLog({ id: logId ?? template.log?.id ?? undefined });
   const logColor = useLogColor({ id: logId ?? template.log?.id ?? undefined });
-  const [name, setName] = React.useState('');
   const [text, setText] = React.useState('');
+
+  const [selectedTagIds, setSelectedTagIds] = React.useState<Set<string>>(
+    () => new Set()
+  );
+
+  const [tagsOpen, setTagsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const resolvedLogId = logId ?? template.log?.id ?? undefined;
+  const teamId = isEditingTemplate ? template.teamId : log.teamId;
+  const logColorIndex = resolveSpectrumColor(log.color);
+
+  const tags = useTags({
+    enabled: isOpen,
+    logId: resolvedLogId,
+    teamIds: teamId ? [teamId] : [],
+    type: 'record',
+  });
+
+  const selectedTags = React.useMemo(
+    () => tags.data.filter((tag) => selectedTagIds.has(tag.id)),
+    [selectedTagIds, tags.data]
+  );
 
   const sheetSessionKey = isEditingTemplate
     ? `edit:${templateId}`
     : `create:${logId ?? ''}`;
 
-  const trimmedName = name.trim();
   const trimmedText = text.trim();
 
   const canSubmit =
-    !!trimmedName &&
     !!trimmedText &&
-    trimmedName.length <= limits.TEMPLATE_NAME_MAX_LENGTH &&
     trimmedText.length <= limits.TEMPLATE_TEXT_MAX_LENGTH &&
     (isEditingTemplate
       ? !!templateId && !!template.id
@@ -51,30 +71,36 @@ export const LogTemplateEditorSheet = () => {
     sheetManager.close('log-template-editor');
   }, [sheetManager]);
 
+  const openTags = React.useCallback(() => {
+    blurActiveTextInput();
+    requestAnimationFrame(() => setTagsOpen(true));
+  }, []);
+
   React.useEffect(() => {
     setIsSubmitting(false);
 
     if (!isOpen) {
-      setName('');
       setText('');
+      setSelectedTagIds(new Set());
+      setTagsOpen(false);
       return;
     }
 
     if (!isEditingTemplate) {
-      setName('');
       setText('');
+      setSelectedTagIds(new Set());
       return;
     }
 
     if (!template.id) return;
-    setName(template.name ?? '');
     setText(template.text ?? '');
+    setSelectedTagIds(new Set(template.tags?.map((tag) => tag.id) ?? []));
   }, [
     isEditingTemplate,
     isOpen,
     sheetSessionKey,
     template.id,
-    template.name,
+    template.tags,
     template.text,
   ]);
 
@@ -88,7 +114,7 @@ export const LogTemplateEditorSheet = () => {
 
         await updateTemplate({
           id: templateId,
-          name: trimmedName,
+          tagIds: [...selectedTagIds],
           text: trimmedText,
         });
 
@@ -98,7 +124,7 @@ export const LogTemplateEditorSheet = () => {
 
       await createTemplate({
         logId,
-        name: trimmedName,
+        tagIds: [...selectedTagIds],
         teamId: log.teamId,
         text: trimmedText,
       });
@@ -113,8 +139,8 @@ export const LogTemplateEditorSheet = () => {
     isEditingTemplate,
     log.teamId,
     logId,
+    selectedTagIds,
     templateId,
-    trimmedName,
     trimmedText,
   ]);
 
@@ -127,30 +153,28 @@ export const LogTemplateEditorSheet = () => {
       portalName="log-template-editor"
       topInset={64}
     >
-      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
-        <View>
-          <Label>Name</Label>
-          <Input
-            autoFocus
-            maxLength={limits.TEMPLATE_NAME_MAX_LENGTH}
-            onChangeText={setName}
-            placeholder="Daily update"
-            returnKeyType="next"
-            value={name}
-          />
+      <View className="mx-auto max-w-md w-full pb-4">
+        <View className="p-4 pb-4 md:p-4 sm:pt-8">
+          <View className="overflow-hidden border-border-secondary border-continuous rounded-xl bg-input border">
+            <AddTagsInput
+              disabled={!resolvedLogId || !teamId}
+              onPress={openTags}
+              tags={selectedTags}
+            />
+            <View className="border-border-secondary border-continuous border-t" />
+            <Textarea
+              autoFocus
+              className="border-0 rounded-none bg-transparent"
+              maxLength={limits.TEMPLATE_TEXT_MAX_LENGTH}
+              maxRows={5}
+              onChangeText={setText}
+              placeholder="Today I worked on..."
+              size="sm"
+              value={text}
+            />
+          </View>
         </View>
-        <View className="mt-4">
-          <Label>Content</Label>
-          <Textarea
-            maxLength={limits.TEMPLATE_TEXT_MAX_LENGTH}
-            maxRows={3}
-            minRows={3}
-            onChangeText={setText}
-            placeholder="Today I worked on…"
-            value={text}
-          />
-        </View>
-        <View className="flex-row mt-8 gap-4">
+        <View className="flex-row mx-8 gap-4 md:mx-8">
           <Button
             disabled={isSubmitting}
             onPress={close}
@@ -175,6 +199,15 @@ export const LogTemplateEditorSheet = () => {
           </Button>
         </View>
       </View>
+      <TemplateTagsPickerSheet
+        logColorIndex={logColorIndex}
+        logId={resolvedLogId}
+        onClose={() => setTagsOpen(false)}
+        onSelectedTagIdsChange={setSelectedTagIds}
+        open={tagsOpen}
+        selectedTagIds={selectedTagIds}
+        teamId={teamId}
+      />
     </Sheet>
   );
 };

@@ -48,7 +48,6 @@ const canManageFor = (teamIdRef: string) =>
 
 const tagColorValues = '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
 const logNameMaxLength = 32;
-const templateNameMaxLength = logNameMaxLength;
 const templateTextMaxLength = 10240;
 
 const rules = {
@@ -423,8 +422,6 @@ const rules = {
   },
   templates: {
     bind: [
-      'isValidName',
-      `newData.name != null && size(newData.name) > 0 && size(newData.name) <= ${templateNameMaxLength}`,
       'isValidText',
       `newData.text != null && size(newData.text) > 0 && size(newData.text) <= ${templateTextMaxLength}`,
       'isValidOrder',
@@ -432,21 +429,35 @@ const rules = {
       'isValidTeamId',
       "newData.teamId in data.ref('log.team.id')",
       'onlyModifiesTemplateDetails',
-      "request.modifiedFields.all(field, field in ['name', 'order', 'text'])",
+      "request.modifiedFields.all(field, field in ['order', 'text'])",
       'isTeamMember',
       "auth.id in data.ref('log.team.roles.user.id')",
       'isLogMember',
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
       canManageFor('log.team.id'),
+      'hasOnlyRecordTags',
+      "data.ref('tags.type').all(type, type == 'record')",
+      'hasSameTeamTags',
+      "data.ref('tags.teamId').all(teamId, teamId == data.teamId)",
+      'templateTagsBelongToTemplateLog',
+      "data.ref('tags.logs.id').all(logId, logId in data.ref('log.id'))",
     ],
     allow: {
       view: 'isTeamMember && (canManage || isLogMember)',
-      create:
-        'canManage && isValidName && isValidText && isValidOrder && isValidTeamId',
+      create: 'canManage && isValidText && isValidOrder && isValidTeamId',
       update:
-        'canManage && onlyModifiesTemplateDetails && isValidName && isValidText && isValidOrder && isValidTeamId',
+        'canManage && onlyModifiesTemplateDetails && isValidText && isValidOrder && isValidTeamId',
       delete: 'canManage',
+      link: {
+        tags: and(
+          'canManage',
+          'hasOnlyRecordTags',
+          'hasSameTeamTags',
+          'templateTagsBelongToTemplateLog'
+        ),
+      },
+      unlink: { tags: 'canManage' },
     },
   },
   logs: {

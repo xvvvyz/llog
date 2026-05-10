@@ -19,7 +19,7 @@ export const ComposerForm = ({
   logColor,
   filePreview,
   onChangeText,
-  inputHeader,
+  inputAccessory,
   inputAction,
   onSubmit,
   onTextareaFocusChange,
@@ -39,7 +39,7 @@ export const ComposerForm = ({
   isTextareaFocused: boolean;
   logColor?: string;
   filePreview: React.ReactNode;
-  inputHeader?: React.ReactNode;
+  inputAccessory?: React.ReactNode;
   inputAction?: React.ReactNode;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
@@ -54,7 +54,7 @@ export const ComposerForm = ({
   const shouldAutoFocus = Platform.OS !== 'web' && autoFocusOnNative;
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
   const isComposerCompact = isTextareaFocused && isVirtualKeyboardVisible;
-  const showInputHeader = !isComposerCompact && !!inputHeader;
+  const showInputAccessory = !isComposerCompact && !!inputAccessory;
   const showInputAction = !isComposerCompact && !!inputAction;
 
   React.useEffect(() => {
@@ -80,9 +80,9 @@ export const ComposerForm = ({
     <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
       <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
         <View className="overflow-hidden min-h-0 border-border-secondary border-continuous rounded-xl bg-input border shrink">
-          {showInputHeader && (
-            <View className="p-2.5 border-b border-border-secondary border-continuous">
-              {inputHeader}
+          {showInputAccessory && (
+            <View className="border-b border-border-secondary border-continuous">
+              {inputAccessory}
             </View>
           )}
           <View className="relative">
@@ -95,6 +95,7 @@ export const ComposerForm = ({
               onChangeText={onChangeText}
               onFocus={handleTextareaFocus}
               placeholder={placeholder}
+              size="sm"
               value={text}
               className={cn(
                 'border-0 bg-transparent',

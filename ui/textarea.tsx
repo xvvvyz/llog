@@ -5,6 +5,7 @@ import { StyleSheet, TextInput } from 'react-native';
 type TextareaProps = React.ComponentPropsWithoutRef<typeof TextInput> & {
   maxRows?: number;
   minRows?: number;
+  size?: 'default' | 'sm';
 };
 
 const NATIVE_TEXTAREA_LINE_HEIGHT = 20;
@@ -24,6 +25,7 @@ const Textarea = React.forwardRef<
       onChangeText,
       onContentSizeChange,
       scrollEnabled,
+      size = 'default',
       style,
       value,
       ...props
@@ -102,7 +104,8 @@ const Textarea = React.forwardRef<
         textAlignVertical="top"
         value={localValue}
         className={cn(
-          'border-border-secondary bg-input native:text-base text-foreground rounded-xl border px-4 py-2.5 text-base border-continuous',
+          'border-border-secondary bg-input native:text-base text-foreground rounded-xl border text-base border-continuous',
+          size === 'sm' ? 'px-3 py-2' : 'px-4 py-2.5',
           className
         )}
         {...props}

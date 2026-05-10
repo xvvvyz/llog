@@ -35,12 +35,12 @@ export const useComposerLinkAttachments = ({
   const linkPreview = React.useMemo(
     () => (
       <LinkAttachments
-        className={links.length === 1 ? '-my-1' : undefined}
+        className={links.length === 1 ? '-my-1.5' : undefined}
         links={links}
         onDeleteLink={handleDeleteLink}
         onReorderLinks={onReorderLinks}
         parent={parent}
-        triggerClassName="px-4"
+        triggerClassName="px-0"
       />
     ),
     [handleDeleteLink, links, onReorderLinks, parent]
