@@ -422,7 +422,8 @@ export const useAudioPlayerController = ({
   }, [onPause, player]);
 
   const togglePlayback = React.useCallback(() => {
-    isPlaying ? handlePause() : void handlePlay();
+    if (isPlaying) handlePause();
+    else void handlePlay();
   }, [handlePause, handlePlay, isPlaying]);
 
   const seekToTime = React.useCallback(

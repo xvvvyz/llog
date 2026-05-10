@@ -571,12 +571,7 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
   });
 
   if (!canDelete) throw new HTTPException(403, { message: 'Forbidden' });
-
-  const filesToDelete: Array<{
-    assetKey?: string | null;
-    uri?: string | null;
-  }> = [];
-
+  const filesToDelete: { assetKey?: string | null; uri?: string | null }[] = [];
   const activities = [...(record.activities ?? [])];
 
   for (const item of record.files ?? []) {

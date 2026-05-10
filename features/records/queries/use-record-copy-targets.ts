@@ -39,8 +39,11 @@ export const useRecordCopyTargets = ({
   const teamsQueryKey = enabled && auth.user ? auth.user.id : undefined;
   const hasCurrentTeamsResult = useCurrentQueryResult(teamsQueryKey, teamsData);
 
-  const teams =
-    teamsQueryKey && hasCurrentTeamsResult ? (teamsData?.teams ?? []) : [];
+  const teams = React.useMemo(
+    () =>
+      teamsQueryKey && hasCurrentTeamsResult ? (teamsData?.teams ?? []) : [],
+    [hasCurrentTeamsResult, teamsData?.teams, teamsQueryKey]
+  );
 
   const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
 
@@ -63,8 +66,10 @@ export const useRecordCopyTargets = ({
 
   const hasCurrentLogsResult = useCurrentQueryResult(logsQueryKey, logsData);
 
-  const queryLogs =
-    logsQueryKey && hasCurrentLogsResult ? (logsData?.logs ?? []) : [];
+  const queryLogs = React.useMemo(
+    () => (logsQueryKey && hasCurrentLogsResult ? (logsData?.logs ?? []) : []),
+    [hasCurrentLogsResult, logsData?.logs, logsQueryKey]
+  );
 
   const groups = React.useMemo<RecordCopyTargetGroup[]>(() => {
     const logsByTeamId = new Map<string, Omit<RecordCopyTargetLog, 'team'>[]>();

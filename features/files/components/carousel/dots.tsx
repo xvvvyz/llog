@@ -2,11 +2,12 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 import Animated, {
+  createAnimatedComponent,
   type SharedValue,
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
-const AnimatedDotView = Animated.createAnimatedComponent(View);
+const AnimatedDotView = createAnimatedComponent(View);
 const MAX_DOTS = 5;
 const DOT_SIZE = 8;
 const DOT_GAP = 8;

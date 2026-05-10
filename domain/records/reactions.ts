@@ -1,3 +1,7 @@
+import schema from '@/instant.schema';
+import type { db as clientDb } from '@/lib/db';
+import type { TransactionChunk } from '@instantdb/react-native';
+
 export const REACTION_EMOJIS = ['❤️', '🔥', '🎉', '👍', '👎'] as const;
 
 export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
@@ -11,7 +15,12 @@ export const isReactionEmoji = (value: unknown): value is ReactionEmoji =>
 export const normalizeReactionEmoji = (value: unknown): ReactionEmoji =>
   isReactionEmoji(value) ? value : DEFAULT_REACTION_EMOJI;
 
-type DbWithTransactions = { tx: any };
+type Transaction = TransactionChunk<
+  typeof schema,
+  keyof (typeof schema)['entities']
+>;
+
+type DbWithTransactions = { tx: typeof clientDb.tx };
 
 export const buildAddReactionTransactions = ({
   activityId,
@@ -35,11 +44,11 @@ export const buildAddReactionTransactions = ({
   recordId: string;
   replyId?: string;
   teamId: string;
-}): any[] => {
+}): Transaction[] => {
   const hasActivity = !!activityId && !!logId;
   const targetLink = replyId ? { reply: replyId } : { record: recordId };
 
-  const transactions = [
+  const transactions: Transaction[] = [
     db.tx.reactions[reactionId]
       .update({ emoji, teamId })
       .link({

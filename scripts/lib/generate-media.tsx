@@ -76,9 +76,7 @@ const writeCachedSourceHash = async ({
   await Bun.write(path, `${JSON.stringify({ sourceHash }, null, 2)}\n`);
 };
 
-const buildIco = (
-  images: Array<{ data: Uint8Array; size: number }>
-): Buffer => {
+const buildIco = (images: { data: Uint8Array; size: number }[]): Buffer => {
   const HEADER_SIZE = 6;
   const ENTRY_SIZE = 16;
   const headerBytes = HEADER_SIZE + ENTRY_SIZE * images.length;

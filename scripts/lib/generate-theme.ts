@@ -152,12 +152,12 @@ export function generateTheme() {
 
   log('Formatting generated theme files');
 
-  const prettierOutput = execSync(
-    'bunx prettier --write "theme/generated.css" "theme/spectrum.ts" "theme/ui.ts"',
+  const oxfmtOutput = execSync(
+    'bunx oxfmt --write "theme/generated.css" "theme/spectrum.ts" "theme/ui.ts"',
     { encoding: 'utf8' }
   );
 
-  for (const line of prettierOutput.split('\n')) {
+  for (const line of oxfmtOutput.split('\n')) {
     const trimmedLine = line.trim();
     if (trimmedLine.length > 0) progress(trimmedLine);
   }

@@ -1,4 +1,4 @@
-import { auth, db } from '@/api/middleware/db';
+import { auth, db, Db } from '@/api/middleware/db';
 import { removeMember } from '@/api/teams/member-actions';
 import * as permissions from '@/domain/teams/permissions';
 import { Role } from '@/domain/teams/role';
@@ -8,6 +8,8 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
+type TransactionInput = Parameters<Db['transact']>[0];
+type Transaction = Extract<TransactionInput, unknown[]>[number];
 
 app.patch(
   '/:teamId/members/:roleId',
@@ -59,7 +61,7 @@ app.patch(
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
-    const tx: any[] = [
+    const tx: Transaction[] = [
       c.var.db.tx.roles[roleId].update({
         key: `${nextRole}_${targetRole.userId}_${teamId}`,
         role: nextRole,

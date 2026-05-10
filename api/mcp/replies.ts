@@ -70,11 +70,9 @@ const getCallerDraftReply = async (
         }),
       },
     }) as Promise<{
-      replies?: Array<
-        McpReply & {
-          record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
-        }
-      >;
+      replies?: (McpReply & {
+        record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
+      })[];
     }>,
     getViewer(ctx.db, ctx.props.userId),
   ]);
@@ -115,11 +113,9 @@ const getVisibleReply = async (
         }),
       },
     }) as Promise<{
-      replies?: Array<
-        McpReply & {
-          record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
-        }
-      >;
+      replies?: (McpReply & {
+        record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
+      })[];
     }>,
     getViewer(ctx.db, ctx.props.userId),
   ]);
@@ -155,11 +151,9 @@ export const getReadableReply = async (
         }),
       },
     }) as Promise<{
-      replies?: Array<
-        McpReply & {
-          record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
-        }
-      >;
+      replies?: (McpReply & {
+        record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
+      })[];
     }>,
     getViewer(ctx.db, ctx.props.userId),
   ]);
@@ -262,7 +256,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     replyId,
     text,
   }: {
-    links?: Array<z.infer<typeof mcpSchemas.linkInputSchema>>;
+    links?: z.infer<typeof mcpSchemas.linkInputSchema>[];
     mode?: 'draft' | 'publish';
     recordId?: string;
     replyId?: string;

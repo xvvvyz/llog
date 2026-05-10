@@ -66,7 +66,7 @@ export const requireVisibleLog = async (ctx: McpContext, logId: string) => {
   const [{ logs }, viewer] = await Promise.all([
     ctx.db.query({
       logs: { $: { fields: ['id' as const], where: { id: logId } } },
-    }) as Promise<{ logs?: Array<{ id: string }> }>,
+    }) as Promise<{ logs?: { id: string }[] }>,
     getViewer(ctx.db, ctx.props.userId),
   ]);
 

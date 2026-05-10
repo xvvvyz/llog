@@ -60,11 +60,7 @@ app.delete('/:teamId', db({ asUser: true }), async (c) => {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 
-  const filesToDelete: Array<{
-    assetKey?: string | null;
-    uri?: string | null;
-  }> = [];
-
+  const filesToDelete: { assetKey?: string | null; uri?: string | null }[] = [];
   if (team.image) filesToDelete.push(team.image);
 
   for (const log of team.logs ?? []) {

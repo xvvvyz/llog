@@ -150,20 +150,20 @@ function suppressNextFollowUpClick() {
 
 const readTouchPoint = (event: ButtonTouchEvent): TouchPoint | null => {
   const nativeEvent = event.nativeEvent as {
-    changedTouches?: Array<{
+    changedTouches?: {
       clientX?: unknown;
       clientY?: unknown;
       pageX?: unknown;
       pageY?: unknown;
-    }>;
+    }[];
     pageX?: unknown;
     pageY?: unknown;
-    touches?: Array<{
+    touches?: {
       clientX?: unknown;
       clientY?: unknown;
       pageX?: unknown;
       pageY?: unknown;
-    }>;
+    }[];
   };
 
   const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent.touches?.[0];

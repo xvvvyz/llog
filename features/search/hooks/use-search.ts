@@ -91,7 +91,7 @@ const getSearchTags = (
   }) ?? [];
 
 const getMediaItems = (
-  files?: Array<{ tracks?: unknown; transcript?: unknown }> | null
+  files?: { tracks?: unknown; transcript?: unknown }[] | null
 ) => files?.flatMap((file) => mediaMetadata.getMediaSearchItems(file)) ?? [];
 
 const getMatchedTermsForField = (

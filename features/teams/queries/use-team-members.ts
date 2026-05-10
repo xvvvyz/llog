@@ -23,7 +23,11 @@ export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
   );
 
   const hasCurrentResult = useCurrentQueryResult(resolvedTeamId, data);
-  const members = resolvedTeamId && hasCurrentResult ? (data?.roles ?? []) : [];
+
+  const members = React.useMemo(
+    () => (resolvedTeamId && hasCurrentResult ? (data?.roles ?? []) : []),
+    [data?.roles, hasCurrentResult, resolvedTeamId]
+  );
 
   const sortedMembers = React.useMemo(
     () =>

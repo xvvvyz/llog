@@ -157,12 +157,7 @@ export type McpViewer = {
   profile?: McpProfile;
   roles: McpRole[];
   rolesByTeamId: Map<string, McpRole>;
-  teams: Array<{
-    id: string;
-    image?: McpFileFields;
-    name: string;
-    role: string;
-  }>;
+  teams: { id: string; image?: McpFileFields; name: string; role: string }[];
   visibleLogIds: Set<string>;
   visibleLogs: McpLog[];
 };

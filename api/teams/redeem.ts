@@ -1,4 +1,4 @@
-import { auth, db } from '@/api/middleware/db';
+import { auth, db, Db } from '@/api/middleware/db';
 import { memberJoinedActivity } from '@/api/teams/member-actions';
 import type { InviteLinkInfo } from '@/domain/invites/invite-link';
 import * as permissions from '@/domain/teams/permissions';
@@ -8,6 +8,8 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
+type TransactionInput = Parameters<Db['transact']>[0];
+type Transaction = Extract<TransactionInput, unknown[]>[number];
 
 app.get('/:token', db(), async (c) => {
   const { token } = c.req.param();
@@ -108,7 +110,7 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
       : logIds;
 
   if (existingRole) {
-    const tx: any[] = [];
+    const tx: Transaction[] = [];
 
     if (desiredRole && desiredRole !== existingRole.role) {
       tx.push(

@@ -205,7 +205,7 @@ export const DocumentAttachments = ({
       onDeleteFile?.(fileId);
       if (items.length <= 1) setIsSheetOpen(false);
     },
-    [items.length, onDeleteFile]
+    [items.length, onDeleteFile, setIsSheetOpen]
   );
 
   const handleDragEnd = React.useCallback(

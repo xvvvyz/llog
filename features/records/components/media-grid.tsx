@@ -64,7 +64,7 @@ export const MediaGrid = ({
         </Pressable>
       );
     },
-    [handlePress, timelineTargetWidth]
+    [handlePress, recordId, timelineTargetWidth]
   );
 
   if (!visualItems.length) return null;

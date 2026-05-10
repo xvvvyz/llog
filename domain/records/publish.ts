@@ -1,4 +1,13 @@
-type DbWithTransactions = { tx: any };
+import schema from '@/instant.schema';
+import type { db as clientDb } from '@/lib/db';
+import type { TransactionChunk } from '@instantdb/react-native';
+
+type Transaction = TransactionChunk<
+  typeof schema,
+  keyof (typeof schema)['entities']
+>;
+
+type DbWithTransactions = { tx: typeof clientDb.tx };
 const optionalDate = (date?: string) => (date ? { date } : {});
 
 export const buildRecordPublishedActivityTransaction = ({
@@ -42,7 +51,7 @@ export const buildPublishDraftRecordTransactions = ({
   recordId: string;
   text: string;
   teamId: string;
-}): any[] => [
+}): Transaction[] => [
   db.tx.records[recordId].update({
     ...optionalDate(contentDate),
     isDraft: false,
@@ -77,7 +86,7 @@ export const buildCreatePublishedRecordTransactions = ({
   recordId: string;
   text?: string | null;
   teamId: string;
-}): any[] => [
+}): Transaction[] => [
   db.tx.records[recordId]
     .update({
       date: now,
@@ -148,7 +157,7 @@ export const buildPublishDraftReplyTransactions = ({
   replyId: string;
   text: string;
   teamId: string;
-}): any[] => [
+}): Transaction[] => [
   db.tx.replies[replyId].update({
     ...optionalDate(contentDate),
     isDraft: false,
@@ -186,7 +195,7 @@ export const buildCreatePublishedReplyTransactions = ({
   replyId: string;
   text: string;
   teamId: string;
-}): any[] => [
+}): Transaction[] => [
   db.tx.replies[replyId]
     .update({ date: now, isDraft: false, teamId, text })
     .link({ author: authorId, record: recordId }),

@@ -501,6 +501,7 @@ export const Carousel = ({
       videoPlaybackRate,
       videoPlaybackIntentState,
       videoResetTokens,
+      videoHandleRef,
       zoomResetTokens,
     ]
   );

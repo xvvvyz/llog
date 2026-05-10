@@ -59,7 +59,7 @@ export const textResult = (
 
 export const table = (
   headers: string[],
-  rows: Array<Array<string | number | boolean | null | undefined>>
+  rows: (string | number | boolean | null | undefined)[][]
 ) => {
   if (!rows.length) return 'No results.';
 

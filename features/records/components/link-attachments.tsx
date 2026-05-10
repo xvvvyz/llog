@@ -131,7 +131,7 @@ export const LinkAttachments = ({
       onDeleteLink?.(linkId);
       if (items.length <= 1) setIsSheetOpen(false);
     },
-    [items.length, onDeleteLink]
+    [items.length, onDeleteLink, setIsSheetOpen]
   );
 
   const handleEditLink = React.useCallback(

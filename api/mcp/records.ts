@@ -112,7 +112,7 @@ const getPublishedReplyCount = async (ctx: McpContext, recordId: string) => {
         where: { isDraft: { $not: true }, record: recordId },
       },
     },
-  })) as { replies?: Array<{ id: string }> };
+  })) as { replies?: { id: string }[] };
 
   return replies?.length ?? 0;
 };
@@ -381,7 +381,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     recordId,
     text,
   }: {
-    links?: Array<z.infer<typeof mcpSchemas.linkInputSchema>>;
+    links?: z.infer<typeof mcpSchemas.linkInputSchema>[];
     logId?: string;
     mode?: 'draft' | 'publish';
     recordId?: string;

@@ -6,7 +6,7 @@ import { View } from 'react-native';
 const SPECTRUM_COLOR_ROWS = [
   [11, 0, 9, 8, 7, 6],
   [10, 1, 2, 3, 4, 5],
-] as const satisfies ReadonlyArray<ReadonlyArray<Color>>;
+] as const satisfies readonly (readonly Color[])[];
 
 export const SpectrumSwatchPicker = ({
   onValueChange,

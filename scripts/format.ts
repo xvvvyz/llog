@@ -124,7 +124,7 @@ function collectTargetFiles(targets: string[]) {
   );
 }
 
-function collectPrettierTargets(targets: string[]) {
+function collectOxfmtTargets(targets: string[]) {
   if (targets.length === 0) return ['.'];
 
   return targets
@@ -173,15 +173,15 @@ function parseSource(filePath: string, text: string): ParsedSource {
   };
 }
 
-function runPrettier(filePaths: string[]) {
+function runOxfmt(filePaths: string[]) {
   if (filePaths.length === 0) return;
-  const prettierBin = path.join(repoRoot, 'node_modules', '.bin', 'prettier');
+  const oxfmtBin = path.join(repoRoot, 'node_modules', '.bin', 'oxfmt');
 
-  if (!fs.existsSync(prettierBin)) {
-    throw new Error('Could not find local Prettier binary.');
+  if (!fs.existsSync(oxfmtBin)) {
+    throw new Error('Could not find local Oxfmt binary.');
   }
 
-  execFileSync(prettierBin, ['--write', ...filePaths], {
+  execFileSync(oxfmtBin, ['--write', ...filePaths], {
     cwd: repoRoot,
     stdio: 'inherit',
   });
@@ -1278,7 +1278,7 @@ function formatFile(filePath: string) {
 const options = parseOptions();
 
 try {
-  runPrettier(collectPrettierTargets(options.targets));
+  runOxfmt(collectOxfmtTargets(options.targets));
 
   const files = [...new Set(collectTargetFiles(options.targets))]
     .filter(isSourceFile)

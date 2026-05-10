@@ -533,7 +533,7 @@ const isShortAudio = (durationMs?: number | null) =>
   Number.isFinite(durationMs) &&
   durationMs <= SHORT_AUDIO_MAX_DURATION_MS;
 
-const mostCommon = (values: Array<string | undefined>) => {
+const mostCommon = (values: (string | undefined)[]) => {
   const counts = new Map<string, number>();
 
   for (const value of values) {

@@ -35,11 +35,7 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 
-  const filesToDelete: Array<{
-    assetKey?: string | null;
-    uri?: string | null;
-  }> = [];
-
+  const filesToDelete: { assetKey?: string | null; uri?: string | null }[] = [];
   const activities = [...(log.activities ?? [])];
 
   for (const record of log.records ?? []) {

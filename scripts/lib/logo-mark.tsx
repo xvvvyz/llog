@@ -18,7 +18,7 @@ const getContinuousRoundedSquarePath = ({
   const half = size / 2;
   const centerX = x + half;
   const centerY = y + half;
-  const points: Array<{ x: number; y: number }> = [];
+  const points: { x: number; y: number }[] = [];
 
   for (let index = 0; index < segments; index += 1) {
     const angle = (Math.PI * 2 * index) / segments;

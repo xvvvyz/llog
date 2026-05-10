@@ -53,11 +53,15 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   const hasCurrentPinnedResult = useCurrentQueryResult(logId, pinnedData);
   const hasCurrentPagedResult = useCurrentQueryResult(logId, pagedData);
 
-  const pinnedRecords =
-    logId && hasCurrentPinnedResult ? (pinnedData?.records ?? []) : [];
+  const pinnedRecords = React.useMemo(
+    () => (logId && hasCurrentPinnedResult ? (pinnedData?.records ?? []) : []),
+    [hasCurrentPinnedResult, logId, pinnedData?.records]
+  );
 
-  const pagedRecords =
-    logId && hasCurrentPagedResult ? (pagedData?.records ?? []) : [];
+  const pagedRecords = React.useMemo(
+    () => (logId && hasCurrentPagedResult ? (pagedData?.records ?? []) : []),
+    [hasCurrentPagedResult, logId, pagedData?.records]
+  );
 
   const hasPinnedResult = !logId || hasCurrentPinnedResult;
   const hasPagedResult = !logId || hasCurrentPagedResult;

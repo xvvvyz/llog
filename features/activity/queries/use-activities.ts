@@ -28,7 +28,7 @@ export const useActivities = () => {
       : null
   );
 
-  const roles = viewerData?.roles ?? [];
+  const roles = React.useMemo(() => viewerData?.roles ?? [], [viewerData]);
   const currentProfileId = viewerData?.profiles?.[0]?.id;
 
   const teamIds = React.useMemo(

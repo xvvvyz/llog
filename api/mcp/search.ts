@@ -38,7 +38,7 @@ const searchLogFields = (
   log?: {
     id: string;
     name: string;
-    tags?: Array<{ name: string; order?: number | null }>;
+    tags?: { name: string; order?: number | null }[];
   } | null
 ) =>
   log

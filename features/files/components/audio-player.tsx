@@ -96,9 +96,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
     onPreviousClip?.();
   }, [
-    controls.displayTime,
-    controls.isPlaying,
-    controls.seekTo,
+    controls,
     currentTrack,
     onPreviousClip,
     trackNavigation.previousIndex,
@@ -114,13 +112,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     }
 
     onNextClip?.();
-  }, [
-    controls.isPlaying,
-    controls.seekTo,
-    onNextClip,
-    trackNavigation.nextIndex,
-    tracks,
-  ]);
+  }, [controls, onNextClip, trackNavigation.nextIndex, tracks]);
 
   const hasMediaSessionPrevious =
     trackNavigation.canSeekPrevious || onPreviousClip != null;

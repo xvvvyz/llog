@@ -8,7 +8,8 @@ import { Spinner } from '@/ui/spinner';
 import HlsClient, { Events as HlsEvents } from 'hls.js';
 import * as React from 'react';
 
-const isHlsClientSupported = () => HlsClient['isSupported']();
+// oxlint-disable-next-line import/no-named-as-default-member
+const isHlsClientSupported = () => HlsClient.isSupported();
 
 const resetVideoSource = (video: HTMLVideoElement) => {
   video.removeAttribute('src');

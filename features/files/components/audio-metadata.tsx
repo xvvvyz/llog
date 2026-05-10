@@ -87,7 +87,6 @@ export const AudioTrackSkipControls = ({
   size?: 'compact' | 'default';
   tracks: readonly audioMetadata.AudioMetadataTrack[];
 }) => {
-  if (tracks.length <= 1) return null;
   const buttonSize = size === 'default' ? 'icon-sm' : 'icon-xs';
   const iconSize = size === 'default' ? 20 : 16;
 
@@ -99,6 +98,7 @@ export const AudioTrackSkipControls = ({
     handlePrevious,
   } = useAudioTrackNavigation(tracks, controls);
 
+  if (tracks.length <= 1) return null;
   if (!currentTrack) return null;
 
   return (

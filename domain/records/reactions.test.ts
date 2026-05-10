@@ -60,7 +60,7 @@ describe('buildAddReactionTransactions', () => {
       teamId: 'team-1',
     });
 
-    expect(transaction).toEqual({
+    expect(transaction as unknown).toEqual({
       entity: 'reactions',
       id: 'reaction-1',
       links: { author: 'profile-1', record: 'record-1' },
@@ -82,7 +82,7 @@ describe('buildAddReactionTransactions', () => {
       teamId: 'team-1',
     });
 
-    expect(transactions).toEqual([
+    expect(transactions as unknown).toEqual([
       {
         entity: 'reactions',
         id: 'reaction-1',
