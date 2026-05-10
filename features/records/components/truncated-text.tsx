@@ -1,10 +1,10 @@
-import { renderLinkifiedText } from '@/features/records/components/linkified-text';
-import { trimDisplayText } from '@/features/records/lib/trim-display-text';
+import { renderRecordMarkdownText } from '@/features/records/components/record-markdown-text';
 import { cn } from '@/lib/cn';
 import { Text } from '@/ui/text';
 import { type TextRef } from '@rn-primitives/types';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
+import * as trimDisplayText from '@/features/records/lib/trim-display-text';
 
 export const TruncatedText = ({
   className,
@@ -18,12 +18,28 @@ export const TruncatedText = ({
   text: string;
 }) => {
   const [expanded, setExpanded] = React.useState(false);
-  const [truncated, setTruncated] = React.useState(false);
+
+  const [truncation, setTruncation] = React.useState({
+    key: '',
+    truncated: false,
+  });
+
   const textRef = React.useRef<TextRef>(null);
-  const displayText = trimDisplayText(text);
+  const displayText = trimDisplayText.trimDisplayText(text);
+
+  const collapsedNumberOfLines =
+    trimDisplayText.getCollapsedPreviewNumberOfLines({
+      numberOfLines,
+      text: displayText,
+    });
+
+  const truncationKey = `${numberOfLines ?? 'all'}:${displayText}`;
+
+  const truncated =
+    truncation.key === truncationKey && truncation.truncated && !expanded;
 
   React.useEffect(() => {
-    if (!numberOfLines || expanded) return;
+    if (!collapsedNumberOfLines || expanded) return;
     const node = textRef.current;
     if (!node) return;
 
@@ -36,8 +52,11 @@ export const TruncatedText = ({
       return;
     }
 
-    if (node.scrollHeight > node.clientHeight) setTruncated(true);
-  }, [numberOfLines, expanded, displayText]);
+    setTruncation({
+      key: truncationKey,
+      truncated: node.scrollHeight > node.clientHeight,
+    });
+  }, [collapsedNumberOfLines, expanded, truncationKey]);
 
   if (!displayText) return null;
 
@@ -45,10 +64,10 @@ export const TruncatedText = ({
     <View>
       <Text
         ref={textRef}
-        className={cn('web:text-pretty', className)}
-        numberOfLines={expanded ? undefined : numberOfLines}
+        className={cn('web:whitespace-pre-wrap web:text-pretty', className)}
+        numberOfLines={expanded ? undefined : collapsedNumberOfLines}
       >
-        {renderLinkifiedText({ color, text: displayText })}
+        {renderRecordMarkdownText({ color, text: displayText })}
       </Text>
       {truncated && !expanded && (
         <Pressable className="px-4" onPress={() => setExpanded(true)}>

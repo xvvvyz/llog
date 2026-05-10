@@ -141,7 +141,7 @@ export default function Index() {
           renderItem={({ index, item }) => (
             <Entry
               logId={params.logId}
-              numberOfLines={5}
+              numberOfLines={7}
               record={item}
               className={cn(
                 'mt-4',
