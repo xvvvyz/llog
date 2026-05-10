@@ -15,9 +15,10 @@ const transact = mock((items: unknown) => {
 
 mock.module('@/lib/db', () => ({ db: { transact } }));
 let reorderItems!: (typeof import('@/lib/reorder-items'))['reorderItems'];
+let applyOrderedIds!: (typeof import('@/lib/reorder-items'))['applyOrderedIds'];
 
 beforeAll(async () => {
-  ({ reorderItems } = await import('@/lib/reorder-items'));
+  ({ applyOrderedIds, reorderItems } = await import('@/lib/reorder-items'));
 });
 
 beforeEach(() => {
@@ -54,6 +55,53 @@ describe('reorderItems', () => {
       { id: 'second', order: 0 },
       { id: 'first', order: 1 },
       { id: 'third', order: 2 },
+    ]);
+  });
+});
+
+describe('applyOrderedIds', () => {
+  const items = [
+    { id: 'first' },
+    { id: 'second' },
+    { id: 'third' },
+    { id: 'fourth' },
+  ];
+
+  test('applies a full ordered id list', () => {
+    expect(
+      applyOrderedIds(items, ['fourth', 'second', 'first', 'third']).map(
+        (item) => item.id
+      )
+    ).toEqual(['fourth', 'second', 'first', 'third']);
+  });
+
+  test('reorders dynamic subsets inside their existing slots', () => {
+    expect(
+      applyOrderedIds(items, ['fourth', 'second']).map((item) => item.id)
+    ).toEqual(['first', 'fourth', 'third', 'second']);
+  });
+
+  test('ignores unknown and duplicate ids', () => {
+    expect(
+      applyOrderedIds(items, ['missing', 'third', 'third', 'first']).map(
+        (item) => item.id
+      )
+    ).toEqual(['third', 'second', 'first', 'fourth']);
+  });
+
+  test('leaves the original list alone without enough known ids', () => {
+    expect(applyOrderedIds(items, ['missing']).map((item) => item.id)).toEqual([
+      'first',
+      'second',
+      'third',
+      'fourth',
+    ]);
+
+    expect(applyOrderedIds(items, ['third']).map((item) => item.id)).toEqual([
+      'first',
+      'second',
+      'third',
+      'fourth',
     ]);
   });
 });

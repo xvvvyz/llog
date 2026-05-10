@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { applyOrderedIds, reorderItems } from '@/lib/reorder-items';
 
 export const reorderTemplates = async ({
   logId,
@@ -15,17 +16,9 @@ export const reorderTemplates = async ({
     },
   });
 
-  const orderById = new Map(orderedIds.map((id, index) => [id, index]));
+  const orderedTemplates = applyOrderedIds(data.templates ?? [], orderedIds);
 
-  const orderedTemplates = [...(data.templates ?? [])].sort(
-    (a, b) =>
-      (orderById.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-      (orderById.get(b.id) ?? Number.MAX_SAFE_INTEGER)
-  );
-
-  return db.transact(
-    orderedTemplates.map((template, index) =>
-      db.tx.templates[template.id].update({ order: index })
-    )
+  return reorderItems(orderedTemplates, (id, order) =>
+    db.tx.templates[id].update({ order })
   );
 };

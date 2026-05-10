@@ -54,9 +54,17 @@ export const LogTagsSheet = () => {
       },
       [log.id, logColorIndex, teamId]
     ),
-    onReorder: React.useCallback((orderedTags: Tag[]) => {
-      void reorderTags({ orderedIds: orderedTags.map((tag) => tag.id) });
-    }, []),
+    onReorder: React.useCallback(
+      (orderedTags: Tag[]) => {
+        if (!teamId) return;
+
+        void reorderTags({
+          orderedIds: orderedTags.map((tag) => tag.id),
+          teamId,
+        });
+      },
+      [teamId]
+    ),
     onToggleTag: React.useCallback(
       async (tagId: string, selected: boolean) => {
         await toggleLogTag({ tagId, selected, logId: log.id });

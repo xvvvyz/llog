@@ -1,17 +1,16 @@
 import type { TagType } from '@/features/tags/types/tag';
 import { getActiveTeamId } from '@/features/teams/queries/get-active-team-id';
 import { db } from '@/lib/db';
-import type { SortableFlexDragEndParams } from 'react-native-sortables';
+import { applyOrderedIds, reorderItems } from '@/lib/reorder-items';
 
 export const reorderTags = async ({
   logId,
-  order,
   orderedIds,
   teamId,
   type = 'log',
-}: Partial<Pick<SortableFlexDragEndParams, 'order'>> & {
+}: {
   logId?: string;
-  orderedIds?: string[];
+  orderedIds: string[];
   teamId?: string;
   type?: TagType;
 }) => {
@@ -27,23 +26,9 @@ export const reorderTags = async ({
     },
   });
 
-  const orderedTags = orderedIds
-    ? (() => {
-        const orderById = new Map(
-          orderedIds.map((id, index) => [id, index] as const)
-        );
+  const orderedTags = applyOrderedIds(data.tags, orderedIds);
 
-        return [...data.tags].sort(
-          (a, b) =>
-            (orderById.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-            (orderById.get(b.id) ?? Number.MAX_SAFE_INTEGER)
-        );
-      })()
-    : order?.(data.tags);
-
-  if (!orderedTags) return;
-
-  return db.transact(
-    orderedTags.map((tag, index) => db.tx.tags[tag.id].update({ order: index }))
+  return reorderItems(orderedTags, (id, order) =>
+    db.tx.tags[id].update({ order })
   );
 };
