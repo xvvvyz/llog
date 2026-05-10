@@ -82,6 +82,7 @@ export default function Layout() {
       screenOptions={{
         animation: 'shift',
         headerShown: false,
+        lazy: false,
         tabBarItemStyle: {
           marginBottom: breakpoints.md ? 8 : 0,
           marginRight: 0,

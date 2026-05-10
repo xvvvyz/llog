@@ -11,19 +11,19 @@ import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useDeferredEmpty } from '@/hooks/use-deferred-empty';
+import { cn } from '@/lib/cn';
 import { createSearchIndex } from '@/lib/search';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';
 import { Icon } from '@/ui/icon';
-import { List } from '@/ui/list';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { id } from '@instantdb/react-native';
 import { router } from 'expo-router';
 import { Plus } from 'phosphor-react-native';
 import * as React from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 type LogSearchDocument = {
   id: string;
@@ -102,25 +102,6 @@ export default function Index() {
     isLoading: logs.isLoading && !hasLoadedRef.current,
   });
 
-  const renderItem = React.useCallback(
-    ({ item }: { item: (typeof filteredLogs)[number] }) => {
-      const color =
-        SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
-
-      return (
-        <ListItem
-          className="p-1.5 md:p-2"
-          color={color}
-          id={item.id}
-          name={item.name}
-          profiles={item.profiles ?? []}
-          tags={tagsByLogId.get(item.id) ?? []}
-        />
-      );
-    },
-    [colorScheme, tagsByLogId]
-  );
-
   return (
     <Page>
       <Header
@@ -153,27 +134,48 @@ export default function Index() {
       ) : queryState.showEmpty ? (
         <ListEmptyState canManage={canManage} />
       ) : (
-        <List
-          key={columns}
+        <ScrollView
+          className="flex-1"
           contentContainerClassName="p-2.5 pt-0 md:p-6"
-          data={filteredLogs}
-          estimatedItemSize={128}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
-          keyExtractor={(item) => item.id}
-          numColumns={columns}
-          renderItem={renderItem}
-          wrapperClassName="flex-1"
-          ListHeaderComponent={
-            !breakpoints.md && !hasNoLogs ? (
-              <ListActions
-                className="p-1.5 pt-4 md:p-2"
-                query={rawQuery}
-                setQuery={setRawQuery}
-              />
-            ) : null
-          }
-        />
+        >
+          {!breakpoints.md && !hasNoLogs && (
+            <ListActions
+              className="p-1.5 pt-4 md:p-2"
+              query={rawQuery}
+              setQuery={setRawQuery}
+            />
+          )}
+          <View className="flex-row flex-wrap">
+            {filteredLogs.map((item) => {
+              const color =
+                SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
+
+              return (
+                <View
+                  key={item.id}
+                  className={cn(
+                    columns === 2 && 'w-1/2',
+                    columns === 3 && 'w-1/3',
+                    columns === 4 && 'w-1/4',
+                    columns === 5 && 'w-1/5',
+                    columns === 6 && 'w-1/6'
+                  )}
+                >
+                  <ListItem
+                    className="p-1.5 md:p-2"
+                    color={color}
+                    id={item.id}
+                    name={item.name}
+                    profiles={item.profiles ?? []}
+                    tags={tagsByLogId.get(item.id) ?? []}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
       )}
     </Page>
   );
