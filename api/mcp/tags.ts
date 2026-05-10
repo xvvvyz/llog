@@ -7,7 +7,6 @@ import { requireVisibleLog } from '@/api/mcp/viewer';
 import { recordTagFields, recordTagLogsQuery } from '@/domain/tags/query';
 import { findExactTagId, searchTags } from '@/domain/tags/search-tags';
 import * as permissions from '@/domain/teams/permissions';
-import { resolveSpectrumColor } from '@/theme/spectrum';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
@@ -37,12 +36,7 @@ const getLogForRecordTags = async (ctx: McpContext, logId: string) => {
   const { logs } = (await ctx.db.query({
     logs: {
       $: {
-        fields: [
-          'color' as const,
-          'id' as const,
-          'name' as const,
-          'teamId' as const,
-        ],
+        fields: ['id' as const, 'name' as const, 'teamId' as const],
         where: { id: logId },
       },
     },
@@ -233,16 +227,11 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('Only team owners and admins can create record tags');
     }
 
-    const [recordTags, log] = await Promise.all([
-      listRecordTagsForLog({ ctx, logId: target.logId }),
-      getLogForRecordTags(ctx, target.logId),
-    ]);
-
+    const recordTags = await listRecordTagsForLog({ ctx, logId: target.logId });
     const existingTagId = findExactTagId(recordTags, trimmedName);
     const existingTag = recordTags.find((tag) => tag.id === existingTagId);
 
     const newTag = {
-      color: resolveSpectrumColor(log.color),
       id: id(),
       logs: [{ id: target.logId, name: record.log?.name ?? '' }],
       name: trimmedName,
@@ -258,7 +247,6 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
       await ctx.db.transact([
         ctx.db.tx.tags[tag.id]
           .update({
-            color: newTag.color,
             name: tag.name,
             order: newTag.order,
             teamId: target.teamId,

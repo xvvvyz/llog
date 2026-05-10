@@ -10,14 +10,21 @@ export const getViewer = async (db: Db, userId: string): Promise<McpViewer> => {
       profiles: {
         $: { where: { user: userId } },
         image: {},
-        logs: { tags: logTagsQuery, team: { $: { fields: ['id', 'name'] } } },
+        logs: {
+          $: { fields: ['id', 'name', 'teamId'] },
+          tags: logTagsQuery,
+          team: { $: { fields: ['id', 'name'] } },
+        },
         user: { $: { fields: ['id', 'email'] } },
       },
     }),
     db.query({
       roles: {
         $: { where: { userId } },
-        team: { image: {}, logs: { tags: logTagsQuery } },
+        team: {
+          image: {},
+          logs: { $: { fields: ['id', 'name', 'teamId'] }, tags: logTagsQuery },
+        },
       },
     }),
   ]);

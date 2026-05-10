@@ -38,7 +38,6 @@ const teamOutputSchema = z.object({
 });
 
 const logOutputSchema = z.object({
-  color: z.number().optional(),
   id: z.string(),
   name: z.string(),
   tags: z.array(tagOutputSchema).optional(),

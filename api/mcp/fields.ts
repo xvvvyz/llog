@@ -184,9 +184,7 @@ export const recordFields = (
   links: options?.includeLinks
     ? (record.links ?? []).map(linkFields)
     : undefined,
-  log: record.log
-    ? { color: record.log.color, id: record.log.id, name: record.log.name }
-    : undefined,
+  log: record.log ? { id: record.log.id, name: record.log.name } : undefined,
   reactionCount: record.reactions?.length,
   reactionCounts: options?.includeReactions
     ? reactionCounts(record.reactions)
@@ -222,7 +220,6 @@ export const replyFields = (
 });
 
 export const logFields = (log: mcpTypes.McpLog) => ({
-  color: log.color ?? undefined,
   id: log.id,
   name: log.name,
   tags: (log.tags ?? []).map((tag) => ({

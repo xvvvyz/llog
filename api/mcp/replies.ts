@@ -24,7 +24,7 @@ const replyDetailQuery = ({ include }: { include: Set<ReplyInclude> }) => ({
   reactions: recordQueries.countReactionQuery,
   record: {
     $: { fields: ['id' as const, 'teamId' as const] },
-    log: { $: { fields: ['color' as const, 'id' as const, 'name' as const] } },
+    log: { $: { fields: ['id' as const, 'name' as const] } },
     tags: recordTagsQuery,
   },
 });
@@ -109,9 +109,7 @@ const getVisibleReply = async (
           reactions: { author: {} },
           record: {
             $: { fields: ['id', 'teamId'] },
-            log: {
-              $: { fields: ['color' as const, 'id' as const, 'name' as const] },
-            },
+            log: { $: { fields: ['id' as const, 'name' as const] } },
             tags: recordTagsQuery,
           },
         }),
@@ -151,9 +149,7 @@ export const getReadableReply = async (
           reactions: { author: {} },
           record: {
             $: { fields: ['id', 'teamId'] },
-            log: {
-              $: { fields: ['color' as const, 'id' as const, 'name' as const] },
-            },
+            log: { $: { fields: ['id' as const, 'name' as const] } },
             tags: recordTagsQuery,
           },
         }),

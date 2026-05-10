@@ -10,7 +10,6 @@ import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
-const DEFAULT_LOG_COLOR = 7;
 const logsActionSchema = z.enum(['list', 'get', 'create']);
 
 const recordSummaryQuery = {
@@ -158,16 +157,11 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
 
     await ctx.db.transact(
       ctx.db.tx.logs[logId]
-        .update({
-          color: DEFAULT_LOG_COLOR,
-          name: trimmedName,
-          teamId: resolvedTeamId,
-        })
+        .update({ name: trimmedName, teamId: resolvedTeamId })
         .link({ team: resolvedTeamId })
     );
 
     const log = mcpFields.logFields({
-      color: DEFAULT_LOG_COLOR,
       id: logId,
       name: trimmedName,
       teamId: resolvedTeamId,

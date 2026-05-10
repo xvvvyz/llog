@@ -91,7 +91,6 @@ export type McpTeam = {
 };
 
 export type McpLog = {
-  color?: number | null;
   id: string;
   name: string;
   profiles?: McpProfile[];

@@ -81,7 +81,7 @@ const recordDetailQuery = ({
     author: recordQueries.summaryProfileQuery,
     files: includeFiles ? visibleFileQuery : recordQueries.countFileQuery,
     links: includeLinks ? {} : recordQueries.countLinkQuery,
-    log: { $: { fields: ['color' as const, 'id' as const, 'name' as const] } },
+    log: { $: { fields: ['id' as const, 'name' as const] } },
     reactions: recordQueries.countReactionQuery,
     replies: {
       $: {
