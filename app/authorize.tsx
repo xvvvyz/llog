@@ -126,7 +126,7 @@ export default function Authorize() {
           {isAuthorizing || isPending ? (
             <>
               <Spinner />
-              <Text>Authorizing...</Text>
+              <Text>Authorizing…</Text>
             </>
           ) : (
             <Text>Authorize</Text>

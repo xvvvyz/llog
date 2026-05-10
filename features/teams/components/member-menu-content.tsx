@@ -7,9 +7,15 @@ import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import { Check, SquaresFour, UserMinus } from 'phosphor-react-native';
 import * as React from 'react';
-import { View } from 'react-native';
+
+import {
+  Check,
+  Shield,
+  SquaresFour,
+  User,
+  UserMinus,
+} from 'phosphor-react-native';
 
 const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
@@ -17,6 +23,7 @@ const ROLE_LABELS: Record<string, string> = {
   [Role.Member]: 'Member',
 };
 
+const ROLE_ICONS = { [Role.Admin]: Shield, [Role.Member]: User } as const;
 const ASSIGNABLE_ROLES = [Role.Admin, Role.Member] as const;
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
@@ -94,6 +101,9 @@ export const TeamMemberMenuContent = ({
   return (
     <>
       {ASSIGNABLE_ROLES.map((role) => {
+        const isLoadingRole = loadingRole === role;
+        const isSelected = memberRole === role;
+
         const isDisabled =
           (role === Role.Admin && !canChangeToAdmin) ||
           (role === Role.Member && !canChangeToMember);
@@ -101,18 +111,21 @@ export const TeamMemberMenuContent = ({
         return (
           <Menu.Item
             key={role}
+            className="justify-between"
             closeOnPress={false}
             disabled={isDisabled || !!loadingRole}
             onPress={() => handleRolePress(role)}
           >
-            <View className="size-5 items-center justify-center">
-              {loadingRole === role ? (
-                <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
-              ) : (
-                memberRole === role && <Icon className="-mr-1" icon={Check} />
-              )}
-            </View>
-            <Text className={loadingRole === role ? 'text-placeholder' : ''}>
+            {isLoadingRole ? (
+              <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+            ) : isSelected ? (
+              <Icon icon={Check} />
+            ) : (
+              <Icon className="text-placeholder" icon={ROLE_ICONS[role]} />
+            )}
+            <Text
+              className={isLoadingRole ? 'flex-1 text-placeholder' : 'flex-1'}
+            >
               {ROLE_LABELS[role]}
             </Text>
           </Menu.Item>
@@ -127,7 +140,7 @@ export const TeamMemberMenuContent = ({
             onPress={() => onOpenMemberLogs(memberId)}
           >
             <Icon icon={SquaresFour} />
-            <Text>Manage logs</Text>
+            <Text>Logs</Text>
           </Menu.Item>
         </>
       )}

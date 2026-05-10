@@ -41,15 +41,15 @@ export const InviteQrSheet = () => {
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 items-center md:p-8">
         {url && (
-          <View className="w-full p-4 border-continuous rounded-xl bg-background dark:bg-foreground">
+          <View className="w-full p-4 border-border-secondary border-continuous rounded-xl bg-secondary border">
             <View
               className="aspect-square w-full items-center justify-center"
               onLayout={handleQrLayout}
             >
               {qrSize > 0 && (
                 <StyledQRCode
-                  backgroundColorClassName="bg-background dark:bg-foreground"
-                  colorClassName="text-foreground dark:text-background"
+                  backgroundColorClassName="bg-transparent"
+                  colorClassName="text-foreground"
                   size={qrSize}
                   value={url}
                 />

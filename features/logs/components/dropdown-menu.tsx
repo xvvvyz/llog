@@ -8,9 +8,10 @@ import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { NotePencil, Tag, Trash, Users } from 'phosphor-react-native';
 import * as React from 'react';
 import { ViewStyle } from 'react-native';
+
+import { NotePencil, Tag, Trash, Users } from 'phosphor-react-native';
 
 export const DropdownMenu = ({
   children,
@@ -56,18 +57,18 @@ export const DropdownMenu = ({
       >
         <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
           <Icon className="text-placeholder" icon={NotePencil} />
-          <Text>Edit</Text>
+          <Text>Details</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
           <Icon className="text-placeholder" icon={Tag} />
-          <Text>Tag</Text>
+          <Text>Tags</Text>
         </Menu.Item>
         <Menu.Separator />
         <LogDropdownItems id={id} />
         {hasMembers && (
           <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
             <Icon className="text-placeholder" icon={Users} />
-            <Text>Manage members</Text>
+            <Text>Members</Text>
           </Menu.Item>
         )}
         <Menu.Separator />

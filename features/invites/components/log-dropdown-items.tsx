@@ -80,7 +80,7 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
           <Icon className="text-placeholder" icon={copied ? Check : Copy} />
         )}
         <Text className={loadingAction === 'copy' ? 'text-placeholder' : ''}>
-          {copied ? 'Copied!' : 'Copy invite link'}
+          Invite link
         </Text>
       </Menu.Item>
       <Menu.Item closeOnPress={false} onPress={handleShowQr}>
@@ -92,7 +92,7 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
           <Icon className="text-placeholder" icon={QrCode} />
         )}
         <Text className={loadingAction === 'qr' ? 'text-placeholder' : ''}>
-          Show invite QR
+          Invite QR
         </Text>
       </Menu.Item>
     </>
