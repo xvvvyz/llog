@@ -23,7 +23,9 @@ export const Textarea = React.forwardRef<
       numberOfLines,
       onChangeText,
       onSubmitEditing,
+      onTouchStart,
       placeholder,
+      readOnly,
       value,
       ...props
     },
@@ -33,9 +35,26 @@ export const Textarea = React.forwardRef<
       value ?? defaultValue ?? ''
     );
 
+    const textareaRef =
+      React.useRef<React.ComponentRef<typeof TextareaAutosize>>(null);
+
     React.useEffect(() => {
       if (value !== undefined) setLocalValue(value);
     }, [value]);
+
+    const handleRef = React.useCallback(
+      (node: React.ComponentRef<typeof TextareaAutosize> | null) => {
+        textareaRef.current = node;
+
+        if (typeof ref === 'function') {
+          ref(node);
+          return;
+        }
+
+        if (ref) ref.current = node;
+      },
+      [ref]
+    );
 
     const handleChange = React.useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -46,15 +65,50 @@ export const Textarea = React.forwardRef<
       [onChangeText]
     );
 
+    const handleTouchStart = React.useCallback(
+      (event: React.TouchEvent<HTMLTextAreaElement>) => {
+        onTouchStart?.(event);
+        if (readOnly || props.disabled) return;
+        if (typeof document === 'undefined') return;
+        const activeElement = document.activeElement as HTMLElement | null;
+        const activeTagName = activeElement?.tagName;
+
+        const isTextEntryActive =
+          activeTagName === 'TEXTAREA' ||
+          activeTagName === 'INPUT' ||
+          !!activeElement?.isContentEditable;
+
+        if (!isTextEntryActive) return;
+
+        const textarea = textareaRef.current as unknown as {
+          focus?: (options?: { preventScroll?: boolean }) => void;
+        } | null;
+
+        if (!textarea?.focus || document.activeElement === textarea) return;
+
+        // Mobile web can briefly collapse the keyboard when moving focus
+        // between text fields. Only assist an existing text-entry handoff;
+        // fresh taps should use the browser's normal focus timing.
+        try {
+          textarea.focus({ preventScroll: true });
+        } catch {
+          textarea.focus();
+        }
+      },
+      [onTouchStart, props.disabled, readOnly]
+    );
+
     return (
       <TextareaAutosize
-        ref={ref}
+        ref={handleRef}
         autoFocus={autoFocus}
         maxLength={maxLength}
         maxRows={maxRows ?? numberOfLines}
         minRows={minRows}
         onChange={handleChange}
+        onTouchStart={handleTouchStart}
         placeholder={placeholder}
+        readOnly={readOnly}
         value={localValue}
         className={cn(
           'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border px-4 py-2.5 focus-visible:outline-hidden border-continuous',

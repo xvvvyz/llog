@@ -1,0 +1,5 @@
+export const LOG_NAME_MAX_LENGTH = 32;
+
+export const TEMPLATE_NAME_MAX_LENGTH = LOG_NAME_MAX_LENGTH;
+
+export const TEMPLATE_TEXT_MAX_LENGTH = 10240;

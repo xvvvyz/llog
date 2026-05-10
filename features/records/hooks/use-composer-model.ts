@@ -4,6 +4,7 @@ import type { PickedFileAsset } from '@/features/files/lib/picked';
 import { reorderFiles } from '@/features/files/mutations/reorder-files';
 import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import { useLogTemplates } from '@/features/logs/queries/use-templates';
 import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
@@ -54,6 +55,7 @@ export const useRecordComposerModel = () => {
   const context = sheetManager.getContext('record-create');
   const isEdit = context === 'edit';
   const isCopy = context === 'copy';
+  const isCreate = !isEdit && !isCopy;
   const isOpen = sheetManager.isOpen('record-create');
   const sheetId = sheetManager.getId('record-create');
 
@@ -71,6 +73,7 @@ export const useRecordComposerModel = () => {
   const editRecordId = isEdit ? sheetId : undefined;
   const copyDraftRecordId = isCopy ? sheetId : undefined;
   const draft = useRecordDraft({ ignoredDraftIds, logId });
+  const templates = useLogTemplates({ enabled: isCreate, logId });
 
   const { data: editData } = db.useQuery(
     editRecordId
@@ -162,6 +165,14 @@ export const useRecordComposerModel = () => {
       void updateRecordDraft({ id: recordId, text: nextText });
     },
     [isEdit, recordId, setLatestText]
+  );
+
+  const handleApplyTemplate = React.useCallback(
+    (templateText: string) => {
+      if (latestTextRef.current.trim()) return;
+      handleChangeText(templateText);
+    },
+    [handleChangeText, latestTextRef]
   );
 
   const handleUploadFile = React.useCallback(
@@ -351,6 +362,8 @@ export const useRecordComposerModel = () => {
   return {
     currentText,
     hasContent: hasContent && (!isCopy || copyTargetLogIds.length > 0),
+    canOpenTemplates:
+      isCreate && templates.data.length > 0 && !currentText.trim(),
     isBusy,
     isOpen,
     isSubmitting,
@@ -365,10 +378,12 @@ export const useRecordComposerModel = () => {
     filePreview,
     onChangeText: handleChangeText,
     onDismiss: handleDismiss,
+    onApplyTemplate: handleApplyTemplate,
     onSubmit: handleSubmit,
     onTextareaFocusChange: setIsTextareaFocused,
     selectedTags: record?.tags ?? [],
     submitLabel: isEdit ? 'Done' : 'Record',
+    templates: isCreate ? templates.data : [],
     toolbar,
   };
 };

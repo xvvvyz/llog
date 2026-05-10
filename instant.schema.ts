@@ -55,6 +55,12 @@ const schema = i.schema({
       teamId: i.string().indexed(),
       type: i.string().indexed(),
     }),
+    templates: i.entity({
+      name: i.string().indexed(),
+      order: i.number().indexed(),
+      teamId: i.string().indexed(),
+      text: i.string(),
+    }),
     logs: i.entity({
       color: i.number().indexed(),
       name: i.string().indexed(),
@@ -178,6 +184,16 @@ const schema = i.schema({
     logsTags: {
       forward: { on: 'logs', has: 'many', label: 'tags' },
       reverse: { on: 'tags', has: 'many', label: 'logs' },
+    },
+    logsTemplates: {
+      forward: { on: 'logs', has: 'many', label: 'templates' },
+      reverse: {
+        on: 'templates',
+        has: 'one',
+        label: 'log',
+        required: true,
+        onDelete: 'cascade',
+      },
     },
     recordsTags: {
       forward: { on: 'records', has: 'many', label: 'tags' },

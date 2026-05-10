@@ -1,6 +1,7 @@
 import { AttachmentSummary } from '@/features/records/components/attachment-summary';
 import { readTextareaBlurText } from '@/features/records/lib/read-textarea-blur-text';
 import { useVirtualKeyboardVisible } from '@/hooks/use-virtual-keyboard-visible';
+import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
@@ -9,6 +10,7 @@ import { Platform, View } from 'react-native';
 
 export const ComposerForm = ({
   attachmentCount,
+  autoFocusOnNative = true,
   hasContent,
   isBusy,
   isOpen,
@@ -18,6 +20,7 @@ export const ComposerForm = ({
   filePreview,
   onChangeText,
   inputHeader,
+  inputAction,
   onSubmit,
   onTextareaFocusChange,
   placeholder,
@@ -28,6 +31,7 @@ export const ComposerForm = ({
   toolbar,
 }: {
   attachmentCount: number;
+  autoFocusOnNative?: boolean;
   hasContent: boolean;
   isBusy: boolean;
   isOpen: boolean;
@@ -36,6 +40,7 @@ export const ComposerForm = ({
   logColor?: string;
   filePreview: React.ReactNode;
   inputHeader?: React.ReactNode;
+  inputAction?: React.ReactNode;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
   onTextareaFocusChange: (isFocused: boolean) => void;
@@ -46,10 +51,11 @@ export const ComposerForm = ({
   text: string;
   toolbar: React.ReactNode;
 }) => {
-  const shouldAutoFocus = Platform.OS !== 'web';
+  const shouldAutoFocus = Platform.OS !== 'web' && autoFocusOnNative;
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
   const isComposerCompact = isTextareaFocused && isVirtualKeyboardVisible;
   const showInputHeader = !isComposerCompact && !!inputHeader;
+  const showInputAction = !isComposerCompact && !!inputAction;
 
   React.useEffect(() => {
     if (isOpen) return;
@@ -79,18 +85,26 @@ export const ComposerForm = ({
               {inputHeader}
             </View>
           )}
-          <Textarea
-            autoFocus={shouldAutoFocus}
-            className="border-0 bg-transparent"
-            maxLength={10240}
-            maxRows={7}
-            minRows={1}
-            onBlur={handleTextareaBlur}
-            onChangeText={onChangeText}
-            onFocus={handleTextareaFocus}
-            placeholder={placeholder}
-            value={text}
-          />
+          <View className="relative">
+            <Textarea
+              autoFocus={shouldAutoFocus}
+              maxLength={10240}
+              maxRows={7}
+              minRows={1}
+              onBlur={handleTextareaBlur}
+              onChangeText={onChangeText}
+              onFocus={handleTextareaFocus}
+              placeholder={placeholder}
+              value={text}
+              className={cn(
+                'border-0 bg-transparent',
+                showInputAction && 'pr-32'
+              )}
+            />
+            {showInputAction && (
+              <View className="absolute right-1 top-1">{inputAction}</View>
+            )}
+          </View>
           {isComposerCompact ? null : filePreview}
         </View>
         <View className="flex-row px-4 gap-3 items-center shrink-0">

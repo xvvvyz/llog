@@ -47,6 +47,9 @@ const canManageFor = (teamIdRef: string) =>
   or(isOwnerFor(teamIdRef), isAdminFor(teamIdRef));
 
 const tagColorValues = '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
+const logNameMaxLength = 32;
+const templateNameMaxLength = logNameMaxLength;
+const templateTextMaxLength = 10240;
 
 const rules = {
   $default: { allow: { $default: `false` } },
@@ -418,10 +421,38 @@ const rules = {
       delete: 'canManage',
     },
   },
+  templates: {
+    bind: [
+      'isValidName',
+      `newData.name != null && size(newData.name) > 0 && size(newData.name) <= ${templateNameMaxLength}`,
+      'isValidText',
+      `newData.text != null && size(newData.text) > 0 && size(newData.text) <= ${templateTextMaxLength}`,
+      'isValidOrder',
+      'newData.order != null',
+      'isValidTeamId',
+      "newData.teamId in data.ref('log.team.id')",
+      'onlyModifiesTemplateDetails',
+      "request.modifiedFields.all(field, field in ['name', 'order', 'text'])",
+      'isTeamMember',
+      "auth.id in data.ref('log.team.roles.user.id')",
+      'isLogMember',
+      "auth.id in data.ref('log.profiles.user.id')",
+      'canManage',
+      canManageFor('log.team.id'),
+    ],
+    allow: {
+      view: 'isTeamMember && (canManage || isLogMember)',
+      create:
+        'canManage && isValidName && isValidText && isValidOrder && isValidTeamId',
+      update:
+        'canManage && onlyModifiesTemplateDetails && isValidName && isValidText && isValidOrder && isValidTeamId',
+      delete: 'canManage',
+    },
+  },
   logs: {
     bind: [
       'isValidName',
-      'newData.name == null || size(newData.name) <= 32',
+      `newData.name == null || size(newData.name) <= ${logNameMaxLength}`,
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'isLogMember',

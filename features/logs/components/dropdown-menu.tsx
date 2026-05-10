@@ -11,7 +11,13 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { ViewStyle } from 'react-native';
 
-import { NotePencil, Tag, Trash, Users } from 'phosphor-react-native';
+import {
+  NoteBlank,
+  NotePencil,
+  Tag,
+  Trash,
+  Users,
+} from 'phosphor-react-native';
 
 export const DropdownMenu = ({
   children,
@@ -62,6 +68,10 @@ export const DropdownMenu = ({
         <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
           <Icon className="text-placeholder" icon={Tag} />
           <Text>Tags</Text>
+        </Menu.Item>
+        <Menu.Item onPress={() => sheetManager.open('log-templates', id)}>
+          <Icon className="text-placeholder" icon={NoteBlank} />
+          <Text>Templates</Text>
         </Menu.Item>
         <Menu.Separator />
         <LogDropdownItems id={id} />

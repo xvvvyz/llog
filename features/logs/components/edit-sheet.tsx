@@ -1,3 +1,4 @@
+import { LOG_NAME_MAX_LENGTH } from '@/features/logs/lib/limits';
 import { updateLog } from '@/features/logs/mutations/update-log';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -28,7 +29,7 @@ export const LogEditSheet = () => {
         <View>
           <Label>Name</Label>
           <Input
-            maxLength={32}
+            maxLength={LOG_NAME_MAX_LENGTH}
             onChangeText={(name) => updateLog({ id: log.id!, name })}
             value={log.name}
           />

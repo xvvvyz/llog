@@ -8,6 +8,9 @@ import { LogDeleteSheet } from '@/features/logs/components/delete-sheet';
 import { LogEditSheet } from '@/features/logs/components/edit-sheet';
 import { LogMembersSheet } from '@/features/logs/components/members-sheet';
 import { LogTagsSheet } from '@/features/logs/components/tags-sheet';
+import { LogTemplateDeleteSheet } from '@/features/logs/components/template-delete-sheet';
+import { LogTemplateEditorSheet } from '@/features/logs/components/template-editor-sheet';
+import { LogTemplatesSheet } from '@/features/logs/components/templates-sheet';
 import { RecordAudioSheet } from '@/features/records/components/audio-sheet';
 import { RecordCopyToSheet } from '@/features/records/components/copy-to-sheet';
 import { RecordCreateSheet } from '@/features/records/components/create-sheet';
@@ -60,6 +63,9 @@ export default function Layout() {
       <InviteQrSheet />
       <LogEditSheet />
       <LogMembersSheet />
+      <LogTemplatesSheet />
+      <LogTemplateEditorSheet />
+      <LogTemplateDeleteSheet />
       <LogTagsSheet />
       <MemberLogsSheet />
       <MemberRemoveSheet />
