@@ -145,7 +145,7 @@ export const TagSheetContent = ({
             />
           )}
           {showEmptyState && !!emptyStateText && (
-            <Text className="mx-auto max-w-56 text-center text-muted-foreground">
+            <Text className="mx-auto max-w-56 text-center text-muted-foreground md:py-8">
               {emptyStateText}
             </Text>
           )}

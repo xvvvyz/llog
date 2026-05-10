@@ -81,7 +81,7 @@ const TemplatePickerSheet = ({
             </Button>
           ))
         ) : (
-          <Text className="mx-auto py-6 text-center text-muted-foreground">
+          <Text className="mx-auto text-center text-muted-foreground md:py-8">
             No templates found.
           </Text>
         )}

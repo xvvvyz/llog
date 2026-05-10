@@ -36,7 +36,7 @@ const TemplateRow = ({
         onPress={onOpen}
         size="sm"
         variant="link"
-        wrapperClassName="self-stretch flex-1 mr-1 rounded-none border-continuous"
+        wrapperClassName="self-stretch flex-1 mr-2.5 rounded-none border-continuous"
       >
         <View className="flex-1 flex-row min-w-0 gap-3 items-center">
           <Text
@@ -114,7 +114,7 @@ export const LogTemplatesSheet = () => {
               )}
             />
           ) : (
-            <Text className="mx-auto max-w-56 text-center text-muted-foreground">
+            <Text className="mx-auto max-w-56 text-center text-muted-foreground md:py-8">
               Create reusable templates for new records in this log.
             </Text>
           )}

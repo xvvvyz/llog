@@ -146,14 +146,13 @@ export const LogTemplateEditorSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       loading={isLoading}
       onDismiss={close}
       open={isOpen}
       portalName="log-template-editor"
       topInset={64}
     >
-      <View className="mx-auto max-w-md w-full pb-4">
+      <View className="mx-auto max-w-lg w-full pb-4">
         <View className="p-4 pb-4 md:p-4 sm:pt-8">
           <View className="overflow-hidden border-border-secondary border-continuous rounded-xl bg-input border">
             <AddTagsInput
