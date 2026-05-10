@@ -29,14 +29,28 @@ import {
 
 export const EmptyState = ({ logId }: { logId: string }) => {
   const log = useLog({ id: logId });
-  const { canManage } = useMyRole({ teamId: log.teamId });
+
+  const { canManage, isLoading: roleLoading } = useMyRole({
+    teamId: log.teamId,
+  });
+
   const colorScheme = useColorScheme();
   const logColor = useLogColor({ id: logId });
   const sheetManager = useSheetManager();
-  const { members } = useTeamMembers({ teamId: log.teamId });
-  const { invites } = useTeamInvites({ teamId: log.teamId });
+
+  const { members, isLoading: membersLoading } = useTeamMembers({
+    teamId: log.teamId,
+  });
+
+  const { invites, isLoading: invitesLoading } = useTeamInvites({
+    teamId: log.teamId,
+  });
+
   const { copy, copied } = useCopy();
   const hasMembers = members.some((member) => isMemberRole(member.role));
+
+  const actionsLoading =
+    roleLoading || (canManage && (membersLoading || invitesLoading));
 
   const [loadingAction, setLoadingAction] = React.useState<
     'copy' | 'qr' | null
@@ -90,7 +104,11 @@ export const EmptyState = ({ logId }: { logId: string }) => {
 
   return (
     <View className="flex-1 mx-auto max-w-[13rem] w-full px-3 py-8 gap-3 justify-center">
-      {canManage && (
+      {actionsLoading ? (
+        <View className="py-2 items-center">
+          <Spinner />
+        </View>
+      ) : canManage ? (
         <>
           <Button
             className="justify-between"
@@ -147,16 +165,18 @@ export const EmptyState = ({ logId }: { logId: string }) => {
             </Button>
           )}
         </>
+      ) : null}
+      {!actionsLoading && (
+        <Button
+          className="mt-3 active:opacity-90 web:hover:opacity-90"
+          onPress={() => sheetManager.open('record-create', logId)}
+          size="xs"
+          style={{ backgroundColor: logColor.default }}
+        >
+          <Icon className="-ml-0.5 text-white" icon={Plus} />
+          <Text className="text-white">Record</Text>
+        </Button>
       )}
-      <Button
-        className="mt-3 active:opacity-90 web:hover:opacity-90"
-        onPress={() => sheetManager.open('record-create', logId)}
-        size="xs"
-        style={{ backgroundColor: logColor.default }}
-      >
-        <Icon className="-ml-0.5 text-white" icon={Plus} />
-        <Text className="text-white">Record</Text>
-      </Button>
     </View>
   );
 };

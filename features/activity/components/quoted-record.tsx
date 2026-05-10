@@ -17,12 +17,14 @@ import * as React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 export const QuotedRecord = ({
+  canAnalyzeAudio,
   logColor,
   links = [],
   files,
   recordId,
   text,
 }: {
+  canAnalyzeAudio: boolean;
   links?: Link[];
   logColor: { lighter: string; default: string; darker: string } | null;
   files?: FileItem[];
@@ -133,7 +135,10 @@ export const QuotedRecord = ({
               !displayText && !visualItems.length && 'pt-3'
             )}
           >
-            <AudioPlaylist clips={audioMedia} />
+            <AudioPlaylist
+              canAnalyzeAudio={canAnalyzeAudio}
+              clips={audioMedia}
+            />
           </View>
         )}
         {(hasDocumentFiles || hasLinks) && (

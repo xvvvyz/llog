@@ -17,7 +17,9 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export default function Activity() {
-  const { activities, isLoading, loadNextPage } = useActivities();
+  const { activities, isLoading, loadNextPage, manageableTeamIds } =
+    useActivities();
+
   const profile = useProfile();
   const ui = useUi();
 
@@ -48,6 +50,7 @@ export default function Activity() {
   const renderItem = React.useCallback(
     ({ item, index }: { item: grouping.GroupedActivity; index: number }) => (
       <Item
+        canAnalyzeAudio={manageableTeamIds.has(item.activities[0].teamId)}
         group={item}
         className={cn(
           'mt-4',
@@ -56,7 +59,7 @@ export default function Activity() {
         )}
       />
     ),
-    [grouped.length]
+    [grouped.length, manageableTeamIds]
   );
 
   return (

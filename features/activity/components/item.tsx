@@ -23,9 +23,11 @@ const CATEGORY_LABELS: Record<GroupedActivity['type'], string> = {
 };
 
 export const Item = ({
+  canAnalyzeAudio,
   className,
   group,
 }: {
+  canAnalyzeAudio: boolean;
   className?: string;
   group: GroupedActivity;
 }) => {
@@ -152,6 +154,7 @@ export const Item = ({
       {showQuotedRecord && (
         <View className="px-4">
           <QuotedRecord
+            canAnalyzeAudio={canAnalyzeAudio}
             files={record.files}
             links={record.links}
             logColor={logColor}
@@ -161,7 +164,9 @@ export const Item = ({
         </View>
       )}
       <ItemContent group={group} logColor={logColor} />
-      {fileProps && <ItemFiles {...fileProps} />}
+      {fileProps && (
+        <ItemFiles canAnalyzeAudio={canAnalyzeAudio} {...fileProps} />
+      )}
     </Card>
   );
 

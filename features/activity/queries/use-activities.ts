@@ -180,6 +180,7 @@ export const useActivities = () => {
   return {
     activities,
     canLoadNextPage,
+    manageableTeamIds,
     isLoading:
       !hasViewerSnapshot ||
       viewerLoading ||

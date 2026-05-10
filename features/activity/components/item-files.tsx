@@ -14,10 +14,12 @@ import * as React from 'react';
 import { Pressable, View } from 'react-native';
 
 export const ItemFiles = ({
+  canAnalyzeAudio,
   files,
   links = [],
   recordId,
 }: {
+  canAnalyzeAudio: boolean;
   links?: Link[];
   files?: FileItem[];
   recordId?: string;
@@ -95,7 +97,7 @@ export const ItemFiles = ({
       )}
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
-          <AudioPlaylist clips={audioMedia} />
+          <AudioPlaylist canAnalyzeAudio={canAnalyzeAudio} clips={audioMedia} />
         </View>
       )}
       {(hasDocumentFiles || hasLinks) && (
