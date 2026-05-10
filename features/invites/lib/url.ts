@@ -1,4 +1,4 @@
-const INVITE_PATH_SEGMENT = 'invite';
+const INVITE_PATH_SEGMENT = 'join';
 const trimTrailingSlashes = (value: string) => value.trim().replace(/\/+$/, '');
 
 export const getInviteUrl = (

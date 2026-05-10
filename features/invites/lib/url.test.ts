@@ -17,13 +17,13 @@ describe('getInviteUrl', () => {
     process.env.EXPO_PUBLIC_APP_URL = 'https://llog.example';
 
     expect(url.getInviteUrl('invite-token')).toBe(
-      'https://llog.example/invite/invite-token'
+      'https://llog.example/join/invite-token'
     );
   });
 
   it('normalizes trailing slashes and encodes the token as a path segment', () => {
     expect(url.getInviteUrl('team/a b', ' https://llog.example/// ')).toBe(
-      'https://llog.example/invite/team%2Fa%20b'
+      'https://llog.example/join/team%2Fa%20b'
     );
   });
 

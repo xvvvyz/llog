@@ -16,7 +16,7 @@ import {
   NotePencil,
   Tag,
   Trash,
-  Users,
+  UsersThree,
 } from 'phosphor-react-native';
 
 export const DropdownMenu = ({
@@ -77,7 +77,7 @@ export const DropdownMenu = ({
         <LogDropdownItems id={id} />
         {hasMembers && (
           <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
-            <Icon className="text-placeholder" icon={Users} />
+            <Icon className="text-placeholder" icon={UsersThree} />
             <Text>Members</Text>
           </Menu.Item>
         )}

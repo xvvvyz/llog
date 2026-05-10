@@ -116,7 +116,7 @@ export default function InviteLink() {
       [storage.PENDING_INVITE_AUTO_JOIN_KEY, token],
     ]);
 
-    router.replace(getSignInHref(`/invite/${encodeURIComponent(token)}`));
+    router.replace(getSignInHref(`/join/${encodeURIComponent(token)}`));
   }, [token]);
 
   const isExistingTeamMember =

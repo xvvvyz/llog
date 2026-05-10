@@ -328,7 +328,7 @@ export default function Account() {
                       Double tap reaction
                     </Text>
                     <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
-                      Applies to the right of reaction buttons
+                      Double tap beside reactions to use this
                     </Text>
                   </View>
                   <Icon

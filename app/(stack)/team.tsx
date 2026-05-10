@@ -1,7 +1,7 @@
 import * as permissions from '@/domain/teams/permissions';
 import { Role } from '@/domain/teams/role';
 import { useUi } from '@/features/account/queries/use-ui';
-import { getInviteUrl } from '@/features/invites/lib/url';
+import { openInviteSheet } from '@/features/invites/lib/sheet';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLogs } from '@/features/logs/queries/use-logs';
@@ -15,7 +15,6 @@ import { useTeam } from '@/features/teams/queries/use-team';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import { UI } from '@/theme/ui';
@@ -37,14 +36,12 @@ import * as React from 'react';
 import { Keyboard, Pressable, View } from 'react-native';
 
 import {
-  Check,
-  Copy,
   DotsThreeVertical,
   LinkBreak,
-  QrCode,
   SignOut,
   Trash,
   UploadSimple,
+  UserPlus,
 } from 'phosphor-react-native';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -54,7 +51,6 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function Team() {
-  const [copiedRole, setCopiedRole] = React.useState<string | null>(null);
   const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
 
   const [pendingMemberLogsRoleId, setPendingMemberLogsRoleId] = React.useState<
@@ -69,7 +65,6 @@ export default function Team() {
   const { activeTeamId } = useUi();
   const myRole = useMyRole();
   const { canDeleteTeam, canManage } = myRole;
-  const { copy } = useCopy();
   const { invites } = useTeamInvites();
   const logs = useLogs();
   const { members } = useTeamMembers();
@@ -125,59 +120,44 @@ export default function Team() {
 
   const getOrCreateAdminLink = React.useCallback(async () => {
     const existing = invites.find((l) => l.role === Role.Admin);
-    if (existing) return existing.token;
+    if (existing) return existing;
     if (!activeTeamId) return null;
 
-    const { token } = await createInviteLink({
+    const invite = await createInviteLink({
       teamId: activeTeamId,
       role: Role.Admin,
     });
 
-    return token;
+    return { ...invite, teamId: activeTeamId };
   }, [invites, activeTeamId]);
 
-  const getOrCreateAdminInviteUrl = React.useCallback(async () => {
-    const token = await getOrCreateAdminLink();
-    if (!token) throw new Error('Failed to create invite link');
-    return getInviteUrl(token);
+  const getOrCreateAdminInvite = React.useCallback(async () => {
+    const invite = await getOrCreateAdminLink();
+
+    if (!invite?.id || !invite.token || !invite.teamId) {
+      throw new Error('Failed to create invite link');
+    }
+
+    return { id: invite.id, teamId: invite.teamId, token: invite.token };
   }, [getOrCreateAdminLink]);
 
-  const handleCopyLink = React.useCallback(
+  const handleInvite = React.useCallback(
     async (role: string) => {
       if (role === Role.Member) {
-        sheetManager.open('invite-logs', 'copy');
+        sheetManager.open('invite-logs');
         return;
       }
 
-      setLoadingAction(`copy-${role}`);
+      setLoadingAction(`invite-${role}`);
 
       try {
-        await copy(getOrCreateAdminInviteUrl);
-        setCopiedRole(role);
-        setTimeout(() => setCopiedRole(null), 2000);
+        const invite = await getOrCreateAdminInvite();
+        openInviteSheet(sheetManager, invite);
       } finally {
         setLoadingAction(null);
       }
     },
-    [copy, getOrCreateAdminInviteUrl, sheetManager]
-  );
-
-  const handleShowQr = React.useCallback(
-    async (role: string) => {
-      if (role === Role.Member) {
-        sheetManager.open('invite-logs', 'qr');
-        return;
-      }
-
-      setLoadingAction(`qr-${role}`);
-
-      try {
-        sheetManager.open('invite-qr', await getOrCreateAdminInviteUrl());
-      } finally {
-        setLoadingAction(null);
-      }
-    },
-    [getOrCreateAdminInviteUrl, sheetManager]
+    [getOrCreateAdminInvite, sheetManager]
   );
 
   const handleDelete = React.useCallback(
@@ -296,11 +276,11 @@ export default function Team() {
                       </View>
                       <View className="flex-row -mr-[7px] gap-1 items-center">
                         <Button
-                          onPress={() => handleCopyLink(role)}
+                          onPress={() => handleInvite(role)}
                           size="icon-xs"
                           variant="ghost"
                         >
-                          {loadingAction === `copy-${role}` ? (
+                          {loadingAction === `invite-${role}` ? (
                             <Spinner
                               color={UI[colorScheme].mutedForeground}
                               size="xs"
@@ -308,22 +288,8 @@ export default function Team() {
                           ) : (
                             <Icon
                               className="text-placeholder"
-                              icon={copiedRole === role ? Check : Copy}
+                              icon={UserPlus}
                             />
-                          )}
-                        </Button>
-                        <Button
-                          onPress={() => handleShowQr(role)}
-                          size="icon-xs"
-                          variant="ghost"
-                        >
-                          {loadingAction === `qr-${role}` ? (
-                            <Spinner
-                              color={UI[colorScheme].mutedForeground}
-                              size="xs"
-                            />
-                          ) : (
-                            <Icon className="text-placeholder" icon={QrCode} />
                           )}
                         </Button>
                         {invites.some((l) => l.role === role) && (

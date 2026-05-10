@@ -60,7 +60,7 @@ app.post(
       });
 
     await c.var.db.transact(linkTx);
-    return c.json({ token });
+    return c.json({ id: linkId, token });
   }
 );
 

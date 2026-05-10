@@ -13,8 +13,6 @@ import { View } from 'react-native';
 type InviteLog = { color?: number | null; id: string; name: string };
 
 export const LogsSheetContent = ({
-  action,
-  copied,
   isLoading,
   logs,
   onConfirm,
@@ -23,8 +21,6 @@ export const LogsSheetContent = ({
   selectedLogIds,
   setQuery,
 }: {
-  action?: 'copy' | 'qr';
-  copied: boolean;
   isLoading: boolean;
   logs: InviteLog[];
   onConfirm: () => void;
@@ -35,12 +31,6 @@ export const LogsSheetContent = ({
 }) => {
   const colorScheme = useColorScheme();
   const visibleLogs = useNameSearch(logs, query);
-
-  const buttonLabel = copied
-    ? 'Copied!'
-    : action === 'qr'
-      ? 'Show QR code'
-      : 'Copy link';
 
   return (
     <>
@@ -85,7 +75,7 @@ export const LogsSheetContent = ({
           size="sm"
           wrapperClassName="shrink-0"
         >
-          {isLoading ? <Spinner /> : <Text>{buttonLabel}</Text>}
+          {isLoading ? <Spinner /> : <Text>Next</Text>}
         </Button>
       </SheetFooter>
     </>

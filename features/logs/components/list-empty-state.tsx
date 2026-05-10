@@ -17,6 +17,7 @@ export const ListEmptyState = ({ canManage }: { canManage?: boolean }) => {
             Track anything in your world.
           </Text>
           <Button
+            size="xs"
             wrapperClassName="mt-4"
             onPress={() => {
               const logId = id();

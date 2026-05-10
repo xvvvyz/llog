@@ -74,7 +74,7 @@ export const useEntryMenuState = ({
     canDuplicateRecord && !!logId && copyTargets.logs.length > 0;
 
   const canPin = !replyId && myRole.canPinRecords;
-  const hasActionsAboveDelete = canEdit || canTag || canDuplicate || canPin;
+  const hasActionsAboveDelete = canEdit || canTag || canPin;
   const hasMenu = canDelete || canDuplicate || canEdit || canPin || canTag;
 
   return {
@@ -213,39 +213,41 @@ const EntryMenuDropdownContent = ({
             <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
           </Menu.Item>
         )}
-        {canDuplicate && (
-          <Menu.Item
-            closeOnPress={copyTargetLogs.length !== 1}
-            disabled={isDuplicating}
-            onPress={() => void duplicateRecord()}
-          >
-            {isDuplicating ? (
-              <Spinner className="text-placeholder" size="xs" />
-            ) : (
-              <Icon className="text-placeholder" icon={StackSimple} />
-            )}
-            <Text>Duplicate</Text>
-          </Menu.Item>
-        )}
-        {canDelete && (
+        {(canDuplicate || canDelete) && (
           <React.Fragment>
             {hasActionsAboveDelete && <Menu.Separator />}
-            <Menu.Item
-              onPress={() => {
-                if (replyId) {
-                  sheetManager.open('reply-delete', replyId, recordId);
-                } else {
-                  sheetManager.open(
-                    'record-delete',
-                    recordId,
-                    isDetail ? `detail:${logId ?? ''}` : undefined
-                  );
-                }
-              }}
-            >
-              <Icon className="text-destructive" icon={Trash} />
-              <Text className="text-destructive">Delete</Text>
-            </Menu.Item>
+            {canDuplicate && (
+              <Menu.Item
+                closeOnPress={copyTargetLogs.length !== 1}
+                disabled={isDuplicating}
+                onPress={() => void duplicateRecord()}
+              >
+                {isDuplicating ? (
+                  <Spinner className="text-placeholder" size="xs" />
+                ) : (
+                  <Icon className="text-placeholder" icon={StackSimple} />
+                )}
+                <Text>Duplicate</Text>
+              </Menu.Item>
+            )}
+            {canDelete && (
+              <Menu.Item
+                onPress={() => {
+                  if (replyId) {
+                    sheetManager.open('reply-delete', replyId, recordId);
+                  } else {
+                    sheetManager.open(
+                      'record-delete',
+                      recordId,
+                      isDetail ? `detail:${logId ?? ''}` : undefined
+                    );
+                  }
+                }}
+              >
+                <Icon className="text-destructive" icon={Trash} />
+                <Text className="text-destructive">Delete</Text>
+              </Menu.Item>
+            )}
           </React.Fragment>
         )}
       </Menu.Content>

@@ -2,8 +2,9 @@ import { McpSheet } from '@/features/account/components/mcp-sheet';
 import { WebPushIosSetupSheet } from '@/features/account/components/web-push-ios-setup-sheet';
 import { useSignInHref } from '@/features/account/lib/auth-redirect';
 import { InviteDeleteSheet } from '@/features/invites/components/delete-sheet';
+import { InviteSheet } from '@/features/invites/components/invite-sheet';
+import { InviteLinkDeleteSheet } from '@/features/invites/components/link-delete-sheet';
 import { InviteLogsSheet } from '@/features/invites/components/logs-sheet';
-import { InviteQrSheet } from '@/features/invites/components/qr-sheet';
 import { LogDeleteSheet } from '@/features/logs/components/delete-sheet';
 import { LogEditSheet } from '@/features/logs/components/edit-sheet';
 import { LogMembersSheet } from '@/features/logs/components/members-sheet';
@@ -60,7 +61,8 @@ export default function Layout() {
       <ReplyDeleteSheet />
       <InviteDeleteSheet />
       <InviteLogsSheet />
-      <InviteQrSheet />
+      <InviteSheet />
+      <InviteLinkDeleteSheet />
       <LogEditSheet />
       <LogMembersSheet />
       <LogTemplatesSheet />

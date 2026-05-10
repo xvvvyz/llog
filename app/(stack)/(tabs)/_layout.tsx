@@ -59,7 +59,7 @@ export default function Layout() {
 
       if (token) {
         await AsyncStorage.removeItem(PENDING_INVITE_KEY);
-        if (!cancelled) router.replace(`/invite/${token}`);
+        if (!cancelled) router.replace(`/join/${token}`);
         return;
       }
 

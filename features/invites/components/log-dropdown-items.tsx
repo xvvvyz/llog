@@ -5,14 +5,13 @@ import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { UI } from '@/theme/ui';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import { Check, Copy, QrCode } from 'phosphor-react-native';
+import { UserPlus } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -22,79 +21,63 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
   const log = useLog({ id });
   const { invites } = useTeamInvites({ teamId: log.teamId });
   const { onOpenChange } = Menu.useContext();
-  const { copy, copied } = useCopy();
-
-  const [loadingAction, setLoadingAction] = React.useState<
-    'copy' | 'qr' | null
-  >(null);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const getOrCreateLink = React.useCallback(async () => {
     if (!log.teamId || !id) return null;
     const existing = findMemberInviteByLogs(invites, [id]);
-    if (existing) return existing.token;
+    if (existing) return existing;
 
-    const { token } = await createInviteLink({
+    const invite = await createInviteLink({
       teamId: log.teamId,
       role: Role.Member,
       logIds: [id],
     });
 
-    return token;
+    return { ...invite, teamId: log.teamId };
   }, [id, invites, log.teamId]);
 
-  const getOrCreateInviteUrl = React.useCallback(async () => {
-    const token = await getOrCreateLink();
-    if (!token) throw new Error('Failed to create invite link');
-    return getInviteUrl(token);
+  const getOrCreateInvite = React.useCallback(async () => {
+    const invite = await getOrCreateLink();
+
+    if (!invite?.id || !invite.token || !invite.teamId) {
+      throw new Error('Failed to create invite link');
+    }
+
+    return {
+      id: invite.id,
+      teamId: invite.teamId,
+      url: getInviteUrl(invite.token),
+    };
   }, [getOrCreateLink]);
 
-  const handleCopyLink = React.useCallback(async () => {
-    setLoadingAction('copy');
+  const handleInvite = React.useCallback(async () => {
+    setIsLoading(true);
 
     try {
-      await copy(getOrCreateInviteUrl);
-    } finally {
-      setLoadingAction(null);
-    }
-  }, [copy, getOrCreateInviteUrl]);
+      const invite = await getOrCreateInvite();
 
-  const handleShowQr = React.useCallback(async () => {
-    setLoadingAction('qr');
+      sheetManager.open('invite', invite.url, undefined, {
+        inviteId: invite.id,
+        teamId: invite.teamId,
+      });
 
-    try {
       onOpenChange(false);
-      sheetManager.open('invite-qr', await getOrCreateInviteUrl());
     } finally {
-      setLoadingAction(null);
+      setIsLoading(false);
     }
-  }, [getOrCreateInviteUrl, onOpenChange, sheetManager]);
+  }, [getOrCreateInvite, onOpenChange, sheetManager]);
 
   return (
-    <>
-      <Menu.Item closeOnPress={false} onPress={handleCopyLink}>
-        {loadingAction === 'copy' ? (
-          <View className="size-5 items-center justify-center">
-            <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
-          </View>
-        ) : (
-          <Icon className="text-placeholder" icon={copied ? Check : Copy} />
-        )}
-        <Text className={loadingAction === 'copy' ? 'text-placeholder' : ''}>
-          Invite link
-        </Text>
-      </Menu.Item>
-      <Menu.Item closeOnPress={false} onPress={handleShowQr}>
-        {loadingAction === 'qr' ? (
-          <View className="size-5 items-center justify-center">
-            <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
-          </View>
-        ) : (
-          <Icon className="text-placeholder" icon={QrCode} />
-        )}
-        <Text className={loadingAction === 'qr' ? 'text-placeholder' : ''}>
-          Invite QR
-        </Text>
-      </Menu.Item>
-    </>
+    <Menu.Item closeOnPress={false} disabled={isLoading} onPress={handleInvite}>
+      {isLoading ? (
+        <View className="size-5 items-center justify-center">
+          <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+        </View>
+      ) : (
+        <Icon className="text-placeholder" icon={UserPlus} />
+      )}
+      <Text className={isLoading ? 'text-placeholder' : ''}>Invite</Text>
+    </Menu.Item>
   );
 };

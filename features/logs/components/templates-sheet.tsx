@@ -39,13 +39,13 @@ const TemplateRow = ({
         wrapperClassName="self-stretch flex-1 mr-2.5 rounded-none border-continuous"
       >
         <View className="flex-1 flex-row min-w-0 gap-3 items-center">
+          <TemplateTagSummary tags={template.tags} />
           <Text
-            className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
+            className="flex-1 min-w-0 font-normal text-muted-foreground"
             numberOfLines={1}
           >
             {template.text}
           </Text>
-          <TemplateTagSummary tags={template.tags} />
         </View>
       </Button>
       <Button
@@ -114,7 +114,7 @@ export const LogTemplatesSheet = () => {
               )}
             />
           ) : (
-            <Text className="mx-auto max-w-56 text-center text-muted-foreground md:py-8">
+            <Text className="mx-auto max-w-56 text-center text-muted-foreground md:py-6">
               Create reusable templates for new records in this log.
             </Text>
           )}
@@ -138,7 +138,7 @@ export const LogTemplatesSheet = () => {
           variant="secondary"
           wrapperClassName="flex-1"
         >
-          <Text className="text-white">Add</Text>
+          <Text className="text-white">Create</Text>
         </Button>
       </SheetFooter>
     </Sheet>

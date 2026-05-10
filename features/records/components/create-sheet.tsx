@@ -69,19 +69,19 @@ const TemplatePickerSheet = ({
               wrapperClassName="w-full"
             >
               <View className="flex-1 flex-row min-w-0 gap-3 items-center">
+                <TemplateTagSummary className="-ml-1.5" tags={template.tags} />
                 <Text
-                  className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
+                  className="flex-1 min-w-0 font-normal text-muted-foreground"
                   numberOfLines={1}
                 >
                   {template.text}
                 </Text>
-                <TemplateTagSummary tags={template.tags} />
               </View>
               <Icon className="-mr-1 text-muted-foreground" icon={ArrowRight} />
             </Button>
           ))
         ) : (
-          <Text className="mx-auto text-center text-muted-foreground md:py-8">
+          <Text className="mx-auto text-center text-muted-foreground md:py-6">
             No templates found.
           </Text>
         )}
@@ -170,7 +170,7 @@ export const RecordCreateSheet = () => {
                 variant="ghost"
                 wrapperClassName="rounded-lg border-continuous"
               >
-                <Text>Use a template</Text>
+                <Text className="mt-px">Use a template</Text>
               </Button>
             )
           }

@@ -5,7 +5,6 @@ import { findMemberInviteByLogs } from '@/features/invites/lib/matching';
 import { getInviteUrl } from '@/features/invites/lib/url';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
-import { useCopy } from '@/hooks/use-copy';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
@@ -15,15 +14,8 @@ import * as React from 'react';
 export const InviteLogsSheet = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const sheetManager = useSheetManager();
-  const actionId = sheetManager.getId('invite-logs');
-
-  const action =
-    actionId === 'copy' || actionId === 'qr' ? actionId : undefined;
-
-  const dismissTimer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
   const open = sheetManager.isOpen('invite-logs');
   const { activeTeamId } = useUi();
-  const { copy, copied } = useCopy();
   const { invites, isLoading: invitesLoading } = useTeamInvites();
 
   const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
@@ -73,17 +65,19 @@ export const InviteLogsSheet = () => {
     const logIds = [...selectedLogIds];
     const existing = findMemberInviteByLogs(invites, logIds);
 
-    const token = existing
-      ? existing.token
-      : (
-          await createInviteLink({
-            teamId: activeTeamId,
-            role: Role.Member,
-            logIds,
-          })
-        ).token;
+    const invite =
+      existing ??
+      (await createInviteLink({
+        teamId: activeTeamId,
+        role: Role.Member,
+        logIds,
+      }));
 
-    return getInviteUrl(token);
+    return {
+      id: invite.id,
+      teamId: activeTeamId,
+      url: getInviteUrl(invite.token),
+    };
   }, [activeTeamId, invites, selectedLogIds]);
 
   const handleConfirm = React.useCallback(async () => {
@@ -91,34 +85,19 @@ export const InviteLogsSheet = () => {
     setIsLoading(true);
 
     try {
-      if (action === 'qr') {
-        const url = await getInviteUrlForSelection();
-        sheetManager.close('invite-logs');
-        sheetManager.open('invite-qr', url);
-        return;
-      }
+      const invite = await getInviteUrlForSelection();
+      sheetManager.close('invite-logs');
 
-      await copy(getInviteUrlForSelection);
-      setIsLoading(false);
-
-      dismissTimer.current = setTimeout(() => {
-        setSelectedLogIds(new Set());
-        sheetManager.close('invite-logs');
-      }, 1500);
+      sheetManager.open('invite', invite.url, undefined, {
+        inviteId: invite.id,
+        teamId: invite.teamId,
+      });
     } catch {
       setIsLoading(false);
     }
-  }, [
-    activeTeamId,
-    selectedLogIds,
-    action,
-    sheetManager,
-    copy,
-    getInviteUrlForSelection,
-  ]);
+  }, [activeTeamId, selectedLogIds, sheetManager, getInviteUrlForSelection]);
 
   const handleDismiss = React.useCallback(() => {
-    clearTimeout(dismissTimer.current);
     sheetManager.close('invite-logs');
   }, [sheetManager]);
 
@@ -134,8 +113,6 @@ export const InviteLogsSheet = () => {
       }
     >
       <LogsSheetContent
-        action={action}
-        copied={copied}
         isLoading={isLoading}
         logs={logs}
         onConfirm={handleConfirm}

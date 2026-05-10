@@ -7,25 +7,14 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
-
-import {
-  Check,
-  Copy,
-  NotePencil,
-  Plus,
-  QrCode,
-  Users,
-} from 'phosphor-react-native';
+import { NotePencil, Plus, UserPlus, UsersThree } from 'phosphor-react-native';
 
 export const EmptyState = ({ logId }: { logId: string }) => {
   const log = useLog({ id: logId });
@@ -34,7 +23,6 @@ export const EmptyState = ({ logId }: { logId: string }) => {
     teamId: log.teamId,
   });
 
-  const colorScheme = useColorScheme();
   const logColor = useLogColor({ id: logId });
   const sheetManager = useSheetManager();
 
@@ -46,15 +34,12 @@ export const EmptyState = ({ logId }: { logId: string }) => {
     teamId: log.teamId,
   });
 
-  const { copy, copied } = useCopy();
   const hasMembers = members.some((member) => isMemberRole(member.role));
 
   const actionsLoading =
     roleLoading || (canManage && (membersLoading || invitesLoading));
 
-  const [loadingAction, setLoadingAction] = React.useState<
-    'copy' | 'qr' | null
-  >(null);
+  const [isInviteLoading, setIsInviteLoading] = React.useState(false);
 
   const getOrCreateLink = React.useCallback(async () => {
     if (!log.teamId) return null;
@@ -65,42 +50,45 @@ export const EmptyState = ({ logId }: { logId: string }) => {
       return logIds.length === 1 && logIds[0] === logId;
     });
 
-    if (existing) return existing.token;
+    if (existing) return existing;
 
-    const { token } = await createInviteLink({
+    const invite = await createInviteLink({
       teamId: log.teamId,
       role: Role.Member,
       logIds: [logId],
     });
 
-    return token;
+    return { ...invite, teamId: log.teamId };
   }, [log.teamId, logId, invites]);
 
-  const getOrCreateInviteUrl = React.useCallback(async () => {
-    const token = await getOrCreateLink();
-    if (!token) throw new Error('Failed to create invite link');
-    return getInviteUrl(token);
+  const getOrCreateInvite = React.useCallback(async () => {
+    const invite = await getOrCreateLink();
+
+    if (!invite?.id || !invite.token || !invite.teamId) {
+      throw new Error('Failed to create invite link');
+    }
+
+    return {
+      id: invite.id,
+      teamId: invite.teamId,
+      url: getInviteUrl(invite.token),
+    };
   }, [getOrCreateLink]);
 
-  const handleCopyLink = React.useCallback(async () => {
-    setLoadingAction('copy');
+  const handleInvite = React.useCallback(async () => {
+    setIsInviteLoading(true);
 
     try {
-      await copy(getOrCreateInviteUrl);
-    } finally {
-      setLoadingAction(null);
-    }
-  }, [copy, getOrCreateInviteUrl]);
+      const invite = await getOrCreateInvite();
 
-  const handleShowQr = React.useCallback(async () => {
-    setLoadingAction('qr');
-
-    try {
-      sheetManager.open('invite-qr', await getOrCreateInviteUrl());
+      sheetManager.open('invite', invite.url, undefined, {
+        inviteId: invite.id,
+        teamId: invite.teamId,
+      });
     } finally {
-      setLoadingAction(null);
+      setIsInviteLoading(false);
     }
-  }, [getOrCreateInviteUrl, sheetManager]);
+  }, [getOrCreateInvite, sheetManager]);
 
   return (
     <View className="flex-1 mx-auto max-w-[13rem] w-full px-3 py-8 gap-3 justify-center">
@@ -121,36 +109,15 @@ export const EmptyState = ({ logId }: { logId: string }) => {
           </Button>
           <Button
             className="justify-between"
-            onPress={handleCopyLink}
+            onPress={handleInvite}
             size="xs"
             variant="secondary"
           >
-            <Text>
-              {copied
-                ? 'Copied!'
-                : loadingAction === 'copy'
-                  ? 'Generating…'
-                  : 'Copy invite link'}
-            </Text>
-            {loadingAction === 'copy' ? (
-              <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+            <Text>Invite members</Text>
+            {isInviteLoading ? (
+              <Spinner className="-mr-0.5" size="xs" />
             ) : (
-              <Icon className="-mr-0.5" icon={copied ? Check : Copy} />
-            )}
-          </Button>
-          <Button
-            className="justify-between"
-            onPress={handleShowQr}
-            size="xs"
-            variant="secondary"
-          >
-            <Text>
-              {loadingAction === 'qr' ? 'Generating…' : 'Show invite QR'}
-            </Text>
-            {loadingAction === 'qr' ? (
-              <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
-            ) : (
-              <Icon className="-mr-0.5" icon={QrCode} />
+              <Icon className="-mr-0.5" icon={UserPlus} />
             )}
           </Button>
           {hasMembers && (
@@ -160,8 +127,8 @@ export const EmptyState = ({ logId }: { logId: string }) => {
               size="xs"
               variant="secondary"
             >
-              <Text>Manage members</Text>
-              <Icon className="-mr-0.5" icon={Users} />
+              <Text>Add members</Text>
+              <Icon className="-mr-0.5" icon={UsersThree} />
             </Button>
           )}
         </>

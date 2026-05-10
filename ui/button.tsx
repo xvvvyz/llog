@@ -50,7 +50,7 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive web:hover:bg-destructive/80 active:bg-destructive/60',
         ghost: 'web:hover:bg-accent active:bg-accent',
-        link: 'p-0 h-auto w-auto rounded-none border-continuous',
+        link: 'p-0 h-auto w-auto rounded-none gap-1.5 border-continuous',
         outline:
           'bg-none web:hover:bg-accent active:bg-accent border border-border',
         secondary:

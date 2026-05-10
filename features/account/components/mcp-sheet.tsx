@@ -5,15 +5,14 @@ import { apiOrThrow } from '@/lib/api';
 import { getDateLabel } from '@/lib/time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import { Check, Copy, Trash } from 'phosphor-react-native';
+import { ArrowSquareOut, Check, Copy, Trash } from 'phosphor-react-native';
 import * as React from 'react';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
+import * as inputGroup from '@/ui/input-group';
 
 type Grant = {
   clientId: string;
@@ -25,6 +24,14 @@ type Grant = {
 };
 
 const mcpUrl = `${process.env.EXPO_PUBLIC_APP_URL ?? ''}/mcp`;
+
+const MCP_PROVIDER_LINKS = [
+  { label: 'ChatGPT', url: 'https://platform.openai.com/docs/developer-mode' },
+  {
+    label: 'Claude',
+    url: 'https://support.anthropic.com/en/articles/11175166-getting-started-with-custom-integrations-using-remote-mcp',
+  },
+];
 
 export const McpSheet = () => {
   const [grants, setGrants] = React.useState<Grant[]>([]);
@@ -85,25 +92,7 @@ export const McpSheet = () => {
       variant="list"
     >
       <SheetListScrollView contentContainerClassName="gap-5 py-5">
-        <View className="flex-row items-center justify-between">
-          <Label className="p-0 shrink-0">MCP URL</Label>
-          <View className="flex-1 flex-row min-w-0 gap-3 items-center justify-end">
-            <Input
-              className="flex-1 h-auto min-w-0 px-0 py-0 border-0 rounded-none bg-transparent text-right opacity-100 web:cursor-default"
-              editable={false}
-              value={mcpUrl}
-            />
-            <Button
-              onPress={() => copy(mcpUrl)}
-              size="icon-xs"
-              variant="ghost"
-              wrapperClassName="-mr-1.5"
-            >
-              <Icon className="text-placeholder" icon={copied ? Check : Copy} />
-            </Button>
-          </View>
-        </View>
-        {grants.length > 0 && (
+        {grants.length > 0 ? (
           <View>
             {grants.map((grant) => {
               const clientName =
@@ -145,9 +134,36 @@ export const McpSheet = () => {
               );
             })}
           </View>
+        ) : (
+          <View className="mx-auto max-w-56 w-full gap-3 items-center md:py-6">
+            <Text className="text-center text-muted-foreground">
+              Connect an AI app with the MCP server URL below.
+            </Text>
+            <View className="flex-row flex-wrap gap-x-5 justify-center">
+              {MCP_PROVIDER_LINKS.map((link) => (
+                <Button
+                  key={link.url}
+                  onPress={() => void Linking.openURL(link.url)}
+                  variant="link"
+                >
+                  <Text>{link.label}</Text>
+                  <Icon
+                    className="text-muted-foreground"
+                    icon={ArrowSquareOut}
+                  />
+                </Button>
+              ))}
+            </View>
+          </View>
         )}
       </SheetListScrollView>
-      <SheetFooter contentClassName="flex-row gap-4">
+      <SheetFooter contentClassName="gap-3">
+        <inputGroup.InputGroup>
+          <inputGroup.InputGroupInput editable={false} value={mcpUrl} />
+          <inputGroup.InputGroupButton onPress={() => copy(mcpUrl)}>
+            <Icon icon={copied ? Check : Copy} />
+          </inputGroup.InputGroupButton>
+        </inputGroup.InputGroup>
         <Button
           onPress={() => sheetManager.close('mcp')}
           size="sm"
