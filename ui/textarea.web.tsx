@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { getMarkdownListEnterEdit } from '@/ui/textarea-markdown-lists';
 import * as React from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 
@@ -23,6 +24,7 @@ export const Textarea = React.forwardRef<
       minRows,
       numberOfLines,
       onChangeText,
+      onKeyDown,
       onSubmitEditing,
       onTouchStart,
       placeholder,
@@ -100,6 +102,83 @@ export const Textarea = React.forwardRef<
       [onTouchStart, props.disabled, readOnly]
     );
 
+    const applyTextEdit = React.useCallback(
+      (
+        textarea: HTMLTextAreaElement,
+        text: string,
+        selectionStart: number,
+        selectionEnd: number,
+        scrollToBottom: boolean
+      ) => {
+        setLocalValue(text);
+        if (onChangeText) React.startTransition(() => onChangeText(text));
+
+        requestAnimationFrame(() => {
+          textarea.setSelectionRange(selectionStart, selectionEnd);
+          keepTextareaScrolledToBottom(textarea, scrollToBottom);
+        });
+      },
+      [onChangeText]
+    );
+
+    const handleKeyDown = React.useCallback(
+      (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        onKeyDown?.(e);
+        if (e.defaultPrevented) return;
+
+        if (!e.shiftKey && e.key === 'Enter' && onSubmitEditing) {
+          e.preventDefault();
+          onSubmitEditing();
+          return;
+        }
+
+        if (
+          e.key !== 'Enter' ||
+          e.altKey ||
+          e.ctrlKey ||
+          e.metaKey ||
+          (e.nativeEvent as KeyboardEvent).isComposing
+        ) {
+          return;
+        }
+
+        const textarea = e.currentTarget;
+        const scrollToBottom = shouldKeepTextareaScrolledToBottom(textarea);
+
+        if (e.shiftKey) {
+          keepTextareaScrolledToBottom(textarea, scrollToBottom);
+          return;
+        }
+
+        const edit = getMarkdownListEnterEdit({
+          selectionEnd: textarea.selectionEnd,
+          selectionStart: textarea.selectionStart,
+          text: textarea.value,
+        });
+
+        if (!edit) {
+          keepTextareaScrolledToBottom(textarea, scrollToBottom);
+          return;
+        }
+
+        if (typeof maxLength === 'number' && edit.text.length > maxLength) {
+          keepTextareaScrolledToBottom(textarea, scrollToBottom);
+          return;
+        }
+
+        e.preventDefault();
+
+        applyTextEdit(
+          textarea,
+          edit.text,
+          edit.selectionStart,
+          edit.selectionEnd,
+          scrollToBottom
+        );
+      },
+      [applyTextEdit, maxLength, onKeyDown, onSubmitEditing]
+    );
+
     return (
       <TextareaAutosize
         ref={handleRef}
@@ -108,6 +187,7 @@ export const Textarea = React.forwardRef<
         maxRows={maxRows ?? numberOfLines}
         minRows={minRows}
         onChange={handleChange}
+        onKeyDown={handleKeyDown}
         onTouchStart={handleTouchStart}
         placeholder={placeholder}
         readOnly={readOnly}
@@ -117,12 +197,6 @@ export const Textarea = React.forwardRef<
           size === 'sm' ? 'px-3 py-2' : 'px-4 py-2.5',
           className
         )}
-        onKeyDown={(e) => {
-          if (!e.shiftKey && e.key === 'Enter' && onSubmitEditing) {
-            e.preventDefault();
-            onSubmitEditing();
-          }
-        }}
         {...props}
       />
     );
@@ -130,3 +204,34 @@ export const Textarea = React.forwardRef<
 );
 
 Textarea.displayName = 'Textarea';
+
+function shouldKeepTextareaScrolledToBottom(textarea: HTMLTextAreaElement) {
+  return (
+    textarea.selectionEnd >= textarea.value.length ||
+    textarea.scrollHeight - textarea.scrollTop - textarea.clientHeight <=
+      getTextareaScrollTolerance(textarea)
+  );
+}
+
+function keepTextareaScrolledToBottom(
+  textarea: HTMLTextAreaElement,
+  shouldScroll: boolean
+) {
+  if (shouldScroll) scrollTextareaToBottomOnNextFrames(textarea);
+}
+
+function scrollTextareaToBottomOnNextFrames(textarea: HTMLTextAreaElement) {
+  requestAnimationFrame(() => {
+    scrollTextareaToBottom(textarea);
+    requestAnimationFrame(() => scrollTextareaToBottom(textarea));
+  });
+}
+
+function scrollTextareaToBottom(textarea: HTMLTextAreaElement) {
+  textarea.scrollTop = textarea.scrollHeight;
+}
+
+function getTextareaScrollTolerance(textarea: HTMLTextAreaElement) {
+  const lineHeight = Number.parseFloat(getComputedStyle(textarea).lineHeight);
+  return Number.isFinite(lineHeight) ? lineHeight / 2 : 12;
+}
