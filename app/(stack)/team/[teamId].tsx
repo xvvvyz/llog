@@ -1,19 +1,16 @@
 import * as permissions from '@/domain/teams/permissions';
 import { Role } from '@/domain/teams/role';
-import { useUi } from '@/features/account/queries/use-ui';
 import { openInviteSheet } from '@/features/invites/lib/sheet';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLogs } from '@/features/logs/queries/use-logs';
 import { TeamMemberMenuContent } from '@/features/teams/components/member-menu-content';
-import { TeamSwitcher } from '@/features/teams/components/switcher';
 import { deleteTeamImage } from '@/features/teams/mutations/delete-image';
 import { updateTeam } from '@/features/teams/mutations/update';
 import { uploadTeamImage } from '@/features/teams/mutations/upload-image';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeam } from '@/features/teams/queries/use-team';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
-import { useTeams } from '@/features/teams/queries/use-teams';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
@@ -32,6 +29,7 @@ import { Page } from '@/ui/page';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Keyboard, Pressable, View } from 'react-native';
 
@@ -49,7 +47,26 @@ const ROLE_LABELS: Record<string, string> = {
   [Role.Member]: 'Member',
 };
 
+const TeamHeaderTitle = ({
+  avatar,
+  id,
+  name,
+}: {
+  avatar?: string;
+  id?: string;
+  name?: string;
+}) => (
+  <View className="flex-row gap-2 items-center justify-center md:justify-start">
+    <Avatar avatar={avatar} fallback="gradient" id={id} size={20} />
+    <Text className="font-medium text-center android:text-lg md:text-left web:md:text-xl">
+      {name}
+    </Text>
+  </View>
+);
+
 export default function Team() {
+  const params = useLocalSearchParams<{ teamId: string }>();
+  const teamId = params.teamId;
   const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
 
   const [pendingMemberLogsRoleId, setPendingMemberLogsRoleId] = React.useState<
@@ -60,14 +77,12 @@ export default function Team() {
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
-  const team = useTeam();
-  const { activeTeamId } = useUi();
-  const myRole = useMyRole();
+  const team = useTeam({ teamId });
+  const myRole = useMyRole({ teamId });
   const { canDeleteTeam, canManage } = myRole;
-  const { invites } = useTeamInvites();
-  const logs = useLogs();
-  const { members } = useTeamMembers();
-  useTeams();
+  const { invites } = useTeamInvites({ teamId });
+  const logs = useLogs({ teamIds: teamId ? [teamId] : [] });
+  const { members } = useTeamMembers({ teamId });
   const ownerCount = members.filter((m) => m.role === Role.Owner).length;
 
   const activeTeamLogIds = React.useMemo(
@@ -85,16 +100,26 @@ export default function Team() {
       false;
 
     if (hasActiveTeamLogs) return;
-    sheetManager.open('member-logs', pendingMemberLogsRoleId);
+
+    sheetManager.open('member-logs', pendingMemberLogsRoleId, undefined, {
+      teamId,
+    });
+
     setPendingMemberLogsRoleId(null);
-  }, [activeTeamLogIds, members, pendingMemberLogsRoleId, sheetManager]);
+  }, [
+    activeTeamLogIds,
+    members,
+    pendingMemberLogsRoleId,
+    sheetManager,
+    teamId,
+  ]);
 
   const handleOpenMemberLogs = React.useCallback(
     (memberId: string) => {
       setPendingMemberLogsRoleId(null);
-      sheetManager.open('member-logs', memberId);
+      sheetManager.open('member-logs', memberId, undefined, { teamId });
     },
-    [sheetManager]
+    [sheetManager, teamId]
   );
 
   const handleOpenMemberLogsAfterDemotion = React.useCallback(
@@ -105,7 +130,7 @@ export default function Team() {
   );
 
   const handleUploadTeamImage = React.useCallback(async () => {
-    if (!activeTeamId) return;
+    if (!teamId) return;
 
     const picker = await launchImageLibraryAsync({
       allowsEditing: true,
@@ -114,21 +139,16 @@ export default function Team() {
     });
 
     if (picker.canceled) return;
-    await uploadTeamImage(picker.assets[0], activeTeamId);
-  }, [activeTeamId]);
+    await uploadTeamImage(picker.assets[0], teamId);
+  }, [teamId]);
 
   const getOrCreateAdminLink = React.useCallback(async () => {
     const existing = invites.find((l) => l.role === Role.Admin);
     if (existing) return existing;
-    if (!activeTeamId) return null;
-
-    const invite = await createInviteLink({
-      teamId: activeTeamId,
-      role: Role.Admin,
-    });
-
-    return { ...invite, teamId: activeTeamId };
-  }, [invites, activeTeamId]);
+    if (!teamId) return null;
+    const invite = await createInviteLink({ teamId, role: Role.Admin });
+    return { ...invite, teamId };
+  }, [invites, teamId]);
 
   const getOrCreateAdminInvite = React.useCallback(async () => {
     const invite = await getOrCreateAdminLink();
@@ -143,7 +163,7 @@ export default function Team() {
   const handleInvite = React.useCallback(
     async (role: string) => {
       if (role === Role.Member) {
-        sheetManager.open('invite-logs');
+        sheetManager.open('invite-logs', undefined, undefined, { teamId });
         return;
       }
 
@@ -156,21 +176,32 @@ export default function Team() {
         setLoadingAction(null);
       }
     },
-    [getOrCreateAdminInvite, sheetManager]
+    [getOrCreateAdminInvite, sheetManager, teamId]
   );
 
   if (team.isLoading) {
     return (
       <Page>
-        <Header left={<BackButton />} title={<TeamSwitcher hideSettings />} />
+        <Header left={<BackButton />} />
         <Loading />
       </Page>
     );
   }
 
+  if (!team.id) return <Redirect href="/" />;
+
   return (
     <Page>
-      <Header left={<BackButton />} title={<TeamSwitcher hideSettings />} />
+      <Header
+        left={<BackButton />}
+        title={
+          <TeamHeaderTitle
+            avatar={team.image?.uri}
+            id={team.id}
+            name={team.name}
+          />
+        }
+      />
       <View className="flex-1 p-3 items-center justify-center">
         <Pressable className="absolute inset-0" onPress={Keyboard.dismiss} />
         <Card className="overflow-hidden max-w-xs w-full p-0">
@@ -204,9 +235,7 @@ export default function Team() {
                     {team.image && (
                       <>
                         <Menu.Separator />
-                        <Menu.Item
-                          onPress={() => deleteTeamImage(activeTeamId)}
-                        >
+                        <Menu.Item onPress={() => deleteTeamImage(teamId)}>
                           <Icon className="text-destructive" icon={Trash} />
                           <Text className="text-destructive">Remove</Text>
                         </Menu.Item>
@@ -360,7 +389,7 @@ export default function Team() {
                         </Menu.Trigger>
                         <Menu.Content align="end">
                           <TeamMemberMenuContent
-                            activeTeamId={activeTeamId}
+                            activeTeamId={teamId}
                             canChangeToAdmin={canChangeToAdmin}
                             canChangeToMember={canChangeToMember}
                             canRemoveMember={canRemoveMember}
@@ -391,7 +420,14 @@ export default function Team() {
                         </Menu.Trigger>
                         <Menu.Content align="end">
                           <Menu.Item
-                            onPress={() => sheetManager.open('team-leave')}
+                            onPress={() =>
+                              sheetManager.open(
+                                'team-leave',
+                                undefined,
+                                undefined,
+                                { teamId }
+                              )
+                            }
                           >
                             <Icon className="text-destructive" icon={SignOut} />
                             <Text className="text-destructive">Leave</Text>
@@ -409,9 +445,13 @@ export default function Team() {
                   <View className="mb-2 border-border border-t" />
                   <Button
                     className="rounded-none justify-between"
-                    onPress={() => sheetManager.open('team-delete')}
                     variant="ghost"
                     wrapperClassName="rounded-none"
+                    onPress={() =>
+                      sheetManager.open('team-delete', undefined, undefined, {
+                        teamId,
+                      })
+                    }
                   >
                     <Text className="font-normal text-destructive">
                       Delete team

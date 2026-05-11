@@ -12,7 +12,10 @@ export const leaveTeam = async ({
   activeTeamId?: string;
   uiId?: string;
 }) => {
-  const nextTeam = teams.find((t) => t.id !== activeTeamId);
-  if (nextTeam) await switchTeam({ teamId: nextTeam.id, uiId });
+  if (teamId === activeTeamId) {
+    const nextTeam = teams.find((t) => t.id !== teamId);
+    if (nextTeam) await switchTeam({ teamId: nextTeam.id, uiId });
+  }
+
   await api(`/teams/${teamId}/leave`, { method: 'POST' });
 };

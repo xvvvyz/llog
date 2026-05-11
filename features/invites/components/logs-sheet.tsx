@@ -16,7 +16,13 @@ export const InviteLogsSheet = () => {
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('invite-logs');
   const { activeTeamId } = useUi();
-  const { invites, isLoading: invitesLoading } = useTeamInvites();
+
+  const payload = sheetManager.getPayload('invite-logs') as
+    | { teamId?: string }
+    | undefined;
+
+  const teamId = payload?.teamId ?? activeTeamId;
+  const { invites, isLoading: invitesLoading } = useTeamInvites({ teamId });
 
   const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
     new Set()
@@ -33,16 +39,12 @@ export const InviteLogsSheet = () => {
   }, [open]);
 
   const { data, isLoading: logsLoading } = db.useQuery(
-    open && activeTeamId
-      ? {
-          logs: {
-            $: { order: { name: 'asc' }, where: { team: activeTeamId } },
-          },
-        }
+    open && teamId
+      ? { logs: { $: { order: { name: 'asc' }, where: { team: teamId } } } }
       : null
   );
 
-  const logsQueryKey = open && activeTeamId ? activeTeamId : undefined;
+  const logsQueryKey = open && teamId ? teamId : undefined;
   const hasCurrentLogsResult = useCurrentQueryResult(logsQueryKey, data);
   const logs = hasCurrentLogsResult ? (data?.logs ?? []) : [];
 
@@ -58,7 +60,7 @@ export const InviteLogsSheet = () => {
   }, []);
 
   const getInviteUrlForSelection = React.useCallback(async () => {
-    if (!activeTeamId || selectedLogIds.size === 0) {
+    if (!teamId || selectedLogIds.size === 0) {
       throw new Error('No invite logs selected');
     }
 
@@ -67,21 +69,13 @@ export const InviteLogsSheet = () => {
 
     const invite =
       existing ??
-      (await createInviteLink({
-        teamId: activeTeamId,
-        role: Role.Member,
-        logIds,
-      }));
+      (await createInviteLink({ teamId, role: Role.Member, logIds }));
 
-    return {
-      id: invite.id,
-      teamId: activeTeamId,
-      url: getInviteUrl(invite.token),
-    };
-  }, [activeTeamId, invites, selectedLogIds]);
+    return { id: invite.id, teamId, url: getInviteUrl(invite.token) };
+  }, [teamId, invites, selectedLogIds]);
 
   const handleConfirm = React.useCallback(async () => {
-    if (!activeTeamId || selectedLogIds.size === 0) return;
+    if (!teamId || selectedLogIds.size === 0) return;
     setIsLoading(true);
 
     try {
@@ -95,7 +89,7 @@ export const InviteLogsSheet = () => {
     } catch {
       setIsLoading(false);
     }
-  }, [activeTeamId, selectedLogIds, sheetManager, getInviteUrlForSelection]);
+  }, [teamId, selectedLogIds, sheetManager, getInviteUrlForSelection]);
 
   const handleDismiss = React.useCallback(() => {
     sheetManager.close('invite-logs');

@@ -38,12 +38,13 @@ export default function Index() {
   const recordData = records.data;
   const recordsLoading = records.isLoading;
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
-  const logLoaded = !!log.id && !log.isLoading;
   const hasRecords = recordData.length > 0;
-  const showLoading = !logLoaded || recordsLoading;
-  const showEmpty = logLoaded && !recordsLoading && !hasRecords;
+  const showLoading = log.isLoading || recordsLoading;
+  const showEmpty = !!log.id && !recordsLoading && !hasRecords;
   const showFab = hasRecords && !breakpoints.md;
-  const contentPaddingBottom = insets.bottom + (showFab ? 104 : 0);
+
+  const listFooterHeight =
+    insets.bottom + (showFab ? 104 : breakpoints.md ? 32 : 16);
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: params.logId,
@@ -124,25 +125,17 @@ export default function Index() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
           keyExtractor={(record) => record.id}
+          ListFooterComponent={<View style={{ height: listFooterHeight }} />}
           listRef={listRef}
           onEndReached={records.loadNextPage}
           onEndReachedThreshold={1}
           wrapperClassName="flex-1"
-          ListFooterComponent={
-            contentPaddingBottom > 0 ? (
-              <View style={{ height: contentPaddingBottom }} />
-            ) : null
-          }
           renderItem={({ index, item }) => (
             <Entry
               logId={params.logId}
               numberOfLines={7}
               record={item}
-              className={cn(
-                'mt-4',
-                index === 0 && 'md:mt-8',
-                index === recordData.length - 1 && 'mb-4 md:mb-8'
-              )}
+              className={cn('mt-4', index === 0 && 'md:mt-8')}
             />
           )}
         />

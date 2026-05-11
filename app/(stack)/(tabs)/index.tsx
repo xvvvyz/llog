@@ -7,11 +7,9 @@ import { useTags } from '@/features/tags/queries/use-tags';
 import type { Tag } from '@/features/tags/types/tag';
 import { TeamSwitcher } from '@/features/teams/components/switcher';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
-import { useUi } from '@/features/account/queries/use-ui';
 import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useDeferredEmpty } from '@/hooks/use-deferred-empty';
 import { cn } from '@/lib/cn';
 import { createSearchIndex } from '@/lib/search';
 import { SPECTRUM } from '@/theme/spectrum';
@@ -39,7 +37,6 @@ export default function Index() {
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
   const tags = useTags();
-  const ui = useUi();
   const { canManage } = useMyRole();
   const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs();
@@ -105,15 +102,6 @@ export default function Index() {
     return map;
   }, [filteredLogs, tagsById]);
 
-  const hasLoadedRef = React.useRef(false);
-  if (!logs.isLoading) hasLoadedRef.current = true;
-
-  const queryState = useDeferredEmpty({
-    isEmpty: !logs.isLoading && hasNoLogs,
-    isLoading: logs.isLoading && !hasLoadedRef.current,
-    resetKey: ui.activeTeamId,
-  });
-
   return (
     <Page>
       <Header
@@ -137,9 +125,9 @@ export default function Index() {
           </View>
         }
       />
-      {queryState.showLoading ? (
+      {logs.isLoading ? (
         <Loading />
-      ) : queryState.showEmpty ? (
+      ) : hasNoLogs ? (
         <ListEmptyState canManage={canManage} onCreateLog={handleCreateLog} />
       ) : (
         <ScrollView

@@ -6,7 +6,6 @@ import { useTeams } from '@/features/teams/queries/use-teams';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
-import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { router } from 'expo-router';
 import * as React from 'react';
@@ -14,55 +13,51 @@ import { View } from 'react-native';
 
 export const TeamDeleteSheet = () => {
   const sheetManager = useSheetManager();
-  const team = useTeam();
-  const { teams, isLoading: teamsLoading } = useTeams();
   const ui = useUi();
-  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const payload = sheetManager.getPayload('team-delete') as
+    | { teamId?: string }
+    | undefined;
+
+  const teamId = payload?.teamId ?? ui.activeTeamId;
+  const team = useTeam({ teamId });
+  const { teams, isLoading: teamsLoading } = useTeams();
   const open = sheetManager.isOpen('team-delete');
 
-  React.useEffect(() => {
-    if (open) setIsDeleting(false);
-  }, [open]);
+  const handleDelete = React.useCallback(() => {
+    if (!team.id) return;
+    const deletedTeamId = team.id;
+    const nextTeam = teams.find((t) => t.id !== deletedTeamId);
+    sheetManager.close('team-delete');
+    router.replace('/');
+
+    void (async () => {
+      if (deletedTeamId === ui.activeTeamId && nextTeam) {
+        await switchTeam({ teamId: nextTeam.id, uiId: ui.id });
+      }
+
+      await deleteTeam({ id: deletedTeamId });
+    })();
+  }, [sheetManager, team.id, teams, ui.activeTeamId, ui.id]);
 
   return (
     <Sheet
       className="md:max-w-sm"
       loading={team.isLoading || teamsLoading || ui.isLoading}
+      onDismiss={() => sheetManager.close('team-delete')}
       open={open}
       portalName="team-delete"
-      onDismiss={() => {
-        if (!isDeleting) sheetManager.close('team-delete');
-      }}
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Delete team?</Text>
         <Button
-          disabled={isDeleting}
+          onPress={handleDelete}
           variant="destructive"
           wrapperClassName="mt-12"
-          onPress={async () => {
-            if (!team.id || isDeleting) return;
-            setIsDeleting(true);
-            const nextTeam = teams.find((t) => t.id !== team.id);
-
-            try {
-              if (nextTeam) {
-                await switchTeam({ teamId: nextTeam.id, uiId: ui.id });
-              }
-
-              await deleteTeam({ id: team.id });
-              router.replace('/');
-              sheetManager.close('team-delete');
-            } catch (error) {
-              setIsDeleting(false);
-              throw error;
-            }
-          }}
         >
-          {isDeleting ? <Spinner /> : <Text>Delete</Text>}
+          <Text>Delete</Text>
         </Button>
         <Button
-          disabled={isDeleting}
           onPress={() => sheetManager.close('team-delete')}
           variant="secondary"
           wrapperClassName="mt-3"

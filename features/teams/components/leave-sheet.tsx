@@ -13,6 +13,12 @@ export const TeamLeaveSheet = () => {
   const { teams, isLoading: teamsLoading } = useTeams();
   const ui = useUi();
 
+  const payload = sheetManager.getPayload('team-leave') as
+    | { teamId?: string }
+    | undefined;
+
+  const teamId = payload?.teamId ?? ui.activeTeamId;
+
   return (
     <Sheet
       className="md:max-w-sm"
@@ -26,18 +32,17 @@ export const TeamLeaveSheet = () => {
         <Button
           variant="destructive"
           wrapperClassName="mt-12"
-          onPress={async () => {
+          onPress={() => {
             sheetManager.close('team-leave');
-            if (!ui.activeTeamId) return;
+            if (!teamId) return;
+            router.replace('/');
 
-            await leaveTeam({
-              teamId: ui.activeTeamId,
+            void leaveTeam({
+              teamId,
               teams,
               activeTeamId: ui.activeTeamId,
               uiId: ui.id,
             });
-
-            router.replace('/');
           }}
         >
           <Text>Leave</Text>

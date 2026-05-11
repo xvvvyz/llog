@@ -2,20 +2,23 @@ import { useUi } from '@/features/account/queries/use-ui';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
-export const useTeam = () => {
+export const useTeam = ({ teamId }: { teamId?: string } = {}) => {
   const { activeTeamId } = useUi();
+  const resolvedTeamId = teamId ?? activeTeamId;
 
   const { data, isLoading } = db.useQuery(
-    activeTeamId
-      ? { teams: { $: { where: { id: activeTeamId } }, image: {} } }
+    resolvedTeamId
+      ? { teams: { $: { where: { id: resolvedTeamId } }, image: {} } }
       : null
   );
 
-  const hasCurrentResult = useCurrentQueryResult(activeTeamId, data);
-  const team = activeTeamId && hasCurrentResult ? data?.teams?.[0] : undefined;
+  const hasCurrentResult = useCurrentQueryResult(resolvedTeamId, data);
+
+  const team =
+    resolvedTeamId && hasCurrentResult ? data?.teams?.[0] : undefined;
 
   return {
     ...team,
-    isLoading: !!activeTeamId && (isLoading || !hasCurrentResult),
+    isLoading: !!resolvedTeamId && (isLoading || !hasCurrentResult),
   };
 };

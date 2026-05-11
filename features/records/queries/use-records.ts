@@ -110,6 +110,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     data,
     isLoading:
       !!logId &&
+      data.length === 0 &&
       (pinnedLoading || pagedLoading || !hasPinnedResult || !hasPagedResult),
     loadNextPage: handleLoadNextPage,
   };

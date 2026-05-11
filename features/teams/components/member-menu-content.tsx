@@ -8,14 +8,8 @@ import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
-
-import {
-  Check,
-  Shield,
-  SquaresFour,
-  User,
-  UserMinus,
-} from 'phosphor-react-native';
+import { View } from 'react-native';
+import { Check, SquaresFour, UserMinus } from 'phosphor-react-native';
 
 const ROLE_LABELS: Record<string, string> = {
   [Role.Owner]: 'Owner',
@@ -23,7 +17,6 @@ const ROLE_LABELS: Record<string, string> = {
   [Role.Member]: 'Member',
 };
 
-const ROLE_ICONS = { [Role.Admin]: Shield, [Role.Member]: User } as const;
 const ASSIGNABLE_ROLES = [Role.Admin, Role.Member] as const;
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
@@ -116,13 +109,13 @@ export const TeamMemberMenuContent = ({
             disabled={isDisabled || !!loadingRole}
             onPress={() => handleRolePress(role)}
           >
-            {isLoadingRole ? (
-              <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
-            ) : isSelected ? (
-              <Icon icon={Check} />
-            ) : (
-              <Icon className="text-placeholder" icon={ROLE_ICONS[role]} />
-            )}
+            <View className="w-5 items-center">
+              {isLoadingRole ? (
+                <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+              ) : isSelected ? (
+                <Icon icon={Check} />
+              ) : null}
+            </View>
             <Text
               className={isLoadingRole ? 'flex-1 text-placeholder' : 'flex-1'}
             >

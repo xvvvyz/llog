@@ -1,10 +1,9 @@
 import { logTagsQuery } from '@/domain/tags/query';
 import { useUi } from '@/features/account/queries/use-ui';
-import { Log } from '@/features/logs/types/log';
-import { Tag } from '@/features/tags/types/tag';
+import type { Log } from '@/features/logs/types/log';
+import type { Tag } from '@/features/tags/types/tag';
 import { useResolvedTeamIds } from '@/features/teams/queries/use-resolved-team-ids';
 import { db } from '@/lib/db';
-import * as React from 'react';
 
 type LogListItem = Log & {
   profiles?: {
@@ -21,20 +20,7 @@ export const useLogs = ({
   teamIds,
 }: { query?: string; teamIds?: string[] } = {}) => {
   const ui = useUi();
-  const prevDataRef = React.useRef<LogListItem[]>([]);
-  const prevRequestKeyRef = React.useRef('');
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
-
-  const requestKey = React.useMemo(
-    () =>
-      JSON.stringify({
-        query: query ?? '',
-        sortBy: ui.logsSortBy,
-        sortDirection: ui.logsSortDirection,
-        teamIds: resolvedTeamIds,
-      }),
-    [query, resolvedTeamIds, ui.logsSortBy, ui.logsSortDirection]
-  );
 
   const { data, isLoading } = db.useQuery(
     resolvedTeamIds.length
@@ -54,15 +40,5 @@ export const useLogs = ({
       : null
   );
 
-  const canUsePreviousData = prevRequestKeyRef.current === requestKey;
-
-  const logs = (data?.logs ??
-    (canUsePreviousData ? prevDataRef.current : [])) as LogListItem[];
-
-  if (data?.logs) {
-    prevDataRef.current = data.logs as LogListItem[];
-    prevRequestKeyRef.current = requestKey;
-  }
-
-  return { data: logs, isLoading };
+  return { data: (data?.logs ?? []) as LogListItem[], isLoading };
 };

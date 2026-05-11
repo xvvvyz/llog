@@ -22,26 +22,30 @@ export const MemberLogsSheet = () => {
   const open = sheetManager.isOpen('member-logs');
   const roleId = sheetManager.getId('member-logs');
   const { activeTeamId } = useUi();
+
+  const payload = sheetManager.getPayload('member-logs') as
+    | { teamId?: string }
+    | undefined;
+
+  const teamId = payload?.teamId ?? activeTeamId;
   const colorScheme = useColorScheme();
 
   const { data, isLoading } = db.useQuery(
-    open && activeTeamId && roleId
+    open && teamId && roleId
       ? {
           logs: {
-            $: { order: { name: 'asc' }, where: { team: activeTeamId } },
+            $: { order: { name: 'asc' }, where: { team: teamId } },
             profiles: { $: { fields: ['id'] } },
           },
           roles: {
-            $: { where: { id: roleId, team: activeTeamId } },
+            $: { where: { id: roleId, team: teamId } },
             user: { profile: { $: { fields: ['id'] } } },
           },
         }
       : null
   );
 
-  const queryKey =
-    open && activeTeamId && roleId ? `${activeTeamId}:${roleId}` : undefined;
-
+  const queryKey = open && teamId && roleId ? `${teamId}:${roleId}` : undefined;
   const hasCurrentResult = useCurrentQueryResult(queryKey, data);
 
   const logs = React.useMemo(
@@ -73,17 +77,11 @@ export const MemberLogsSheet = () => {
     onChange: React.useCallback(
       (logId: string, selected: boolean) => {
         if (!roleId) return Promise.resolve();
-
-        return toggleLogMember({
-          roleId,
-          selected,
-          logId,
-          teamId: activeTeamId,
-        });
+        return toggleLogMember({ roleId, selected, logId, teamId });
       },
-      [activeTeamId, roleId]
+      [teamId, roleId]
     ),
-    scopeKey: `${activeTeamId ?? ''}:${roleId ?? ''}`,
+    scopeKey: `${teamId ?? ''}:${roleId ?? ''}`,
     selectedIds: profileLogIds,
   });
 

@@ -26,5 +26,4 @@ export type SheetName =
   | 'tag-delete'
   | 'team-delete'
   | 'team-leave'
-  | 'team-switch'
   | 'web-push-ios-setup';

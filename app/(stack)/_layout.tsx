@@ -26,7 +26,6 @@ import { TeamDeleteSheet } from '@/features/teams/components/delete-sheet';
 import { TeamLeaveSheet } from '@/features/teams/components/leave-sheet';
 import { MemberLogsSheet } from '@/features/teams/components/member-logs-sheet';
 import { MemberRemoveSheet } from '@/features/teams/components/member-remove-sheet';
-import { TeamSwitchSheet } from '@/features/teams/components/switch-sheet';
 import { db } from '@/lib/db';
 import { Redirect, Stack } from 'expo-router';
 import * as React from 'react';
@@ -82,7 +81,6 @@ export default function Layout() {
       <TagDeleteSheet />
       <TeamDeleteSheet />
       <TeamLeaveSheet />
-      <TeamSwitchSheet />
       <McpSheet />
       <WebPushIosSetupSheet />
     </React.Fragment>

@@ -2,7 +2,6 @@ import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import type { ActivityWithRelations } from '@/features/activity/lib/group-activities';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
-import { useKeyedQueryCache } from '@/hooks/use-keyed-query-cache';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -17,7 +16,6 @@ const RECORD_REQUIRED_ACTIVITY_TYPES = [
 ] as const;
 
 const EMPTY_ACTIVITIES: ActivityWithRelations[] = [];
-const EMPTY_VISIBLE_LOG_IDS: string[] = [];
 const activityLinkFields = ['id', 'label', 'order', 'teamId', 'url'] as const;
 
 const activityLinkQuery = {
@@ -128,7 +126,7 @@ export const useActivities = () => {
     [hasCurrentViewerResult, viewerData?.roles, viewerQueryKey]
   );
 
-  const currentProfileId =
+  const viewerProfileId =
     viewerQueryKey && hasCurrentViewerResult
       ? viewerData?.profiles?.[0]?.id
       : undefined;
@@ -172,36 +170,25 @@ export const useActivities = () => {
       : null
   );
 
-  const nextVisibleLogIds = React.useMemo(
+  const visibleLogIds = React.useMemo(
     () =>
-      visibleLogsData?.logs
-        ? Array.from(new Set(visibleLogsData.logs.map((log) => log.id)))
-            .filter((id): id is string => !!id)
-            .sort()
-        : undefined,
+      Array.from(new Set((visibleLogsData?.logs ?? []).map((log) => log.id)))
+        .filter((id): id is string => !!id)
+        .sort(),
     [visibleLogsData?.logs]
   );
 
-  const { hasSnapshot: hasVisibleLogsSnapshot, value: visibleLogIds } =
-    useKeyedQueryCache({
-      emptyValue: EMPTY_VISIBLE_LOG_IDS,
-      queryKey: visibleLogsQueryKey,
-      value: nextVisibleLogIds,
-    });
-
   const visibleLogIdsKey = visibleLogIds.join(':');
-
-  const visibleLogsAreLoading =
-    !!visibleLogsQueryKey && visibleLogsLoading && !hasVisibleLogsSnapshot;
+  const visibleLogsAreLoading = !!visibleLogsQueryKey && visibleLogsLoading;
 
   const recordActivityQueryKey =
     viewerQueryKey &&
     hasCurrentViewerResult &&
     !visibleLogsAreLoading &&
-    currentProfileId &&
+    viewerProfileId &&
     teamIds.length > 0 &&
     visibleLogIds.length > 0
-      ? `${viewerQueryKey}:${currentProfileId}:${teamIdsKey}:${visibleLogIdsKey}:${manageableTeamIdsKey}`
+      ? `${viewerQueryKey}:${viewerProfileId}:${teamIdsKey}:${visibleLogIdsKey}:${manageableTeamIdsKey}`
       : undefined;
 
   const memberActivityQueryKey =
@@ -215,7 +202,7 @@ export const useActivities = () => {
           $: {
             where: {
               // InstantDB types do not model relation-path filters here.
-              'actor.id': { $ne: currentProfileId },
+              'actor.id': { $ne: viewerProfileId },
               'record.logId': { $in: visibleLogIds },
               teamId: { $in: teamIds },
               type: { $in: [...RECORD_REQUIRED_ACTIVITY_TYPES] },
@@ -254,30 +241,18 @@ export const useActivities = () => {
   const {
     data: recordActivitiesData,
     isLoading: recordActivitiesLoading,
-    canLoadNextPage: canLoadQueriedNextPage,
+    canLoadNextPage: canLoadRecordActivitiesNextPage,
     loadNextPage,
   } = db.useInfiniteQuery(recordActivitiesQuery);
 
   const { data: memberActivitiesData, isLoading: memberActivitiesLoading } =
     db.useQuery(memberActivitiesQuery);
 
-  const { hasSnapshot: hasRecordActivitiesSnapshot, value: recordActivities } =
-    useKeyedQueryCache({
-      emptyValue: EMPTY_ACTIVITIES,
-      queryKey: recordActivityQueryKey,
-      value: recordActivitiesData?.activities as
-        | ActivityWithRelations[]
-        | undefined,
-    });
+  const recordActivities = (recordActivitiesData?.activities ??
+    EMPTY_ACTIVITIES) as ActivityWithRelations[];
 
-  const { hasSnapshot: hasMemberActivitiesSnapshot, value: memberActivities } =
-    useKeyedQueryCache({
-      emptyValue: EMPTY_ACTIVITIES,
-      queryKey: memberActivityQueryKey,
-      value: memberActivitiesData?.activities as
-        | ActivityWithRelations[]
-        | undefined,
-    });
+  const memberActivities = (memberActivitiesData?.activities ??
+    EMPTY_ACTIVITIES) as ActivityWithRelations[];
 
   const activities = React.useMemo(
     () =>
@@ -288,9 +263,7 @@ export const useActivities = () => {
   );
 
   const canLoadActivitiesNextPage =
-    shouldQueryRecordActivities &&
-    hasRecordActivitiesSnapshot &&
-    canLoadQueriedNextPage;
+    shouldQueryRecordActivities && canLoadRecordActivitiesNextPage;
 
   const handleLoadNextPage = useLoadNextPage({
     canLoadNextPage: canLoadActivitiesNextPage,
@@ -308,10 +281,10 @@ export const useActivities = () => {
       visibleLogsAreLoading ||
       (shouldQueryRecordActivities &&
         recordActivitiesLoading &&
-        !hasRecordActivitiesSnapshot) ||
+        recordActivities.length === 0) ||
       (shouldQueryMemberActivities &&
         memberActivitiesLoading &&
-        !hasMemberActivitiesSnapshot),
+        memberActivities.length === 0),
     loadNextPage: handleLoadNextPage,
   };
 };
