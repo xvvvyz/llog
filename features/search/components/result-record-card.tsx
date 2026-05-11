@@ -50,6 +50,11 @@ export const ResultRecordCard = ({
     (snippet) => !!trimDisplayText(snippet)
   );
 
+  const activityLabel =
+    result.type === 'reply'
+      ? `replied${result.logName ? ' in' : ''}`
+      : `recorded${result.logName ? ' in' : ''}`;
+
   const hasMatchedText = !!(
     displayText ||
     attachmentNames?.length ||
@@ -60,7 +65,7 @@ export const ResultRecordCard = ({
   return (
     <Pressable className={className} onPress={onPress}>
       <Card className="min-w-0 p-4 gap-3">
-        <View className="flex-row gap-3 items-start">
+        <View className="flex-row gap-2.5 items-center">
           {result.author && (
             <Avatar
               avatar={result.author.image?.uri}
@@ -70,41 +75,29 @@ export const ResultRecordCard = ({
               size={32}
             />
           )}
-          <View className="flex-1 -mt-0.5 gap-0.5">
-            <View className="flex-row gap-2 items-baseline justify-between">
-              {result.author && (
-                <Text
-                  className="font-medium leading-tight text-sm shrink"
-                  numberOfLines={1}
-                >
-                  {result.author.name}
+          <View className="flex-1">
+            <View className="flex-row gap-1 items-center">
+              <Text className="text-xs shrink" numberOfLines={1}>
+                {result.author?.name}
+                <Text className="text-muted-foreground text-xs">
+                  {result.author?.name ? ' ' : ''}
+                  {activityLabel}
                 </Text>
-              )}
+              </Text>
               {result.logName && (
-                <View className="flex-1 flex-row min-w-32 gap-1 items-baseline justify-end">
-                  <Text
-                    className="leading-tight text-muted-foreground text-xs shrink-0"
-                    numberOfLines={1}
-                  >
-                    {result.type === 'reply' ? 'Reply in' : 'Record in'}
+                <View className="flex-row gap-1 items-center shrink">
+                  <View
+                    className="size-2.5 border-continuous rounded-[2px] shrink-0"
+                    style={{ backgroundColor: logColor?.default }}
+                  />
+                  <Text className="text-xs shrink" numberOfLines={1}>
+                    {result.logName}
                   </Text>
-                  <View className="flex-row gap-1 items-center shrink">
-                    <View
-                      className="size-2.5 border-continuous rounded-[2px] shrink-0"
-                      style={{ backgroundColor: logColor?.default }}
-                    />
-                    <Text
-                      className="leading-tight text-muted-foreground text-xs shrink"
-                      numberOfLines={1}
-                    >
-                      {result.logName}
-                    </Text>
-                  </View>
                 </View>
               )}
             </View>
             {result.date && (
-              <Text className="leading-tight text-muted-foreground text-xs">
+              <Text className="text-muted-foreground text-xs">
                 {formatDate(result.date)}
               </Text>
             )}

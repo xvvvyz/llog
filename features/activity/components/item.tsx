@@ -1,6 +1,5 @@
 import { ItemContent } from '@/features/activity/components/item-content';
 import { ItemFiles } from '@/features/activity/components/item-files';
-import { ItemName } from '@/features/activity/components/item-name';
 import { QuotedRecord } from '@/features/activity/components/quoted-record';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
 import { openRecordDetail } from '@/features/records/lib/route';
@@ -15,11 +14,11 @@ import { Text } from '@/ui/text';
 import { Pressable, View } from 'react-native';
 
 const CATEGORY_LABELS: Record<GroupedActivity['type'], string> = {
-  record_published: 'Recorded',
-  reply_posted: 'Replied',
-  reaction_added: 'Reacted',
-  member_joined: 'Joined',
-  member_left: 'Left',
+  record_published: 'recorded',
+  reply_posted: 'replied',
+  reaction_added: 'reacted',
+  member_joined: 'joined',
+  member_left: 'left',
 };
 
 export const Item = ({
@@ -40,6 +39,17 @@ export const Item = ({
   const logColor = log?.color != null ? SPECTRUM[colorScheme][log.color] : null;
   const category = CATEGORY_LABELS[group.type];
   const isClickable = Boolean(record?.id);
+  const uniqueActors = [...new Set(group.activities.map((a) => a.actor?.id))];
+
+  const othersCount =
+    group.type === 'reaction_added' ? uniqueActors.length - 1 : 0;
+
+  const activityLabel =
+    group.type === 'member_joined'
+      ? `joined${team?.name ? '' : ' the team'}`
+      : group.type === 'member_left'
+        ? `left${team?.name ? '' : ' the team'}`
+        : category + (log ? ' in' : '');
 
   const handlePress = () => {
     openRecordDetail(record?.id);
@@ -87,7 +97,7 @@ export const Item = ({
 
   const content = (
     <Card className={cn('gap-4', !filesAreLast && 'pb-4', className)}>
-      <View className="flex-row p-4 pb-0 gap-3 items-start">
+      <View className="flex-row p-4 pb-0 gap-2.5 items-center">
         <Avatar
           avatar={actor?.image?.uri}
           className="border-border-secondary border"
@@ -95,58 +105,48 @@ export const Item = ({
           seedId={actor?.avatarSeedId}
           size={32}
         />
-        <View className="flex-1 -mt-0.5">
-          <View className="flex-row gap-3 items-baseline justify-between">
-            <ItemName group={group} />
-            <View className="flex-1 flex-row min-w-32 gap-1 items-center justify-end">
-              <Text
-                className="text-muted-foreground text-xs shrink-0"
-                numberOfLines={1}
-              >
-                {group.type === 'member_joined'
-                  ? `Joined${team?.name ? '' : ' the team'}`
-                  : group.type === 'member_left'
-                    ? `Left${team?.name ? '' : ' the team'}`
-                    : category + (log ? ' in' : '')}
+        <View className="flex-1">
+          <View className="flex-row gap-1 items-center">
+            <Text className="text-xs shrink" numberOfLines={1}>
+              {actor?.name}
+              {othersCount > 0 && (
+                <Text className="text-muted-foreground text-xs">{` +${othersCount}`}</Text>
+              )}
+              <Text className="text-muted-foreground text-xs">
+                {' '}
+                {activityLabel}
               </Text>
-              {log &&
-                group.type !== 'member_joined' &&
-                group.type !== 'member_left' && (
-                  <View className="flex-row gap-1 items-center shrink">
-                    <View
-                      className="size-2.5 border-continuous rounded-[2px] shrink-0"
-                      style={{ backgroundColor: logColor?.default }}
-                    />
-                    <Text
-                      className="text-muted-foreground text-xs shrink"
-                      numberOfLines={1}
-                    >
-                      {log.name}
-                    </Text>
-                  </View>
-                )}
-              {(group.type === 'member_joined' ||
-                group.type === 'member_left') &&
-                team?.name && (
-                  <View className="flex-row gap-1 items-center shrink">
-                    <Avatar
-                      avatar={team.image?.uri}
-                      className="shrink-0"
-                      fallback="gradient"
-                      id={team.id}
-                      size={10}
-                    />
-                    <Text
-                      className="text-muted-foreground text-xs shrink"
-                      numberOfLines={1}
-                    >
-                      {team.name}
-                    </Text>
-                  </View>
-                )}
-            </View>
+            </Text>
+            {log &&
+              group.type !== 'member_joined' &&
+              group.type !== 'member_left' && (
+                <View className="flex-row gap-1 items-center shrink">
+                  <View
+                    className="size-2.5 border-continuous rounded-[2px] shrink-0"
+                    style={{ backgroundColor: logColor?.default }}
+                  />
+                  <Text className="text-xs shrink" numberOfLines={1}>
+                    {log.name}
+                  </Text>
+                </View>
+              )}
+            {(group.type === 'member_joined' || group.type === 'member_left') &&
+              team?.name && (
+                <View className="flex-row gap-1 items-center shrink">
+                  <Avatar
+                    avatar={team.image?.uri}
+                    className="shrink-0"
+                    fallback="gradient"
+                    id={team.id}
+                    size={10}
+                  />
+                  <Text className="text-xs shrink" numberOfLines={1}>
+                    {team.name}
+                  </Text>
+                </View>
+              )}
           </View>
-          <Text className="leading-tight text-muted-foreground text-xs">
+          <Text className="text-muted-foreground text-xs">
             {formatDate(group.latestDate)}
           </Text>
         </View>
