@@ -49,14 +49,15 @@ export const ListItem = ({
           <TagChipList
             chipClassName="max-w-full dark:bg-background"
             className="-ml-1.5 -mt-1.5 w-full pr-6 gap-0.5"
+            maxVisible={1}
             showEmpty
             tags={tags}
             textClassName="text-foreground"
           />
           <View className="flex-row w-full gap-3 items-end justify-between">
             <Text
-              className="flex-1 -mb-[5px] leading-snug text-white"
-              numberOfLines={1}
+              className="flex-1 -mb-[5px] min-w-0 leading-tight text-balance text-white web:whitespace-normal"
+              numberOfLines={2}
             >
               {name}
             </Text>
