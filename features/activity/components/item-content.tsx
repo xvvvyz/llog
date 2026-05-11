@@ -1,12 +1,13 @@
 import { isReactionEmoji } from '@/domain/records/reactions';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
-import { renderLinkifiedText } from '@/features/records/components/linkified-text';
+import { TruncatedText } from '@/features/records/components/truncated-text';
 import { groupReactionItems } from '@/features/records/lib/group-reaction-items';
 import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { Icon } from '@/ui/icon';
-import { Text } from '@/ui/text';
 import { View } from 'react-native';
+
+const ACTIVITY_TEXT_LINES = 3;
 
 export const ItemContent = ({
   group,
@@ -23,17 +24,13 @@ export const ItemContent = ({
   switch (type) {
     case 'record_published': {
       return recordText ? (
-        <Text className="-mt-1 px-4 web:text-pretty" numberOfLines={2}>
-          {renderLinkifiedText({ text: recordText })}
-        </Text>
+        <ActivityText logColor={logColor} text={recordText} variant="record" />
       ) : null;
     }
 
     case 'reply_posted': {
       return replyText ? (
-        <Text className="-my-1 px-4 web:text-pretty" numberOfLines={2}>
-          {renderLinkifiedText({ text: replyText })}
-        </Text>
+        <ActivityText logColor={logColor} text={replyText} variant="reply" />
       ) : null;
     }
 
@@ -80,3 +77,21 @@ export const ItemContent = ({
     }
   }
 };
+
+const ActivityText = ({
+  logColor,
+  text,
+  variant,
+}: {
+  logColor: { lighter: string; default: string; darker: string } | null;
+  text: string;
+  variant: 'record' | 'reply';
+}) => (
+  <TruncatedText
+    className={`${variant === 'record' ? '-mt-1' : '-my-1'} px-4`}
+    color={logColor?.darker}
+    expandable={false}
+    numberOfLines={ACTIVITY_TEXT_LINES}
+    text={text}
+  />
+);

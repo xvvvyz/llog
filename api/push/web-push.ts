@@ -1,5 +1,6 @@
 import type { Db } from '@/api/middleware/db';
 import * as permissions from '@/domain/teams/permissions';
+import { recordMarkdownToPlainText } from '@/features/records/lib/record-markdown';
 import { buildPushHTTPRequest } from '@pushforge/builder';
 import { z } from 'zod/v4';
 
@@ -39,7 +40,7 @@ const getPrivateJwk = (env: CloudflareEnv) => {
 };
 
 const trimBody = (text?: string | null) => {
-  const value = text?.trim();
+  const value = recordMarkdownToPlainText(text ?? '');
   if (!value) return '';
 
   return value.length > MAX_BODY_LENGTH

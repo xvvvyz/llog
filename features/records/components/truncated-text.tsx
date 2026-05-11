@@ -9,11 +9,13 @@ import * as trimDisplayText from '@/features/records/lib/trim-display-text';
 export const TruncatedText = ({
   className,
   color,
+  expandable = true,
   numberOfLines,
   text,
 }: {
   className?: string;
   color?: string;
+  expandable?: boolean;
   numberOfLines?: number;
   text: string;
 }) => {
@@ -69,7 +71,7 @@ export const TruncatedText = ({
       >
         {renderRecordMarkdownText({ color, text: displayText })}
       </Text>
-      {truncated && !expanded && (
+      {expandable && truncated && !expanded && (
         <Pressable className="px-4" onPress={() => setExpanded(true)}>
           <Text
             className={cn(!color && 'text-primary', 'hover:underline')}

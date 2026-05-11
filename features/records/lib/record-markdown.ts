@@ -32,6 +32,14 @@ export function parseRecordMarkdown(text: string): RecordMarkdownBlock[] {
   return text.split('\n').map((line) => parseRecordMarkdownLine(line));
 }
 
+export function recordMarkdownToPlainText(text: string): string {
+  return parseRecordMarkdown(text)
+    .map((block) => getPlainInlineText(block.children))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function parseRecordMarkdownLine(line: string): RecordMarkdownBlock {
   const title = /^(#{1,6})\s+(.+)$/.exec(line);
 
@@ -232,4 +240,13 @@ function mergeAdjacentTextNodes(nodes: RecordMarkdownInline[]) {
     merged.push(node);
     return merged;
   }, []);
+}
+
+function getPlainInlineText(inlines: RecordMarkdownInline[]): string {
+  return inlines
+    .map((inline) => {
+      if (inline.kind === 'text') return inline.text;
+      return getPlainInlineText(inline.children);
+    })
+    .join('');
 }

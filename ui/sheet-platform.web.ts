@@ -156,6 +156,20 @@ const isEditableElement = (target: EventTarget | null) => {
   return isTextEntryElement(target);
 };
 
+const hasActiveTextSelection = () => {
+  const activeElement = document.activeElement;
+
+  if (
+    activeElement instanceof HTMLInputElement ||
+    activeElement instanceof HTMLTextAreaElement
+  ) {
+    return activeElement.selectionStart !== activeElement.selectionEnd;
+  }
+
+  const selection = window.getSelection();
+  return !!selection && !selection.isCollapsed;
+};
+
 const canScrollElement = (
   element: HTMLElement,
   deltaX: number,
@@ -273,6 +287,7 @@ const useWebSheetScrollLock = (open: boolean) => {
     const preventPageTouchMove = (event: TouchEvent) => {
       const touch = event.touches[0];
       if (!touch) return;
+      if (hasActiveTextSelection()) return;
       const deltaX = touchStartX - touch.clientX;
       const deltaY = touchStartY - touch.clientY;
       if (canScrollWithinTarget(event.target, deltaX, deltaY)) return;
