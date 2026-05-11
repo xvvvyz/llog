@@ -65,7 +65,7 @@ const loadNextTemplateOrder = async (ctx: McpContext, logId: string) => {
       $: {
         fields: ['order' as const],
         order: { order: 'desc' },
-        where: { log: logId },
+        where: { logId },
       },
     },
   })) as { templates?: Pick<McpTemplate, 'order'>[] };
@@ -134,7 +134,7 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
         $: {
           fields: logTemplates.logTemplateFields,
           order: { order: 'asc' },
-          where: { log: logId },
+          where: { logId },
         },
         ...logTemplates.templateQuery,
       },
@@ -208,7 +208,7 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
       if (text !== undefined) {
         const trimmedText = text.trim();
         if (!trimmedText) throw new Error('text cannot be empty');
-        fields.text = trimmedText;
+        fields.text = text;
       }
 
       const transactions = Object.keys(fields).length
@@ -251,8 +251,11 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
     if (!logId) throw new Error('logId is required to create a template');
     const { log, viewer } = await getTemplateLog(ctx, logId);
     requireManageTemplates({ teamId: log.teamId, viewer });
-    const trimmedText = text?.trim();
-    if (!trimmedText) throw new Error('text is required to create a template');
+    const templateText = text;
+
+    if (!templateText?.trim()) {
+      throw new Error('text is required to create a template');
+    }
 
     const nextTagIds = await validateTemplateTags({
       ctx,
@@ -266,9 +269,10 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
     await ctx.db.transact([
       ctx.db.tx.templates[newTemplateId]
         .update({
+          logId: log.id,
           order: await loadNextTemplateOrder(ctx, log.id),
           teamId: log.teamId,
-          text: trimmedText,
+          text: templateText,
         })
         .link({ log: log.id }),
       ...nextTagIds.map((tagId) =>

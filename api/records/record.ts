@@ -412,6 +412,7 @@ app.post(
     await c.var.db.transact([
       c.var.db.tx.records[draftRecordId]
         .update({
+          authorId,
           date: now,
           isDraft: true,
           teamId: draftTeamId,

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { useSheetScrollHandler } from '@/ui/sheet-drag';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
@@ -29,30 +30,38 @@ export const SheetListScrollView = React.forwardRef<
       contentContainerClassName,
       keyboardDismissMode = 'on-drag',
       keyboardShouldPersistTaps = 'always',
+      onScroll,
       showsVerticalScrollIndicator = false,
+      scrollEventThrottle = 16,
       style,
       variant,
       ...props
     },
     ref
-  ) => (
-    <ScrollView
-      ref={ref}
-      keyboardDismissMode={keyboardDismissMode}
-      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-      showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-      style={style}
-      className={cn(
-        '-mx-px max-h-[19rem] min-h-0 border-b border-border-secondary border-x rounded-b-4xl md:rounded-b-3xl border-continuous',
-        className
-      )}
-      contentContainerClassName={cn(
-        sheetListContentVariants({ variant }),
-        contentContainerClassName
-      )}
-      {...props}
-    />
-  )
+  ) => {
+    const handleScroll = useSheetScrollHandler(onScroll);
+
+    return (
+      <ScrollView
+        ref={ref}
+        keyboardDismissMode={keyboardDismissMode}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        onScroll={handleScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+        style={style}
+        className={cn(
+          '-mx-px max-h-52 min-h-0 border-b border-border-secondary border-x rounded-b-4xl md:max-h-96 md:rounded-b-3xl border-continuous',
+          className
+        )}
+        contentContainerClassName={cn(
+          sheetListContentVariants({ variant }),
+          contentContainerClassName
+        )}
+        {...props}
+      />
+    );
+  }
 );
 
 SheetListScrollView.displayName = 'SheetListScrollView';

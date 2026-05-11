@@ -1,3 +1,4 @@
+import * as recordIdentity from '@/domain/records/identity-fields';
 import schema from '@/instant.schema';
 import type { db as clientDb } from '@/lib/db';
 import type { TransactionChunk } from '@instantdb/react-native';
@@ -54,7 +55,7 @@ export const buildPublishDraftRecordTransactions = ({
 }): Transaction[] => [
   db.tx.records[recordId].update({
     ...optionalDate(contentDate),
-    isDraft: false,
+    ...recordIdentity.getPublishedLogRecordWhere(logId),
     text,
   }),
   buildRecordPublishedActivityTransaction({
@@ -89,6 +90,7 @@ export const buildCreatePublishedRecordTransactions = ({
 }): Transaction[] => [
   db.tx.records[recordId]
     .update({
+      ...recordIdentity.getRecordIdentityFields({ authorId, logId }),
       date: now,
       isDraft: false,
       teamId,

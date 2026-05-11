@@ -5,16 +5,20 @@ import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
+import { TruncatedText } from '@/features/records/components/truncated-text';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { Link } from '@/features/records/types/link';
 import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
-import { Text } from '@/ui/text';
+import { TextContext } from '@/ui/text';
 import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+
+const QUOTED_TEXT_LINES = 3;
+const QUOTED_TEXT_CLASS_NAME = 'text-muted-foreground text-sm';
 
 export const QuotedRecord = ({
   canAnalyzeAudio,
@@ -71,12 +75,9 @@ export const QuotedRecord = ({
                 logColor ? { backgroundColor: logColor.default } : undefined
               }
             />
-            <Text
-              className="max-w-full text-muted-foreground text-sm shrink"
-              numberOfLines={1}
-            >
-              {displayText}
-            </Text>
+            <View className="flex-1 min-w-0">
+              <QuotedRecordText text={displayText} />
+            </View>
           </View>
         )}
         {!!visualItems.length && (
@@ -168,3 +169,14 @@ export const QuotedRecord = ({
     </React.Fragment>
   );
 };
+
+const QuotedRecordText = ({ text }: { text: string }) => (
+  <TextContext.Provider value={QUOTED_TEXT_CLASS_NAME}>
+    <TruncatedText
+      className={cn('max-w-full shrink', QUOTED_TEXT_CLASS_NAME)}
+      expandable={false}
+      numberOfLines={QUOTED_TEXT_LINES}
+      text={text}
+    />
+  </TextContext.Provider>
+);

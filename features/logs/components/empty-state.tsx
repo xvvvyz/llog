@@ -104,21 +104,8 @@ export const EmptyState = ({ logId }: { logId: string }) => {
             size="xs"
             variant="secondary"
           >
-            <Text>Edit details</Text>
+            <Text>Details</Text>
             <Icon className="-mr-0.5" icon={NotePencil} />
-          </Button>
-          <Button
-            className="justify-between"
-            onPress={handleInvite}
-            size="xs"
-            variant="secondary"
-          >
-            <Text>Invite members</Text>
-            {isInviteLoading ? (
-              <Spinner className="-mr-0.5" size="xs" />
-            ) : (
-              <Icon className="-mr-0.5" icon={UserPlus} />
-            )}
           </Button>
           {hasMembers && (
             <Button
@@ -127,18 +114,31 @@ export const EmptyState = ({ logId }: { logId: string }) => {
               size="xs"
               variant="secondary"
             >
-              <Text>Add members</Text>
+              <Text>Members</Text>
               <Icon className="-mr-0.5" icon={UsersThree} />
             </Button>
           )}
+          <Button
+            className="justify-between"
+            onPress={handleInvite}
+            size="xs"
+            variant="secondary"
+          >
+            <Text>Invite</Text>
+            {isInviteLoading ? (
+              <Spinner className="-mr-0.5" size="xs" />
+            ) : (
+              <Icon className="-mr-0.5" icon={UserPlus} />
+            )}
+          </Button>
         </>
       ) : null}
       {!actionsLoading && (
         <Button
-          className="mt-3 active:opacity-90 web:hover:opacity-90"
+          className="active:opacity-90 web:hover:opacity-90"
           onPress={() => sheetManager.open('record-create', logId)}
-          size="xs"
           style={{ backgroundColor: logColor.default }}
+          wrapperClassName="mt-4 self-center"
         >
           <Icon className="-ml-0.5 text-white" icon={Plus} />
           <Text className="text-white">Record</Text>

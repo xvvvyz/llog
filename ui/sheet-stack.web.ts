@@ -1,21 +1,33 @@
 import { useDismissStack } from '@/ui/dismiss-stack';
 import * as React from 'react';
+import type { SharedValue } from 'react-native-reanimated';
 
 type SheetStackOptions = {
+  backdropFadeDistance?: number;
+  backdropTranslateY?: SharedValue<number>;
   layer: number;
   onDismiss: () => void;
   open: boolean;
 };
 
-type SheetStackState = { isTopSheet: boolean; zIndex: number };
+type SheetStackState = {
+  isLastSheet: boolean;
+  isTopSheet: boolean;
+  zIndex: number;
+};
 
 type SheetStackBackdropState = {
+  fadeDistance?: number;
+  isLastSheet: boolean;
   layer: number;
   onDismiss: () => void;
   open: boolean;
+  translateY?: SharedValue<number>;
 };
 
 type WebSheetStackItem = {
+  backdropFadeDistance?: number;
+  backdropTranslateY?: SharedValue<number>;
   id: string;
   layer: number;
   onDismissRef: React.RefObject<() => void>;
@@ -36,10 +48,9 @@ const emitWebSheetStackChange = () => {
 const registerWebSheet = (
   id: string,
   layer: number,
-  onDismissRef: React.RefObject<() => void>
+  onDismissRef: React.RefObject<() => void>,
+  order: number
 ) => {
-  const order = ++nextWebSheetOrder;
-
   webSheetStack = [
     ...webSheetStack.filter((item) => item.id !== id),
     { id, layer, onDismissRef, order },
@@ -51,6 +62,31 @@ const registerWebSheet = (
     webSheetStack = webSheetStack.filter((item) => item.id !== id);
     emitWebSheetStackChange();
   };
+};
+
+const updateWebSheet = (
+  id: string,
+  values: Pick<
+    WebSheetStackItem,
+    'backdropFadeDistance' | 'backdropTranslateY' | 'layer'
+  >
+) => {
+  const currentItem = webSheetStack.find((item) => item.id === id);
+
+  if (
+    !currentItem ||
+    (currentItem.layer === values.layer &&
+      currentItem.backdropTranslateY === values.backdropTranslateY &&
+      currentItem.backdropFadeDistance === values.backdropFadeDistance)
+  ) {
+    return;
+  }
+
+  webSheetStack = webSheetStack.map((item) =>
+    item.id === id ? { ...item, ...values } : item
+  );
+
+  emitWebSheetStackChange();
 };
 
 const getTopWebSheet = () =>
@@ -85,6 +121,8 @@ const getTopWebSheetId = () => getTopWebSheet()?.id ?? null;
 const getWebSheetStackVersion = () => webSheetStackVersion;
 
 export const useSheetStack = ({
+  backdropFadeDistance,
+  backdropTranslateY,
   layer,
   onDismiss,
   open,
@@ -92,6 +130,8 @@ export const useSheetStack = ({
   const sheetId = React.useId();
   const onDismissRef = React.useRef(onDismiss);
   onDismissRef.current = onDismiss;
+  const layerRef = React.useRef(layer);
+  layerRef.current = layer;
   const [sheetOrder, setSheetOrder] = React.useState(0);
 
   const topSheetId = React.useSyncExternalStore(
@@ -100,16 +140,33 @@ export const useSheetStack = ({
     () => null
   );
 
+  React.useSyncExternalStore(
+    subscribeToWebSheetStack,
+    getWebSheetStackVersion,
+    () => 0
+  );
+
   React.useEffect(() => {
     if (!open) return;
-    const order = nextWebSheetOrder + 1;
+    const order = ++nextWebSheetOrder;
     setSheetOrder(order);
-    return registerWebSheet(sheetId, layer, onDismissRef);
-  }, [layer, open, sheetId]);
+    return registerWebSheet(sheetId, layerRef.current, onDismissRef, order);
+  }, [open, sheetId]);
+
+  React.useEffect(() => {
+    if (!open) return;
+
+    updateWebSheet(sheetId, {
+      backdropFadeDistance,
+      backdropTranslateY,
+      layer,
+    });
+  }, [backdropFadeDistance, backdropTranslateY, layer, open, sheetId]);
 
   useDismissStack({ id: sheetId, layer, onDismiss, open });
 
   return {
+    isLastSheet: open && webSheetStack.length === 1,
     isTopSheet: open && topSheetId === sheetId,
     zIndex: getWebSheetZIndex({ layer, order: sheetOrder }),
   };
@@ -123,10 +180,14 @@ export const useSheetStackBackdrop = (): SheetStackBackdropState => {
   );
 
   const topSheet = getTopWebSheet();
+  const isLastSheet = webSheetStack.length === 1;
 
   return {
+    fadeDistance: isLastSheet ? topSheet?.backdropFadeDistance : undefined,
+    isLastSheet,
     layer: topSheet ? Math.max(0, getWebSheetZIndex(topSheet) - 1) : 0,
     onDismiss: () => topSheet?.onDismissRef.current(),
     open: !!topSheet,
+    translateY: isLastSheet ? topSheet?.backdropTranslateY : undefined,
   };
 };

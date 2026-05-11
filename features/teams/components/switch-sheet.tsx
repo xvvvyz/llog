@@ -1,19 +1,28 @@
 import { useUi } from '@/features/account/queries/use-ui';
-import { createTeam } from '@/features/teams/mutations/create';
-import { switchTeam } from '@/features/teams/mutations/switch';
+import { useTeamTransition } from '@/features/teams/hooks/use-team-transition';
 import { useTeams } from '@/features/teams/queries/use-teams';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Check, Plus } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const TeamSwitchSheet = () => {
   const sheetManager = useSheetManager();
+  const colorScheme = useColorScheme();
   const ui = useUi();
   const { teams } = useTeams();
+
+  const teamTransition = useTeamTransition({
+    onReady: () => {
+      sheetManager.close('team-switch');
+    },
+  });
 
   return (
     <Sheet
@@ -28,33 +37,41 @@ export const TeamSwitchSheet = () => {
             <Button
               key={t.id}
               className="rounded-none justify-between"
+              disabled={teamTransition.isPending}
+              onPress={() => teamTransition.switchToTeam(t.id)}
               variant="ghost"
               wrapperClassName="rounded-none"
-              onPress={() => {
-                switchTeam({ teamId: t.id, uiId: ui.id });
-                sheetManager.close('team-switch');
-              }}
             >
               <Text className="font-normal">{t.name}</Text>
-              {t.id === ui.activeTeamId && (
+              {teamTransition.pendingTeamId === t.id ? (
+                <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+              ) : t.id === ui.activeTeamId ? (
                 <Icon className="-mr-1 text-placeholder" icon={Check} />
-              )}
+              ) : null}
             </Button>
           ))}
         </View>
         <Button
+          disabled={teamTransition.isPending}
+          onPress={teamTransition.createAndSwitchToTeam}
+          size="sm"
           variant="secondary"
           wrapperClassName="mt-8"
-          onPress={() => {
-            createTeam({ name: 'Team' });
-            sheetManager.close('team-switch');
-          }}
         >
-          <Icon className="text-placeholder" icon={Plus} />
-          <Text>New team</Text>
+          {teamTransition.isCreatingTeam ? (
+            <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+          ) : (
+            <Icon className="text-placeholder" icon={Plus} />
+          )}
+          <Text
+            className={teamTransition.isCreatingTeam ? 'text-placeholder' : ''}
+          >
+            New team
+          </Text>
         </Button>
         <Button
           onPress={() => sheetManager.close('team-switch')}
+          size="sm"
           variant="secondary"
           wrapperClassName="mt-3"
         >

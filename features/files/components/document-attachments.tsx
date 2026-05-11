@@ -593,7 +593,7 @@ export const DocumentAttachments = ({
               items.map(renderSheetItem)
             )}
           </SheetListScrollView>
-          <SheetFooter contentClassName="flex-row gap-4">
+          <SheetFooter className="flex" contentClassName="flex-row gap-4">
             <Button
               onPress={() => setIsSheetOpen(false)}
               size="sm"

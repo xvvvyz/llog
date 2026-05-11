@@ -60,11 +60,17 @@ export const AudioSheetContent = ({
           className="active:opacity-90 web:hover:opacity-90"
           disabled={isUploading || !canSave}
           onPress={onSave}
+          size="sm"
           style={logColor ? { backgroundColor: logColor } : undefined}
         >
           {isUploading ? <Spinner /> : <Text>Save</Text>}
         </Button>
-        <Button disabled={isUploading} onPress={onCancel} variant="secondary">
+        <Button
+          disabled={isUploading}
+          onPress={onCancel}
+          size="sm"
+          variant="secondary"
+        >
           <Text>Cancel</Text>
         </Button>
       </View>

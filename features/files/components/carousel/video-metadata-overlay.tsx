@@ -82,6 +82,45 @@ const getBalancedCaptionLines = (text: string, maxLineLength: number) => {
   );
 };
 
+const VideoTranscriptCaptionTrigger = ({
+  bottomOffset,
+  captionLines,
+  onPress,
+}: {
+  bottomOffset: number;
+  captionLines: string[];
+  onPress: () => void;
+}) => {
+  if (captionLines.length === 0) return null;
+
+  return (
+    <View
+      className="absolute left-6 right-6 z-10 items-center md:left-16 md:right-16"
+      pointerEvents="box-none"
+      style={{ bottom: bottomOffset }}
+    >
+      <Button
+        accessibilityLabel="Open transcript"
+        className="flex-col max-w-3xl gap-1 items-center"
+        onPress={onPress}
+        pressOnWebTouchRelease={false}
+        variant="link"
+        wrapperClassName="overflow-visible rounded"
+      >
+        {captionLines.map((line, index) => (
+          <Text
+            key={`${line}:${index}`}
+            className="max-w-full px-1.5 py-0.5 bg-background/75 font-medium leading-snug text-balance text-base text-center text-foreground rounded md:text-lg"
+            numberOfLines={1}
+          >
+            {line}
+          </Text>
+        ))}
+      </Button>
+    </View>
+  );
+};
+
 export const VideoMetadataOverlay = ({
   currentTime,
   file,
@@ -228,31 +267,13 @@ export const VideoMetadataOverlay = ({
               <Text>Close</Text>
             </Button>
           )}
-          renderTrigger={({ openSheet }) =>
-            currentTranscriptSegment ? (
-              <View
-                className="absolute left-6 right-6 z-10 items-center md:left-16 md:right-16"
-                pointerEvents="box-none"
-                style={{ bottom: transcriptBottomOffset }}
-              >
-                <Pressable
-                  accessibilityRole="button"
-                  className="max-w-3xl gap-1 items-center"
-                  onPress={openSheet}
-                >
-                  {captionLines.map((line, index) => (
-                    <Text
-                      key={`${line}:${index}`}
-                      className="max-w-full px-1.5 py-0.5 bg-background/75 font-medium leading-snug text-balance text-base text-center text-foreground rounded md:text-lg"
-                      numberOfLines={1}
-                    >
-                      {line}
-                    </Text>
-                  ))}
-                </Pressable>
-              </View>
-            ) : null
-          }
+          renderTrigger={({ openSheet }) => (
+            <VideoTranscriptCaptionTrigger
+              bottomOffset={transcriptBottomOffset}
+              captionLines={captionLines}
+              onPress={openSheet}
+            />
+          )}
         />
       )}
     </React.Fragment>

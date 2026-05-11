@@ -9,6 +9,8 @@ import { Spinner } from '@/ui/spinner';
 import { Portal } from '@rn-primitives/portal';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
+import { GestureDetector } from 'react-native-gesture-handler';
+import * as sheetDrag from '@/ui/sheet-drag';
 
 import {
   KeyboardAvoidingView,
@@ -25,6 +27,12 @@ import Animated, {
   FadeOut,
   FadeOutDown,
 } from 'react-native-reanimated';
+
+export {
+  SHEET_SORTABLE_DRAG_HANDLE_PROPS,
+  useSheetDragLock,
+  useSheetScrollHandler,
+} from '@/ui/sheet-drag';
 
 export const SHEET_LAYERS = {
   route: OVERLAY_LAYERS.routeSheet,
@@ -49,6 +57,12 @@ const sheetLoadingVariants = cva(
 
 export const SheetBackdrop = () => {
   const backdrop = useSheetStackBackdrop();
+
+  const backdropDragStyle = sheetDrag.useSheetBackdropDragStyle(
+    backdrop.translateY,
+    backdrop.fadeDistance
+  );
+
   if (Platform.OS !== 'web' || !backdrop.open) return null;
 
   return (
@@ -57,7 +71,7 @@ export const SheetBackdrop = () => {
         className="fixed inset-0 bg-background/90"
         entering={animation(FadeIn)}
         exiting={animation(FadeOut)}
-        style={{ zIndex: backdrop.layer }}
+        style={[{ zIndex: backdrop.layer }, backdropDragStyle]}
       >
         <Pressable
           className="h-full w-full cursor-default"
@@ -94,8 +108,21 @@ export const Sheet = ({
   const inset = useSafeAreaInsets();
   const windowDimensions = useWindowDimensions();
   const isDesktopSheet = windowDimensions.width >= BREAKPOINT_VALUES.md;
-  const sheetContentRef = React.useRef<React.ComponentRef<typeof View>>(null);
-  const sheetStack = useSheetStack({ layer, onDismiss, open });
+
+  const sheetContentRef =
+    React.useRef<React.ComponentRef<typeof Animated.View>>(null);
+
+  const sheetDragMetrics = sheetDrag.useSheetDragMetrics(
+    windowDimensions.height
+  );
+
+  const sheetStack = useSheetStack({
+    backdropFadeDistance: sheetDragMetrics.dismissThreshold,
+    backdropTranslateY: sheetDragMetrics.translateY,
+    layer,
+    onDismiss,
+    open,
+  });
 
   const platformLayout = useSheetPlatformLayout({
     activeElementRootRef: sheetContentRef,
@@ -118,6 +145,53 @@ export const Sheet = ({
   const heightStyle = { maxHeight: availableHeight };
   const shouldRenderInlineBackdrop = !isWeb || portalHostName != null;
 
+  const sheetDragBehavior = sheetDrag.useSheetDragBehavior({
+    ...sheetDragMetrics,
+    isTopSheet: sheetStack.isTopSheet,
+    isWeb,
+    onDismiss,
+    open,
+  });
+
+  const sheetCard = (
+    <Animated.View
+      ref={sheetContentRef}
+      style={[heightStyle, sheetDragBehavior.sheetStyle]}
+      className={cn(
+        sheetVariants({ variant }),
+        loading && 'min-h-24',
+        className
+      )}
+      {...sheetDrag.SHEET_DRAG_SURFACE_PROPS}
+      {...sheetDragBehavior.webTouchHandlers}
+    >
+      <View
+        accessibilityElementsHidden
+        aria-hidden
+        className="h-5 items-center justify-center shrink-0 md:hidden"
+        importantForAccessibility="no-hide-descendants"
+        pointerEvents="none"
+      >
+        <View className="h-1.5 w-11 rounded-full bg-border-secondary" />
+      </View>
+      <sheetDrag.SheetDragProviders
+        dragLock={sheetDragBehavior.dragLockContext}
+        scroll={sheetDragBehavior.scrollContext}
+      >
+        {children}
+        {loading && (
+          <Animated.View
+            className={sheetLoadingVariants({ variant })}
+            entering={animation(FadeIn)}
+            exiting={animation(FadeOut)}
+          >
+            <Spinner />
+          </Animated.View>
+        )}
+      </sheetDrag.SheetDragProviders>
+    </Animated.View>
+  );
+
   const sheet = (
     <Animated.View
       className="absolute inset-0"
@@ -130,6 +204,9 @@ export const Sheet = ({
           className="absolute inset-0 bg-background/90"
           entering={animation(FadeIn)}
           exiting={animation(FadeOut)}
+          style={
+            sheetStack.isLastSheet ? sheetDragBehavior.backdropStyle : undefined
+          }
         >
           <Pressable
             className="h-full w-full cursor-default"
@@ -143,26 +220,20 @@ export const Sheet = ({
         pointerEvents="box-none"
         style={platformLayout.keyboardAvoidingStyle}
       >
-        <View
-          ref={sheetContentRef}
-          className={cn(sheetVariants({ variant }), className)}
-          style={heightStyle}
-        >
-          {children}
-          {loading && (
-            <Animated.View
-              className={sheetLoadingVariants({ variant })}
-              entering={animation(FadeIn)}
-              exiting={animation(FadeOut)}
-            >
-              <Spinner />
-            </Animated.View>
-          )}
-        </View>
+        {isWeb ? (
+          sheetCard
+        ) : (
+          <GestureDetector gesture={sheetDragBehavior.dismissGesture}>
+            {sheetCard}
+          </GestureDetector>
+        )}
         {isDesktopSheet ? null : (
-          <View
+          <Animated.View
             className="border-border border-x bg-popover"
-            style={platformLayout.bottomSpacerStyle}
+            style={[
+              platformLayout.bottomSpacerStyle,
+              sheetDragBehavior.sheetStyle,
+            ]}
           />
         )}
       </KeyboardAvoidingView>

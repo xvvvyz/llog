@@ -71,7 +71,7 @@ const TemplatePickerSheet = ({
               <View className="flex-1 flex-row min-w-0 gap-3 items-center">
                 <TemplateTagSummary className="-ml-1.5" tags={template.tags} />
                 <Text
-                  className="flex-1 min-w-0 font-normal text-muted-foreground"
+                  className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
                   numberOfLines={1}
                 >
                   {template.text}

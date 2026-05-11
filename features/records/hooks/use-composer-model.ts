@@ -140,8 +140,11 @@ export const useRecordComposerModel = () => {
   const logColor = useLogColor({ id: recordLogId });
   const myRole = useMyRole({ teamId: recordTeamId });
 
+  const canCheckRecordTags =
+    (!isCopy || isSingleTargetCopy) && !myRole.isLoading && !myRole.canManage;
+
   const recordTags = useHasRecordTagsForLog({
-    enabled: (!isCopy || isSingleTargetCopy) && !myRole.canManage,
+    enabled: canCheckRecordTags,
     logId: recordLogId,
     teamId: recordTeamId,
   });

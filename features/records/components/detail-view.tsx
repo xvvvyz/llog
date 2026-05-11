@@ -1,3 +1,4 @@
+import { useLogColor } from '@/features/logs/hooks/use-color';
 import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { type UseRecordResult } from '@/features/records/queries/use-record';
@@ -5,6 +6,7 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Page } from '@/ui/page';
+import { useSheetScrollHandler } from '@/ui/sheet-drag';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
@@ -22,6 +24,8 @@ export const DetailView = ({
 }) => {
   const scrollViewRef = React.useRef<ScrollView>(null);
   const sheetManager = useSheetManager();
+  const handleScroll = useSheetScrollHandler();
+  const logColor = useLogColor({ id: record.log?.id });
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: recordId,
@@ -46,13 +50,15 @@ export const DetailView = ({
   }, [data.length, pendingScroll, record.isLoading, recordId]);
 
   return (
-    <Page className={cn('min-h-0', pageClassName)}>
+    <Page className={cn('flex-col min-h-0', pageClassName)}>
       <ScrollView
         ref={scrollViewRef}
-        className="-mx-px min-h-0 border-b border-border-secondary border-continuous border-x rounded-b-4xl"
+        className="flex-1 -mx-px min-h-0 border-b border-border-secondary border-continuous border-x rounded-b-4xl"
         contentContainerClassName="mx-auto w-full max-w-lg"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="always"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {data.map((item, index) => (
           <Entry
@@ -66,7 +72,7 @@ export const DetailView = ({
           />
         ))}
       </ScrollView>
-      <View>
+      <View className="h-[4.5rem] shrink-0">
         <View className="flex-row mx-auto max-w-lg w-full p-4 gap-4">
           <Button
             onPress={onClose}
@@ -77,11 +83,14 @@ export const DetailView = ({
             <Text>Close</Text>
           </Button>
           <Button
+            className="active:opacity-90 web:hover:opacity-90"
             onPress={() => sheetManager.open('reply-create', recordId)}
             size="sm"
+            style={{ backgroundColor: logColor.default }}
+            variant="secondary"
             wrapperClassName="flex-1"
           >
-            <Text>Reply</Text>
+            <Text className="text-white">Reply</Text>
           </Button>
         </View>
       </View>

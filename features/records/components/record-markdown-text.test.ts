@@ -44,6 +44,36 @@ describe('renderRecordMarkdownText', () => {
     const children = React.Children.toArray(child.props.children);
     expect(children[0]).toBe('  ');
   });
+
+  test('flattens list item blocks for truncated web previews', () => {
+    platform.OS = 'web';
+
+    const nodes = renderRecordMarkdownText({
+      flattenListItems: true,
+      text: '- silly\n- ...loser',
+    });
+
+    const first = getElement(nodes[0]);
+    const second = getElement(nodes[2]);
+    const firstChildren = React.Children.toArray(first.props.children);
+    const secondChildren = React.Children.toArray(second.props.children);
+    expect(first.type).toBe(React.Fragment);
+    expect(firstChildren[0]).toBe('');
+
+    expect(
+      React.Children.toArray(getElement(firstChildren[1]).props.children)
+    ).toEqual(['-', ' ']);
+
+    expect(firstChildren[2]).toBe('silly');
+    expect(nodes[1]).toBe('\n');
+    expect(second.type).toBe(React.Fragment);
+
+    expect(
+      React.Children.toArray(getElement(secondChildren[1]).props.children)
+    ).toEqual(['-', ' ']);
+
+    expect(secondChildren[2]).toBe('...loser');
+  });
 });
 
 function getElement(node: React.ReactNode) {

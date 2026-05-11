@@ -115,7 +115,7 @@ export const LogTemplateEditorSheet = () => {
         await updateTemplate({
           id: templateId,
           tagIds: [...selectedTagIds],
-          text: trimmedText,
+          text,
         });
 
         close();
@@ -126,7 +126,7 @@ export const LogTemplateEditorSheet = () => {
         logId,
         tagIds: [...selectedTagIds],
         teamId: log.teamId,
-        text: trimmedText,
+        text,
       });
 
       close();
@@ -141,7 +141,7 @@ export const LogTemplateEditorSheet = () => {
     logId,
     selectedTagIds,
     templateId,
-    trimmedText,
+    text,
   ]);
 
   return (

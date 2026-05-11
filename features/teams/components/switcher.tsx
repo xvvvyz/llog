@@ -1,13 +1,15 @@
 import { useUi } from '@/features/account/queries/use-ui';
-import { createTeam } from '@/features/teams/mutations/create';
-import { switchTeam } from '@/features/teams/mutations/switch';
+import { useTeamTransition } from '@/features/teams/hooks/use-team-transition';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
+import { UI } from '@/theme/ui';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { router } from 'expo-router';
 import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
@@ -17,9 +19,24 @@ import { View } from 'react-native';
 export const TeamSwitcher = ({
   hideSettings,
 }: { hideSettings?: boolean } = {}) => {
+  return (
+    <Menu.Root>
+      <TeamSwitcherContent hideSettings={hideSettings} />
+    </Menu.Root>
+  );
+};
+
+const TeamSwitcherContent = ({ hideSettings }: { hideSettings?: boolean }) => {
   const breakpoints = useBreakpoints();
+  const colorScheme = useColorScheme();
+  const { onOpenChange } = Menu.useContext();
   const ui = useUi();
   const { teams } = useTeams();
+
+  const teamTransition = useTeamTransition({
+    onReady: () => onOpenChange(false),
+  });
+
   const activeTeam = teams.find((t) => t.id === ui.activeTeamId);
   const lastAvatarRef = React.useRef(activeTeam?.image?.uri);
   const lastIdRef = React.useRef(activeTeam?.id);
@@ -29,7 +46,7 @@ export const TeamSwitcher = ({
   if (activeTeam?.name) lastNameRef.current = activeTeam.name;
 
   return (
-    <Menu.Root>
+    <>
       <Menu.Trigger asChild>
         <Button className="h-auto py-3 gap-1 md:self-start" variant="link">
           <Avatar
@@ -50,26 +67,30 @@ export const TeamSwitcher = ({
           <Menu.Item
             key={t.id}
             className="justify-between"
-            onPress={() => switchTeam({ teamId: t.id, uiId: ui.id })}
+            closeOnPress={false}
+            disabled={teamTransition.isPending}
+            onPress={() => teamTransition.switchToTeam(t.id)}
           >
-            <Avatar
-              avatar={t.image?.uri}
-              fallback="gradient"
-              id={t.id}
-              size={20}
-            />
-            <Text className="flex-1">{t.name}</Text>
-            {t.id === ui.activeTeamId && (
-              <Icon className="-mr-1" icon={Check} />
+            {teamTransition.pendingTeamId === t.id ? (
+              <View className="size-5 items-center justify-center">
+                <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+              </View>
+            ) : (
+              <Avatar
+                avatar={t.image?.uri}
+                fallback="gradient"
+                id={t.id}
+                size={20}
+              />
             )}
+            <Text className="flex-1">{t.name}</Text>
+            {teamTransition.pendingTeamId !== t.id &&
+            t.id === ui.activeTeamId ? (
+              <Icon className="-mr-1" icon={Check} />
+            ) : null}
           </Menu.Item>
         ))}
-        <Menu.Item onPress={() => createTeam({ name: 'Team' })}>
-          <View className="w-5 items-center">
-            <Icon className="text-placeholder" icon={Plus} />
-          </View>
-          <Text>Create team</Text>
-        </Menu.Item>
+        <CreateTeamMenuItem teamTransition={teamTransition} />
         {!hideSettings && (
           <>
             <Menu.Separator />
@@ -82,6 +103,33 @@ export const TeamSwitcher = ({
           </>
         )}
       </Menu.Content>
-    </Menu.Root>
+    </>
+  );
+};
+
+const CreateTeamMenuItem = ({
+  teamTransition,
+}: {
+  teamTransition: ReturnType<typeof useTeamTransition>;
+}) => {
+  const colorScheme = useColorScheme();
+
+  return (
+    <Menu.Item
+      closeOnPress={false}
+      disabled={teamTransition.isPending}
+      onPress={teamTransition.createAndSwitchToTeam}
+    >
+      <View className="w-5 items-center">
+        {teamTransition.isCreatingTeam ? (
+          <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+        ) : (
+          <Icon className="text-placeholder" icon={Plus} />
+        )}
+      </View>
+      <Text className={teamTransition.isCreatingTeam ? 'text-placeholder' : ''}>
+        New team
+      </Text>
+    </Menu.Item>
   );
 };

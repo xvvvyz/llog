@@ -5,6 +5,7 @@ import type * as mcpTypes from '@/api/mcp/types';
 import * as mediaMetadata from '@/domain/files/media-metadata';
 import { recordSearchQuery } from '@/domain/records/query';
 import { logTagsQuery } from '@/domain/tags/query';
+import { normalizeSearchText } from '@/lib/search';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
@@ -149,12 +150,19 @@ const getFileMediaSearchItems = (
 const getFileMediaSearchText = (items: readonly FileMediaSearchItem[]) =>
   mediaMetadata.getMediaSearchText(items.map(({ item }) => item));
 
+const searchHaystack = (values: (string | null | undefined)[]) =>
+  normalizeSearchText(values.filter(Boolean).join(' '));
+
 const getFileMediaMatchesFromItems = (
   items: readonly FileMediaSearchItem[],
   query: string
-): mcpTypes.McpMediaSearchMatch[] =>
-  items
-    .filter(({ item }) => item.text.toLowerCase().includes(query))
+): mcpTypes.McpMediaSearchMatch[] => {
+  const normalizedQuery = normalizeSearchText(query);
+
+  return items
+    .filter(({ item }) =>
+      normalizeSearchText(item.text).includes(normalizedQuery)
+    )
     .map(({ file, item }) => ({
       ...(item.endSeconds != null ? { endSeconds: item.endSeconds } : {}),
       fileId: file.id,
@@ -166,6 +174,7 @@ const getFileMediaMatchesFromItems = (
         ? { trackDurationSeconds: item.trackDurationSeconds }
         : {}),
     }));
+};
 
 export const getFileMediaMatches = (
   files: mcpTypes.McpFile[] | undefined,
@@ -237,7 +246,7 @@ export const registerSearchTool = (
       outputSchema: mcpSchemas.searchOutputSchema,
     },
     async ({ cursor, keyword, limit = 25, recordTagIds }) => {
-      const q = keyword.toLowerCase();
+      const q = normalizeSearchText(keyword);
       const searchCursor = parseSearchCursor(cursor);
 
       const recordTagIdSet = recordTagIds?.length
@@ -252,13 +261,10 @@ export const registerSearchTool = (
         })) as { logs?: mcpTypes.McpLog[] };
 
         for (const log of logs ?? []) {
-          const haystack = [
+          const haystack = searchHaystack([
             log.name,
             ...(log.tags ?? []).map((tag) => tag.name),
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
+          ]);
 
           if (haystack.includes(q)) pageResults.push({ log, type: 'log' });
         }
@@ -290,7 +296,7 @@ export const registerSearchTool = (
 
         const recordMediaItems = getFileMediaSearchItems(record.files);
 
-        const recordHaystack = [
+        const recordHaystack = searchHaystack([
           record.text,
           record.log?.name,
           ...(record.tags ?? []).map((tag) => tag.name),
@@ -298,10 +304,7 @@ export const registerSearchTool = (
           ...(record.links ?? []).map((link) => link.url),
           ...(record.files ?? []).map((file) => file.name),
           getFileMediaSearchText(recordMediaItems),
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
+        ]);
 
         const recordMediaMatches = getFileMediaMatchesFromItems(
           recordMediaItems,
@@ -321,7 +324,7 @@ export const registerSearchTool = (
         for (const reply of record.replies ?? []) {
           const replyMediaItems = getFileMediaSearchItems(reply.files);
 
-          const replyHaystack = [
+          const replyHaystack = searchHaystack([
             reply.text,
             record.log?.name,
             ...(record.tags ?? []).map((tag) => tag.name),
@@ -329,10 +332,7 @@ export const registerSearchTool = (
             ...(reply.links ?? []).map((link) => link.url),
             ...(reply.files ?? []).map((file) => file.name),
             getFileMediaSearchText(replyMediaItems),
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
+          ]);
 
           const replyMediaMatches = getFileMediaMatchesFromItems(
             replyMediaItems,

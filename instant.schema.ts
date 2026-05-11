@@ -56,6 +56,7 @@ const schema = i.schema({
       type: i.string().indexed(),
     }),
     templates: i.entity({
+      logId: i.string().indexed().optional(),
       order: i.number().indexed(),
       teamId: i.string().indexed(),
       text: i.string(),
@@ -79,9 +80,11 @@ const schema = i.schema({
       teamId: i.string().indexed(),
     }),
     records: i.entity({
+      authorId: i.string().indexed().optional(),
       date: i.date().indexed(),
       isDraft: i.boolean().indexed(),
       isPinned: i.boolean().optional().indexed(),
+      logId: i.string().indexed().optional(),
       teamId: i.string().indexed(),
       text: i.string().optional(),
     }),

@@ -5,7 +5,7 @@ import { id as generateId } from '@instantdb/react-native';
 const loadNextTemplateOrder = async (logId: string) => {
   const { data } = await db.queryOnce({
     templates: {
-      $: { fields: ['order'], order: { order: 'desc' }, where: { log: logId } },
+      $: { fields: ['order'], order: { order: 'desc' }, where: { logId } },
     },
   });
 
@@ -34,9 +34,10 @@ export const createTemplate = async ({
   return db.transact([
     db.tx.templates[templateId]
       .update({
+        logId,
         order: await loadNextTemplateOrder(logId),
         teamId,
-        text: trimmedText,
+        text,
       })
       .link({ log: logId }),
     ...uniqueTagIds.map((tagId) =>

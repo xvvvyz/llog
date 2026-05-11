@@ -20,7 +20,7 @@ export const useLogTemplates = ({
             $: {
               fields: logTemplateFields,
               order: { order: 'asc' },
-              where: { log: queryKey },
+              where: { logId: queryKey },
             },
             tags: recordTagsQuery,
           },

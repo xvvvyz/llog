@@ -37,7 +37,6 @@ import { Keyboard, Pressable, View } from 'react-native';
 
 import {
   DotsThreeVertical,
-  LinkBreak,
   SignOut,
   Trash,
   UploadSimple,
@@ -160,13 +159,6 @@ export default function Team() {
     [getOrCreateAdminInvite, sheetManager]
   );
 
-  const handleDelete = React.useCallback(
-    (role: string) => {
-      sheetManager.open('invite-delete', role);
-    },
-    [sheetManager]
-  );
-
   if (team.isLoading) {
     return (
       <Page>
@@ -262,50 +254,33 @@ export default function Team() {
               [Role.Admin, Role.Member]
                 .filter((role) => role === Role.Admin || logs.data.length > 0)
                 .map((role) => (
-                  <View key={role} className="px-4">
-                    <View className="flex-row py-3 border-b border-border gap-4 items-center justify-between">
+                  <View key={role}>
+                    <Button
+                      className="h-auto px-4 py-3 rounded-none gap-4 justify-between"
+                      onPress={() => handleInvite(role)}
+                      variant="ghost"
+                      wrapperClassName="w-full rounded-none"
+                    >
                       <View className="flex-1">
-                        <Text className="font-normal text-muted-foreground">
-                          {ROLE_LABELS[role]} invite link
+                        <Text className="font-normal leading-normal text-muted-foreground">
+                          Invite {role === Role.Admin ? 'admins' : 'members'}
                         </Text>
-                        <Text className="pb-0.5 text-placeholder text-xs">
+                        <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
                           {role === Role.Admin
                             ? 'Can manage team and logs'
                             : 'Can access selected logs'}
                         </Text>
                       </View>
-                      <View className="flex-row -mr-[7px] gap-1 items-center">
-                        <Button
-                          onPress={() => handleInvite(role)}
-                          size="icon-xs"
-                          variant="ghost"
-                        >
-                          {loadingAction === `invite-${role}` ? (
-                            <Spinner
-                              color={UI[colorScheme].mutedForeground}
-                              size="xs"
-                            />
-                          ) : (
-                            <Icon
-                              className="text-placeholder"
-                              icon={UserPlus}
-                            />
-                          )}
-                        </Button>
-                        {invites.some((l) => l.role === role) && (
-                          <Button
-                            onPress={() => handleDelete(role)}
-                            size="icon-xs"
-                            variant="ghost"
-                          >
-                            <Icon
-                              className="text-placeholder"
-                              icon={LinkBreak}
-                            />
-                          </Button>
-                        )}
-                      </View>
-                    </View>
+                      {loadingAction === `invite-${role}` ? (
+                        <Spinner
+                          color={UI[colorScheme].mutedForeground}
+                          size="xs"
+                        />
+                      ) : (
+                        <Icon className="text-placeholder" icon={UserPlus} />
+                      )}
+                    </Button>
+                    <View className="mx-4 border-border border-t" />
                   </View>
                 ))}
             <View className="max-h-60 px-4 py-2">

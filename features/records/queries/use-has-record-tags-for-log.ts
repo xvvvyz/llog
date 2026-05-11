@@ -17,7 +17,7 @@ export const useHasRecordTagsForLog = ({
             $: {
               fields: ['id'],
               limit: 1,
-              where: { logs: logId, team: teamId, type: 'record' },
+              where: { logs: logId, teamId, type: 'record' },
             },
           },
         }

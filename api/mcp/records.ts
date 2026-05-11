@@ -7,6 +7,7 @@ import { getViewer, requireVisibleLog } from '@/api/mcp/viewer';
 import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as push from '@/api/push/web-push';
 import { visibleFileQuery } from '@/domain/files/query';
+import * as recordIdentity from '@/domain/records/identity-fields';
 import * as recordPublish from '@/domain/records/publish';
 import * as recordQueries from '@/domain/records/query';
 import { recordTagsQuery } from '@/domain/tags/query';
@@ -252,8 +253,11 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
           order: { date: 'desc' },
           where:
             status === 'draft'
-              ? { author: profileId, isDraft: true, log: logId }
-              : { isDraft: false, log: logId },
+              ? recordIdentity.getDraftRecordLookupWhere({
+                  authorId: profileId!,
+                  logId,
+                })
+              : recordIdentity.getPublishedLogRecordWhere(logId),
         },
         ...recordSummaryQuery,
       },
@@ -441,7 +445,10 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         records: {
           $: {
             limit: 1,
-            where: { author: profile.id, isDraft: true, log: logId },
+            where: recordIdentity.getDraftRecordLookupWhere({
+              authorId: profile.id,
+              logId,
+            }),
           },
           links: {},
         },
@@ -453,6 +460,10 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
       await ctx.db.transact([
         ctx.db.tx.records[draftRecordId]
           .update({
+            ...recordIdentity.getRecordIdentityFields({
+              authorId: profile.id,
+              logId,
+            }),
             date: records?.[0]?.date ?? now,
             isDraft: true,
             teamId,

@@ -1,3 +1,4 @@
+import * as recordIdentity from '@/domain/records/identity-fields';
 import { resolveProfileAndTeam } from '@/features/account/queries/resolve-profile-and-team';
 import { db } from '@/lib/db';
 import { id } from '@instantdb/react-native';
@@ -19,20 +20,30 @@ export const createRecordDraft = async ({
     records: {
       $: {
         fields: ['id'],
-        where: { author: resolved.profileId, log: logId, isDraft: true },
+        where: recordIdentity.getDraftRecordLookupWhere({
+          authorId: resolved.profileId,
+          logId,
+        }),
       },
     },
   });
 
-  if (data.records?.[0]) return;
+  if (data.records?.[0]?.id) return data.records[0].id;
+  const recordId = id();
 
-  return db.transact(
-    db.tx.records[id()]
+  await db.transact(
+    db.tx.records[recordId]
       .update({
+        ...recordIdentity.getRecordIdentityFields({
+          authorId: resolved.profileId,
+          logId,
+        }),
         date: new Date().toISOString(),
         isDraft: true,
         teamId: resolved.teamId,
       })
       .link({ author: resolved.profileId, log: logId })
   );
+
+  return recordId;
 };

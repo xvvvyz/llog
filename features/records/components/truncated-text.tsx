@@ -6,8 +6,6 @@ import * as React from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import * as trimDisplayText from '@/features/records/lib/trim-display-text';
 
-const COLLAPSED_LINE_HEIGHT = 24;
-
 export const TruncatedText = ({
   className,
   color,
@@ -31,14 +29,11 @@ export const TruncatedText = ({
   const textRef = React.useRef<TextRef>(null);
   const displayText = trimDisplayText.trimDisplayText(text);
 
-  const shouldUseVisualClip =
-    Platform.OS === 'web' &&
-    !expanded &&
-    !!numberOfLines &&
-    trimDisplayText.hasExplicitLineBreaks(displayText);
+  const shouldUseWebNumberOfLines =
+    Platform.OS === 'web' && !expanded && !!numberOfLines;
 
-  const collapsedPreview = shouldUseVisualClip
-    ? { isLineTruncated: false, numberOfLines: undefined, text: displayText }
+  const collapsedPreview = shouldUseWebNumberOfLines
+    ? { isLineTruncated: false, numberOfLines, text: displayText }
     : trimDisplayText.getCollapsedPreview({ numberOfLines, text: displayText });
 
   const collapsedNumberOfLines = expanded
@@ -48,21 +43,13 @@ export const TruncatedText = ({
   const visibleText = expanded ? displayText : collapsedPreview.text;
   const truncationKey = `${numberOfLines ?? 'all'}:${displayText}`;
 
-  const visualClipStyle = shouldUseVisualClip
-    ? ({
-        display: 'block',
-        maxHeight: (numberOfLines ?? 0) * COLLAPSED_LINE_HEIGHT,
-        overflow: 'hidden',
-      } as unknown as React.ComponentProps<typeof Text>['style'])
-    : undefined;
-
   const truncated =
     !expanded &&
     (collapsedPreview.isLineTruncated ||
       (truncation.key === truncationKey && truncation.truncated));
 
   React.useEffect(() => {
-    if ((!collapsedNumberOfLines && !shouldUseVisualClip) || expanded) return;
+    if (!collapsedNumberOfLines || expanded) return;
     const node = textRef.current;
     if (!node) return;
 
@@ -79,7 +66,7 @@ export const TruncatedText = ({
       key: truncationKey,
       truncated: node.scrollHeight > node.clientHeight,
     });
-  }, [collapsedNumberOfLines, expanded, shouldUseVisualClip, truncationKey]);
+  }, [collapsedNumberOfLines, expanded, truncationKey]);
 
   if (!displayText) return null;
 
@@ -89,9 +76,12 @@ export const TruncatedText = ({
         ref={textRef}
         className={cn('web:whitespace-pre-wrap web:text-pretty', className)}
         numberOfLines={collapsedNumberOfLines}
-        style={visualClipStyle}
       >
-        {renderRecordMarkdownText({ color, text: visibleText })}
+        {renderRecordMarkdownText({
+          color,
+          flattenListItems: shouldUseWebNumberOfLines,
+          text: visibleText,
+        })}
       </Text>
       {expandable && truncated && !expanded && (
         <Pressable className="px-4" onPress={() => setExpanded(true)}>

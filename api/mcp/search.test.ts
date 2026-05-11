@@ -56,6 +56,29 @@ describe('getFileMediaMatches', () => {
       },
     ]);
   });
+
+  test('finds media matches without requiring accents', () => {
+    expect(
+      getFileMediaMatches(
+        [
+          {
+            id: 'file-1',
+            transcript: [{ end: 2, start: 0, text: 'México está aquí' }],
+            type: 'audio',
+          },
+        ],
+        'mexico esta'
+      )
+    ).toEqual([
+      {
+        fileId: 'file-1',
+        endSeconds: 2,
+        kind: 'transcript',
+        snippet: 'México está aquí',
+        startSeconds: 0,
+      },
+    ]);
+  });
 });
 
 describe('parseSearchCursor', () => {

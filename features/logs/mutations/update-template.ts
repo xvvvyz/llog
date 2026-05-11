@@ -11,7 +11,11 @@ export const updateTemplate = async ({
   text?: string;
 }) => {
   const fields: { text?: string } = {};
-  if (text !== undefined) fields.text = text.trim();
+
+  if (text !== undefined) {
+    if (!text.trim()) return;
+    fields.text = text;
+  }
 
   if (tagIds === undefined) {
     return db.transact(db.tx.templates[id].update(fields));

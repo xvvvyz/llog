@@ -74,13 +74,13 @@ export const DropdownMenu = ({
           <Text>Templates</Text>
         </Menu.Item>
         <Menu.Separator />
-        <LogDropdownItems id={id} />
         {hasMembers && (
           <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
             <Icon className="text-placeholder" icon={UsersThree} />
             <Text>Members</Text>
           </Menu.Item>
         )}
+        <LogDropdownItems id={id} />
         <Menu.Separator />
         <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
           <Icon className="text-destructive" icon={Trash} />

@@ -1,6 +1,6 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
-import { useActivities } from '@/features/activity/queries/use-activities';
+import { useUnreadActivityCount } from '@/features/activity/queries/use-unread-activity-count';
 import { PENDING_INVITE_KEY } from '@/features/invites/lib/storage';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
@@ -20,12 +20,6 @@ import { Bell, MagnifyingGlass, SquaresFour } from 'phosphor-react-native';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 
-const NEEDS_RECORD = new Set([
-  'record_published',
-  'reply_posted',
-  'reaction_added',
-]);
-
 export default function Layout() {
   const [checkedPending, setCheckedPending] = React.useState(false);
   const auth = db.useAuth();
@@ -34,20 +28,13 @@ export default function Layout() {
   const insets = useSafeAreaInsets();
   const profile = useProfile();
   const ui = useUi();
-  const { activities } = useActivities();
+
+  const unreadCount = useUnreadActivityCount({
+    lastReadDate: ui.activityLastReadDate,
+    profileId: profile.id,
+  });
+
   const { teams, isLoading: teamsLoading } = useTeams();
-
-  const unreadCount = React.useMemo(() => {
-    if (!profile.id) return 0;
-
-    return activities.filter(
-      (a) =>
-        a.actor?.id !== profile.id &&
-        (!NEEDS_RECORD.has(a.type) || a.record) &&
-        (!ui.activityLastReadDate ||
-          String(a.date ?? '') > ui.activityLastReadDate)
-    ).length;
-  }, [activities, profile.id, ui.activityLastReadDate]);
 
   React.useEffect(() => {
     if (!auth.user || profile.isLoading || !profile.id) return;

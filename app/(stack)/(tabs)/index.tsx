@@ -7,6 +7,7 @@ import { useTags } from '@/features/tags/queries/use-tags';
 import type { Tag } from '@/features/tags/types/tag';
 import { TeamSwitcher } from '@/features/teams/components/switcher';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
+import { useUi } from '@/features/account/queries/use-ui';
 import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -38,10 +39,20 @@ export default function Index() {
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
   const tags = useTags();
+  const ui = useUi();
   const { canManage } = useMyRole();
   const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
   const logs = useLogs();
   const hasNoLogs = logs.data.length === 0;
+
+  const handleCreateLog = React.useCallback(() => {
+    const logId = id();
+    router.push(`/${logId}`);
+
+    void createLog({ color: 7, id: logId, name: 'Log' }).catch((error) => {
+      console.error('Failed to create log', error);
+    });
+  }, []);
 
   const tagsById = React.useMemo(
     () => new Map(tags.data.map((tag) => [tag.id, tag])),
@@ -100,6 +111,7 @@ export default function Index() {
   const queryState = useDeferredEmpty({
     isEmpty: !logs.isLoading && hasNoLogs,
     isLoading: logs.isLoading && !hasLoadedRef.current,
+    resetKey: ui.activeTeamId,
   });
 
   return (
@@ -114,14 +126,10 @@ export default function Index() {
             {canManage && (
               <Button
                 className="size-11"
+                onPress={handleCreateLog}
                 size="icon"
                 variant="link"
                 wrapperClassName="md:-mr-4 md:ml-4"
-                onPress={() => {
-                  const logId = id();
-                  createLog({ color: 7, id: logId, name: 'Log' });
-                  router.push(`/${logId}`);
-                }}
               >
                 <Icon className="text-foreground" icon={Plus} size={24} />
               </Button>
@@ -132,7 +140,7 @@ export default function Index() {
       {queryState.showLoading ? (
         <Loading />
       ) : queryState.showEmpty ? (
-        <ListEmptyState canManage={canManage} />
+        <ListEmptyState canManage={canManage} onCreateLog={handleCreateLog} />
       ) : (
         <ScrollView
           className="flex-1"

@@ -10,14 +10,24 @@ const DEFAULT_NAMED_SEARCH_OPTIONS = {
   boost: { name: 2 },
 } satisfies SearchOptions;
 
-export const normalizeSearchText = (text: string) => text.trim().toLowerCase();
+export const normalizeSearchText = (text: string) =>
+  text
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
 
 export const createSearchIndex = <T extends { id: string }>({
   documents,
   searchOptions = DEFAULT_NAMED_SEARCH_OPTIONS,
   ...options
 }: Options<T> & { documents: T[] }) => {
-  const miniSearch = new MiniSearch<T>({ ...options, searchOptions });
+  const miniSearch = new MiniSearch<T>({
+    processTerm: normalizeSearchText,
+    ...options,
+    searchOptions,
+  });
+
   miniSearch.addAll(documents);
   return miniSearch;
 };

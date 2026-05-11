@@ -1,7 +1,7 @@
 import * as permissions from '@/domain/teams/permissions';
 import { getActiveTeamId } from '@/features/teams/queries/get-active-team-id';
 import { db } from '@/lib/db';
-import { Color } from '@/theme/spectrum';
+import type { Color } from '@/theme/spectrum';
 import { id as generateId } from '@instantdb/react-native';
 
 export const createLog = async ({
@@ -18,7 +18,7 @@ export const createLog = async ({
 
   const { data } = await db.queryOnce({
     roles: {
-      $: { where: { team: teamId } },
+      $: { fields: ['role'], where: { team: teamId } },
       user: { profile: { $: { fields: ['id'] } } },
     },
   });
@@ -31,10 +31,12 @@ export const createLog = async ({
   const logId = id ?? generateId();
   const trimmedName = name.trim();
 
-  return db.transact([
+  await db.transact([
     db.tx.logs[logId]
       .update({ color, name: trimmedName, teamId })
       .link({ team: teamId }),
     ...profileIds.map((pid) => db.tx.logs[logId].link({ profiles: pid })),
   ]);
+
+  return logId;
 };

@@ -13,27 +13,40 @@ const LONG_LIST_MARKER_COLUMN_CH = 3.25;
 
 export function renderRecordMarkdownText({
   color,
+  flattenListItems = false,
   text,
 }: {
   color?: string;
+  flattenListItems?: boolean;
   text: string;
 }) {
   return recordMarkdown
     .parseRecordMarkdown(text)
     .flatMap((block, index, blocks) => [
-      renderBlock(block, index, color),
-      getBlockSeparator(block, index, blocks),
+      renderBlock(block, index, color, flattenListItems),
+      getBlockSeparator(block, index, blocks, flattenListItems),
     ]);
 }
 
 function renderBlock(
   block: recordMarkdown.RecordMarkdownBlock,
   index: number,
-  color?: string
+  color?: string,
+  flattenListItems = false
 ) {
   if (block.kind === 'list-item') {
     const indent = block.indent;
     const marker = block.marker;
+
+    if (flattenListItems) {
+      return (
+        <React.Fragment key={`block:${index}`}>
+          {'  '.repeat(indent)}
+          <Text className={getListMarkerClassName(marker)}>{marker} </Text>
+          {renderInlines(block.children, `${index}`, color)}
+        </React.Fragment>
+      );
+    }
 
     return (
       <Text key={`block:${index}`} style={getListItemStyle({ indent, marker })}>
@@ -58,9 +71,11 @@ function renderBlock(
 function getBlockSeparator(
   block: recordMarkdown.RecordMarkdownBlock,
   index: number,
-  blocks: recordMarkdown.RecordMarkdownBlock[]
+  blocks: recordMarkdown.RecordMarkdownBlock[],
+  flattenListItems = false
 ) {
   if (index >= blocks.length - 1) return null;
+  if (flattenListItems) return '\n';
   if (Platform.OS === 'web' && block.kind === 'list-item') return null;
   return '\n';
 }
@@ -107,10 +122,7 @@ function renderListMarker({
   indent: number;
   marker: string;
 }) {
-  const className = cn(
-    'text-muted-foreground',
-    marker !== '-' && 'tabular-nums'
-  );
+  const className = getListMarkerClassName(marker);
 
   if (Platform.OS !== 'web') {
     return (
@@ -137,6 +149,10 @@ function renderListMarker({
       {marker}
     </Text>
   );
+}
+
+function getListMarkerClassName(marker: string) {
+  return cn('text-muted-foreground', marker !== '-' && 'tabular-nums');
 }
 
 function renderInlines(

@@ -55,7 +55,7 @@ export default function RecordDetailRoute() {
         !!record.id && (
           <DetailView
             onClose={exitRoute}
-            pageClassName="flex-none max-h-full overflow-hidden bg-popover"
+            pageClassName="max-h-full overflow-hidden bg-popover"
             record={record}
             recordId={routeRecordId ?? ''}
           />

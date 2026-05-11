@@ -2,6 +2,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
+import { Spinner } from '@/ui/spinner';
 import type { IconProps } from 'phosphor-react-native';
 import { MagnifyingGlass, X } from 'phosphor-react-native';
 import * as React from 'react';
@@ -12,6 +13,7 @@ export const SearchInput = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof Input> & {
     actionIcon?: React.ComponentType<IconProps>;
     className?: string;
+    isLoading?: boolean;
     onActionPress?: () => void;
     placeholder?: string;
     query: string;
@@ -23,6 +25,7 @@ export const SearchInput = React.forwardRef<
     {
       actionIcon,
       className,
+      isLoading = false,
       onActionPress,
       placeholder = 'Search',
       query,
@@ -62,6 +65,7 @@ export const SearchInput = React.forwardRef<
         />
         {!!query.length && (
           <Button
+            disabled={isLoading}
             onPress={onActionPress ?? (() => setQuery(''))}
             size="icon"
             variant="ghost"
@@ -74,11 +78,15 @@ export const SearchInput = React.forwardRef<
                   : 'h-9 w-9 rounded-lg'
             }
           >
-            <Icon
-              className="text-muted-foreground"
-              icon={actionIcon ?? X}
-              size={20}
-            />
+            {isLoading ? (
+              <Spinner className="text-muted-foreground" size="xs" />
+            ) : (
+              <Icon
+                className="text-muted-foreground"
+                icon={actionIcon ?? X}
+                size={20}
+              />
+            )}
           </Button>
         )}
       </View>

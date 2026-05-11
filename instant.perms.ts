@@ -566,6 +566,8 @@ const rules = {
       "data.ref('author.user.id') == auth.ref('$user.id')",
       'onlyModifiesText',
       "request.modifiedFields.all(field, field in ['text'])",
+      'onlyModifiesTextAndTags',
+      "request.modifiedFields.all(field, field in ['text', 'tags'])",
       'onlyModifiesPinnedState',
       "request.modifiedFields.all(field, field in ['isPinned'])",
       'onlyPublishesDraft',
@@ -634,6 +636,17 @@ const rules = {
         group(and('canManage', '!isDraft', 'onlyModifiesPinnedState')),
         group(
           and('isAuthorOwnedLoglessDraft', 'onlyModifiesText', 'isValidNewText')
+        ),
+        group(
+          and(
+            'isDraft',
+            'canManageRecordTags',
+            'onlyModifiesTextAndTags',
+            'isValidNewText',
+            'hasOnlyRecordTags',
+            'hasSameTeamTags',
+            'recordTagsBelongToRecordLog'
+          )
         )
       ),
       delete: 'canDeleteOwn || canManage || isAuthorOwnedLoglessDraft',

@@ -51,10 +51,10 @@ export const InviteSheet = () => {
       open={sheetManager.isOpen('invite')}
       portalName="invite"
     >
-      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 gap-8 items-center md:p-8">
+      <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 gap-3 items-center md:p-8">
         {url && (
           <View className="w-full gap-3">
-            <View className="w-full p-3 border-border-secondary border-continuous rounded-xl bg-secondary border">
+            <View className="w-full p-4 border-border-secondary border-continuous rounded-xl bg-secondary border">
               <View
                 className="aspect-square w-full items-center justify-center"
                 onLayout={handleQrLayout}
@@ -70,7 +70,11 @@ export const InviteSheet = () => {
               </View>
             </View>
             <inputGroup.InputGroup className="w-full">
-              <inputGroup.InputGroupInput editable={false} value={url} />
+              <inputGroup.InputGroupInput
+                editable={false}
+                size="default"
+                value={url}
+              />
               <inputGroup.InputGroupButton onPress={() => copy(url)}>
                 <Icon icon={copied ? Check : Copy} />
               </inputGroup.InputGroupButton>
@@ -88,7 +92,7 @@ export const InviteSheet = () => {
         <Button
           onPress={handleDismiss}
           variant="secondary"
-          wrapperClassName="w-full"
+          wrapperClassName="mt-5 w-full"
         >
           <Text>Close</Text>
         </Button>

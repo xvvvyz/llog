@@ -6,7 +6,6 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';
 import { View } from 'react-native';
@@ -27,8 +26,8 @@ export const LogEditSheet = () => {
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <View>
-          <Label>Name</Label>
           <Input
+            accessibilityLabel="Log name"
             maxLength={LOG_NAME_MAX_LENGTH}
             onChangeText={(name) => updateLog({ id: log.id!, name })}
             value={log.name}
@@ -78,7 +77,7 @@ export const LogEditSheet = () => {
           variant="secondary"
           wrapperClassName="mt-8"
         >
-          <Text>Done</Text>
+          <Text>Close</Text>
         </Button>
       </View>
     </Sheet>

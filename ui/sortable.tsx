@@ -3,6 +3,7 @@ import { Icon } from '@/ui/icon';
 import { DotsSixVertical } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
+import * as sheetDrag from '@/ui/sheet-drag';
 
 import Sortable, {
   type SortableGridDragEndParams,
@@ -24,9 +25,33 @@ type AppSortableGridProps<T> = Omit<
 > & { sortEnabled?: SortableGridProps<T>['sortEnabled'] };
 
 export function SortableGrid<T>({
+  onDragEnd,
+  onDragStart,
   sortEnabled = true,
   ...props
 }: AppSortableGridProps<T>) {
+  const sheetDragLock = sheetDrag.useSheetDragLock();
+
+  const handleDragStart = React.useCallback<
+    NonNullable<SortableGridProps<T>['onDragStart']>
+  >(
+    (params) => {
+      sheetDragLock.lock();
+      onDragStart?.(params);
+    },
+    [onDragStart, sheetDragLock]
+  );
+
+  const handleDragEnd = React.useCallback<
+    NonNullable<SortableGridProps<T>['onDragEnd']>
+  >(
+    (params) => {
+      sheetDragLock.unlock();
+      onDragEnd?.(params);
+    },
+    [onDragEnd, sheetDragLock]
+  );
+
   const gridProps = {
     activeItemShadowOpacity: 0,
     autoScrollActivationOffset: 50,
@@ -35,6 +60,8 @@ export function SortableGrid<T>({
     itemEntering: null,
     itemExiting: null,
     itemsLayoutTransitionMode: 'reorder',
+    onDragEnd: handleDragEnd,
+    onDragStart: handleDragStart,
     sortEnabled,
     ...props,
   } as SortableGridProps<T>;
@@ -54,24 +81,41 @@ export const SortableDragHandle = ({
   contentClassName,
   iconClassName,
   iconSize,
-}: SortableDragHandleProps) => (
-  <View className={cn('cursor-grab items-center justify-center', className)}>
-    <Sortable.Handle>
-      <View
-        className={cn(
-          'h-full w-full items-center justify-center',
-          contentClassName
-        )}
-      >
-        <Icon
-          className={iconClassName ?? 'text-placeholder'}
-          icon={DotsSixVertical}
-          size={iconSize}
-        />
-      </View>
-    </Sortable.Handle>
-  </View>
-);
+}: SortableDragHandleProps) => {
+  const sheetDragLock = sheetDrag.useSheetDragLock();
+
+  return (
+    <View
+      {...sheetDrag.SHEET_SORTABLE_DRAG_HANDLE_PROPS}
+      className={cn('cursor-grab items-center justify-center', className)}
+      onTouchCancel={sheetDragLock.unlock}
+      onTouchEnd={sheetDragLock.unlock}
+      onTouchStart={sheetDragLock.lock}
+    >
+      <Sortable.Handle>
+        <Sortable.Touchable
+          failDistance={9999}
+          gestureMode="simultaneous"
+          onTouchesDown={sheetDragLock.lock}
+          onTouchesUp={sheetDragLock.unlock}
+        >
+          <View
+            className={cn(
+              'h-full w-full items-center justify-center',
+              contentClassName
+            )}
+          >
+            <Icon
+              className={iconClassName ?? 'text-placeholder'}
+              icon={DotsSixVertical}
+              size={iconSize}
+            />
+          </View>
+        </Sortable.Touchable>
+      </Sortable.Handle>
+    </View>
+  );
+};
 
 export const SortableSheetDragHandle = ({
   className,

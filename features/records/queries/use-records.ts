@@ -1,3 +1,4 @@
+import * as recordIdentity from '@/domain/records/identity-fields';
 import { recordListItemQuery } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
@@ -22,7 +23,10 @@ export const useRecords = ({ logId }: { logId?: string }) => {
           records: {
             $: {
               order: { date: 'desc' },
-              where: { isDraft: false, isPinned: true, log: logId },
+              where: {
+                ...recordIdentity.getPublishedLogRecordWhere(logId),
+                isPinned: true,
+              },
             },
             ...recordListItemQuery,
           },
@@ -42,7 +46,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
             $: {
               limit: RECORDS_PAGE_SIZE,
               order: { date: 'desc' },
-              where: { isDraft: false, log: logId },
+              where: recordIdentity.getPublishedLogRecordWhere(logId),
             },
             ...recordListItemQuery,
           },

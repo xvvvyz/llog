@@ -15,9 +15,16 @@ import { Sparkle } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
+const ACTIVITY_MIN_RENDERED_GROUPS = 12;
+
 export default function Activity() {
-  const { activities, isLoading, loadNextPage, manageableTeamIds } =
-    useActivities();
+  const {
+    activities,
+    canLoadNextPage,
+    isLoading,
+    loadNextPage,
+    manageableTeamIds,
+  } = useActivities();
 
   const profile = useProfile();
   const ui = useUi();
@@ -29,17 +36,29 @@ export default function Activity() {
 
   const showLoading = isLoading || profile.isLoading;
   const showEmpty = !showLoading && !grouped.length;
-  const latestActivityDate = grouped[0]?.latestDate;
+
+  const latestReadActivityDate = profile.id
+    ? activities.find((activity) => activity.actor?.id !== profile.id)?.date
+    : undefined;
+
+  React.useEffect(() => {
+    if (!canLoadNextPage || grouped.length >= ACTIVITY_MIN_RENDERED_GROUPS) {
+      return;
+    }
+
+    loadNextPage();
+  }, [canLoadNextPage, grouped.length, loadNextPage]);
 
   useFocusEffect(
     React.useCallback(() => {
       if (
-        latestActivityDate &&
-        latestActivityDate !== ui.activityLastReadDate
+        profile.id &&
+        latestReadActivityDate &&
+        latestReadActivityDate !== ui.activityLastReadDate
       ) {
-        markActivitiesRead({ uiId: ui.id, date: latestActivityDate });
+        markActivitiesRead({ uiId: ui.id, date: latestReadActivityDate });
       }
-    }, [latestActivityDate, ui.activityLastReadDate, ui.id])
+    }, [latestReadActivityDate, profile.id, ui.activityLastReadDate, ui.id])
   );
 
   const renderItem = React.useCallback(

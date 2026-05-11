@@ -1,9 +1,9 @@
 import * as mediaMetadata from '@/domain/files/media-metadata';
 import * as recordQueries from '@/domain/records/query';
 import { logTagsQuery } from '@/domain/tags/query';
+import * as recordMarkdown from '@/features/records/lib/record-markdown';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import type * as searchTypes from '@/features/search/types/search';
-import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
 import { createSearchIndex, normalizeSearchText } from '@/lib/search';
 import type { SearchResult as MiniSearchResult } from 'minisearch';
@@ -141,33 +141,31 @@ const uniqueStrings = (values: string[]) => {
   return unique;
 };
 
+const getSearchableRecordText = (text?: string | null) =>
+  recordMarkdown.recordMarkdownToPlainText(trimDisplayText(text));
+
 export const useSearch = ({ query }: { query: string }) => {
   const trimmedQuery = query.trim();
   const deferredQuery = React.useDeferredValue(trimmedQuery);
-  const { teams } = useTeams();
-  const teamIds = React.useMemo(() => teams.map((team) => team.id), [teams]);
-  const shouldLoadSearchData = teamIds.length > 0 && !!deferredQuery;
+  const auth = db.useAuth();
+  const shouldLoadSearchData = !!auth.user && !!deferredQuery;
 
   const searchDataQuery = React.useMemo(
     () =>
       shouldLoadSearchData
         ? {
             records: {
-              $: { where: { teamId: { $in: teamIds }, isDraft: false } },
+              $: { where: { isDraft: false } },
               ...recordQueries.recordSearchDocumentQuery,
             },
             replies: {
-              $: { where: { teamId: { $in: teamIds }, isDraft: false } },
+              $: { where: { isDraft: false } },
               ...recordQueries.replySearchDocumentQuery,
             },
-            logs: {
-              $: { where: { teamId: { $in: teamIds } } },
-              profiles: { image: {} },
-              tags: logTagsQuery,
-            },
+            logs: { profiles: { image: {} }, tags: logTagsQuery },
           }
         : null,
-    [shouldLoadSearchData, teamIds]
+    [shouldLoadSearchData]
   );
 
   const { data, isLoading } = db.useQuery(searchDataQuery);
@@ -208,7 +206,7 @@ export const useSearch = ({ query }: { query: string }) => {
     }
 
     for (const record of data.records ?? []) {
-      const text = trimDisplayText(record.text);
+      const text = getSearchableRecordText(record.text);
 
       const attachmentNames = [
         ...getAttachmentNames(record.files),
@@ -259,7 +257,7 @@ export const useSearch = ({ query }: { query: string }) => {
     }
 
     for (const reply of data.replies ?? []) {
-      const text = trimDisplayText(reply.text);
+      const text = getSearchableRecordText(reply.text);
 
       const attachmentNames = [
         ...getAttachmentNames(reply.files),

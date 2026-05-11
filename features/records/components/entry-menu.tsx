@@ -56,7 +56,7 @@ export const useEntryMenuState = ({
   const canEdit = isAuthor;
 
   const recordTags = useHasRecordTagsForLog({
-    enabled: !replyId && isAuthor && !myRole.canManage,
+    enabled: !replyId && isAuthor && !myRole.isLoading && !myRole.canManage,
     logId,
     teamId,
   });

@@ -22,7 +22,19 @@ export const useLogs = ({
 }: { query?: string; teamIds?: string[] } = {}) => {
   const ui = useUi();
   const prevDataRef = React.useRef<LogListItem[]>([]);
+  const prevRequestKeyRef = React.useRef('');
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
+
+  const requestKey = React.useMemo(
+    () =>
+      JSON.stringify({
+        query: query ?? '',
+        sortBy: ui.logsSortBy,
+        sortDirection: ui.logsSortDirection,
+        teamIds: resolvedTeamIds,
+      }),
+    [query, resolvedTeamIds, ui.logsSortBy, ui.logsSortDirection]
+  );
 
   const { data, isLoading } = db.useQuery(
     resolvedTeamIds.length
@@ -42,7 +54,15 @@ export const useLogs = ({
       : null
   );
 
-  const logs = (data?.logs ?? prevDataRef.current) as LogListItem[];
-  if (data?.logs) prevDataRef.current = data.logs as LogListItem[];
+  const canUsePreviousData = prevRequestKeyRef.current === requestKey;
+
+  const logs = (data?.logs ??
+    (canUsePreviousData ? prevDataRef.current : [])) as LogListItem[];
+
+  if (data?.logs) {
+    prevDataRef.current = data.logs as LogListItem[];
+    prevRequestKeyRef.current = requestKey;
+  }
+
   return { data: logs, isLoading };
 };

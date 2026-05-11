@@ -12,7 +12,7 @@ export const reorderTemplates = async ({
 
   const { data } = await db.queryOnce({
     templates: {
-      $: { fields: ['id'], order: { order: 'asc' }, where: { log: logId } },
+      $: { fields: ['id'], order: { order: 'asc' }, where: { logId } },
     },
   });
 

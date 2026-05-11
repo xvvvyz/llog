@@ -12,7 +12,7 @@ import { View } from 'react-native';
 export default function Search() {
   const [query, setQuery] = React.useState('');
   const trimmedQuery = query.trim();
-  const { results } = useSearch({ query });
+  const { isLoading, results } = useSearch({ query });
   const listRef = React.useRef<ListHandle | null>(null);
 
   React.useEffect(() => {
@@ -49,6 +49,7 @@ export default function Search() {
         ListHeaderComponent={
           <View className="pb-3">
             <SearchInput
+              isLoading={isLoading}
               query={query}
               setQuery={setQuery}
               wrapperClassName="w-full"
