@@ -12,12 +12,16 @@ export const templateLogQuery = {
 };
 
 export const templateTagQuery = {
-  $: { fields: recordTagFields },
+  $: { fields: recordTagFields, order: { order: 'asc' as const } },
   logs: recordTagLogsQuery,
 };
 
 export const templateTagsQuery = {
-  $: { fields: recordTagFields, where: { type: 'record' as const } },
+  $: {
+    fields: recordTagFields,
+    order: { order: 'asc' as const },
+    where: { type: 'record' as const },
+  },
   logs: recordTagLogsQuery,
 };
 

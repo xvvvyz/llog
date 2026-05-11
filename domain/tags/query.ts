@@ -16,9 +16,17 @@ export const recordTagLogsQuery = {
 };
 
 export const logTagsQuery = {
-  $: { fields: logTagFields, where: { type: 'log' as const } },
+  $: {
+    fields: logTagFields,
+    order: { order: 'asc' as const },
+    where: { type: 'log' as const },
+  },
 };
 
 export const recordTagsQuery = {
-  $: { fields: recordTagFields, where: { type: 'record' as const } },
+  $: {
+    fields: recordTagFields,
+    order: { order: 'asc' as const },
+    where: { type: 'record' as const },
+  },
 };

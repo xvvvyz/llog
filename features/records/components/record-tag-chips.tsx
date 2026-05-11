@@ -18,16 +18,14 @@ export const RecordTagChips = ({
   className?: string;
   tags?: RecordTagChip[];
 }) => {
-  const orderedTags = [...(tags ?? [])]
-    .filter((tag) => !!tag.name)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const visibleTags = (tags ?? []).filter((tag) => !!tag.name);
 
   return (
     <TagChipList
       chipClassName={chipClassName}
       className={cn('max-w-full justify-end gap-1', className)}
-      maxVisible={orderedTags.length}
-      tags={orderedTags}
+      maxVisible={visibleTags.length}
+      tags={visibleTags}
     />
   );
 };

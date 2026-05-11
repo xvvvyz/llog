@@ -160,7 +160,10 @@ export const McpSheet = () => {
       <SheetFooter contentClassName="gap-3">
         <inputGroup.InputGroup>
           <inputGroup.InputGroupInput editable={false} value={mcpUrl} />
-          <inputGroup.InputGroupButton onPress={() => copy(mcpUrl)}>
+          <inputGroup.InputGroupButton
+            onPress={() => copy(mcpUrl)}
+            size="icon-sm"
+          >
             <Icon icon={copied ? Check : Copy} />
           </inputGroup.InputGroupButton>
         </inputGroup.InputGroup>

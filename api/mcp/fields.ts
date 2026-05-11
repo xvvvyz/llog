@@ -146,9 +146,6 @@ const linkFields = (link: mcpTypes.McpLink) => ({
   url: link.url,
 });
 
-const byTagOrder = (a: mcpTypes.McpTag, b: mcpTypes.McpTag) =>
-  (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name);
-
 export const tagFields = (tag: mcpTypes.McpTag) => ({
   id: tag.id,
   name: tag.name,
@@ -164,7 +161,7 @@ export const recordRefFields = (
 ) => ({
   id: record.id,
   log: record.log ? { id: record.log.id, name: record.log.name } : undefined,
-  tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
+  tags: (record.tags ?? []).map(tagFields),
   url: recordUrl(record.id, options),
 });
 
@@ -205,7 +202,7 @@ export const recordFields = (
     ? reactionCounts(record.reactions)
     : undefined,
   replyCount: (record.replies ?? []).filter((reply) => !reply.isDraft).length,
-  tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
+  tags: (record.tags ?? []).map(tagFields),
   teamId: record.teamId,
   text: record.text ?? '',
   url: recordUrl(record.id, options),
@@ -254,7 +251,7 @@ export const templateFields = (template: mcpTypes.McpTemplate) => ({
         teamId: template.log.teamId ?? undefined,
       }
     : undefined,
-  tags: [...(template.tags ?? [])].sort(byTagOrder).map(tagFields),
+  tags: (template.tags ?? []).map(tagFields),
   teamId: template.teamId ?? undefined,
   text: template.text,
 });
@@ -276,7 +273,7 @@ export const recordSummaryFields = (
   log: record.log ? { id: record.log.id, name: record.log.name } : undefined,
   reactionCount: record.reactions?.length,
   replyCount: (record.replies ?? []).filter((reply) => !reply.isDraft).length,
-  tags: [...(record.tags ?? [])].sort(byTagOrder).map(tagFields),
+  tags: (record.tags ?? []).map(tagFields),
   text: textPreview(record.text),
   url: recordUrl(record.id, options),
 });

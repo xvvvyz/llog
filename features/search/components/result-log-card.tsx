@@ -24,9 +24,9 @@ export const ResultLogCard = ({
       ? SPECTRUM[colorScheme][result.logColor]
       : undefined;
 
-  const tags = [...(result.tagItems ?? [])]
-    .filter((tag) => !!trimDisplayText(tag.name))
-    .sort((a, b) => a.order - b.order);
+  const tags = (result.tagItems ?? []).filter((tag) =>
+    trimDisplayText(tag.name)
+  );
 
   return (
     <Pressable className={className} onPress={onPress}>

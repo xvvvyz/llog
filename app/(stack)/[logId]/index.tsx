@@ -39,11 +39,12 @@ export default function Index() {
   const recordData = records.data;
   const recordsLoading = records.isLoading;
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
+  const logLoaded = !!log.id && !log.isLoading;
   const hasRecords = recordData.length > 0;
 
   const queryState = useDeferredEmpty({
-    isEmpty: !hasRecords,
-    isLoading: log.isLoading || recordsLoading,
+    isEmpty: logLoaded && !hasRecords,
+    isLoading: !logLoaded || recordsLoading,
     resetKey: params.logId,
   });
 

@@ -12,14 +12,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
 const recordTagQuery = {
-  $: { fields: recordTagFields },
+  $: { fields: recordTagFields, order: { order: 'asc' as const } },
   logs: recordTagLogsQuery,
 };
 
 const recordTagsActionSchema = z.enum(['list', 'set', 'create']);
-
-const byTagOrder = (a: McpTag, b: McpTag) =>
-  (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name);
 
 const getRecordForTagging = async (
   ctx: McpContext,
@@ -127,8 +124,7 @@ const listRecordTagsForLog = async ({
     },
   })) as { tags?: McpTag[] };
 
-  const orderedTags = [...(tags ?? [])].sort(byTagOrder);
-  const matchingTags = query ? searchTags(orderedTags, query) : orderedTags;
+  const matchingTags = query ? searchTags(tags ?? [], query) : (tags ?? []);
 
   return typeof limit === 'number'
     ? matchingTags.slice(0, limit)

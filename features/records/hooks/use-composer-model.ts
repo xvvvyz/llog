@@ -88,6 +88,7 @@ export const useRecordComposerModel = () => {
             tags: {
               $: {
                 fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
+                order: { order: 'asc' as const },
                 where: { type: 'record' },
               },
             },
@@ -112,6 +113,7 @@ export const useRecordComposerModel = () => {
             tags: {
               $: {
                 fields: ['color', 'id', 'name', 'order', 'teamId', 'type'],
+                order: { order: 'asc' as const },
                 where: { type: 'record' },
               },
             },

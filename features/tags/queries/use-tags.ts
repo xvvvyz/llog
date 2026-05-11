@@ -24,6 +24,7 @@ export const useTags = ({
           tags: {
             $: {
               fields: tagFields,
+              order: { order: 'asc' as const },
               where: {
                 teamId: { $in: resolvedTeamIds },
                 type,
@@ -47,10 +48,7 @@ export const useTags = ({
 
   const tags = React.useMemo(
     // https://discord.com/channels/1031957483243188235/1376250736416919567
-    () =>
-      queryKey && hasCurrentResult && data?.tags
-        ? [...data.tags].sort((a, b) => a.order - b.order)
-        : [],
+    () => (queryKey && hasCurrentResult && data?.tags ? data.tags : []),
     [data?.tags, hasCurrentResult, queryKey]
   );
 
