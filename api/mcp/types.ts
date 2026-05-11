@@ -99,6 +99,15 @@ export type McpLog = {
   teamId?: string | null;
 };
 
+export type McpTemplate = {
+  id: string;
+  log?: Pick<McpLog, 'id' | 'name' | 'teamId'> | null;
+  order?: number | null;
+  tags?: McpTag[];
+  teamId?: string | null;
+  text: string;
+};
+
 export type McpReaction = {
   author?: McpProfile | null;
   emoji: string;

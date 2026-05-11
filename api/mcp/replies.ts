@@ -224,9 +224,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
               item.record.tags.map((tag) => [tag.name])
             )
           : undefined,
-        item.text
-          ? `Text: ${mcpFields.textPreview(item.text, 600)}`
-          : undefined,
+        mcpFields.textBlock('Text', item.text),
         item.files?.length
           ? mcpFields.table(
               ['File', 'Type', 'URL'],
@@ -487,7 +485,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     server,
     'replies',
     {
-      description: 'Get, save, or publish replies.',
+      description: 'Replies.',
       inputSchema: {
         action: repliesActionSchema,
         links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),

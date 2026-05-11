@@ -69,6 +69,20 @@ describe('textResult', () => {
   });
 });
 
+describe('textBlock', () => {
+  test('preserves newlines in a fenced text block', () => {
+    expect(mcpFields.textBlock('Text', 'Line 1\nLine 2')).toBe(
+      'Text:\n```text\nLine 1\nLine 2\n```'
+    );
+  });
+
+  test('uses a longer fence when the text contains backticks', () => {
+    expect(mcpFields.textBlock('Text', '```\nvalue\n```')).toBe(
+      'Text:\n````text\n```\nvalue\n```\n````'
+    );
+  });
+});
+
 describe('recordSummaryFields', () => {
   test('serializes Date values for structured output', () => {
     expect(

@@ -7,6 +7,7 @@ import { registerReplyTools } from '@/api/mcp/replies';
 import { registerResources } from '@/api/mcp/resources';
 import { registerSearchTool } from '@/api/mcp/search';
 import { registerTagTools } from '@/api/mcp/tags';
+import { registerTemplateTools } from '@/api/mcp/templates';
 import type { McpContext, OAuthProps } from '@/api/mcp/types';
 import { createAdminDb } from '@/api/middleware/db';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -44,6 +45,7 @@ const createServer = (ctx: McpContext) => {
   registerRecordTools(server, ctx);
   registerReplyTools(server, ctx);
   registerTagTools(server, ctx);
+  registerTemplateTools(server, ctx);
   registerActionTools(server, ctx);
   registerResources(server, ctx);
   return server;

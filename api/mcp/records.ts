@@ -49,7 +49,7 @@ const recordPublishQuery = {
   log: { $: { fields: ['id' as const, 'name' as const, 'teamId' as const] } },
 };
 
-const recordsActionSchema = z.enum(['list', 'get', 'save']);
+const recordsActionSchema = z.enum(['list', 'get', 'save', 'update']);
 type RecordInclude = z.infer<typeof mcpSchemas.recordIncludeSchema>;
 
 const recordIdFromUrl = (recordUrl?: string) => {
@@ -116,6 +116,11 @@ const getPublishedReplyCount = async (ctx: McpContext, recordId: string) => {
 
   return replies?.length ?? 0;
 };
+
+const draftRecordError = () =>
+  new Error(
+    'Draft record not found. For published records, use action: update.'
+  );
 
 export const getVisibleRecord = async (
   ctx: McpContext,
@@ -335,9 +340,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         'Record',
         item.log?.name ? `Log: ${item.log.name}` : undefined,
         item.url ? `URL: ${item.url}` : undefined,
-        item.text
-          ? `Text: ${mcpFields.textPreview(item.text, 600)}`
-          : undefined,
+        mcpFields.textBlock('Text', item.text),
         item.tags?.length
           ? mcpFields.table(
               ['Tag'],
@@ -389,7 +392,12 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   }) => {
     if (mode === 'draft') {
       if (recordId) {
-        const { record } = await getCallerDraftRecord(ctx, recordId);
+        const { record } = await getCallerDraftRecord(ctx, recordId).catch(
+          () => {
+            throw draftRecordError();
+          }
+        );
+
         if (!record.teamId) throw new Error('Invalid record draft');
 
         const transactions = [
@@ -472,6 +480,8 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     if (recordId) {
       const { record } = await getCallerDraftRecord(ctx, recordId, {
         query: recordPublishQuery,
+      }).catch(() => {
+        throw draftRecordError();
       });
 
       const nextText = (text ?? record.text ?? '').trim();
@@ -598,11 +608,73 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     );
   };
 
+  const updateRecord = async ({
+    links,
+    recordId,
+    recordUrl,
+    text,
+  }: {
+    links?: z.infer<typeof mcpSchemas.linkInputSchema>[];
+    recordId?: string;
+    recordUrl?: string;
+    text?: string;
+  }) => {
+    const resolvedRecordId = recordId ?? recordIdFromUrl(recordUrl);
+
+    if (!resolvedRecordId) {
+      throw new Error('recordId or recordUrl is required to update a record');
+    }
+
+    if (text === undefined && links === undefined) {
+      throw new Error('text or links is required to update a record');
+    }
+
+    const { record } = await getVisibleRecord(ctx, resolvedRecordId, {
+      query: recordPublishQuery,
+    });
+
+    if (record.author?.user?.id !== ctx.props.userId) {
+      throw new Error('Only the record author can update a published record');
+    }
+
+    if (!record.teamId) throw new Error('Invalid record');
+    const nextText = text === undefined ? (record.text ?? '') : text.trim();
+    const nextLinks = links ?? record.links ?? [];
+
+    const hasContent =
+      !!nextText || !!record.files?.length || nextLinks.length > 0;
+
+    if (!hasContent) throw new Error('Record content cannot be empty');
+
+    const transactions = [
+      ...(text !== undefined
+        ? [ctx.db.tx.records[record.id].update({ text: nextText })]
+        : []),
+      ...(links
+        ? replaceLinkTransactions({
+            db: ctx.db,
+            existingLinks: record.links,
+            links,
+            target: 'record',
+            targetId: record.id,
+            teamId: record.teamId,
+          })
+        : []),
+    ];
+
+    await ctx.db.transact(transactions);
+
+    return mcpFields.textResult(
+      { recordId: record.id, status: 'published' },
+      `Updated record: ${record.id}`
+    );
+  };
+
   registerMcpTool(
     server,
     'records',
     {
-      description: 'List, get, save, or publish records.',
+      description: 'Records.',
       inputSchema: {
         action: recordsActionSchema,
         links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),
@@ -648,6 +720,10 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
 
         case 'save': {
           return saveRecord({ links, logId, mode, recordId, text });
+        }
+
+        case 'update': {
+          return updateRecord({ links, recordId, recordUrl, text });
         }
       }
     }

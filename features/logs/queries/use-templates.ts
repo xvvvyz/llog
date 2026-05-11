@@ -1,14 +1,8 @@
+import { logTemplateFields } from '@/domain/logs/templates';
 import { recordTagsQuery } from '@/domain/tags/query';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
-
-export const logTemplateFields = [
-  'id' as const,
-  'order' as const,
-  'teamId' as const,
-  'text' as const,
-];
 
 export const useLogTemplates = ({
   enabled = true,

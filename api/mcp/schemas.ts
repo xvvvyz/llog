@@ -45,6 +45,14 @@ const logOutputSchema = z.object({
   teamId: z.string().optional(),
 });
 
+const templateOutputSchema = z.object({
+  id: z.string(),
+  log: logOutputSchema.optional(),
+  tags: z.array(tagOutputSchema).optional(),
+  teamId: z.string().optional(),
+  text: z.string(),
+});
+
 const fileOutputSchema = z.object({
   assetKey: z.string().optional(),
   duration: z.number().optional(),
@@ -138,6 +146,13 @@ export const logsOutputSchema = {
   log: logOutputSchema.optional(),
   logs: z.array(logOutputSchema).optional(),
   records: z.array(recordSummaryOutputSchema).optional(),
+};
+
+export const templatesOutputSchema = {
+  deleted: z.boolean().optional(),
+  template: templateOutputSchema.optional(),
+  templateId: z.string().optional(),
+  templates: z.array(templateOutputSchema).optional(),
 };
 
 export const recordsOutputSchema = {

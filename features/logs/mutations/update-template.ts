@@ -1,3 +1,4 @@
+import { getTemplateTagChanges } from '@/domain/logs/templates';
 import { db } from '@/lib/db';
 
 export const updateTemplate = async ({
@@ -24,16 +25,11 @@ export const updateTemplate = async ({
   });
 
   const template = data.templates?.[0];
-  const currentTagIds = new Set(template?.tags?.map((tag) => tag.id) ?? []);
-  const nextTagIds = new Set(tagIds);
 
-  const linkTagIds = [...nextTagIds].filter(
-    (tagId) => !currentTagIds.has(tagId)
-  );
-
-  const unlinkTagIds = [...currentTagIds].filter(
-    (tagId) => !nextTagIds.has(tagId)
-  );
+  const { linkTagIds, unlinkTagIds } = getTemplateTagChanges({
+    currentTagIds: template?.tags?.map((tag) => tag.id),
+    nextTagIds: tagIds,
+  });
 
   await db.transact(db.tx.templates[id].update(fields));
 

@@ -79,6 +79,21 @@ export const textPreview = (text?: string | null, max = 160) => {
   return `${value.slice(0, max - 3).trimEnd()}...`;
 };
 
+const codeFence = (text: string) => {
+  const longestRun = Math.max(
+    2,
+    ...(text.match(/`+/g) ?? []).map((run) => run.length)
+  );
+
+  return '`'.repeat(longestRun + 1);
+};
+
+export const textBlock = (label: string, text?: string | null) => {
+  if (!text) return undefined;
+  const fence = codeFence(text);
+  return `${label}:\n${fence}text\n${text}\n${fence}`;
+};
+
 const dateField = (value: string | number | Date) =>
   value instanceof Date ? value.toISOString() : value;
 
@@ -228,6 +243,20 @@ export const logFields = (log: mcpTypes.McpLog) => ({
     order: tag.order ?? undefined,
   })),
   teamId: log.team?.id ?? log.teamId ?? undefined,
+});
+
+export const templateFields = (template: mcpTypes.McpTemplate) => ({
+  id: template.id,
+  log: template.log
+    ? {
+        id: template.log.id,
+        name: template.log.name,
+        teamId: template.log.teamId ?? undefined,
+      }
+    : undefined,
+  tags: [...(template.tags ?? [])].sort(byTagOrder).map(tagFields),
+  teamId: template.teamId ?? undefined,
+  text: template.text,
 });
 
 export const teamFields = (

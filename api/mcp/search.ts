@@ -227,7 +227,7 @@ export const registerSearchTool = (
     server,
     'search',
     {
-      description: 'Keyword search logs, records, and replies.',
+      description: 'Search.',
       inputSchema: {
         cursor: z.string().trim().min(1).optional(),
         keyword: z.string().trim().min(1),

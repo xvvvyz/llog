@@ -276,7 +276,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     server,
     'record_tags',
     {
-      description: 'List, apply, remove, or create record tags.',
+      description: 'Record tags.',
       inputSchema: {
         action: recordTagsActionSchema,
         limit: z.number().int().min(1).max(100).optional(),
