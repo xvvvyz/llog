@@ -151,7 +151,7 @@ export const TagSheetContent = ({
           )}
         </SheetListScrollView>
       )}
-      <SheetFooter contentClassName="flex-row gap-4">
+      <SheetFooter contentClassName="gap-3">
         <SearchInput
           ref={searchInputRef}
           actionIcon={showCreateTag ? Plus : undefined}
@@ -163,15 +163,15 @@ export const TagSheetContent = ({
           setQuery={setRawQuery}
           size="sm"
           submitBehavior="submit"
-          wrapperClassName="flex-1 min-w-0"
+          wrapperClassName="w-full"
         />
         <Button
           onPress={onClose}
           size="sm"
           variant="secondary"
-          wrapperClassName="shrink-0"
+          wrapperClassName="w-full"
         >
-          <Text>Done</Text>
+          <Text>Close</Text>
         </Button>
       </SheetFooter>
     </>

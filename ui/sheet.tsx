@@ -40,7 +40,7 @@ const sheetVariants = cva(
 );
 
 const sheetLoadingVariants = cva(
-  'absolute inset-0 z-10 items-center justify-center border-continuous rounded-t-4xl bg-popover/80 md:rounded-4xl',
+  'absolute inset-0 z-10 items-center justify-center border-continuous rounded-t-4xl bg-popover md:rounded-4xl',
   {
     defaultVariants: { variant: 'default' },
     variants: { variant: { default: '', list: 'md:rounded-3xl' } },
@@ -145,12 +145,8 @@ export const Sheet = ({
       >
         <View
           ref={sheetContentRef}
+          className={cn(sheetVariants({ variant }), className)}
           style={heightStyle}
-          className={cn(
-            sheetVariants({ variant }),
-            loading && 'min-h-32',
-            className
-          )}
         >
           {children}
           {loading && (

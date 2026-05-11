@@ -86,22 +86,22 @@ const TemplatePickerSheet = ({
           </Text>
         )}
       </SheetListScrollView>
-      <SheetFooter contentClassName="flex-row gap-4">
+      <SheetFooter contentClassName="gap-3">
         <SearchInput
           onSubmitEditing={handleSubmitSearch}
           query={query}
           setQuery={setQuery}
           size="sm"
           submitBehavior="blurAndSubmit"
-          wrapperClassName="flex-1 min-w-0"
+          wrapperClassName="w-full"
         />
         <Button
           onPress={onClose}
           size="sm"
           variant="secondary"
-          wrapperClassName="shrink-0"
+          wrapperClassName="w-full"
         >
-          <Text>Done</Text>
+          <Text>Close</Text>
         </Button>
       </SheetFooter>
     </Sheet>

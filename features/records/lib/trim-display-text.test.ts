@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import * as displayText from '@/features/records/lib/trim-display-text';
 
-const { getCollapsedPreviewNumberOfLines, trimDisplayText } = displayText;
+const { hasExplicitLineBreaks, trimDisplayText } = displayText;
+const { getCollapsedPreview } = displayText;
 
 describe('trimDisplayText', () => {
   test('trims surrounding whitespace', () => {
@@ -20,31 +21,50 @@ describe('trimDisplayText', () => {
   });
 });
 
-describe('getCollapsedPreviewNumberOfLines', () => {
-  test('keeps the requested line count when the cutoff line has content', () => {
-    expect(
-      getCollapsedPreviewNumberOfLines({ numberOfLines: 3, text: 'A\n\nB\nC' })
-    ).toBe(3);
+describe('hasExplicitLineBreaks', () => {
+  test('detects newline styles', () => {
+    expect(hasExplicitLineBreaks('A\nB')).toBe(true);
+    expect(hasExplicitLineBreaks('A\rB')).toBe(true);
+    expect(hasExplicitLineBreaks('A\r\nB')).toBe(true);
   });
 
-  test('backs up when the collapsed cutoff lands on a blank line', () => {
-    expect(
-      getCollapsedPreviewNumberOfLines({ numberOfLines: 2, text: 'A\n\nB' })
-    ).toBe(1);
+  test('ignores wrapping-only text', () => {
+    expect(hasExplicitLineBreaks('A long line that may wrap visually')).toBe(
+      false
+    );
+  });
+});
+
+describe('getCollapsedPreview', () => {
+  test('uses numberOfLines for single-line text that may wrap visually', () => {
+    expect(getCollapsedPreview({ numberOfLines: 3, text: 'A' })).toEqual({
+      isLineTruncated: false,
+      numberOfLines: 3,
+      text: 'A',
+    });
   });
 
-  test('backs up across multiple blank lines at the collapsed cutoff', () => {
-    expect(
-      getCollapsedPreviewNumberOfLines({
-        numberOfLines: 4,
-        text: 'A\n \n\t\n\nB',
-      })
-    ).toBe(1);
+  test('does not clamp multiline text that already fits', () => {
+    expect(getCollapsedPreview({ numberOfLines: 3, text: 'A\nB\nC' })).toEqual({
+      isLineTruncated: false,
+      numberOfLines: undefined,
+      text: 'A\nB\nC',
+    });
   });
 
-  test('keeps trailing blank lines when the text fits without truncation', () => {
+  test('backs up when the collapsed cutoff lands on blank lines', () => {
     expect(
-      getCollapsedPreviewNumberOfLines({ numberOfLines: 4, text: 'A\n\nB' })
-    ).toBe(4);
+      getCollapsedPreview({ numberOfLines: 4, text: 'A\n \n\t\n\nB' })
+    ).toEqual({ isLineTruncated: true, numberOfLines: undefined, text: 'A' });
+  });
+
+  test('trims multiline previews by complete source lines', () => {
+    expect(
+      getCollapsedPreview({ numberOfLines: 3, text: 'A\nB\nC\nD' })
+    ).toEqual({
+      isLineTruncated: true,
+      numberOfLines: undefined,
+      text: 'A\nB\nC',
+    });
   });
 });
