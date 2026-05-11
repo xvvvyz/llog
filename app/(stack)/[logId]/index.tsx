@@ -6,7 +6,6 @@ import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { useRecords } from '@/features/records/queries/use-records';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { useDeferredEmpty } from '@/hooks/use-deferred-empty';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -41,13 +40,8 @@ export default function Index() {
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
   const logLoaded = !!log.id && !log.isLoading;
   const hasRecords = recordData.length > 0;
-
-  const queryState = useDeferredEmpty({
-    isEmpty: logLoaded && !hasRecords,
-    isLoading: !logLoaded || recordsLoading,
-    resetKey: params.logId,
-  });
-
+  const showLoading = !logLoaded || recordsLoading;
+  const showEmpty = logLoaded && !recordsLoading && !hasRecords;
   const showFab = hasRecords && !breakpoints.md;
   const contentPaddingBottom = insets.bottom + (showFab ? 104 : 0);
 
@@ -119,9 +113,9 @@ export default function Index() {
       />
       {logNotFound ? (
         <NotFound />
-      ) : queryState.showLoading ? (
+      ) : showLoading ? (
         <Loading />
-      ) : queryState.showEmpty ? (
+      ) : showEmpty ? (
         <EmptyState logId={params.logId} />
       ) : (
         <List

@@ -2,10 +2,10 @@ import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { BREAKPOINT_VALUES } from '@/theme/tokens';
-import { Loading } from '@/ui/loading';
 import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
 import { useSheetStack, useSheetStackBackdrop } from '@/ui/sheet-stack';
+import { Spinner } from '@/ui/spinner';
 import { Portal } from '@rn-primitives/portal';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
@@ -40,7 +40,7 @@ const sheetVariants = cva(
 );
 
 const sheetLoadingVariants = cva(
-  'absolute inset-0 z-10 py-8 border-continuous rounded-t-4xl bg-popover md:rounded-4xl',
+  'absolute inset-0 z-10 items-center justify-center border-continuous rounded-t-4xl bg-popover/80 md:rounded-4xl',
   {
     defaultVariants: { variant: 'default' },
     variants: { variant: { default: '', list: 'md:rounded-3xl' } },
@@ -156,9 +156,10 @@ export const Sheet = ({
           {loading && (
             <Animated.View
               className={sheetLoadingVariants({ variant })}
+              entering={animation(FadeIn)}
               exiting={animation(FadeOut)}
             >
-              <Loading className="p-0 bg-popover" />
+              <Spinner />
             </Animated.View>
           )}
         </View>

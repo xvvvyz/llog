@@ -1,6 +1,7 @@
 import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import * as activityGroups from '@/features/activity/lib/group-activities';
+import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -28,8 +29,24 @@ export const useActivities = () => {
       : null
   );
 
-  const roles = React.useMemo(() => viewerData?.roles ?? [], [viewerData]);
-  const currentProfileId = viewerData?.profiles?.[0]?.id;
+  const hasCurrentViewerResult = useCurrentQueryResult(
+    auth.user?.id,
+    viewerData
+  );
+
+  const viewerIsLoading =
+    !!auth.user && (viewerLoading || !hasCurrentViewerResult);
+
+  const roles = React.useMemo(
+    () =>
+      auth.user && hasCurrentViewerResult ? (viewerData?.roles ?? []) : [],
+    [auth.user, hasCurrentViewerResult, viewerData?.roles]
+  );
+
+  const currentProfileId =
+    auth.user && hasCurrentViewerResult
+      ? viewerData?.profiles?.[0]?.id
+      : undefined;
 
   const teamIds = React.useMemo(
     () => Array.from(new Set(roles.map((role) => role.teamId))),
@@ -38,33 +55,106 @@ export const useActivities = () => {
 
   const teamIdsKey = teamIds.join(':');
 
-  const [activityLimit, setActivityLimit] =
-    React.useState(ACTIVITIES_PAGE_SIZE);
+  const visibleLogsQueryKey =
+    auth.user && teamIds.length > 0 ? teamIdsKey : undefined;
 
-  React.useEffect(() => {
-    setActivityLimit(ACTIVITIES_PAGE_SIZE);
-  }, [currentProfileId, teamIdsKey]);
+  const { data: visibleLogsData, isLoading: visibleLogsLoading } = db.useQuery(
+    auth.user && teamIds.length > 0
+      ? {
+          logs: {
+            $: { fields: ['id' as const], where: { teamId: { $in: teamIds } } },
+          },
+        }
+      : null
+  );
+
+  const hasCurrentVisibleLogsResult = useCurrentQueryResult(
+    visibleLogsQueryKey,
+    visibleLogsData
+  );
+
+  const visibleLogIds = React.useMemo(
+    () =>
+      hasCurrentVisibleLogsResult
+        ? Array.from(
+            new Set((visibleLogsData?.logs ?? []).map((log) => log.id))
+          ).filter((id): id is string => !!id)
+        : [],
+    [hasCurrentVisibleLogsResult, visibleLogsData?.logs]
+  );
+
+  const visibleLogIdsKey = visibleLogIds.join(':');
+  const visibleLogsReady = !visibleLogsQueryKey || hasCurrentVisibleLogsResult;
+
+  const visibleLogsAreLoading =
+    !!visibleLogsQueryKey &&
+    (visibleLogsLoading || !hasCurrentVisibleLogsResult);
+
+  const manageableTeamIds = React.useMemo(
+    () =>
+      Array.from(
+        new Set(
+          roles
+            .filter((role) => permissions.canManageTeam(role.role))
+            .map((role) => role.teamId)
+        )
+      ),
+    [roles]
+  );
+
+  const manageableTeamIdsKey = manageableTeamIds.join(':');
+
+  const manageableTeamIdsSet = React.useMemo(
+    () => new Set(manageableTeamIds),
+    [manageableTeamIds]
+  );
+
+  const activityFilters = React.useMemo(() => {
+    const filters: unknown[] = [];
+
+    if (visibleLogIds.length > 0) {
+      filters.push({
+        'log.id': { $in: visibleLogIds },
+        'record.id': { $isNull: false },
+        type: { $in: [...RECORD_REQUIRED_ACTIVITY_TYPES] },
+      });
+
+      filters.push({
+        'actor.logs.id': { $in: visibleLogIds },
+        type: { $in: [...MEMBER_ACTIVITY_TYPES] },
+      });
+    }
+
+    if (manageableTeamIds.length > 0) {
+      filters.push({
+        teamId: { $in: manageableTeamIds },
+        type: { $in: [...MEMBER_ACTIVITY_TYPES] },
+      });
+    }
+
+    return filters;
+  }, [manageableTeamIds, visibleLogIds]);
+
+  const hasVisibleActivityScope = activityFilters.length > 0;
 
   const activitiesQuery =
-    auth.user && teamIds.length > 0 && currentProfileId
+    auth.user &&
+    teamIds.length > 0 &&
+    currentProfileId &&
+    visibleLogsReady &&
+    hasVisibleActivityScope
       ? {
           activities: {
             $: {
               // InstantDB types do not model relation-path filters here.
               where: {
                 'actor.id': { $ne: currentProfileId },
-                or: [
-                  {
-                    'record.id': { $isNull: false },
-                    type: { $in: [...RECORD_REQUIRED_ACTIVITY_TYPES] },
-                  },
-                  { type: { $in: [...MEMBER_ACTIVITY_TYPES] } },
-                ],
+                or: activityFilters,
                 teamId: { $in: teamIds },
                 type: { $in: [...activityGroups.GROUPED_ACTIVITY_TYPES] },
               } as never,
               order: { date: 'desc' as const },
-              limit: activityLimit,
+              limit: ACTIVITIES_PAGE_SIZE,
             },
             actor: { image: {}, logs: { $: { fields: ['id' as const] } } },
             team: { image: {} },
@@ -79,21 +169,11 @@ export const useActivities = () => {
 
   const {
     data,
-    isLoading: activitiesLoading,
-    pageInfo,
-  } = db.useQuery(activitiesQuery);
+    canLoadNextPage: canLoadQueriedNextPage,
+    loadNextPage,
+  } = db.useInfiniteQuery(activitiesQuery);
 
-  const manageableTeamIds = React.useMemo(
-    () =>
-      new Set(
-        roles
-          .filter((role) => permissions.canManageTeam(role.role))
-          .map((role) => role.teamId)
-      ),
-    [roles]
-  );
-
-  const queryKey = `${currentProfileId ?? ''}:${teamIdsKey}`;
+  const queryKey = `${currentProfileId ?? ''}:${teamIdsKey}:${manageableTeamIdsKey}:${visibleLogIdsKey}`;
 
   const activitiesCacheRef = React.useRef<{
     activities: activityGroups.ActivityWithRelations[];
@@ -119,72 +199,56 @@ export const useActivities = () => {
     };
   }
 
-  const hasViewerSnapshot = !auth.user || viewerData !== undefined;
-
   const hasActivitiesSnapshot =
     !shouldQueryActivities || activitiesCacheRef.current.hasReceived;
 
   const rawActivities =
     queriedActivities ?? activitiesCacheRef.current.activities;
 
-  const canLoadNextPage =
-    shouldQueryActivities && !!pageInfo?.activities?.hasNextPage;
+  const canLoadActivitiesNextPage =
+    shouldQueryActivities && hasActivitiesSnapshot && canLoadQueriedNextPage;
 
-  const activities = React.useMemo(
-    () =>
-      rawActivities.filter((activity) => {
-        if (
-          activity.type !== 'member_joined' &&
-          activity.type !== 'member_left'
-        ) {
-          return true;
-        }
-
-        if (manageableTeamIds.has(activity.teamId)) return true;
-        return (activity.actor?.logs?.length ?? 0) > 0;
-      }),
-    [manageableTeamIds, rawActivities]
-  );
-
-  const loadNextPage = React.useCallback(() => {
-    if (!canLoadNextPage) return;
-    setActivityLimit((limit) => limit + ACTIVITIES_PAGE_SIZE);
-  }, [canLoadNextPage]);
+  const activities = rawActivities;
 
   const handleLoadNextPage = useLoadNextPage({
-    canLoadNextPage,
+    canLoadNextPage: canLoadActivitiesNextPage,
     itemCount: rawActivities.length,
     loadNextPage,
-    requestKey: activityLimit,
+    requestKey: queryKey,
   });
 
   const autoLoadCountRef = React.useRef(0);
 
   React.useEffect(() => {
     autoLoadCountRef.current = 0;
-  }, [currentProfileId, teamIdsKey]);
+  }, [currentProfileId, manageableTeamIdsKey, teamIdsKey, visibleLogIdsKey]);
 
   React.useEffect(() => {
     if (
-      !canLoadNextPage ||
+      !canLoadActivitiesNextPage ||
       activities.length >= ACTIVITIES_MIN_RENDERED_BEFORE_SCROLL
     ) {
       return;
     }
 
     if (autoLoadCountRef.current >= ACTIVITIES_AUTO_LOAD_LIMIT) return;
-    autoLoadCountRef.current += 1;
-    loadNextPage();
-  }, [activities.length, canLoadNextPage, loadNextPage]);
+    if (handleLoadNextPage()) autoLoadCountRef.current += 1;
+  }, [activities.length, canLoadActivitiesNextPage, handleLoadNextPage]);
+
+  const isAutoLoadingInitialActivities =
+    activities.length === 0 &&
+    canLoadActivitiesNextPage &&
+    autoLoadCountRef.current < ACTIVITIES_AUTO_LOAD_LIMIT;
 
   return {
     activities,
-    canLoadNextPage,
-    manageableTeamIds,
+    canLoadNextPage: canLoadActivitiesNextPage,
+    manageableTeamIds: manageableTeamIdsSet,
     isLoading:
-      !hasViewerSnapshot ||
-      viewerLoading ||
-      (shouldQueryActivities && !hasActivitiesSnapshot && activitiesLoading),
+      viewerIsLoading ||
+      visibleLogsAreLoading ||
+      (shouldQueryActivities && !hasActivitiesSnapshot) ||
+      isAutoLoadingInitialActivities,
     loadNextPage: handleLoadNextPage,
   };
 };

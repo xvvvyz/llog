@@ -31,16 +31,17 @@ export const useLoadNextPage = ({
   }, [canLoadNextPage, itemCount]);
 
   return React.useCallback(() => {
-    if (!canLoadNextPage) return;
+    if (!canLoadNextPage) return false;
 
     if (
       requestedRef.current?.itemCount === itemCount &&
       Object.is(requestedRef.current.requestKey, requestKey)
     ) {
-      return;
+      return false;
     }
 
     requestedRef.current = { itemCount, requestKey };
     loadNextPage();
+    return true;
   }, [canLoadNextPage, itemCount, loadNextPage, requestKey]);
 };

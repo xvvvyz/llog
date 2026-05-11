@@ -4,7 +4,6 @@ import { Item } from '@/features/activity/components/item';
 import * as grouping from '@/features/activity/lib/group-activities';
 import { markActivitiesRead } from '@/features/activity/mutations/mark-activities-read';
 import { useActivities } from '@/features/activity/queries/use-activities';
-import { useDeferredEmpty } from '@/hooks/use-deferred-empty';
 import { cn } from '@/lib/cn';
 import { Header } from '@/ui/header';
 import { Icon } from '@/ui/icon';
@@ -28,12 +27,8 @@ export default function Activity() {
     [activities, profile.id]
   );
 
-  const queryState = useDeferredEmpty({
-    isEmpty: !grouped.length,
-    isLoading: isLoading || profile.isLoading,
-    resetKey: profile.id,
-  });
-
+  const showLoading = isLoading || profile.isLoading;
+  const showEmpty = !showLoading && !grouped.length;
   const latestActivityDate = grouped[0]?.latestDate;
 
   useFocusEffect(
@@ -65,9 +60,9 @@ export default function Activity() {
   return (
     <Page>
       <Header title="Activity" />
-      {queryState.showLoading ? (
+      {showLoading ? (
         <Loading />
-      ) : queryState.showEmpty ? (
+      ) : showEmpty ? (
         <View className="flex-1 py-8 gap-8 items-center justify-center">
           <Icon className="text-primary" icon={Sparkle} size={64} />
         </View>
