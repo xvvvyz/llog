@@ -12,6 +12,7 @@ import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { resolveSpectrumColor } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
 import * as React from 'react';
@@ -192,9 +193,11 @@ export const LogTemplateEditorSheet = () => {
             variant="secondary"
             wrapperClassName="flex-1"
           >
-            <Text className="text-white">
-              {isSubmitting ? 'Saving…' : 'Save'}
-            </Text>
+            {isSubmitting ? (
+              <Spinner color="white" />
+            ) : (
+              <Text className="text-white">Save</Text>
+            )}
           </Button>
         </View>
       </View>

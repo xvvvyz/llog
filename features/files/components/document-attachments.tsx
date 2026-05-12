@@ -643,7 +643,7 @@ export const DocumentAttachments = ({
                 size="sm"
                 wrapperClassName="flex-1"
               >
-                <Text>{isRenaming ? 'Saving…' : 'Save'}</Text>
+                {isRenaming ? <Spinner /> : <Text>Save</Text>}
               </Button>
             </View>
           </View>

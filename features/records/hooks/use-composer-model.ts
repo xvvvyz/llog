@@ -258,8 +258,9 @@ export const useRecordComposerModel = () => {
     !!recordId &&
     (!!myRole.canManage || recordTags.hasRecordTags);
 
+  const canToggleCopyPin = !isCopy || isSingleTargetCopy;
   const isPinned = !!record?.isPinned;
-  const canTogglePin = !isCopy && !!recordId && myRole.canPinRecords;
+  const canTogglePin = canToggleCopyPin && !!recordId && myRole.canPinRecords;
 
   const handleTogglePin = React.useCallback(() => {
     if (!recordId) return;
@@ -432,7 +433,7 @@ export const useRecordComposerModel = () => {
       : isCopy
         ? copyLoading || !copyDraft
         : !!logId && !draft.id,
-    logColor: isCopy ? undefined : logColor.default,
+    logColor: isEdit || isCopy ? undefined : logColor.default,
     fileCount,
     filePreview,
     onChangeText: handleChangeText,
@@ -444,6 +445,7 @@ export const useRecordComposerModel = () => {
     onTogglePin: handleTogglePin,
     selectedTags: record?.tags ?? [],
     submitLabel: isEdit ? 'Done' : 'Record',
+    submitVariant: isEdit ? ('secondary' as const) : undefined,
     templates: isCreate ? templates.data : [],
     toolbar,
   };

@@ -73,6 +73,7 @@ export const buildCreatePublishedRecordTransactions = ({
   activityId,
   authorId,
   db,
+  isPinned,
   logId,
   now,
   recordId,
@@ -82,6 +83,7 @@ export const buildCreatePublishedRecordTransactions = ({
   activityId: string;
   authorId: string;
   db: DbWithTransactions;
+  isPinned?: boolean;
   logId: string;
   now: string;
   recordId: string;
@@ -93,6 +95,7 @@ export const buildCreatePublishedRecordTransactions = ({
       ...recordIdentity.getRecordIdentityFields({ authorId, logId }),
       date: now,
       isDraft: false,
+      ...(isPinned ? { isPinned } : {}),
       teamId,
       ...(text != null ? { text } : {}),
     })

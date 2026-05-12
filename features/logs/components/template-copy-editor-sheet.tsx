@@ -5,6 +5,7 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
 import * as React from 'react';
@@ -125,7 +126,7 @@ export const LogTemplateCopyEditorSheet = () => {
             size="sm"
             wrapperClassName="flex-1"
           >
-            <Text>{isSubmitting ? 'Copying…' : 'Copy'}</Text>
+            {isSubmitting ? <Spinner /> : <Text>Copy</Text>}
           </Button>
         </View>
       </View>

@@ -3,6 +3,7 @@ import { readTextareaBlurText } from '@/features/records/lib/read-textarea-blur-
 import { useVirtualKeyboardVisible } from '@/hooks/use-virtual-keyboard-visible';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
 import * as React from 'react';
@@ -124,9 +125,11 @@ export const ComposerForm = ({
             style={logColor ? { backgroundColor: logColor } : undefined}
             variant={submitVariant}
           >
-            <Text className={submitTextClassName}>
-              {isSubmitting ? 'Saving…' : submitLabel}
-            </Text>
+            {isSubmitting ? (
+              <Spinner color={logColor ? 'white' : undefined} />
+            ) : (
+              <Text className={submitTextClassName}>{submitLabel}</Text>
+            )}
           </Button>
         </View>
       </View>

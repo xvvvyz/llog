@@ -250,6 +250,7 @@ const buildPublishedRecordCopies = ({
   authorId,
   dbClient,
   files,
+  isPinned,
   links,
   now,
   targetLogs,
@@ -258,6 +259,7 @@ const buildPublishedRecordCopies = ({
   authorId: string;
   dbClient: Db;
   files?: RecordCopyFile[];
+  isPinned?: boolean;
   links?: RecordCopyLink[];
   now: string;
   targetLogs: RecordCopyTargetLog[];
@@ -275,6 +277,7 @@ const buildPublishedRecordCopies = ({
         activityId: id(),
         authorId,
         db: dbClient,
+        isPinned,
         logId,
         now,
         recordId: copiedRecordId,
@@ -516,6 +519,7 @@ app.post(
       authorId: record.author.id,
       dbClient: c.var.db,
       files: record.files,
+      isPinned: record.isPinned,
       links: record.links,
       now,
       targetLogs,

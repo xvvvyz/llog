@@ -635,6 +635,13 @@ const rules = {
         ),
         group(and('canManage', 'onlyModifiesPinnedState')),
         group(
+          and(
+            'isAuthorOwnedLoglessDraft',
+            'canManageByTeamId',
+            'onlyModifiesPinnedState'
+          )
+        ),
+        group(
           and('isAuthorOwnedLoglessDraft', 'onlyModifiesText', 'isValidNewText')
         ),
         group(

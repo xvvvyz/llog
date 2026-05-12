@@ -9,6 +9,7 @@ import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
+import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -225,9 +226,11 @@ export const LinkEditorSheet = () => {
             size="sm"
             wrapperClassName="flex-1"
           >
-            <Text>
-              {isSubmitting ? 'Saving…' : isEditingLink ? 'Save' : 'Add'}
-            </Text>
+            {isSubmitting ? (
+              <Spinner />
+            ) : (
+              <Text>{isEditingLink ? 'Save' : 'Add'}</Text>
+            )}
           </Button>
         </View>
       </View>
