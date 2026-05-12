@@ -16,17 +16,19 @@ import { deleteRecordFile } from '@/features/records/mutations/delete-record-fil
 import { finalizeRecordCopy } from '@/features/records/mutations/finalize-record-copy';
 import { publishRecord } from '@/features/records/mutations/publish-record';
 import { reorderLinks } from '@/features/records/mutations/reorder-links';
+import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
 import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { useRecordDraft } from '@/features/records/queries/use-record-draft';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { Tag } from 'phosphor-react-native';
+import { PushPin, Tag } from 'phosphor-react-native';
 import * as React from 'react';
 
 const getCopyTargetLogIds = (payload: unknown) => {
@@ -60,6 +62,7 @@ export const useRecordComposerModel = () => {
   const isCreate = !isEdit && !isCopy;
   const isOpen = sheetManager.isOpen('record-create');
   const sheetId = sheetManager.getId('record-create');
+  const colorScheme = useColorScheme();
 
   const copyPayload = isCopy
     ? sheetManager.getPayload('record-create')
@@ -138,6 +141,7 @@ export const useRecordComposerModel = () => {
 
   const recordTeamId = record?.teamId;
   const logColor = useLogColor({ id: recordLogId });
+  const accentColor = logColor[colorScheme === 'dark' ? 'lighter' : 'darker'];
   const myRole = useMyRole({ teamId: recordTeamId });
 
   const canCheckRecordTags =
@@ -254,11 +258,37 @@ export const useRecordComposerModel = () => {
     !!recordId &&
     (!!myRole.canManage || recordTags.hasRecordTags);
 
+  const isPinned = !!record?.isPinned;
+  const canTogglePin = !isCopy && !!recordId && myRole.canPinRecords;
+
+  const handleTogglePin = React.useCallback(() => {
+    if (!recordId) return;
+    void toggleRecordPin({ id: recordId, isPinned: !isPinned });
+  }, [isPinned, recordId]);
+
   const tagToolbarItem = canOpenTags
     ? React.createElement(
         Button,
         { onPress: handleOpenTags, size: 'icon-xs', variant: 'secondary' },
         React.createElement(Icon, { icon: Tag })
+      )
+    : null;
+
+  const pinToolbarItem = canTogglePin
+    ? React.createElement(
+        Button,
+        {
+          accessibilityLabel: isPinned ? 'Unpin record' : 'Pin record',
+          accessibilityState: { selected: isPinned },
+          onPress: handleTogglePin,
+          size: 'icon-xs',
+          variant: 'secondary',
+        },
+        React.createElement(Icon, {
+          color: isPinned ? accentColor : undefined,
+          icon: PushPin,
+          weight: isPinned ? 'fill' : 'regular',
+        })
       )
     : null;
 
@@ -269,7 +299,8 @@ export const useRecordComposerModel = () => {
       React.Fragment,
       null,
       linkToolbarItems,
-      tagToolbarItem
+      tagToolbarItem,
+      pinToolbarItem
     ),
     isOpen,
     files: record?.files ?? [],
@@ -390,8 +421,10 @@ export const useRecordComposerModel = () => {
     canOpenTemplates:
       isCreate && templates.data.length > 0 && !currentText.trim(),
     canOpenTags,
+    canTogglePin,
     isBusy,
     isOpen,
+    isPinned,
     isSubmitting,
     isTextareaFocused,
     loading: isEdit
@@ -408,6 +441,7 @@ export const useRecordComposerModel = () => {
     onSubmit: handleSubmit,
     onOpenTags: handleOpenTags,
     onTextareaFocusChange: setIsTextareaFocused,
+    onTogglePin: handleTogglePin,
     selectedTags: record?.tags ?? [],
     submitLabel: isEdit ? 'Done' : 'Record',
     templates: isCreate ? templates.data : [],

@@ -186,7 +186,7 @@ const EntryMenuDropdownContent = ({
         {canTag && (
           <Menu.Item onPress={() => sheetManager.open('record-tags', recordId)}>
             <Icon className="text-placeholder" icon={Tag} />
-            <Text>Tag</Text>
+            <Text>Tags</Text>
           </Menu.Item>
         )}
         {canPin && (

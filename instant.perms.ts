@@ -633,7 +633,7 @@ const rules = {
             'isValidNewText'
           )
         ),
-        group(and('canManage', '!isDraft', 'onlyModifiesPinnedState')),
+        group(and('canManage', 'onlyModifiesPinnedState')),
         group(
           and('isAuthorOwnedLoglessDraft', 'onlyModifiesText', 'isValidNewText')
         ),

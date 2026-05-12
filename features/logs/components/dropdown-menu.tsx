@@ -63,7 +63,7 @@ export const DropdownMenu = ({
       >
         <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
           <Icon className="text-placeholder" icon={NotePencil} />
-          <Text>Details</Text>
+          <Text>Edit</Text>
         </Menu.Item>
         <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
           <Icon className="text-placeholder" icon={Tag} />

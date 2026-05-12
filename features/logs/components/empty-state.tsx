@@ -107,7 +107,7 @@ export const EmptyState = ({ logId }: { logId: string }) => {
             variant="secondary"
             wrapperClassName={ACTION_BUTTON_WRAPPER_CLASS_NAME}
           >
-            <Text>Details</Text>
+            <Text>Edit</Text>
             <Icon className="-mr-0.5" icon={NotePencil} />
           </Button>
           {hasMembers && (

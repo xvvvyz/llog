@@ -8,7 +8,7 @@ import {
   ImageSquare,
   Microphone,
   Paperclip,
-  Plus,
+  UploadSimple,
 } from 'phosphor-react-native';
 
 export const Toolbar = ({
@@ -29,7 +29,7 @@ export const Toolbar = ({
   return Platform.OS === 'web' ? (
     <>
       <Button onPress={onPickDocuments} size="icon-xs" variant="secondary">
-        <Icon icon={Plus} />
+        <Icon icon={UploadSimple} />
       </Button>
       <Button
         disabled={!canAddAudio}
