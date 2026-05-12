@@ -38,8 +38,8 @@
     "@cloudflare/workers-oauth-provider": "^0.5.0",
     "@expo/metro-runtime": "^55.0.11",
     "@hono/zod-validator": "^0.8.0",
-    "@instantdb/admin": "1.0.26",
-    "@instantdb/react-native": "1.0.26",
+    "@instantdb/admin": "1.0.27",
+    "@instantdb/react-native": "1.0.27",
     "@legendapp/list": "^2.0.19",
     "@likashefqet/react-native-image-zoom": "^4.3.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -122,14 +122,14 @@
     "@types/react": "~19.2.14",
     "@types/react-dom": "19.2.3",
     "babel-plugin-transform-remove-console": "^6.9.4",
-    "instant-cli": "1.0.26",
-    "oxfmt": "^0.48.0",
-    "oxlint": "^1.63.0",
+    "instant-cli": "1.0.27",
+    "oxfmt": "^0.49.0",
+    "oxlint": "^1.64.0",
     "postcss": "^8.5.14",
     "satori": "^0.26.0",
     "tailwindcss": "4.3.0",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~5.9.2",
-    "wrangler": "^4.90.0"
+    "wrangler": "^4.90.1"
   }
 }
