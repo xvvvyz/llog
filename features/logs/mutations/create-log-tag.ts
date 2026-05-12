@@ -1,4 +1,5 @@
 import { getActiveTeamId } from '@/features/teams/queries/get-active-team-id';
+import { getPrependTagOrderTransactions } from '@/features/tags/mutations/prepend-tag-order';
 import { db } from '@/lib/db';
 import type { Color } from '@/theme/spectrum';
 import { id as generateId } from '@instantdb/react-native';
@@ -8,14 +9,12 @@ export const createLogTag = async ({
   id,
   logId,
   name,
-  order,
   teamId,
 }: {
   color: Color;
   id?: string;
   logId?: string;
   name: string;
-  order?: number;
   teamId?: string;
 }) => {
   if (!logId) return;
@@ -24,15 +23,22 @@ export const createLogTag = async ({
   const tagId = id ?? generateId();
   const trimmedName = name.trim();
 
-  return db.transact(
+  const orderTransactions = await getPrependTagOrderTransactions({
+    tagId,
+    teamId: resolvedTeamId,
+    type: 'log',
+  });
+
+  return db.transact([
     db.tx.tags[tagId]
       .update({
         color,
         name: trimmedName,
-        order: order ?? -Date.now(),
+        order: 0,
         teamId: resolvedTeamId,
         type: 'log',
       })
-      .link({ logs: logId, team: resolvedTeamId })
-  );
+      .link({ logs: logId, team: resolvedTeamId }),
+    ...orderTransactions,
+  ]);
 };

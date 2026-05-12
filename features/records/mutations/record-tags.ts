@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { getPrependTagOrderTransactions } from '@/features/tags/mutations/prepend-tag-order';
 import type { Color } from '@/theme/spectrum';
 import { id as generateId } from '@instantdb/react-native';
 
@@ -43,7 +44,6 @@ export const createRecordTag = async ({
   id,
   logId,
   name,
-  order,
   recordId,
   teamId,
 }: {
@@ -51,7 +51,6 @@ export const createRecordTag = async ({
   id?: string;
   logId?: string;
   name: string;
-  order?: number;
   recordId?: string;
   teamId?: string;
 }) => {
@@ -59,16 +58,18 @@ export const createRecordTag = async ({
   const trimmedName = name.trim();
   const tagId = id ?? generateId();
 
+  const orderTransactions = await getPrependTagOrderTransactions({
+    logId,
+    tagId,
+    teamId,
+    type: 'record',
+  });
+
   return db.transact([
     db.tx.tags[tagId]
-      .update({
-        color,
-        name: trimmedName,
-        order: order ?? -Date.now(),
-        teamId,
-        type: 'record',
-      })
+      .update({ color, name: trimmedName, order: 0, teamId, type: 'record' })
       .link({ logs: logId, team: teamId }),
+    ...orderTransactions,
     db.tx.records[recordId].link({ tags: tagId }),
   ]);
 };
@@ -78,14 +79,12 @@ export const createRecordTagDefinition = async ({
   id,
   logId,
   name,
-  order,
   teamId,
 }: {
   color: Color;
   id?: string;
   logId?: string;
   name: string;
-  order?: number;
   teamId?: string;
 }) => {
   if (!logId || !teamId) return;
@@ -93,15 +92,17 @@ export const createRecordTagDefinition = async ({
   if (!trimmedName) return;
   const tagId = id ?? generateId();
 
-  return db.transact(
+  const orderTransactions = await getPrependTagOrderTransactions({
+    logId,
+    tagId,
+    teamId,
+    type: 'record',
+  });
+
+  return db.transact([
     db.tx.tags[tagId]
-      .update({
-        color,
-        name: trimmedName,
-        order: order ?? -Date.now(),
-        teamId,
-        type: 'record',
-      })
-      .link({ logs: logId, team: teamId })
-  );
+      .update({ color, name: trimmedName, order: 0, teamId, type: 'record' })
+      .link({ logs: logId, team: teamId }),
+    ...orderTransactions,
+  ]);
 };

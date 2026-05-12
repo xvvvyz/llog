@@ -52,7 +52,7 @@ export const TemplateTagsPickerSheet = ({
     canCreateNewTag: !!logId && !!teamId,
     logId,
     onCreateTag: React.useCallback(
-      ({ id, name, order }) => {
+      ({ id, name }) => {
         if (!logId || !teamId) return;
         onSelectedTagIdsChange((ids) => new Set(ids).add(id));
 
@@ -61,7 +61,6 @@ export const TemplateTagsPickerSheet = ({
           id,
           logId,
           name,
-          order,
           teamId,
         });
       },

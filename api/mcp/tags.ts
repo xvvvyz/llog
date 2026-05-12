@@ -231,7 +231,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
       id: id(),
       logs: [{ id: target.logId, name: record.log?.name ?? '' }],
       name: trimmedName,
-      order: -Date.now(),
+      order: 0,
       teamId: target.teamId,
       type: 'record',
     };
@@ -249,6 +249,9 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
             type: 'record',
           })
           .link({ logs: target.logId, team: target.teamId }),
+        ...recordTags.map((tag, index) =>
+          ctx.db.tx.tags[tag.id].update({ order: index + 1 })
+        ),
         ctx.db.tx.records[record.id].link({ tags: tag.id }),
       ]);
     } else if (!alreadySelected) {

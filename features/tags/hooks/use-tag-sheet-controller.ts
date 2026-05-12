@@ -6,6 +6,7 @@ import { id as generateId } from '@instantdb/react-native';
 import * as React from 'react';
 
 type NewTagInput = { id: string; name: string; order: number };
+type CreateTagInput = Omit<NewTagInput, 'order'>;
 
 export const useTagSheetController = ({
   buildPendingTag,
@@ -26,7 +27,7 @@ export const useTagSheetController = ({
   canCreateNewTag?: boolean;
   canToggleTags?: boolean;
   logId?: string;
-  onCreateTag: (tag: NewTagInput) => void | Promise<void>;
+  onCreateTag: (tag: CreateTagInput) => void | Promise<void>;
   onReorder: (tags: Tag[]) => void | Promise<void>;
   onToggleTag: (tagId: string, selected: boolean) => Promise<void>;
   scopeKey?: string | null;
@@ -75,11 +76,11 @@ export const useTagSheetController = ({
 
     if (!canCreateDefinitions || !canCreateNewTag) return;
     const tagId = generateId();
-    const order = -Date.now();
+    const order = 0;
     const pendingTag = buildPendingTag({ id: tagId, name: query, order });
     if (!pendingTag) return;
     setPendingCreatedTag(pendingTag);
-    void onCreateTag({ id: tagId, name: query, order });
+    void onCreateTag({ id: tagId, name: query });
     setRawQuery('');
   }, [
     buildPendingTag,

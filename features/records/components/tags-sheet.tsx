@@ -71,7 +71,7 @@ export const RecordTagsSheet = () => {
     canToggleTags: canManageRecordTags,
     logId,
     onCreateTag: React.useCallback(
-      ({ id, name, order }) => {
+      ({ id, name }) => {
         if (!logId || !record?.id || !teamId) return;
 
         void recordTags.createRecordTag({
@@ -79,7 +79,6 @@ export const RecordTagsSheet = () => {
           id,
           logId,
           name,
-          order,
           recordId: record.id,
           teamId,
         });

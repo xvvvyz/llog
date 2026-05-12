@@ -40,7 +40,7 @@ export const LogTagsSheet = () => {
     ),
     canCreateNewTag: !!teamId,
     onCreateTag: React.useCallback(
-      ({ id, name, order }) => {
+      ({ id, name }) => {
         if (!teamId) return;
 
         void createLogTag({
@@ -48,7 +48,6 @@ export const LogTagsSheet = () => {
           id,
           logId: log.id,
           name,
-          order,
           teamId,
         });
       },
