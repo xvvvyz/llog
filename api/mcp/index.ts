@@ -10,6 +10,7 @@ import { registerTagTools } from '@/api/mcp/tags';
 import { registerTemplateTools } from '@/api/mcp/templates';
 import type { McpContext, OAuthProps } from '@/api/mcp/types';
 import { createAdminDb } from '@/api/middleware/db';
+import packageJson from '@/package.json';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createMcpHandler } from 'agents/mcp';
 
@@ -33,7 +34,7 @@ const createServer = (ctx: McpContext) => {
       ],
       name: 'llog',
       title: 'llog',
-      version: '0.0.1',
+      version: packageJson.version,
       websiteUrl: appUrl,
     },
     { instructions: MCP_SERVER_INSTRUCTIONS }

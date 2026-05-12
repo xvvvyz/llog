@@ -1,5 +1,7 @@
 import type { ExpoConfig } from 'expo/config';
 
+import packageJson from './package.json';
+
 const { NATIVE_ADAPTIVE_ICON_BACKGROUND, NATIVE_SPLASH_BACKGROUNDS } =
   require('./theme/native.cjs') as {
     NATIVE_ADAPTIVE_ICON_BACKGROUND: string;
@@ -10,7 +12,7 @@ const config: { expo: ExpoConfig } = {
   expo: {
     name: 'llog',
     slug: 'llog',
-    version: '0.0.1',
+    version: packageJson.version,
     platforms: ['ios', 'android', 'web'],
     scheme: 'llog',
     userInterfaceStyle: 'automatic',
