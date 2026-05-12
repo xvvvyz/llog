@@ -39,6 +39,8 @@ export const Carousel = ({
   onActiveMediaChange,
   onDismissLockChange,
   onUiHiddenChange,
+  renderVideoActions,
+  topActionsOffset = 0,
   videoHandleRef: externalVideoHandleRef,
   videoPlaybackRate = 1,
 }: {
@@ -52,6 +54,8 @@ export const Carousel = ({
   onActiveMediaChange?: (fileId: string) => void;
   onDismissLockChange?: (isLocked: boolean) => void;
   onUiHiddenChange?: (isHidden: boolean) => void;
+  renderVideoActions?: (file: FileItem) => React.ReactNode;
+  topActionsOffset?: number;
   videoHandleRef?: React.RefObject<VideoPlayerHandle | null>;
   videoPlaybackRate?: number;
 }) => {
@@ -547,6 +551,14 @@ export const Carousel = ({
         >
           {isActiveVideo && (
             <React.Fragment>
+              {renderVideoActions && (
+                <View
+                  className="absolute right-4 z-10 border-continuous rounded-full pointer-events-auto md:right-8"
+                  style={{ top: topActionsOffset }}
+                >
+                  {renderVideoActions(activeMedia)}
+                </View>
+              )}
               <VideoMetadataOverlay
                 currentTime={videoCurrentTime}
                 file={activeMedia}

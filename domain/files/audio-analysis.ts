@@ -2,9 +2,16 @@ export const MAX_TRANSCRIPTION_DURATION_MS = 15 * 60 * 1000;
 
 export const MAX_TRANSCRIPTION_UPLOAD_BYTES = 25 * 1024 * 1024;
 
+export const MIN_AUDIO_ANALYSIS_DURATION_MS = 2000;
+
 export const isAudioAnalysisFileType = (
   type?: string | null
 ): type is 'audio' | 'video' => type === 'audio' || type === 'video';
+
+export const isAudioAnalysisDurationTooShort = (duration?: number | null) =>
+  typeof duration === 'number' &&
+  Number.isFinite(duration) &&
+  duration < MIN_AUDIO_ANALYSIS_DURATION_MS;
 
 export const isTranscriptionDurationTooLong = (duration?: number | null) =>
   typeof duration === 'number' &&
@@ -26,5 +33,6 @@ export const canTranscribeAudioAnalysisFile = (file: {
   type?: string | null;
 }) =>
   file.transcript == null &&
+  !isAudioAnalysisDurationTooShort(file.duration) &&
   !isTranscriptionDurationTooLong(file.duration) &&
   !(file.type === 'audio' && isTranscriptionUploadTooLarge(file.size));

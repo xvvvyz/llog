@@ -6,12 +6,8 @@ import type * as audioAnalysisTypes from '@/api/audio-analysis/types';
 import { type Db } from '@/api/middleware/db';
 import * as audioAnalysis from '@/domain/files/audio-analysis';
 
-const MIN_AUDIO_ANALYSIS_DURATION_MS = 2000;
-
 const isTooShortForAnalysis = (file: audioAnalysisTypes.AudioFile) =>
-  typeof file.duration === 'number' &&
-  Number.isFinite(file.duration) &&
-  file.duration < MIN_AUDIO_ANALYSIS_DURATION_MS;
+  audioAnalysis.isAudioAnalysisDurationTooShort(file.duration);
 
 const clearIdentifying = (db: Db, fileId: string) =>
   updateAudioFile(db, fileId, { isIdentifying: false });

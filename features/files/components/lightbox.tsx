@@ -5,6 +5,7 @@ import { useMediaLightboxTransition } from '@/features/files/hooks/use-lightbox-
 import * as mediaPlaybackRate from '@/features/files/lib/media-playback-rate';
 import { type FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
+import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { Button } from '@/ui/button';
 import { useDismissStack } from '@/ui/dismiss-stack';
@@ -19,11 +20,12 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 
 import {
+  ArrowLeft,
+  CaretLeft,
   Check,
   CornersOut,
   DotsThreeVertical,
   Speedometer,
-  X,
 } from 'phosphor-react-native';
 
 export const Lightbox = ({
@@ -41,6 +43,7 @@ export const Lightbox = ({
   onCloseAnimationEnd?: () => void;
   onRequestClose: () => void;
 }) => {
+  const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
   const [isUiHidden, setIsUiHidden] = React.useState(false);
 
@@ -97,16 +100,74 @@ export const Lightbox = ({
   }, [media, resolvedMediaId]);
 
   const hasRenderedPreview = defaultIndex !== -1;
-  const activeMedia = hasRenderedPreview ? media[defaultIndex] : undefined;
+  const topControlStyle = { top: insets.top + (headerHeight - 44) / 2 };
 
-  const hasActiveVideoAnalysisMenuItems =
-    activeMedia?.type === 'video' &&
-    audioAnalysisMenuItems.shouldShowAudioAnalysisMenu({
-      canAnalyze: canAnalyzeAudio,
-      file: activeMedia,
-    });
+  const renderActiveVideoMenu = React.useCallback(
+    (file: FileItem) => {
+      const hasAnalysisMenuItems =
+        audioAnalysisMenuItems.shouldShowAudioAnalysisMenu({
+          canAnalyze: canAnalyzeAudio,
+          file,
+        });
 
-  const showActiveVideoMenu = activeMedia?.type === 'video';
+      return (
+        <Menu.Root>
+          <Menu.Trigger asChild>
+            <Button
+              accessibilityLabel="Video options"
+              className="size-11"
+              size="icon"
+              variant="link"
+              wrapperClassName="md:ml-4 md:-mr-4"
+            >
+              <Icon
+                className="text-popover-foreground"
+                icon={DotsThreeVertical}
+                size={24}
+              />
+            </Button>
+          </Menu.Trigger>
+          <Menu.Content
+            align="end"
+            className="min-w-48"
+            portalHostName={overlayLayers.MEDIA_LIGHTBOX_PORTAL_HOST}
+          >
+            <Menu.Item
+              onPress={() => videoHandleRef.current?.enterFullscreen()}
+            >
+              <Icon className="text-placeholder" icon={CornersOut} />
+              <Text>Fullscreen</Text>
+            </Menu.Item>
+            <Menu.Separator />
+            {mediaPlaybackRate.PLAYBACK_RATES.map((playbackRate) => {
+              const isSelected = playbackRate === videoPlaybackRate;
+
+              return (
+                <Menu.Item
+                  key={playbackRate}
+                  onPress={() => setVideoPlaybackRate(playbackRate)}
+                >
+                  <Icon
+                    className="text-placeholder"
+                    icon={isSelected ? Check : Speedometer}
+                  />
+                  <Text className="tabular-nums">
+                    {playbackRate.toFixed(1)}×
+                  </Text>
+                </Menu.Item>
+              );
+            })}
+            {hasAnalysisMenuItems && <Menu.Separator />}
+            <audioAnalysisMenuItems.AudioAnalysisMenuItems
+              canAnalyze={canAnalyzeAudio}
+              file={file}
+            />
+          </Menu.Content>
+        </Menu.Root>
+      );
+    },
+    [canAnalyzeAudio, videoPlaybackRate]
+  );
 
   useDismissStack({
     layer: overlayLayers.OVERLAY_LAYERS.modal,
@@ -133,77 +194,27 @@ export const Lightbox = ({
       />
       <View className="absolute inset-0">
         {!isUiHidden && (
-          <Animated.View
-            className="absolute right-4 top-1 z-10 border-continuous rounded-full md:right-8 md:top-3"
-            style={[overlayStyle, { marginTop: insets.top + 1 }]}
-          >
-            <View className="items-center">
+          <>
+            <Animated.View
+              className="absolute left-4 z-10 border-continuous rounded-full md:left-8"
+              style={[overlayStyle, topControlStyle]}
+            >
               <Button
+                accessibilityLabel="Back"
                 className="size-11"
                 onPress={handleInstantRequestClose}
                 size="icon"
                 variant="link"
-                wrapperClassName="md:ml-4 md:-mr-4"
+                wrapperClassName="md:-ml-4 md:mr-4"
               >
-                <Icon className="text-popover-foreground" icon={X} size={24} />
+                <Icon
+                  className="text-popover-foreground"
+                  icon={Platform.select({ default: ArrowLeft, ios: CaretLeft })}
+                  size={Platform.select({ default: 24, ios: 30 })}
+                />
               </Button>
-              {showActiveVideoMenu && (
-                <Menu.Root>
-                  <Menu.Trigger asChild>
-                    <Button
-                      accessibilityLabel="Video options"
-                      className="size-11"
-                      size="icon"
-                      variant="link"
-                      wrapperClassName="md:ml-4 md:-mr-4"
-                    >
-                      <Icon
-                        className="text-popover-foreground"
-                        icon={DotsThreeVertical}
-                        size={24}
-                      />
-                    </Button>
-                  </Menu.Trigger>
-                  <Menu.Content
-                    align="end"
-                    className="min-w-48"
-                    portalHostName={overlayLayers.MEDIA_LIGHTBOX_PORTAL_HOST}
-                  >
-                    <Menu.Item
-                      onPress={() => videoHandleRef.current?.enterFullscreen()}
-                    >
-                      <Icon className="text-placeholder" icon={CornersOut} />
-                      <Text>Fullscreen</Text>
-                    </Menu.Item>
-                    <Menu.Separator />
-                    {mediaPlaybackRate.PLAYBACK_RATES.map((playbackRate) => {
-                      const isSelected = playbackRate === videoPlaybackRate;
-
-                      return (
-                        <Menu.Item
-                          key={playbackRate}
-                          onPress={() => setVideoPlaybackRate(playbackRate)}
-                        >
-                          <Icon
-                            className="text-placeholder"
-                            icon={isSelected ? Check : Speedometer}
-                          />
-                          <Text className="tabular-nums">
-                            {playbackRate.toFixed(1)}×
-                          </Text>
-                        </Menu.Item>
-                      );
-                    })}
-                    {hasActiveVideoAnalysisMenuItems && <Menu.Separator />}
-                    <audioAnalysisMenuItems.AudioAnalysisMenuItems
-                      canAnalyze={canAnalyzeAudio}
-                      file={activeMedia}
-                    />
-                  </Menu.Content>
-                </Menu.Root>
-              )}
-            </View>
-          </Animated.View>
+            </Animated.View>
+          </>
         )}
         <Carousel
           defaultIndex={defaultIndex}
@@ -216,6 +227,8 @@ export const Lightbox = ({
           onActiveMediaChange={onActiveMediaChange}
           onDismissLockChange={setIsDismissLocked}
           onUiHiddenChange={setIsUiHidden}
+          renderVideoActions={renderActiveVideoMenu}
+          topActionsOffset={topControlStyle.top}
           videoHandleRef={videoHandleRef}
           videoPlaybackRate={videoPlaybackRate}
         />

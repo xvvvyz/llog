@@ -60,6 +60,10 @@ const getAudioAnalysisMenuState = ({
 
   const hasEmptyTranscriptResult = file.transcript != null && !hasTranscript;
 
+  const isAudioTooShort = audioAnalysis.isAudioAnalysisDurationTooShort(
+    file.duration
+  );
+
   const isTranscriptionTooLong = audioAnalysis.isTranscriptionDurationTooLong(
     file.duration
   );
@@ -70,12 +74,14 @@ const getAudioAnalysisMenuState = ({
 
   const canIdentify =
     audioAnalysis.canIdentifyAudioAnalysisFile(file) ||
+    isAudioTooShort ||
     !!file.isIdentifying ||
     file.tracks != null;
 
   const canTranscribe =
     audioAnalysis.canTranscribeAudioAnalysisFile(file) ||
     hasEmptyTranscriptResult ||
+    isAudioTooShort ||
     isTranscriptionTooLong ||
     isTranscriptionTooLarge ||
     !!file.isTranscribing;
@@ -88,21 +94,29 @@ const getAudioAnalysisMenuState = ({
 
   const transcribeLabel =
     file.transcript == null
-      ? isTranscriptionTooLong
-        ? 'Too long to transcribe'
-        : isTranscriptionTooLarge
-          ? 'Too large to transcribe'
-          : 'Transcribe'
+      ? isAudioTooShort
+        ? 'Too short to transcribe'
+        : isTranscriptionTooLong
+          ? 'Too long to transcribe'
+          : isTranscriptionTooLarge
+            ? 'Too large to transcribe'
+            : 'Transcribe'
       : hasTranscript
         ? null
-        : 'No speech';
+        : isAudioTooShort
+          ? 'Too short to transcribe'
+          : 'No speech';
 
   const identifyMusicLabel =
     file.tracks == null
-      ? 'Identify music'
+      ? isAudioTooShort
+        ? 'Too short to identify'
+        : 'Identify music'
       : hasIdentifiedMusic
         ? 'Music identified'
-        : 'No music';
+        : isAudioTooShort
+          ? 'Too short to identify'
+          : 'No music';
 
   return {
     canClearTranscription,
@@ -110,9 +124,10 @@ const getAudioAnalysisMenuState = ({
     canTranscribe,
     hasMenuItems: canIdentify || canTranscribe || canClearTranscription,
     identifyMusicLabel,
-    isIdentificationDisabled: file.tracks != null,
+    isIdentificationDisabled: file.tracks != null || isAudioTooShort,
     isTranscriptionDisabled:
       file.transcript != null ||
+      isAudioTooShort ||
       isTranscriptionTooLong ||
       isTranscriptionTooLarge,
     transcribeLabel,
