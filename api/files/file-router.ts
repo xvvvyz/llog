@@ -2,6 +2,8 @@ import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import * as upload from '@/api/files/file-upload';
 import { auth, type Db, db } from '@/api/middleware/db';
 import * as permissions from '@/domain/teams/permissions';
+import schema from '@/instant.schema';
+import type { InstaQLEntity } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
@@ -18,10 +20,10 @@ type UploadTarget = {
   recordId: string;
 };
 
+type FileEntity = InstaQLEntity<typeof schema, 'files'>;
+
 type FileAsset = {
-  assetKey?: string | null;
-  id?: string | null;
-  uri?: string | null;
+  [Key in 'assetKey' | 'id' | 'uri']?: FileEntity[Key] | null;
 };
 
 type DeleteTarget = { canDelete: boolean; item?: FileAsset };

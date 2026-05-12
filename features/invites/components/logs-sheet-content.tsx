@@ -1,3 +1,4 @@
+import type { Log } from '@/features/logs/types/log';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { SPECTRUM } from '@/theme/spectrum';
@@ -10,7 +11,7 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
 
-type InviteLog = { color?: number | null; id: string; name: string };
+type InviteLog = Pick<Log, 'color' | 'id' | 'name'>;
 
 export const LogsSheetContent = ({
   isLoading,

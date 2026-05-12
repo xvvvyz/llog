@@ -4,7 +4,7 @@ import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scro
 import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
-import { useRecordCopyTargets } from '@/features/records/queries/use-record-copy-targets';
+import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
@@ -66,7 +66,7 @@ export const useEntryMenuState = ({
 
   const canDuplicateRecord = !replyId && isAuthor;
 
-  const copyTargets = useRecordCopyTargets({
+  const copyTargets = useCopyTargets({
     enabled: canDuplicateRecord && !!logId,
   });
 

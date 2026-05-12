@@ -9,6 +9,8 @@ import { LogDeleteSheet } from '@/features/logs/components/delete-sheet';
 import { LogEditSheet } from '@/features/logs/components/edit-sheet';
 import { LogMembersSheet } from '@/features/logs/components/members-sheet';
 import { LogTagsSheet } from '@/features/logs/components/tags-sheet';
+import { LogTemplateCopyEditorSheet } from '@/features/logs/components/template-copy-editor-sheet';
+import { LogTemplateCopyToSheet } from '@/features/logs/components/template-copy-to-sheet';
 import { LogTemplateDeleteSheet } from '@/features/logs/components/template-delete-sheet';
 import { LogTemplateEditorSheet } from '@/features/logs/components/template-editor-sheet';
 import { LogTemplatesSheet } from '@/features/logs/components/templates-sheet';
@@ -66,6 +68,8 @@ export default function Layout() {
       <LogEditSheet />
       <LogMembersSheet />
       <LogTemplatesSheet />
+      <LogTemplateCopyToSheet />
+      <LogTemplateCopyEditorSheet />
       <LogTemplateEditorSheet />
       <LogTemplateDeleteSheet />
       <LogTagsSheet />

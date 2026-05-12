@@ -1,4 +1,7 @@
 import { recordTagFields, recordTagLogsQuery } from '@/domain/tags/query';
+import schema from '@/instant.schema';
+import { normalizeSearchText } from '@/lib/search';
+import { InstaQLEntity } from '@instantdb/react-native';
 
 export const logTemplateFields = [
   'id' as const,
@@ -29,6 +32,13 @@ export const templateQuery = { log: templateLogQuery, tags: templateTagsQuery };
 
 type OrderedTemplate = { order?: number | null };
 type TemplateSearchItem = { tags?: { name: string }[]; text?: string | null };
+type TemplateTagEntity = InstaQLEntity<typeof schema, 'tags'>;
+
+type CopyTemplateSourceTag = Partial<
+  Pick<TemplateTagEntity, 'color' | 'id' | 'name'>
+>;
+
+type CopyTemplateTargetTag = Partial<Pick<TemplateTagEntity, 'id' | 'name'>>;
 
 export const getNextTemplateOrder = (templates: OrderedTemplate[]) =>
   templates.reduce((max, template) => Math.max(max, template.order ?? -1), -1) +
@@ -56,6 +66,47 @@ export const getTemplateTagChanges = ({
       (tagId) => !nextTagIdSet.has(tagId)
     ),
   };
+};
+
+export const resolveCopyTemplateTagsForTargetLog = ({
+  createMissingTags = false,
+  sourceTags,
+  targetTags,
+}: {
+  createMissingTags?: boolean;
+  sourceTags?: CopyTemplateSourceTag[];
+  targetTags?: CopyTemplateTargetTag[];
+}) => {
+  const targetTagIdByName = new Map<string, string>();
+
+  for (const tag of targetTags ?? []) {
+    if (!tag.id || !tag.name) continue;
+    targetTagIdByName.set(normalizeSearchText(tag.name), tag.id);
+  }
+
+  const linkedTagIds: string[] = [];
+  const missingTags: { color: number; name: string }[] = [];
+  const seenSourceNames = new Set<string>();
+
+  for (const tag of sourceTags ?? []) {
+    if (!tag.name) continue;
+    const name = tag.name.trim();
+    if (!name) continue;
+    const normalizedName = normalizeSearchText(name);
+    if (!normalizedName || seenSourceNames.has(normalizedName)) continue;
+    seenSourceNames.add(normalizedName);
+    const targetTagId = targetTagIdByName.get(normalizedName);
+
+    if (targetTagId) {
+      linkedTagIds.push(targetTagId);
+      continue;
+    }
+
+    if (!createMissingTags) continue;
+    missingTags.push({ color: tag.color ?? 11, name });
+  }
+
+  return { linkedTagIds, missingTags };
 };
 
 export const filterTemplatesByQuery = <T extends TemplateSearchItem>(

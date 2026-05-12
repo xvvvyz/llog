@@ -11,7 +11,7 @@ import { Linking, View } from 'react-native';
 
 import {
   AppleLogo,
-  DotsThree,
+  DotsThreeVertical,
   MusicNote,
   SpotifyLogo,
   YoutubeLogo,
@@ -153,7 +153,7 @@ export const TrackLinksMenu = ({
           >
             <Icon
               className={cn('text-muted-foreground', triggerIconClassName)}
-              icon={DotsThree}
+              icon={DotsThreeVertical}
               size={triggerIconSize}
             />
           </Button>

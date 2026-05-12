@@ -1,8 +1,15 @@
 import { Role } from '@/domain/teams/role';
 import { findMemberInviteByLogs } from '@/features/invites/lib/matching';
+import type { Log } from '@/features/logs/types/log';
+import schema from '@/instant.schema';
+import { InstaQLEntity } from '@instantdb/react-native';
 import { describe, expect, it } from 'bun:test';
 
-type TestInvite = { id: string; logs?: { id: string }[] | null; role: string };
+type Invite = InstaQLEntity<typeof schema, 'invites'>;
+
+type TestInvite = Pick<Invite, 'id' | 'role'> & {
+  logs?: Pick<Log, 'id'>[] | null;
+};
 
 describe('findMemberInviteByLogs', () => {
   it('finds a member invite with the same log ids regardless of order', () => {

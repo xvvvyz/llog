@@ -1,13 +1,18 @@
+import schema from '@/instant.schema';
 import { normalizeSearchText } from '@/lib/search';
+import { InstaQLEntity } from '@instantdb/react-native';
 
-export type CopyRecordTag = {
-  id?: string | null;
-  name?: string | null;
-  type?: string | null;
-  logs?: { id?: string | null }[];
-};
+type RecordTagEntity = InstaQLEntity<
+  typeof schema,
+  'tags',
+  { logs: { $: { fields: ['id'] } } }
+>;
 
-export type CopyTargetTag = { id?: string | null; name?: string | null };
+export type CopyRecordTag = Partial<
+  Pick<RecordTagEntity, 'id' | 'logs' | 'name' | 'type'>
+>;
+
+export type CopyTargetTag = Partial<Pick<RecordTagEntity, 'id' | 'name'>>;
 
 export const resolveCopyDraftTagIdsForTargetLog = ({
   sourceTags,

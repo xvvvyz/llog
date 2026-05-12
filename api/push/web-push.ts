@@ -1,23 +1,27 @@
 import type { Db } from '@/api/middleware/db';
 import * as permissions from '@/domain/teams/permissions';
 import { recordMarkdownToPlainText } from '@/features/records/lib/record-markdown';
+import schema from '@/instant.schema';
+import type { InstaQLEntity } from '@instantdb/admin';
 import { buildPushHTTPRequest } from '@pushforge/builder';
 import { z } from 'zod/v4';
 
 const MAX_BODY_LENGTH = 140;
+type SubscriptionEntity = InstaQLEntity<typeof schema, 'subscriptions'>;
+type UserEntity = InstaQLEntity<typeof schema, '$users'>;
+type RoleEntity = InstaQLEntity<typeof schema, 'roles'>;
 
-type StoredPushSubscription = {
-  endpoint?: string | null;
-  id: string;
+type StoredPushSubscription = Pick<SubscriptionEntity, 'id'> & {
+  endpoint?: SubscriptionEntity['endpoint'] | null;
   subscription?: z.infer<typeof pushSubscriptionSchema> | null;
 };
 
-type RecipientUser = { id?: string; subscriptions?: StoredPushSubscription[] };
+type RecipientUser = Partial<Pick<UserEntity, 'id'>> & {
+  subscriptions?: StoredPushSubscription[];
+};
 
-type RecipientRole = {
-  role?: string | null;
+type RecipientRole = Partial<Pick<RoleEntity, 'role' | 'userId'>> & {
   user?: RecipientUser;
-  userId?: string;
 };
 
 type RecipientProfile = { user?: RecipientUser };

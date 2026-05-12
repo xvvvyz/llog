@@ -2,12 +2,8 @@ import { TagChipList } from '@/features/tags/components/tag-chip-list';
 import type { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
 
-type RecordTagChip = {
-  color: Tag['color'];
-  id: Tag['id'];
-  name?: string | null;
-  order?: Tag['order'];
-};
+type RecordTagChip = Partial<Pick<Tag, 'order'>> &
+  Pick<Tag, 'color' | 'id' | 'name'>;
 
 export const RecordTagChips = ({
   chipClassName,

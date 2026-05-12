@@ -1,42 +1,64 @@
+import { canManageTeam } from '@/domain/teams/permissions';
+import type { FileItem } from '@/features/files/types/file';
+import type { Log } from '@/features/logs/types/log';
+import type { Team } from '@/features/teams/types/team';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
+import schema from '@/instant.schema';
 import { db } from '@/lib/db';
+import { InstaQLEntity } from '@instantdb/react-native';
 import * as React from 'react';
 
-type RecordCopyTargetTeam = {
-  id: string;
-  image?: { uri?: string | null } | null;
-  name: string;
+type CopyTargetRole = InstaQLEntity<typeof schema, 'roles'>['role'];
+
+type CopyTargetTeam = Pick<Team, 'id' | 'name'> & {
+  image?: Pick<FileItem, 'uri'> | null;
+  role?: CopyTargetRole | null;
 };
 
-type RecordCopyTargetLog = {
-  color?: number | null;
-  id: string;
-  name?: string | null;
-  team: RecordCopyTargetTeam;
-  teamId?: string | null;
+export type CopyTargetLog = Pick<Log, 'color' | 'id' | 'name' | 'teamId'> & {
+  team: CopyTargetTeam;
 };
 
-type RecordCopyTargetGroup = RecordCopyTargetTeam & {
-  logs: RecordCopyTargetLog[];
-};
+type CopyTargetGroup = CopyTargetTeam & { logs: CopyTargetLog[] };
 
-export const useRecordCopyTargets = ({
+export const useCopyTargets = ({
   enabled = true,
-}: { enabled?: boolean } = {}) => {
+  requireCanManage = false,
+}: { enabled?: boolean; requireCanManage?: boolean } = {}) => {
   const auth = db.useAuth();
 
   const { data: teamsData, isLoading: teamsLoading } = db.useQuery(
     enabled && auth.user
-      ? {
-          teams: {
-            $: { fields: ['id', 'name'], order: { name: 'asc' } },
-            image: {},
-          },
-        }
+      ? requireCanManage
+        ? {
+            teams: {
+              $: {
+                fields: ['id' as const, 'name' as const],
+                order: { name: 'asc' as const },
+              },
+              image: {},
+              roles: {
+                $: { fields: ['role' as const], where: { user: auth.user.id } },
+              },
+            },
+          }
+        : {
+            teams: {
+              $: {
+                fields: ['id' as const, 'name' as const],
+                order: { name: 'asc' as const },
+              },
+              image: {},
+            },
+          }
       : null
   );
 
-  const teamsQueryKey = enabled && auth.user ? auth.user.id : undefined;
+  const teamsQueryKey =
+    enabled && auth.user
+      ? `${auth.user.id}:${requireCanManage ? 'manage' : 'all'}`
+      : undefined;
+
   const hasCurrentTeamsResult = useCurrentQueryResult(teamsQueryKey, teamsData);
 
   const teams = React.useMemo(
@@ -71,8 +93,8 @@ export const useRecordCopyTargets = ({
     [hasCurrentLogsResult, logsData?.logs, logsQueryKey]
   );
 
-  const groups = React.useMemo<RecordCopyTargetGroup[]>(() => {
-    const logsByTeamId = new Map<string, Omit<RecordCopyTargetLog, 'team'>[]>();
+  const groups = React.useMemo<CopyTargetGroup[]>(() => {
+    const logsByTeamId = new Map<string, Omit<CopyTargetLog, 'team'>[]>();
 
     for (const log of queryLogs) {
       if (!log.teamId) continue;
@@ -85,11 +107,14 @@ export const useRecordCopyTargets = ({
       const logs = logsByTeamId.get(team.id) ?? [];
       if (!logs.length) return [];
 
-      const targetTeam: RecordCopyTargetTeam = {
+      const targetTeam: CopyTargetTeam = {
         id: team.id,
         image: team.image,
         name: team.name,
+        role: team.roles?.[0]?.role,
       };
+
+      if (requireCanManage && !canManageTeam(targetTeam.role)) return [];
 
       return [
         {
@@ -98,7 +123,7 @@ export const useRecordCopyTargets = ({
         },
       ];
     });
-  }, [queryLogs, teams]);
+  }, [queryLogs, requireCanManage, teams]);
 
   const logs = React.useMemo(
     () => groups.flatMap((group) => group.logs),

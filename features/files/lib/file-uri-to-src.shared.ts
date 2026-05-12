@@ -1,3 +1,5 @@
+import type { FileItem } from '@/features/files/types/file';
+
 export type ResolvedFileUrl = string | null;
 
 export type FileUriToSrcOptions = {
@@ -7,7 +9,9 @@ export type FileUriToSrcOptions = {
   targetWidth?: number;
 };
 
-export type FileSource = { assetKey?: string | null; uri?: string | null };
+export type FileSource = {
+  [Key in 'assetKey' | 'uri']?: FileItem[Key] | null;
+};
 
 const DEFAULT_CLOUDFLARE_IMAGE_QUALITY = 75;
 const DEFAULT_CLOUDFLARE_IMAGE_FORMAT = 'webp';

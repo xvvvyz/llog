@@ -5,7 +5,7 @@ import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { id as generateId } from '@instantdb/react-native';
 import * as React from 'react';
 
-type NewTagInput = { id: string; name: string; order: number };
+type NewTagInput = Pick<Tag, 'id' | 'name' | 'order'>;
 type CreateTagInput = Omit<NewTagInput, 'order'>;
 
 export const useTagSheetController = ({

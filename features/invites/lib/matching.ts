@@ -1,6 +1,10 @@
 import { Role } from '@/domain/teams/role';
+import type { Log } from '@/features/logs/types/log';
+import schema from '@/instant.schema';
+import { InstaQLEntity } from '@instantdb/react-native';
 
-type InviteLike = { role: string; logs?: { id: string }[] | null };
+type Invite = InstaQLEntity<typeof schema, 'invites'>;
+type InviteLike = Pick<Invite, 'role'> & { logs?: Pick<Log, 'id'>[] | null };
 
 export const findMemberInviteByLogs = <T extends InviteLike>(
   invites: T[],

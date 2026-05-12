@@ -1,7 +1,8 @@
+import type { Tag } from '@/features/tags/types/tag';
 import { createSearchIndex, normalizeSearchText } from '@/lib/search';
 import type MiniSearch from 'minisearch';
 
-type SearchableTag = { id: string; name: string };
+type SearchableTag = Pick<Tag, 'id' | 'name'>;
 type TagSearchIndex = MiniSearch<SearchableTag>;
 
 export const createTagSearchIndex = <T extends SearchableTag>(tags: T[]) =>

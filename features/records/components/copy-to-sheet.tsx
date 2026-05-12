@@ -1,5 +1,5 @@
 import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
-import { useRecordCopyTargets } from '@/features/records/queries/use-record-copy-targets';
+import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -28,7 +28,7 @@ export const RecordCopyToSheet = () => {
     new Set()
   );
 
-  const copyTargets = useRecordCopyTargets({ enabled: open && !!recordId });
+  const copyTargets = useCopyTargets({ enabled: open && !!recordId });
   const visibleLogs = useNameSearch(copyTargets.logs, query);
 
   React.useEffect(() => {

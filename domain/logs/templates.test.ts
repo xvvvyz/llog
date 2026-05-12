@@ -32,6 +32,45 @@ describe('getTemplateTagChanges', () => {
   });
 });
 
+describe('resolveCopyTemplateTagsForTargetLog', () => {
+  const sourceTags = [
+    { color: 2, name: 'Focus' },
+    { color: 4, name: 'Reading' },
+    { color: 5, name: ' focus ' },
+  ];
+
+  test('links matching target tags by normalized name', () => {
+    expect(
+      templates.resolveCopyTemplateTagsForTargetLog({
+        sourceTags,
+        targetTags: [{ id: 'target-focus', name: 'focus' }],
+      })
+    ).toEqual({ linkedTagIds: ['target-focus'], missingTags: [] });
+  });
+
+  test('skips missing source tags when creation is disabled', () => {
+    expect(
+      templates.resolveCopyTemplateTagsForTargetLog({
+        sourceTags,
+        targetTags: [],
+      })
+    ).toEqual({ linkedTagIds: [], missingTags: [] });
+  });
+
+  test('returns missing source tags when creation is enabled', () => {
+    expect(
+      templates.resolveCopyTemplateTagsForTargetLog({
+        createMissingTags: true,
+        sourceTags,
+        targetTags: [{ id: 'target-focus', name: 'focus' }],
+      })
+    ).toEqual({
+      linkedTagIds: ['target-focus'],
+      missingTags: [{ color: 4, name: 'Reading' }],
+    });
+  });
+});
+
 describe('filterTemplatesByQuery', () => {
   const items = [
     { tags: [{ name: 'Focus' }], text: 'Morning plan' },

@@ -7,8 +7,9 @@ import { copyFileQuery, fileAssetQuery } from '@/domain/files/query';
 import * as copyTags from '@/domain/records/copy-tags';
 import * as recordPublish from '@/domain/records/publish';
 import * as permissions from '@/domain/teams/permissions';
+import schema from '@/instant.schema';
 import { zValidator } from '@hono/zod-validator';
-import { id } from '@instantdb/admin';
+import { id, type InstaQLEntity } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
@@ -19,28 +20,30 @@ const copyTargetsSchema = z.object({
   logIds: z.array(z.string()).min(1).max(100),
 });
 
-type RecordCopyFile = {
-  audd?: unknown;
-  assetKey?: string | null;
-  duration?: number | null;
-  mimeType?: string | null;
-  name?: string | null;
-  order?: number | null;
-  size?: number | null;
-  thumbnailUri?: string | null;
-  tracks?: unknown;
-  transcript?: unknown;
-  type?: string | null;
-  uri?: string | null;
-};
+type FileEntity = InstaQLEntity<typeof schema, 'files'>;
+type LinkEntity = InstaQLEntity<typeof schema, 'links'>;
+type LogEntity = InstaQLEntity<typeof schema, 'logs'>;
 
-type RecordCopyLink = {
-  label?: string | null;
-  order?: number | null;
-  url?: string | null;
-};
+type RecordCopyFile = Partial<
+  Pick<
+    FileEntity,
+    | 'audd'
+    | 'assetKey'
+    | 'duration'
+    | 'mimeType'
+    | 'name'
+    | 'order'
+    | 'size'
+    | 'thumbnailUri'
+    | 'tracks'
+    | 'transcript'
+    | 'type'
+    | 'uri'
+  >
+>;
 
-type RecordCopyTargetLog = { id: string; teamId: string };
+type RecordCopyLink = Partial<Pick<LinkEntity, 'label' | 'order' | 'url'>>;
+type RecordCopyTargetLog = Pick<LogEntity, 'id' | 'teamId'>;
 
 const normalizeCopyOrder = (
   order: number | null | undefined,

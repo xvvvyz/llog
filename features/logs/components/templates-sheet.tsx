@@ -5,58 +5,81 @@ import { useLogTemplates } from '@/features/logs/queries/use-templates';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
+import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import * as Sortable from '@/ui/sortable';
 import { SortableSheetDragHandle } from '@/ui/sortable';
 import { Text } from '@/ui/text';
-import { Trash } from 'phosphor-react-native';
+import { DotsThreeVertical, StackSimple, Trash } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 
 const TemplateRow = ({
+  onCopy,
   onDelete,
   onOpen,
   template,
 }: {
+  onCopy: () => void;
   onDelete: () => void;
   onOpen: () => void;
   template: LogTemplate;
 }) => (
-  <View className="flex-row w-full px-0 gap-3 items-center">
-    <View className="flex-1 flex-row overflow-hidden min-w-0 px-0 border-border-secondary border-continuous rounded-xl bg-secondary border items-center">
+  <View className="relative h-10 w-full">
+    <Button
+      className="h-10 w-full"
+      onPress={onOpen}
+      size="sm"
+      variant="secondary"
+      wrapperClassName="absolute inset-0 w-full"
+    />
+    <View className="flex-row h-10 items-center" pointerEvents="box-none">
       <SortableSheetDragHandle
         className="h-10 w-10"
         contentClassName="h-10 w-10"
       />
-      <Button
-        className="flex-1 h-full min-w-0 px-0 rounded-none justify-start"
-        onPress={onOpen}
-        size="sm"
-        variant="link"
-        wrapperClassName="self-stretch flex-1 mr-2.5 rounded-none border-continuous"
+      <View
+        className="flex-1 flex-row min-w-0 gap-3 items-center"
+        pointerEvents="none"
       >
-        <View className="flex-1 flex-row min-w-0 gap-3 items-center">
-          <TemplateTagSummary tags={template.tags} />
-          <Text
-            className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
-            numberOfLines={1}
+        <TemplateTagSummary tags={template.tags} />
+        <Text
+          className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
+          numberOfLines={1}
+        >
+          {template.text}
+        </Text>
+      </View>
+      <Menu.Root>
+        <Menu.Trigger asChild>
+          <Button
+            accessibilityLabel="Template actions"
+            size="icon-xs"
+            variant="ghost"
+            wrapperClassName="ml-2 mr-1 rounded-lg border-continuous"
           >
-            {template.text}
-          </Text>
-        </View>
-      </Button>
-      <Button
-        accessibilityLabel="Delete template"
-        onPress={onDelete}
-        size="icon-sm"
-        variant="ghost"
-        wrapperClassName="border-continuous"
-      >
-        <Icon className="text-muted-foreground" icon={Trash} size={18} />
-      </Button>
+            <Icon
+              className="text-muted-foreground"
+              icon={DotsThreeVertical}
+              size={18}
+            />
+          </Button>
+        </Menu.Trigger>
+        <Menu.Content align="end">
+          <Menu.Item onPress={onCopy}>
+            <Icon className="text-placeholder" icon={StackSimple} />
+            <Text>Copy to</Text>
+          </Menu.Item>
+          <Menu.Separator />
+          <Menu.Item onPress={onDelete}>
+            <Icon className="text-destructive" icon={Trash} />
+            <Text className="text-destructive">Delete</Text>
+          </Menu.Item>
+        </Menu.Content>
+      </Menu.Root>
     </View>
   </View>
 );
@@ -107,6 +130,11 @@ export const LogTemplatesSheet = () => {
                 <TemplateRow
                   onOpen={() => openTemplateEditor(item.id)}
                   template={item}
+                  onCopy={() =>
+                    sheetManager.open('log-template-copy-to', item.id, logId, {
+                      hasTemplateTags: !!item.tags?.length,
+                    })
+                  }
                   onDelete={() =>
                     sheetManager.open('log-template-delete', item.id)
                   }

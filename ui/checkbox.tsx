@@ -8,11 +8,14 @@ export const Checkbox = ({
   checked,
   checkedColor,
   className,
+  emptyUnchecked = false,
   onCheckedChange,
+  wrapperClassName,
   ...rest
 }: ButtonProps & {
   checked: boolean;
   checkedColor?: string;
+  emptyUnchecked?: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) => {
   const handleChange = React.useCallback(() => {
@@ -28,16 +31,23 @@ export const Checkbox = ({
       style={checked && { backgroundColor: checkedColor }}
       variant="secondary"
       className={cn(
+        emptyUnchecked && 'rounded-md border-continuous',
         checked && 'bg-primary web:hover:opacity-90 active:opacity-90',
         className
       )}
+      wrapperClassName={cn(
+        emptyUnchecked && 'rounded-md border-continuous',
+        wrapperClassName
+      )}
       {...rest}
     >
-      <Icon
-        className={cn(checked && 'text-primary-foreground')}
-        icon={checked ? Check : Plus}
-        size={20}
-      />
+      {(checked || !emptyUnchecked) && (
+        <Icon
+          className={cn(checked && 'text-primary-foreground')}
+          icon={checked ? Check : Plus}
+          size={emptyUnchecked ? 14 : 20}
+        />
+      )}
     </Button>
   );
 };

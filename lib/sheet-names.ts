@@ -9,6 +9,8 @@ export type SheetName =
   | 'log-delete'
   | 'log-edit'
   | 'log-members'
+  | 'log-template-copy-to'
+  | 'log-template-copy-editor'
   | 'log-template-delete'
   | 'log-template-editor'
   | 'log-templates'

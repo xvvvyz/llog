@@ -12,7 +12,7 @@ import Animated, { runOnJS, useSharedValue } from 'react-native-reanimated';
 
 import {
   Check,
-  DotsThree,
+  DotsThreeVertical,
   FastForward,
   Pause,
   Play,
@@ -237,7 +237,7 @@ export const AudioTransport = ({
                   variant="ghost"
                   wrapperClassName={controlButtonWrapperClassName}
                 >
-                  <Icon icon={DotsThree} size={iconSize} />
+                  <Icon icon={DotsThreeVertical} size={iconSize} />
                 </Button>
               </Menu.Trigger>
               <Menu.Content align="end" className="min-w-48">

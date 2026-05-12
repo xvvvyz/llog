@@ -2,11 +2,13 @@ import { deleteImage } from '@/api/files/cloudflare-images';
 import { deleteStreamVideo } from '@/api/files/cloudflare-stream';
 import { getFileR2Keys, isR2Key } from '@/api/files/r2-keys';
 import { createAdminDb } from '@/api/middleware/db';
+import schema from '@/instant.schema';
+import type { InstaQLEntity } from '@instantdb/admin';
+
+type FileEntity = InstaQLEntity<typeof schema, 'files'>;
 
 type FileAsset = {
-  assetKey?: string | null;
-  id?: string | null;
-  uri?: string | null;
+  [Key in 'assetKey' | 'id' | 'uri']?: FileEntity[Key] | null;
 };
 
 type DeleteFileAssetsOptions = {
