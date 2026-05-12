@@ -30,7 +30,10 @@ export const TruncatedText = ({
   const displayText = trimDisplayText.trimDisplayText(text);
 
   const shouldUseWebNumberOfLines =
-    Platform.OS === 'web' && !expanded && !!numberOfLines;
+    Platform.OS === 'web' &&
+    !expanded &&
+    !!numberOfLines &&
+    !trimDisplayText.hasExplicitLineBreaks(displayText);
 
   const collapsedPreview = shouldUseWebNumberOfLines
     ? { isLineTruncated: false, numberOfLines, text: displayText }
@@ -40,7 +43,12 @@ export const TruncatedText = ({
     ? undefined
     : collapsedPreview.numberOfLines;
 
-  const visibleText = expanded ? displayText : collapsedPreview.text;
+  const visibleText = expanded
+    ? displayText
+    : collapsedPreview.isLineTruncated
+      ? `${collapsedPreview.text}…`
+      : collapsedPreview.text;
+
   const truncationKey = `${numberOfLines ?? 'all'}:${displayText}`;
 
   const truncated =

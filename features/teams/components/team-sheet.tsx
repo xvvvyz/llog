@@ -71,6 +71,14 @@ export const TeamSheet = () => {
     (member) => member.role === Role.Member
   ).length;
 
+  const inviteRoles = canManage
+    ? [Role.Admin, Role.Member].filter(
+        (role) => role === Role.Admin || logs.data.length > 0
+      )
+    : [];
+
+  const hasTeamActionRows = inviteRoles.length > 0 || canDeleteTeam;
+
   const memberSummary = [
     teamAdminCount > 0
       ? `${teamAdminCount} team ${teamAdminCount === 1 ? 'admin' : 'admins'}`
@@ -141,6 +149,7 @@ export const TeamSheet = () => {
       variant="list"
     >
       <SheetListScrollView
+        className="max-h-96"
         contentContainerClassName="gap-0 pb-4 pt-0"
         variant="rows"
       >
@@ -230,7 +239,7 @@ export const TeamSheet = () => {
         >
           <View className="flex-1">
             <Text className="font-normal leading-normal text-muted-foreground">
-              Manage team
+              {canManage ? 'Manage team' : 'View team'}
             </Text>
             {!!memberSummary && (
               <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
@@ -240,40 +249,38 @@ export const TeamSheet = () => {
           </View>
           <Icon className="text-placeholder" icon={UsersThree} />
         </Button>
-        <View className="border-border border-t" />
-        {canManage &&
-          [Role.Admin, Role.Member]
-            .filter((role) => role === Role.Admin || logs.data.length > 0)
-            .map((role) => (
-              <View key={role}>
-                <Button
-                  className={ROW_BUTTON_CLASS_NAME}
-                  onPress={() => handleInvite(role)}
-                  variant="ghost"
-                  wrapperClassName={ROW_BUTTON_WRAPPER_CLASS_NAME}
-                >
-                  <View className="flex-1">
-                    <Text className="font-normal leading-normal text-muted-foreground">
-                      Invite {role === Role.Admin ? 'team admins' : 'members'}
-                    </Text>
-                    <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
-                      {role === Role.Admin
-                        ? 'Can manage team and logs'
-                        : 'Can access selected logs'}
-                    </Text>
-                  </View>
-                  {loadingAction === `invite-${role}` ? (
-                    <Spinner
-                      color={UI[colorScheme].mutedForeground}
-                      size="xs"
-                    />
-                  ) : (
-                    <Icon className="text-placeholder" icon={UserPlus} />
-                  )}
-                </Button>
-                <View className="border-border border-t" />
-              </View>
-            ))}
+        {hasTeamActionRows && <View className="border-border border-t" />}
+        {inviteRoles.map((role, index) => {
+          const hasItemBelow = index < inviteRoles.length - 1 || canDeleteTeam;
+
+          return (
+            <View key={role}>
+              <Button
+                className={ROW_BUTTON_CLASS_NAME}
+                onPress={() => handleInvite(role)}
+                variant="ghost"
+                wrapperClassName={ROW_BUTTON_WRAPPER_CLASS_NAME}
+              >
+                <View className="flex-1">
+                  <Text className="font-normal leading-normal text-muted-foreground">
+                    Invite {role === Role.Admin ? 'team admins' : 'members'}
+                  </Text>
+                  <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
+                    {role === Role.Admin
+                      ? 'Can manage team and logs'
+                      : 'Can access selected logs'}
+                  </Text>
+                </View>
+                {loadingAction === `invite-${role}` ? (
+                  <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
+                ) : (
+                  <Icon className="text-placeholder" icon={UserPlus} />
+                )}
+              </Button>
+              {hasItemBelow && <View className="border-border border-t" />}
+            </View>
+          );
+        })}
         {canDeleteTeam && (
           <Button
             className={ROW_BUTTON_CLASS_NAME}

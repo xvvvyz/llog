@@ -1,5 +1,4 @@
 import type { ExpoConfig } from 'expo/config';
-
 import packageJson from './package.json';
 
 const { NATIVE_ADAPTIVE_ICON_BACKGROUND, NATIVE_SPLASH_BACKGROUNDS } =

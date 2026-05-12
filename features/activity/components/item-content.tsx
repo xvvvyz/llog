@@ -7,7 +7,7 @@ import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { Icon } from '@/ui/icon';
 import { View } from 'react-native';
 
-const ACTIVITY_TEXT_LINES = 3;
+const ACTIVITY_TEXT_LINES = 2;
 
 export const ItemContent = ({
   group,

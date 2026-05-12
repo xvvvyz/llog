@@ -17,7 +17,7 @@ import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-const QUOTED_TEXT_LINES = 3;
+const QUOTED_TEXT_LINES = 2;
 const QUOTED_TEXT_CLASS_NAME = 'text-muted-foreground text-sm';
 
 export const QuotedRecord = ({

@@ -71,7 +71,7 @@ export const replySearchDocumentQuery = {
   author: { image: {} },
   files: visibleFileQuery,
   links: {},
-  record: { log: {} },
+  record: { log: {}, tags: recordTagsQuery },
 };
 
 export const searchFileQuery = {

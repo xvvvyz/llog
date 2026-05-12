@@ -103,50 +103,57 @@ export const ResultRecordCard = ({
             )}
           </View>
         </View>
-        {!!tagItems?.length && (
-          <RecordTagChips className="w-full justify-start" tags={tagItems} />
-        )}
-        {hasMatchedText && (
-          <View className="min-w-0 gap-1.5">
-            {!!displayText && (
-              <ResultHighlightedText
-                className="min-w-0 leading-tight text-muted-foreground text-sm web:text-pretty"
-                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
-                numberOfLines={2}
-                terms={result.textTerms ?? result.terms}
-                text={displayText}
+        {(!!tagItems?.length || hasMatchedText) && (
+          <View className="min-w-0 gap-2">
+            {!!tagItems?.length && (
+              <RecordTagChips
+                className="w-full justify-start"
+                tags={tagItems}
               />
             )}
-            {attachmentNames?.map((name, index) => (
-              <ResultHighlightedText
-                key={`${name}:${index}`}
-                className={RESULT_TEXT_CLASS_NAME}
-                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
-                numberOfLines={1}
-                terms={result.attachmentTerms ?? result.terms}
-                text={name}
-              />
-            ))}
-            {attachmentUrls?.map((url, index) => (
-              <ResultHighlightedText
-                key={`${url}:${index}`}
-                className={RESULT_TEXT_CLASS_NAME}
-                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
-                numberOfLines={1}
-                terms={result.attachmentTerms ?? result.terms}
-                text={url}
-              />
-            ))}
-            {mediaSnippets?.map((snippet, index) => (
-              <ResultHighlightedText
-                key={`${snippet}:${index}`}
-                className={RESULT_TEXT_CLASS_NAME}
-                highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
-                numberOfLines={1}
-                terms={result.mediaTerms ?? result.terms}
-                text={snippet}
-              />
-            ))}
+            {hasMatchedText && (
+              <View className="min-w-0 gap-1.5">
+                {!!displayText && (
+                  <ResultHighlightedText
+                    className="min-w-0 leading-tight text-muted-foreground text-sm web:text-pretty"
+                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    numberOfLines={2}
+                    terms={result.textTerms ?? result.terms}
+                    text={displayText}
+                  />
+                )}
+                {attachmentNames?.map((name, index) => (
+                  <ResultHighlightedText
+                    key={`${name}:${index}`}
+                    className={RESULT_TEXT_CLASS_NAME}
+                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    numberOfLines={1}
+                    terms={result.attachmentTerms ?? result.terms}
+                    text={name}
+                  />
+                ))}
+                {attachmentUrls?.map((url, index) => (
+                  <ResultHighlightedText
+                    key={`${url}:${index}`}
+                    className={RESULT_TEXT_CLASS_NAME}
+                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    numberOfLines={1}
+                    terms={result.attachmentTerms ?? result.terms}
+                    text={url}
+                  />
+                ))}
+                {mediaSnippets?.map((snippet, index) => (
+                  <ResultHighlightedText
+                    key={`${snippet}:${index}`}
+                    className={RESULT_TEXT_CLASS_NAME}
+                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    numberOfLines={1}
+                    terms={result.mediaTerms ?? result.terms}
+                    text={snippet}
+                  />
+                ))}
+              </View>
+            )}
           </View>
         )}
       </Card>

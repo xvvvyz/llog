@@ -17,6 +17,82 @@ export const normalizeSearchText = (text: string) =>
     .trim()
     .toLowerCase();
 
+export type SearchFilterKey = 'author' | 'log' | 'tag';
+
+export type ParsedSearchQuery = {
+  filters: Record<SearchFilterKey, string[]>;
+  text: string;
+};
+
+const SEARCH_FILTER_KEYS = new Set<SearchFilterKey>(['author', 'log', 'tag']);
+
+const tokenizeSearchQuery = (query: string) => {
+  const tokens: string[] = [];
+  let current = '';
+  let quote: '"' | "'" | undefined;
+
+  for (const char of query.trim()) {
+    if (quote) {
+      if (char === quote) {
+        quote = undefined;
+      } else {
+        current += char;
+      }
+
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+
+    if (/\s/.test(char)) {
+      if (current) {
+        tokens.push(current);
+        current = '';
+      }
+
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current) tokens.push(current);
+  return tokens;
+};
+
+export const parseSearchQuery = (query: string): ParsedSearchQuery => {
+  const filters: ParsedSearchQuery['filters'] = {
+    author: [],
+    log: [],
+    tag: [],
+  };
+
+  const textTokens: string[] = [];
+
+  for (const token of tokenizeSearchQuery(query)) {
+    const separatorIndex = token.indexOf(':');
+
+    if (separatorIndex <= 0 || separatorIndex === token.length - 1) {
+      textTokens.push(token);
+      continue;
+    }
+
+    const key = normalizeSearchText(token.slice(0, separatorIndex));
+    const value = token.slice(separatorIndex + 1).trim();
+
+    if (SEARCH_FILTER_KEYS.has(key as SearchFilterKey) && value) {
+      filters[key as SearchFilterKey].push(value);
+    } else {
+      textTokens.push(token);
+    }
+  }
+
+  return { filters, text: textTokens.join(' ') };
+};
+
 export const createSearchIndex = <T extends { id: string }>({
   documents,
   searchOptions = DEFAULT_NAMED_SEARCH_OPTIONS,

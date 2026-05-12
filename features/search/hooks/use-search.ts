@@ -3,11 +3,12 @@ import * as recordQueries from '@/domain/records/query';
 import { logTagsQuery } from '@/domain/tags/query';
 import * as recordMarkdown from '@/features/records/lib/record-markdown';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
+import * as queryFilters from '@/features/search/lib/query-filters';
 import type * as searchTypes from '@/features/search/types/search';
 import { db } from '@/lib/db';
-import { createSearchIndex, normalizeSearchText } from '@/lib/search';
 import type { SearchResult as MiniSearchResult } from 'minisearch';
 import * as React from 'react';
+import * as search2 from '@/lib/search';
 
 type SearchDocument = {
   id: string;
@@ -108,11 +109,15 @@ const filterMatchingItems = <Item>(
   getText: (item: Item) => string
 ): Item[] => {
   if (!items?.length || terms.length === 0) return [];
-  const normalizedTerms = terms.map(normalizeSearchText).filter(Boolean);
+
+  const normalizedTerms = terms
+    .map(search2.normalizeSearchText)
+    .filter(Boolean);
+
   if (!normalizedTerms.length) return [];
 
   return items.filter((item) => {
-    const normalizedText = normalizeSearchText(getText(item));
+    const normalizedText = search2.normalizeSearchText(getText(item));
     return normalizedTerms.some((term) => normalizedText.includes(term));
   });
 };
@@ -132,7 +137,7 @@ const uniqueStrings = (values: string[]) => {
   const unique: string[] = [];
 
   for (const value of values) {
-    const key = normalizeSearchText(value);
+    const key = search2.normalizeSearchText(value);
     if (!key || seen.has(key)) continue;
     seen.add(key);
     unique.push(value);
@@ -147,6 +152,12 @@ const getSearchableRecordText = (text?: string | null) =>
 export const useSearch = ({ query }: { query: string }) => {
   const trimmedQuery = query.trim();
   const deferredQuery = React.useDeferredValue(trimmedQuery);
+
+  const parsedQuery = React.useMemo(
+    () => search2.parseSearchQuery(deferredQuery),
+    [deferredQuery]
+  );
+
   const auth = db.useAuth();
   const shouldLoadSearchData = !!auth.user && !!deferredQuery;
 
@@ -155,11 +166,17 @@ export const useSearch = ({ query }: { query: string }) => {
       shouldLoadSearchData
         ? {
             records: {
-              $: { where: { isDraft: false } },
+              $: {
+                order: { date: 'desc' as const },
+                where: { isDraft: false },
+              },
               ...recordQueries.recordSearchDocumentQuery,
             },
             replies: {
-              $: { where: { isDraft: false } },
+              $: {
+                order: { date: 'desc' as const },
+                where: { isDraft: false },
+              },
               ...recordQueries.replySearchDocumentQuery,
             },
             logs: { profiles: { image: {} }, tags: logTagsQuery },
@@ -268,7 +285,10 @@ export const useSearch = ({ query }: { query: string }) => {
       const attachmentText = [...attachmentNames, ...attachmentUrls].join(' ');
       const mediaItems = getMediaItems(reply.files);
       const mediaText = mediaMetadata.getMediaSearchText(mediaItems);
-      if (!text && !attachmentText && !mediaText) continue;
+      const tagItems = getSearchTags(reply.record?.tags);
+      const tagNames = getTagNames(tagItems);
+      const tagText = tagNames.join(' ');
+      if (!text && !attachmentText && !mediaText && !tagText) continue;
 
       docs.push({
         id: `reply:${reply.id}`,
@@ -279,8 +299,8 @@ export const useSearch = ({ query }: { query: string }) => {
         attachmentText,
         mediaItems,
         mediaText,
-        tagItems: [],
-        tagText: '',
+        tagItems,
+        tagText,
         name: '',
         date: reply.date,
         logId: reply.record?.log?.id,
@@ -308,7 +328,7 @@ export const useSearch = ({ query }: { query: string }) => {
   }, [data]);
 
   const miniSearch = React.useMemo(() => {
-    return createSearchIndex<SearchDocument>({
+    return search2.createSearchIndex<SearchDocument>({
       documents,
       fields: [
         'text',
@@ -347,7 +367,19 @@ export const useSearch = ({ query }: { query: string }) => {
 
   const results = React.useMemo((): searchTypes.SearchResult[] => {
     if (!deferredQuery) return [];
-    const raw = miniSearch.search(deferredQuery).filter(isSearchDocument);
+
+    const raw = (
+      parsedQuery.text
+        ? miniSearch.search(parsedQuery.text).filter(isSearchDocument)
+        : documents.map((document) => ({
+            ...document,
+            match: {},
+            score: 0,
+            terms: [],
+          }))
+    ).filter((document) =>
+      queryFilters.matchesSearchFilters(document, parsedQuery.filters)
+    );
 
     return raw.map((result) => {
       const entityId = String(result.id).split(':')[1] ?? '';
@@ -373,7 +405,15 @@ export const useSearch = ({ query }: { query: string }) => {
       );
 
       const tagTerms = getMatchedTermsForField(result.match, 'tagText');
-      const tagItems = filterMatchingTags(result.tagItems, tagTerms);
+
+      const tagItems = queryFilters.uniqueSearchTags([
+        ...filterMatchingTags(result.tagItems, tagTerms),
+        ...queryFilters.getMatchingSearchTags(
+          result.tagItems,
+          parsedQuery.filters.tag
+        ),
+      ]);
+
       const mediaTerms = getMatchedTermsForField(result.match, 'mediaText');
 
       const mediaSnippets = filterMatchingItems(
@@ -381,6 +421,13 @@ export const useSearch = ({ query }: { query: string }) => {
         mediaTerms,
         (item) => item.text
       ).map((item) => item.snippet);
+
+      const hasMatchedContent = !!(
+        textTerms.length ||
+        attachmentNames.length ||
+        attachmentUrls.length ||
+        mediaSnippets.length
+      );
 
       return {
         id: entityId,
@@ -393,7 +440,7 @@ export const useSearch = ({ query }: { query: string }) => {
         text:
           result.type === 'log'
             ? (result.logName ?? '')
-            : textTerms.length
+            : textTerms.length || !hasMatchedContent
               ? (result.text ?? '')
               : '',
         attachmentNames,
@@ -420,7 +467,7 @@ export const useSearch = ({ query }: { query: string }) => {
         profiles: result.profiles,
       } satisfies searchTypes.SearchResult;
     });
-  }, [deferredQuery, miniSearch]);
+  }, [deferredQuery, documents, miniSearch, parsedQuery]);
 
   return { results, isLoading };
 };
