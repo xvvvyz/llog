@@ -2,6 +2,7 @@ import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import type { ActivityWithRelations } from '@/features/activity/lib/group-activities';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
+import { useFrameDelayedTrue } from '@/hooks/use-frame-delayed-true';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -272,6 +273,27 @@ export const useActivities = () => {
     requestKey: recordActivityQueryKey,
   });
 
+  const hasActivities = activities.length > 0;
+
+  const activityQueriesLoading =
+    (shouldQueryRecordActivities &&
+      recordActivitiesLoading &&
+      recordActivities.length === 0) ||
+    (shouldQueryMemberActivities &&
+      memberActivitiesLoading &&
+      memberActivities.length === 0);
+
+  const emptyQueryKey = `${recordActivityQueryKey ?? ''}:${memberActivityQueryKey ?? ''}`;
+
+  const isEmptyReady = useFrameDelayedTrue({
+    resetKey: emptyQueryKey,
+    value:
+      !viewerIsLoading &&
+      !visibleLogsAreLoading &&
+      !activityQueriesLoading &&
+      !hasActivities,
+  });
+
   return {
     activities,
     canLoadNextPage: canLoadActivitiesNextPage,
@@ -279,12 +301,8 @@ export const useActivities = () => {
     isLoading:
       viewerIsLoading ||
       visibleLogsAreLoading ||
-      (shouldQueryRecordActivities &&
-        recordActivitiesLoading &&
-        recordActivities.length === 0) ||
-      (shouldQueryMemberActivities &&
-        memberActivitiesLoading &&
-        memberActivities.length === 0),
+      activityQueriesLoading ||
+      (!hasActivities && !isEmptyReady),
     loadNextPage: handleLoadNextPage,
   };
 };

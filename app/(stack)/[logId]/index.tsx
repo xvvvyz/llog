@@ -40,7 +40,7 @@ export default function Index() {
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
   const hasRecords = recordData.length > 0;
   const showLoading = log.isLoading || recordsLoading;
-  const showEmpty = !!log.id && !recordsLoading && !hasRecords;
+  const showEmpty = !!log.id && records.isEmptyReady;
   const showFab = hasRecords && !breakpoints.md;
 
   const listFooterHeight =

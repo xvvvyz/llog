@@ -1,6 +1,7 @@
 import * as recordIdentity from '@/domain/records/identity-fields';
 import { recordListItemQuery } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
+import { useFrameDelayedTrue } from '@/hooks/use-frame-delayed-true';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -105,13 +106,25 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     loadNextPage,
   });
 
+  const hasRecords = data.length > 0;
+
+  const isQueryLoading =
+    !!logId &&
+    !hasRecords &&
+    (pinnedLoading || pagedLoading || !hasPinnedResult || !hasPagedResult);
+
+  const canShowEmptyResult = !!logId && !isQueryLoading && !hasRecords;
+
+  const isEmptyReady = useFrameDelayedTrue({
+    resetKey: logId,
+    value: canShowEmptyResult,
+  });
+
   return {
     canLoadNextPage: currentCanLoadNextPage,
     data,
-    isLoading:
-      !!logId &&
-      data.length === 0 &&
-      (pinnedLoading || pagedLoading || !hasPinnedResult || !hasPagedResult),
+    isEmptyReady,
+    isLoading: isQueryLoading || (!!logId && !hasRecords && !isEmptyReady),
     loadNextPage: handleLoadNextPage,
   };
 };
