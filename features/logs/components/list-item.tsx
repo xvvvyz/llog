@@ -30,6 +30,8 @@ export const ListItem = ({
   }[];
   tags: Tag[];
 }) => {
+  const titleLineCount = tags.length <= 1 ? 3 : 2;
+
   return (
     <View
       className={cn(
@@ -57,7 +59,7 @@ export const ListItem = ({
           <View className="flex-row w-full gap-3 items-end justify-between">
             <Text
               className="flex-1 -mb-[5px] min-w-0 leading-tight text-balance text-white web:whitespace-normal"
-              numberOfLines={2}
+              numberOfLines={titleLineCount}
             >
               {name}
             </Text>

@@ -3,13 +3,13 @@ import { createTeam } from '@/features/teams/mutations/create';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
+import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { router } from 'expo-router';
 import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { View, type GestureResponderEvent } from 'react-native';
@@ -25,6 +25,7 @@ export const TeamSwitcher = () => {
 const TeamSwitcherContent = () => {
   const breakpoints = useBreakpoints();
   const menu = Menu.useContext();
+  const sheetManager = useSheetManager();
   const ui = useUi();
   const { teams } = useTeams();
 
@@ -48,9 +49,9 @@ const TeamSwitcherContent = () => {
     (event: GestureResponderEvent, teamId: string) => {
       event.stopPropagation();
       menu.onOpenChange(false);
-      router.push(`/team/${teamId}`);
+      sheetManager.open('team', teamId);
     },
-    [menu]
+    [menu, sheetManager]
   );
 
   const activeTeam = teams.find((t) => t.id === ui.activeTeamId);
@@ -88,28 +89,25 @@ const TeamSwitcherContent = () => {
             )}
           >
             <Menu.Item
-              className="flex-1 pr-4 active:bg-transparent web:focus:bg-transparent web:hover:bg-transparent"
+              className="flex-1 pr-2 active:bg-transparent web:focus:bg-transparent web:hover:bg-transparent"
               onHoverIn={() => setHighlightedTeamId(t.id)}
               onHoverOut={() => setHighlightedTeamId(null)}
               onPress={() => handleSwitchTeam(t.id)}
               onPressIn={() => setHighlightedTeamId(t.id)}
               onPressOut={() => setHighlightedTeamId(null)}
             >
-              {t.id === ui.activeTeamId ? (
-                <View className="size-5 items-center justify-center">
-                  <Icon icon={Check} />
-                </View>
-              ) : (
-                <Avatar
-                  avatar={t.image?.uri}
-                  fallback="gradient"
-                  id={t.id}
-                  size={20}
-                />
-              )}
+              <Avatar
+                avatar={t.image?.uri}
+                fallback="gradient"
+                id={t.id}
+                size={20}
+              />
               <Text className="flex-1" numberOfLines={1}>
                 {t.name}
               </Text>
+              <View className="size-5 items-center justify-center">
+                {t.id === ui.activeTeamId && <Icon icon={Check} />}
+              </View>
             </Menu.Item>
             <Button
               onPress={(event) => handleOpenTeamSettings(event, t.id)}

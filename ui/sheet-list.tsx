@@ -51,7 +51,7 @@ export const SheetListScrollView = React.forwardRef<
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         style={style}
         className={cn(
-          '-mx-px max-h-52 min-h-0 border-b border-border-secondary border-x rounded-b-4xl md:max-h-96 md:rounded-b-3xl border-continuous',
+          '-mx-px max-h-64 min-h-0 border-b border-border-secondary border-x rounded-b-4xl md:max-h-96 md:rounded-b-3xl border-continuous',
           className
         )}
         contentContainerClassName={cn(

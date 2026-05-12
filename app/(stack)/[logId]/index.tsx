@@ -132,10 +132,10 @@ export default function Index() {
           wrapperClassName="flex-1"
           renderItem={({ index, item }) => (
             <Entry
+              className={cn('mt-4', index === 0 && 'md:mt-8')}
               logId={params.logId}
               numberOfLines={7}
               record={item}
-              className={cn('mt-4', index === 0 && 'md:mt-8')}
             />
           )}
         />

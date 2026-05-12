@@ -29,6 +29,7 @@ import { MemberRemoveSheet } from '@/features/teams/components/member-remove-she
 import { db } from '@/lib/db';
 import { Redirect, Stack } from 'expo-router';
 import * as React from 'react';
+import * as teamSheet from '@/features/teams/components/team-sheet';
 
 export default function Layout() {
   const auth = db.useAuth();
@@ -79,6 +80,8 @@ export default function Layout() {
       <RecordTagsSheet />
       <LogDeleteSheet />
       <TagDeleteSheet />
+      <teamSheet.TeamSheet />
+      <teamSheet.TeamMembersSheet />
       <TeamDeleteSheet />
       <TeamLeaveSheet />
       <McpSheet />

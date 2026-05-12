@@ -1,7 +1,7 @@
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Globe, Plus } from 'phosphor-react-native';
+import { Globe } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const ListEmptyState = ({
@@ -20,7 +20,6 @@ export const ListEmptyState = ({
             Track anything in your world.
           </Text>
           <Button onPress={onCreateLog} wrapperClassName="mt-4">
-            <Icon className="-ml-0.5" icon={Plus} />
             <Text>New log</Text>
           </Button>
         </>

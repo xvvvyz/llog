@@ -29,6 +29,8 @@ export const TeamDeleteSheet = () => {
     const deletedTeamId = team.id;
     const nextTeam = teams.find((t) => t.id !== deletedTeamId);
     sheetManager.close('team-delete');
+    sheetManager.close('team-members');
+    sheetManager.close('team');
     router.replace('/');
 
     void (async () => {

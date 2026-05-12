@@ -24,6 +24,8 @@ export type SheetName =
   | 'record-link-editor'
   | 'record-tags'
   | 'tag-delete'
+  | 'team'
   | 'team-delete'
   | 'team-leave'
+  | 'team-members'
   | 'web-push-ios-setup';

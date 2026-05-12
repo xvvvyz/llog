@@ -34,6 +34,8 @@ export const TeamLeaveSheet = () => {
           wrapperClassName="mt-12"
           onPress={() => {
             sheetManager.close('team-leave');
+            sheetManager.close('team-members');
+            sheetManager.close('team');
             if (!teamId) return;
             router.replace('/');
 

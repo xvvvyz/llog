@@ -14,7 +14,9 @@ import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
-import { NotePencil, Plus, UserPlus, UsersThree } from 'phosphor-react-native';
+import { NotePencil, UserPlus, UsersThree } from 'phosphor-react-native';
+
+const ACTION_BUTTON_WRAPPER_CLASS_NAME = 'w-32 self-center';
 
 export const EmptyState = ({ logId }: { logId: string }) => {
   const log = useLog({ id: logId });
@@ -103,6 +105,7 @@ export const EmptyState = ({ logId }: { logId: string }) => {
             onPress={() => sheetManager.open('log-edit', logId)}
             size="xs"
             variant="secondary"
+            wrapperClassName={ACTION_BUTTON_WRAPPER_CLASS_NAME}
           >
             <Text>Details</Text>
             <Icon className="-mr-0.5" icon={NotePencil} />
@@ -113,6 +116,7 @@ export const EmptyState = ({ logId }: { logId: string }) => {
               onPress={() => sheetManager.open('log-members', logId)}
               size="xs"
               variant="secondary"
+              wrapperClassName={ACTION_BUTTON_WRAPPER_CLASS_NAME}
             >
               <Text>Members</Text>
               <Icon className="-mr-0.5" icon={UsersThree} />
@@ -123,6 +127,7 @@ export const EmptyState = ({ logId }: { logId: string }) => {
             onPress={handleInvite}
             size="xs"
             variant="secondary"
+            wrapperClassName={ACTION_BUTTON_WRAPPER_CLASS_NAME}
           >
             <Text>Invite</Text>
             {isInviteLoading ? (
@@ -137,10 +142,10 @@ export const EmptyState = ({ logId }: { logId: string }) => {
         <Button
           className="active:opacity-90 web:hover:opacity-90"
           onPress={() => sheetManager.open('record-create', logId)}
+          size="xs"
           style={{ backgroundColor: logColor.default }}
-          wrapperClassName="mt-4 self-center"
+          wrapperClassName="w-32 self-center"
         >
-          <Icon className="-ml-0.5 text-white" icon={Plus} />
           <Text className="text-white">Record</Text>
         </Button>
       )}
