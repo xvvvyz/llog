@@ -25,7 +25,7 @@ export const ResultItem = ({
       }
 
       case 'reply': {
-        openRecordDetail(result.recordId);
+        openRecordDetail(result.recordId, result.id);
         break;
       }
     }

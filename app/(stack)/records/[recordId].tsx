@@ -11,8 +11,13 @@ const getRouteParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
 
 export default function RecordDetailRoute() {
-  const params = useLocalSearchParams<{ recordId?: string }>();
+  const params = useLocalSearchParams<{
+    recordId?: string;
+    replyId?: string;
+  }>();
+
   const routeRecordId = getRouteParam(params.recordId);
+  const targetReplyId = getRouteParam(params.replyId);
   const record = useRecord({ id: routeRecordId });
   const { close, isOpen, open } = useSheetManager();
 
@@ -58,6 +63,7 @@ export default function RecordDetailRoute() {
             pageClassName="max-h-full overflow-hidden bg-popover"
             record={record}
             recordId={routeRecordId ?? ''}
+            targetReplyId={targetReplyId}
           />
         )
       )}

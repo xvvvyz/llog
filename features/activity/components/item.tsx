@@ -52,7 +52,7 @@ export const Item = ({
         : category + (log ? ' in' : '');
 
   const handlePress = () => {
-    openRecordDetail(record?.id);
+    openRecordDetail(record?.id, first.reply?.id);
   };
 
   const fileSource =
