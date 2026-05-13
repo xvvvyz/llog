@@ -5,6 +5,7 @@ type SearchFilterTarget = { id?: string; name?: string | null };
 const getFilterValue = ({ id, name }: SearchFilterTarget) => {
   const trimmedName = name?.trim();
   if (!trimmedName) return id;
+  if (!/\s/.test(trimmedName) && !/["']/.test(trimmedName)) return trimmedName;
   if (!trimmedName.includes('"')) return `"${trimmedName}"`;
   if (!trimmedName.includes("'")) return `'${trimmedName}'`;
   return id;
