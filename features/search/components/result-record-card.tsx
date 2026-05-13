@@ -3,18 +3,13 @@ import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { ResultHighlightedText } from '@/features/search/components/result-highlighted-text';
 import { SearchResult } from '@/features/search/types/search';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/time';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Avatar } from '@/ui/avatar';
 import { Card } from '@/ui/card';
 import { Text } from '@/ui/text';
 import { Pressable, View } from 'react-native';
-
-const RESULT_TEXT_CLASS_NAME =
-  'min-w-0 leading-tight text-muted-foreground text-sm';
-
-const RESULT_HIGHLIGHT_CLASS_NAME =
-  'text-sm leading-tight font-medium text-foreground';
 
 export const ResultRecordCard = ({
   className,
@@ -64,8 +59,18 @@ export const ResultRecordCard = ({
 
   return (
     <Pressable className={className} onPress={onPress}>
-      <Card className="min-w-0 p-4 gap-3">
-        <View className="flex-row gap-2.5 items-center">
+      <Card className="min-w-0 gap-3">
+        {!!tagItems?.length && (
+          <View className="pt-4 px-4">
+            <RecordTagChips className="w-full justify-start" tags={tagItems} />
+          </View>
+        )}
+        <View
+          className={cn(
+            'flex-row px-4 gap-2.5 items-center',
+            tagItems?.length ? 'pt-0' : 'pt-4'
+          )}
+        >
           {result.author && (
             <Avatar
               avatar={result.author.image?.uri}
@@ -104,19 +109,13 @@ export const ResultRecordCard = ({
           </View>
         </View>
         {(!!tagItems?.length || hasMatchedText) && (
-          <View className="min-w-0 gap-2">
-            {!!tagItems?.length && (
-              <RecordTagChips
-                className="w-full justify-start"
-                tags={tagItems}
-              />
-            )}
+          <View className="min-w-0 pb-4 px-4">
             {hasMatchedText && (
               <View className="min-w-0 gap-1.5">
                 {!!displayText && (
                   <ResultHighlightedText
-                    className="min-w-0 leading-tight text-muted-foreground text-sm web:text-pretty"
-                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm web:text-pretty"
+                    highlightClassName="font-medium text-foreground text-sm"
                     numberOfLines={2}
                     terms={result.textTerms ?? result.terms}
                     text={displayText}
@@ -125,8 +124,8 @@ export const ResultRecordCard = ({
                 {attachmentNames?.map((name, index) => (
                   <ResultHighlightedText
                     key={`${name}:${index}`}
-                    className={RESULT_TEXT_CLASS_NAME}
-                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
+                    highlightClassName="font-medium text-foreground text-sm"
                     numberOfLines={1}
                     terms={result.attachmentTerms ?? result.terms}
                     text={name}
@@ -135,8 +134,8 @@ export const ResultRecordCard = ({
                 {attachmentUrls?.map((url, index) => (
                   <ResultHighlightedText
                     key={`${url}:${index}`}
-                    className={RESULT_TEXT_CLASS_NAME}
-                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
+                    highlightClassName="font-medium text-foreground text-sm"
                     numberOfLines={1}
                     terms={result.attachmentTerms ?? result.terms}
                     text={url}
@@ -145,8 +144,8 @@ export const ResultRecordCard = ({
                 {mediaSnippets?.map((snippet, index) => (
                   <ResultHighlightedText
                     key={`${snippet}:${index}`}
-                    className={RESULT_TEXT_CLASS_NAME}
-                    highlightClassName={RESULT_HIGHLIGHT_CLASS_NAME}
+                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
+                    highlightClassName="font-medium text-foreground text-sm"
                     numberOfLines={1}
                     terms={result.mediaTerms ?? result.terms}
                     text={snippet}

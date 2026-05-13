@@ -29,6 +29,7 @@ export const EntryCard = ({
   entryMenuState,
   links,
   logId,
+  logName,
   numberOfLines,
   onDoubleTapReaction,
   onOpenReply,
@@ -84,6 +85,8 @@ export const EntryCard = ({
         <View className="pt-4 px-4 gap-4">
           <View className="relative">
             <RecordTagChips
+              linkToSearch
+              logName={logName}
               tags={record.tags}
               className={cn(
                 'w-full justify-start',

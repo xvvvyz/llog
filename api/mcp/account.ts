@@ -10,7 +10,7 @@ export const registerAccountTool = (server: McpServer, ctx: McpContext) => {
     server,
     'account',
     {
-      description: 'Account.',
+      description: 'Get the signed-in user, profile, and team memberships.',
       inputSchema: {},
       outputSchema: mcpSchemas.accountOutputSchema,
     },

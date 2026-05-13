@@ -1,6 +1,7 @@
 import { isMemberRole } from '@/domain/teams/permissions';
 import { LogDropdownItems } from '@/features/invites/components/log-dropdown-items';
 import { useLog } from '@/features/logs/queries/use-log';
+import * as lookup from '@/features/search/lib/lookup';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -12,6 +13,7 @@ import * as React from 'react';
 import { ViewStyle } from 'react-native';
 
 import {
+  MagnifyingGlass,
   NoteBlank,
   NotePencil,
   Tag,
@@ -36,6 +38,15 @@ export const DropdownMenu = ({
   const { canManage } = useMyRole({ teamId: log.teamId });
   const sheetManager = useSheetManager();
   const { members } = useTeamMembers({ teamId: log.teamId });
+
+  const searchQuery = lookup.getLogSearchQuery({
+    id: log.id ?? id,
+    name: log.name,
+  });
+
+  const searchHref = searchQuery
+    ? lookup.getLookupHref(searchQuery)
+    : undefined;
 
   const hasMembers = React.useMemo(
     () => members.some((m) => isMemberRole(m.role)),
@@ -73,7 +84,6 @@ export const DropdownMenu = ({
           <Icon className="text-placeholder" icon={NoteBlank} />
           <Text>Templates</Text>
         </Menu.Item>
-        <Menu.Separator />
         {hasMembers && (
           <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
             <Icon className="text-placeholder" icon={UsersThree} />
@@ -81,6 +91,10 @@ export const DropdownMenu = ({
           </Menu.Item>
         )}
         <LogDropdownItems id={id} />
+        <Menu.Item disabled={!searchHref} href={searchHref}>
+          <Icon className="text-placeholder" icon={MagnifyingGlass} />
+          <Text>Search</Text>
+        </Menu.Item>
         <Menu.Separator />
         <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
           <Icon className="text-destructive" icon={Trash} />

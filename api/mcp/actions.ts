@@ -120,7 +120,7 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     server,
     'record_actions',
     {
-      description: 'Record actions.',
+      description: 'React to records or replies, and pin or unpin records.',
       inputSchema: {
         action: recordActionsActionSchema,
         emoji: reactionEmojiSchema.nullable().optional(),

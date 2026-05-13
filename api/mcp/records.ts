@@ -685,7 +685,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     server,
     'records',
     {
-      description: 'Records.',
+      description: 'List, read, draft, publish, and update records.',
       inputSchema: {
         action: recordsActionSchema,
         links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),

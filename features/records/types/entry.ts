@@ -26,6 +26,7 @@ export type EntrySharedProps = {
   entryMenuState: EntryMenuState;
   links: Link[];
   logId?: string;
+  logName?: string;
   numberOfLines?: number;
   onDoubleTapReaction: () => void;
   record: EntryRecord;

@@ -51,14 +51,7 @@ export const ResultHighlightedText = ({
 
   const parts = displayText.split(pattern);
   const children: React.ReactNode[] = [];
-
-  if (prefix) {
-    children.push(
-      <Text key="prefix" className="text-muted-foreground">
-        {prefix}
-      </Text>
-    );
-  }
+  if (prefix) children.push(prefix);
 
   for (let index = 0; index < parts.length; index++) {
     const part = parts[index];

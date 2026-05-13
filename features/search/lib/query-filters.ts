@@ -58,8 +58,6 @@ export const matchesSearchFilters = (
   document: SearchFilterDocument,
   filters: ParsedSearchQuery['filters']
 ) => {
-  if (filters.log.length && document.type === 'log') return false;
-
   if (
     !matchesEveryFilter(
       filters.log,

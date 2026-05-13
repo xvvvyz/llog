@@ -2,7 +2,6 @@ import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useUnreadActivityCount } from '@/features/activity/queries/use-unread-activity-count';
 import { PENDING_INVITE_KEY } from '@/features/invites/lib/storage';
-import * as browserHistoryTabTransition from '@/features/navigation/hooks/use-browser-history-tab-transition';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -36,7 +35,6 @@ export default function Layout() {
   });
 
   const { teams, isLoading: teamsLoading } = useTeams();
-  browserHistoryTabTransition.useBrowserHistoryTabTransition();
 
   React.useEffect(() => {
     if (!auth.user || profile.isLoading || !profile.id) return;
@@ -72,8 +70,6 @@ export default function Layout() {
         animation: 'shift',
         headerShown: false,
         lazy: false,
-        sceneStyleInterpolator:
-          browserHistoryTabTransition.browserHistoryTabSceneStyleInterpolator,
         tabBarItemStyle: {
           marginBottom: breakpoints.md ? 8 : 0,
           marginRight: 0,

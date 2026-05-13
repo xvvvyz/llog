@@ -406,13 +406,16 @@ export const useSearch = ({ query }: { query: string }) => {
 
       const tagTerms = getMatchedTermsForField(result.match, 'tagText');
 
-      const tagItems = queryFilters.uniqueSearchTags([
-        ...filterMatchingTags(result.tagItems, tagTerms),
-        ...queryFilters.getMatchingSearchTags(
-          result.tagItems,
-          parsedQuery.filters.tag
-        ),
-      ]);
+      const tagItems =
+        result.type === 'log'
+          ? result.tagItems
+          : queryFilters.uniqueSearchTags([
+              ...filterMatchingTags(result.tagItems, tagTerms),
+              ...queryFilters.getMatchingSearchTags(
+                result.tagItems,
+                parsedQuery.filters.tag
+              ),
+            ]);
 
       const mediaTerms = getMatchedTermsForField(result.match, 'mediaText');
 

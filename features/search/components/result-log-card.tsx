@@ -31,44 +31,46 @@ export const ResultLogCard = ({
   return (
     <Pressable className={className} onPress={onPress}>
       <View
-        className="flex-row p-4 border-continuous rounded-2xl items-center justify-between"
+        className="flex flex-col overflow-hidden min-h-24 w-full p-4 border-continuous rounded-2xl justify-between"
         style={{ backgroundColor: spectrum?.default }}
       >
-        <View className="flex-1 flex-row min-w-0 gap-4 items-center">
-          <Text className="text-white shrink" numberOfLines={1}>
-            {result.text}
-          </Text>
+        <View className="-ml-1.5 -mt-1.5 w-full pr-6">
           {!!tags.length && (
             <TagChipList
               chipClassName="max-w-full dark:bg-background"
-              className="flex-1 min-w-0 gap-0.5"
+              className="gap-0.5"
               maxVisible={tags.length}
               tags={tags}
               textClassName="text-foreground"
             />
           )}
         </View>
-        {!!result.profiles?.length && (
-          <View className="flex-row -mr-[6px] ml-3">
-            {result.profiles.map((profile, index) => (
-              <View
-                key={profile.id}
-                style={{ backgroundColor: spectrum?.default }}
-                className={cn(
-                  'size-[24px] items-center justify-center overflow-hidden rounded-full p-px border-continuous',
-                  index > 0 && '-ml-[10px]'
-                )}
-              >
-                <Avatar
-                  avatar={profile.uri}
-                  id={profile.id}
-                  seedId={profile.avatarSeedId}
-                  size={22}
-                />
-              </View>
-            ))}
-          </View>
-        )}
+        <View className="flex-row mt-4 w-full gap-3 items-end justify-between">
+          <Text className="flex-1 -mb-[5px] min-w-0 leading-tight text-balance text-white web:whitespace-normal">
+            {result.text}
+          </Text>
+          {!!result.profiles?.length && (
+            <View className="flex-row -mb-[6px] -mr-[6px]">
+              {result.profiles.map((profile, index) => (
+                <View
+                  key={profile.id}
+                  style={{ backgroundColor: spectrum?.default }}
+                  className={cn(
+                    'size-[24px] items-center justify-center overflow-hidden rounded-full p-px border-continuous',
+                    index > 0 && '-ml-[10px]'
+                  )}
+                >
+                  <Avatar
+                    avatar={profile.uri}
+                    id={profile.id}
+                    seedId={profile.avatarSeedId}
+                    size={22}
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
     </Pressable>
   );

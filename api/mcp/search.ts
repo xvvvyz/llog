@@ -5,7 +5,8 @@ import type * as mcpTypes from '@/api/mcp/types';
 import * as mediaMetadata from '@/domain/files/media-metadata';
 import { recordSearchQuery } from '@/domain/records/query';
 import { logTagsQuery } from '@/domain/tags/query';
-import { normalizeSearchText } from '@/lib/search';
+import { normalizeSearchText, parseSearchQuery } from '@/lib/search';
+import type { ParsedSearchQuery } from '@/lib/search';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
@@ -153,11 +154,70 @@ const getFileMediaSearchText = (items: readonly FileMediaSearchItem[]) =>
 const searchHaystack = (values: (string | null | undefined)[]) =>
   normalizeSearchText(values.filter(Boolean).join(' '));
 
+const includesNormalized = (value: string | undefined, query: string) => {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) return true;
+  return normalizeSearchText(value ?? '').includes(normalizedQuery);
+};
+
+const matchesEveryFilter = (
+  filters: string[],
+  values: (string | undefined)[]
+) =>
+  filters.every((filter) =>
+    values.some((value) => includesNormalized(value, filter))
+  );
+
+const matchesTagFilters = (
+  tags: { id: string; name?: string | null }[] | undefined,
+  filters: string[]
+) =>
+  matchesEveryFilter(
+    filters,
+    (tags ?? []).flatMap((tag) => [tag.name ?? undefined, tag.id])
+  );
+
+const matchesLogFilters = (
+  log: { id: string; name?: string | null } | undefined | null,
+  filters: string[]
+) => matchesEveryFilter(filters, [log?.name ?? undefined, log?.id]);
+
+const matchesAuthorFilters = (
+  author: { id?: string; name?: string | null } | undefined | null,
+  filters: string[]
+) => matchesEveryFilter(filters, [author?.name ?? undefined, author?.id]);
+
+const matchesLogSearchFilters = (
+  log: mcpTypes.McpLog,
+  filters: ParsedSearchQuery['filters']
+) =>
+  filters.author.length === 0 &&
+  matchesLogFilters(log, filters.log) &&
+  matchesTagFilters(log.tags, filters.tag);
+
+const matchesRecordSearchFilters = (
+  record: mcpTypes.McpRecord,
+  filters: ParsedSearchQuery['filters']
+) =>
+  matchesLogFilters(record.log, filters.log) &&
+  matchesTagFilters(record.tags, filters.tag) &&
+  matchesAuthorFilters(record.author, filters.author);
+
+const matchesReplySearchFilters = (
+  record: mcpTypes.McpRecord,
+  reply: mcpTypes.McpReply,
+  filters: ParsedSearchQuery['filters']
+) =>
+  matchesLogFilters(record.log, filters.log) &&
+  matchesTagFilters(record.tags, filters.tag) &&
+  matchesAuthorFilters(reply.author, filters.author);
+
 const getFileMediaMatchesFromItems = (
   items: readonly FileMediaSearchItem[],
   query: string
 ): mcpTypes.McpMediaSearchMatch[] => {
   const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) return [];
 
   return items
     .filter(({ item }) =>
@@ -236,7 +296,8 @@ export const registerSearchTool = (
     server,
     'search',
     {
-      description: 'Search.',
+      description:
+        'Search logs, records, replies, links, files, and media text. Supports keyword filters like log:"Daily", tag:"Work", and author:"Cade".',
       inputSchema: {
         cursor: z.string().trim().min(1).optional(),
         keyword: z.string().trim().min(1),
@@ -246,7 +307,8 @@ export const registerSearchTool = (
       outputSchema: mcpSchemas.searchOutputSchema,
     },
     async ({ cursor, keyword, limit = 25, recordTagIds }) => {
-      const q = normalizeSearchText(keyword);
+      const parsedQuery = parseSearchQuery(keyword);
+      const q = normalizeSearchText(parsedQuery.text);
       const searchCursor = parseSearchCursor(cursor);
 
       const recordTagIdSet = recordTagIds?.length
@@ -266,7 +328,12 @@ export const registerSearchTool = (
             ...(log.tags ?? []).map((tag) => tag.name),
           ]);
 
-          if (haystack.includes(q)) pageResults.push({ log, type: 'log' });
+          if (
+            matchesLogSearchFilters(log, parsedQuery.filters) &&
+            haystack.includes(q)
+          ) {
+            pageResults.push({ log, type: 'log' });
+          }
         }
       }
 
@@ -311,7 +378,11 @@ export const registerSearchTool = (
           q
         );
 
-        if (hasSelectedRecordTag && recordHaystack.includes(q)) {
+        if (
+          hasSelectedRecordTag &&
+          matchesRecordSearchFilters(record, parsedQuery.filters) &&
+          recordHaystack.includes(q)
+        ) {
           pageResults.push({
             ...(recordMediaMatches.length
               ? { matches: recordMediaMatches }
@@ -339,7 +410,11 @@ export const registerSearchTool = (
             q
           );
 
-          if (hasSelectedRecordTag && replyHaystack.includes(q)) {
+          if (
+            hasSelectedRecordTag &&
+            matchesReplySearchFilters(record, reply, parsedQuery.filters) &&
+            replyHaystack.includes(q)
+          ) {
             pageResults.push({
               ...(replyMediaMatches.length
                 ? { matches: replyMediaMatches }

@@ -215,7 +215,6 @@ const EntryMenuDropdownContent = ({
         )}
         {(canDuplicate || canDelete) && (
           <React.Fragment>
-            {hasActionsAboveDelete && <Menu.Separator />}
             {canDuplicate && (
               <Menu.Item
                 closeOnPress={copyTargetLogs.length !== 1}
@@ -231,22 +230,25 @@ const EntryMenuDropdownContent = ({
               </Menu.Item>
             )}
             {canDelete && (
-              <Menu.Item
-                onPress={() => {
-                  if (replyId) {
-                    sheetManager.open('reply-delete', replyId, recordId);
-                  } else {
-                    sheetManager.open(
-                      'record-delete',
-                      recordId,
-                      isDetail ? `detail:${logId ?? ''}` : undefined
-                    );
-                  }
-                }}
-              >
-                <Icon className="text-destructive" icon={Trash} />
-                <Text className="text-destructive">Delete</Text>
-              </Menu.Item>
+              <React.Fragment>
+                {(hasActionsAboveDelete || canDuplicate) && <Menu.Separator />}
+                <Menu.Item
+                  onPress={() => {
+                    if (replyId) {
+                      sheetManager.open('reply-delete', replyId, recordId);
+                    } else {
+                      sheetManager.open(
+                        'record-delete',
+                        recordId,
+                        isDetail ? `detail:${logId ?? ''}` : undefined
+                      );
+                    }
+                  }}
+                >
+                  <Icon className="text-destructive" icon={Trash} />
+                  <Text className="text-destructive">Delete</Text>
+                </Menu.Item>
+              </React.Fragment>
             )}
           </React.Fragment>
         )}

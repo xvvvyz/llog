@@ -161,6 +161,7 @@ export default function Index() {
             <Entry
               className={cn('mt-4', index === 0 && 'md:mt-8')}
               logId={params.logId}
+              logName={log.name}
               numberOfLines={7}
               record={item}
             />

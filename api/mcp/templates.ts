@@ -308,7 +308,8 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
     server,
     'templates',
     {
-      description: 'Log templates.',
+      description:
+        'List, create, copy, update, and delete reusable record templates.',
       inputSchema: {
         action: templateActionsSchema,
         limit: z.number().int().min(1).max(100).optional(),

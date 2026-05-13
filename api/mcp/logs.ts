@@ -177,7 +177,7 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
     server,
     'logs',
     {
-      description: 'Logs.',
+      description: 'List, inspect, and create logs within teams.',
       inputSchema: {
         action: logsActionSchema,
         limit: z.number().int().min(1).max(100).optional(),

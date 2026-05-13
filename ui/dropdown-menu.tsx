@@ -6,6 +6,7 @@ import { Icon } from '@/ui/icon';
 import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
 import { TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
+import { Href, Link } from 'expo-router';
 import { SortAscending, SortDescending } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, View, type GestureResponderEvent } from 'react-native';
@@ -147,22 +148,46 @@ const Content = React.forwardRef<
 
 Content.displayName = DropdownMenuPrimitive.Content.displayName;
 
-const Item = React.forwardRef<
+const ItemContent = React.forwardRef<
   DropdownMenuPrimitive.ItemRef,
   DropdownMenuPrimitive.ItemProps
->(({ className, ...props }, ref) => (
-  <TextContext.Provider value="text-popover-foreground">
+>(({ className, ...props }, ref) => {
+  const rippleColor = useRippleColor('inverse');
+
+  return (
     <DropdownMenuPrimitive.Item
       ref={ref}
-      android_ripple={{ color: useRippleColor('inverse') }}
+      android_ripple={{ color: rippleColor }}
       className={cn(
         'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative flex h-10 flex-row items-center gap-4 pr-6 pl-4',
         className
       )}
       {...props}
     />
-  </TextContext.Provider>
-));
+  );
+});
+
+ItemContent.displayName = DropdownMenuPrimitive.Item.displayName;
+
+const Item = React.forwardRef<
+  DropdownMenuPrimitive.ItemRef,
+  DropdownMenuPrimitive.ItemProps & { href?: Href }
+>(({ disabled, href, ...props }, ref) => {
+  const shouldLink = !!href && !disabled;
+  const item = <ItemContent ref={ref} disabled={disabled} {...props} />;
+
+  return (
+    <TextContext.Provider value="text-popover-foreground">
+      {shouldLink ? (
+        <Link asChild href={href}>
+          {item}
+        </Link>
+      ) : (
+        item
+      )}
+    </TextContext.Provider>
+  );
+});
 
 Item.displayName = DropdownMenuPrimitive.Item.displayName;
 

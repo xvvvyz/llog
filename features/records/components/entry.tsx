@@ -17,6 +17,7 @@ export const Entry = ({
   className,
   replyId,
   logId,
+  logName,
   numberOfLines,
   record,
   recordId: recordIdProp,
@@ -25,6 +26,7 @@ export const Entry = ({
   className?: string;
   replyId?: string;
   logId?: string;
+  logName?: string;
   numberOfLines?: number;
   record: EntryTypes.EntryRecord;
   recordId?: string;
@@ -85,6 +87,7 @@ export const Entry = ({
     entryMenuState,
     links: record.links ?? [],
     logId,
+    logName,
     numberOfLines,
     onDoubleTapReaction: handleDoubleTapReaction,
     record,

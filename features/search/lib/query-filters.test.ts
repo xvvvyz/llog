@@ -23,7 +23,7 @@ describe('matchesSearchFilters', () => {
     ).toBe(true);
   });
 
-  test('excludes log results when a log filter is present', () => {
+  test('matches log results when a log filter is present', () => {
     expect(
       queryFilters.matchesSearchFilters(
         {
@@ -33,7 +33,7 @@ describe('matchesSearchFilters', () => {
         },
         { ...emptyFilters(), log: ['daily'] }
       )
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 

@@ -112,18 +112,18 @@ export const LogMembersSheet = () => {
           })}
         </SheetListScrollView>
       )}
-      <SheetFooter contentClassName="gap-3">
+      <SheetFooter contentClassName="flex-row gap-4">
         <SearchInput
           query={query}
           setQuery={setQuery}
           size="sm"
-          wrapperClassName="w-full"
+          wrapperClassName="flex-1 min-w-0"
         />
         <Button
           onPress={() => sheetManager.close('log-members')}
           size="sm"
           variant="secondary"
-          wrapperClassName="w-full"
+          wrapperClassName="shrink-0"
         >
           <Text>Close</Text>
         </Button>

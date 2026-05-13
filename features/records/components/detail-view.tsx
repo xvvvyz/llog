@@ -65,6 +65,7 @@ export const DetailView = ({
             key={item.id ?? index}
             className="border-t-0"
             logId={record.log?.id}
+            logName={record.log?.name}
             record={item}
             recordId={recordId}
             replyId={index > 0 ? item.id : undefined}

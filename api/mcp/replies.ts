@@ -485,7 +485,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     server,
     'replies',
     {
-      description: 'Replies.',
+      description: 'Read, draft, publish, and update replies on records.',
       inputSchema: {
         action: repliesActionSchema,
         links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),
