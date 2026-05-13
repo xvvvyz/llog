@@ -2,22 +2,22 @@ import * as mcpFields from '@/api/mcp/fields';
 import { describe, expect, test } from 'bun:test';
 
 describe('fileFields', () => {
-  test('emits normalized read-only media metadata for analyzed files', () => {
+  test('serializes media fields', () => {
     const fields = mcpFields.compact(
       mcpFields.fileFields({
         id: 'file-1',
         name: 'set.mp3',
         tracks: [
           {
-            album: 'Album',
-            artists: ['Artist'],
+            album: 'Lorem Album',
+            artists: ['Foo Artist'],
             end: 6500,
             start: 1500,
-            title: 'Track',
+            title: 'Foo',
             trackDuration: 200000,
           },
         ],
-        transcript: [{ end: 4, start: 2, text: 'spoken words' }],
+        transcript: [{ end: 4, start: 2, text: 'lorem ipsum' }],
         type: 'audio',
       })
     );
@@ -28,21 +28,21 @@ describe('fileFields', () => {
       trackCount: 1,
       tracks: [
         {
-          album: 'Album',
-          artists: ['Artist'],
+          album: 'Lorem Album',
+          artists: ['Foo Artist'],
           endSeconds: 6.5,
           startSeconds: 1.5,
-          title: 'Track',
+          title: 'Foo',
           trackDurationSeconds: 200,
         },
       ],
-      transcript: [{ endSeconds: 4, startSeconds: 2, text: 'spoken words' }],
+      transcript: [{ endSeconds: 4, startSeconds: 2, text: 'lorem ipsum' }],
       transcriptSegmentCount: 1,
       type: 'audio',
     });
   });
 
-  test('keeps counts for empty analyzed metadata while compacting empty arrays', () => {
+  test('keeps empty counts', () => {
     expect(
       mcpFields.compact(
         mcpFields.fileFields({
@@ -62,7 +62,7 @@ describe('fileFields', () => {
 });
 
 describe('textResult', () => {
-  test('preserves explicit false values for non-state result fields', () => {
+  test('keeps false values', () => {
     expect(mcpFields.textResult({ pinned: false }).structuredContent).toEqual({
       pinned: false,
     });
@@ -70,13 +70,13 @@ describe('textResult', () => {
 });
 
 describe('textBlock', () => {
-  test('preserves newlines in a fenced text block', () => {
+  test('fences text', () => {
     expect(mcpFields.textBlock('Text', 'Line 1\nLine 2')).toBe(
       'Text:\n```text\nLine 1\nLine 2\n```'
     );
   });
 
-  test('uses a longer fence when the text contains backticks', () => {
+  test('escapes fences', () => {
     expect(mcpFields.textBlock('Text', '```\nvalue\n```')).toBe(
       'Text:\n````text\n```\nvalue\n```\n````'
     );
@@ -84,7 +84,7 @@ describe('textBlock', () => {
 });
 
 describe('recordSummaryFields', () => {
-  test('serializes Date values for structured output', () => {
+  test('serializes dates', () => {
     expect(
       mcpFields.recordSummaryFields({
         date: new Date('2026-01-02T03:04:05.000Z'),
@@ -93,7 +93,7 @@ describe('recordSummaryFields', () => {
     ).toMatchObject({ date: '2026-01-02T03:04:05.000Z', id: 'record-1' });
   });
 
-  test('includes record URLs when appUrl is available', () => {
+  test('adds record URLs', () => {
     expect(
       mcpFields.recordSummaryFields(
         { date: new Date('2026-01-02T03:04:05.000Z'), id: 'record 1' },

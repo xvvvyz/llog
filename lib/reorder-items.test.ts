@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 describe('reorderItems', () => {
-  test('skips transactions when there is nothing to reorder', async () => {
+  test('skips empty reorder', async () => {
     const failTransaction = () => {
       throw new Error('getTransaction should not be called');
     };
@@ -42,7 +42,7 @@ describe('reorderItems', () => {
     expect(transact).not.toHaveBeenCalled();
   });
 
-  test('builds dense order transactions from the supplied item order', async () => {
+  test('builds reorder txs', async () => {
     const result = await reorderItems(
       [{ id: 'second' }, { id: 'first' }, { id: 'third' }],
       (id, order) => ({ id, order }) as never
@@ -67,7 +67,7 @@ describe('applyOrderedIds', () => {
     { id: 'fourth' },
   ];
 
-  test('applies a full ordered id list', () => {
+  test('applies full order', () => {
     expect(
       applyOrderedIds(items, ['fourth', 'second', 'first', 'third']).map(
         (item) => item.id
@@ -75,13 +75,13 @@ describe('applyOrderedIds', () => {
     ).toEqual(['fourth', 'second', 'first', 'third']);
   });
 
-  test('reorders dynamic subsets inside their existing slots', () => {
+  test('reorders subsets', () => {
     expect(
       applyOrderedIds(items, ['fourth', 'second']).map((item) => item.id)
     ).toEqual(['first', 'fourth', 'third', 'second']);
   });
 
-  test('ignores unknown and duplicate ids', () => {
+  test('ignores bad ids', () => {
     expect(
       applyOrderedIds(items, ['missing', 'third', 'third', 'first']).map(
         (item) => item.id
@@ -89,7 +89,7 @@ describe('applyOrderedIds', () => {
     ).toEqual(['third', 'second', 'first', 'fourth']);
   });
 
-  test('leaves the original list alone without enough known ids', () => {
+  test('skips partial ids', () => {
     expect(applyOrderedIds(items, ['missing']).map((item) => item.id)).toEqual([
       'first',
       'second',

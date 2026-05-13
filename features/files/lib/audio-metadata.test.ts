@@ -2,7 +2,7 @@ import * as audioMetadata from '@/features/files/lib/audio-metadata';
 import { describe, expect, test } from 'bun:test';
 
 describe('parseAudioTracks', () => {
-  test('filters invalid rows, sorts by start time, and normalizes display metadata', () => {
+  test('parses audio tracks', () => {
     const previousApiUrl = process.env.EXPO_PUBLIC_API_URL;
     process.env.EXPO_PUBLIC_API_URL = 'https://api.example.test';
 
@@ -10,8 +10,8 @@ describe('parseAudioTracks', () => {
       const tracks = audioMetadata.parseAudioTracks(
         [
           {
-            album: 'Album',
-            artists: ['Artist A', null, 'Artist B'],
+            album: 'Lorem Album',
+            artists: ['Foo Artist', null, 'Bar Artist'],
             artwork: 'https://images.example/direct.jpg',
             links: [
               {
@@ -37,8 +37,8 @@ describe('parseAudioTracks', () => {
             start: 1500,
             title: 'First',
           },
-          { artists: ['Missing start'], title: 'Invalid' },
-          { artists: ['Missing title'], start: 500 },
+          { artists: ['Missing foo'], title: 'Baz' },
+          { artists: ['Missing bar'], start: 500 },
         ],
         { fileId: 'file/id' }
       );
@@ -53,8 +53,8 @@ describe('parseAudioTracks', () => {
           title: 'First',
         },
         {
-          album: 'Album',
-          artistText: 'Artist A, Artist B',
+          album: 'Lorem Album',
+          artistText: 'Foo Artist, Bar Artist',
           artwork:
             'https://api.example.test/files/file%2Fid/track-artwork?source=https%3A%2F%2Fimages.example%2Fdirect.jpg',
           links: [
@@ -77,7 +77,7 @@ describe('parseAudioTracks', () => {
 });
 
 describe('parseTranscriptSegments', () => {
-  test('filters invalid segments and sorts valid segments by start time', () => {
+  test('parses transcript segments', () => {
     expect(
       audioMetadata.parseTranscriptSegments([
         { end: 12, start: 10, text: 'later' },
@@ -95,12 +95,12 @@ describe('parseTranscriptSegments', () => {
 
 describe('getTrackNavigationState', () => {
   const tracks = [
-    { artistText: 'Artist', links: [], startSeconds: 0, title: 'Intro' },
-    { artistText: 'Artist', links: [], startSeconds: 10, title: 'Middle' },
-    { artistText: 'Artist', links: [], startSeconds: 30, title: 'Outro' },
+    { artistText: 'Foo Artist', links: [], startSeconds: 0, title: 'Foo' },
+    { artistText: 'Foo Artist', links: [], startSeconds: 10, title: 'Bar' },
+    { artistText: 'Foo Artist', links: [], startSeconds: 30, title: 'Baz' },
   ];
 
-  test('seeks to the previous track when playback is near the current track start', () => {
+  test('seeks previous track', () => {
     expect(
       audioMetadata.getTrackNavigationState({
         currentTimeSeconds: 10.5,
@@ -118,7 +118,7 @@ describe('getTrackNavigationState', () => {
     });
   });
 
-  test('restarts the current track once playback is past the start threshold', () => {
+  test('restarts current track', () => {
     expect(
       audioMetadata.getTrackNavigationState({ currentTimeSeconds: 13, tracks })
     ).toMatchObject({
@@ -131,12 +131,12 @@ describe('getTrackNavigationState', () => {
 
 describe('getTranscriptNavigationState', () => {
   const segments = [
-    { endSeconds: 3, startSeconds: 0, text: 'Intro' },
-    { endSeconds: 7, startSeconds: 4, text: 'Middle' },
-    { endSeconds: 12, startSeconds: 8, text: 'Outro' },
+    { endSeconds: 3, startSeconds: 0, text: 'Foo' },
+    { endSeconds: 7, startSeconds: 4, text: 'Bar' },
+    { endSeconds: 12, startSeconds: 8, text: 'Baz' },
   ];
 
-  test('returns current and pending transcript segment indexes', () => {
+  test('gets transcript indexes', () => {
     expect(
       audioMetadata.getTranscriptNavigationState({
         currentTimeSeconds: 5,
@@ -146,7 +146,7 @@ describe('getTranscriptNavigationState', () => {
     ).toEqual({ currentIndex: 1, pendingIndex: 2 });
   });
 
-  test('uses the first segment before transcript playback has reached it', () => {
+  test('uses first segment', () => {
     expect(
       audioMetadata.getTranscriptNavigationState({
         currentTimeSeconds: -1,

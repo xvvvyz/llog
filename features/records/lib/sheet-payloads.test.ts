@@ -13,7 +13,7 @@ const createSheetManager = (payloads: Record<string, unknown> = {}) => {
 };
 
 describe('record link sheet payload helpers', () => {
-  test('reads the link attachments payload from the expected sheet', () => {
+  test('reads attachment payload', () => {
     const payload = { parent: { id: 'record-1', type: 'record' as const } };
 
     const { getPayload, sheetManager } = createSheetManager({
@@ -29,7 +29,7 @@ describe('record link sheet payload helpers', () => {
     );
   });
 
-  test('opens the link attachments sheet with the payload in the fourth slot', () => {
+  test('opens attachment sheet', () => {
     const payload = {
       parent: { id: 'reply-1', recordId: 'record-1', type: 'reply' as const },
     };
@@ -45,7 +45,7 @@ describe('record link sheet payload helpers', () => {
     );
   });
 
-  test('reads the link editor payload from the expected sheet', () => {
+  test('reads editor payload', () => {
     const payload = { linkId: 'link-1', mode: 'edit' as const };
 
     const { getPayload, sheetManager } = createSheetManager({
@@ -61,7 +61,7 @@ describe('record link sheet payload helpers', () => {
     );
   });
 
-  test('opens the link editor sheet with create and edit payloads', () => {
+  test('opens editor sheet', () => {
     const createPayload = {
       mode: 'create' as const,
       parent: { id: 'record-1', type: 'record' as const },

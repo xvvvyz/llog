@@ -2,12 +2,12 @@ import * as mediaMetadata from '@/domain/files/media-metadata';
 import { describe, expect, test } from 'bun:test';
 
 describe('parseStoredTracks', () => {
-  test('filters invalid rows, sorts by start time, and converts timing to seconds', () => {
+  test('parses tracks', () => {
     expect(
       mediaMetadata.parseStoredTracks([
         {
-          album: 'Album',
-          artists: ['Artist B'],
+          album: 'Lorem Album',
+          artists: ['Bar Artist'],
           end: 7000,
           genres: ['Dance'],
           isrc: 'ISRC1',
@@ -16,32 +16,32 @@ describe('parseStoredTracks', () => {
           releaseDate: '2026-01-02',
           score: 91,
           start: 5000,
-          title: 'Later',
+          title: 'Bar',
           trackDuration: 120000,
           upc: 12345,
         },
         {
-          artists: ['Artist A', null],
+          artists: ['Foo Artist', null],
           artwork: { medium: 'https://images.example/art.jpg' },
           end: 3000,
           start: 1000,
-          title: 'Early',
+          title: 'Foo',
         },
-        { artists: ['Missing start'], title: 'Invalid' },
+        { artists: ['Missing foo'], title: 'Baz' },
         { start: 0, title: '' },
-        { end: 1000, start: 2000, title: 'Backwards' },
+        { end: 1000, start: 2000, title: 'Qux' },
       ])
     ).toEqual([
       {
-        artists: ['Artist A'],
+        artists: ['Foo Artist'],
         artwork: 'https://images.example/art.jpg',
         endSeconds: 3,
         startSeconds: 1,
-        title: 'Early',
+        title: 'Foo',
       },
       {
-        album: 'Album',
-        artists: ['Artist B'],
+        album: 'Lorem Album',
+        artists: ['Bar Artist'],
         endSeconds: 7,
         genres: ['Dance'],
         isrc: 'ISRC1',
@@ -50,46 +50,44 @@ describe('parseStoredTracks', () => {
         releaseDate: '2026-01-02',
         score: 91,
         startSeconds: 5,
-        title: 'Later',
+        title: 'Bar',
         trackDurationSeconds: 120,
         upc: '12345',
       },
     ]);
   });
 
-  test('builds searchable track snippets from title, artists, and album text', () => {
+  test('builds track search text', () => {
     const track = mediaMetadata.parseStoredTracks([
       {
-        album: 'Searchable Album',
-        artists: ['Artist A', 'Artist B'],
+        album: 'Lorem Search',
+        artists: ['Foo Artist', 'Bar Artist'],
         start: 0,
-        title: 'Track Title',
+        title: 'Foo Bar',
       },
     ])[0];
 
     expect(mediaMetadata.getTrackSearchSnippet(track)).toBe(
-      'Track Title - Artist A, Artist B'
+      'Foo Bar - Foo Artist, Bar Artist'
     );
 
-    expect(mediaMetadata.getTrackSearchText(track)).toContain(
-      'Searchable Album'
-    );
+    expect(mediaMetadata.getTrackSearchText(track)).toContain('Lorem Search');
   });
 });
 
 describe('parseStoredTranscriptSegments', () => {
-  test('filters invalid segments, sorts by start time, and preserves seconds', () => {
+  test('parses transcript segments', () => {
     expect(
       mediaMetadata.parseStoredTranscriptSegments([
-        { end: 12, start: 10, text: 'later transcript' },
-        { end: 4, start: 2, text: 'early transcript' },
+        { end: 12, start: 10, text: 'lorem later' },
+        { end: 4, start: 2, text: 'lorem early' },
         { end: 1, start: 2, text: 'backwards' },
         { end: 3, start: 3, text: '' },
         { end: 5, text: 'missing start' },
       ])
     ).toEqual([
-      { endSeconds: 4, startSeconds: 2, text: 'early transcript' },
-      { endSeconds: 12, startSeconds: 10, text: 'later transcript' },
+      { endSeconds: 4, startSeconds: 2, text: 'lorem early' },
+      { endSeconds: 12, startSeconds: 10, text: 'lorem later' },
     ]);
   });
 });

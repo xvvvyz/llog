@@ -2,7 +2,7 @@ import { readTextareaBlurText } from '@/features/records/lib/read-textarea-blur-
 import { describe, expect, test } from 'bun:test';
 
 describe('readTextareaBlurText', () => {
-  test('prefers currentTarget, then target, then nativeEvent text', () => {
+  test('prefers event values', () => {
     expect(
       readTextareaBlurText(
         {
@@ -37,7 +37,7 @@ describe('readTextareaBlurText', () => {
     ).toBe('native value');
   });
 
-  test('uses fallback when the blur event has no string values', () => {
+  test('uses fallback', () => {
     expect(readTextareaBlurText(null, 'fallback')).toBe('fallback');
 
     expect(
@@ -52,7 +52,7 @@ describe('readTextareaBlurText', () => {
     ).toBe('fallback');
   });
 
-  test('keeps empty strings from the event instead of replacing them', () => {
+  test('keeps empty strings', () => {
     expect(
       readTextareaBlurText({ currentTarget: { value: '' } }, 'fallback')
     ).toBe('');

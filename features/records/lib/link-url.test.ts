@@ -2,7 +2,7 @@ import * as linkUrl from '@/features/records/lib/link-url';
 import { describe, expect, test } from 'bun:test';
 
 describe('normalizeLinkUrl', () => {
-  test('adds https to bare hosts and trims cosmetic root slashes', () => {
+  test('normalizes web URLs', () => {
     expect(linkUrl.normalizeLinkUrl(' example.com ')).toBe(
       'https://example.com'
     );
@@ -16,7 +16,7 @@ describe('normalizeLinkUrl', () => {
     );
   });
 
-  test('keeps allowed explicit protocols and normalizes email addresses', () => {
+  test('keeps allowed protocols', () => {
     expect(linkUrl.normalizeLinkUrl('https://example.com/records')).toBe(
       'https://example.com/records'
     );
@@ -34,7 +34,7 @@ describe('normalizeLinkUrl', () => {
     );
   });
 
-  test('rejects blank values, unsupported protocols, missing targets, and whitespace', () => {
+  test('rejects bad URLs', () => {
     expect(linkUrl.normalizeLinkUrl('')).toBeNull();
     expect(linkUrl.normalizeLinkUrl('javascript:alert(1)')).toBeNull();
     expect(linkUrl.normalizeLinkUrl('ftp://example.com')).toBeNull();
@@ -44,13 +44,13 @@ describe('normalizeLinkUrl', () => {
 });
 
 describe('getLinkUrlDisplayText', () => {
-  test('uses host names for parseable web urls', () => {
+  test('displays hosts', () => {
     expect(linkUrl.getLinkUrlDisplayText('https://sub.example.com/path')).toBe(
       'sub.example.com'
     );
   });
 
-  test('falls back to the original text when no host can be displayed', () => {
+  test('falls back to text', () => {
     expect(linkUrl.getLinkUrlDisplayText('mailto:person@example.com')).toBe(
       'mailto:person@example.com'
     );

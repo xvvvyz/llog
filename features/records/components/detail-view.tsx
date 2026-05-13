@@ -73,7 +73,7 @@ export const DetailView = ({
           />
         ))}
       </ScrollView>
-      <View className="h-[4.5rem] shrink-0">
+      <View className="h-18 shrink-0">
         <View className="flex-row mx-auto max-w-lg w-full p-4 gap-4">
           <Button
             onPress={onClose}

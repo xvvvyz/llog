@@ -163,7 +163,7 @@ const VideoScrubber = ({
 
   return (
     <View className="flex-row items-center">
-      <Text className="min-w-[40px] font-medium leading-4 text-popover-foreground text-xs">
+      <Text className="min-w-10 font-medium leading-4 text-popover-foreground text-xs">
         {formatTime(currentTime)}
       </Text>
       <GestureDetector gesture={Gesture.Race(pan, tap)}>
@@ -179,7 +179,7 @@ const VideoScrubber = ({
           </View>
         </Animated.View>
       </GestureDetector>
-      <Text className="min-w-[40px] font-medium leading-4 text-popover-foreground text-right text-xs">
+      <Text className="min-w-10 font-medium leading-4 text-popover-foreground text-right text-xs">
         {formatTime(duration)}
       </Text>
     </View>

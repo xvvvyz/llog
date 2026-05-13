@@ -92,7 +92,7 @@ export const ResultRecordCard = ({
               {result.logName && (
                 <View className="flex-row gap-1 items-center shrink">
                   <View
-                    className="size-2.5 border-continuous rounded-[2px] shrink-0"
+                    className="size-2.5 border-continuous rounded-xs shrink-0"
                     style={{ backgroundColor: logColor?.default }}
                   />
                   <Text className="text-xs shrink" numberOfLines={1}>

@@ -5,7 +5,7 @@ const publicMusicLink = (value: string) =>
   musicLinks.getPublicMusicLink(new URL(value));
 
 describe('music link provider helpers', () => {
-  test('classifies source, public, and visible providers', () => {
+  test('classifies providers', () => {
     expect(musicLinks.isSourceMusicLinkProvider('audd')).toBe(true);
     expect(musicLinks.isPublicMusicLinkProvider('spotify')).toBe(true);
     expect(musicLinks.isPublicMusicLinkProvider('audd')).toBe(false);
@@ -13,7 +13,7 @@ describe('music link provider helpers', () => {
     expect(musicLinks.isVisibleMusicLinkProvider('unknown')).toBe(false);
   });
 
-  test('orders visible providers and formats labels', () => {
+  test('orders provider labels', () => {
     expect(
       ['tidal', 'unknown', 'spotify'].sort(
         (left, right) =>
@@ -32,7 +32,7 @@ describe('music link provider helpers', () => {
 });
 
 describe('getPublicMusicLink', () => {
-  test('normalizes supported provider URLs and strips tracking parameters', () => {
+  test('normalizes music URLs', () => {
     expect(
       publicMusicLink(
         'http://open.spotify.com/track/abc?si=share&utm_source=copy&context=album'
@@ -52,7 +52,7 @@ describe('getPublicMusicLink', () => {
     });
   });
 
-  test('detects YouTube and Tidal music links while rejecting unsupported URLs', () => {
+  test('detects music URLs', () => {
     expect(
       publicMusicLink('https://youtu.be/video-id?utm_campaign=share')
     ).toEqual({ provider: 'youtube', url: 'https://youtu.be/video-id' });

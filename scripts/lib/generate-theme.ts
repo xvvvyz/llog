@@ -1,10 +1,10 @@
 import { COLORS } from '@/theme/base';
-import { BREAKPOINTS, RADII } from '@/theme/tokens';
 import { execSync } from 'child_process';
 import chroma from 'chroma-js';
 import fs from 'fs';
 import path from 'path';
 import { createLogger } from './logger';
+import * as tokens from '@/theme/tokens';
 
 const themePath = (...segments: string[]) =>
   path.join(process.cwd(), 'theme', ...segments);
@@ -65,22 +65,29 @@ function generateTailwindTheme() {
 
   return [
     ...uiTheme,
-    `--radius: ${RADII.DEFAULT};`,
-    `--radius-xs: ${RADII.xs};`,
-    `--radius-sm: ${RADII.sm};`,
-    `--radius-md: ${RADII.md};`,
-    `--radius-lg: ${RADII.lg};`,
-    `--radius-xl: ${RADII.xl};`,
-    `--radius-2xl: ${RADII['2xl']};`,
-    `--radius-3xl: ${RADII['3xl']};`,
-    `--radius-4xl: ${RADII['4xl']};`,
-    `--breakpoint-2xs: ${BREAKPOINTS['2xs']};`,
-    `--breakpoint-xs: ${BREAKPOINTS.xs};`,
-    `--breakpoint-sm: ${BREAKPOINTS.sm};`,
-    `--breakpoint-md: ${BREAKPOINTS.md};`,
-    `--breakpoint-lg: ${BREAKPOINTS.lg};`,
-    `--breakpoint-xl: ${BREAKPOINTS.xl};`,
-    `--breakpoint-2xl: ${BREAKPOINTS['2xl']};`,
+    `--radius: ${tokens.RADII.DEFAULT};`,
+    `--radius-xs: ${tokens.RADII.xs};`,
+    `--radius-sm: ${tokens.RADII.sm};`,
+    `--radius-md: ${tokens.RADII.md};`,
+    `--radius-lg: ${tokens.RADII.lg};`,
+    `--radius-xl: ${tokens.RADII.xl};`,
+    `--radius-2xl: ${tokens.RADII['2xl']};`,
+    `--radius-3xl: ${tokens.RADII['3xl']};`,
+    `--radius-4xl: ${tokens.RADII['4xl']};`,
+    `--container-sheet: ${tokens.CONTAINERS.sheet};`,
+    `--text-2xs: ${tokens.FONT_SIZES['2xs']};`,
+    `--spacing-avatar-stack-sm: ${tokens.SPACING.avatarStackSm};`,
+    `--spacing-avatar-stack-sm-overlap: ${tokens.SPACING.avatarStackSmOverlap};`,
+    `--spacing-avatar-stack-lg: ${tokens.SPACING.avatarStackLg};`,
+    `--spacing-avatar-stack-lg-overlap: ${tokens.SPACING.avatarStackLgOverlap};`,
+    `--spacing-action-menu-nudge: ${tokens.SPACING.actionMenuNudge};`,
+    `--breakpoint-2xs: ${tokens.BREAKPOINTS['2xs']};`,
+    `--breakpoint-xs: ${tokens.BREAKPOINTS.xs};`,
+    `--breakpoint-sm: ${tokens.BREAKPOINTS.sm};`,
+    `--breakpoint-md: ${tokens.BREAKPOINTS.md};`,
+    `--breakpoint-lg: ${tokens.BREAKPOINTS.lg};`,
+    `--breakpoint-xl: ${tokens.BREAKPOINTS.xl};`,
+    `--breakpoint-2xl: ${tokens.BREAKPOINTS['2xl']};`,
   ].join('\n  ');
 }
 

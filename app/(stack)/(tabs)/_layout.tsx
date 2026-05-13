@@ -136,7 +136,7 @@ export default function Layout() {
               />
               {unreadCount > 0 && (
                 <View className="absolute -right-1.5 -top-1 h-4 min-w-4 px-1 border-continuous rounded-full bg-primary items-center justify-center">
-                  <Text className="font-bold leading-none text-[10px] text-primary-foreground">
+                  <Text className="font-bold leading-none text-2xs text-primary-foreground">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
                 </View>

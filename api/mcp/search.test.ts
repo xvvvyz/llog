@@ -2,7 +2,7 @@ import { getFileMediaMatches, parseSearchCursor } from '@/api/mcp/search';
 import { describe, expect, test } from 'bun:test';
 
 describe('getFileMediaMatches', () => {
-  test('finds media-only track and transcript matches with snippets and timing', () => {
+  test('matches media text', () => {
     expect(
       getFileMediaMatches(
         [
@@ -11,18 +11,18 @@ describe('getFileMediaMatches', () => {
             name: 'set.mp3',
             tracks: [
               {
-                album: 'Night Drive',
-                artists: ['Artist'],
+                album: 'Dolor Drive',
+                artists: ['Foo Artist'],
                 end: 6000,
                 start: 1000,
-                title: 'Track Title',
+                title: 'Foo Bar',
               },
             ],
-            transcript: [{ end: 12, start: 10, text: 'spoken phrase' }],
+            transcript: [{ end: 12, start: 10, text: 'lorem ipsum' }],
             type: 'audio',
           },
         ],
-        'drive'
+        'dolor'
       )
     ).toEqual([
       {
@@ -30,7 +30,7 @@ describe('getFileMediaMatches', () => {
         fileId: 'file-1',
         fileName: 'set.mp3',
         kind: 'track',
-        snippet: 'Track Title - Artist',
+        snippet: 'Foo Bar - Foo Artist',
         startSeconds: 1,
       },
     ]);
@@ -40,41 +40,41 @@ describe('getFileMediaMatches', () => {
         [
           {
             id: 'file-1',
-            transcript: [{ end: 12, start: 10, text: 'spoken phrase' }],
+            transcript: [{ end: 12, start: 10, text: 'lorem ipsum' }],
             type: 'audio',
           },
         ],
-        'phrase'
+        'ipsum'
       )
     ).toEqual([
       {
         endSeconds: 12,
         fileId: 'file-1',
         kind: 'transcript',
-        snippet: 'spoken phrase',
+        snippet: 'lorem ipsum',
         startSeconds: 10,
       },
     ]);
   });
 
-  test('finds media matches without requiring accents', () => {
+  test('matches accents loosely', () => {
     expect(
       getFileMediaMatches(
         [
           {
             id: 'file-1',
-            transcript: [{ end: 2, start: 0, text: 'México está aquí' }],
+            transcript: [{ end: 2, start: 0, text: 'Fóo bär baz' }],
             type: 'audio',
           },
         ],
-        'mexico esta'
+        'foo bar'
       )
     ).toEqual([
       {
         fileId: 'file-1',
         endSeconds: 2,
         kind: 'transcript',
-        snippet: 'México está aquí',
+        snippet: 'Fóo bär baz',
         startSeconds: 0,
       },
     ]);
@@ -82,13 +82,13 @@ describe('getFileMediaMatches', () => {
 });
 
 describe('parseSearchCursor', () => {
-  test('parses empty, offset-only, and offset-with-skip cursors', () => {
+  test('parses cursors', () => {
     expect(parseSearchCursor()).toEqual({ offset: 0, skip: 0 });
     expect(parseSearchCursor('25')).toEqual({ offset: 25, skip: 0 });
     expect(parseSearchCursor('25:3')).toEqual({ offset: 25, skip: 3 });
   });
 
-  test('rejects malformed cursors', () => {
+  test('rejects bad cursors', () => {
     expect(() => parseSearchCursor(' ')).toThrow('Invalid search cursor');
     expect(() => parseSearchCursor(':')).toThrow('Invalid search cursor');
     expect(() => parseSearchCursor('1:')).toThrow('Invalid search cursor');

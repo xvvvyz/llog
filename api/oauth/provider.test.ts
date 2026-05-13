@@ -6,7 +6,7 @@ const tokenRequest = () =>
     body: new URLSearchParams({
       client_id: 'client-1',
       code: 'user:grant:secret',
-      code_verifier: 'verifier',
+      code_veribazr: 'veribazr',
       grant_type: 'authorization_code',
       redirect_uri: 'https://chatgpt.com/callback',
     }),
@@ -28,7 +28,7 @@ const createEnv = () => {
 };
 
 describe('handleAuthorizationCodeReplay', () => {
-  test('replays a cached successful token response for duplicate auth code exchanges', async () => {
+  test('replays token responses', async () => {
     const env = createEnv();
     let calls = 0;
 

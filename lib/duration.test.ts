@@ -10,12 +10,12 @@ const invalidDurations = [
 ] as const;
 
 describe('durationMsToSeconds', () => {
-  test('converts finite non-negative milliseconds to seconds', () => {
+  test('converts ms to seconds', () => {
     expect(duration2.durationMsToSeconds(0)).toBe(0);
     expect(duration2.durationMsToSeconds(1234)).toBe(1.234);
   });
 
-  test('rejects missing, negative, and non-finite millisecond values', () => {
+  test('rejects bad ms', () => {
     for (const duration of invalidDurations) {
       expect(duration2.durationMsToSeconds(duration)).toBeUndefined();
     }
@@ -23,13 +23,13 @@ describe('durationMsToSeconds', () => {
 });
 
 describe('durationSecondsToMs', () => {
-  test('converts finite non-negative seconds to rounded milliseconds', () => {
+  test('converts seconds to ms', () => {
     expect(duration2.durationSecondsToMs(0)).toBe(0);
     expect(duration2.durationSecondsToMs(1.2344)).toBe(1234);
     expect(duration2.durationSecondsToMs(1.2345)).toBe(1235);
   });
 
-  test('rejects missing, negative, and non-finite second values', () => {
+  test('rejects bad seconds', () => {
     for (const duration of invalidDurations) {
       expect(duration2.durationSecondsToMs(duration)).toBeUndefined();
     }
@@ -37,7 +37,7 @@ describe('durationSecondsToMs', () => {
 });
 
 describe('positiveDurationSeconds', () => {
-  test('keeps only finite second values greater than zero', () => {
+  test('keeps positive seconds', () => {
     expect(duration2.positiveDurationSeconds(0.001)).toBe(0.001);
     expect(duration2.positiveDurationSeconds(0)).toBeUndefined();
 

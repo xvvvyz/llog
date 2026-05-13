@@ -2,42 +2,39 @@ import * as searchTags from '@/domain/tags/search-tags';
 import { describe, expect, test } from 'bun:test';
 
 const tags = [
-  { color: 'blue', id: 'deep-house', name: 'Deep House' },
-  { color: 'green', id: 'ambient', name: 'Ambient' },
-  { color: 'red', id: 'field-notes', name: 'Field Notes' },
+  { color: 'blue', id: 'foo-bar', name: 'Foo Bar' },
+  { color: 'green', id: 'bar-baz', name: 'Bar Baz' },
+  { color: 'red', id: 'baz-qux', name: 'Baz Qux' },
 ];
 
 describe('findExactTagId', () => {
-  test('matches tag names with trimmed case-insensitive text only', () => {
-    expect(searchTags.findExactTagId(tags, '  deep house  ')).toBe(
-      'deep-house'
-    );
-
-    expect(searchTags.findExactTagId(tags, 'DEEP HOUSE')).toBe('deep-house');
-    expect(searchTags.findExactTagId(tags, 'deep')).toBeUndefined();
+  test('matches exact names', () => {
+    expect(searchTags.findExactTagId(tags, '  foo bar  ')).toBe('foo-bar');
+    expect(searchTags.findExactTagId(tags, 'FOO BAR')).toBe('foo-bar');
+    expect(searchTags.findExactTagId(tags, 'foo')).toBeUndefined();
     expect(searchTags.findExactTagId(tags, '   ')).toBeUndefined();
   });
 });
 
 describe('searchTags', () => {
-  test('returns original tag objects for prefix matches', () => {
-    expect(searchTags.searchTags(tags, 'fie')).toEqual([tags[2]]);
+  test('matches prefixes', () => {
+    expect(searchTags.searchTags(tags, 'qu')).toEqual([tags[2]]);
   });
 
-  test('returns the original ordered list for blank queries', () => {
+  test('keeps blank queries', () => {
     expect(searchTags.searchTags(tags, '   ')).toBe(tags);
   });
 });
 
 describe('searchTagsWithIndex', () => {
-  test('filters search results that are no longer present in the supplied tags', () => {
+  test('drops stale index results', () => {
     const index = searchTags.createTagSearchIndex([
       ...tags,
-      { id: 'archived', name: 'Archived' },
+      { id: 'corge', name: 'Corge' },
     ]);
 
     expect(
-      searchTags.searchTagsWithIndex({ index, query: 'archived', tags })
+      searchTags.searchTagsWithIndex({ index, query: 'corge', tags })
     ).toEqual([]);
   });
 });

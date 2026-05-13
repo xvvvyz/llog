@@ -22,7 +22,7 @@ const { renderRecordMarkdownText } =
   await import('@/features/records/components/record-markdown-text');
 
 describe('renderRecordMarkdownText', () => {
-  test('applies parsed list indentation on web', () => {
+  test('indents web lists', () => {
     platform.OS = 'web';
     const nodes = renderRecordMarkdownText({ text: '- one\n  - two' });
     const parent = getElement(nodes[0]);
@@ -37,7 +37,7 @@ describe('renderRecordMarkdownText', () => {
     expect(childMarker.props.style).toMatchObject({ left: '2ch' });
   });
 
-  test('applies parsed list indentation on native', () => {
+  test('indents native lists', () => {
     platform.OS = 'ios';
     const nodes = renderRecordMarkdownText({ text: '- one\n  - two' });
     const child = getElement(nodes[2]);
@@ -45,12 +45,12 @@ describe('renderRecordMarkdownText', () => {
     expect(children[0]).toBe('  ');
   });
 
-  test('flattens list item blocks for truncated web previews', () => {
+  test('flattens preview lists', () => {
     platform.OS = 'web';
 
     const nodes = renderRecordMarkdownText({
       flattenListItems: true,
-      text: '- silly\n- ...loser',
+      text: '- lorem\n- ...ipsum',
     });
 
     const first = getElement(nodes[0]);
@@ -64,7 +64,7 @@ describe('renderRecordMarkdownText', () => {
       React.Children.toArray(getElement(firstChildren[1]).props.children)
     ).toEqual(['-', ' ']);
 
-    expect(firstChildren[2]).toBe('silly');
+    expect(firstChildren[2]).toBe('lorem');
     expect(nodes[1]).toBe('\n');
     expect(second.type).toBe(React.Fragment);
 
@@ -72,7 +72,7 @@ describe('renderRecordMarkdownText', () => {
       React.Children.toArray(getElement(secondChildren[1]).props.children)
     ).toEqual(['-', ' ']);
 
-    expect(secondChildren[2]).toBe('...loser');
+    expect(secondChildren[2]).toBe('...ipsum');
   });
 });
 

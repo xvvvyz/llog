@@ -84,7 +84,7 @@ export const EmptyState = ({
   }, [getOrCreateInvite, sheetManager]);
 
   return (
-    <View className="flex-1 mx-auto max-w-[13rem] w-full px-3 py-8 gap-3 justify-center">
+    <View className="flex-1 mx-auto max-w-52 w-full px-3 py-8 gap-3 justify-center">
       {canManage ? (
         <>
           <Button

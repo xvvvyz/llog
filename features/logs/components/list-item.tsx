@@ -82,20 +82,20 @@ export const ListItem = ({
             pointerEvents="none"
           >
             <Text
-              className="flex-1 -mb-[5px] min-w-0 leading-tight text-balance text-white web:whitespace-normal"
+              className="flex-1 -mb-1 min-w-0 leading-tight text-balance text-white web:whitespace-normal"
               numberOfLines={titleLineCount}
             >
               {name}
             </Text>
             {profiles.length > 0 && (
-              <View className="flex-row -mb-[6px] -mr-[6px]">
+              <View className="flex-row -mb-1.5 -mr-1.5">
                 {profiles.map((profile, i) => (
                   <View
                     key={profile.id}
                     style={{ backgroundColor: color.default }}
                     className={cn(
-                      'size-[24px] items-center justify-center overflow-hidden rounded-full p-px border-continuous',
-                      i > 0 && '-ml-[10px]'
+                      'size-avatar-stack-sm items-center justify-center overflow-hidden rounded-full p-px border-continuous',
+                      i > 0 && '-ml-avatar-stack-sm-overlap'
                     )}
                   >
                     <Avatar

@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe('getFileSourceUri', () => {
-  test('prefers explicit uri, then asset key, then null', () => {
+  test('resolves file source', () => {
     expect(
       fileUriToSrcShared.getFileSourceUri({
         assetKey: 'records/file.jpg',
@@ -30,7 +30,7 @@ describe('getFileSourceUri', () => {
 });
 
 describe('fileUriToSrc', () => {
-  test('builds API file URLs for stored asset keys', () => {
+  test('builds asset URLs', () => {
     process.env.EXPO_PUBLIC_API_URL = 'https://api.llog.example';
 
     expect(fileUriToSrcShared.fileUriToSrc('records/record-1/file.jpg')).toBe(
@@ -38,7 +38,7 @@ describe('fileUriToSrc', () => {
     );
   });
 
-  test('rewrites Cloudflare Image URLs to flexible variants', () => {
+  test('rewrites image URLs', () => {
     expect(
       fileUriToSrcShared.fileUriToSrc(
         'https://imagedelivery.net/account/image-id/public',
@@ -58,7 +58,7 @@ describe('fileUriToSrc', () => {
     );
   });
 
-  test('adds clamped Stream thumbnail dimensions without changing ordinary URLs', () => {
+  test('rewrites thumbnails', () => {
     expect(
       fileUriToSrcShared.fileUriToSrc(
         'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s',

@@ -23,3 +23,15 @@ export const RADII = {
   '3xl': '1.5rem',
   '4xl': '2rem',
 } as const;
+
+export const CONTAINERS = { sheet: '30rem' } as const;
+
+export const FONT_SIZES = { '2xs': '0.625rem' } as const;
+
+export const SPACING = {
+  avatarStackSm: '1.5rem',
+  avatarStackSmOverlap: '0.625rem',
+  avatarStackLg: '4.25rem',
+  avatarStackLgOverlap: '1.375rem',
+  actionMenuNudge: '0.4375rem',
+} as const;

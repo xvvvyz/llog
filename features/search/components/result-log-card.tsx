@@ -46,18 +46,18 @@ export const ResultLogCard = ({
           )}
         </View>
         <View className="flex-row mt-4 w-full gap-3 items-end justify-between">
-          <Text className="flex-1 -mb-[5px] min-w-0 leading-tight text-balance text-white web:whitespace-normal">
+          <Text className="flex-1 -mb-1 min-w-0 leading-tight text-balance text-white web:whitespace-normal">
             {result.text}
           </Text>
           {!!result.profiles?.length && (
-            <View className="flex-row -mb-[6px] -mr-[6px]">
+            <View className="flex-row -mb-1.5 -mr-1.5">
               {result.profiles.map((profile, index) => (
                 <View
                   key={profile.id}
                   style={{ backgroundColor: spectrum?.default }}
                   className={cn(
-                    'size-[24px] items-center justify-center overflow-hidden rounded-full p-px border-continuous',
-                    index > 0 && '-ml-[10px]'
+                    'size-avatar-stack-sm items-center justify-center overflow-hidden rounded-full p-px border-continuous',
+                    index > 0 && '-ml-avatar-stack-sm-overlap'
                   )}
                 >
                   <Avatar

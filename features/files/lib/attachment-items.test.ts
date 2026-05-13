@@ -2,7 +2,7 @@ import { getAttachmentPreviewItems } from '@/features/files/lib/attachment-items
 import { describe, expect, test } from 'bun:test';
 
 describe('getAttachmentPreviewItems', () => {
-  test('sorts persisted and pending attachments by order', () => {
+  test('sorts attachments', () => {
     expect(
       getAttachmentPreviewItems({
         files: [
@@ -20,7 +20,7 @@ describe('getAttachmentPreviewItems', () => {
     ]);
   });
 
-  test('prefers persisted files over pending uploads with the same id', () => {
+  test('prefers persisted files', () => {
     const [item] = getAttachmentPreviewItems({
       files: [{ id: 'same-id', order: 2, uri: 'https://example.com/file.jpg' }],
       pending: [{ id: 'same-id', order: 1, uri: 'file:///pending.jpg' }],

@@ -2,14 +2,14 @@ import { describe, expect, test } from 'bun:test';
 import * as recordMarkdown from '@/features/records/lib/record-markdown';
 
 describe('parseRecordMarkdown', () => {
-  test('parses titles as bold-only title blocks', () => {
+  test('parses headings', () => {
     expect(recordMarkdown.parseRecordMarkdown('# Title')[0]).toEqual({
       children: [{ kind: 'text', text: 'Title' }],
       kind: 'title',
     });
   });
 
-  test('parses supported inline styles', () => {
+  test('parses inline styles', () => {
     expect(
       recordMarkdown.parseRecordMarkdown(
         '**bold** ~~strike~~ ++underline++ *italic* _also italic_'
@@ -30,7 +30,7 @@ describe('parseRecordMarkdown', () => {
     });
   });
 
-  test('parses unordered and ordered list items with inline content', () => {
+  test('parses lists', () => {
     expect(
       recordMarkdown.parseRecordMarkdown(
         '- **one**\n  2. [two](https://two.test)'
@@ -76,7 +76,7 @@ describe('parseRecordMarkdown', () => {
     });
   });
 
-  test('skips escaped inline markers and parses later matching spans', () => {
+  test('skips escaped openers', () => {
     expect(
       recordMarkdown.parseRecordMarkdown('\\*literal* then *italic*')[0]
     ).toEqual({
@@ -88,7 +88,7 @@ describe('parseRecordMarkdown', () => {
     });
   });
 
-  test('skips escaped closing inline markers', () => {
+  test('skips escaped closers', () => {
     expect(recordMarkdown.parseRecordMarkdown('*a \\* literal*')[0]).toEqual({
       children: [
         { children: [{ kind: 'text', text: 'a \\* literal' }], kind: 'italic' },
@@ -97,7 +97,7 @@ describe('parseRecordMarkdown', () => {
     });
   });
 
-  test('leaves unsupported markdown syntax as text', () => {
+  test('keeps unsupported syntax', () => {
     expect(
       recordMarkdown.parseRecordMarkdown(
         '![alt](image.jpg)\n---\n| a | b |\n<div>html</div>'
@@ -118,7 +118,7 @@ describe('parseRecordMarkdown', () => {
 });
 
 describe('recordMarkdownToPlainText', () => {
-  test('strips supported block and inline markdown syntax', () => {
+  test('strips markdown', () => {
     expect(
       recordMarkdown.recordMarkdownToPlainText(
         '# Title\n- **bold** and *italic*\n  2. [docs](https://example.com)'
@@ -126,7 +126,7 @@ describe('recordMarkdownToPlainText', () => {
     ).toBe('Title bold and italic docs');
   });
 
-  test('keeps plain text unchanged except whitespace normalization', () => {
+  test('keeps plain text', () => {
     expect(recordMarkdown.recordMarkdownToPlainText('  one\n\n  two  ')).toBe(
       'one two'
     );

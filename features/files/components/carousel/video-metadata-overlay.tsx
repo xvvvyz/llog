@@ -219,7 +219,7 @@ export const VideoMetadataOverlay = ({
               <View className="flex-row min-w-0 w-full gap-3 items-center justify-between">
                 <Pressable
                   accessibilityRole="button"
-                  className="flex-1 flex-row max-w-[18rem] min-w-0 pl-1 gap-3 items-center"
+                  className="flex-1 flex-row max-w-72 min-w-0 pl-1 gap-3 items-center"
                   onPress={openSheet}
                 >
                   <mediaMetadataPrimitives.TrackArtwork

@@ -9,46 +9,46 @@ const emptyFilters = (): ParsedSearchQuery['filters'] => ({
 });
 
 describe('matchesSearchFilters', () => {
-  test('matches record filters by log, tag, and author text', () => {
+  test('matches record filters', () => {
     expect(
       queryFilters.matchesSearchFilters(
         {
-          authorName: 'Cáde',
-          logName: 'Daily Notes',
-          tagItems: [{ color: 1, id: 'tag-1', name: 'Work', order: 0 }],
+          authorName: 'Fóo',
+          logName: 'Foo Log',
+          tagItems: [{ color: 1, id: 'tag-1', name: 'Foo', order: 0 }],
           type: 'record',
         },
-        { author: ['cade'], log: ['daily'], tag: ['wor'] }
+        { author: ['foo'], log: ['foo'], tag: ['foo'] }
       )
     ).toBe(true);
   });
 
-  test('matches log results when a log filter is present', () => {
+  test('matches log filters', () => {
     expect(
       queryFilters.matchesSearchFilters(
         {
-          logName: 'Daily Notes',
-          tagItems: [{ color: 1, id: 'tag-1', name: 'Work', order: 0 }],
+          logName: 'Foo Log',
+          tagItems: [{ color: 1, id: 'tag-1', name: 'Foo', order: 0 }],
           type: 'log',
         },
-        { ...emptyFilters(), log: ['daily'] }
+        { ...emptyFilters(), log: ['foo'] }
       )
     ).toBe(true);
   });
 });
 
 describe('getMatchingSearchTags', () => {
-  test('returns matching tag filter chips by name or id', () => {
+  test('matches tag chips', () => {
     const tags = [
-      { color: 1, id: 'tag-work', name: 'Work', order: 0 },
-      { color: 2, id: 'tag-home', name: 'Home', order: 1 },
+      { color: 1, id: 'tag-foo', name: 'Foo', order: 0 },
+      { color: 2, id: 'tag-bar', name: 'Bar', order: 1 },
     ];
 
-    expect(queryFilters.getMatchingSearchTags(tags, ['tag-home'])).toEqual([
+    expect(queryFilters.getMatchingSearchTags(tags, ['tag-bar'])).toEqual([
       tags[1],
     ]);
 
-    expect(queryFilters.getMatchingSearchTags(tags, ['wor'])).toEqual([
+    expect(queryFilters.getMatchingSearchTags(tags, ['foo'])).toEqual([
       tags[0],
     ]);
   });

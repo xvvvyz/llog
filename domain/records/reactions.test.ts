@@ -38,7 +38,7 @@ const createDb = () =>
   }) as Parameters<typeof reactions.buildAddReactionTransactions>[0]['db'];
 
 describe('reaction emoji helpers', () => {
-  test('recognizes supported reactions and normalizes unsupported input', () => {
+  test('normalizes emoji', () => {
     const [defaultEmoji, fireEmoji] = reactions.REACTION_EMOJIS;
     expect(reactions.isReactionEmoji(fireEmoji)).toBe(true);
     expect(reactions.isReactionEmoji('nope')).toBe(false);
@@ -49,7 +49,7 @@ describe('reaction emoji helpers', () => {
 });
 
 describe('buildAddReactionTransactions', () => {
-  test('builds a record reaction without activity when activity context is incomplete', () => {
+  test('builds record reactions', () => {
     const [transaction] = reactions.buildAddReactionTransactions({
       activityId: 'activity-1',
       db: createDb(),
@@ -68,7 +68,7 @@ describe('buildAddReactionTransactions', () => {
     });
   });
 
-  test('links reply reactions to activity records when activity context is complete', () => {
+  test('builds reply activity', () => {
     const transactions = reactions.buildAddReactionTransactions({
       activityId: 'activity-1',
       db: createDb(),

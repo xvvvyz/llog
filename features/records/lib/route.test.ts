@@ -15,7 +15,7 @@ describe('record route helpers', () => {
     push.mockClear();
   });
 
-  test('encodes dynamic route segments', () => {
+  test('encodes routes', () => {
     expect(getLogHref('team/log 1')).toBe('/team%2Flog%201');
 
     expect(getRecordDetailHref('record/id?draft=true')).toBe(
@@ -27,12 +27,12 @@ describe('record route helpers', () => {
     );
   });
 
-  test('opens encoded record detail routes', () => {
+  test('opens record routes', () => {
     openRecordDetail('record/id');
     expect(push).toHaveBeenCalledWith('/records/record%2Fid');
   });
 
-  test('does not navigate without a record id', () => {
+  test('skips missing record ids', () => {
     openRecordDetail();
     openRecordDetail('');
     expect(push).not.toHaveBeenCalled();

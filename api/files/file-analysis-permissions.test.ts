@@ -3,7 +3,7 @@ import { Role } from '@/domain/teams/role';
 import { describe, expect, test } from 'bun:test';
 
 describe('canAnalyzeSharedLogFile', () => {
-  test('allows team managers to analyze published shared-log files', () => {
+  test('allows manager analysis', () => {
     expect(
       canAnalyzeSharedLogFile({
         actorRole: Role.Admin,
@@ -21,7 +21,7 @@ describe('canAnalyzeSharedLogFile', () => {
     ).toBe(true);
   });
 
-  test('requires draft file analysis to be performed by the draft author', () => {
+  test('checks draft author', () => {
     expect(
       canAnalyzeSharedLogFile({
         actorRole: Role.Admin,
@@ -39,7 +39,7 @@ describe('canAnalyzeSharedLogFile', () => {
     ).toBe(true);
   });
 
-  test('denies non-manager roles even for authored files', () => {
+  test('denies analysis', () => {
     expect(
       canAnalyzeSharedLogFile({
         actorRole: Role.Member,

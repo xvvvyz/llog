@@ -34,6 +34,13 @@
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
   --radius-4xl: 2rem;
+  --container-sheet: 30rem;
+  --text-2xs: 0.625rem;
+  --spacing-avatar-stack-sm: 1.5rem;
+  --spacing-avatar-stack-sm-overlap: 0.625rem;
+  --spacing-avatar-stack-lg: 4.25rem;
+  --spacing-avatar-stack-lg-overlap: 1.375rem;
+  --spacing-action-menu-nudge: 0.4375rem;
   --breakpoint-2xs: 320px;
   --breakpoint-xs: 480px;
   --breakpoint-sm: 640px;

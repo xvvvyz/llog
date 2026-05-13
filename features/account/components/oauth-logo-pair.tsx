@@ -18,7 +18,7 @@ import Svg, {
 } from 'react-native-svg';
 
 const LogoFrame = ({ children }: { children: React.ReactNode }) => (
-  <View className="overflow-hidden size-[68px] p-0.5 border-continuous rounded-full bg-background items-center justify-center">
+  <View className="overflow-hidden size-avatar-stack-lg p-0.5 border-continuous rounded-full bg-background items-center justify-center">
     <View className="overflow-hidden size-16 border-continuous rounded-full bg-white items-center justify-center">
       {children}
     </View>
@@ -257,7 +257,7 @@ export const OAuthLogoPair = ({ clientName }: { clientName: string }) => {
         <LineLogo />
       </LogoFrame>
       {clientLogo && (
-        <View className="-ml-[22px]">
+        <View className="-ml-avatar-stack-lg-overlap">
           <LogoFrame>{clientLogo}</LogoFrame>
         </View>
       )}

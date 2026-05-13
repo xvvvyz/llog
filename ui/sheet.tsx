@@ -40,7 +40,7 @@ export const SHEET_LAYERS = {
 } as const;
 
 const sheetVariants = cva(
-  'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-[30rem] md:rounded-4xl md:border-b border-continuous',
+  'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-sheet md:rounded-4xl md:border-b border-continuous',
   {
     defaultVariants: { variant: 'default' },
     variants: { variant: { default: '', list: 'md:rounded-3xl' } },

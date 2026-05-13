@@ -6,14 +6,14 @@
         "end_offset": 12000,
         "song_link": "https://lis.tn/plain",
         "start_offset": 0,
-        "title": "Mermaid Song"
+        "title": "Foo Bar Song"
       },
       {
         "artist": "Korablove",
         "end_offset": 12000,
         "song_link": "https://lis.tn/remix",
         "start_offset": 0,
-        "title": "Mermaid Song (Mihai Popoviciu Remix)"
+        "title": "Foo Bar Song (Baz Qux Remix)"
       }
     ],
     "offset": "05:36"
@@ -25,14 +25,14 @@
         "end_offset": 12000,
         "song_link": "https://lis.tn/plain",
         "start_offset": 0,
-        "title": "Mermaid Song"
+        "title": "Foo Bar Song"
       },
       {
         "artist": "Korablove",
         "end_offset": 12000,
         "song_link": "https://lis.tn/remix",
         "start_offset": 0,
-        "title": "Mermaid Song (Mihai Popoviciu Remix)"
+        "title": "Foo Bar Song (Baz Qux Remix)"
       }
     ],
     "offset": "05:48"
@@ -44,14 +44,14 @@
         "end_offset": 12000,
         "song_link": "https://lis.tn/plain",
         "start_offset": 0,
-        "title": "Mermaid Song"
+        "title": "Foo Bar Song"
       },
       {
         "artist": "Korablove",
         "end_offset": 12000,
         "song_link": "https://lis.tn/remix",
         "start_offset": 0,
-        "title": "Mermaid Song (Mihai Popoviciu Remix)"
+        "title": "Foo Bar Song (Baz Qux Remix)"
       }
     ],
     "offset": "06:00"

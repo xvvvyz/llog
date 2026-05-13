@@ -441,7 +441,7 @@ export const TeamMembersSheet = () => {
                     <Button
                       size="icon-xs"
                       variant="ghost"
-                      wrapperClassName="-mr-[7px]"
+                      wrapperClassName="-mr-action-menu-nudge"
                     >
                       <Icon
                         className="text-placeholder"
@@ -472,7 +472,7 @@ export const TeamMembersSheet = () => {
                     <Button
                       size="icon-xs"
                       variant="ghost"
-                      wrapperClassName="-mr-[7px]"
+                      wrapperClassName="-mr-action-menu-nudge"
                     >
                       <Icon
                         className="text-placeholder"

@@ -2,7 +2,7 @@ import * as templates from '@/domain/logs/templates';
 import { describe, expect, test } from 'bun:test';
 
 describe('getNextTemplateOrder', () => {
-  test('returns one more than the largest existing order', () => {
+  test('increments max order', () => {
     expect(
       templates.getNextTemplateOrder([
         { order: 2 },
@@ -12,13 +12,13 @@ describe('getNextTemplateOrder', () => {
     ).toBe(6);
   });
 
-  test('starts at zero for an empty list', () => {
+  test('starts at zero', () => {
     expect(templates.getNextTemplateOrder([])).toBe(0);
   });
 });
 
 describe('getTemplateTagChanges', () => {
-  test('deduplicates incoming tag ids and returns link/unlink sets', () => {
+  test('diffs tag ids', () => {
     expect(
       templates.getTemplateTagChanges({
         currentTagIds: ['a', 'b'],
@@ -34,21 +34,21 @@ describe('getTemplateTagChanges', () => {
 
 describe('resolveCopyTemplateTagsForTargetLog', () => {
   const sourceTags = [
-    { color: 2, name: 'Focus' },
-    { color: 4, name: 'Reading' },
-    { color: 5, name: ' focus ' },
+    { color: 2, name: 'Foo' },
+    { color: 4, name: 'Bar' },
+    { color: 5, name: ' foo ' },
   ];
 
-  test('links matching target tags by normalized name', () => {
+  test('links matching tags', () => {
     expect(
       templates.resolveCopyTemplateTagsForTargetLog({
         sourceTags,
-        targetTags: [{ id: 'target-focus', name: 'focus' }],
+        targetTags: [{ id: 'target-foo', name: 'foo' }],
       })
-    ).toEqual({ linkedTagIds: ['target-focus'], missingTags: [] });
+    ).toEqual({ linkedTagIds: ['target-foo'], missingTags: [] });
   });
 
-  test('skips missing source tags when creation is disabled', () => {
+  test('skips missing tags', () => {
     expect(
       templates.resolveCopyTemplateTagsForTargetLog({
         sourceTags,
@@ -57,35 +57,35 @@ describe('resolveCopyTemplateTagsForTargetLog', () => {
     ).toEqual({ linkedTagIds: [], missingTags: [] });
   });
 
-  test('returns missing source tags when creation is enabled', () => {
+  test('creates missing tags', () => {
     expect(
       templates.resolveCopyTemplateTagsForTargetLog({
         createMissingTags: true,
         sourceTags,
-        targetTags: [{ id: 'target-focus', name: 'focus' }],
+        targetTags: [{ id: 'target-foo', name: 'foo' }],
       })
     ).toEqual({
-      linkedTagIds: ['target-focus'],
-      missingTags: [{ color: 4, name: 'Reading' }],
+      linkedTagIds: ['target-foo'],
+      missingTags: [{ color: 4, name: 'Bar' }],
     });
   });
 });
 
 describe('filterTemplatesByQuery', () => {
   const items = [
-    { tags: [{ name: 'Focus' }], text: 'Morning plan' },
-    { tags: [{ name: 'Reading' }], text: 'Book notes' },
+    { tags: [{ name: 'Foo' }], text: 'Lorem ipsum' },
+    { tags: [{ name: 'Bar' }], text: 'Foo bar' },
   ];
 
-  test('matches template text and tag names case-insensitively', () => {
-    expect(templates.filterTemplatesByQuery(items, 'MORNING')).toEqual([
+  test('matches templates', () => {
+    expect(templates.filterTemplatesByQuery(items, 'LOREM')).toEqual([
       items[0],
     ]);
 
-    expect(templates.filterTemplatesByQuery(items, 'read')).toEqual([items[1]]);
+    expect(templates.filterTemplatesByQuery(items, 'bar')).toEqual([items[1]]);
   });
 
-  test('returns the original list for blank queries', () => {
+  test('keeps blank queries', () => {
     expect(templates.filterTemplatesByQuery(items, '   ')).toBe(items);
   });
 });

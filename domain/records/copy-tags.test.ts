@@ -2,49 +2,49 @@ import { resolveCopyDraftTagIdsForTargetLog } from '@/domain/records/copy-tags';
 import { describe, expect, test } from 'bun:test';
 
 describe('resolveCopyDraftTagIdsForTargetLog', () => {
-  test('maps source tags to destination tags by normalized name', () => {
+  test('maps copied tags', () => {
     expect(
       resolveCopyDraftTagIdsForTargetLog({
         sourceTags: [
           {
-            id: 'source-perf',
+            id: 'source-foo',
             logs: [{ id: 'source-log' }],
-            name: ' Perf ',
+            name: ' Foo ',
             type: 'record',
           },
         ],
         targetLogId: 'target-log',
-        targetTags: [{ id: 'target-perf', name: 'perf' }],
+        targetTags: [{ id: 'target-foo', name: 'foo' }],
       })
-    ).toEqual(['target-perf']);
+    ).toEqual(['target-foo']);
   });
 
-  test('keeps tags already linked to the destination log', () => {
+  test('keeps linked tags', () => {
     expect(
       resolveCopyDraftTagIdsForTargetLog({
         sourceTags: [
           {
-            id: 'shared-perf',
+            id: 'shared-foo',
             logs: [{ id: 'target-log' }],
-            name: 'perf',
+            name: 'foo',
             type: 'record',
           },
         ],
         targetLogId: 'target-log',
-        targetTags: [{ id: 'shared-perf', name: 'perf' }],
+        targetTags: [{ id: 'shared-foo', name: 'foo' }],
       })
-    ).toEqual(['shared-perf']);
+    ).toEqual(['shared-foo']);
   });
 
-  test('ignores non-record and non-overlapping tags', () => {
+  test('ignores unrelated tags', () => {
     expect(
       resolveCopyDraftTagIdsForTargetLog({
         sourceTags: [
-          { id: 'log-tag', name: 'perf', type: 'log' },
-          { id: 'source-dag', name: 'dag', type: 'record' },
+          { id: 'log-tag', name: 'foo', type: 'log' },
+          { id: 'source-bar', name: 'bar', type: 'record' },
         ],
         targetLogId: 'target-log',
-        targetTags: [{ id: 'target-perf', name: 'perf' }],
+        targetTags: [{ id: 'target-foo', name: 'foo' }],
       })
     ).toEqual([]);
   });

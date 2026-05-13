@@ -5,7 +5,7 @@ import { describe, expect, test } from 'bun:test';
 const files = ['file-a', 'file-b', 'file-c'].map((id) => ({ id }) as FileItem);
 
 describe('pruneStateMap', () => {
-  test('returns the same object when every entry is still allowed', () => {
+  test('keeps valid state', () => {
     const state = { 'file-a': true, 'file-b': false };
 
     expect(
@@ -13,7 +13,7 @@ describe('pruneStateMap', () => {
     ).toBe(state);
   });
 
-  test('drops state for files that are no longer present', () => {
+  test('drops stale state', () => {
     expect(
       carousel.pruneStateMap(
         { 'file-a': true, 'file-b': false, stale: true },
@@ -24,7 +24,7 @@ describe('pruneStateMap', () => {
 });
 
 describe('getDominantCarouselIndex', () => {
-  test('clamps progress and switches indexes after the halfway point', () => {
+  test('gets dominant index', () => {
     expect(carousel.getDominantCarouselIndex(-1, 3)).toBe(0);
     expect(carousel.getDominantCarouselIndex(0.5, 3)).toBe(0);
     expect(carousel.getDominantCarouselIndex(0.51, 3)).toBe(1);
@@ -34,7 +34,7 @@ describe('getDominantCarouselIndex', () => {
 });
 
 describe('getVisibleCarouselMediaIds', () => {
-  test('returns the floor and ceiling media ids for the current progress', () => {
+  test('gets visible ids', () => {
     expect([...carousel.getVisibleCarouselMediaIds(files, 0.25)]).toEqual([
       'file-a',
       'file-b',
@@ -45,7 +45,7 @@ describe('getVisibleCarouselMediaIds', () => {
     ]);
   });
 
-  test('clamps progress outside the available media range', () => {
+  test('clamps visible ids', () => {
     expect([...carousel.getVisibleCarouselMediaIds(files, -10)]).toEqual([
       'file-a',
     ]);

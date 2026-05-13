@@ -3,7 +3,7 @@ import { Role } from '@/domain/teams/role';
 import { describe, expect, test } from 'bun:test';
 
 describe('getTeamPermissionFlags', () => {
-  test('derives team capability flags from owner, admin, member, and missing roles', () => {
+  test('derives flags', () => {
     expect(permissions.getTeamPermissionFlags(Role.Owner)).toEqual({
       canDeleteTeam: true,
       canLeaveTeam: false,
@@ -47,7 +47,7 @@ describe('getTeamPermissionFlags', () => {
 });
 
 describe('team member management policy', () => {
-  test('owners can manage other members and admins but not themselves', () => {
+  test('checks owner policy', () => {
     expect(
       permissions.canOpenTeamMemberMenu({
         actorRole: Role.Owner,
@@ -79,7 +79,7 @@ describe('team member management policy', () => {
     ).toBe(false);
   });
 
-  test('admins can manage non-owner roles and only remove members', () => {
+  test('checks admin policy', () => {
     expect(
       permissions.canOpenTeamMemberMenu({
         actorRole: Role.Admin,
@@ -118,7 +118,7 @@ describe('team member management policy', () => {
     ).toBe(true);
   });
 
-  test('members and missing roles cannot manage team members', () => {
+  test('checks member policy', () => {
     for (const actorRole of [Role.Member, undefined]) {
       expect(
         permissions.canOpenTeamMemberMenu({
@@ -131,7 +131,7 @@ describe('team member management policy', () => {
 });
 
 describe('team visibility policy', () => {
-  test('managed roles are always visible and members see peers only through shared logs', () => {
+  test('checks member visibility', () => {
     expect(
       permissions.canViewTeamMember({
         actorRole: Role.Member,
@@ -167,7 +167,7 @@ describe('team visibility policy', () => {
 });
 
 describe('role helpers', () => {
-  test('sorts known roles before unknown roles in privilege order', () => {
+  test('sorts roles', () => {
     const roles = [Role.Member, 'unknown', Role.Owner, Role.Admin];
 
     expect(
@@ -178,7 +178,7 @@ describe('role helpers', () => {
     ).toEqual([Role.Owner, Role.Admin, Role.Member, 'unknown']);
   });
 
-  test('keeps owners from being downgraded and upgrades existing members through admin invites', () => {
+  test('resolves invite roles', () => {
     expect(
       permissions.getInviteRedemptionRole({
         currentRole: Role.Owner,
