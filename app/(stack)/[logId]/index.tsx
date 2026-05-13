@@ -2,9 +2,12 @@ import { DropdownMenu } from '@/features/logs/components/dropdown-menu';
 import { EmptyState } from '@/features/logs/components/empty-state';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
+import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { useRecords } from '@/features/records/queries/use-records';
+import { useMyRole } from '@/features/teams/queries/use-my-role';
+import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
@@ -39,8 +42,26 @@ export default function Index() {
   const recordsLoading = records.isLoading;
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
   const hasRecords = recordData.length > 0;
-  const showLoading = log.isLoading || recordsLoading;
   const showEmpty = !!log.id && records.isEmptyReady;
+  const emptyStateTeamId = showEmpty ? (log.teamId ?? null) : null;
+  const emptyStateRole = useMyRole({ teamId: emptyStateTeamId });
+
+  const managedEmptyStateTeamId =
+    showEmpty && emptyStateRole.canManage ? (log.teamId ?? null) : null;
+
+  const emptyStateMembers = useTeamMembers({ teamId: managedEmptyStateTeamId });
+  const emptyStateInvites = useTeamInvites({ teamId: managedEmptyStateTeamId });
+
+  const emptyStateActionsLoading =
+    showEmpty &&
+    (!log.teamId ||
+      emptyStateRole.isLoading ||
+      (emptyStateRole.canManage &&
+        (emptyStateMembers.isLoading || emptyStateInvites.isLoading)));
+
+  const showLoading =
+    log.isLoading || recordsLoading || emptyStateActionsLoading;
+
   const showFab = hasRecords && !breakpoints.md;
 
   const listFooterHeight =
@@ -117,7 +138,13 @@ export default function Index() {
       ) : showLoading ? (
         <Loading />
       ) : showEmpty ? (
-        <EmptyState logId={params.logId} />
+        <EmptyState
+          canManage={emptyStateRole.canManage}
+          invites={emptyStateInvites.invites}
+          logId={params.logId}
+          members={emptyStateMembers.members}
+          teamId={log.teamId!}
+        />
       ) : (
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"

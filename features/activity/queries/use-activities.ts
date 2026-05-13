@@ -2,7 +2,7 @@ import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import type { ActivityWithRelations } from '@/features/activity/lib/group-activities';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
-import { useFrameDelayedTrue } from '@/hooks/use-frame-delayed-true';
+import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -285,14 +285,13 @@ export const useActivities = () => {
 
   const emptyQueryKey = `${recordActivityQueryKey ?? ''}:${memberActivityQueryKey ?? ''}`;
 
-  const isEmptyReady = useFrameDelayedTrue({
-    resetKey: emptyQueryKey,
-    value:
-      !viewerIsLoading &&
+  const isEmptyReady = useDelayedTrue(
+    !viewerIsLoading &&
       !visibleLogsAreLoading &&
       !activityQueriesLoading &&
       !hasActivities,
-  });
+    { resetKey: emptyQueryKey }
+  );
 
   return {
     activities,

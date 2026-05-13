@@ -5,10 +5,10 @@ import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
-export const useTeamMembers = ({ teamId }: { teamId?: string } = {}) => {
+export const useTeamMembers = ({ teamId }: { teamId?: string | null } = {}) => {
   const auth = db.useAuth();
   const { activeTeamId } = useUi();
-  const resolvedTeamId = teamId ?? activeTeamId;
+  const resolvedTeamId = teamId === null ? undefined : (teamId ?? activeTeamId);
   const myRole = useMyRole({ teamId: resolvedTeamId });
 
   const { data, isLoading } = db.useQuery(

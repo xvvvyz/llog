@@ -2,11 +2,9 @@ import { isMemberRole } from '@/domain/teams/permissions';
 import { Role } from '@/domain/teams/role';
 import { getInviteUrl } from '@/features/invites/lib/url';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
-import { useTeamInvites } from '@/features/invites/queries/use-team-links';
+import type { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLogColor } from '@/features/logs/hooks/use-color';
-import { useLog } from '@/features/logs/queries/use-log';
-import { useMyRole } from '@/features/teams/queries/use-my-role';
-import { useTeamMembers } from '@/features/teams/queries/use-team-members';
+import type { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
@@ -18,34 +16,27 @@ import { NotePencil, UserPlus, UsersThree } from 'phosphor-react-native';
 
 const ACTION_BUTTON_WRAPPER_CLASS_NAME = 'w-32 self-center';
 
-export const EmptyState = ({ logId }: { logId: string }) => {
-  const log = useLog({ id: logId });
+type EmptyStateProps = {
+  canManage: boolean;
+  invites: ReturnType<typeof useTeamInvites>['invites'];
+  logId: string;
+  members: ReturnType<typeof useTeamMembers>['members'];
+  teamId: string;
+};
 
-  const { canManage, isLoading: roleLoading } = useMyRole({
-    teamId: log.teamId,
-  });
-
+export const EmptyState = ({
+  canManage,
+  invites,
+  logId,
+  members,
+  teamId,
+}: EmptyStateProps) => {
   const logColor = useLogColor({ id: logId });
   const sheetManager = useSheetManager();
-
-  const { members, isLoading: membersLoading } = useTeamMembers({
-    teamId: log.teamId,
-  });
-
-  const { invites, isLoading: invitesLoading } = useTeamInvites({
-    teamId: log.teamId,
-  });
-
   const hasMembers = members.some((member) => isMemberRole(member.role));
-
-  const actionsLoading =
-    roleLoading || (canManage && (membersLoading || invitesLoading));
-
   const [isInviteLoading, setIsInviteLoading] = React.useState(false);
 
   const getOrCreateLink = React.useCallback(async () => {
-    if (!log.teamId) return null;
-
     const existing = invites.find((link) => {
       if (link.role !== Role.Member) return false;
       const logIds = link.logs?.map((l) => l.id) ?? [];
@@ -55,13 +46,13 @@ export const EmptyState = ({ logId }: { logId: string }) => {
     if (existing) return existing;
 
     const invite = await createInviteLink({
-      teamId: log.teamId,
+      teamId,
       role: Role.Member,
       logIds: [logId],
     });
 
-    return { ...invite, teamId: log.teamId };
-  }, [log.teamId, logId, invites]);
+    return { ...invite, teamId };
+  }, [teamId, logId, invites]);
 
   const getOrCreateInvite = React.useCallback(async () => {
     const invite = await getOrCreateLink();
@@ -94,11 +85,7 @@ export const EmptyState = ({ logId }: { logId: string }) => {
 
   return (
     <View className="flex-1 mx-auto max-w-[13rem] w-full px-3 py-8 gap-3 justify-center">
-      {actionsLoading ? (
-        <View className="py-2 items-center">
-          <Spinner />
-        </View>
-      ) : canManage ? (
+      {canManage ? (
         <>
           <Button
             className="justify-between"
@@ -138,17 +125,15 @@ export const EmptyState = ({ logId }: { logId: string }) => {
           </Button>
         </>
       ) : null}
-      {!actionsLoading && (
-        <Button
-          className="active:opacity-90 web:hover:opacity-90"
-          onPress={() => sheetManager.open('record-create', logId)}
-          size="xs"
-          style={{ backgroundColor: logColor.default }}
-          wrapperClassName="w-32 self-center"
-        >
-          <Text className="text-white">Record</Text>
-        </Button>
-      )}
+      <Button
+        className="active:opacity-90 web:hover:opacity-90"
+        onPress={() => sheetManager.open('record-create', logId)}
+        size="xs"
+        style={{ backgroundColor: logColor.default }}
+        wrapperClassName="w-32 self-center"
+      >
+        <Text className="text-white">Record</Text>
+      </Button>
     </View>
   );
 };

@@ -3,10 +3,11 @@ import { useUi } from '@/features/account/queries/use-ui';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
-export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
+export const useMyRole = ({ teamId }: { teamId?: string | null } = {}) => {
   const auth = db.useAuth();
-  const { activeTeamId } = useUi();
-  const resolvedTeamId = teamId ?? activeTeamId;
+  const { activeTeamId, isLoading: uiLoading } = useUi();
+  const resolvedTeamId = teamId === null ? undefined : (teamId ?? activeTeamId);
+  const shouldResolveActiveTeam = teamId === undefined;
 
   const { data, isLoading } = db.useQuery(
     auth.user && resolvedTeamId
@@ -32,6 +33,10 @@ export const useMyRole = ({ teamId }: { teamId?: string } = {}) => {
   return {
     ...role,
     ...permissions.getTeamPermissionFlags(role?.role),
-    isLoading: !!queryKey && (isLoading || !hasCurrentResult),
+    isLoading:
+      teamId !== null &&
+      (auth.isLoading ||
+        (shouldResolveActiveTeam && uiLoading) ||
+        (!!queryKey && (isLoading || !hasCurrentResult))),
   };
 };

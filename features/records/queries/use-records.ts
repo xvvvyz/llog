@@ -1,12 +1,13 @@
 import * as recordIdentity from '@/domain/records/identity-fields';
 import { recordListItemQuery } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
-import { useFrameDelayedTrue } from '@/hooks/use-frame-delayed-true';
+import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
 const RECORDS_PAGE_SIZE = 25;
+const EMPTY_STATE_DELAY_MS = 400;
 
 const compareByDateDesc = (
   a: { date?: Date | string | number | null },
@@ -115,9 +116,9 @@ export const useRecords = ({ logId }: { logId?: string }) => {
 
   const canShowEmptyResult = !!logId && !isQueryLoading && !hasRecords;
 
-  const isEmptyReady = useFrameDelayedTrue({
+  const isEmptyReady = useDelayedTrue(canShowEmptyResult, {
+    delayMs: EMPTY_STATE_DELAY_MS,
     resetKey: logId,
-    value: canShowEmptyResult,
   });
 
   return {

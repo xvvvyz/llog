@@ -2,9 +2,9 @@ import { useUi } from '@/features/account/queries/use-ui';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
-export const useTeamInvites = ({ teamId }: { teamId?: string } = {}) => {
+export const useTeamInvites = ({ teamId }: { teamId?: string | null } = {}) => {
   const { activeTeamId } = useUi();
-  const resolvedTeamId = teamId ?? activeTeamId;
+  const resolvedTeamId = teamId === null ? undefined : (teamId ?? activeTeamId);
 
   const { data, isLoading } = db.useQuery(
     resolvedTeamId
