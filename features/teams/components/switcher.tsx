@@ -96,20 +96,24 @@ const TeamSwitcherContent = () => {
               onPressIn={() => setHighlightedTeamId(t.id)}
               onPressOut={() => setHighlightedTeamId(null)}
             >
-              <Avatar
-                avatar={t.image?.uri}
-                fallback="gradient"
-                id={t.id}
-                size={20}
-              />
+              <View className="size-5 items-center justify-center">
+                {t.id === ui.activeTeamId ? (
+                  <Icon icon={Check} />
+                ) : (
+                  <Avatar
+                    avatar={t.image?.uri}
+                    fallback="gradient"
+                    id={t.id}
+                    size={20}
+                  />
+                )}
+              </View>
               <Text className="flex-1" numberOfLines={1}>
                 {t.name}
               </Text>
-              <View className="size-5 items-center justify-center">
-                {t.id === ui.activeTeamId && <Icon icon={Check} />}
-              </View>
             </Menu.Item>
             <Button
+              className="ml-2"
               onPress={(event) => handleOpenTeamSettings(event, t.id)}
               onTouchStart={(event) => event.stopPropagation()}
               size="icon-xs"
