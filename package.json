@@ -24,7 +24,7 @@
     "push": "bun push:db && bun push:secrets && bun push:worker",
     "push:db": "NODE_ENV=production instant-cli push -y",
     "push:secrets": "wrangler secret bulk .dev.vars.production --env ''",
-    "push:worker": "wrangler deploy --name llog --env production",
+    "push:worker": "bun build:web && wrangler deploy --name llog --env production",
     "reprocess:audd": "bun scripts/reprocess-audd.ts",
     "test": "bun test",
     "test:watch": "bun test --watch",
