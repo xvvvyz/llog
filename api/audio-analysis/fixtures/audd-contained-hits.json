@@ -1,0 +1,107 @@
+[
+  {
+    "songs": [
+      {
+        "artist": "Anchor Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/AnchorTrack",
+        "start_offset": 0,
+        "title": "Anchor Track"
+      }
+    ],
+    "offset": "00:00"
+  },
+  {
+    "songs": [
+      {
+        "artist": "Anchor Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/AnchorTrack",
+        "start_offset": 0,
+        "title": "Anchor Track"
+      }
+    ],
+    "offset": "00:12"
+  },
+  {
+    "songs": [
+      {
+        "artist": "Anchor Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/AnchorTrack",
+        "start_offset": 0,
+        "title": "Anchor Track"
+      },
+      {
+        "artist": "Contained Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/ContainedTrack",
+        "start_offset": 0,
+        "title": "Contained Track"
+      }
+    ],
+    "offset": "00:24"
+  },
+  {
+    "songs": [
+      {
+        "artist": "Anchor Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/AnchorTrack",
+        "start_offset": 0,
+        "title": "Anchor Track"
+      },
+      {
+        "artist": "Contained Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/ContainedTrack",
+        "start_offset": 0,
+        "title": "Contained Track"
+      }
+    ],
+    "offset": "00:36"
+  },
+  {
+    "songs": [
+      {
+        "artist": "Anchor Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/AnchorTrack",
+        "start_offset": 0,
+        "title": "Anchor Track"
+      },
+      {
+        "artist": "Contained Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/ContainedTrack",
+        "start_offset": 0,
+        "title": "Contained Track"
+      }
+    ],
+    "offset": "00:48"
+  },
+  {
+    "songs": [
+      {
+        "artist": "Anchor Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/AnchorTrack",
+        "start_offset": 0,
+        "title": "Anchor Track"
+      }
+    ],
+    "offset": "01:00"
+  },
+  {
+    "songs": [
+      {
+        "artist": "Anchor Artist",
+        "end_offset": 12000,
+        "song_link": "https://lis.tn/AnchorTrack",
+        "start_offset": 0,
+        "title": "Anchor Track"
+      }
+    ],
+    "offset": "01:12"
+  }
+]

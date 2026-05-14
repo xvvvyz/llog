@@ -12,7 +12,7 @@ const createSheetManager = (payloads: Record<string, unknown> = {}) => {
   return { getPayload, open, sheetManager };
 };
 
-describe('record link sheet payload helpers', () => {
+describe('sheet payloads', () => {
   test('reads attachment payload', () => {
     const payload = { parent: { id: 'record-1', type: 'record' as const } };
 

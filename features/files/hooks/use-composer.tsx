@@ -6,6 +6,7 @@ import { type UseFileComposerOptions } from '@/features/files/types/composer';
 import * as React from 'react';
 
 export const useFileComposer = ({
+  actionsDisabled,
   replyId,
   isOpen,
   extraAttachmentCount = 0,
@@ -38,11 +39,14 @@ export const useFileComposer = ({
     pendingDocuments,
     removeLocalPreviewUri,
   } = useFileComposerState({
+    actionsDisabled,
     isOpen,
     files,
     onDeleteFile,
     onReorderFiles,
     onUploadFile,
+    recordId,
+    replyId,
     scopeKey: `${recordId ?? ''}:${replyId ?? ''}`,
   });
 
@@ -57,6 +61,7 @@ export const useFileComposer = ({
 
   const filePreview = (
     <Preview
+      actionsDisabled={actionsDisabled}
       audioMedia={audioMedia}
       autoPlayPendingVideoId={autoPlayPendingVideoId}
       documentFiles={documentFiles}
@@ -78,6 +83,7 @@ export const useFileComposer = ({
   const toolbar = (
     <Toolbar
       canAddAudio={canAddAudio}
+      disabled={actionsDisabled}
       onBrowseMedia={handleBrowseMedia}
       onCaptureMedia={handleCaptureMedia}
       onOpenAudio={onOpenAudio}

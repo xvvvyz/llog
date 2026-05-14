@@ -144,6 +144,7 @@ export const RecordCreateSheet = () => {
           isOpen={composer.isOpen}
           isSubmitting={composer.isSubmitting}
           isTextareaFocused={composer.isTextareaFocused}
+          isTextInputDisabled={composer.isTextInputDisabled}
           logColor={composer.logColor}
           onChangeText={composer.onChangeText}
           onSubmit={composer.onSubmit}
@@ -157,6 +158,7 @@ export const RecordCreateSheet = () => {
             composer.canOpenTags &&
             hasSelectedTags && (
               <AddTagsInput
+                disabled={composer.isTagsDisabled}
                 onPress={composer.onOpenTags}
                 tags={composer.selectedTags}
               />

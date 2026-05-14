@@ -2,6 +2,8 @@ import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import { useConnectivity } from '@/features/offline/connectivity';
+import * as outboxStore from '@/features/offline/outbox-store';
 import { CompactEntry } from '@/features/records/components/compact-entry';
 import { EntryCard } from '@/features/records/components/entry-card';
 import { useEntryMenuState } from '@/features/records/components/entry-menu';
@@ -40,19 +42,88 @@ export const Entry = ({
   const profile = useProfile();
   const sheetManager = useSheetManager();
   const ui = useUi();
+  const connectivity = useConnectivity();
+  const isLocalPending = !!record.localStatus;
+  const isCompletedLocalSubmission = record.localOutboxStatus === 'complete';
+
+  const canManageLocalPendingEntry =
+    isLocalPending &&
+    !isCompletedLocalSubmission &&
+    (!replyId || record.localNeedsDraftReplay === true);
+
+  const isSyncedLocalReply =
+    !!replyId && isLocalPending && isCompletedLocalSubmission;
 
   const { audioMedia, documentFiles, visualMedia } = useFilteredFiles(
     record.files || []
   );
 
-  const entryMenuState = useEntryMenuState({
+  const rawEntryMenuState = useEntryMenuState({
     authorId: record.author?.id,
     logId,
     replyId,
     teamId: record.teamId,
   });
 
+  const entryMenuState = React.useMemo(() => {
+    const canDelete = canManageLocalPendingEntry
+      ? true
+      : isLocalPending
+        ? isSyncedLocalReply && rawEntryMenuState.canDelete
+        : rawEntryMenuState.canDelete;
+
+    const canDuplicate = rawEntryMenuState.canDuplicate;
+
+    const canEdit = canManageLocalPendingEntry
+      ? true
+      : isLocalPending
+        ? isSyncedLocalReply && rawEntryMenuState.canEdit
+        : rawEntryMenuState.canEdit;
+
+    const canPin = rawEntryMenuState.canPin;
+    const canRetry = record.localOutboxStatus === 'error';
+    const canTag = rawEntryMenuState.canTag;
+    const hasActionsAboveDelete = canEdit || canRetry || canTag || canPin;
+
+    const hasMenu =
+      canDelete || canDuplicate || canEdit || canRetry || canPin || canTag;
+
+    return {
+      ...rawEntryMenuState,
+      canDelete,
+      canDuplicate,
+      canEdit,
+      canPin,
+      canRetry,
+      canTag,
+      hasActionsAboveDelete,
+      hasMenu,
+      isDeleteDisabled:
+        isSyncedLocalReply ||
+        (!canManageLocalPendingEntry && rawEntryMenuState.isDeleteDisabled),
+      isDuplicateDisabled:
+        isLocalPending ||
+        rawEntryMenuState.isDuplicateDisabled ||
+        !connectivity.canRunNetworkActions,
+      isEditDisabled:
+        isSyncedLocalReply ||
+        (!canManageLocalPendingEntry && rawEntryMenuState.isEditDisabled),
+      isPinDisabled: !connectivity.canRunNetworkActions,
+      isRetryDisabled: !connectivity.canRunNetworkActions,
+      isTagDisabled: !connectivity.canRunNetworkActions,
+    };
+  }, [
+    canManageLocalPendingEntry,
+    connectivity.canRunNetworkActions,
+    isLocalPending,
+    isSyncedLocalReply,
+    record.localOutboxStatus,
+    rawEntryMenuState,
+  ]);
+
   const handleDoubleTapReaction = React.useCallback(() => {
+    if (isLocalPending) return;
+    if (!connectivity.canRunNetworkActions) return;
     if (!record.teamId) return;
     const emoji = ui.doubleTapEmoji;
 
@@ -71,6 +142,8 @@ export const Entry = ({
     });
   }, [
     logId,
+    connectivity.canRunNetworkActions,
+    isLocalPending,
     profile.id,
     record.reactions,
     record.teamId,
@@ -83,11 +156,13 @@ export const Entry = ({
     accentColor,
     audioMedia,
     canAnalyzeAudio: myRole.canManage,
+    canOpenReply: !isLocalPending,
     documentFiles,
     entryMenuState,
     links: record.links ?? [],
     logId,
     logName,
+    networkActionsEnabled: connectivity.canRunNetworkActions && !isLocalPending,
     numberOfLines,
     onDoubleTapReaction: handleDoubleTapReaction,
     record,
@@ -97,13 +172,24 @@ export const Entry = ({
   };
 
   const handleOpenReply = React.useCallback(() => {
+    if (isLocalPending) return;
     if (!record.id) return;
-    sheetManager.open('reply-create', record.id);
-  }, [record.id, sheetManager]);
+
+    sheetManager.open('reply-create', record.id, undefined, {
+      teamId: record.teamId,
+    });
+  }, [isLocalPending, record.id, record.teamId, sheetManager]);
 
   const handleUnpin = React.useCallback(() => {
+    if (!connectivity.canRunNetworkActions) return;
+
+    if (isLocalPending) {
+      outboxStore.updateQueuedRecordPin({ isPinned: false, recordId });
+      return;
+    }
+
     toggleRecordPin({ id: recordId, isPinned: false });
-  }, [recordId]);
+  }, [connectivity.canRunNetworkActions, isLocalPending, recordId]);
 
   if (variant === 'compact') {
     return <CompactEntry {...sharedProps} className={className} />;
@@ -112,7 +198,7 @@ export const Entry = ({
   return (
     <EntryCard
       {...sharedProps}
-      canUnpinRecord={myRole.canPinRecords}
+      canUnpinRecord={entryMenuState.canPin && !entryMenuState.isPinDisabled}
       className={className}
       onOpenReply={handleOpenReply}
       onUnpin={handleUnpin}

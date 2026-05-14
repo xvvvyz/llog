@@ -34,7 +34,7 @@ describe('normalizeLinkUrl', () => {
     );
   });
 
-  test('rejects bad URLs', () => {
+  test('rejects invalid URLs', () => {
     expect(linkUrl.normalizeLinkUrl('')).toBeNull();
     expect(linkUrl.normalizeLinkUrl('javascript:alert(1)')).toBeNull();
     expect(linkUrl.normalizeLinkUrl('ftp://example.com')).toBeNull();

@@ -6,8 +6,8 @@ describe('parseStoredTracks', () => {
     expect(
       mediaMetadata.parseStoredTracks([
         {
-          album: 'Lorem Album',
-          artists: ['Bar Artist'],
+          album: 'Evening Notes',
+          artists: ['Second Artist'],
           end: 7000,
           genres: ['Dance'],
           isrc: 'ISRC1',
@@ -16,32 +16,32 @@ describe('parseStoredTracks', () => {
           releaseDate: '2026-01-02',
           score: 91,
           start: 5000,
-          title: 'Bar',
+          title: 'Second Track',
           trackDuration: 120000,
           upc: 12345,
         },
         {
-          artists: ['Foo Artist', null],
+          artists: ['First Artist', null],
           artwork: { medium: 'https://images.example/art.jpg' },
           end: 3000,
           start: 1000,
-          title: 'Foo',
+          title: 'First Track',
         },
-        { artists: ['Missing foo'], title: 'Baz' },
+        { artists: ['Missing artist'], title: 'Missing title' },
         { start: 0, title: '' },
-        { end: 1000, start: 2000, title: 'Qux' },
+        { end: 1000, start: 2000, title: 'Backwards Track' },
       ])
     ).toEqual([
       {
-        artists: ['Foo Artist'],
+        artists: ['First Artist'],
         artwork: 'https://images.example/art.jpg',
         endSeconds: 3,
         startSeconds: 1,
-        title: 'Foo',
+        title: 'First Track',
       },
       {
-        album: 'Lorem Album',
-        artists: ['Bar Artist'],
+        album: 'Evening Notes',
+        artists: ['Second Artist'],
         endSeconds: 7,
         genres: ['Dance'],
         isrc: 'ISRC1',
@@ -50,7 +50,7 @@ describe('parseStoredTracks', () => {
         releaseDate: '2026-01-02',
         score: 91,
         startSeconds: 5,
-        title: 'Bar',
+        title: 'Second Track',
         trackDurationSeconds: 120,
         upc: '12345',
       },
@@ -60,18 +60,18 @@ describe('parseStoredTracks', () => {
   test('builds track search text', () => {
     const track = mediaMetadata.parseStoredTracks([
       {
-        album: 'Lorem Search',
-        artists: ['Foo Artist', 'Bar Artist'],
+        album: 'Search Notes',
+        artists: ['First Artist', 'Second Artist'],
         start: 0,
-        title: 'Foo Bar',
+        title: 'Daily Recap',
       },
     ])[0];
 
     expect(mediaMetadata.getTrackSearchSnippet(track)).toBe(
-      'Foo Bar - Foo Artist, Bar Artist'
+      'Daily Recap - First Artist, Second Artist'
     );
 
-    expect(mediaMetadata.getTrackSearchText(track)).toContain('Lorem Search');
+    expect(mediaMetadata.getTrackSearchText(track)).toContain('Search Notes');
   });
 });
 
@@ -79,15 +79,15 @@ describe('parseStoredTranscriptSegments', () => {
   test('parses transcript segments', () => {
     expect(
       mediaMetadata.parseStoredTranscriptSegments([
-        { end: 12, start: 10, text: 'lorem later' },
-        { end: 4, start: 2, text: 'lorem early' },
+        { end: 12, start: 10, text: 'later note' },
+        { end: 4, start: 2, text: 'early note' },
         { end: 1, start: 2, text: 'backwards' },
         { end: 3, start: 3, text: '' },
         { end: 5, text: 'missing start' },
       ])
     ).toEqual([
-      { endSeconds: 4, startSeconds: 2, text: 'lorem early' },
-      { endSeconds: 12, startSeconds: 10, text: 'lorem later' },
+      { endSeconds: 4, startSeconds: 2, text: 'early note' },
+      { endSeconds: 12, startSeconds: 10, text: 'later note' },
     ]);
   });
 });

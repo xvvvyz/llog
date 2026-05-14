@@ -1,3 +1,4 @@
+import * as outboxStore from '@/features/offline/outbox-store';
 import { deleteReply } from '@/features/records/mutations/delete-reply';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
@@ -22,10 +23,20 @@ export const ReplyDeleteSheet = () => {
       onConfirm={async () => {
         setIsPending(true);
         const replyId = sheetManager.getId('reply-delete')!;
-        const recordId = sheetManager.getContext('reply-delete')!;
+        const context = sheetManager.getContext('reply-delete')!;
+        const isLocalPending = context.startsWith('local:');
+
+        const recordId = isLocalPending
+          ? context.slice('local:'.length)
+          : context;
 
         try {
-          await deleteReply({ id: replyId, recordId });
+          if (isLocalPending) {
+            await outboxStore.discardQueuedSubmission(`reply:${replyId}`);
+          } else {
+            await deleteReply({ id: replyId, recordId });
+          }
+
           sheetManager.close('reply-delete');
         } catch (error) {
           setIsPending(false);

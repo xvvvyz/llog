@@ -168,7 +168,7 @@ export const Sheet = ({
       <View
         accessibilityElementsHidden
         aria-hidden
-        className="h-5 items-center justify-center shrink-0 md:hidden"
+        className="relative z-20 h-5 items-center justify-center shrink-0 md:hidden"
         importantForAccessibility="no-hide-descendants"
         pointerEvents="none"
       >

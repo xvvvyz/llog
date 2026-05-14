@@ -3,7 +3,7 @@ import { findMemberInviteByLogs } from '@/features/invites/lib/matching';
 import type { Log } from '@/features/logs/types/log';
 import schema from '@/instant.schema';
 import { InstaQLEntity } from '@instantdb/react-native';
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 
 type Invite = InstaQLEntity<typeof schema, 'invites'>;
 
@@ -12,7 +12,7 @@ type TestInvite = Pick<Invite, 'id' | 'role'> & {
 };
 
 describe('findMemberInviteByLogs', () => {
-  it('matches log sets', () => {
+  test('matches log sets', () => {
     const invites: TestInvite[] = [
       {
         id: 'admin-invite',
@@ -33,7 +33,7 @@ describe('findMemberInviteByLogs', () => {
     expect(invites[1].logs?.map((log) => log.id)).toEqual(['log-b', 'log-a']);
   });
 
-  it('requires exact logs', () => {
+  test('requires exact logs', () => {
     const invites: TestInvite[] = [
       { id: 'missing-log', logs: [{ id: 'log-a' }], role: Role.Member },
       {
@@ -46,7 +46,7 @@ describe('findMemberInviteByLogs', () => {
     expect(findMemberInviteByLogs(invites, ['log-a', 'log-b'])).toBeUndefined();
   });
 
-  it('handles empty logs', () => {
+  test('handles empty logs', () => {
     const invites: TestInvite[] = [
       { id: 'empty-null', logs: null, role: Role.Member },
       { id: 'empty-missing', role: Role.Member },

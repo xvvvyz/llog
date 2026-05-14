@@ -16,6 +16,7 @@ export const ComposerForm = ({
   isBusy,
   isOpen,
   isSubmitting,
+  isTextInputDisabled = false,
   isTextareaFocused,
   logColor,
   filePreview,
@@ -37,6 +38,7 @@ export const ComposerForm = ({
   isBusy: boolean;
   isOpen: boolean;
   isSubmitting: boolean;
+  isTextInputDisabled?: boolean;
   isTextareaFocused: boolean;
   logColor?: string;
   filePreview: React.ReactNode;
@@ -52,7 +54,9 @@ export const ComposerForm = ({
   text: string;
   toolbar: React.ReactNode;
 }) => {
-  const shouldAutoFocus = Platform.OS !== 'web' && autoFocusOnNative;
+  const shouldAutoFocus =
+    Platform.OS !== 'web' && autoFocusOnNative && !isTextInputDisabled;
+
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
   const isComposerCompact = isTextareaFocused && isVirtualKeyboardVisible;
   const showInputAccessory = !isComposerCompact && !!inputAccessory;
@@ -64,17 +68,23 @@ export const ComposerForm = ({
   }, [isOpen, onTextareaFocusChange]);
 
   const handleTextareaFocus = React.useCallback(() => {
+    if (isTextInputDisabled) return;
     onTextareaFocusChange(true);
-  }, [onTextareaFocusChange]);
+  }, [isTextInputDisabled, onTextareaFocusChange]);
 
   const handleTextareaBlur = React.useCallback(
     (event: unknown) => {
+      if (isTextInputDisabled) {
+        onTextareaFocusChange(false);
+        return;
+      }
+
       const rawText = readTextareaBlurText(event, text);
       const nextText = rawText.trim();
       if (nextText !== rawText || nextText !== text) onChangeText(nextText);
       onTextareaFocusChange(false);
     },
-    [onChangeText, onTextareaFocusChange, text]
+    [isTextInputDisabled, onChangeText, onTextareaFocusChange, text]
   );
 
   return (
@@ -96,10 +106,12 @@ export const ComposerForm = ({
               onChangeText={onChangeText}
               onFocus={handleTextareaFocus}
               placeholder={placeholder}
+              readOnly={isTextInputDisabled}
               size="sm"
               value={text}
               className={cn(
                 'border-0 bg-transparent',
+                isTextInputDisabled && 'opacity-50',
                 showInputAction && 'pr-32'
               )}
             />

@@ -25,6 +25,12 @@ describe('getFileSourceUri', () => {
       fileUriToSrcShared.getFileSourceUri({ assetKey: 'records/file.jpg' })
     ).toBe('records/file.jpg');
 
+    expect(
+      fileUriToSrcShared.getFileSourceUri({
+        assetKey: 'cf-image:https://imagedelivery.net/account/image-id/public',
+      })
+    ).toBe('https://imagedelivery.net/account/image-id/public');
+
     expect(fileUriToSrcShared.getFileSourceUri({})).toBeNull();
   });
 });

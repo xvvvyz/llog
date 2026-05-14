@@ -21,6 +21,8 @@ type EmptyStateProps = {
   invites: ReturnType<typeof useTeamInvites>['invites'];
   logId: string;
   members: ReturnType<typeof useTeamMembers>['members'];
+  networkActionsEnabled?: boolean;
+  showManagerActions?: boolean;
   teamId: string;
 };
 
@@ -29,6 +31,8 @@ export const EmptyState = ({
   invites,
   logId,
   members,
+  networkActionsEnabled = true,
+  showManagerActions = canManage,
   teamId,
 }: EmptyStateProps) => {
   const logColor = useLogColor({ id: logId });
@@ -69,6 +73,7 @@ export const EmptyState = ({
   }, [getOrCreateLink]);
 
   const handleInvite = React.useCallback(async () => {
+    if (!networkActionsEnabled) return;
     setIsInviteLoading(true);
 
     try {
@@ -81,14 +86,15 @@ export const EmptyState = ({
     } finally {
       setIsInviteLoading(false);
     }
-  }, [getOrCreateInvite, sheetManager]);
+  }, [getOrCreateInvite, networkActionsEnabled, sheetManager]);
 
   return (
     <View className="flex-1 mx-auto max-w-52 w-full px-3 py-8 gap-3 justify-center">
-      {canManage ? (
+      {showManagerActions ? (
         <>
           <Button
             className="justify-between"
+            disabled={!canManage}
             onPress={() => sheetManager.open('log-edit', logId)}
             size="xs"
             variant="secondary"
@@ -100,6 +106,7 @@ export const EmptyState = ({
           {hasMembers && (
             <Button
               className="justify-between"
+              disabled={!networkActionsEnabled}
               onPress={() => sheetManager.open('log-members', logId)}
               size="xs"
               variant="secondary"
@@ -111,6 +118,7 @@ export const EmptyState = ({
           )}
           <Button
             className="justify-between"
+            disabled={!networkActionsEnabled || isInviteLoading}
             onPress={handleInvite}
             size="xs"
             variant="secondary"
@@ -127,10 +135,12 @@ export const EmptyState = ({
       ) : null}
       <Button
         className="active:opacity-90 web:hover:opacity-90"
-        onPress={() => sheetManager.open('record-create', logId)}
         size="xs"
         style={{ backgroundColor: logColor.default }}
         wrapperClassName="w-32 self-center"
+        onPress={() =>
+          sheetManager.open('record-create', logId, undefined, { teamId })
+        }
       >
         <Text className="text-white">Record</Text>
       </Button>

@@ -37,7 +37,7 @@ const createDb = () =>
     },
   }) as Parameters<typeof reactions.buildAddReactionTransactions>[0]['db'];
 
-describe('reaction emoji helpers', () => {
+describe('reaction emoji', () => {
   test('normalizes emoji', () => {
     const [defaultEmoji, fireEmoji] = reactions.REACTION_EMOJIS;
     expect(reactions.isReactionEmoji(fireEmoji)).toBe(true);

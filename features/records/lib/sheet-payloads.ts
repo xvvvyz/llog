@@ -7,9 +7,24 @@ export const RECORD_LINK_ATTACHMENTS_SHEET =
 export const RECORD_LINK_EDITOR_SHEET =
   'record-link-editor' satisfies SheetName;
 
+type LinkSnapshot = {
+  id: string;
+  label: string;
+  localStatus?: 'error' | 'pending';
+  order: number;
+  teamId: string;
+  url: string;
+};
+
 export type RecordSheetParent =
-  | { id: string; type: 'record' }
-  | { id: string; recordId: string; type: 'reply' };
+  | { id: string; links?: LinkSnapshot[]; teamId?: string; type: 'record' }
+  | {
+      id: string;
+      links?: LinkSnapshot[];
+      recordId: string;
+      teamId?: string;
+      type: 'reply';
+    };
 
 type RecordLinkAttachmentsSheetPayload = { parent: RecordSheetParent };
 

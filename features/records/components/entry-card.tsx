@@ -23,6 +23,7 @@ export const EntryCard = ({
   accentColor,
   audioMedia,
   canAnalyzeAudio,
+  canOpenReply = true,
   canUnpinRecord,
   className,
   documentFiles,
@@ -30,6 +31,7 @@ export const EntryCard = ({
   links,
   logId,
   logName,
+  networkActionsEnabled = true,
   numberOfLines,
   onDoubleTapReaction,
   onOpenReply,
@@ -68,6 +70,7 @@ export const EntryCard = ({
         <EntryMenuContent
           accentColor={accentColor}
           authorId={record.author?.id}
+          isLocalPending={!!record.localStatus}
           isPinned={'isPinned' in record ? !!record.isPinned : undefined}
           logId={logId}
           recordId={recordId}
@@ -171,6 +174,7 @@ export const EntryCard = ({
       <ReactionsRow
         accentColor={accentColor}
         className="-mt-1 pb-3 px-3 gap-3"
+        disabled={!networkActionsEnabled}
         logId={logId}
         onDoubleTapReaction={onDoubleTapReaction}
         record={record}
@@ -181,6 +185,7 @@ export const EntryCard = ({
             <View className="flex-row gap-1.5 items-center self-end">
               {record.replies.length > 0 && (
                 <Button
+                  disabled={!!record.localStatus}
                   onPress={() => openRecordDetail(recordId)}
                   size="xs"
                   variant="ghost"
@@ -193,6 +198,7 @@ export const EntryCard = ({
               )}
               <Button
                 className="w-8 px-0"
+                disabled={!canOpenReply}
                 onPress={onOpenReply}
                 size="xs"
                 variant="ghost"

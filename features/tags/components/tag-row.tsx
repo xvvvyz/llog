@@ -16,6 +16,7 @@ import { View } from 'react-native';
 
 export const TagRow = ({
   canManageColor,
+  canSort = true,
   canToggle = true,
   canManageDefinitions = true,
   color,
@@ -26,6 +27,7 @@ export const TagRow = ({
   onColorChange,
 }: {
   canManageColor?: boolean;
+  canSort?: boolean;
   canToggle?: boolean;
   canManageDefinitions?: boolean;
   color: number;
@@ -51,6 +53,7 @@ export const TagRow = ({
           <SortableSheetDragHandle
             className="h-10 w-10"
             contentClassName="h-10 w-10"
+            disabled={!canSort}
           />
         )}
         {canEditColor ? (

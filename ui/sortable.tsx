@@ -72,6 +72,7 @@ export function SortableGrid<T>({
 type SortableDragHandleProps = {
   className?: string;
   contentClassName?: string;
+  disabled?: boolean;
   iconClassName?: string;
   iconSize?: number;
 };
@@ -79,40 +80,53 @@ type SortableDragHandleProps = {
 export const SortableDragHandle = ({
   className,
   contentClassName,
+  disabled = false,
   iconClassName,
   iconSize,
 }: SortableDragHandleProps) => {
   const sheetDragLock = sheetDrag.useSheetDragLock();
 
+  const content = (
+    <View
+      className={cn(
+        'h-full w-full items-center justify-center',
+        contentClassName
+      )}
+    >
+      <Icon
+        className={iconClassName ?? 'text-placeholder'}
+        icon={DotsSixVertical}
+        size={iconSize}
+      />
+    </View>
+  );
+
   return (
     <View
-      {...sheetDrag.SHEET_SORTABLE_DRAG_HANDLE_PROPS}
-      className={cn('cursor-grab items-center justify-center', className)}
-      onTouchCancel={sheetDragLock.unlock}
-      onTouchEnd={sheetDragLock.unlock}
-      onTouchStart={sheetDragLock.lock}
+      {...(disabled ? {} : sheetDrag.SHEET_SORTABLE_DRAG_HANDLE_PROPS)}
+      onTouchCancel={disabled ? undefined : sheetDragLock.unlock}
+      onTouchEnd={disabled ? undefined : sheetDragLock.unlock}
+      onTouchStart={disabled ? undefined : sheetDragLock.lock}
+      className={cn(
+        'items-center justify-center',
+        disabled ? 'cursor-default opacity-50' : 'cursor-grab',
+        className
+      )}
     >
-      <Sortable.Handle>
-        <Sortable.Touchable
-          failDistance={9999}
-          gestureMode="simultaneous"
-          onTouchesDown={sheetDragLock.lock}
-          onTouchesUp={sheetDragLock.unlock}
-        >
-          <View
-            className={cn(
-              'h-full w-full items-center justify-center',
-              contentClassName
-            )}
+      {disabled ? (
+        content
+      ) : (
+        <Sortable.Handle>
+          <Sortable.Touchable
+            failDistance={9999}
+            gestureMode="simultaneous"
+            onTouchesDown={sheetDragLock.lock}
+            onTouchesUp={sheetDragLock.unlock}
           >
-            <Icon
-              className={iconClassName ?? 'text-placeholder'}
-              icon={DotsSixVertical}
-              size={iconSize}
-            />
-          </View>
-        </Sortable.Touchable>
-      </Sortable.Handle>
+            {content}
+          </Sortable.Touchable>
+        </Sortable.Handle>
+      )}
     </View>
   );
 };

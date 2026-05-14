@@ -53,17 +53,18 @@ export const useTagSheetController = ({
       tags,
     });
 
-  const { getSelected, setSelected } = useOptimisticSelection({
-    onChange: React.useCallback(
-      async (tagId: string, selected: boolean) => {
-        if (!canToggleTags) return;
-        await onToggleTag(tagId, selected);
-      },
-      [canToggleTags, onToggleTag]
-    ),
-    scopeKey,
-    selectedIds: optimisticSelectedIds,
-  });
+  const { getSelected, setOptimisticSelected, setSelected } =
+    useOptimisticSelection({
+      onChange: React.useCallback(
+        async (tagId: string, selected: boolean) => {
+          if (!canToggleTags) return;
+          await onToggleTag(tagId, selected);
+        },
+        [canToggleTags, onToggleTag]
+      ),
+      scopeKey,
+      selectedIds: optimisticSelectedIds,
+    });
 
   const handleSubmitTag = React.useCallback(() => {
     if (!query || !canToggleTags || tags.isLoading) return;
@@ -80,6 +81,7 @@ export const useTagSheetController = ({
     const pendingTag = buildPendingTag({ id: tagId, name: query, order });
     if (!pendingTag) return;
     setPendingCreatedTag(pendingTag);
+    setOptimisticSelected(tagId, true);
     void onCreateTag({ id: tagId, name: query });
     setRawQuery('');
   }, [
@@ -90,6 +92,7 @@ export const useTagSheetController = ({
     onCreateTag,
     query,
     queryExistingTagId,
+    setOptimisticSelected,
     setSelected,
     tags.isLoading,
   ]);

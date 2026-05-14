@@ -18,9 +18,8 @@ export const useTagSheetState = ({
   React.useEffect(() => {
     if (!pendingCreatedTag) return;
     if (!tags.data.some((tag) => tag.id === pendingCreatedTag.id)) return;
-    if (!selectedIds.has(pendingCreatedTag.id)) return;
     setPendingCreatedTag(null);
-  }, [pendingCreatedTag, selectedIds, setPendingCreatedTag, tags.data]);
+  }, [pendingCreatedTag, setPendingCreatedTag, tags.data]);
 
   const tagsWithPending = React.useMemo(() => {
     if (!pendingCreatedTag) return tags.data;
@@ -52,11 +51,9 @@ export const useTagSheetState = ({
     [query, tagsWithPending]
   );
 
-  const optimisticSelectedIds = React.useMemo(() => {
-    const ids = new Set(selectedIds);
-    if (pendingCreatedTag) ids.add(pendingCreatedTag.id);
-    return ids;
-  }, [pendingCreatedTag, selectedIds]);
-
-  return { optimisticSelectedIds, queryExistingTagId, visibleTags };
+  return {
+    optimisticSelectedIds: selectedIds,
+    queryExistingTagId,
+    visibleTags,
+  };
 };

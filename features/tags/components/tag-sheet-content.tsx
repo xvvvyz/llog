@@ -126,6 +126,7 @@ export const TagSheetContent = ({
                 <TagRow
                   canManageColor={canManageColor}
                   canManageDefinitions={canManageDefinitions}
+                  canSort={sortEnabled}
                   canToggle={canToggleTags}
                   color={tag.color}
                   id={tag.id}

@@ -16,6 +16,7 @@ import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 
 export const Reactions = ({
   color,
+  disabled,
   leading,
   logId,
   reactions,
@@ -24,6 +25,7 @@ export const Reactions = ({
   replyId,
 }: {
   color?: string;
+  disabled?: boolean;
   leading?: React.ReactNode;
   logId?: string;
   reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
@@ -98,11 +100,12 @@ export const Reactions = ({
               >
                 <Button
                   className="rounded-lg gap-1.5"
+                  disabled={disabled}
                   size="xs"
                   variant="ghost"
                   wrapperClassName="rounded-lg"
                   onPress={() => {
-                    if (!teamId) return;
+                    if (disabled || !teamId) return;
 
                     toggleReaction({
                       emoji: reactionEmoji,

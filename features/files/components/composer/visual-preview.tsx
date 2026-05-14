@@ -1,14 +1,16 @@
 import { PendingVideoPreview } from '@/features/files/components/composer/pending-video-preview';
 import { PreviewImage } from '@/features/files/components/composer/preview-image';
+import { isLocalFileSourceUri } from '@/features/files/lib/offline-availability';
 import type * as fileComposer from '@/features/files/types/composer';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import * as Sortable from '@/ui/sortable';
 import { Spinner } from '@/ui/spinner';
-import { X } from 'phosphor-react-native';
+import { WifiSlash, X } from 'phosphor-react-native';
 import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, type GestureResponderEvent } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 
 const getItemOrderKey = (items: fileComposer.VisualPreviewItem[]) =>
@@ -19,7 +21,16 @@ const getVisualItemKey = (item: fileComposer.VisualPreviewItem) => item.id;
 const areOrderKeysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((id, index) => id === b[index]);
 
+const UnavailableVisualOverlay = () => (
+  <View className="absolute inset-0 z-[6] pointer-events-none items-center justify-center">
+    <View className="size-8 border-continuous rounded-full bg-background/50 items-center justify-center">
+      <Icon className="text-muted-foreground" icon={WifiSlash} size={16} />
+    </View>
+  </View>
+);
+
 export const VisualPreview = ({
+  actionsDisabled,
   autoPlayPendingVideoId,
   onDeleteFile,
   onOpenVisual,
@@ -28,6 +39,7 @@ export const VisualPreview = ({
   showBottomBorder,
   visualItems,
 }: {
+  actionsDisabled?: boolean;
   autoPlayPendingVideoId?: string;
   onDeleteFile: (fileId: string) => void;
   onOpenVisual: (fileId: string) => void;
@@ -36,6 +48,7 @@ export const VisualPreview = ({
   showBottomBorder?: boolean;
   visualItems: fileComposer.VisualPreviewItem[];
 }) => {
+  const connectivity = useConnectivity();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
 
   const [localOrderIds, setLocalOrderIds] = React.useState<string[] | null>(
@@ -61,7 +74,10 @@ export const VisualPreview = ({
     ];
   }, [localOrderIds, visualItems]);
 
-  const canSort = !!onReorderVisualItems && displayedVisualItems.length > 1;
+  const canSort =
+    !!onReorderVisualItems &&
+    !actionsDisabled &&
+    displayedVisualItems.length > 1;
 
   React.useEffect(() => {
     setLocalOrderIds((current) => {
@@ -87,7 +103,6 @@ export const VisualPreview = ({
 
   React.useEffect(() => {
     if (!localOrderIds || !onReorderVisualItems) return;
-    if (displayedVisualItems.some((item) => item.pending)) return;
     const orderKey = getItemOrderKey(displayedVisualItems);
     if (lastPersistedOrderKeyRef.current === orderKey) return;
     lastPersistedOrderKeyRef.current = orderKey;
@@ -102,12 +117,6 @@ export const VisualPreview = ({
       const orderedItems = params.data;
       const orderKey = getItemOrderKey(orderedItems);
       setLocalOrderIds(orderedItems.map((item) => item.id));
-
-      if (orderedItems.some((item) => item.pending)) {
-        lastPersistedOrderKeyRef.current = null;
-        return;
-      }
-
       lastPersistedOrderKeyRef.current = orderKey;
       onReorderVisualItems?.(orderedItems);
     },
@@ -117,12 +126,30 @@ export const VisualPreview = ({
   if (!displayedVisualItems.length) return null;
 
   const renderItem = (item: fileComposer.VisualPreviewItem) => {
-    const canDragItem = canSort && !item.pending;
+    const canDragItem = canSort;
+    const sourceUri = item.localUri ?? item.uri;
+
+    const isUnavailableOffline =
+      connectivity.isOffline && !isLocalFileSourceUri(sourceUri);
+
+    const canOpenItem =
+      !!sourceUri && (!connectivity.isOffline || !isUnavailableOffline);
+
+    const handleDeletePress = (event: GestureResponderEvent) => {
+      event.stopPropagation();
+      onDeleteFile(item.id);
+    };
 
     return (
       <View key={item.id} className="relative size-16">
         {item.pending ? (
-          <View className="flex-1 overflow-hidden border-continuous rounded-lg bg-border cursor-default">
+          <Pressable
+            className="flex-1 overflow-hidden border-continuous rounded-lg bg-border"
+            disabled={!canOpenItem}
+            onPress={() => {
+              if (canOpenItem) onOpenVisual(item.id);
+            }}
+          >
             <View className="flex-1 bg-card">
               {item.type === 'video' ? (
                 <PendingVideoPreview
@@ -139,22 +166,26 @@ export const VisualPreview = ({
                   wrapperClassName="bg-card"
                 />
               )}
-              <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
-                <Spinner size="xs" />
-              </View>
+              {item.status === 'uploading' && (
+                <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
+                  <Spinner size="xs" />
+                </View>
+              )}
             </View>
-          </View>
+          </Pressable>
         ) : (
           <Pressable
             className="flex-1 overflow-hidden border-continuous rounded-lg bg-border"
-            onPress={() => onOpenVisual(item.id)}
+            disabled={!canOpenItem}
+            onPress={() => {
+              if (canOpenItem) onOpenVisual(item.id);
+            }}
           >
             <PreviewImage item={item} onRemoteReady={onRemoteReady} />
           </Pressable>
         )}
-        {(canDragItem || !item.pending) && (
-          <View className="absolute inset-x-0 top-0 z-10 h-8 rounded-t-lg bg-gradient-to-b from-background/60 to-background/0 pointer-events-none" />
-        )}
+        {isUnavailableOffline && <UnavailableVisualOverlay />}
+        <View className="absolute inset-x-0 top-0 z-10 h-8 rounded-t-lg bg-gradient-to-b from-background/60 to-background/0 pointer-events-none" />
         {canDragItem && (
           <Sortable.SortableDragHandle
             className="absolute left-0 top-0 z-20 size-6"
@@ -162,14 +193,21 @@ export const VisualPreview = ({
             iconSize={16}
           />
         )}
-        {!item.pending && (
-          <Pressable
-            className="absolute right-0 top-0 z-20 size-6 items-center justify-center"
-            onPress={() => onDeleteFile(item.id)}
-          >
-            <Icon className="text-foreground" icon={X} size={16} />
-          </Pressable>
-        )}
+        <Pressable
+          onPress={handleDeletePress}
+          className={cn(
+            'absolute right-0 top-0 z-20 size-6 items-center justify-center',
+            (actionsDisabled ||
+              (!item.pending && !connectivity.canRunNetworkActions)) &&
+              'opacity-50'
+          )}
+          disabled={
+            actionsDisabled ||
+            (!item.pending && !connectivity.canRunNetworkActions)
+          }
+        >
+          <Icon className="text-foreground" icon={X} size={16} />
+        </Pressable>
       </View>
     );
   };

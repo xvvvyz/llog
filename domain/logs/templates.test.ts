@@ -34,18 +34,18 @@ describe('getTemplateTagChanges', () => {
 
 describe('resolveCopyTemplateTagsForTargetLog', () => {
   const sourceTags = [
-    { color: 2, name: 'Foo' },
-    { color: 4, name: 'Bar' },
-    { color: 5, name: ' foo ' },
+    { color: 2, name: 'Ideas' },
+    { color: 4, name: 'Reading' },
+    { color: 5, name: ' ideas ' },
   ];
 
   test('links matching tags', () => {
     expect(
       templates.resolveCopyTemplateTagsForTargetLog({
         sourceTags,
-        targetTags: [{ id: 'target-foo', name: 'foo' }],
+        targetTags: [{ id: 'target-ideas', name: 'ideas' }],
       })
-    ).toEqual({ linkedTagIds: ['target-foo'], missingTags: [] });
+    ).toEqual({ linkedTagIds: ['target-ideas'], missingTags: [] });
   });
 
   test('skips missing tags', () => {
@@ -62,27 +62,27 @@ describe('resolveCopyTemplateTagsForTargetLog', () => {
       templates.resolveCopyTemplateTagsForTargetLog({
         createMissingTags: true,
         sourceTags,
-        targetTags: [{ id: 'target-foo', name: 'foo' }],
+        targetTags: [{ id: 'target-ideas', name: 'ideas' }],
       })
     ).toEqual({
-      linkedTagIds: ['target-foo'],
-      missingTags: [{ color: 4, name: 'Bar' }],
+      linkedTagIds: ['target-ideas'],
+      missingTags: [{ color: 4, name: 'Reading' }],
     });
   });
 });
 
 describe('filterTemplatesByQuery', () => {
   const items = [
-    { tags: [{ name: 'Foo' }], text: 'Lorem ipsum' },
-    { tags: [{ name: 'Bar' }], text: 'Foo bar' },
+    { tags: [{ name: 'Ideas' }], text: 'Morning pages' },
+    { tags: [{ name: 'Reading' }], text: 'Book notes' },
   ];
 
   test('matches templates', () => {
-    expect(templates.filterTemplatesByQuery(items, 'LOREM')).toEqual([
+    expect(templates.filterTemplatesByQuery(items, 'MORNING')).toEqual([
       items[0],
     ]);
 
-    expect(templates.filterTemplatesByQuery(items, 'bar')).toEqual([items[1]]);
+    expect(templates.filterTemplatesByQuery(items, 'book')).toEqual([items[1]]);
   });
 
   test('keeps blank queries', () => {

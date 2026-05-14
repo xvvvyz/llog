@@ -1,14 +1,17 @@
 import type * as pickedFiles from '@/features/files/lib/picked';
 import type { FileItem } from '@/features/files/types/file';
+import type { QueuedAttachmentStatus } from '@/features/offline/types';
 import type * as React from 'react';
 
 export interface PendingUpload {
+  duration?: number;
   height?: number;
   id: string;
   mimeType?: string;
   name?: string;
   order: number;
   size?: number;
+  status?: QueuedAttachmentStatus;
   type: pickedFiles.PickedFileType;
   uri: string;
   width?: number;
@@ -24,6 +27,7 @@ export interface VisualPreviewItem {
   localUri?: string;
   order?: number;
   pending: boolean;
+  status?: QueuedAttachmentStatus;
   thumbnailUri?: string | null;
   type: 'image' | 'video';
   uri?: string | null;
@@ -31,6 +35,7 @@ export interface VisualPreviewItem {
 }
 
 export interface UseFileComposerOptions {
+  actionsDisabled?: boolean;
   replyId?: string;
   isOpen: boolean;
   extraAttachmentCount?: number;

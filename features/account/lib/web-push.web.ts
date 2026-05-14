@@ -1,4 +1,5 @@
 import type * as webPushTypes from '@/features/account/types/web-push';
+import { requestAppResourceCache } from '@/features/offline/service-worker-cache';
 import { apiOrThrow } from '@/lib/api';
 
 export type {
@@ -103,7 +104,9 @@ export const registerWebPushServiceWorker = async () => {
     registrationPromise = (async () => {
       try {
         await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-        return await navigator.serviceWorker.ready;
+        const registration = await navigator.serviceWorker.ready;
+        requestAppResourceCache(registration);
+        return registration;
       } catch (error) {
         registrationPromise = null;
         throw error;

@@ -15,33 +15,22 @@ export const createRecordDraft = async ({
   if (!logId) return;
   const resolved = await resolveProfileAndTeam(profileId, teamId);
   if (!resolved) return;
-
-  const { data } = await db.queryOnce({
-    records: {
-      $: {
-        fields: ['id'],
-        where: recordIdentity.getDraftRecordLookupWhere({
-          authorId: resolved.profileId,
-          logId,
-        }),
-      },
-    },
-  });
-
-  if (data.records?.[0]?.id) return data.records[0].id;
   const recordId = id();
 
   await db.transact(
     db.tx.records[recordId]
-      .update({
-        ...recordIdentity.getRecordIdentityFields({
-          authorId: resolved.profileId,
-          logId,
-        }),
-        date: new Date().toISOString(),
-        isDraft: true,
-        teamId: resolved.teamId,
-      })
+      .update(
+        {
+          ...recordIdentity.getRecordIdentityFields({
+            authorId: resolved.profileId,
+            logId,
+          }),
+          date: new Date().toISOString(),
+          isDraft: true,
+          teamId: resolved.teamId,
+        },
+        { upsert: true }
+      )
       .link({ author: resolved.profileId, log: logId })
   );
 

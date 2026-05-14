@@ -18,6 +18,7 @@ import {
   Play,
   Rewind,
   Speedometer,
+  WifiSlash,
 } from 'phosphor-react-native';
 
 const AUDIO_SEEK_STEP_SECONDS = 5;
@@ -32,6 +33,7 @@ export type AudioTransportControls = {
   handleScrubMove: (seconds: number) => void;
   handleScrubStart: () => void;
   isDisabled: boolean;
+  isUnavailableOffline: boolean;
   isPlaying: boolean;
   pendingPlaybackTime: number | null;
   playerDuration: number;
@@ -89,6 +91,7 @@ export const AudioTransport = ({
     handleScrubMove,
     handleScrubStart,
     isDisabled,
+    isUnavailableOffline,
     isPlaying,
     playerDuration,
     progress,
@@ -160,7 +163,11 @@ export const AudioTransport = ({
         variant="ghost"
         wrapperClassName={controlButtonWrapperClassName}
       >
-        <Icon icon={isPlaying ? Pause : Play} size={iconSize} />
+        <Icon
+          icon={isUnavailableOffline ? WifiSlash : isPlaying ? Pause : Play}
+          size={iconSize}
+          weight={!isUnavailableOffline && !isPlaying ? 'fill' : 'regular'}
+        />
       </Button>
       <View
         className={cn(
@@ -184,9 +191,11 @@ export const AudioTransport = ({
               style={{ width: `${progress * 100}%` }}
             />
           </View>
-          <GestureDetector gesture={gesture}>
-            <Animated.View className="absolute -bottom-2 -top-2 left-0 right-0" />
-          </GestureDetector>
+          {!isDisabled && (
+            <GestureDetector gesture={gesture}>
+              <Animated.View className="absolute -bottom-2 -top-2 left-0 right-0" />
+            </GestureDetector>
+          )}
         </View>
         <Text
           className={cn(

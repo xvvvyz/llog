@@ -1,7 +1,9 @@
 import { useExclusiveFilePlayback } from '@/features/files/hooks/use-exclusive-media-playback';
 import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import * as audioPlaybackRate from '@/features/files/lib/media-playback-rate';
+import { isLocalFileSourceUri } from '@/features/files/lib/offline-availability';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { clamp } from '@/lib/clamp';
 import { positiveDurationSeconds } from '@/lib/duration';
 import * as React from 'react';
@@ -78,6 +80,7 @@ const useWebAudioMetadataDuration = (
 export const useAudioPlayerController = ({
   active = true,
   autoPlayKey,
+  disabled = false,
   durationSeconds,
   onDidFinish,
   onPause,
@@ -87,8 +90,14 @@ export const useAudioPlayerController = ({
   assetKey,
   uri,
 }: AudioPlayerProps) => {
+  const connectivity = useConnectivity();
+  const sourceUri = fileUriSources.getFileSourceUri({ assetKey, uri });
+
+  const sourceUnavailableOffline =
+    connectivity.isOffline && !isLocalFileSourceUri(sourceUri);
+
   const src = fileUriSources.useFileUriToSrc(
-    fileUriSources.getFileSourceUri({ assetKey, uri })
+    sourceUnavailableOffline ? null : sourceUri
   );
 
   const player = useAudioPlayer(src, { updateInterval: 50 });
@@ -350,7 +359,7 @@ export const useAudioPlayerController = ({
 
   const playFrom = React.useCallback(
     async (seconds: number) => {
-      if (!src) return;
+      if (!src || sourceUnavailableOffline) return;
       const startTime = clamp(seconds, 0, playerDuration);
       const seekId = seekRequestIdRef.current + 1;
       seekRequestIdRef.current = seekId;
@@ -384,6 +393,7 @@ export const useAudioPlayerController = ({
       requestPlayback,
       settlePendingSeek,
       shouldSettleSeekAfterNativeCall,
+      sourceUnavailableOffline,
       src,
     ]
   );
@@ -402,13 +412,20 @@ export const useAudioPlayerController = ({
   }, [active, autoPlayKey, playFrom]);
 
   const handlePlay = React.useCallback(async () => {
-    if (!src) return;
+    if (!src || sourceUnavailableOffline) return;
 
     const startTime =
       status.didJustFinish || displayTime >= playerDuration ? 0 : displayTime;
 
     await playFrom(startTime);
-  }, [displayTime, playerDuration, playFrom, src, status.didJustFinish]);
+  }, [
+    displayTime,
+    playerDuration,
+    playFrom,
+    sourceUnavailableOffline,
+    src,
+    status.didJustFinish,
+  ]);
 
   const handlePause = React.useCallback(() => {
     seekRequestIdRef.current += 1;
@@ -420,6 +437,11 @@ export const useAudioPlayerController = ({
     player.pause();
     onPause?.();
   }, [onPause, player]);
+
+  React.useEffect(() => {
+    if (!disabled || !status.playing) return;
+    handlePause();
+  }, [disabled, handlePause, status.playing]);
 
   const togglePlayback = React.useCallback(() => {
     if (isPlaying) handlePause();
@@ -470,24 +492,31 @@ export const useAudioPlayerController = ({
 
   const seekBy = React.useCallback(
     (secondsDelta: number) => {
-      if (!src || playerDuration <= 0) return;
+      if (!src || sourceUnavailableOffline || playerDuration <= 0) return;
       const baseTime = pendingSeekRef.current?.seconds ?? displayTime;
       const resumePlayback = isPlaying;
       isScrubbingRef.current = false;
       wasPlayingBeforeScrub.current = false;
       void seekToTime(baseTime + secondsDelta, resumePlayback);
     },
-    [displayTime, isPlaying, playerDuration, seekToTime, src]
+    [
+      displayTime,
+      isPlaying,
+      playerDuration,
+      seekToTime,
+      sourceUnavailableOffline,
+      src,
+    ]
   );
 
   const seekTo = React.useCallback(
     (seconds: number, resumePlayback = isPlaying) => {
-      if (!src || playerDuration <= 0) return;
+      if (!src || sourceUnavailableOffline || playerDuration <= 0) return;
       isScrubbingRef.current = false;
       wasPlayingBeforeScrub.current = false;
       void seekToTime(seconds, resumePlayback);
     },
-    [isPlaying, playerDuration, seekToTime, src]
+    [isPlaying, playerDuration, seekToTime, sourceUnavailableOffline, src]
   );
 
   const startScrub = React.useCallback(() => {
@@ -527,7 +556,8 @@ export const useAudioPlayerController = ({
     handleScrubEnd,
     handleScrubMove,
     handleScrubStart: startScrub,
-    isDisabled: !src,
+    isDisabled: disabled || !src || sourceUnavailableOffline,
+    isUnavailableOffline: sourceUnavailableOffline,
     isPlaying,
     pause: handlePause,
     pendingPlaybackTime,

@@ -4,6 +4,7 @@ import { Item } from '@/features/activity/components/item';
 import * as grouping from '@/features/activity/lib/group-activities';
 import { markActivitiesRead } from '@/features/activity/mutations/mark-activities-read';
 import { useActivities } from '@/features/activity/queries/use-activities';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { cn } from '@/lib/cn';
 import { Header } from '@/ui/header';
 import { Icon } from '@/ui/icon';
@@ -26,6 +27,7 @@ export default function Activity() {
     manageableTeamIds,
   } = useActivities();
 
+  const connectivity = useConnectivity();
   const profile = useProfile();
   const ui = useUi();
 
@@ -54,11 +56,18 @@ export default function Activity() {
       if (
         profile.id &&
         latestReadActivityDate &&
+        connectivity.canRunNetworkActions &&
         latestReadActivityDate !== ui.activityLastReadDate
       ) {
         markActivitiesRead({ uiId: ui.id, date: latestReadActivityDate });
       }
-    }, [latestReadActivityDate, profile.id, ui.activityLastReadDate, ui.id])
+    }, [
+      connectivity.canRunNetworkActions,
+      latestReadActivityDate,
+      profile.id,
+      ui.activityLastReadDate,
+      ui.id,
+    ])
   );
 
   const renderItem = React.useCallback(

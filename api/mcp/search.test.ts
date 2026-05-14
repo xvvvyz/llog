@@ -11,18 +11,18 @@ describe('getFileMediaMatches', () => {
             name: 'set.mp3',
             tracks: [
               {
-                album: 'Dolor Drive',
-                artists: ['Foo Artist'],
+                album: 'Evening Drive',
+                artists: ['First Artist'],
                 end: 6000,
                 start: 1000,
-                title: 'Foo Bar',
+                title: 'Daily Recap',
               },
             ],
-            transcript: [{ end: 12, start: 10, text: 'lorem ipsum' }],
+            transcript: [{ end: 12, start: 10, text: 'meeting notes' }],
             type: 'audio',
           },
         ],
-        'dolor'
+        'evening'
       )
     ).toEqual([
       {
@@ -30,7 +30,7 @@ describe('getFileMediaMatches', () => {
         fileId: 'file-1',
         fileName: 'set.mp3',
         kind: 'track',
-        snippet: 'Foo Bar - Foo Artist',
+        snippet: 'Daily Recap - First Artist',
         startSeconds: 1,
       },
     ]);
@@ -40,18 +40,18 @@ describe('getFileMediaMatches', () => {
         [
           {
             id: 'file-1',
-            transcript: [{ end: 12, start: 10, text: 'lorem ipsum' }],
+            transcript: [{ end: 12, start: 10, text: 'meeting notes' }],
             type: 'audio',
           },
         ],
-        'ipsum'
+        'notes'
       )
     ).toEqual([
       {
         endSeconds: 12,
         fileId: 'file-1',
         kind: 'transcript',
-        snippet: 'lorem ipsum',
+        snippet: 'meeting notes',
         startSeconds: 10,
       },
     ]);
@@ -63,18 +63,18 @@ describe('getFileMediaMatches', () => {
         [
           {
             id: 'file-1',
-            transcript: [{ end: 2, start: 0, text: 'Fóo bär baz' }],
+            transcript: [{ end: 2, start: 0, text: 'Café résumé note' }],
             type: 'audio',
           },
         ],
-        'foo bar'
+        'cafe resume'
       )
     ).toEqual([
       {
         fileId: 'file-1',
         endSeconds: 2,
         kind: 'transcript',
-        snippet: 'Fóo bär baz',
+        snippet: 'Café résumé note',
         startSeconds: 0,
       },
     ]);
@@ -88,7 +88,7 @@ describe('parseSearchCursor', () => {
     expect(parseSearchCursor('25:3')).toEqual({ offset: 25, skip: 3 });
   });
 
-  test('rejects bad cursors', () => {
+  test('rejects invalid cursors', () => {
     expect(() => parseSearchCursor(' ')).toThrow('Invalid search cursor');
     expect(() => parseSearchCursor(':')).toThrow('Invalid search cursor');
     expect(() => parseSearchCursor('1:')).toThrow('Invalid search cursor');

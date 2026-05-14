@@ -2,6 +2,7 @@ import { ItemContent } from '@/features/activity/components/item-content';
 import { ItemFiles } from '@/features/activity/components/item-files';
 import { QuotedRecord } from '@/features/activity/components/quoted-record';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { openRecordDetail } from '@/features/records/lib/route';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -30,6 +31,7 @@ export const Item = ({
   className?: string;
   group: GroupedActivity;
 }) => {
+  const connectivity = useConnectivity();
   const colorScheme = useColorScheme();
   const first = group.activities[0];
   const actor = first.actor;
@@ -38,7 +40,10 @@ export const Item = ({
   const team = first.team;
   const logColor = log?.color != null ? SPECTRUM[colorScheme][log.color] : null;
   const category = CATEGORY_LABELS[group.type];
-  const isClickable = Boolean(record?.id);
+
+  const canOpenRecord =
+    Boolean(record?.id) && connectivity.canRunNetworkActions;
+
   const uniqueActors = [...new Set(group.activities.map((a) => a.actor?.id))];
 
   const othersCount =
@@ -52,7 +57,8 @@ export const Item = ({
         : category + (log ? ' in' : '');
 
   const handlePress = () => {
-    openRecordDetail(record?.id, first.reply?.id);
+    if (!canOpenRecord) return;
+    openRecordDetail(record?.id, first.reply?.id, { highlight: true });
   };
 
   const fileSource =
@@ -170,6 +176,15 @@ export const Item = ({
     </Card>
   );
 
-  if (!isClickable) return content;
-  return <Pressable onPress={handlePress}>{content}</Pressable>;
+  if (!record?.id) return content;
+
+  return (
+    <Pressable
+      accessibilityState={{ disabled: !canOpenRecord }}
+      disabled={!canOpenRecord}
+      onPress={handlePress}
+    >
+      {content}
+    </Pressable>
+  );
 };

@@ -1,21 +1,22 @@
 import { describe, expect, test } from 'bun:test';
 import * as lookup from '@/features/search/lib/lookup';
 
-describe('search lookup queries', () => {
+describe('lookup', () => {
   test('formats words', () => {
-    expect(lookup.getLogSearchQuery({ name: 'foo' })).toBe('log:foo ');
-    expect(lookup.getTagSearchQuery({ name: 'bar' })).toBe('tag:bar ');
+    expect(lookup.getLogSearchQuery({ name: 'inbox' })).toBe('log:inbox ');
+    expect(lookup.getTagSearchQuery({ name: 'ideas' })).toBe('tag:ideas ');
   });
 
   test('quotes spaces', () => {
-    expect(lookup.getLogSearchQuery({ name: 'foo bar' })).toBe(
-      'log:"foo bar" '
+    expect(lookup.getLogSearchQuery({ name: 'daily notes' })).toBe(
+      'log:"daily notes" '
     );
+
     expect(
       lookup.getRecordTagSearchQuery({
-        log: { name: 'foo bar' },
-        tag: { name: 'baz' },
+        log: { name: 'daily notes' },
+        tag: { name: 'ideas' },
       })
-    ).toBe('log:"foo bar" tag:baz ');
+    ).toBe('log:"daily notes" tag:ideas ');
   });
 });

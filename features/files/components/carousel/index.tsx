@@ -7,7 +7,9 @@ import { useCarouselMediaState } from '@/features/files/hooks/use-carousel-media
 import { useCarouselPreloading } from '@/features/files/hooks/use-carousel-preloading';
 import { useCarouselVideoControls } from '@/features/files/hooks/use-carousel-video-controls';
 import * as carouselHelpers from '@/features/files/lib/carousel';
+import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
 import { FileItem } from '@/features/files/types/file';
+import { useConnectivity } from '@/features/offline/connectivity';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
@@ -60,6 +62,7 @@ export const Carousel = ({
   videoPlaybackRate?: number;
 }) => {
   const insets = useSafeAreaInsets();
+  const connectivity = useConnectivity();
   const carouselRef = React.useRef<ICarouselInstance>(null);
   const localVideoHandleRef = React.useRef<VideoPlayerHandle | null>(null);
   const videoHandleRef = externalVideoHandleRef ?? localVideoHandleRef;
@@ -161,10 +164,36 @@ export const Carousel = ({
   const scrubberBottomOffset = 44 + insets.bottom;
   const activeMedia = files[activeIndexState];
   const isActiveVideo = activeMedia?.type === 'video';
+
+  const isActiveMediaUnavailableOffline =
+    !!activeMedia &&
+    connectivity.isOffline &&
+    !isFileAvailableOffline(activeMedia);
+
   const isOverlaySheetOpen = isTrackSheetOpen || isTranscriptSheetOpen;
 
   const showImageLoadingIndicator =
-    activeMedia?.type === 'image' && isActiveMediaLoading;
+    activeMedia?.type === 'image' &&
+    isActiveMediaLoading &&
+    !isActiveMediaUnavailableOffline;
+
+  React.useEffect(() => {
+    if (!isActiveMediaUnavailableOffline || activeMedia?.type !== 'video') {
+      return;
+    }
+
+    videoHandleRef.current?.pause();
+    setVideoPlaybackIntent(activeMedia.id, false);
+    setIsPlaying(false);
+    resetVideoUiState();
+  }, [
+    activeMedia?.id,
+    activeMedia?.type,
+    isActiveMediaUnavailableOffline,
+    resetVideoUiState,
+    setVideoPlaybackIntent,
+    videoHandleRef,
+  ]);
 
   const shouldShowImageLoadingIndicator = useDelayedTrue(
     showImageLoadingIndicator,
@@ -487,6 +516,9 @@ export const Carousel = ({
           shouldAutoPlay={shouldAutoPlay}
           videoHandleRef={videoHandleRef}
           visibleIndex={activeIndexState}
+          isUnavailableOffline={
+            connectivity.isOffline && !isFileAvailableOffline(item)
+          }
         />
       );
     },
@@ -499,6 +531,7 @@ export const Carousel = ({
       handleVideoTimeChange,
       handleZoomInteractionStateChange,
       handleZoomStateChange,
+      connectivity.isOffline,
       isActiveMediaLoading,
       isMuted,
       setIsPlaying,
@@ -585,6 +618,7 @@ export const Carousel = ({
                 isMuted={isMuted}
                 isPlaying={isPlaying}
                 isSwiping={isSwiping}
+                isUnavailableOffline={isActiveMediaUnavailableOffline}
                 onScrubEnd={commitVideoScrub}
                 onScrubMove={previewVideoScrub}
                 onScrubStart={startVideoScrub}

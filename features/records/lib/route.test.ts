@@ -4,13 +4,14 @@ const push = mock(() => {});
 mock.module('expo-router', () => ({ router: { push } }));
 
 const {
+  getHighlightedRecordDetailHref,
   getLogHref,
   getRecordDetailHref,
   getRecordMediaHref,
   openRecordDetail,
 } = await import('@/features/records/lib/route');
 
-describe('record route helpers', () => {
+describe('record routes', () => {
   beforeEach(() => {
     push.mockClear();
   });
@@ -30,6 +31,14 @@ describe('record route helpers', () => {
   test('opens record routes', () => {
     openRecordDetail('record/id');
     expect(push).toHaveBeenCalledWith('/records/record%2Fid');
+  });
+
+  test('opens highlighted record routes', () => {
+    openRecordDetail('record/id', undefined, { highlight: true });
+
+    expect(push).toHaveBeenCalledWith(
+      getHighlightedRecordDetailHref('record/id')
+    );
   });
 
   test('skips missing record ids', () => {

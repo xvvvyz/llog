@@ -1,4 +1,7 @@
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import { useConnectivity } from '@/features/offline/connectivity';
+import * as outbox from '@/features/offline/outbox-hooks';
+import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments';
 import { AudioSheetContent } from '@/features/records/components/audio-sheet-content';
 import { useAudioRecorder } from '@/features/records/hooks/use-audio-recorder';
 import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
@@ -7,7 +10,9 @@ import { useRecord } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { durationSecondsToMs } from '@/lib/duration';
 import { Sheet } from '@/ui/sheet';
+import { id } from '@instantdb/react-native';
 import * as React from 'react';
+import * as existingUpload from '@/features/files/lib/existing-upload';
 
 type AudioContext = { type: 'record' } | { type: 'reply'; recordId: string };
 
@@ -21,6 +26,7 @@ const parseAudioContext = (context?: string): AudioContext => {
 
 export const RecordAudioSheet = () => {
   const [isUploading, setIsUploading] = React.useState(false);
+  const connectivity = useConnectivity();
   const sheetManager = useSheetManager();
   const recorder = useAudioRecorder();
   const draftId = sheetManager.getId('record-audio');
@@ -46,6 +52,38 @@ export const RecordAudioSheet = () => {
   const record = useRecord({
     id: audioContext.type === 'reply' ? audioContext.recordId : draftId,
   });
+
+  const outboxSnapshot = outbox.useOutbox();
+
+  const audioParent = React.useMemo(
+    () =>
+      draftId
+        ? {
+            parentId: draftId,
+            parentType: audioContext.type,
+            recordId:
+              audioContext.type === 'reply' ? audioContext.recordId : draftId,
+          }
+        : undefined,
+    [audioContext, draftId]
+  );
+
+  const queuedAttachments = React.useMemo(
+    () =>
+      queuedAttachmentUtils.getQueuedAttachmentsForParent(
+        outboxSnapshot.attachments,
+        audioParent
+      ),
+    [audioParent, outboxSnapshot.attachments]
+  );
+
+  const existingFiles = React.useMemo(
+    () =>
+      audioContext.type === 'reply'
+        ? (record.replies.find((reply) => reply.id === draftId)?.files ?? [])
+        : record.files,
+    [audioContext.type, draftId, record.files, record.replies]
+  );
 
   const logColor = useLogColor({ id: record.log?.id });
   const saveColor = record.log?.id ? logColor.default : undefined;
@@ -101,25 +139,141 @@ export const RecordAudioSheet = () => {
     }
   }, [close, hasPermission, isOpen, recorder]);
 
-  const upload = React.useCallback(
+  const uploadQueuedAudio = React.useCallback(
+    async ({
+      duration,
+      fileId,
+      localUri,
+      order,
+    }: {
+      duration?: number;
+      fileId: string;
+      localUri: string;
+      order: number;
+    }) => {
+      const parent = audioParent;
+      if (!parent) return;
+      outbox.setQueuedAttachmentStatus(fileId, 'uploading');
+
+      const markUploaded = async (
+        uploadedFile?: Awaited<
+          ReturnType<typeof existingUpload.getExistingFileForQueuedParent>
+        >
+      ) => {
+        let file = uploadedFile;
+
+        if (!file) {
+          try {
+            file = await existingUpload.getExistingFileForQueuedParent({
+              fileId,
+              parent,
+            });
+          } catch (error) {
+            console.error('Failed to refresh uploaded audio snapshot', error);
+          }
+        }
+
+        outbox.markQueuedAttachmentUploaded(fileId, file);
+      };
+
+      try {
+        const existingFile =
+          await existingUpload.getExistingFileForQueuedParent({
+            fileId,
+            parent,
+          });
+
+        if (existingFile?.id) {
+          await markUploaded(existingFile);
+          return;
+        }
+
+        if (audioContext.type === 'reply') {
+          await uploadReplyFile({
+            audioUri: localUri,
+            replyId: draftId,
+            duration,
+            fileId,
+            order,
+            recordId: audioContext.recordId,
+          });
+        } else {
+          await uploadRecordFile({
+            audioUri: localUri,
+            duration,
+            fileId,
+            order,
+            recordId: draftId,
+          });
+        }
+
+        await markUploaded();
+      } catch (error) {
+        if (existingUpload.isExistingFileIdError(error)) {
+          const existingFile =
+            await existingUpload.getExistingFileForQueuedParent({
+              fileId,
+              parent,
+            });
+
+          if (existingFile?.id) {
+            await markUploaded(existingFile);
+            return;
+          }
+        }
+
+        outbox.setQueuedAttachmentStatus(
+          fileId,
+          'error',
+          error instanceof Error ? error.message : 'Failed to upload audio.'
+        );
+      }
+    },
+    [audioContext, audioParent, draftId]
+  );
+
+  const queueAudio = React.useCallback(
     async (uri: string) => {
       if (!draftId) return;
       const duration = durationSecondsToMs(recorder.duration);
+      const fileId = id();
 
-      if (audioContext.type === 'reply') {
-        await uploadReplyFile({
-          audioUri: uri,
-          replyId: draftId,
+      const order = queuedAttachmentUtils.getNextAttachmentOrder({
+        files: existingFiles,
+        queuedAttachments,
+      });
+
+      const queued = await outbox.queueAudioAttachment({
+        audioUri: uri,
+        duration,
+        fileId,
+        order,
+        parentId: draftId,
+        parentType: audioContext.type,
+        recordId:
+          audioContext.type === 'reply' ? audioContext.recordId : draftId,
+      });
+
+      if (connectivity.canRunNetworkActions) {
+        void uploadQueuedAudio({
           duration,
-          recordId: audioContext.recordId,
+          fileId,
+          localUri: queued.localUri,
+          order,
         });
-      } else {
-        await uploadRecordFile({ audioUri: uri, duration, recordId: draftId });
       }
 
       recorder.reset();
     },
-    [audioContext, draftId, recorder]
+    [
+      audioContext,
+      connectivity.canRunNetworkActions,
+      draftId,
+      existingFiles,
+      queuedAttachments,
+      recorder,
+      uploadQueuedAudio,
+    ]
   );
 
   const handleSave = React.useCallback(async () => {
@@ -136,14 +290,14 @@ export const RecordAudioSheet = () => {
         return;
       }
 
-      await upload(uri);
+      await queueAudio(uri);
       close();
     } catch {
       isClosingRef.current = false;
     } finally {
       setIsUploading(false);
     }
-  }, [close, isUploading, recorder, upload]);
+  }, [close, isUploading, queueAudio, recorder]);
 
   return (
     <Sheet

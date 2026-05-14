@@ -1,34 +1,73 @@
 import { getFileSourceUri } from '@/features/files/lib/file-uri-to-src';
 import * as pickedFiles from '@/features/files/lib/picked';
+import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
+import { useConnectivity } from '@/features/offline/connectivity';
+import * as outbox from '@/features/offline/outbox-hooks';
+import type { QueuedAttachment, QueuedParent } from '@/features/offline/types';
 import { alert } from '@/lib/alert';
 import { id } from '@instantdb/react-native';
 import * as React from 'react';
+import * as existingUpload from '@/features/files/lib/existing-upload';
 
 export const useFileUploadPreviewState = ({
-  fileCount,
+  actionsDisabled,
   onUploadFile,
+  parent,
+  queuedAttachmentsForParent,
   scopeKey,
   visibleFiles,
   visualMedia: visualItems,
 }: Pick<fileComposer.UseFileComposerOptions, 'onUploadFile'> & {
-  fileCount: number;
+  actionsDisabled?: boolean;
+  parent?: QueuedParent;
+  queuedAttachmentsForParent?: QueuedAttachment[];
   scopeKey: string;
   visibleFiles: FileItem[];
   visualMedia: FileItem[];
 }) => {
-  const [pendingUploads, setPendingUploads] = React.useState<
-    fileComposer.PendingUpload[]
-  >([]);
-
   const [localPreviewUris, setLocalPreviewUris] = React.useState<
     Record<string, string>
   >({});
 
+  const [activeUploadIds, setActiveUploadIds] = React.useState(
+    () => new Set<string>()
+  );
+
   const [focusedAudioId, setFocusedAudioId] = React.useState<string | null>(
     null
+  );
+
+  const connectivity = useConnectivity();
+  const unsubmittedQueuedAttachments = outbox.useQueuedAttachments(parent);
+
+  const queuedAttachments =
+    queuedAttachmentsForParent ?? unsubmittedQueuedAttachments;
+
+  const parentRef = React.useRef(parent);
+
+  React.useEffect(() => {
+    parentRef.current = parent;
+  }, [parent]);
+
+  const pendingUploads = React.useMemo(
+    (): fileComposer.PendingUpload[] =>
+      queuedAttachments.map((attachment) => ({
+        height: attachment.height,
+        id: attachment.id,
+        duration: attachment.duration,
+        mimeType: attachment.mimeType,
+        name: attachment.name,
+        order: attachment.order,
+        size: attachment.size,
+        status: attachment.status,
+        type: attachment.type,
+        uri: attachment.localUri,
+        width: attachment.width,
+      })),
+    [queuedAttachments]
   );
 
   const removeLocalPreviewUri = React.useCallback((fileId: string) => {
@@ -45,17 +84,136 @@ export const useFileUploadPreviewState = ({
   }, []);
 
   React.useEffect(() => {
-    setPendingUploads([]);
     setLocalPreviewUris({});
     setFocusedAudioId(null);
+    setActiveUploadIds(new Set());
   }, [scopeKey]);
+
+  const markUploadActive = React.useCallback((fileId: string) => {
+    setActiveUploadIds((current) => new Set(current).add(fileId));
+  }, []);
+
+  const markUploadInactive = React.useCallback((fileId: string) => {
+    setActiveUploadIds((current) => {
+      if (!current.has(fileId)) return current;
+      const next = new Set(current);
+      next.delete(fileId);
+      return next;
+    });
+  }, []);
+
+  const markQueuedAttachmentUploaded = React.useCallback(
+    async (attachment: QueuedAttachment, uploadedFile?: FileItem) => {
+      let file = uploadedFile;
+
+      if (!file) {
+        try {
+          file = await existingUpload.getExistingFileForQueuedParent({
+            fileId: attachment.id,
+            parent: attachment,
+          });
+        } catch (error) {
+          console.error('Failed to refresh uploaded file snapshot', error);
+        }
+      }
+
+      outbox.markQueuedAttachmentUploaded(attachment.id, file);
+    },
+    []
+  );
+
+  const uploadQueuedAttachment = React.useCallback(
+    async (
+      attachment: QueuedAttachment,
+      asset?: pickedFiles.PickedFileAsset
+    ) => {
+      if (activeUploadIds.has(attachment.id)) return;
+      markUploadActive(attachment.id);
+      outbox.setQueuedAttachmentStatus(attachment.id, 'uploading');
+
+      try {
+        const existingFile =
+          await existingUpload.getExistingFileForQueuedParent({
+            fileId: attachment.id,
+            parent: attachment,
+          });
+
+        if (existingFile?.id) {
+          await markQueuedAttachmentUploaded(attachment, existingFile);
+          return;
+        }
+
+        await onUploadFile(
+          asset ?? {
+            fileName: attachment.name,
+            height: attachment.height,
+            mimeType: attachment.mimeType,
+            size: attachment.size,
+            type: attachment.type,
+            uri: attachment.localUri,
+            width: attachment.width,
+          },
+          attachment.id,
+          attachment.order
+        );
+
+        await markQueuedAttachmentUploaded(attachment);
+      } catch (error) {
+        if (existingUpload.isExistingFileIdError(error)) {
+          const existingFile =
+            await existingUpload.getExistingFileForQueuedParent({
+              fileId: attachment.id,
+              parent: attachment,
+            });
+
+          if (existingFile?.id) {
+            await markQueuedAttachmentUploaded(attachment, existingFile);
+            return;
+          }
+        }
+
+        outbox.setQueuedAttachmentStatus(
+          attachment.id,
+          'error',
+          error instanceof Error ? error.message : 'Failed to upload files.'
+        );
+
+        if (connectivity.canRunNetworkActions) {
+          alert({
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Failed to upload files.',
+            title: 'Upload queued',
+          });
+        }
+      } finally {
+        markUploadInactive(attachment.id);
+      }
+    },
+    [
+      activeUploadIds,
+      connectivity.canRunNetworkActions,
+      markQueuedAttachmentUploaded,
+      markUploadActive,
+      markUploadInactive,
+      onUploadFile,
+    ]
+  );
 
   const uploadAssets = React.useCallback(
     (inputAssets: pickedFiles.PickedFileAsset[]) => {
+      if (actionsDisabled) return;
       const assets = inputAssets;
-      if (!assets.length) return;
+      const currentParent = parentRef.current;
+      if (!assets.length || !currentParent) return;
       const fileIds = assets.map(() => id());
-      const baseOrder = fileCount + pendingUploads.length;
+
+      const baseOrder = queuedAttachmentUtils.getNextAttachmentOrder({
+        files: visibleFiles,
+        queuedAttachments,
+      });
+
       let focusedAudioIndex = -1;
 
       for (let i = assets.length - 1; i >= 0; i -= 1) {
@@ -65,21 +223,6 @@ export const useFileUploadPreviewState = ({
       }
 
       if (focusedAudioIndex >= 0) setFocusedAudioId(fileIds[focusedAudioIndex]);
-
-      setPendingUploads((prev) => [
-        ...prev,
-        ...assets.map((asset, i) => ({
-          height: asset.height,
-          id: fileIds[i],
-          mimeType: asset.mimeType ?? undefined,
-          name: asset.fileName ?? undefined,
-          order: baseOrder + i,
-          size: asset.size ?? undefined,
-          type: asset.type,
-          uri: asset.uri,
-          width: asset.width,
-        })),
-      ]);
 
       setLocalPreviewUris((prev) => ({
         ...prev,
@@ -103,12 +246,18 @@ export const useFileUploadPreviewState = ({
       const run = async (items: typeof queue) => {
         for (const { asset, fileId, order } of items) {
           try {
-            await onUploadFile(asset, fileId, order);
-          } catch (error) {
-            setPendingUploads((prev) =>
-              prev.filter((item) => item.id !== fileId)
-            );
+            const attachment = await outbox.queuePickedAttachment({
+              ...currentParent,
+              asset,
+              fileId,
+              order,
+            });
 
+            if (connectivity.canRunNetworkActions) {
+              await uploadQueuedAttachment(attachment, asset);
+            }
+          } catch (error) {
+            void outbox.removeQueuedAttachment(fileId);
             removeLocalPreviewUri(fileId);
             clearFocusedAudioId(fileId);
 
@@ -133,27 +282,48 @@ export const useFileUploadPreviewState = ({
     },
     [
       clearFocusedAudioId,
-      fileCount,
-      onUploadFile,
-      pendingUploads.length,
+      actionsDisabled,
+      connectivity.canRunNetworkActions,
+      queuedAttachments,
       removeLocalPreviewUri,
+      uploadQueuedAttachment,
+      visibleFiles,
     ]
   );
 
   React.useEffect(() => {
-    setPendingUploads((prev) => {
-      if (!prev.length) return prev;
+    const fileIds = new Set(
+      visibleFiles
+        .filter((item) => !visualMedia.isProcessing(item))
+        .map((item) => item.id)
+    );
 
-      const fileIds = new Set(
-        visibleFiles
-          .filter((item) => !visualMedia.isProcessing(item))
-          .map((item) => item.id)
-      );
+    queuedAttachments.forEach((attachment) => {
+      if (attachment.submissionId) return;
 
-      const next = prev.filter((item) => !fileIds.has(item.id));
-      return next.length === prev.length ? prev : next;
+      if (fileIds.has(attachment.id)) {
+        void outbox.removeQueuedAttachment(attachment.id);
+      }
     });
-  }, [visibleFiles]);
+  }, [queuedAttachments, visibleFiles]);
+
+  React.useEffect(() => {
+    if (!connectivity.canRunNetworkActions) return;
+
+    queuedAttachments.forEach((attachment) => {
+      if (attachment.submissionId) return;
+
+      if (attachment.status !== 'queued' && attachment.status !== 'error') {
+        return;
+      }
+
+      void uploadQueuedAttachment(attachment);
+    });
+  }, [
+    connectivity.canRunNetworkActions,
+    queuedAttachments,
+    uploadQueuedAttachment,
+  ]);
 
   React.useEffect(() => {
     setLocalPreviewUris((prev) => {
@@ -225,6 +395,7 @@ export const useFileUploadPreviewState = ({
               localUri: localPreviewUris[item.id] ?? item.uri,
               order: item.order,
               pending: true,
+              status: item.status,
               type: item.type,
               uri: item.uri,
               width: item.width,

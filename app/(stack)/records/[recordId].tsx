@@ -12,10 +12,12 @@ const getRouteParam = (value: string | string[] | undefined) =>
 
 export default function RecordDetailRoute() {
   const params = useLocalSearchParams<{
+    highlight?: string;
     recordId?: string;
     replyId?: string;
   }>();
 
+  const highlight = getRouteParam(params.highlight);
   const routeRecordId = getRouteParam(params.recordId);
   const targetReplyId = getRouteParam(params.replyId);
   const record = useRecord({ id: routeRecordId });
@@ -59,6 +61,7 @@ export default function RecordDetailRoute() {
       ) : (
         !!record.id && (
           <DetailView
+            highlightRecord={highlight === 'record'}
             onClose={exitRoute}
             pageClassName="max-h-full overflow-hidden bg-popover"
             record={record}

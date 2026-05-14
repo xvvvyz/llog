@@ -13,7 +13,7 @@ describe('formatTime', () => {
     expect(formatTime(59.9)).toBe('0:59');
   });
 
-  test('handles bad time', () => {
+  test('handles invalid time', () => {
     expect(formatTime(-3)).toBe('0:00');
     expect(formatTime(Number.NaN)).toBe('0:00');
     expect(formatTime(Number.POSITIVE_INFINITY)).toBe('0:00');

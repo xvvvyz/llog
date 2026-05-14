@@ -1,3 +1,4 @@
+import { useConnectivity } from '@/features/offline/connectivity';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 
@@ -10,6 +11,8 @@ export const useHasRecordTagsForLog = ({
   logId?: string;
   teamId?: string;
 }) => {
+  const { isOffline } = useConnectivity();
+
   const { data, isLoading } = db.useQuery(
     enabled && logId && teamId
       ? {
@@ -31,6 +34,6 @@ export const useHasRecordTagsForLog = ({
 
   return {
     hasRecordTags: !!queryKey && hasCurrentResult && !!data?.tags?.length,
-    isLoading: !!queryKey && (isLoading || !hasCurrentResult),
+    isLoading: !!queryKey && !isOffline && (isLoading || !hasCurrentResult),
   };
 };

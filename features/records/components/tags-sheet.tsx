@@ -1,5 +1,10 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useLog } from '@/features/logs/queries/use-log';
+import { useConnectivity } from '@/features/offline/connectivity';
+import * as localEntry from '@/features/offline/local-entry';
+import { useOutbox } from '@/features/offline/outbox-hooks';
+import * as outboxStore from '@/features/offline/outbox-store';
+import * as pendingEntries from '@/features/offline/pending-entries';
 import * as recordTags from '@/features/records/mutations/record-tags';
 import { useRecordTagsTarget } from '@/features/records/queries/use-record-tags-target';
 import { TagSheetContent } from '@/features/tags/components/tag-sheet-content';
@@ -17,6 +22,9 @@ export const RecordTagsSheet = () => {
   const sheetManager = useSheetManager();
   const recordId = sheetManager.getId('record-tags');
   const profile = useProfile();
+  const connectivity = useConnectivity();
+  const outbox = useOutbox();
+  const visibleTagsRef = React.useRef<Tag[]>([]);
 
   const target = useRecordTagsTarget({
     payload: sheetManager.getPayload('record-tags'),
@@ -32,15 +40,63 @@ export const RecordTagsSheet = () => {
   const myRole = useMyRole({ teamId });
   const canManageDefinitions = !!myRole.canManage;
 
+  const canMutateDefinitions =
+    canManageDefinitions && connectivity.canRunNetworkActions;
+
+  const canEditRecordTags = connectivity.canRunNetworkActions;
+
   const canManageRecordTags =
+    canEditRecordTags &&
     !!record?.id &&
     (canManageDefinitions ||
       (!!profile.id && profile.id === record.author?.id));
 
+  const pendingRecord = React.useMemo(
+    () =>
+      record?.id
+        ? outbox.submissions.find(
+            (submission) =>
+              submission.type === 'record' &&
+              submission.contentId === record.id &&
+              pendingEntries.isActiveQueuedSubmission(submission)
+          )
+        : undefined,
+    [outbox.submissions, record?.id]
+  );
+
+  const queuedRecordDraft = React.useMemo(
+    () =>
+      record?.id
+        ? outbox.drafts.find(
+            (draft) => draft.type === 'record' && draft.contentId === record.id
+          )
+        : undefined,
+    [outbox.drafts, record?.id]
+  );
+
+  const currentRecordTags = React.useMemo(
+    () =>
+      record?.isDraft &&
+      queuedRecordDraft?.type === 'record' &&
+      queuedRecordDraft.tagsUpdated
+        ? queuedRecordDraft.tags
+        : pendingRecord?.type === 'record'
+          ? pendingRecord.tags
+          : (record?.tags ?? []),
+    [pendingRecord, queuedRecordDraft, record?.isDraft, record?.tags]
+  );
+
+  const shouldMirrorQueuedDraftTags = !!record?.isDraft && !pendingRecord;
+
+  const selectedTagIds = React.useMemo(
+    () => new Set(currentRecordTags.map((tag) => tag.id)),
+    [currentRecordTags]
+  );
+
   const isLoading =
     target.isLoading ||
-    (needsLogColor && log.isLoading) ||
-    (!!teamId && myRole.isLoading);
+    (!connectivity.isOffline &&
+      ((needsLogColor && log.isLoading) || (!!teamId && myRole.isLoading)));
 
   const tagTeamIds = React.useMemo(
     () => (teamId && logId ? [teamId] : []),
@@ -66,13 +122,14 @@ export const RecordTagsSheet = () => {
           : null,
       [logColorIndex, teamId]
     ),
-    canCreateDefinitions: canManageDefinitions,
-    canCreateNewTag: !!logId && !!record?.id && !!teamId,
+    canCreateDefinitions: canMutateDefinitions,
+    canCreateNewTag: canEditRecordTags && !!logId && !!record?.id && !!teamId,
     canToggleTags: canManageRecordTags,
     logId,
     onCreateTag: React.useCallback(
       ({ id, name }) => {
         if (!logId || !record?.id || !teamId) return;
+        if (!connectivity.canRunNetworkActions) return;
 
         void recordTags.createRecordTag({
           color: logColorIndex,
@@ -82,12 +139,49 @@ export const RecordTagsSheet = () => {
           recordId: record.id,
           teamId,
         });
+
+        const tag = {
+          color: logColorIndex,
+          id,
+          name,
+          order: 0,
+          teamId,
+          type: 'record' as const,
+        };
+
+        if (pendingRecord) {
+          outboxStore.updateQueuedRecordTagSelection({
+            recordId: record.id,
+            selected: true,
+            tag,
+            tagId: id,
+          });
+        }
+
+        if (shouldMirrorQueuedDraftTags) {
+          outboxStore.updateQueuedDraftRecordTagSelection({
+            baseTags: currentRecordTags,
+            recordId: record.id,
+            selected: true,
+            tag,
+            tagId: id,
+          });
+        }
       },
-      [logColorIndex, logId, record?.id, teamId]
+      [
+        connectivity.canRunNetworkActions,
+        currentRecordTags,
+        logColorIndex,
+        logId,
+        pendingRecord,
+        record?.id,
+        shouldMirrorQueuedDraftTags,
+        teamId,
+      ]
     ),
     onReorder: React.useCallback(
       (orderedTags: Tag[]) => {
-        if (!logId || !teamId) return;
+        if (!connectivity.canRunNetworkActions || !logId || !teamId) return;
 
         void reorderTags({
           logId,
@@ -96,23 +190,57 @@ export const RecordTagsSheet = () => {
           type: 'record',
         });
       },
-      [logId, teamId]
+      [connectivity.canRunNetworkActions, logId, teamId]
     ),
     onToggleTag: React.useCallback(
       async (tagId: string, selected: boolean) => {
+        if (!connectivity.canRunNetworkActions) return;
+        const tag = visibleTagsRef.current.find((tag) => tag.id === tagId);
+
+        if (pendingRecord) {
+          outboxStore.updateQueuedRecordTagSelection({
+            recordId: record?.id ?? '',
+            selected,
+            tag,
+            tagId,
+          });
+        }
+
+        if (shouldMirrorQueuedDraftTags) {
+          outboxStore.updateQueuedDraftRecordTagSelection({
+            baseTags: currentRecordTags,
+            recordId: record?.id ?? '',
+            selected,
+            tag,
+            tagId,
+          });
+        }
+
+        if (localEntry.hasLocalStatus(record)) return;
+
         await recordTags.toggleRecordTag({
           tagId,
           selected,
           recordId: record?.id,
         });
       },
-      [record?.id]
+      [
+        connectivity.canRunNetworkActions,
+        currentRecordTags,
+        pendingRecord,
+        record,
+        shouldMirrorQueuedDraftTags,
+      ]
     ),
     scopeKey: record?.id,
-    selectedIds: target.selectedTagIds,
+    selectedIds: selectedTagIds,
     teamIds: tagTeamIds,
     type: 'record',
   });
+
+  React.useEffect(() => {
+    visibleTagsRef.current = tagSheet.visibleTags;
+  }, [tagSheet.visibleTags]);
 
   const sheetIsLoading =
     isLoading || (tagSheet.tagsIsLoading && !tagSheet.hasPendingCreatedTag);
@@ -127,8 +255,8 @@ export const RecordTagsSheet = () => {
     >
       <TagSheetContent
         canCreateTag={tagSheet.canCreateTag}
-        canManageColor={canManageDefinitions}
-        canManageDefinitions={canManageDefinitions}
+        canManageColor={canMutateDefinitions}
+        canManageDefinitions={canMutateDefinitions}
         canToggleTags={canManageRecordTags}
         defaultTagColor={logColorIndex}
         emptyStateText="Create reusable tags for records in this log."
@@ -142,8 +270,12 @@ export const RecordTagsSheet = () => {
         query={tagSheet.query}
         rawQuery={tagSheet.rawQuery}
         setRawQuery={tagSheet.setRawQuery}
-        sortEnabled={!tagSheet.rawQuery && canManageDefinitions}
         visibleTags={tagSheet.visibleTags}
+        sortEnabled={
+          !tagSheet.rawQuery &&
+          canMutateDefinitions &&
+          connectivity.canRunNetworkActions
+        }
       />
     </Sheet>
   );

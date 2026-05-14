@@ -20,6 +20,7 @@ export type AudioPlayerProps = {
   assetKey?: string | null;
   autoPlayKey?: number;
   canAnalyzeAudio?: boolean;
+  disabled?: boolean;
   durationSeconds?: number;
   fileId?: string | null;
   isIdentifying?: boolean | null;

@@ -17,30 +17,31 @@ const titles = (tracks: ReturnType<typeof parseAuddMusicTracks>) =>
 
 describe('parseAuddMusicTracks', () => {
   test('keeps repeated hits', () => {
-    const tracks = parseAuddMusicTracks(readFixture('audd-video-bussit.json'), {
-      audioDurationMs: 114590,
-    });
+    const tracks = parseAuddMusicTracks(
+      readFixture('audd-repeated-hits.json'),
+      { audioDurationMs: 114590 }
+    );
 
-    expect(titles(tracks)).toEqual(['FOO BAR']);
+    expect(titles(tracks)).toEqual(['Repeat Track']);
 
     expect(tracks[0]).toMatchObject({
-      artists: ['Foo Artist'],
+      artists: ['Repeat Artist'],
       end: 112380,
       start: 108001,
-      title: 'FOO BAR',
+      title: 'Repeat Track',
     });
   });
 
   test('drops contained hits', () => {
     const tracks = parseAuddMusicTracks(
-      readFixture('audd-contained-false-positive.json'),
+      readFixture('audd-contained-hits.json'),
       { audioDurationMs: 10 * 60 * 1000 }
     );
 
-    expect(titles(tracks)).toEqual(['Foo Track']);
+    expect(titles(tracks)).toEqual(['Anchor Track']);
 
     expect(tracks[0]).toMatchObject({
-      artists: ['Foo Artist'],
+      artists: ['Anchor Artist'],
       end: 84000,
       start: 0,
     });
@@ -48,7 +49,7 @@ describe('parseAuddMusicTracks', () => {
 
   test('requires enough chunks', () => {
     const tracks = parseAuddMusicTracks(
-      readFixture('audd-long-two-chunk.json'),
+      readFixture('audd-insufficient-chunks.json'),
       { audioDurationMs: 10 * 60 * 1000 }
     );
 
@@ -56,11 +57,12 @@ describe('parseAuddMusicTracks', () => {
   });
 
   test('prefers remix titles', () => {
-    const tracks = parseAuddMusicTracks(readFixture('audd-remix-title.json'), {
-      audioDurationMs: 10 * 60 * 1000,
-    });
+    const tracks = parseAuddMusicTracks(
+      readFixture('audd-remix-preference.json'),
+      { audioDurationMs: 10 * 60 * 1000 }
+    );
 
-    expect(titles(tracks)).toEqual(['Foo Bar Song (Baz Qux Remix)']);
+    expect(titles(tracks)).toEqual(['Preview Song (Night Mix)']);
 
     expect(tracks[0]?.links).toEqual([
       { provider: 'audd', url: 'https://lis.tn/remix' },

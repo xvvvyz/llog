@@ -4,6 +4,7 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { Entry } from '@/features/records/components/entry';
+import { useConnectivity } from '@/features/offline/connectivity';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { useRecords } from '@/features/records/queries/use-records';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
@@ -35,6 +36,7 @@ export default function Index() {
   const params = useLocalSearchParams<{ logId: string }>();
   const listRef = React.useRef<ListHandle>(null);
   const sheetManager = useSheetManager();
+  const connectivity = useConnectivity();
   const log = useLog({ id: params.logId });
   const logColor = useLogColor({ id: params.logId });
   const records = useRecords({ logId: params.logId });
@@ -55,14 +57,19 @@ export default function Index() {
   const emptyStateActionsLoading =
     showEmpty &&
     (!log.teamId ||
+      !emptyStateRole.isReady ||
       emptyStateRole.isLoading ||
       (emptyStateRole.canManage &&
-        (emptyStateMembers.isLoading || emptyStateInvites.isLoading)));
+        (!emptyStateMembers.isReady ||
+          emptyStateMembers.isLoading ||
+          (connectivity.canRunNetworkActions &&
+            (!emptyStateInvites.isReady || emptyStateInvites.isLoading)))));
 
   const showLoading =
     log.isLoading || recordsLoading || emptyStateActionsLoading;
 
   const showFab = hasRecords && !breakpoints.md;
+  const showEmptyManagerActions = emptyStateRole.canManage;
 
   const listFooterHeight =
     insets.bottom + (showFab ? 104 : breakpoints.md ? 32 : 16);
@@ -105,7 +112,12 @@ export default function Index() {
                   style={{ backgroundColor: logColor.default }}
                   variant="secondary"
                   onPress={() =>
-                    sheetManager.open('record-create', params.logId)
+                    sheetManager.open(
+                      'record-create',
+                      params.logId,
+                      undefined,
+                      { teamId: log.teamId }
+                    )
                   }
                 >
                   <Icon className="-ml-0.5 text-white" icon={Plus} />
@@ -143,6 +155,8 @@ export default function Index() {
           invites={emptyStateInvites.invites}
           logId={params.logId}
           members={emptyStateMembers.members}
+          networkActionsEnabled={connectivity.canRunNetworkActions}
+          showManagerActions={showEmptyManagerActions}
           teamId={log.teamId!}
         />
       ) : (
@@ -175,11 +189,15 @@ export default function Index() {
         >
           <Button
             className="size-14 border-0 rounded-full active:opacity-90 web:hover:opacity-90"
-            onPress={() => sheetManager.open('record-create', params.logId)}
             size="icon"
             style={{ backgroundColor: logColor.default }}
             variant="secondary"
             wrapperClassName="rounded-full"
+            onPress={() =>
+              sheetManager.open('record-create', params.logId, undefined, {
+                teamId: log.teamId,
+              })
+            }
           >
             <Icon className="text-white" icon={Plus} />
           </Button>

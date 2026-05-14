@@ -6,5 +6,15 @@
   "trailingComma": "es5",
   "printWidth": 80,
   "sortPackageJson": false,
-  "ignorePatterns": ["public/"]
+  "ignorePatterns": [
+    "public/apple-startup/**",
+    "public/apple-touch-icon*.png",
+    "public/badge-72.png",
+    "public/favicon-32.png",
+    "public/favicon.ico",
+    "public/favicon.svg",
+    "public/icon-*.png",
+    "public/index.html",
+    "public/manifest.webmanifest"
+  ]
 }

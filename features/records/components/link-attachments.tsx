@@ -1,4 +1,5 @@
 import * as linkUrl from '@/features/records/lib/link-url';
+import { useConnectivity } from '@/features/offline/connectivity';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -17,6 +18,7 @@ import Animated, { useAnimatedRef } from 'react-native-reanimated';
 
 const byOrder = (a: Link, b: Link) => (a.order ?? 0) - (b.order ?? 0);
 const getLinkLabel = (item: Link) => item.label?.trim() || 'Link';
+type LinkAttachmentItem = Link & { localStatus?: 'error' | 'pending' };
 
 const LinkUrlText = ({
   className,
@@ -38,6 +40,7 @@ const LinkUrlText = ({
 );
 
 export const LinkAttachments = ({
+  actionsDisabled,
   className,
   hideTrigger,
   links,
@@ -51,9 +54,10 @@ export const LinkAttachments = ({
   triggerClassName,
   triggerIconClassName,
 }: {
+  actionsDisabled?: boolean;
   className?: string;
   hideTrigger?: boolean;
-  links: Link[];
+  links: LinkAttachmentItem[];
   onDeleteLink?: (linkId: string) => void;
   onReorderLinks?: (links: { id: string }[]) => void;
   onSheetOpenChange?: (open: boolean) => void;
@@ -64,6 +68,7 @@ export const LinkAttachments = ({
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
+  const connectivity = useConnectivity();
   const sheetManager = useSheetManager();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
@@ -86,8 +91,18 @@ export const LinkAttachments = ({
   const items = React.useMemo(() => [...links].sort(byOrder), [links]);
   const firstItem = items[0];
   const canDeleteSingleLink = !!onDeleteLink && items.length === 1;
-  const canSortLinks = !!onReorderLinks && items.length > 1;
+  const canRunNetworkActions = connectivity.canRunNetworkActions;
+  const canSortLinkSet = !!onReorderLinks && items.length > 1;
+  const canSortLinks = canSortLinkSet && canRunNetworkActions;
   const shouldOpenLinksInline = !onDeleteLink;
+
+  const canMutateLink = React.useCallback(
+    (item: LinkAttachmentItem) =>
+      !!onDeleteLink &&
+      !actionsDisabled &&
+      (canRunNetworkActions || !!item.localStatus),
+    [actionsDisabled, canRunNetworkActions, onDeleteLink]
+  );
 
   const shouldRenderSheet =
     !shouldOpenLinksInline &&
@@ -135,13 +150,15 @@ export const LinkAttachments = ({
   );
 
   const handleEditLink = React.useCallback(
-    (linkId: string) => {
+    (item: LinkAttachmentItem) => {
+      if (!canMutateLink(item)) return;
+
       sheetPayloads.openRecordLinkEditorSheet(sheetManager, {
-        linkId,
+        linkId: item.id,
         mode: 'edit',
       });
     },
-    [sheetManager]
+    [canMutateLink, sheetManager]
   );
 
   const handleDragEnd = React.useCallback(
@@ -198,7 +215,9 @@ export const LinkAttachments = ({
     </View>
   );
 
-  const renderSheetItem = (item: Link) => {
+  const renderSheetItem = (item: LinkAttachmentItem) => {
+    const isMutateDisabled = !canMutateLink(item);
+
     const linkDetails = (
       <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
         <View className="flex-1 flex-row min-w-0 gap-2 items-center">
@@ -218,12 +237,16 @@ export const LinkAttachments = ({
 
     return (
       <View key={item.id} className="flex-row min-w-0 items-center">
-        {canSortLinks && (
-          <Sortable.SortableSheetDragHandle className="-ml-1.5 mr-1" />
+        {canSortLinkSet && (
+          <Sortable.SortableSheetDragHandle
+            className="-ml-1.5 mr-1"
+            disabled={!canSortLinks}
+          />
         )}
         <Button
           className="flex-1 flex-row min-w-0 justify-start"
-          onPress={() => handleEditLink(item.id)}
+          disabled={isMutateDisabled}
+          onPress={() => handleEditLink(item)}
           variant="link"
           wrapperClassName="flex-1 overflow-visible rounded-lg"
         >
@@ -231,6 +254,7 @@ export const LinkAttachments = ({
         </Button>
         <Button
           accessibilityLabel={`Remove ${getLinkLabel(item)}`}
+          disabled={isMutateDisabled}
           onPress={() => handleDeleteLink(item.id)}
           size="icon-xs"
           variant="ghost"
@@ -255,7 +279,8 @@ export const LinkAttachments = ({
         >
           <Button
             className="flex-1 flex-row min-w-0 gap-4 justify-between"
-            onPress={() => handleEditLink(firstItem.id)}
+            disabled={!canMutateLink(firstItem)}
+            onPress={() => handleEditLink(firstItem)}
             variant="link"
             wrapperClassName="flex-1 overflow-visible rounded-lg"
           >
@@ -267,6 +292,7 @@ export const LinkAttachments = ({
           <View className="flex-row gap-2 items-center shrink-0">
             <Button
               accessibilityLabel={`Remove ${getLinkLabel(firstItem)}`}
+              disabled={!canMutateLink(firstItem)}
               onPress={() => handleDeleteLink(firstItem.id)}
               size="icon-xs"
               variant="ghost"
@@ -278,6 +304,7 @@ export const LinkAttachments = ({
         </View>
       ) : (
         <Button
+          disabled={actionsDisabled}
           onPress={handleOpenSheet}
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"

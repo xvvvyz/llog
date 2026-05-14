@@ -4,7 +4,7 @@ import { describe, expect, test } from 'bun:test';
 const publicMusicLink = (value: string) =>
   musicLinks.getPublicMusicLink(new URL(value));
 
-describe('music link provider helpers', () => {
+describe('music link providers', () => {
   test('classifies providers', () => {
     expect(musicLinks.isSourceMusicLinkProvider('audd')).toBe(true);
     expect(musicLinks.isPublicMusicLinkProvider('spotify')).toBe(true);

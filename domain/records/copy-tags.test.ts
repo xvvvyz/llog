@@ -7,16 +7,16 @@ describe('resolveCopyDraftTagIdsForTargetLog', () => {
       resolveCopyDraftTagIdsForTargetLog({
         sourceTags: [
           {
-            id: 'source-foo',
+            id: 'source-ideas',
             logs: [{ id: 'source-log' }],
-            name: ' Foo ',
+            name: ' Ideas ',
             type: 'record',
           },
         ],
         targetLogId: 'target-log',
-        targetTags: [{ id: 'target-foo', name: 'foo' }],
+        targetTags: [{ id: 'target-ideas', name: 'ideas' }],
       })
-    ).toEqual(['target-foo']);
+    ).toEqual(['target-ideas']);
   });
 
   test('keeps linked tags', () => {
@@ -24,27 +24,27 @@ describe('resolveCopyDraftTagIdsForTargetLog', () => {
       resolveCopyDraftTagIdsForTargetLog({
         sourceTags: [
           {
-            id: 'shared-foo',
+            id: 'shared-ideas',
             logs: [{ id: 'target-log' }],
-            name: 'foo',
+            name: 'ideas',
             type: 'record',
           },
         ],
         targetLogId: 'target-log',
-        targetTags: [{ id: 'shared-foo', name: 'foo' }],
+        targetTags: [{ id: 'shared-ideas', name: 'ideas' }],
       })
-    ).toEqual(['shared-foo']);
+    ).toEqual(['shared-ideas']);
   });
 
   test('ignores unrelated tags', () => {
     expect(
       resolveCopyDraftTagIdsForTargetLog({
         sourceTags: [
-          { id: 'log-tag', name: 'foo', type: 'log' },
-          { id: 'source-bar', name: 'bar', type: 'record' },
+          { id: 'log-tag', name: 'ideas', type: 'log' },
+          { id: 'source-reading', name: 'reading', type: 'record' },
         ],
         targetLogId: 'target-log',
-        targetTags: [{ id: 'target-foo', name: 'foo' }],
+        targetTags: [{ id: 'target-ideas', name: 'ideas' }],
       })
     ).toEqual([]);
   });

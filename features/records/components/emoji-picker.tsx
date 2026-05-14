@@ -13,6 +13,7 @@ import * as React from 'react';
 
 export const EmojiPicker = ({
   color,
+  disabled,
   logId,
   recordId,
   teamId,
@@ -20,6 +21,7 @@ export const EmojiPicker = ({
   reactions,
 }: {
   color?: string;
+  disabled?: boolean;
   logId?: string;
   recordId: string;
   teamId?: string;
@@ -47,10 +49,23 @@ export const EmojiPicker = ({
 
   if (REACTION_EMOJIS.every((emoji) => usedEmojis.has(emoji))) return null;
 
+  if (disabled) {
+    return (
+      <Button disabled size="icon-xs" variant="ghost" wrapperClassName="mr-1">
+        <Icon className="text-muted-foreground" icon={SmileySticker} />
+      </Button>
+    );
+  }
+
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
-        <Button size="icon-xs" variant="ghost" wrapperClassName="mr-1">
+        <Button
+          disabled={disabled}
+          size="icon-xs"
+          variant="ghost"
+          wrapperClassName="mr-1"
+        >
           <Icon className="text-muted-foreground" icon={SmileySticker} />
         </Button>
       </Menu.Trigger>
@@ -63,8 +78,9 @@ export const EmojiPicker = ({
             <Menu.Item
               key={emoji}
               className="min-w-0 size-10 pl-0 pr-0 rounded-xl justify-center"
+              disabled={disabled}
               onPress={() => {
-                if (!teamId) return;
+                if (disabled || !teamId) return;
 
                 toggleReaction({
                   emoji,

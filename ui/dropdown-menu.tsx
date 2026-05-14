@@ -151,15 +151,17 @@ Content.displayName = DropdownMenuPrimitive.Content.displayName;
 const ItemContent = React.forwardRef<
   DropdownMenuPrimitive.ItemRef,
   DropdownMenuPrimitive.ItemProps
->(({ className, ...props }, ref) => {
+>(({ className, disabled, ...props }, ref) => {
   const rippleColor = useRippleColor('inverse');
 
   return (
     <DropdownMenuPrimitive.Item
       ref={ref}
       android_ripple={{ color: rippleColor }}
+      disabled={disabled}
       className={cn(
         'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative flex h-10 flex-row items-center gap-4 pr-6 pl-4',
+        disabled && 'opacity-50',
         className
       )}
       {...props}

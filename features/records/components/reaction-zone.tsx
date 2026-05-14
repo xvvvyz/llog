@@ -5,9 +5,11 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 export const ReactionZone = ({
   className,
+  disabled,
   onDoubleTap,
 }: {
   className?: string;
+  disabled?: boolean;
   onDoubleTap: () => void;
 }) => {
   const gesture = React.useMemo(
@@ -17,10 +19,11 @@ export const ReactionZone = ({
         .maxDelay(260)
         .maxDistance(12)
         .onEnd(() => {
+          if (disabled) return;
           onDoubleTap();
         })
         .runOnJS(true),
-    [onDoubleTap]
+    [disabled, onDoubleTap]
   );
 
   return (

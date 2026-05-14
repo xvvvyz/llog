@@ -15,10 +15,10 @@ import {
 
 const spinnerVariants = cva('shrink-0 items-center justify-center', {
   defaultVariants: { size: 'sm' },
-  variants: { size: { sm: 'h-5 w-5', xs: 'h-5 w-5' } },
+  variants: { size: { icon: 'h-3.5 w-3.5', sm: 'h-5 w-5', xs: 'h-5 w-5' } },
 });
 
-const spinnerIndicatorSizes = { sm: 20, xs: 16 } as const;
+const spinnerIndicatorSizes = { icon: 14, sm: 20, xs: 16 } as const;
 type SpinnerVariantSize = keyof typeof spinnerIndicatorSizes;
 type ThemeColors = (typeof UI)[keyof typeof UI];
 

@@ -1,4 +1,5 @@
 import { tagFields } from '@/domain/tags/query';
+import { useConnectivity } from '@/features/offline/connectivity';
 import type { TagType } from '@/features/tags/types/tag';
 import { useResolvedTeamIds } from '@/features/teams/queries/use-resolved-team-ids';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
@@ -16,6 +17,7 @@ export const useTags = ({
   teamIds?: string[];
   type?: TagType;
 } = {}) => {
+  const { isOffline } = useConnectivity();
   const resolvedTeamIds = useResolvedTeamIds(teamIds);
 
   const { data, isLoading } = db.useQuery(
@@ -54,6 +56,6 @@ export const useTags = ({
 
   return {
     data: tags,
-    isLoading: !!queryKey && (isLoading || !hasCurrentResult),
+    isLoading: !!queryKey && !isOffline && (isLoading || !hasCurrentResult),
   };
 };

@@ -3,16 +3,24 @@ import { formatTime } from '@/lib/format-time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
-import { Pause, Play, SpeakerHigh, SpeakerSlash } from 'phosphor-react-native';
 import * as React from 'react';
 import { type LayoutChangeEvent, Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue } from 'react-native-reanimated';
 
+import {
+  Pause,
+  Play,
+  SpeakerHigh,
+  SpeakerSlash,
+  WifiSlash,
+} from 'phosphor-react-native';
+
 type VideoControlsProps = {
   currentTime: number;
   duration: number;
   isMuted: boolean;
+  isUnavailableOffline: boolean;
   isPlaying: boolean;
   isSwiping: boolean;
   onScrubEnd: (seconds: number) => void;
@@ -27,6 +35,7 @@ export const VideoControls = ({
   currentTime,
   duration,
   isMuted,
+  isUnavailableOffline,
   isPlaying,
   isSwiping,
   onScrubEnd,
@@ -48,6 +57,7 @@ export const VideoControls = ({
         >
           <Button
             className="size-11"
+            disabled={isUnavailableOffline}
             onPress={onTogglePlay}
             size="icon"
             variant="link"
@@ -55,14 +65,15 @@ export const VideoControls = ({
           >
             <Icon
               className="text-popover-foreground"
-              icon={isPlaying ? Pause : Play}
+              icon={isUnavailableOffline ? WifiSlash : isPlaying ? Pause : Play}
               size={Platform.select({ default: 24, ios: 22 })}
-              weight={isPlaying ? 'regular' : 'fill'}
+              weight={!isUnavailableOffline && !isPlaying ? 'fill' : 'regular'}
             />
           </Button>
           <View className="flex-1 min-w-0">
             <VideoScrubber
               currentTime={currentTime}
+              disabled={isUnavailableOffline}
               duration={duration}
               onScrubEnd={onScrubEnd}
               onScrubMove={onScrubMove}
@@ -71,6 +82,7 @@ export const VideoControls = ({
           </View>
           <Button
             className="size-11"
+            disabled={isUnavailableOffline}
             onPress={onToggleMute}
             size="icon"
             variant="link"
@@ -91,12 +103,14 @@ export const VideoControls = ({
 const VideoScrubber = ({
   currentTime,
   duration,
+  disabled,
   onScrubEnd,
   onScrubMove,
   onScrubStart,
 }: {
   currentTime: number;
   duration: number;
+  disabled?: boolean;
   onScrubEnd: (seconds: number) => void;
   onScrubMove: (seconds: number) => void;
   onScrubStart: () => void;
@@ -161,24 +175,32 @@ const VideoScrubber = ({
     [trackWidth]
   );
 
+  const track = (
+    <Animated.View className="flex-1 h-8 justify-center self-stretch">
+      <View
+        className="relative overflow-hidden h-1 border-continuous rounded-full bg-popover-foreground/10"
+        onLayout={handleTrackLayout}
+      >
+        <View
+          className="absolute bottom-0 left-0 top-0 border-continuous rounded-full bg-popover-foreground"
+          style={{ width: `${progress * 100}%` }}
+        />
+      </View>
+    </Animated.View>
+  );
+
   return (
     <View className="flex-row items-center">
       <Text className="min-w-10 font-medium leading-4 text-popover-foreground text-xs">
         {formatTime(currentTime)}
       </Text>
-      <GestureDetector gesture={Gesture.Race(pan, tap)}>
-        <Animated.View className="flex-1 h-8 justify-center self-stretch">
-          <View
-            className="relative overflow-hidden h-1 border-continuous rounded-full bg-popover-foreground/10"
-            onLayout={handleTrackLayout}
-          >
-            <View
-              className="absolute bottom-0 left-0 top-0 border-continuous rounded-full bg-popover-foreground"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </View>
-        </Animated.View>
-      </GestureDetector>
+      {disabled ? (
+        track
+      ) : (
+        <GestureDetector gesture={Gesture.Race(pan, tap)}>
+          {track}
+        </GestureDetector>
+      )}
       <Text className="min-w-10 font-medium leading-4 text-popover-foreground text-right text-xs">
         {formatTime(duration)}
       </Text>

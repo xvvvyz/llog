@@ -12,6 +12,7 @@ import {
 } from 'phosphor-react-native';
 
 export const Toolbar = ({
+  disabled,
   canAddAudio,
   onBrowseMedia,
   onCaptureMedia,
@@ -19,6 +20,7 @@ export const Toolbar = ({
   onPickDocuments,
   trailingItems,
 }: {
+  disabled?: boolean;
   canAddAudio: boolean;
   onBrowseMedia: () => void | Promise<void>;
   onCaptureMedia: () => void | Promise<void>;
@@ -28,11 +30,16 @@ export const Toolbar = ({
 }) => {
   return Platform.OS === 'web' ? (
     <>
-      <Button onPress={onPickDocuments} size="icon-xs" variant="secondary">
+      <Button
+        disabled={disabled}
+        onPress={onPickDocuments}
+        size="icon-xs"
+        variant="secondary"
+      >
         <Icon icon={UploadSimple} />
       </Button>
       <Button
-        disabled={!canAddAudio}
+        disabled={disabled || !canAddAudio}
         onPress={onOpenAudio}
         size="icon-xs"
         variant="secondary"
@@ -43,19 +50,34 @@ export const Toolbar = ({
     </>
   ) : (
     <>
-      <Button onPress={onPickDocuments} size="icon-xs" variant="secondary">
+      <Button
+        disabled={disabled}
+        onPress={onPickDocuments}
+        size="icon-xs"
+        variant="secondary"
+      >
         <Icon icon={Paperclip} />
       </Button>
-      <Button onPress={onBrowseMedia} size="icon-xs" variant="secondary">
+      <Button
+        disabled={disabled}
+        onPress={onBrowseMedia}
+        size="icon-xs"
+        variant="secondary"
+      >
         <Icon icon={ImageSquare} />
       </Button>
       {Platform.OS === 'ios' && (
-        <Button onPress={onCaptureMedia} size="icon-xs" variant="secondary">
+        <Button
+          disabled={disabled}
+          onPress={onCaptureMedia}
+          size="icon-xs"
+          variant="secondary"
+        >
           <Icon icon={Camera} />
         </Button>
       )}
       <Button
-        disabled={!canAddAudio}
+        disabled={disabled || !canAddAudio}
         onPress={onOpenAudio}
         size="icon-xs"
         variant="secondary"

@@ -9,15 +9,15 @@ describe('fileFields', () => {
         name: 'set.mp3',
         tracks: [
           {
-            album: 'Lorem Album',
-            artists: ['Foo Artist'],
+            album: 'Evening Notes',
+            artists: ['First Artist'],
             end: 6500,
             start: 1500,
-            title: 'Foo',
+            title: 'Daily Recap',
             trackDuration: 200000,
           },
         ],
-        transcript: [{ end: 4, start: 2, text: 'lorem ipsum' }],
+        transcript: [{ end: 4, start: 2, text: 'meeting notes' }],
         type: 'audio',
       })
     );
@@ -28,15 +28,15 @@ describe('fileFields', () => {
       trackCount: 1,
       tracks: [
         {
-          album: 'Lorem Album',
-          artists: ['Foo Artist'],
+          album: 'Evening Notes',
+          artists: ['First Artist'],
           endSeconds: 6.5,
           startSeconds: 1.5,
-          title: 'Foo',
+          title: 'Daily Recap',
           trackDurationSeconds: 200,
         },
       ],
-      transcript: [{ endSeconds: 4, startSeconds: 2, text: 'lorem ipsum' }],
+      transcript: [{ endSeconds: 4, startSeconds: 2, text: 'meeting notes' }],
       transcriptSegmentCount: 1,
       type: 'audio',
     });

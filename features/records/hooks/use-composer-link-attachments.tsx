@@ -1,4 +1,6 @@
 import { LinkAttachments } from '@/features/records/components/link-attachments';
+import { useConnectivity } from '@/features/offline/connectivity';
+import * as outboxStore from '@/features/offline/outbox-store';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import { deleteLink } from '@/features/records/mutations/delete-link';
 import type { Link } from '@/features/records/types/link';
@@ -9,46 +11,74 @@ import { LinkSimple } from 'phosphor-react-native';
 import * as React from 'react';
 
 export const useComposerLinkAttachments = ({
+  actionsDisabled,
   links,
   onReorderLinks,
   parent,
 }: {
+  actionsDisabled?: boolean;
   links: Link[];
   onReorderLinks?: (links: { id: string }[]) => void;
   parent?: sheetPayloads.RecordSheetParent;
 }) => {
+  const connectivity = useConnectivity();
   const sheetManager = useSheetManager();
 
-  const handleDeleteLink = React.useCallback((linkId: string) => {
-    void deleteLink({ id: linkId });
-  }, []);
+  const handleDeleteLink = React.useCallback(
+    (linkId: string) => {
+      const snapshot = outboxStore.getOutboxSnapshot();
+
+      const isQueuedSubmissionLink = snapshot.submissions.some((submission) =>
+        submission.links.some((link) => link.id === linkId)
+      );
+
+      const isQueuedDraftLink = snapshot.drafts.some((draft) =>
+        draft.links.some((link) => link.id === linkId)
+      );
+
+      outboxStore.removeQueuedLink(linkId);
+      outboxStore.removeQueuedDraftLink(linkId);
+
+      if (
+        isQueuedSubmissionLink ||
+        (isQueuedDraftLink && !connectivity.canRunNetworkActions)
+      ) {
+        return;
+      }
+
+      void deleteLink({ id: linkId });
+    },
+    [connectivity.canRunNetworkActions]
+  );
 
   const handleOpenLinkEditor = React.useCallback(() => {
+    if (actionsDisabled) return;
     if (!parent) return;
 
     sheetPayloads.openRecordLinkEditorSheet(sheetManager, {
       mode: 'create',
-      parent,
+      parent: { ...parent, links },
     });
-  }, [parent, sheetManager]);
+  }, [actionsDisabled, links, parent, sheetManager]);
 
   const linkPreview = React.useMemo(
     () => (
       <LinkAttachments
+        actionsDisabled={actionsDisabled}
         className={links.length === 1 ? '-my-1.5' : undefined}
         links={links}
         onDeleteLink={handleDeleteLink}
         onReorderLinks={onReorderLinks}
-        parent={parent}
+        parent={parent ? { ...parent, links } : undefined}
         triggerClassName="px-0"
       />
     ),
-    [handleDeleteLink, links, onReorderLinks, parent]
+    [actionsDisabled, handleDeleteLink, links, onReorderLinks, parent]
   );
 
   const linkToolbarItems = (
     <Button
-      disabled={!parent}
+      disabled={actionsDisabled || !parent}
       onPress={handleOpenLinkEditor}
       size="icon-xs"
       variant="secondary"

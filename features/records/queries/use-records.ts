@@ -1,10 +1,16 @@
 import * as recordIdentity from '@/domain/records/identity-fields';
 import { recordListItemQuery } from '@/domain/records/query';
+import { useProfile } from '@/features/account/queries/use-profile';
+import { useConnectivity } from '@/features/offline/connectivity';
+import { useOutbox } from '@/features/offline/outbox-hooks';
+import * as outboxStore from '@/features/offline/outbox-store';
+import * as pendingEntries from '@/features/offline/pending-entries';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
+import * as recordCache from './record-cache';
 
 const RECORDS_PAGE_SIZE = 25;
 const EMPTY_STATE_DELAY_MS = 400;
@@ -19,6 +25,10 @@ const compareByDateDesc = (
 };
 
 export const useRecords = ({ logId }: { logId?: string }) => {
+  const outbox = useOutbox();
+  const profile = useProfile();
+  const { isOffline } = useConnectivity();
+
   const { data: pinnedData, isLoading: pinnedLoading } = db.useQuery(
     logId
       ? {
@@ -72,6 +82,40 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   const hasPinnedResult = !logId || hasCurrentPinnedResult;
   const hasPagedResult = !logId || hasCurrentPagedResult;
 
+  React.useEffect(() => {
+    if (!logId || !hasCurrentPinnedResult || !hasCurrentPagedResult) return;
+
+    const visibleRecordIds = new Set(
+      [...pinnedRecords, ...pagedRecords].map((record) => record.id)
+    );
+
+    const completedSubmissionIds = outbox.submissions
+      .filter(
+        (
+          submission
+        ): submission is Extract<
+          (typeof outbox.submissions)[number],
+          { type: 'record' }
+        > =>
+          submission.type === 'record' &&
+          submission.logId === logId &&
+          submission.status === 'complete' &&
+          visibleRecordIds.has(submission.contentId)
+      )
+      .map((submission) => submission.id);
+
+    for (const submissionId of completedSubmissionIds) {
+      void outboxStore.clearCompletedSubmission(submissionId);
+    }
+  }, [
+    hasCurrentPagedResult,
+    hasCurrentPinnedResult,
+    logId,
+    outbox.submissions,
+    pagedRecords,
+    pinnedRecords,
+  ]);
+
   const data = React.useMemo(() => {
     const merged = new Map<string, (typeof pinnedRecords)[number]>();
 
@@ -92,14 +136,99 @@ export const useRecords = ({ logId }: { logId?: string }) => {
       else unpinned.push(record);
     }
 
-    return [
+    const records = [
       ...pinned.sort(compareByDateDesc),
       ...unpinned.sort(compareByDateDesc),
     ].map((record) => (record.files ? record : { ...record, files: [] }));
-  }, [pagedRecords, pinnedRecords]);
+
+    const pendingRecords = outbox.submissions
+      .filter(
+        (
+          submission
+        ): submission is Extract<
+          (typeof outbox.submissions)[number],
+          { type: 'record' }
+        > =>
+          submission.type === 'record' &&
+          submission.logId === logId &&
+          pendingEntries.isActiveQueuedSubmission(submission)
+      )
+      .map((submission) =>
+        pendingEntries.queuedRecordToEntry({
+          attachments: outbox.attachments,
+          profile,
+          submission,
+        })
+      );
+
+    const mergedRecords = pendingEntries
+      .mergePendingRecords(records, pendingRecords)
+      .map((record) => {
+        const existingReplyIds = new Set(
+          (record.replies ?? []).map((reply) => reply.id).filter(Boolean)
+        );
+
+        const pendingReplies = outbox.submissions
+          .filter(
+            (
+              submission
+            ): submission is Extract<
+              (typeof outbox.submissions)[number],
+              { type: 'reply' }
+            > =>
+              submission.type === 'reply' &&
+              submission.recordId === record.id &&
+              pendingEntries.isActiveQueuedSubmission(submission) &&
+              !existingReplyIds.has(submission.contentId)
+          )
+          .map((submission) =>
+            pendingEntries.queuedReplyToEntry({
+              attachments: outbox.attachments,
+              profile,
+              submission,
+            })
+          );
+
+        return pendingReplies.length
+          ? {
+              ...record,
+              replies: [...(record.replies ?? []), ...pendingReplies],
+            }
+          : record;
+      });
+
+    const isPinnedRecord = (record: (typeof mergedRecords)[number]) =>
+      'isPinned' in record && !!record.isPinned;
+
+    return [
+      ...mergedRecords.filter(isPinnedRecord).sort(compareByDateDesc),
+      ...mergedRecords
+        .filter((record) => !isPinnedRecord(record))
+        .sort(compareByDateDesc),
+    ];
+  }, [
+    logId,
+    outbox.attachments,
+    outbox.submissions,
+    pagedRecords,
+    pinnedRecords,
+    profile,
+  ]);
+
+  React.useEffect(() => {
+    recordCache.cacheRecords(
+      data.map((record) => {
+        const recordLog = 'log' in record ? record.log : undefined;
+
+        return logId && !recordLog?.id
+          ? { ...record, log: { ...(recordLog ?? {}), id: logId } }
+          : record;
+      })
+    );
+  }, [data, logId]);
 
   const currentCanLoadNextPage =
-    !!logId && hasCurrentPagedResult && canLoadNextPage;
+    !!logId && !isOffline && hasCurrentPagedResult && canLoadNextPage;
 
   const handleLoadNextPage = useLoadNextPage({
     canLoadNextPage: currentCanLoadNextPage,
@@ -112,6 +241,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   const isQueryLoading =
     !!logId &&
     !hasRecords &&
+    !isOffline &&
     (pinnedLoading || pagedLoading || !hasPinnedResult || !hasPagedResult);
 
   const canShowEmptyResult = !!logId && !isQueryLoading && !hasRecords;

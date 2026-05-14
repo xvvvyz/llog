@@ -1,0 +1,658 @@
+import { describe, expect, test } from 'bun:test';
+import { getConnectivityState } from '@/features/offline/connectivity-state';
+import * as localEntry from '@/features/offline/local-entry';
+import { getNextOfflineBannerState } from '@/features/offline/offline-banner-state';
+import * as outboxNormalize from '@/features/offline/outbox-normalize';
+import * as outboxState from '@/features/offline/outbox-state';
+import * as persistence from '@/features/offline/persistence';
+import * as pendingEntries from '@/features/offline/pending-entries';
+import * as queuedLinks from '@/features/offline/queued-links';
+import type * as types from '@/features/offline/types';
+
+const fixtures = {
+  date: '2026-05-13T00:00:00.000Z',
+  fileId: 'file-a',
+  logId: 'log-a',
+  profileId: 'profile-a',
+  recordId: 'record-a',
+  replyId: 'reply-a',
+  teamId: 'team-a',
+};
+
+const queuedAttachment = (
+  overrides: Partial<types.QueuedAttachment>
+): types.QueuedAttachment => ({
+  id: fixtures.fileId,
+  localUri: 'file:///file-a.jpg',
+  order: 0,
+  parentId: fixtures.recordId,
+  parentType: 'record',
+  recordId: fixtures.recordId,
+  status: 'queued',
+  type: 'image',
+  ...overrides,
+});
+
+const queuedRecordSubmission = (
+  overrides: Partial<Extract<types.QueuedSubmission, { type: 'record' }>> = {}
+): Extract<types.QueuedSubmission, { type: 'record' }> => ({
+  contentId: fixtures.recordId,
+  createdAt: fixtures.date,
+  files: [],
+  id: `record:${fixtures.recordId}`,
+  links: [],
+  logId: fixtures.logId,
+  status: 'pending',
+  tagIds: [],
+  tags: [],
+  text: 'Queued record',
+  type: 'record',
+  updatedAt: fixtures.date,
+  ...overrides,
+});
+
+const queuedReplySubmission = (
+  overrides: Partial<Extract<types.QueuedSubmission, { type: 'reply' }>> = {}
+): Extract<types.QueuedSubmission, { type: 'reply' }> => ({
+  contentId: fixtures.replyId,
+  createdAt: fixtures.date,
+  files: [],
+  id: `reply:${fixtures.replyId}`,
+  links: [],
+  recordId: fixtures.recordId,
+  status: 'pending',
+  text: 'Queued reply',
+  type: 'reply',
+  updatedAt: fixtures.date,
+  ...overrides,
+});
+
+const queuedFile = (
+  overrides: Partial<types.QueuedFileSnapshot>
+): types.QueuedFileSnapshot => ({
+  id: fixtures.fileId,
+  order: 0,
+  type: 'image',
+  uri: 'https://example.com/file.jpg',
+  ...overrides,
+});
+
+describe('persistence', () => {
+  test('normalizes invalid data', () => {
+    expect(persistence.parsePersistedOutbox('{not json')).toEqual(
+      persistence.emptyPersistedOutbox()
+    );
+
+    expect(persistence.normalizePersistedOutbox({ submissions: [] })).toEqual({
+      attachments: [],
+      drafts: [],
+      submissions: [],
+      version: 1,
+    });
+  });
+
+  test('scopes keys', () => {
+    expect(persistence.getPersistedOutboxStorageKey()).toBe(
+      'llog.offlineOutbox.v1'
+    );
+
+    expect(persistence.getPersistedOutboxStorageKey('user:a@example.com')).toBe(
+      'llog.offlineOutbox.v1:user%3Aa%40example.com'
+    );
+  });
+});
+
+describe('pending entries', () => {
+  test('preserves previews', () => {
+    const files = [
+      queuedAttachment({ id: 'late', localUri: 'file:///late.jpg', order: 2 }),
+      queuedAttachment({
+        id: 'early',
+        localUri: 'file:///early.jpg',
+        order: 0,
+      }),
+    ]
+      .sort((a, b) => a.order - b.order)
+      .map(pendingEntries.queuedAttachmentToFileItem);
+
+    expect(files.map((file) => [file.id, file.uri])).toEqual([
+      ['early', 'file:///early.jpg'],
+      ['late', 'file:///late.jpg'],
+    ]);
+  });
+});
+
+describe('outbox state', () => {
+  test('resets in-flight work', () => {
+    const reset = outboxState.resetInFlightOutboxWork({
+      attachments: [
+        queuedAttachment({ id: 'uploading-file', status: 'uploading' }),
+        queuedAttachment({ id: 'uploaded-file', status: 'uploaded' }),
+      ],
+      submissions: [queuedRecordSubmission({ status: 'syncing' })],
+    });
+
+    expect(reset.attachments.map((item) => [item.id, item.status])).toEqual([
+      ['uploading-file', 'queued'],
+      ['uploaded-file', 'uploaded'],
+    ]);
+
+    expect(reset.submissions[0]?.status).toBe('pending');
+  });
+
+  test('ignores discarded media', () => {
+    const state = {
+      attachments: [
+        queuedAttachment({
+          id: 'orphaned-file',
+          parentId: fixtures.recordId,
+          submissionId: undefined,
+        }),
+      ],
+      submissions: [queuedRecordSubmission({ status: 'discarded' })],
+    };
+
+    expect(outboxState.hasPendingOutboxWork(state)).toBe(false);
+
+    expect(
+      outboxState.getDiscardedSubmissions(state).map((item) => item.id)
+    ).toEqual(['record:record-a']);
+
+    expect(
+      outboxState
+        .getDiscardedSubmissionAttachments(state)
+        .map((item) => item.id)
+    ).toEqual(['orphaned-file']);
+  });
+
+  test('tracks pending media', () => {
+    const state = {
+      attachments: [
+        queuedAttachment({
+          id: 'pending-file',
+          parentId: fixtures.recordId,
+          submissionId: undefined,
+        }),
+      ],
+      submissions: [queuedRecordSubmission({ status: 'pending' })],
+    };
+
+    expect(outboxState.hasPendingOutboxWork(state)).toBe(true);
+  });
+
+  test('hides failed work', () => {
+    const state = {
+      attachments: [
+        queuedAttachment({
+          status: 'error',
+          submissionId: `record:${fixtures.recordId}`,
+        }),
+      ],
+      submissions: [queuedRecordSubmission({ status: 'error' })],
+    };
+
+    expect(
+      outboxState.getRetryableSubmissions(state).map((item) => item.id)
+    ).toEqual(['record:record-a']);
+
+    expect(
+      outboxState.getAutoSyncableSubmissions(state).map((item) => item.id)
+    ).toEqual([]);
+
+    expect(outboxState.hasPendingOutboxWork(state)).toBe(false);
+  });
+
+  test('retries failed work', () => {
+    const retried = outboxState.retryOutboxSubmission(
+      {
+        attachments: [
+          queuedAttachment({
+            error: 'Upload failed',
+            status: 'error',
+            submissionId: `record:${fixtures.recordId}`,
+          }),
+          queuedAttachment({ id: 'uploaded-file', status: 'uploaded' }),
+        ],
+        submissions: [
+          queuedRecordSubmission({ error: 'Sync failed', status: 'error' }),
+        ],
+      },
+      `record:${fixtures.recordId}`
+    );
+
+    expect(retried.submissions[0]?.error).toBeUndefined();
+    expect(retried.submissions[0]?.status).toBe('pending');
+
+    expect(retried.attachments.map((item) => [item.id, item.status])).toEqual([
+      [fixtures.fileId, 'queued'],
+      ['uploaded-file', 'uploaded'],
+    ]);
+  });
+});
+
+describe('outbox normalize', () => {
+  test('normalizes file snapshots', () => {
+    expect(
+      outboxNormalize.normalizeQueuedFileSnapshots([
+        queuedFile({ id: '', order: 0 }),
+        queuedFile({ id: 'late', order: 2 }),
+        queuedFile({ id: 'early', order: undefined }),
+      ])
+    ).toEqual([
+      {
+        id: 'early',
+        order: 0,
+        type: 'image',
+        uri: 'https://example.com/file.jpg',
+      },
+      {
+        id: 'late',
+        order: 2,
+        type: 'image',
+        uri: 'https://example.com/file.jpg',
+      },
+    ]);
+  });
+});
+
+describe('outbox state', () => {
+  test('merges hydration races', () => {
+    const merged = outboxState.mergeOutboxForHydration({
+      current: {
+        attachments: [queuedAttachment({ id: 'new-file' })],
+        drafts: [],
+        hydrated: false,
+        ownerUserId: 'user-a',
+        submissions: [queuedRecordSubmission({ contentId: 'new-record' })],
+        version: 1,
+      },
+      persisted: {
+        attachments: [
+          queuedAttachment({ id: 'persisted-file', status: 'uploading' }),
+        ],
+        drafts: [],
+        ownerUserId: 'user-a',
+        submissions: [
+          queuedRecordSubmission({
+            contentId: 'persisted-record',
+            id: 'record:persisted-record',
+            status: 'publishing',
+          }),
+        ],
+        version: 1,
+      },
+    });
+
+    expect(merged.hydrated).toBe(true);
+    expect(merged.ownerUserId).toBe('user-a');
+
+    expect(merged.attachments.map((item) => [item.id, item.status])).toEqual([
+      ['persisted-file', 'queued'],
+      ['new-file', 'queued'],
+    ]);
+
+    expect(merged.submissions.map((item) => [item.id, item.status])).toEqual([
+      ['record:persisted-record', 'pending'],
+      ['record:record-a', 'pending'],
+    ]);
+  });
+});
+
+describe('outbox state', () => {
+  test('matches links exactly', () => {
+    const links = [
+      {
+        id: 'link-a',
+        label: 'Release notes',
+        order: 0,
+        teamId: 'team-a',
+        url: 'https://example.com',
+      },
+    ];
+
+    expect(outboxState.queuedLinkSnapshotsMatchExactly(links, links)).toBe(
+      true
+    );
+
+    expect(
+      outboxState.queuedLinkSnapshotsMatchExactly(
+        [],
+        [{ id: 'stale-link', label: 'Old', order: 0, url: 'https://old.test' }]
+      )
+    ).toBe(false);
+
+    expect(
+      outboxState.queuedLinkSnapshotsMatchExactly(links, [
+        { ...links[0], url: 'https://stale.test' },
+      ])
+    ).toBe(false);
+  });
+});
+
+describe('queued links', () => {
+  test('normalizes snapshots', () => {
+    expect(
+      queuedLinks.toQueuedLinkSnapshot({
+        id: 'link-a',
+        label: 'Docs',
+        localStatus: 'pending',
+        order: 0,
+        teamId: fixtures.teamId,
+        url: 'https://example.com/docs',
+      })
+    ).toEqual({
+      id: 'link-a',
+      label: 'Docs',
+      localStatus: 'pending',
+      order: 0,
+      teamId: fixtures.teamId,
+      url: 'https://example.com/docs',
+    });
+
+    expect(
+      queuedLinks.toQueuedLinkSnapshot({
+        id: 'link-b',
+        label: 'Invalid status',
+        localStatus: 'uploaded',
+        order: 1,
+        teamId: fixtures.teamId,
+        url: 'https://example.com/invalid',
+      })
+    ).not.toHaveProperty('localStatus');
+  });
+
+  test('selects replayable links', () => {
+    expect(
+      queuedLinks
+        .getReplayableQueuedLinks([
+          {
+            id: 'link-a',
+            label: 'Pending',
+            localStatus: 'pending',
+            order: 0,
+            teamId: fixtures.teamId,
+            url: 'https://example.com/a',
+          },
+          {
+            id: 'link-b',
+            label: 'Synced',
+            order: 1,
+            teamId: fixtures.teamId,
+            url: 'https://example.com/b',
+          },
+        ])
+        .map((link) => link.id)
+    ).toEqual(['link-a']);
+  });
+});
+
+describe('local entries', () => {
+  test('detects local metadata', () => {
+    expect(localEntry.hasLocalStatus({ localStatus: 'pending' })).toBe(true);
+    expect(localEntry.hasLocalStatus({ status: 'pending' })).toBe(false);
+
+    expect(localEntry.needsIdentityReplay({ needsIdentityReplay: true })).toBe(
+      true
+    );
+
+    expect(localEntry.needsIdentityReplay({ needsIdentityReplay: false })).toBe(
+      false
+    );
+  });
+});
+
+describe('pending entries', () => {
+  test('keeps draft files', () => {
+    const queuedRecord = pendingEntries.queuedRecordToEntry({
+      attachments: [
+        queuedAttachment({ id: 'queued-file', localUri: 'file:///local.jpg' }),
+      ],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedRecordSubmission({
+        files: [
+          queuedFile({
+            id: 'uploaded-file',
+            order: 0,
+            uri: 'https://example.com/uploaded.jpg',
+          }),
+        ],
+      }),
+    });
+
+    expect(queuedRecord.files?.map((file) => [file.id, file.uri])).toEqual([
+      ['uploaded-file', 'https://example.com/uploaded.jpg'],
+      ['queued-file', 'file:///local.jpg'],
+    ]);
+  });
+
+  test('keeps pending file sources', () => {
+    const queuedRecord = pendingEntries.queuedRecordToEntry({
+      attachments: [
+        queuedAttachment({
+          id: fixtures.fileId,
+          localUri: 'file:///local.jpg',
+        }),
+      ],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedRecordSubmission({
+        files: [
+          queuedFile({
+            id: fixtures.fileId,
+            order: 0,
+            uri: 'https://example.com/uploaded.jpg',
+          }),
+        ],
+      }),
+    });
+
+    const [record] = pendingEntries.mergePendingRecords(
+      [
+        {
+          files: [{ id: fixtures.fileId, order: 0, type: 'image' }],
+          id: fixtures.recordId,
+        },
+      ],
+      [queuedRecord]
+    ) as { files?: { id: string; uri?: string }[]; localStatus?: string }[];
+
+    expect(record.files?.map((file) => [file.id, file.uri])).toEqual([
+      [fixtures.fileId, 'https://example.com/uploaded.jpg'],
+    ]);
+
+    expect(record.localStatus).toBe('pending');
+  });
+
+  test('merges records', () => {
+    const queuedRecord = pendingEntries.queuedRecordToEntry({
+      attachments: [queuedAttachment({ id: 'queued-file' })],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedRecordSubmission(),
+    });
+
+    expect(
+      pendingEntries
+        .mergePendingRecords(
+          [{ id: 'record-b' }, { id: 'record-a' }],
+          [queuedRecord]
+        )
+        .map((record) => record.id)
+    ).toEqual(['record-b', 'record-a']);
+
+    expect(
+      pendingEntries
+        .mergePendingRecords([{ id: 'record-b' }], [queuedRecord])
+        .map((record) => record.id)
+    ).toEqual(['record-a', 'record-b']);
+  });
+
+  test('keeps completed submissions visible', () => {
+    const queuedRecord = pendingEntries.queuedRecordToEntry({
+      attachments: [],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedRecordSubmission({ status: 'complete' }),
+    });
+
+    expect(
+      pendingEntries
+        .mergePendingRecords([{ id: 'record-b' }], [queuedRecord])
+        .map((record) => record.id)
+    ).toEqual(['record-a', 'record-b']);
+
+    expect(
+      pendingEntries
+        .mergePendingRecords([{ id: fixtures.recordId }], [queuedRecord])
+        .map((record) => record.id)
+    ).toEqual([fixtures.recordId]);
+  });
+
+  test('merges replies', () => {
+    const queuedReply = pendingEntries.queuedReplyToEntry({
+      attachments: [],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedReplySubmission({ status: 'error' }),
+    });
+
+    expect(
+      pendingEntries
+        .mergePendingReplies([{ id: 'reply-b' }], [queuedReply])
+        .map((reply) => reply.id)
+    ).toEqual(['reply-b', 'reply-a']);
+  });
+
+  test('keeps pending reply data', () => {
+    const queuedReply = pendingEntries.queuedReplyToEntry({
+      attachments: [],
+      submission: queuedReplySubmission({
+        createdAt: '2026-05-13T12:00:00.000Z',
+        text: 'Pending reply',
+      }),
+    });
+
+    expect(
+      pendingEntries.mergePendingReplies(
+        [
+          {
+            date: '2026-05-13T00:00:00.000Z',
+            files: [],
+            id: fixtures.replyId,
+            text: 'Older live reply',
+          },
+        ],
+        [queuedReply]
+      )[0]
+    ).toMatchObject({
+      date: '2026-05-13T12:00:00.000Z',
+      id: fixtures.replyId,
+      localStatus: 'pending',
+      text: 'Pending reply',
+    });
+  });
+
+  test('keeps reply replay flags', () => {
+    expect(
+      pendingEntries.queuedReplyToEntry({
+        attachments: [],
+        submission: queuedReplySubmission({ needsDraftReplay: false }),
+      }).localNeedsDraftReplay
+    ).toBe(false);
+
+    const replayReply = pendingEntries.queuedReplyToEntry({
+      attachments: [],
+      submission: queuedReplySubmission({
+        needsDraftReplay: true,
+        status: 'complete',
+      }),
+    });
+
+    expect(replayReply.localNeedsDraftReplay).toBe(true);
+    expect(replayReply.localOutboxStatus).toBe('complete');
+  });
+});
+
+describe('connectivity state', () => {
+  test('separates reconnect lag', () => {
+    const state = getConnectivityState({
+      browserOnline: true,
+      instantStatus: 'closed',
+      netInfoOnline: null,
+    });
+
+    expect(state.isOffline).toBe(true);
+    expect(state.isNetworkOffline).toBe(false);
+    expect(state.canRunNetworkActions).toBe(false);
+  });
+
+  test('keeps browser offline visible', () => {
+    const state = getConnectivityState({
+      browserOnline: false,
+      instantStatus: 'authenticated',
+      netInfoOnline: null,
+    });
+
+    expect(state.isOffline).toBe(true);
+    expect(state.isNetworkOffline).toBe(true);
+    expect(state.canRunNetworkActions).toBe(false);
+  });
+});
+
+describe('offline banner state', () => {
+  test('delays offline display', () => {
+    expect(
+      getNextOfflineBannerState({
+        currentState: null,
+        hasPendingWork: false,
+        isNetworkOffline: true,
+        outboxHydrated: true,
+        showOffline: false,
+      })
+    ).toBe(null);
+  });
+
+  test('switches offline to syncing', () => {
+    expect(
+      getNextOfflineBannerState({
+        currentState: 'offline',
+        hasPendingWork: true,
+        isNetworkOffline: false,
+        outboxHydrated: true,
+        showOffline: false,
+      })
+    ).toBe('syncing');
+  });
+
+  test('keeps online background work hidden', () => {
+    expect(
+      getNextOfflineBannerState({
+        currentState: null,
+        hasPendingWork: true,
+        isNetworkOffline: false,
+        outboxHydrated: true,
+        showOffline: false,
+      })
+    ).toBe(null);
+  });
+
+  test('keeps banner during hydration', () => {
+    expect(
+      getNextOfflineBannerState({
+        currentState: 'offline',
+        hasPendingWork: false,
+        isNetworkOffline: false,
+        outboxHydrated: false,
+        showOffline: false,
+      })
+    ).toBe('syncing');
+  });
+
+  test('hides once online and synced', () => {
+    expect(
+      getNextOfflineBannerState({
+        currentState: 'syncing',
+        hasPendingWork: false,
+        isNetworkOffline: false,
+        outboxHydrated: true,
+        showOffline: false,
+      })
+    ).toBe(null);
+  });
+});

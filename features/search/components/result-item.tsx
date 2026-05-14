@@ -20,7 +20,7 @@ export const ResultItem = ({
       }
 
       case 'record': {
-        openRecordDetail(result.id);
+        openRecordDetail(result.id, undefined, { highlight: true });
         break;
       }
 

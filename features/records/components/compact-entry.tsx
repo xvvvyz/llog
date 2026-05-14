@@ -22,6 +22,7 @@ export const CompactEntry = ({
   entryMenuState,
   links,
   logId,
+  networkActionsEnabled = true,
   numberOfLines,
   onDoubleTapReaction,
   record,
@@ -66,6 +67,7 @@ export const CompactEntry = ({
               authorId={record.author?.id}
               className="-mb-3 -mr-1.5 -mt-1.5"
               isDetail
+              isLocalPending={!!record.localStatus}
               isPinned={'isPinned' in record ? !!record.isPinned : undefined}
               logId={logId}
               recordId={recordId}
@@ -116,11 +118,13 @@ export const CompactEntry = ({
           <ReactionsRow
             accentColor={accentColor}
             className="mt-3 gap-1.5"
+            disabled={!networkActionsEnabled}
             logId={logId}
             onDoubleTapReaction={onDoubleTapReaction}
             record={record}
             recordId={recordId}
             replyId={replyId}
+            trailing={undefined}
           />
         </View>
       </View>

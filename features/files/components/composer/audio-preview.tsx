@@ -2,10 +2,9 @@ import { AudioPlayer } from '@/features/files/components/audio-player';
 import { useAudioPlaylistPlayback } from '@/features/files/hooks/use-audio-playlist-playback';
 import { useUiAudioPlaybackRate } from '@/features/files/hooks/use-ui-audio-playback-rate';
 import * as attachmentItems from '@/features/files/lib/attachment-items';
-import { formatFileSize } from '@/features/files/lib/file-size';
-import { getFileTypeIcon } from '@/features/files/lib/file-type-icon';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { cn } from '@/lib/cn';
 import { durationMsToSeconds } from '@/lib/duration';
 import { Button } from '@/ui/button';
@@ -16,55 +15,90 @@ import { CaretLeft, CaretRight, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
-const getAudioName = (item: { name?: string | null }) =>
-  item.name?.trim() || 'Audio';
-
-const getAudioSizeText = (item: { size?: number | null }) =>
-  formatFileSize(item.size) || 'Uploading';
-
 const PendingAudioPreview = ({
+  actionsDisabled,
+  active,
+  autoPlayKey,
+  hasMultipleItems,
   item,
+  onDidFinish,
+  onDeleteFile,
+  onNextClip,
+  onPause,
+  onPlayStart,
+  onPreviousClip,
 }: {
+  actionsDisabled?: boolean;
+  active: boolean;
+  autoPlayKey?: number;
+  hasMultipleItems: boolean;
   item: fileComposer.PendingAudioUpload;
+  onDidFinish?: () => void;
+  onDeleteFile: (fileId: string) => void;
+  onNextClip?: () => void;
+  onPause?: () => void;
+  onPlayStart?: () => void;
+  onPreviousClip?: () => void;
 }) => {
-  const AudioIcon = getFileTypeIcon(item);
+  const trailingAccessory = (
+    <View className="flex-row items-center shrink-0">
+      {item.status === 'uploading' ? (
+        <View className="h-8 w-8 items-center justify-center">
+          <Spinner size="xs" />
+        </View>
+      ) : (
+        <Button
+          className="rounded-none"
+          disabled={actionsDisabled}
+          onPress={() => onDeleteFile(item.id)}
+          size="icon-xs"
+          variant="ghost"
+          wrapperClassName="rounded-none"
+        >
+          <Icon icon={X} />
+        </Button>
+      )}
+    </View>
+  );
 
   return (
-    <View className="flex-1 flex-row overflow-hidden h-8 max-h-8 min-h-8 min-w-0 px-1 border-border-secondary border-continuous rounded-lg bg-secondary opacity-70 border gap-1 items-center">
-      <View className="size-6 items-center justify-center shrink-0">
-        <Icon className="text-placeholder" icon={AudioIcon} size={16} />
-      </View>
-      <View className="flex-1 flex-row min-w-0 gap-4 items-baseline justify-between">
-        <Text
-          className="flex-1 min-w-0 text-muted-foreground text-sm"
-          numberOfLines={1}
-        >
-          {getAudioName(item)}
-        </Text>
-        <Text className="text-placeholder text-xs shrink-0" numberOfLines={1}>
-          {getAudioSizeText(item)}
-        </Text>
-      </View>
-      <View className="ml-0.5 size-6 items-center justify-center shrink-0">
-        <Spinner size="xs" />
-      </View>
-    </View>
+    <AudioPlayer
+      active={active}
+      autoPlayKey={autoPlayKey}
+      disabled={actionsDisabled}
+      durationSeconds={durationMsToSeconds(item.duration)}
+      fileId={item.id}
+      onDidFinish={onDidFinish}
+      onNextClip={hasMultipleItems ? onNextClip : undefined}
+      onPause={onPause}
+      onPlayStart={onPlayStart}
+      onPreviousClip={hasMultipleItems ? onPreviousClip : undefined}
+      showMetadata={false}
+      showPlaybackRate={false}
+      size={item.size}
+      trailingAccessory={trailingAccessory}
+      uri={item.uri}
+    />
   );
 };
 
 export const AudioPreview = ({
+  actionsDisabled,
   audioMedia,
   focusedAudioId,
   onFocusedAudioApplied,
   onDeleteFile,
   pendingAudio,
 }: {
+  actionsDisabled?: boolean;
   audioMedia: FileItem[];
   focusedAudioId?: string | null;
   onFocusedAudioApplied?: (fileId: string) => void;
   onDeleteFile: (fileId: string) => void;
   pendingAudio: fileComposer.PendingAudioUpload[];
 }) => {
+  const connectivity = useConnectivity();
+
   const items = React.useMemo(
     () =>
       attachmentItems.getAttachmentPreviewItems({
@@ -87,7 +121,10 @@ export const AudioPreview = ({
     setActiveIndex,
     showNext,
     showPrevious,
-  } = useAudioPlaylistPlayback(items, (item) => item.kind === 'file');
+  } = useAudioPlaylistPlayback(
+    items,
+    (item) => item.kind === 'file' || !!item.item.uri
+  );
 
   React.useEffect(() => {
     const previousItemIds = previousItemIdsRef.current;
@@ -132,6 +169,7 @@ export const AudioPreview = ({
                     active={isActive}
                     assetKey={previewItem.item.assetKey}
                     autoPlayKey={isActive ? activeAutoPlayKey : undefined}
+                    disabled={actionsDisabled}
                     fileId={previewItem.item.id}
                     name={previewItem.item.name}
                     onDidFinish={isActive ? handleDidFinish : undefined}
@@ -160,13 +198,30 @@ export const AudioPreview = ({
                         size="icon-xs"
                         variant="ghost"
                         wrapperClassName="rounded-none"
+                        disabled={
+                          actionsDisabled || !connectivity.canRunNetworkActions
+                        }
                       >
                         <Icon icon={X} />
                       </Button>
                     }
                   />
                 ) : (
-                  <PendingAudioPreview item={previewItem.item} />
+                  <PendingAudioPreview
+                    actionsDisabled={actionsDisabled}
+                    active={isActive}
+                    autoPlayKey={isActive ? activeAutoPlayKey : undefined}
+                    hasMultipleItems={hasMultipleItems}
+                    item={previewItem.item}
+                    onDeleteFile={onDeleteFile}
+                    onDidFinish={isActive ? handleDidFinish : undefined}
+                    onNextClip={isActive ? showNext : undefined}
+                    onPause={isActive ? handlePause : undefined}
+                    onPreviousClip={isActive ? showPrevious : undefined}
+                    onPlayStart={
+                      isActive ? () => handlePlayStart(index) : undefined
+                    }
+                  />
                 )}
               </View>
             );
@@ -177,6 +232,7 @@ export const AudioPreview = ({
             <Button
               accessibilityLabel="Previous audio"
               className="w-8 px-0"
+              disabled={actionsDisabled}
               onPress={showPrevious}
               size="xs"
               variant="ghost"
@@ -193,6 +249,7 @@ export const AudioPreview = ({
             <Button
               accessibilityLabel="Next audio"
               className="w-8 px-0"
+              disabled={actionsDisabled}
               onPress={showNext}
               size="xs"
               variant="ghost"

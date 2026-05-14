@@ -14,6 +14,7 @@ const SOURCE_EXTENSIONS = new Set([
 
 const PRINT_WIDTH = 80;
 const FORMAT_IGNORED_DIRECTORIES = new Set(['public']);
+const FORMAT_INCLUDED_FILES = new Set(['public/sw.js']);
 
 const PROP_PRIORITY = new Map([
   ['key', 0],
@@ -96,7 +97,9 @@ function isSourceFile(filePath: string) {
 }
 
 function isFormatIgnoredPath(filePath: string) {
-  const [directory] = normalizeRelativePath(filePath).split('/');
+  const normalizedPath = normalizeRelativePath(filePath);
+  if (FORMAT_INCLUDED_FILES.has(normalizedPath)) return false;
+  const [directory] = normalizedPath.split('/');
   return FORMAT_IGNORED_DIRECTORIES.has(directory);
 }
 

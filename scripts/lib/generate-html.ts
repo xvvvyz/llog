@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import * as startupImages from './apple-startup-images';
 import { AssetPlatformSelection } from './generate-platforms';
 import { createLogger } from './logger';
+import { getServiceWorkerBootstrapScript } from './service-worker-bootstrap';
 
 const publicPath = (...segments: string[]) =>
   join(process.cwd(), 'public', ...segments);
@@ -60,7 +61,8 @@ export async function generateHtml(platforms: AssetPlatformSelection) {
     ...startupLinks,
   ];
 
-  const html = `<!doctype html><html lang="en"><head>${tags.join('')}</head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>`;
+  const serviceWorkerBootstrap = getServiceWorkerBootstrapScript();
+  const html = `<!doctype html><html lang="en"><head>${tags.join('')}${serviceWorkerBootstrap}</head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>`;
   const outputPath = publicPath('index.html');
   const tempPath = publicPath('index.html.tmp');
   const manifestPath = publicPath('manifest.webmanifest');

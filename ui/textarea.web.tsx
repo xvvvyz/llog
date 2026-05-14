@@ -62,11 +62,12 @@ export const Textarea = React.forwardRef<
 
     const handleChange = React.useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        if (readOnly || props.disabled) return;
         const text = e.target.value;
         setLocalValue(text);
         if (onChangeText) React.startTransition(() => onChangeText(text));
       },
-      [onChangeText]
+      [onChangeText, props.disabled, readOnly]
     );
 
     const handleTouchStart = React.useCallback(
@@ -110,6 +111,7 @@ export const Textarea = React.forwardRef<
         selectionEnd: number,
         scrollToBottom: boolean
       ) => {
+        if (readOnly || props.disabled) return;
         setLocalValue(text);
         if (onChangeText) React.startTransition(() => onChangeText(text));
 
@@ -118,13 +120,14 @@ export const Textarea = React.forwardRef<
           keepTextareaScrolledToBottom(textarea, scrollToBottom);
         });
       },
-      [onChangeText]
+      [onChangeText, props.disabled, readOnly]
     );
 
     const handleKeyDown = React.useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         onKeyDown?.(e);
         if (e.defaultPrevented) return;
+        if (readOnly || props.disabled) return;
 
         if (!e.shiftKey && e.key === 'Enter' && onSubmitEditing) {
           e.preventDefault();
@@ -176,7 +179,14 @@ export const Textarea = React.forwardRef<
           scrollToBottom
         );
       },
-      [applyTextEdit, maxLength, onKeyDown, onSubmitEditing]
+      [
+        applyTextEdit,
+        maxLength,
+        onKeyDown,
+        onSubmitEditing,
+        props.disabled,
+        readOnly,
+      ]
     );
 
     return (
@@ -195,6 +205,7 @@ export const Textarea = React.forwardRef<
         className={cn(
           'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border focus-visible:outline-hidden border-continuous',
           size === 'sm' ? 'px-3 py-2' : 'px-4 py-2.5',
+          readOnly && 'opacity-50 web:cursor-not-allowed',
           className
         )}
         {...props}

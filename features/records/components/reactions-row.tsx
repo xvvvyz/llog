@@ -10,6 +10,7 @@ import { View } from 'react-native';
 export const ReactionsRow = ({
   accentColor,
   className,
+  disabled,
   logId,
   onDoubleTapReaction,
   record,
@@ -19,6 +20,7 @@ export const ReactionsRow = ({
 }: {
   accentColor?: string;
   className?: string;
+  disabled?: boolean;
   logId?: string;
   onDoubleTapReaction: () => void;
   record: EntryRecord;
@@ -36,6 +38,7 @@ export const ReactionsRow = ({
   ) && (
     <EmojiPicker
       color={accentColor}
+      disabled={disabled}
       logId={logId}
       reactions={record.reactions}
       recordId={recordId}
@@ -52,6 +55,7 @@ export const ReactionsRow = ({
         {hasReactions ? (
           <Reactions
             color={accentColor}
+            disabled={disabled}
             leading={reactionPicker}
             logId={logId}
             reactions={record.reactions ?? []}
@@ -65,6 +69,7 @@ export const ReactionsRow = ({
       </View>
       <ReactionZone
         className="-mb-3 -mt-3 pb-3 pt-3 justify-center"
+        disabled={disabled}
         onDoubleTap={onDoubleTapReaction}
       />
       {trailing}

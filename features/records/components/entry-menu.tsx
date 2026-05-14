@@ -1,10 +1,12 @@
 import { canDeleteOwnOrManagedResource } from '@/domain/teams/permissions';
 import { useProfile } from '@/features/account/queries/use-profile';
+import * as outboxStore from '@/features/offline/outbox-store';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
@@ -18,6 +20,7 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 import {
+  ArrowClockwise,
   DotsThreeVertical,
   NotePencil,
   PushPin,
@@ -32,6 +35,7 @@ type EntryMenuProps = {
   className?: string;
   replyId?: string;
   isDetail?: boolean;
+  isLocalPending?: boolean;
   isPinned?: boolean;
   logId?: string;
   recordId: string;
@@ -46,7 +50,10 @@ export const useEntryMenuState = ({
 }: Pick<EntryMenuProps, 'authorId' | 'logId' | 'replyId' | 'teamId'>) => {
   const myRole = useMyRole({ teamId });
   const profile = useProfile();
+  const connectivity = useConnectivity();
   const isAuthor = !!profile.id && profile.id === authorId;
+  const isSyncedReplyOffline = !!replyId && connectivity.isOffline;
+  const isSyncedRecordOffline = !replyId && connectivity.isOffline;
 
   const canDelete = canDeleteOwnOrManagedResource({
     actorRole: myRole.role,
@@ -71,7 +78,11 @@ export const useEntryMenuState = ({
   });
 
   const canDuplicate =
-    canDuplicateRecord && !!logId && copyTargets.logs.length > 0;
+    canDuplicateRecord &&
+    !!logId &&
+    (copyTargets.logs.length > 0 ||
+      copyTargets.isLoading ||
+      !connectivity.canRunNetworkActions);
 
   const canPin = !replyId && myRole.canPinRecords;
   const hasActionsAboveDelete = canEdit || canTag || canPin;
@@ -82,10 +93,18 @@ export const useEntryMenuState = ({
     canDuplicate,
     canEdit,
     canPin,
+    canRetry: false,
     canTag,
     copyTargetLogs: copyTargets.logs,
     hasActionsAboveDelete,
     hasMenu,
+    isDeleteDisabled: isSyncedReplyOffline,
+    isDuplicateDisabled:
+      copyTargets.isLoading || !connectivity.canRunNetworkActions,
+    isEditDisabled: isSyncedReplyOffline || isSyncedRecordOffline,
+    isPinDisabled: !connectivity.canRunNetworkActions,
+    isRetryDisabled: false,
+    isTagDisabled: !connectivity.canRunNetworkActions,
   };
 };
 
@@ -96,6 +115,7 @@ const EntryMenuDropdownContent = ({
   logId,
   replyId,
   isDetail,
+  isLocalPending,
   isPinned,
   recordId,
   state,
@@ -109,17 +129,24 @@ const EntryMenuDropdownContent = ({
     canDuplicate,
     canEdit,
     canPin,
+    canRetry,
     canTag,
     copyTargetLogs,
     hasActionsAboveDelete,
     hasMenu,
+    isDeleteDisabled,
+    isDuplicateDisabled,
+    isEditDisabled,
+    isPinDisabled,
+    isRetryDisabled,
+    isTagDisabled,
   } = state;
 
   if (!hasMenu) return null;
 
   const duplicateRecord = async () => {
     const [targetLog] = copyTargetLogs;
-    if (isDuplicating) return;
+    if (isDuplicating || isDuplicateDisabled) return;
 
     if (!targetLog || copyTargetLogs.length > 1) {
       sheetManager.open('record-copy-to', recordId);
@@ -171,6 +198,7 @@ const EntryMenuDropdownContent = ({
       <Menu.Content align="end">
         {canEdit && (
           <Menu.Item
+            disabled={isEditDisabled}
             onPress={() => {
               if (replyId) {
                 sheetManager.open('reply-create', replyId, recordId);
@@ -183,16 +211,49 @@ const EntryMenuDropdownContent = ({
             <Text>Edit</Text>
           </Menu.Item>
         )}
+        {canRetry && (
+          <Menu.Item
+            disabled={isRetryDisabled}
+            onPress={() => {
+              if (isRetryDisabled) return;
+
+              outboxStore.retryQueuedSubmission(
+                `${replyId ? 'reply' : 'record'}:${replyId ?? recordId}`
+              );
+            }}
+          >
+            <Icon className="text-placeholder" icon={ArrowClockwise} />
+            <Text>Retry sync</Text>
+          </Menu.Item>
+        )}
         {canTag && (
-          <Menu.Item onPress={() => sheetManager.open('record-tags', recordId)}>
+          <Menu.Item
+            disabled={isTagDisabled}
+            onPress={() => {
+              if (isTagDisabled) return;
+              sheetManager.open('record-tags', recordId);
+            }}
+          >
             <Icon className="text-placeholder" icon={Tag} />
             <Text>Tags</Text>
           </Menu.Item>
         )}
         {canPin && (
           <Menu.Item
+            disabled={isPinDisabled}
             onPress={() => {
+              if (isPinDisabled) return;
               const nextIsPinned = !isPinned;
+
+              if (isLocalPending) {
+                outboxStore.updateQueuedRecordPin({
+                  isPinned: nextIsPinned,
+                  recordId,
+                });
+
+                return;
+              }
+
               void toggleRecordPin({ id: recordId, isPinned: nextIsPinned });
 
               if (nextIsPinned) {
@@ -218,7 +279,7 @@ const EntryMenuDropdownContent = ({
             {canDuplicate && (
               <Menu.Item
                 closeOnPress={copyTargetLogs.length !== 1}
-                disabled={isDuplicating}
+                disabled={isDuplicating || isDuplicateDisabled}
                 onPress={() => void duplicateRecord()}
               >
                 {isDuplicating ? (
@@ -233,14 +294,27 @@ const EntryMenuDropdownContent = ({
               <React.Fragment>
                 {(hasActionsAboveDelete || canDuplicate) && <Menu.Separator />}
                 <Menu.Item
+                  disabled={isDeleteDisabled}
                   onPress={() => {
                     if (replyId) {
-                      sheetManager.open('reply-delete', replyId, recordId);
+                      sheetManager.open(
+                        'reply-delete',
+                        replyId,
+                        isLocalPending ? `local:${recordId}` : recordId
+                      );
                     } else {
+                      const detailContext = isDetail
+                        ? `detail:${logId ?? ''}`
+                        : undefined;
+
                       sheetManager.open(
                         'record-delete',
                         recordId,
-                        isDetail ? `detail:${logId ?? ''}` : undefined
+                        isLocalPending
+                          ? detailContext
+                            ? `local:${detailContext}`
+                            : 'local'
+                          : detailContext
                       );
                     }
                   }}

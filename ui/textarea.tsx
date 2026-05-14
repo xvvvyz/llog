@@ -5,6 +5,7 @@ import { StyleSheet, TextInput } from 'react-native';
 type TextareaProps = React.ComponentPropsWithoutRef<typeof TextInput> & {
   maxRows?: number;
   minRows?: number;
+  readOnly?: boolean;
   size?: 'default' | 'sm';
 };
 
@@ -19,11 +20,13 @@ const Textarea = React.forwardRef<
     {
       className,
       defaultValue,
+      editable,
       maxRows,
       minRows,
       numberOfLines,
       onChangeText,
       onContentSizeChange,
+      readOnly,
       scrollEnabled,
       size = 'default',
       style,
@@ -65,10 +68,11 @@ const Textarea = React.forwardRef<
 
     const handleChangeText = React.useCallback(
       (text: string) => {
+        if (readOnly) return;
         setLocalValue(text);
         if (onChangeText) React.startTransition(() => onChangeText(text));
       },
-      [onChangeText]
+      [onChangeText, readOnly]
     );
 
     const handleContentSizeChange = React.useCallback<
@@ -91,6 +95,7 @@ const Textarea = React.forwardRef<
         autoComplete="off"
         autoCorrect
         blurOnSubmit={false}
+        editable={readOnly ? false : editable}
         lineBreakModeIOS="wordWrapping"
         multiline
         numberOfLines={minRows ?? numberOfLines}
@@ -106,6 +111,7 @@ const Textarea = React.forwardRef<
         className={cn(
           'border-border-secondary bg-input native:text-base text-foreground rounded-xl border text-base border-continuous',
           size === 'sm' ? 'px-3 py-2' : 'px-4 py-2.5',
+          readOnly && 'opacity-50',
           className
         )}
         {...props}

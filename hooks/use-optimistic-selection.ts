@@ -42,6 +42,18 @@ export const useOptimisticSelection = ({
     [pendingSelections, selectedIds]
   );
 
+  const setOptimisticSelected = React.useCallback(
+    (id: string, selected: boolean) => {
+      const requestId = ++nextRequestIdRef.current;
+
+      setPendingSelections((current) => ({
+        ...current,
+        [id]: { requestId, selected },
+      }));
+    },
+    []
+  );
+
   const setSelected = React.useCallback(
     async (id: string, selected: boolean) => {
       const requestId = ++nextRequestIdRef.current;
@@ -68,5 +80,5 @@ export const useOptimisticSelection = ({
     [onChange]
   );
 
-  return { getSelected, setSelected };
+  return { getSelected, setOptimisticSelected, setSelected };
 };

@@ -3,6 +3,7 @@ import { ListEmptyState } from '@/features/logs/components/list-empty-state';
 import { ListItem } from '@/features/logs/components/list-item';
 import { createLog } from '@/features/logs/mutations/create-log';
 import { useLogs } from '@/features/logs/queries/use-logs';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { useTags } from '@/features/tags/queries/use-tags';
 import type { Tag } from '@/features/tags/types/tag';
 import { TeamSwitcher } from '@/features/teams/components/switcher';
@@ -36,6 +37,7 @@ export default function Index() {
   const breakpoints = useBreakpoints();
   const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
+  const connectivity = useConnectivity();
   const tags = useTags();
   const { canManage } = useMyRole();
   const query = React.useMemo(() => rawQuery?.trim(), [rawQuery]);
@@ -43,13 +45,20 @@ export default function Index() {
   const hasNoLogs = logs.data.length === 0;
 
   const handleCreateLog = React.useCallback(() => {
+    if (!connectivity.canRunNetworkActions) return;
     const logId = id();
     router.push(`/${logId}`);
 
-    void createLog({ color: 7, id: logId, name: 'Log' }).catch((error) => {
-      console.error('Failed to create log', error);
-    });
-  }, []);
+    const createBlankLog = async () => {
+      try {
+        await createLog({ color: 7, id: logId, name: 'Log' });
+      } catch (error) {
+        console.error('Failed to create log', error);
+      }
+    };
+
+    void createBlankLog();
+  }, [connectivity.canRunNetworkActions]);
 
   const tagsById = React.useMemo(
     () => new Map(tags.data.map((tag) => [tag.id, tag])),
@@ -114,6 +123,7 @@ export default function Index() {
             {canManage && (
               <Button
                 className="size-11"
+                disabled={!connectivity.canRunNetworkActions}
                 onPress={handleCreateLog}
                 size="icon"
                 variant="link"
@@ -128,7 +138,11 @@ export default function Index() {
       {logs.isLoading ? (
         <Loading />
       ) : hasNoLogs ? (
-        <ListEmptyState canManage={canManage} onCreateLog={handleCreateLog} />
+        <ListEmptyState
+          canManage={canManage}
+          createDisabled={!connectivity.canRunNetworkActions}
+          onCreateLog={handleCreateLog}
+        />
       ) : (
         <ScrollView
           className="flex-1"

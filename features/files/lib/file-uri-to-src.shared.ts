@@ -17,6 +17,7 @@ const DEFAULT_CLOUDFLARE_IMAGE_QUALITY = 75;
 const DEFAULT_CLOUDFLARE_IMAGE_FORMAT = 'webp';
 const CLOUDFLARE_STREAM_THUMBNAIL_MIN_SIZE = 10;
 const CLOUDFLARE_STREAM_THUMBNAIL_MAX_SIZE = 2000;
+const STORED_IMAGE_URL_PREFIX = 'cf-image:';
 const isAbsoluteUri = (uri: string) => /^[a-z][a-z\d+.-]*:/i.test(uri);
 
 const roundPositiveDimension = (value?: number) =>
@@ -114,8 +115,13 @@ const getCloudflareStreamThumbnailSrc = (
   return url.toString();
 };
 
+const getStoredImageDeliveryUrl = (value?: string | null) =>
+  value?.startsWith(STORED_IMAGE_URL_PREFIX)
+    ? value.slice(STORED_IMAGE_URL_PREFIX.length)
+    : null;
+
 export const getFileSourceUri = ({ assetKey, uri }: FileSource) =>
-  uri ?? assetKey ?? null;
+  uri ?? getStoredImageDeliveryUrl(assetKey) ?? assetKey ?? null;
 
 export const fileUriToSrc = (
   uri?: string | null,

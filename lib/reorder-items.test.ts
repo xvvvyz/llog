@@ -81,7 +81,7 @@ describe('applyOrderedIds', () => {
     ).toEqual(['first', 'fourth', 'third', 'second']);
   });
 
-  test('ignores bad ids', () => {
+  test('ignores invalid ids', () => {
     expect(
       applyOrderedIds(items, ['missing', 'third', 'third', 'first']).map(
         (item) => item.id

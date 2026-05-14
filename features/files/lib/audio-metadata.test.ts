@@ -10,8 +10,8 @@ describe('parseAudioTracks', () => {
       const tracks = audioMetadata.parseAudioTracks(
         [
           {
-            album: 'Lorem Album',
-            artists: ['Foo Artist', null, 'Bar Artist'],
+            album: 'Evening Notes',
+            artists: ['First Artist', null, 'Second Artist'],
             artwork: 'https://images.example/direct.jpg',
             links: [
               {
@@ -37,8 +37,8 @@ describe('parseAudioTracks', () => {
             start: 1500,
             title: 'First',
           },
-          { artists: ['Missing foo'], title: 'Baz' },
-          { artists: ['Missing bar'], start: 500 },
+          { artists: ['Missing artist'], title: 'Missing title' },
+          { artists: ['Missing start'], start: 500 },
         ],
         { fileId: 'file/id' }
       );
@@ -53,8 +53,8 @@ describe('parseAudioTracks', () => {
           title: 'First',
         },
         {
-          album: 'Lorem Album',
-          artistText: 'Foo Artist, Bar Artist',
+          album: 'Evening Notes',
+          artistText: 'First Artist, Second Artist',
           artwork:
             'https://api.example.test/files/file%2Fid/track-artwork?source=https%3A%2F%2Fimages.example%2Fdirect.jpg',
           links: [
@@ -95,9 +95,9 @@ describe('parseTranscriptSegments', () => {
 
 describe('getTrackNavigationState', () => {
   const tracks = [
-    { artistText: 'Foo Artist', links: [], startSeconds: 0, title: 'Foo' },
-    { artistText: 'Foo Artist', links: [], startSeconds: 10, title: 'Bar' },
-    { artistText: 'Foo Artist', links: [], startSeconds: 30, title: 'Baz' },
+    { artistText: 'First Artist', links: [], startSeconds: 0, title: 'Intro' },
+    { artistText: 'First Artist', links: [], startSeconds: 10, title: 'Notes' },
+    { artistText: 'First Artist', links: [], startSeconds: 30, title: 'Outro' },
   ];
 
   test('seeks previous track', () => {
@@ -131,9 +131,9 @@ describe('getTrackNavigationState', () => {
 
 describe('getTranscriptNavigationState', () => {
   const segments = [
-    { endSeconds: 3, startSeconds: 0, text: 'Foo' },
-    { endSeconds: 7, startSeconds: 4, text: 'Bar' },
-    { endSeconds: 12, startSeconds: 8, text: 'Baz' },
+    { endSeconds: 3, startSeconds: 0, text: 'Intro' },
+    { endSeconds: 7, startSeconds: 4, text: 'Notes' },
+    { endSeconds: 12, startSeconds: 8, text: 'Outro' },
   ];
 
   test('gets transcript indexes', () => {

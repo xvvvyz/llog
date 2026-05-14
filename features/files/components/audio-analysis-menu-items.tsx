@@ -2,6 +2,7 @@ import * as audioAnalysis from '@/domain/files/audio-analysis';
 import * as audioMetadata from '@/features/files/lib/audio-metadata';
 import * as audioAnalysisMutations from '@/features/files/mutations/audio-analysis';
 import type { FileItem } from '@/features/files/types/file';
+import { useConnectivity } from '@/features/offline/connectivity';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
@@ -189,6 +190,8 @@ export const AudioAnalysisMenuItems = ({
   canAnalyze?: boolean;
   file?: AudioAnalysisMenuFile;
 }) => {
+  const connectivity = useConnectivity();
+
   const [isRequestingIdentification, setIsRequestingIdentification] =
     React.useState(false);
 
@@ -260,15 +263,19 @@ export const AudioAnalysisMenuItems = ({
     <React.Fragment>
       {menuState.canTranscribe && menuState.transcribeLabel && (
         <AudioAnalysisMenuItem
-          disabled={menuState.isTranscriptionDisabled}
           icon={TextT}
           isPending={!!file.isTranscribing || isRequestingTranscription}
           label={menuState.transcribeLabel}
           onPress={transcribe}
+          disabled={
+            menuState.isTranscriptionDisabled ||
+            !connectivity.canRunNetworkActions
+          }
         />
       )}
       {menuState.canClearTranscription && (
         <AudioAnalysisMenuItem
+          disabled={!connectivity.canRunNetworkActions}
           icon={TextTSlash}
           isPending={isClearingTranscription}
           label="Clear transcript"
@@ -277,11 +284,14 @@ export const AudioAnalysisMenuItems = ({
       )}
       {menuState.canIdentify && (
         <AudioAnalysisMenuItem
-          disabled={menuState.isIdentificationDisabled}
           icon={MusicNotes}
           isPending={!!file.isIdentifying || isRequestingIdentification}
           label={menuState.identifyMusicLabel}
           onPress={identifyMusic}
+          disabled={
+            menuState.isIdentificationDisabled ||
+            !connectivity.canRunNetworkActions
+          }
         />
       )}
     </React.Fragment>

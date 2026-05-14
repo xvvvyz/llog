@@ -15,7 +15,7 @@ describe('durationMsToSeconds', () => {
     expect(duration2.durationMsToSeconds(1234)).toBe(1.234);
   });
 
-  test('rejects bad ms', () => {
+  test('rejects invalid ms', () => {
     for (const duration of invalidDurations) {
       expect(duration2.durationMsToSeconds(duration)).toBeUndefined();
     }
@@ -29,7 +29,7 @@ describe('durationSecondsToMs', () => {
     expect(duration2.durationSecondsToMs(1.2345)).toBe(1235);
   });
 
-  test('rejects bad seconds', () => {
+  test('rejects invalid seconds', () => {
     for (const duration of invalidDurations) {
       expect(duration2.durationSecondsToMs(duration)).toBeUndefined();
     }

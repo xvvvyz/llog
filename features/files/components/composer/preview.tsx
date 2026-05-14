@@ -8,6 +8,7 @@ import type * as React from 'react';
 import { View } from 'react-native';
 
 export const Preview = ({
+  actionsDisabled,
   audioMedia,
   autoPlayPendingVideoId,
   documentFiles,
@@ -24,6 +25,7 @@ export const Preview = ({
   pendingDocuments,
   visualItems,
 }: {
+  actionsDisabled?: boolean;
   audioMedia: FileItem[];
   autoPlayPendingVideoId?: string;
   documentFiles: FileItem[];
@@ -62,6 +64,7 @@ export const Preview = ({
   return (
     <View className="border-border-secondary border-t">
       <VisualPreview
+        actionsDisabled={actionsDisabled}
         autoPlayPendingVideoId={autoPlayPendingVideoId}
         onDeleteFile={onDeleteFile}
         onOpenVisual={onOpenVisual}
@@ -74,6 +77,7 @@ export const Preview = ({
         <View className="p-3 gap-3">
           {hasAudioAttachments && (
             <AudioPreview
+              actionsDisabled={actionsDisabled}
               audioMedia={audioMedia}
               focusedAudioId={focusedAudioId}
               onDeleteFile={onDeleteFile}
@@ -90,6 +94,7 @@ export const Preview = ({
               )}
             >
               <DocumentAttachments
+                actionsDisabled={actionsDisabled}
                 className={cn(documentAttachmentCount === 1 && '-my-1.5')}
                 documents={documentFiles}
                 onDeleteFile={onDeleteFile}

@@ -50,7 +50,7 @@ describe('renderRecordMarkdownText', () => {
 
     const nodes = renderRecordMarkdownText({
       flattenListItems: true,
-      text: '- lorem\n- ...ipsum',
+      text: '- first\n- ...second',
     });
 
     const first = getElement(nodes[0]);
@@ -64,7 +64,7 @@ describe('renderRecordMarkdownText', () => {
       React.Children.toArray(getElement(firstChildren[1]).props.children)
     ).toEqual(['-', ' ']);
 
-    expect(firstChildren[2]).toBe('lorem');
+    expect(firstChildren[2]).toBe('first');
     expect(nodes[1]).toBe('\n');
     expect(second.type).toBe(React.Fragment);
 
@@ -72,7 +72,7 @@ describe('renderRecordMarkdownText', () => {
       React.Children.toArray(getElement(secondChildren[1]).props.children)
     ).toEqual(['-', ' ']);
 
-    expect(secondChildren[2]).toBe('...ipsum');
+    expect(secondChildren[2]).toBe('...second');
   });
 });
 

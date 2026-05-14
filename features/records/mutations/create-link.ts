@@ -3,6 +3,7 @@ import { id } from '@instantdb/react-native';
 
 export const createLink = async ({
   label,
+  linkId,
   order,
   parentId,
   parentType,
@@ -10,6 +11,7 @@ export const createLink = async ({
   url,
 }: {
   label: string;
+  linkId?: string;
   order: number;
   parentId?: string;
   parentType: 'record' | 'reply';
@@ -17,11 +19,14 @@ export const createLink = async ({
   url: string;
 }) => {
   if (!parentId || !teamId) return;
-  const link = db.tx.links[id()].update({ label, order, teamId, url });
+  const nextLinkId = linkId ?? id();
+  const link = db.tx.links[nextLinkId].update({ label, order, teamId, url });
 
-  return db.transact(
+  await db.transact(
     parentType === 'record'
       ? link.link({ record: parentId })
       : link.link({ reply: parentId })
   );
+
+  return nextLinkId;
 };

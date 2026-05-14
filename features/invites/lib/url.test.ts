@@ -1,5 +1,5 @@
 import * as url from '@/features/invites/lib/url';
-import { afterEach, describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
 
 const originalAppUrl = process.env.EXPO_PUBLIC_APP_URL;
 
@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe('getInviteUrl', () => {
-  it('builds invite URLs', () => {
+  test('builds invite URLs', () => {
     process.env.EXPO_PUBLIC_APP_URL = 'https://llog.example';
 
     expect(url.getInviteUrl('invite-token')).toBe(
@@ -21,13 +21,13 @@ describe('getInviteUrl', () => {
     );
   });
 
-  it('normalizes invite URLs', () => {
+  test('normalizes invite URLs', () => {
     expect(url.getInviteUrl('team/a b', ' https://llog.example/// ')).toBe(
       'https://llog.example/join/team%2Fa%20b'
     );
   });
 
-  it('rejects bad invite URLs', () => {
+  test('rejects invalid invite URLs', () => {
     delete process.env.EXPO_PUBLIC_APP_URL;
 
     expect(() => url.getInviteUrl('invite-token')).toThrow(

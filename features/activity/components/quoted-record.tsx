@@ -2,8 +2,10 @@ import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
+import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { TruncatedText } from '@/features/records/components/truncated-text';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
@@ -13,7 +15,7 @@ import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
 import { TextContext } from '@/ui/text';
-import { Play } from 'phosphor-react-native';
+import { Play, WifiSlash } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -42,6 +44,7 @@ export const QuotedRecord = ({
   } = useFilteredFiles(files || []);
 
   const displayText = trimDisplayText(text);
+  const connectivity = useConnectivity();
   const { openMediaLightbox } = useMediaLightbox({ recordId });
   const hasAudioFiles = audioMedia.length > 0;
   const hasDocumentFiles = documentFiles.length > 0;
@@ -91,41 +94,61 @@ export const QuotedRecord = ({
             )}
           >
             <View className="flex-row gap-0.5">
-              {visualItems.map((item) => (
-                <Pressable
-                  key={item.id}
-                  className="overflow-hidden h-16 w-16 border-continuous rounded-lg shrink-0"
-                  disabled={visualMedia.isProcessing(item) || !recordId}
-                  onPress={() =>
-                    !visualMedia.isProcessing(item) &&
-                    openMediaLightbox(item.id)
-                  }
-                >
-                  <Image
-                    contentFit="cover"
-                    height={64}
-                    targetSize={128}
-                    uri={visualMedia.getThumbnailUri(item)}
-                    width={64}
-                  />
-                  {item.type === 'video' && (
-                    <View className="absolute inset-0 pointer-events-none items-center justify-center">
-                      {visualMedia.isProcessing(item) ? (
-                        <Spinner />
-                      ) : (
-                        <View className="size-6 border-continuous rounded-full bg-background/50 items-center justify-center">
-                          <Icon
-                            className="text-foreground"
-                            icon={Play}
-                            size={12}
-                            weight="fill"
-                          />
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </Pressable>
-              ))}
+              {visualItems.map((item) => {
+                const isProcessing = visualMedia.isProcessing(item);
+                const isAvailableOffline = isFileAvailableOffline(item);
+
+                const isUnavailableOffline =
+                  connectivity.isOffline && !isAvailableOffline;
+
+                const canOpenMedia =
+                  !!recordId &&
+                  !isProcessing &&
+                  (!connectivity.isOffline || isAvailableOffline);
+
+                return (
+                  <Pressable
+                    key={item.id}
+                    className="overflow-hidden h-16 w-16 border-continuous rounded-lg shrink-0"
+                    disabled={!canOpenMedia}
+                    onPress={() => {
+                      if (canOpenMedia) openMediaLightbox(item.id);
+                    }}
+                  >
+                    <Image
+                      contentFit="cover"
+                      height={64}
+                      targetSize={128}
+                      uri={visualMedia.getThumbnailUri(item)}
+                      width={64}
+                    />
+                    {(item.type === 'video' || isUnavailableOffline) && (
+                      <View className="absolute inset-0 pointer-events-none items-center justify-center">
+                        {isUnavailableOffline ? (
+                          <View className="size-6 border-continuous rounded-full bg-background/50 items-center justify-center">
+                            <Icon
+                              className="text-muted-foreground"
+                              icon={WifiSlash}
+                              size={12}
+                            />
+                          </View>
+                        ) : isProcessing ? (
+                          <Spinner />
+                        ) : (
+                          <View className="size-6 border-continuous rounded-full bg-background/50 items-center justify-center">
+                            <Icon
+                              className="text-foreground"
+                              icon={Play}
+                              size={12}
+                              weight="fill"
+                            />
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </ScrollView>
         )}

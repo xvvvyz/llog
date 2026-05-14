@@ -1,6 +1,7 @@
 import { isMemberRole } from '@/domain/teams/permissions';
 import { LogDropdownItems } from '@/features/invites/components/log-dropdown-items';
 import { useLog } from '@/features/logs/queries/use-log';
+import { useConnectivity } from '@/features/offline/connectivity';
 import * as lookup from '@/features/search/lib/lookup';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
@@ -35,6 +36,7 @@ export const DropdownMenu = ({
   triggerWrapperClassName?: string;
 }) => {
   const log = useLog({ id });
+  const connectivity = useConnectivity();
   const { canManage } = useMyRole({ teamId: log.teamId });
   const sheetManager = useSheetManager();
   const { members } = useTeamMembers({ teamId: log.teamId });
@@ -53,7 +55,9 @@ export const DropdownMenu = ({
     [members]
   );
 
-  if (!canManage) return null;
+  const networkActionsDisabled = !connectivity.canRunNetworkActions;
+  const shouldShowMembers = hasMembers || networkActionsDisabled;
+  if (!canManage && !searchHref) return null;
 
   return (
     <Menu.Root>
@@ -72,34 +76,54 @@ export const DropdownMenu = ({
         className={contentClassName}
         style={contentStyle}
       >
-        <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
-          <Icon className="text-placeholder" icon={NotePencil} />
-          <Text>Edit</Text>
-        </Menu.Item>
-        <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
-          <Icon className="text-placeholder" icon={Tag} />
-          <Text>Tags</Text>
-        </Menu.Item>
-        <Menu.Item onPress={() => sheetManager.open('log-templates', id)}>
-          <Icon className="text-placeholder" icon={NoteBlank} />
-          <Text>Templates</Text>
-        </Menu.Item>
-        {hasMembers && (
-          <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
-            <Icon className="text-placeholder" icon={UsersThree} />
-            <Text>Members</Text>
-          </Menu.Item>
+        {canManage && (
+          <>
+            <Menu.Item onPress={() => sheetManager.open('log-edit', id)}>
+              <Icon className="text-placeholder" icon={NotePencil} />
+              <Text>Edit</Text>
+            </Menu.Item>
+            <Menu.Item
+              disabled={networkActionsDisabled}
+              onPress={() => sheetManager.open('log-tags', id)}
+            >
+              <Icon className="text-placeholder" icon={Tag} />
+              <Text>Tags</Text>
+            </Menu.Item>
+            <Menu.Item
+              disabled={networkActionsDisabled}
+              onPress={() => sheetManager.open('log-templates', id)}
+            >
+              <Icon className="text-placeholder" icon={NoteBlank} />
+              <Text>Templates</Text>
+            </Menu.Item>
+            {shouldShowMembers && (
+              <Menu.Item
+                disabled={networkActionsDisabled}
+                onPress={() => sheetManager.open('log-members', id)}
+              >
+                <Icon className="text-placeholder" icon={UsersThree} />
+                <Text>Members</Text>
+              </Menu.Item>
+            )}
+            <LogDropdownItems disabled={networkActionsDisabled} id={id} />
+          </>
         )}
-        <LogDropdownItems id={id} />
         <Menu.Item disabled={!searchHref} href={searchHref}>
           <Icon className="text-placeholder" icon={MagnifyingGlass} />
           <Text>Search</Text>
         </Menu.Item>
-        <Menu.Separator />
-        <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
-          <Icon className="text-destructive" icon={Trash} />
-          <Text className="text-destructive">Delete</Text>
-        </Menu.Item>
+        {canManage && (
+          <>
+            <Menu.Separator />
+            <Menu.Item
+              disabled={networkActionsDisabled}
+              onPress={() => sheetManager.open('log-delete', id)}
+            >
+              <Icon className="text-destructive" icon={Trash} />
+              <Text className="text-destructive">Delete</Text>
+            </Menu.Item>
+          </>
+        )}
       </Menu.Content>
     </Menu.Root>
   );

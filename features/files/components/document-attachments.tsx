@@ -5,6 +5,7 @@ import { getFileTypeIcon } from '@/features/files/lib/file-type-icon';
 import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { alert as showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
@@ -51,6 +52,7 @@ const getTotalSizeText = (items: DocumentAttachmentItem[]) => {
 };
 
 export const DocumentAttachments = ({
+  actionsDisabled,
   className,
   documents,
   hideTrigger,
@@ -64,6 +66,7 @@ export const DocumentAttachments = ({
   triggerClassName,
   triggerIconClassName,
 }: {
+  actionsDisabled?: boolean;
   className?: string;
   documents: FileItem[];
   hideTrigger?: boolean;
@@ -78,6 +81,7 @@ export const DocumentAttachments = ({
   triggerIconClassName?: string;
 }) => {
   const colorScheme = useColorScheme();
+  const connectivity = useConnectivity();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
 
@@ -125,14 +129,25 @@ export const DocumentAttachments = ({
 
   const totalSizeText = React.useMemo(() => getTotalSizeText(items), [items]);
   const firstItem = items[0];
-  const hasPendingDocuments = pendingDocuments.length > 0;
+
+  const hasUploadingPendingDocuments = pendingDocuments.some(
+    (item) => item.status === 'uploading'
+  );
+
   const canDeleteSingleDocument = !!onDeleteFile && items.length === 1;
   const shouldOpenDocumentsInline = !onDeleteFile;
+  const canRunNetworkActions = connectivity.canRunNetworkActions;
 
-  const canSortDocuments =
+  const canRenameDocuments =
+    !!onRenameFile && !actionsDisabled && canRunNetworkActions;
+
+  const canSortDocumentSet =
     !!onReorderFiles &&
     items.length > 1 &&
     items.every((item) => item.kind === 'file');
+
+  const canSortDocuments =
+    canSortDocumentSet && !actionsDisabled && canRunNetworkActions;
 
   const shouldRenderSheet =
     !shouldOpenDocumentsInline &&
@@ -148,38 +163,43 @@ export const DocumentAttachments = ({
   const trimmedEditingName = editingName.trim();
 
   const canRenameDocument =
-    !!editingDocument && !!onRenameFile && !!trimmedEditingName;
+    !!editingDocument && canRenameDocuments && !!trimmedEditingName;
 
   const moreDocumentsText =
     items.length > 1 ? `+${items.length - 1} more` : null;
 
-  const handleOpenDocument = React.useCallback(async (item: FileItem) => {
-    const src = fileUriSources.fileUriToSrc(
-      fileUriSources.getFileSourceUri(item)
-    );
+  const handleOpenDocument = React.useCallback(
+    async (item: FileItem) => {
+      if (!canRunNetworkActions) return;
 
-    if (!src) return;
-    setDownloadingDocumentIds((current) => new Set(current).add(item.id));
+      const src = fileUriSources.fileUriToSrc(
+        fileUriSources.getFileSourceUri(item)
+      );
 
-    try {
-      await downloadFile({
-        fileName: getDocumentName(item),
-        mimeType: item.mimeType ?? undefined,
-        url: src,
-      });
-    } catch {
-      showAlert({
-        message: 'Could not download this document.',
-        title: 'Document unavailable',
-      });
-    } finally {
-      setDownloadingDocumentIds((current) => {
-        const next = new Set(current);
-        next.delete(item.id);
-        return next;
-      });
-    }
-  }, []);
+      if (!src) return;
+      setDownloadingDocumentIds((current) => new Set(current).add(item.id));
+
+      try {
+        await downloadFile({
+          fileName: getDocumentName(item),
+          mimeType: item.mimeType ?? undefined,
+          url: src,
+        });
+      } catch {
+        showAlert({
+          message: 'Could not download this document.',
+          title: 'Document unavailable',
+        });
+      } finally {
+        setDownloadingDocumentIds((current) => {
+          const next = new Set(current);
+          next.delete(item.id);
+          return next;
+        });
+      }
+    },
+    [canRunNetworkActions]
+  );
 
   const handleOpenSheet = React.useCallback(() => {
     setIsSheetOpen(true);
@@ -187,11 +207,12 @@ export const DocumentAttachments = ({
 
   const handleOpenNameEditor = React.useCallback(
     (item: FileItem) => {
-      if (!onRenameFile) return;
+      if (actionsDisabled) return;
+      if (!canRenameDocuments) return;
       setEditingDocument(item);
       setEditingName(getDocumentName(item));
     },
-    [onRenameFile]
+    [actionsDisabled, canRenameDocuments]
   );
 
   const handleCloseNameEditor = React.useCallback(() => {
@@ -202,10 +223,11 @@ export const DocumentAttachments = ({
 
   const handleDeleteDocument = React.useCallback(
     (fileId: string) => {
+      if (actionsDisabled) return;
       onDeleteFile?.(fileId);
       if (items.length <= 1) setIsSheetOpen(false);
     },
-    [items.length, onDeleteFile, setIsSheetOpen]
+    [actionsDisabled, items.length, onDeleteFile, setIsSheetOpen]
   );
 
   const handleDragEnd = React.useCallback(
@@ -223,7 +245,7 @@ export const DocumentAttachments = ({
   );
 
   const handleRenameDocument = React.useCallback(async () => {
-    if (!editingDocument || !onRenameFile || !trimmedEditingName) return;
+    if (!canRenameDocument || !editingDocument || !onRenameFile) return;
     setIsRenaming(true);
 
     try {
@@ -238,7 +260,7 @@ export const DocumentAttachments = ({
     } finally {
       setIsRenaming(false);
     }
-  }, [editingDocument, onRenameFile, trimmedEditingName]);
+  }, [canRenameDocument, editingDocument, onRenameFile, trimmedEditingName]);
 
   React.useEffect(() => {
     if (!editingDocument) return;
@@ -280,8 +302,26 @@ export const DocumentAttachments = ({
     const isDownloading =
       previewItem.kind === 'file' && downloadingDocumentIds.has(item.id);
 
+    const isUploading =
+      previewItem.kind === 'pending' && previewItem.item.status === 'uploading';
+
+    const isPersistedNetworkActionDisabled =
+      previewItem.kind === 'file' &&
+      !canRunNetworkActions &&
+      (!!onDeleteFile || !!onRenameFile);
+
+    const canDeleteDocument =
+      !!onDeleteFile &&
+      !actionsDisabled &&
+      (previewItem.kind === 'pending' || canRunNetworkActions);
+
     const documentDetails = (
-      <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
+      <View
+        className={cn(
+          'flex-1 flex-row min-w-0 gap-4 items-center justify-between',
+          isPersistedNetworkActionDisabled && 'opacity-50'
+        )}
+      >
         <View className="flex-1 flex-row min-w-0 gap-2 items-center">
           {isDownloading ? (
             <Spinner color={placeholderColor} size="xs" />
@@ -304,18 +344,26 @@ export const DocumentAttachments = ({
       </View>
     );
 
-    const dragHandle = canSortDocuments && previewItem.kind === 'file' && (
-      <Sortable.SortableSheetDragHandle className="-ml-1.5 mr-1" />
-    );
+    const dragHandle =
+      canSortDocumentSet && previewItem.kind === 'file' ? (
+        <Sortable.SortableSheetDragHandle
+          className="-ml-1.5 mr-1"
+          disabled={!canSortDocuments}
+        />
+      ) : null;
+
+    const renameableDocument =
+      canRenameDocuments && previewItem.kind === 'file';
 
     if (previewItem.kind === 'file') {
       if (onDeleteFile) {
         return (
           <View key={previewItem.id} className="flex-row items-center">
             {dragHandle}
-            {onRenameFile ? (
+            {renameableDocument ? (
               <Button
                 className="flex-1 flex-row min-w-0 justify-start"
+                disabled={actionsDisabled}
                 onPress={() => handleOpenNameEditor(previewItem.item)}
                 variant="link"
                 wrapperClassName="flex-1 overflow-visible rounded-lg"
@@ -327,6 +375,7 @@ export const DocumentAttachments = ({
             )}
             <Button
               accessibilityLabel={`Remove ${getDocumentName(item)}`}
+              disabled={!canDeleteDocument}
               onPress={() => handleDeleteDocument(previewItem.item.id)}
               size="icon-xs"
               variant="ghost"
@@ -342,9 +391,12 @@ export const DocumentAttachments = ({
         <Button
           key={previewItem.id}
           className="flex-row w-full justify-start"
-          disabled={downloadingDocumentIds.has(item.id)}
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
+          disabled={
+            downloadingDocumentIds.has(item.id) ||
+            !connectivity.canRunNetworkActions
+          }
           onPress={() => {
             void handleOpenDocument(previewItem.item);
           }}
@@ -360,9 +412,19 @@ export const DocumentAttachments = ({
         className="flex-row opacity-70 gap-2 items-center"
       >
         {documentDetails}
-        <View className="-mr-1.5 size-8 items-center justify-center">
-          <Spinner size="xs" />
-        </View>
+        {isUploading && <Spinner size="xs" />}
+        {!!onDeleteFile && (
+          <Button
+            accessibilityLabel={`Remove ${getDocumentName(item)}`}
+            disabled={!canDeleteDocument}
+            onPress={() => handleDeleteDocument(item.id)}
+            size="icon-xs"
+            variant="ghost"
+            wrapperClassName="-mr-1.5"
+          >
+            <Icon icon={X} />
+          </Button>
+        )}
       </View>
     );
   };
@@ -395,7 +457,7 @@ export const DocumentAttachments = ({
               {getDocumentName(item)}
             </Text>
           </View>
-          <Spinner size="xs" />
+          {previewItem.item.status === 'uploading' && <Spinner size="xs" />}
         </View>
       );
     }
@@ -403,7 +465,6 @@ export const DocumentAttachments = ({
     return (
       <Button
         key={previewItem.id}
-        disabled={downloadingDocumentIds.has(item.id)}
         onPress={() => void handleOpenDocument(item)}
         variant="link"
         wrapperClassName="w-full overflow-visible rounded-lg"
@@ -411,6 +472,10 @@ export const DocumentAttachments = ({
           'flex-row w-full min-w-0 gap-4 justify-between px-4',
           triggerClassName
         )}
+        disabled={
+          downloadingDocumentIds.has(item.id) ||
+          !connectivity.canRunNetworkActions
+        }
       >
         <View className="flex-1 flex-row min-w-0 gap-2 items-center">
           {isDownloading ? (
@@ -444,6 +509,11 @@ export const DocumentAttachments = ({
 
   if (!items.length) return null;
 
+  const firstDocumentContentDisabled =
+    firstItem?.kind === 'file' &&
+    !canRunNetworkActions &&
+    (!!onDeleteFile || !!onRenameFile);
+
   return (
     <View className={cn('gap-2', className)}>
       {hideTrigger ? null : shouldOpenDocumentsInline ? (
@@ -456,14 +526,19 @@ export const DocumentAttachments = ({
             triggerClassName
           )}
         >
-          {firstItem.kind === 'file' && onRenameFile ? (
+          {canRenameDocuments && firstItem.kind === 'file' ? (
             <Button
               className="flex-1 flex-row min-w-0 gap-4 justify-between"
               onPress={() => handleOpenNameEditor(firstItem.item)}
               variant="link"
               wrapperClassName="flex-1 overflow-visible rounded-lg"
             >
-              <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+              <View
+                className={cn(
+                  'flex-1 flex-row min-w-0 gap-2 items-center',
+                  firstDocumentContentDisabled && 'opacity-50'
+                )}
+              >
                 <Icon
                   className={cn('text-placeholder', triggerIconClassName)}
                   icon={firstDocumentIcon}
@@ -476,15 +551,23 @@ export const DocumentAttachments = ({
                 </Text>
               </View>
               <Text
-                className="font-normal text-placeholder text-xs self-center shrink-0"
                 numberOfLines={1}
+                className={cn(
+                  'font-normal text-placeholder text-xs self-center shrink-0',
+                  firstDocumentContentDisabled && 'opacity-50'
+                )}
               >
                 {getDocumentSizeText(firstItem.item)}
               </Text>
             </Button>
           ) : (
             <>
-              <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+              <View
+                className={cn(
+                  'flex-1 flex-row min-w-0 gap-2 items-center',
+                  firstDocumentContentDisabled && 'opacity-50'
+                )}
+              >
                 <Icon
                   className={cn('text-placeholder', triggerIconClassName)}
                   icon={firstDocumentIcon}
@@ -497,8 +580,11 @@ export const DocumentAttachments = ({
                 </Text>
               </View>
               <Text
-                className="font-normal text-placeholder text-xs self-center shrink-0"
                 numberOfLines={1}
+                className={cn(
+                  'font-normal text-placeholder text-xs self-center shrink-0',
+                  firstDocumentContentDisabled && 'opacity-50'
+                )}
               >
                 {getDocumentSizeText(firstItem.item)}
               </Text>
@@ -508,6 +594,7 @@ export const DocumentAttachments = ({
             {firstItem.kind === 'file' ? (
               <Button
                 accessibilityLabel={`Remove ${getDocumentName(firstItem.item)}`}
+                disabled={actionsDisabled || !canRunNetworkActions}
                 onPress={() => handleDeleteDocument(firstItem.item.id)}
                 size="icon-xs"
                 variant="ghost"
@@ -516,14 +603,27 @@ export const DocumentAttachments = ({
                 <Icon icon={X} />
               </Button>
             ) : (
-              <View className="-mr-1.5 size-8 items-center justify-center">
-                <Spinner size="xs" />
-              </View>
+              <>
+                {firstItem.item.status === 'uploading' && <Spinner size="xs" />}
+                {!!onDeleteFile && (
+                  <Button
+                    accessibilityLabel={`Remove ${getDocumentName(firstItem.item)}`}
+                    disabled={actionsDisabled}
+                    onPress={() => handleDeleteDocument(firstItem.item.id)}
+                    size="icon-xs"
+                    variant="ghost"
+                    wrapperClassName="-mr-1.5"
+                  >
+                    <Icon icon={X} />
+                  </Button>
+                )}
+              </>
             )}
           </View>
         </View>
       ) : (
         <Button
+          disabled={actionsDisabled}
           onPress={handleOpenSheet}
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
@@ -552,7 +652,7 @@ export const DocumentAttachments = ({
               >
                 {moreDocumentsText}
               </Text>
-              {hasPendingDocuments && <Spinner size="xs" />}
+              {hasUploadingPendingDocuments && <Spinner size="xs" />}
             </View>
           ) : (
             showSummarySize && (
@@ -605,7 +705,7 @@ export const DocumentAttachments = ({
           </SheetFooter>
         </Sheet>
       )}
-      {!!onRenameFile && (
+      {canRenameDocuments && (
         <Sheet
           className="md:max-w-sm"
           onDismiss={handleCloseNameEditor}

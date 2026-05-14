@@ -9,17 +9,29 @@ export const getRecordDetailHref = (recordId: string) =>
 export const getRecordReplyDetailHref = (recordId: string, replyId: string) =>
   ({ pathname: '/records/[recordId]', params: { recordId, replyId } }) as Href;
 
+export const getHighlightedRecordDetailHref = (recordId: string) =>
+  ({
+    pathname: '/records/[recordId]',
+    params: { highlight: 'record', recordId },
+  }) as Href;
+
 export const getRecordMediaHref = (recordId: string, fileId: string) =>
   `/records/${encodeURIComponent(recordId)}/files/${encodeURIComponent(
     fileId
   )}` as Href;
 
-export const openRecordDetail = (recordId?: string, replyId?: string) => {
+export const openRecordDetail = (
+  recordId?: string,
+  replyId?: string,
+  options: { highlight?: boolean } = {}
+) => {
   if (!recordId) return;
 
   router.push(
     replyId
       ? getRecordReplyDetailHref(recordId, replyId)
-      : getRecordDetailHref(recordId)
+      : options.highlight
+        ? getHighlightedRecordDetailHref(recordId)
+        : getRecordDetailHref(recordId)
   );
 };

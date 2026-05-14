@@ -11,7 +11,7 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { Animated, Easing, ScrollView, View } from 'react-native';
 
-const TargetReplyHighlight = ({
+const TargetEntryHighlight = ({
   color,
   targetKey,
 }: {
@@ -54,12 +54,14 @@ const TargetReplyHighlight = ({
 };
 
 export const DetailView = ({
+  highlightRecord,
   onClose,
   pageClassName,
   record,
   recordId,
   targetReplyId,
 }: {
+  highlightRecord?: boolean;
   onClose: () => void;
   pageClassName?: string;
   record: UseRecordResult;
@@ -69,6 +71,9 @@ export const DetailView = ({
   const scrollViewRef = React.useRef<ScrollView>(null);
   const scrolledTargetRef = React.useRef<string | undefined>(undefined);
 
+  const [postSubmitTargetReplyId, setPostSubmitTargetReplyId] =
+    React.useState<string>();
+
   const [entryLayouts, setEntryLayouts] = React.useState<
     Record<string, number>
   >({});
@@ -76,34 +81,48 @@ export const DetailView = ({
   const sheetManager = useSheetManager();
   const handleScroll = useSheetScrollHandler();
   const logColor = useLogColor({ id: record.log?.id });
+  const canReply = !record.localStatus;
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: recordId,
     scope: 'record',
   });
 
+  const pendingScrollReplyId =
+    pendingScroll && typeof pendingScroll === 'object'
+      ? pendingScroll.replyId
+      : undefined;
+
+  const effectiveTargetReplyId =
+    targetReplyId ?? pendingScrollReplyId ?? postSubmitTargetReplyId;
+
+  React.useEffect(() => {
+    setPostSubmitTargetReplyId(undefined);
+  }, [recordId]);
+
+  React.useEffect(() => {
+    if (pendingScrollReplyId) setPostSubmitTargetReplyId(pendingScrollReplyId);
+  }, [pendingScrollReplyId]);
+
   const data = React.useMemo(
     () => [{ ...record, replies: undefined }, ...record.replies],
     [record]
   );
 
-  React.useEffect(() => {
-    if (pendingScroll !== 'end' || record.isLoading) return;
-
-    const frame = requestAnimationFrame(() => {
-      if (!scrollViewRef.current) return;
-      scrollViewRef.current.scrollToEnd({ animated: true });
-      scroll.clearPostSubmitScroll({ id: recordId, scope: 'record' });
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [data.length, pendingScroll, record.isLoading, recordId]);
-
-  const targetReplyLayout = targetReplyId ? entryLayouts[targetReplyId] : null;
+  const targetReplyLayout = effectiveTargetReplyId
+    ? entryLayouts[effectiveTargetReplyId]
+    : null;
 
   React.useEffect(() => {
-    if (!targetReplyId || record.isLoading || targetReplyLayout == null) return;
-    const targetKey = `${recordId}:${targetReplyId}`;
+    if (
+      !effectiveTargetReplyId ||
+      record.isLoading ||
+      targetReplyLayout == null
+    ) {
+      return;
+    }
+
+    const targetKey = `${recordId}:${effectiveTargetReplyId}`;
     if (scrolledTargetRef.current === targetKey) return;
 
     const frame = requestAnimationFrame(() => {
@@ -115,10 +134,20 @@ export const DetailView = ({
       });
 
       scrolledTargetRef.current = targetKey;
+
+      if (pendingScrollReplyId === effectiveTargetReplyId) {
+        scroll.clearPostSubmitScroll({ id: recordId, scope: 'record' });
+      }
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [record.isLoading, recordId, targetReplyId, targetReplyLayout]);
+  }, [
+    effectiveTargetReplyId,
+    pendingScrollReplyId,
+    record.isLoading,
+    recordId,
+    targetReplyLayout,
+  ]);
 
   return (
     <Page className={cn('flex-col min-h-0', pageClassName)}>
@@ -134,6 +163,12 @@ export const DetailView = ({
         {data.map((item, index) => {
           const replyId = index > 0 ? item.id : undefined;
 
+          const shouldHighlight =
+            (replyId && replyId === effectiveTargetReplyId) ||
+            (!replyId && highlightRecord && !effectiveTargetReplyId);
+
+          const highlightKey = replyId ?? recordId;
+
           return (
             <View
               key={item.id ?? index}
@@ -147,10 +182,10 @@ export const DetailView = ({
                 );
               }}
             >
-              {replyId === targetReplyId && (
-                <TargetReplyHighlight
+              {shouldHighlight && (
+                <TargetEntryHighlight
                   color={logColor.default}
-                  targetKey={`${recordId}:${replyId}`}
+                  targetKey={`${recordId}:${highlightKey}`}
                 />
               )}
               <Entry
@@ -178,11 +213,16 @@ export const DetailView = ({
           </Button>
           <Button
             className="active:opacity-90 web:hover:opacity-90"
-            onPress={() => sheetManager.open('reply-create', recordId)}
+            disabled={!canReply}
             size="sm"
             style={{ backgroundColor: logColor.default }}
             variant="secondary"
             wrapperClassName="flex-1"
+            onPress={() =>
+              sheetManager.open('reply-create', recordId, undefined, {
+                teamId: record.teamId,
+              })
+            }
           >
             <Text className="text-white">Reply</Text>
           </Button>

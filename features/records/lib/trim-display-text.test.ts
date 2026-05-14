@@ -6,7 +6,7 @@ const { getCollapsedPreview } = displayText;
 
 describe('trimDisplayText', () => {
   test('trims whitespace', () => {
-    expect(trimDisplayText('  Hello foold  ')).toBe('Hello foold');
+    expect(trimDisplayText('  Field note  ')).toBe('Field note');
   });
 
   test('collapses breaks', () => {
@@ -29,7 +29,9 @@ describe('hasExplicitLineBreaks', () => {
   });
 
   test('ignores wrapped text', () => {
-    expect(hasExplicitLineBreaks('Lorem ipsum dolor sit amet')).toBe(false);
+    expect(hasExplicitLineBreaks('A long note without manual breaks')).toBe(
+      false
+    );
   });
 });
 

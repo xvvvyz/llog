@@ -6,12 +6,17 @@ import { Reaction } from '@/features/records/types/reaction';
 import { Record } from '@/features/records/types/record';
 import { Reply } from '@/features/records/types/reply';
 import { Tag } from '@/features/tags/types/tag';
+import type { OutboxStatus } from '@/features/offline/types';
 
 export type EntryRecord = Partial<
   (Record | Reply) & {
     author: Profile & { image?: FileItem };
     links: Link[];
-    replies: Pick<Reply, 'id'>[];
+    log: { color?: string; id?: string; name?: string };
+    localNeedsDraftReplay: boolean;
+    localOutboxStatus: OutboxStatus;
+    localStatus: 'pending' | 'error';
+    replies: EntryRecord[];
     files: FileItem[];
     reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
     tags: Tag[];
@@ -22,11 +27,13 @@ export type EntrySharedProps = {
   accentColor?: string;
   audioMedia: FileItem[];
   canAnalyzeAudio: boolean;
+  canOpenReply?: boolean;
   documentFiles: FileItem[];
   entryMenuState: EntryMenuState;
   links: Link[];
   logId?: string;
   logName?: string;
+  networkActionsEnabled?: boolean;
   numberOfLines?: number;
   onDoubleTapReaction: () => void;
   record: EntryRecord;

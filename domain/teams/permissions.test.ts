@@ -46,7 +46,7 @@ describe('getTeamPermissionFlags', () => {
   });
 });
 
-describe('team member management policy', () => {
+describe('team member policy', () => {
   test('checks owner policy', () => {
     expect(
       permissions.canOpenTeamMemberMenu({

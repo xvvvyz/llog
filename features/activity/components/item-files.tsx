@@ -2,14 +2,16 @@ import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
+import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { Link } from '@/features/records/types/link';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
-import { Play } from 'phosphor-react-native';
+import { Play, WifiSlash } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -32,6 +34,7 @@ export const ItemFiles = ({
 
   const hasDocumentFiles = documentFiles.length > 0;
   const hasLinks = links.length > 0;
+  const connectivity = useConnectivity();
   const { openMediaLightbox } = useMediaLightbox({ recordId });
 
   if (
@@ -47,39 +50,58 @@ export const ItemFiles = ({
     visualItems.length
   );
 
-  const renderMediaThumb = (item: FileItem) => (
-    <Pressable
-      key={item.id}
-      className="flex-1"
-      disabled={visualMedia.isProcessing(item) || !recordId}
-      onPress={() =>
-        !visualMedia.isProcessing(item) && openMediaLightbox(item.id)
-      }
-    >
-      <Image
-        fill
-        targetWidth={timelineTargetWidth}
-        uri={visualMedia.getThumbnailUri(item)}
-        wrapperClassName="rounded-2xl border-continuous"
-      />
-      {item.type === 'video' && (
-        <View className="absolute inset-0 pointer-events-none items-center justify-center">
-          {visualMedia.isProcessing(item) ? (
-            <Spinner />
-          ) : (
-            <View className="size-10 border-continuous rounded-full bg-background/50 items-center justify-center">
-              <Icon
-                className="text-foreground"
-                icon={Play}
-                size={20}
-                weight="fill"
-              />
-            </View>
-          )}
-        </View>
-      )}
-    </Pressable>
-  );
+  const renderMediaThumb = (item: FileItem) => {
+    const isProcessing = visualMedia.isProcessing(item);
+    const isAvailableOffline = isFileAvailableOffline(item);
+    const isUnavailableOffline = connectivity.isOffline && !isAvailableOffline;
+
+    const canOpenMedia =
+      !!recordId &&
+      !isProcessing &&
+      (!connectivity.isOffline || isAvailableOffline);
+
+    return (
+      <Pressable
+        key={item.id}
+        className="flex-1"
+        disabled={!canOpenMedia}
+        onPress={() => {
+          if (canOpenMedia) openMediaLightbox(item.id);
+        }}
+      >
+        <Image
+          fill
+          targetWidth={timelineTargetWidth}
+          uri={visualMedia.getThumbnailUri(item)}
+          wrapperClassName="rounded-2xl border-continuous"
+        />
+        {(item.type === 'video' || isUnavailableOffline) && (
+          <View className="absolute inset-0 pointer-events-none items-center justify-center">
+            {isUnavailableOffline ? (
+              <View className="size-10 border-continuous rounded-full bg-background/50 items-center justify-center">
+                <Icon
+                  className="text-muted-foreground"
+                  icon={WifiSlash}
+                  size={20}
+                />
+              </View>
+            ) : isProcessing ? (
+              <Spinner />
+            ) : (
+              <View className="size-10 border-continuous rounded-full bg-background/50 items-center justify-center">
+                <Icon
+                  className="text-foreground"
+                  icon={Play}
+                  size={20}
+                  weight="fill"
+                />
+              </View>
+            )}
+          </View>
+        )}
+      </Pressable>
+    );
+  };
 
   return (
     <React.Fragment>

@@ -1,4 +1,7 @@
 import * as push from '@/features/account/lib/web-push';
+import { useConnectivity } from '@/features/offline/connectivity';
+import { OfflineBannerProvider } from '@/features/offline/offline-banner';
+import { OutboxSyncRunner } from '@/features/offline/outbox-sync';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
@@ -72,6 +75,7 @@ if (Platform.OS === 'web') {
 export default function Layout() {
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
+  const connectivity = useConnectivity();
   const userId = auth.user?.id;
   const isSignedOut = !auth.isLoading && !auth.user;
 
@@ -92,7 +96,13 @@ export default function Layout() {
   }, []);
 
   React.useEffect(() => {
-    if (Platform.OS !== 'web' || !userId) return;
+    if (
+      Platform.OS !== 'web' ||
+      !userId ||
+      !connectivity.canRunNetworkActions
+    ) {
+      return;
+    }
 
     void (async () => {
       try {
@@ -101,7 +111,7 @@ export default function Layout() {
         console.error('Failed to sync web push subscription', error);
       }
     })();
-  }, [userId]);
+  }, [connectivity.canRunNetworkActions, userId]);
 
   return (
     <React.Fragment>
@@ -121,9 +131,12 @@ export default function Layout() {
       >
         <GestureHandlerRootView className="flex-1">
           <SheetManagerProvider disabled={isSignedOut}>
-            <Slot />
-            <SheetBackdrop />
-            <PortalHost />
+            <OfflineBannerProvider>
+              <OutboxSyncRunner />
+              <Slot />
+              <SheetBackdrop />
+              <PortalHost />
+            </OfflineBannerProvider>
           </SheetManagerProvider>
         </GestureHandlerRootView>
       </ThemeProvider>

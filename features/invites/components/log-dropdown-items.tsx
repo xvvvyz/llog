@@ -15,7 +15,13 @@ import { UserPlus } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
-export const LogDropdownItems = ({ id }: { id?: string }) => {
+export const LogDropdownItems = ({
+  disabled,
+  id,
+}: {
+  disabled?: boolean;
+  id?: string;
+}) => {
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const log = useLog({ id });
@@ -52,6 +58,7 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
   }, [getOrCreateLink]);
 
   const handleInvite = React.useCallback(async () => {
+    if (disabled) return;
     setIsLoading(true);
 
     try {
@@ -66,10 +73,14 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [getOrCreateInvite, onOpenChange, sheetManager]);
+  }, [disabled, getOrCreateInvite, onOpenChange, sheetManager]);
 
   return (
-    <Menu.Item closeOnPress={false} disabled={isLoading} onPress={handleInvite}>
+    <Menu.Item
+      closeOnPress={false}
+      disabled={disabled || isLoading}
+      onPress={handleInvite}
+    >
       {isLoading ? (
         <View className="size-5 items-center justify-center">
           <Spinner color={UI[colorScheme].mutedForeground} size="xs" />

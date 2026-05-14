@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 type ScrollScope = 'log' | 'record';
-type ScrollTarget = 'top' | 'end';
+type ScrollTarget = 'top' | { replyId: string; type: 'reply' };
 const listeners = new Set<() => void>();
 const pendingScrolls = new Map<string, ScrollTarget>();
 const getKey = (scope: ScrollScope, id?: string) => `${scope}:${id ?? ''}`;

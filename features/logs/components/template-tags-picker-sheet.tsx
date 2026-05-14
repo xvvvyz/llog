@@ -1,4 +1,5 @@
 import * as recordTags from '@/features/records/mutations/record-tags';
+import { useConnectivity } from '@/features/offline/connectivity';
 import { TagSheetContent } from '@/features/tags/components/tag-sheet-content';
 import { useTagSheetController } from '@/features/tags/hooks/use-tag-sheet-controller';
 import { reorderTags } from '@/features/tags/mutations/reorder-tags';
@@ -25,6 +26,8 @@ export const TemplateTagsPickerSheet = ({
   selectedTagIds: ReadonlySet<string>;
   teamId?: string;
 }) => {
+  const connectivity = useConnectivity();
+
   const tagTeamIds = React.useMemo(
     () => (teamId && logId ? [teamId] : []),
     [logId, teamId]
@@ -68,6 +71,7 @@ export const TemplateTagsPickerSheet = ({
     ),
     onReorder: React.useCallback(
       (orderedTags: Tag[]) => {
+        if (!connectivity.canRunNetworkActions) return;
         if (!logId || !teamId) return;
 
         void reorderTags({
@@ -77,7 +81,7 @@ export const TemplateTagsPickerSheet = ({
           type: 'record',
         });
       },
-      [logId, teamId]
+      [connectivity.canRunNetworkActions, logId, teamId]
     ),
     onToggleTag: React.useCallback(
       async (tagId: string, selected: boolean) => {
@@ -127,7 +131,7 @@ export const TemplateTagsPickerSheet = ({
         query={tagSheet.query}
         rawQuery={tagSheet.rawQuery}
         setRawQuery={tagSheet.setRawQuery}
-        sortEnabled={!tagSheet.rawQuery}
+        sortEnabled={!tagSheet.rawQuery && connectivity.canRunNetworkActions}
         visibleTags={tagSheet.visibleTags}
       />
     </Sheet>
