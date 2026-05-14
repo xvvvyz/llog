@@ -1,4 +1,4 @@
-self.__LLOG_SW_VERSION__ = 'offline-v9';
+self.__LLOG_SW_VERSION__ = 'offline-v1';
 const CACHE_NAME = `llog-${self.__LLOG_SW_VERSION__}`;
 const INSTALL_CACHE_NAME = `${CACHE_NAME}-install`;
 const CACHE_RESOURCES_MESSAGE = 'LLOG_CACHE_RESOURCES';
@@ -12,6 +12,7 @@ const HTML_RESOURCE_ATTRIBUTE_PATTERN =
 
 const EXPO_RESOURCE_PATTERN = /\/_expo\/[^"'`\s)<>\\]+/g;
 const TEXT_RESOURCE_PATTERN = /\.(?:css|html|js|json|webmanifest)(?:[?#]|$)/;
+const IMAGE_RESPONSE_PATTERN = /^image\//i;
 
 const STATIC_RESOURCE_URLS = [
   '/manifest.webmanifest',
@@ -30,20 +31,42 @@ const STATIC_RESOURCE_URLS = [
 
 const BLOCKED_ROUTE_PREFIXES = ['/api', '/mcp', '/.well-known', '/cdn-cgi'];
 
-const toSameOriginUrl = (value) => {
+// Image resources are cacheable outside the app shell, including a tight
+// allowlist of cross-origin Cloudflare image hosts.
+const SAME_ORIGIN_IMAGE_PATH_PATTERNS = [
+  /^\/api\/v1\/files\/avatars\/(?:gradient|neutral)$/,
+  /^\/api\/v1\/files\/[^/]+\/track-artwork$/,
+  /^\/api\/v1\/files\/(?:profiles|records|replies|teams)\//,
+  /^\/cdn-cgi\/imagedelivery\//,
+];
+
+const toUrl = (value) => {
   try {
-    const url = new URL(value, self.location.origin);
-    if (url.origin !== self.location.origin) return null;
-    return url;
+    return new URL(value, self.location.origin);
   } catch {
     return null;
   }
+};
+
+const toSameOriginUrl = (value) => {
+  const url = toUrl(value);
+  if (!url || url.origin !== self.location.origin) return null;
+  return url;
 };
 
 const toCacheablePath = (value) => {
   const url = toSameOriginUrl(value);
   if (!url || !isCacheableResource(url)) return null;
   return `${url.pathname}${url.search}`;
+};
+
+const toCacheableImageUrl = (value) => {
+  const url = toUrl(value);
+  if (!url || !isCacheableImageResource(url)) return null;
+
+  return url.origin === self.location.origin
+    ? `${url.pathname}${url.search}`
+    : url.href;
 };
 
 const hasFileExtension = (pathname) => {
@@ -61,11 +84,57 @@ const isAppRoute = (pathname) =>
   !isBlockedRoute(pathname) &&
   !hasFileExtension(pathname);
 
+const toNotificationUrl = (value) => {
+  const url = toSameOriginUrl(value ?? '/');
+
+  return url && isAppRoute(url.pathname)
+    ? url.href
+    : new URL('/', self.location.origin).href;
+};
+
 const isCacheableResource = (url) =>
   url.origin === self.location.origin &&
   (url.pathname.startsWith(EXPO_ASSET_PREFIX) ||
     APP_SHELL_URLS.includes(url.pathname) ||
     STATIC_RESOURCE_URLS.includes(url.pathname));
+
+const isImageDeliveryHost = (hostname) =>
+  hostname === 'imagedelivery.net' || hostname.endsWith('.imagedelivery.net');
+
+const isCloudflareStreamHost = (hostname) =>
+  hostname === 'cloudflarestream.com' ||
+  hostname.endsWith('.cloudflarestream.com') ||
+  hostname === 'videodelivery.net' ||
+  hostname.endsWith('.videodelivery.net');
+
+const isCloudflareImageResource = (url) =>
+  isImageDeliveryHost(url.hostname) &&
+  url.pathname.split('/').filter(Boolean).length >= 3;
+
+const isCloudflareStreamThumbnailResource = (url) =>
+  isCloudflareStreamHost(url.hostname) &&
+  /\/thumbnails\/thumbnail\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname);
+
+const isSameOriginImageResource = (url) =>
+  url.origin === self.location.origin &&
+  SAME_ORIGIN_IMAGE_PATH_PATTERNS.some((pattern) => pattern.test(url.pathname));
+
+const isExternalImageResource = (url) =>
+  url.origin !== self.location.origin &&
+  (isCloudflareImageResource(url) || isCloudflareStreamThumbnailResource(url));
+
+const isCacheableImageResource = (url) =>
+  isSameOriginImageResource(url) || isExternalImageResource(url);
+
+const isCacheableExternalImageRequest = (request, url) =>
+  request.destination === 'image' && isExternalImageResource(url);
+
+const isImageResponse = (response) =>
+  IMAGE_RESPONSE_PATTERN.test(response.headers.get('content-type') ?? '');
+
+const isCacheableImageResponse = (response) =>
+  response.type === 'opaque' ||
+  (response.ok && response.status !== 206 && isImageResponse(response));
 
 const unique = (values) => [...new Set(values)];
 
@@ -155,10 +224,44 @@ const copyCache = async (sourceName, targetName) => {
 const cacheUrls = async (urls, cacheName = CACHE_NAME) => {
   const cache = await caches.open(cacheName);
   const paths = unique(urls.map(toCacheablePath).filter(Boolean));
+  const imageUrls = unique(urls.map(toCacheableImageUrl).filter(Boolean));
 
-  await Promise.allSettled(
-    paths.map((path) => cachePath(cache, path, { required: false }))
-  );
+  await Promise.allSettled([
+    ...paths.map((path) => cachePath(cache, path, { required: false })),
+    ...imageUrls.map((url) => cacheImageUrl(cache, url, { required: false })),
+  ]);
+};
+
+const fetchImageResource = (url, { reload = true } = {}) => {
+  const parsed = new URL(url, self.location.origin);
+
+  if (isExternalImageResource(parsed)) {
+    return fetch(
+      new Request(parsed.href, {
+        cache: reload ? 'reload' : 'default',
+        mode: 'no-cors',
+      })
+    );
+  }
+
+  return fetchResource(url, { reload });
+};
+
+const cacheImageUrl = async (
+  cache,
+  url,
+  { onlyIfMissing = false, reload = true, required }
+) => {
+  try {
+    if (onlyIfMissing && (await cache.match(url))) return;
+    const response = await fetchImageResource(url, { reload });
+
+    if (isCacheableImageResponse(response)) {
+      await cache.put(url, response.clone());
+    }
+  } catch (error) {
+    if (required) throw error;
+  }
 };
 
 const extractCacheableResourcePaths = (html) => {
@@ -331,14 +434,41 @@ const cacheFirstResource = async (request) => {
   return response;
 };
 
+// Image responses use cache-first so already-viewed avatars, artwork, and
+// attachments remain available offline.
+const cacheFirstImage = async (request) => {
+  if (request.headers.has('Range')) return fetch(request);
+  const cached = await matchCurrentCache(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+
+  if (isCacheableImageResponse(response)) {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  }
+
+  return response;
+};
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+
+  if (isCacheableExternalImageRequest(request, url)) {
+    event.respondWith(cacheFirstImage(request));
+    return;
+  }
+
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate' && isAppRoute(url.pathname)) {
     event.respondWith(networkFirstNavigation(request));
+    return;
+  }
+
+  if (isSameOriginImageResource(url)) {
+    event.respondWith(cacheFirstImage(request));
     return;
   }
 
@@ -377,9 +507,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
-  const url = new URL(event.notification.data?.url ?? '/', self.location.origin)
-    .href;
+  const url = toNotificationUrl(event.notification.data?.url);
 
   event.waitUntil(
     (async () => {

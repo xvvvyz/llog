@@ -11,6 +11,7 @@ const source = readFileSync(
 
 type WorkerEvent = {
   data?: { type?: string; urls?: string[] };
+  notification?: { close: () => void; data?: { url?: string } };
   request?: RequestLike;
   respondWith?: (response: Promise<Response> | Response) => void;
   waitUntil: (promise: Promise<unknown>) => void;
@@ -21,7 +22,11 @@ type WorkerListener = (event: WorkerEvent) => void;
 type FakeWorker = {
   __LLOG_SW_VERSION__?: string;
   addEventListener: (type: string, listener: WorkerListener) => void;
-  clients: { claim: () => Promise<void>; matchAll: () => Promise<never[]> };
+  clients: {
+    claim: () => Promise<void>;
+    matchAll: () => Promise<never[]>;
+    openWindow: (url: string) => Promise<null>;
+  };
   location: { origin: string };
   registration: { showNotification: () => Promise<void> };
   skipWaiting: () => Promise<void>;
@@ -29,12 +34,23 @@ type FakeWorker = {
 
 type FetchFixture =
   | string
-  | { body?: string; redirected?: boolean; status?: number };
+  | {
+      body?: string;
+      headers?: Record<string, string>;
+      redirected?: boolean;
+      status?: number;
+    };
 
 type RequestLike =
   | RequestInfo
   | URL
-  | { method?: string; mode?: string; url: string };
+  | {
+      destination?: RequestDestination;
+      headers?: Headers;
+      method?: string;
+      mode?: string;
+      url: string;
+    };
 
 type Fetcher = (input: RequestLike, init?: RequestInit) => Promise<Response>;
 
@@ -44,7 +60,7 @@ const hasUrl = (input: unknown): input is { url: string } =>
   'url' in input &&
   typeof input.url === 'string';
 
-const swPath = (input: RequestLike) => {
+const swCacheKey = (input: RequestLike) => {
   const value = hasUrl(input)
     ? input.url
     : input instanceof URL
@@ -52,7 +68,8 @@ const swPath = (input: RequestLike) => {
       : input;
 
   const url = new URL(value, origin);
-  return `${url.pathname}${url.search}`;
+  const path = `${url.pathname}${url.search}`;
+  return url.origin === origin ? path : url.href;
 };
 
 const redirectedResponse = (response: Response) => {
@@ -71,6 +88,7 @@ const fixtureResponse = (fixture?: FetchFixture) => {
   if (typeof fixture === 'string') return new Response(fixture);
 
   const response = new Response(fixture.body ?? '', {
+    headers: fixture.headers,
     status: fixture.status ?? 200,
   });
 
@@ -81,6 +99,7 @@ function createHarness(fixtures: Record<string, FetchFixture>) {
   const listeners = new Map<string, WorkerListener[]>();
   const stores = new Map<string, Map<string, Response>>();
   const fetchCalls: string[] = [];
+  const openedUrls: string[] = [];
   let skipWaitingCalls = 0;
 
   const store = (name: string) => {
@@ -95,7 +114,7 @@ function createHarness(fixtures: Record<string, FetchFixture>) {
     delete: async (name: string) => stores.delete(name),
     keys: async () => [...stores.keys()],
     match: async (request: RequestInfo | URL) => {
-      const path = swPath(request);
+      const path = swCacheKey(request);
 
       for (const cache of stores.values()) {
         const response = cache.get(path);
@@ -106,18 +125,19 @@ function createHarness(fixtures: Record<string, FetchFixture>) {
       ({
         keys: async () =>
           [...store(name).keys()].map(
-            (path) => new Request(`${origin}${path}`)
+            (path) =>
+              new Request(path.startsWith('http') ? path : `${origin}${path}`)
           ),
         match: async (request: RequestInfo | URL) =>
-          store(name).get(swPath(request)),
+          store(name).get(swCacheKey(request)),
         put: async (request: RequestInfo | URL, response: Response) => {
-          store(name).set(swPath(request), response);
+          store(name).set(swCacheKey(request), response);
         },
       }) as Partial<Cache> as Cache,
   };
 
   const fakeFetch: Fetcher = async (input) => {
-    const path = swPath(input);
+    const path = swCacheKey(input);
     fetchCalls.push(path);
     return fixtureResponse(fixtures[path]);
   };
@@ -126,7 +146,14 @@ function createHarness(fixtures: Record<string, FetchFixture>) {
     addEventListener: (type, listener) => {
       listeners.set(type, [...(listeners.get(type) ?? []), listener]);
     },
-    clients: { claim: async () => {}, matchAll: async () => [] },
+    clients: {
+      claim: async () => {},
+      matchAll: async () => [],
+      openWindow: async (url) => {
+        openedUrls.push(url);
+        return null;
+      },
+    },
     location: { origin },
     registration: { showNotification: async () => {} },
     skipWaiting: async () => {
@@ -178,13 +205,27 @@ function createHarness(fixtures: Record<string, FetchFixture>) {
     return [...(stores.get(cacheName)?.keys() ?? [])].sort();
   };
 
-  const runFetch = async (path: string) => {
+  const runFetch = async (
+    path: string,
+    options: {
+      destination?: RequestDestination;
+      headers?: HeadersInit;
+      mode?: string;
+    } = {}
+  ) => {
     const promises: Promise<unknown>[] = [];
     const responses: Promise<Response>[] = [];
+    const url = path.startsWith('http') ? path : `${origin}${path}`;
 
     for (const listener of listeners.get('fetch') ?? []) {
       listener({
-        request: { method: 'GET', mode: 'navigate', url: `${origin}${path}` },
+        request: {
+          destination: options.destination,
+          headers: new Headers(options.headers),
+          method: 'GET',
+          mode: options.mode ?? 'navigate',
+          url,
+        },
         respondWith: (response) => responses.push(Promise.resolve(response)),
         waitUntil: (promise) => promises.push(promise),
       });
@@ -204,12 +245,27 @@ function createHarness(fixtures: Record<string, FetchFixture>) {
     store(name).set(path, fixtureResponse(fixture));
   };
 
+  const runNotificationClick = async (url?: string) => {
+    const promises: Promise<unknown>[] = [];
+
+    for (const listener of listeners.get('notificationclick') ?? []) {
+      listener({
+        notification: { close: () => {}, data: { url } },
+        waitUntil: (promise) => promises.push(promise),
+      });
+    }
+
+    await Promise.all(promises);
+  };
+
   return {
     cacheNames: () => [...stores.keys()].sort(),
     currentCachePaths,
     fetchCalls,
+    openedUrls,
     run,
     runFetch,
+    runNotificationClick,
     seedCache,
     skipWaitingCalls: () => skipWaitingCalls,
   };
@@ -289,26 +345,135 @@ describe('service worker', () => {
     ]);
   });
 
+  test('caches same-origin images', async () => {
+    const path = '/api/v1/files/avatars/neutral?seed=abc';
+
+    const harness = createHarness({
+      [path]: { body: 'image', headers: { 'content-type': 'image/webp' } },
+    });
+
+    const response = await harness.runFetch(path, { mode: 'no-cors' });
+    expect(await response.text()).toBe('image');
+    expect(harness.currentCachePaths()).toEqual([path]);
+    const cached = await harness.runFetch(path, { mode: 'no-cors' });
+    expect(await cached.text()).toBe('image');
+    expect(harness.fetchCalls).toEqual([path]);
+  });
+
+  test('caches external images', async () => {
+    const url =
+      'https://imagedelivery.net/account/image-id/format=webp,q=75,w=120,h=120';
+
+    const harness = createHarness({
+      [url]: { body: 'image', headers: { 'content-type': 'image/webp' } },
+    });
+
+    const response = await harness.runFetch(url, {
+      destination: 'image',
+      mode: 'no-cors',
+    });
+
+    expect(await response.text()).toBe('image');
+    expect(harness.currentCachePaths()).toEqual([url]);
+
+    const cached = await harness.runFetch(url, {
+      destination: 'image',
+      mode: 'no-cors',
+    });
+
+    expect(await cached.text()).toBe('image');
+    expect(harness.fetchCalls).toEqual([url]);
+  });
+
+  test('ignores backend non-images', async () => {
+    const path = '/api/v1/files/records/record-1/files/file-1';
+
+    const harness = createHarness({
+      [path]: { body: 'audio', headers: { 'content-type': 'audio/mpeg' } },
+    });
+
+    const response = await harness.runFetch(path, { mode: 'no-cors' });
+    expect(await response.text()).toBe('audio');
+    expect(harness.currentCachePaths()).toEqual([]);
+  });
+
+  test('bypasses image ranges', async () => {
+    const path = '/api/v1/files/avatars/neutral?seed=abc';
+
+    const harness = createHarness({
+      [path]: { body: 'fresh', headers: { 'content-type': 'image/webp' } },
+    });
+
+    harness.seedCache('llog-offline-v1', path, {
+      body: 'cached',
+      headers: { 'content-type': 'image/webp' },
+    });
+
+    const response = await harness.runFetch(path, {
+      headers: { Range: 'bytes=0-1' },
+      mode: 'no-cors',
+    });
+
+    expect(await response.text()).toBe('fresh');
+    expect(harness.fetchCalls).toEqual([path]);
+  });
+
+  test('caches message images', async () => {
+    const imagePath =
+      '/api/v1/files/abc/track-artwork?source=https%3A%2F%2Fimages.example%2Fcover.jpg';
+
+    const externalImageUrl =
+      'https://imagedelivery.net/account/image-id/public';
+
+    const audioPath = '/api/v1/files/records/record-1/files/file-1';
+
+    const harness = createHarness({
+      [audioPath]: { body: 'audio', headers: { 'content-type': 'audio/mpeg' } },
+      [externalImageUrl]: {
+        body: 'external-image',
+        headers: { 'content-type': 'image/webp' },
+      },
+      [imagePath]: { body: 'image', headers: { 'content-type': 'image/webp' } },
+    });
+
+    await harness.run('message', {
+      type: 'LLOG_CACHE_RESOURCES',
+      urls: [
+        `${origin}${imagePath}`,
+        externalImageUrl,
+        `${origin}${audioPath}`,
+      ],
+    });
+
+    expect(harness.currentCachePaths()).toEqual([imagePath, externalImageUrl]);
+  });
+
+  test('keeps notification local', async () => {
+    const harness = createHarness({});
+    await harness.runNotificationClick('https://evil.test/records/a');
+    await harness.runNotificationClick('/records/a');
+    expect(harness.openedUrls).toEqual([`${origin}/`, `${origin}/records/a`]);
+  });
+
   test('keeps previous cache', async () => {
     const harness = createHarness({});
-    harness.seedCache('llog-offline-v7', '/index.html', 'v7');
-    harness.seedCache('llog-offline-v8', '/index.html', 'v8');
-    harness.seedCache('llog-offline-v9', '/index.html', 'v9');
-    harness.seedCache('llog-offline-v9-install', '/index.html', 'install');
+    harness.seedCache('llog-offline-v0', '/index.html', 'v0');
+    harness.seedCache('llog-offline-v1', '/index.html', 'v1');
+    harness.seedCache('llog-offline-v1-install', '/index.html', 'install');
     harness.seedCache('other-cache', '/index.html', 'other');
     await harness.run('activate');
 
     expect(harness.cacheNames()).toEqual([
-      'llog-offline-v8',
-      'llog-offline-v9',
+      'llog-offline-v0',
+      'llog-offline-v1',
       'other-cache',
     ]);
   });
 
   test('prefers current shell', async () => {
     const harness = createHarness({});
-    harness.seedCache('llog-offline-v8', '/index.html', 'old');
-    harness.seedCache('llog-offline-v9', '/index.html', 'new');
+    harness.seedCache('llog-offline-v0', '/index.html', 'old');
+    harness.seedCache('llog-offline-v1', '/index.html', 'new');
     const response = await harness.runFetch('/records/a');
     expect(await response.text()).toBe('new');
   });
@@ -316,7 +481,7 @@ describe('service worker', () => {
   test('strips cached redirects', async () => {
     const harness = createHarness({});
 
-    harness.seedCache('llog-offline-v9', '/index.html', {
+    harness.seedCache('llog-offline-v1', '/index.html', {
       body: 'cached',
       redirected: true,
     });
@@ -367,7 +532,7 @@ describe('service worker', () => {
       '/records/a': '<script src="/_expo/static/js/web/missing.js"></script>',
     });
 
-    harness.seedCache('llog-offline-v9', '/index.html', 'old');
+    harness.seedCache('llog-offline-v1', '/index.html', 'old');
     const response = await harness.runFetch('/records/a');
     expect(await response.text()).toBe('old');
     expect(harness.currentCachePaths()).toEqual(['/index.html']);

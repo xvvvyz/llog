@@ -77,7 +77,10 @@ const getCloudflareFlexibleVariantSrc = (
   const parts = url.pathname.split('/').filter(Boolean);
   let variantIndex: number;
 
-  if (url.hostname.endsWith('imagedelivery.net')) {
+  if (
+    url.hostname === 'imagedelivery.net' ||
+    url.hostname.endsWith('.imagedelivery.net')
+  ) {
     variantIndex = 2;
   } else if (parts[0] === 'cdn-cgi' && parts[1] === 'imagedelivery') {
     variantIndex = 4;

@@ -45,6 +45,8 @@ describe('fileUriToSrc', () => {
   });
 
   test('rewrites image URLs', () => {
+    delete process.env.EXPO_PUBLIC_API_URL;
+
     expect(
       fileUriToSrcShared.fileUriToSrc(
         'https://imagedelivery.net/account/image-id/public',
