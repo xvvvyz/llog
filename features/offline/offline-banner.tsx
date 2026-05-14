@@ -68,7 +68,7 @@ export const OfflineBanner = () => {
       <Text className="text-muted-foreground text-sm" numberOfLines={1}>
         {state === 'offline'
           ? 'Offline. Features are limited.'
-          : 'Syncing saved changes.'}
+          : 'Syncing offline changes.'}
       </Text>
     </View>
   );
