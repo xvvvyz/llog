@@ -27,7 +27,9 @@ type FakeWorker = {
   skipWaiting: () => Promise<void>;
 };
 
-type FetchFixture = string | { body?: string; status?: number };
+type FetchFixture =
+  | string
+  | { body?: string; redirected?: boolean; status?: number };
 
 type RequestLike =
   | RequestInfo
@@ -53,10 +55,26 @@ const swPath = (input: RequestLike) => {
   return `${url.pathname}${url.search}`;
 };
 
+const redirectedResponse = (response: Response) => {
+  const clone = response.clone.bind(response);
+
+  Object.defineProperties(response, {
+    clone: { value: () => redirectedResponse(clone()) },
+    redirected: { value: true },
+  });
+
+  return response;
+};
+
 const fixtureResponse = (fixture?: FetchFixture) => {
   if (!fixture) return new Response('missing', { status: 404 });
   if (typeof fixture === 'string') return new Response(fixture);
-  return new Response(fixture.body ?? '', { status: fixture.status ?? 200 });
+
+  const response = new Response(fixture.body ?? '', {
+    status: fixture.status ?? 200,
+  });
+
+  return fixture.redirected ? redirectedResponse(response) : response;
 };
 
 function createHarness(fixtures: Record<string, FetchFixture>) {
@@ -178,8 +196,12 @@ function createHarness(fixtures: Record<string, FetchFixture>) {
     return response;
   };
 
-  const seedCache = (name: string, path: string, body = '') => {
-    store(name).set(path, new Response(body));
+  const seedCache = (
+    name: string,
+    path: string,
+    fixture: FetchFixture = ''
+  ) => {
+    store(name).set(path, fixtureResponse(fixture));
   };
 
   return {
@@ -269,26 +291,39 @@ describe('service worker', () => {
 
   test('keeps previous cache', async () => {
     const harness = createHarness({});
-    harness.seedCache('llog-offline-v6', '/index.html', 'v6');
     harness.seedCache('llog-offline-v7', '/index.html', 'v7');
     harness.seedCache('llog-offline-v8', '/index.html', 'v8');
-    harness.seedCache('llog-offline-v8-install', '/index.html', 'install');
+    harness.seedCache('llog-offline-v9', '/index.html', 'v9');
+    harness.seedCache('llog-offline-v9-install', '/index.html', 'install');
     harness.seedCache('other-cache', '/index.html', 'other');
     await harness.run('activate');
 
     expect(harness.cacheNames()).toEqual([
-      'llog-offline-v7',
       'llog-offline-v8',
+      'llog-offline-v9',
       'other-cache',
     ]);
   });
 
   test('prefers current shell', async () => {
     const harness = createHarness({});
-    harness.seedCache('llog-offline-v7', '/index.html', 'old');
-    harness.seedCache('llog-offline-v8', '/index.html', 'new');
+    harness.seedCache('llog-offline-v8', '/index.html', 'old');
+    harness.seedCache('llog-offline-v9', '/index.html', 'new');
     const response = await harness.runFetch('/records/a');
     expect(await response.text()).toBe('new');
+  });
+
+  test('strips cached redirects', async () => {
+    const harness = createHarness({});
+
+    harness.seedCache('llog-offline-v9', '/index.html', {
+      body: 'cached',
+      redirected: true,
+    });
+
+    const response = await harness.runFetch('/records/a');
+    expect(response.redirected).toBe(false);
+    expect(await response.text()).toBe('cached');
   });
 
   test('caches navigation shell', async () => {
@@ -310,12 +345,29 @@ describe('service worker', () => {
     ]);
   });
 
+  test('strips navigation redirects', async () => {
+    const harness = createHarness({
+      '/_expo/static/js/web/entry-redirected.js': 'js',
+      '/records/a': {
+        body: '<script src="/_expo/static/js/web/entry-redirected.js"></script>',
+        redirected: true,
+      },
+    });
+
+    const response = await harness.runFetch('/records/a');
+    expect(response.redirected).toBe(false);
+    expect(await response.text()).toContain('entry-redirected.js');
+    const cachedResponse = await harness.runFetch('/records/b');
+    expect(cachedResponse.redirected).toBe(false);
+    expect(await cachedResponse.text()).toContain('entry-redirected.js');
+  });
+
   test('keeps old shell', async () => {
     const harness = createHarness({
       '/records/a': '<script src="/_expo/static/js/web/missing.js"></script>',
     });
 
-    harness.seedCache('llog-offline-v8', '/index.html', 'old');
+    harness.seedCache('llog-offline-v9', '/index.html', 'old');
     const response = await harness.runFetch('/records/a');
     expect(await response.text()).toBe('old');
     expect(harness.currentCachePaths()).toEqual(['/index.html']);

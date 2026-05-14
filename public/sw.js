@@ -1,4 +1,4 @@
-self.__LLOG_SW_VERSION__ = 'offline-v8';
+self.__LLOG_SW_VERSION__ = 'offline-v9';
 const CACHE_NAME = `llog-${self.__LLOG_SW_VERSION__}`;
 const INSTALL_CACHE_NAME = `${CACHE_NAME}-install`;
 const CACHE_RESOURCES_MESSAGE = 'LLOG_CACHE_RESOURCES';
@@ -80,6 +80,20 @@ const previousCacheNames = (cacheNames) =>
     .sort((left, right) => cacheVersion(right) - cacheVersion(left))
     .slice(0, 1);
 
+const responseHeaders = (response) => {
+  const headers = new Headers(response.headers);
+  headers.delete('content-encoding');
+  headers.delete('content-length');
+  return headers;
+};
+
+const withoutRedirects = (response) =>
+  new Response(response.clone().body, {
+    headers: responseHeaders(response),
+    status: response.status,
+    statusText: response.statusText,
+  });
+
 const matchCurrentCache = async (request) => {
   const cache = await caches.open(CACHE_NAME);
   return (await cache.match(request)) ?? caches.match(request);
@@ -88,12 +102,13 @@ const matchCurrentCache = async (request) => {
 const matchCurrentAppShell = async () => {
   const cache = await caches.open(CACHE_NAME);
 
-  return (
+  const response =
     (await cache.match(INDEX_URL)) ??
     (await cache.match('/')) ??
     (await caches.match(INDEX_URL)) ??
-    (await caches.match('/'))
-  );
+    (await caches.match('/'));
+
+  return response ? withoutRedirects(response) : undefined;
 };
 
 const fetchResource = async (path, { reload = true } = {}) => {
@@ -113,7 +128,12 @@ const cachePath = async (
   try {
     if (onlyIfMissing && (await cache.match(path))) return;
     const response = await fetchResource(path, { reload });
-    await cache.put(path, response.clone());
+
+    const cacheResponse = APP_SHELL_URLS.includes(path)
+      ? withoutRedirects(response)
+      : response.clone();
+
+    await cache.put(path, cacheResponse);
   } catch (error) {
     if (required) throw error;
   }
@@ -212,7 +232,8 @@ const cacheAppShellResponse = async (
   response,
   { onlyIfMissing = false, reloadResources = true, required }
 ) => {
-  const html = await response.clone().text();
+  const appShellResponse = withoutRedirects(response);
+  const html = await appShellResponse.clone().text();
   const paths = appResourcePaths(html);
 
   if (required && paths.length === 0) {
@@ -225,8 +246,8 @@ const cacheAppShellResponse = async (
     required,
   });
 
-  await cache.put(INDEX_URL, response.clone());
-  await cache.put('/', response.clone());
+  await cache.put(INDEX_URL, appShellResponse.clone());
+  await cache.put('/', appShellResponse.clone());
 };
 
 const cacheCurrentAppShell = async () => {
@@ -283,14 +304,15 @@ const networkFirstNavigation = async (request) => {
     const response = await fetch(request);
     if (!response.ok) throw new Error('Navigation request failed.');
     const cache = await caches.open(CACHE_NAME);
+    const appShellResponse = withoutRedirects(response);
 
-    await cacheAppShellResponse(cache, response, {
+    await cacheAppShellResponse(cache, appShellResponse.clone(), {
       onlyIfMissing: true,
       reloadResources: false,
       required: true,
     });
 
-    return response;
+    return appShellResponse;
   } catch {
     return (await matchCurrentAppShell()) ?? Response.error();
   }
