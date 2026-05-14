@@ -40,11 +40,31 @@ export const TagRow = ({
   const [isDeleteButtonVisible, setIsDeleteButtonVisible] =
     React.useState(false);
 
+  const [draftName, setDraftName] = React.useState(name);
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const colorValue = resolveSpectrumColor(color);
   const accentColor = SPECTRUM[colorScheme][colorValue].default;
   const canEditColor = !!canManageColor && !!onColorChange;
+
+  React.useEffect(() => {
+    if (isDeleteButtonVisible) return;
+    setDraftName(name);
+  }, [isDeleteButtonVisible, name]);
+
+  const handleChangeName = React.useCallback(
+    (nextName: string) => {
+      setDraftName(nextName);
+      if (!nextName.trim()) return;
+      void updateTag({ id, name: nextName });
+    },
+    [id]
+  );
+
+  const handleBlurName = React.useCallback(() => {
+    if (!draftName.trim()) setDraftName(name);
+    setTimeout(() => setIsDeleteButtonVisible(false), 200);
+  }, [draftName, name]);
 
   return (
     <View className="flex-row w-full gap-3 items-center">
@@ -99,15 +119,13 @@ export const TagRow = ({
         ) : (
           <Input
             className="flex-1 min-w-0 px-0 border-0 bg-transparent"
-            defaultValue={name}
             maxLength={16}
-            onChangeText={(name) => updateTag({ id: id, name })}
+            onBlur={handleBlurName}
+            onChangeText={handleChangeName}
             onFocus={() => setIsDeleteButtonVisible(true)}
             placeholder="Tag"
             size="sm"
-            onBlur={() =>
-              setTimeout(() => setIsDeleteButtonVisible(false), 200)
-            }
+            value={draftName}
           />
         )}
         {isDeleteButtonVisible && canManageDefinitions ? (

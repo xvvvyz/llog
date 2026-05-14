@@ -396,7 +396,7 @@ const rules = {
   tags: {
     bind: [
       'isValidName',
-      'newData.name == null || size(newData.name) <= 16',
+      'newData.name != null && size(newData.name) > 0 && size(newData.name) <= 16',
       'isValidType',
       "newData.type in ['log', 'record']",
       'isValidColor',

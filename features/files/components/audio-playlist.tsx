@@ -37,7 +37,6 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
     } = useUiAudioPlaybackRate();
 
     if (clips.length === 0) return null;
-
     const hasMultipleClips = clips.length > 1;
 
     return (

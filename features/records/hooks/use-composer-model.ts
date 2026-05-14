@@ -27,6 +27,7 @@ import { updateRecordDraft } from '@/features/records/mutations/update-record-dr
 import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { useRecordDraft } from '@/features/records/queries/use-record-draft';
+import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -298,7 +299,7 @@ export const useRecordComposerModel = () => {
     ]
   );
 
-  const selectedTags = React.useMemo(
+  const selectedRecordTags = React.useMemo(
     () =>
       shouldUseQueuedRecordDraft && queuedRecordDraft?.tagsUpdated
         ? queuedRecordDraft.tags
@@ -310,6 +311,19 @@ export const useRecordComposerModel = () => {
       shouldUseQueuedRecordDraft,
     ]
   );
+
+  const tagDefinitions = useTags({
+    enabled: !!recordLogId && !!recordTeamId,
+    logId: recordLogId,
+    teamIds: recordTeamId ? [recordTeamId] : undefined,
+    type: 'record',
+  });
+
+  const selectedTags = React.useMemo(() => {
+    if (!tagDefinitions.data.length) return selectedRecordTags;
+    const tagsById = new Map(tagDefinitions.data.map((tag) => [tag.id, tag]));
+    return selectedRecordTags.map((tag) => tagsById.get(tag.id) ?? tag);
+  }, [tagDefinitions.data, selectedRecordTags]);
 
   const { displayText, latestTextRef, setLatestText } = useComposerLatestText({
     resetKey: composerTextResetKey,
