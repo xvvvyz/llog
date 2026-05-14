@@ -1,4 +1,4 @@
-import * as duration2 from '@/lib/duration';
+import * as durationUtils from '@/lib/duration';
 import { describe, expect, test } from 'bun:test';
 
 const invalidDurations = [
@@ -11,38 +11,38 @@ const invalidDurations = [
 
 describe('durationMsToSeconds', () => {
   test('converts ms to seconds', () => {
-    expect(duration2.durationMsToSeconds(0)).toBe(0);
-    expect(duration2.durationMsToSeconds(1234)).toBe(1.234);
+    expect(durationUtils.durationMsToSeconds(0)).toBe(0);
+    expect(durationUtils.durationMsToSeconds(1234)).toBe(1.234);
   });
 
   test('rejects invalid ms', () => {
     for (const duration of invalidDurations) {
-      expect(duration2.durationMsToSeconds(duration)).toBeUndefined();
+      expect(durationUtils.durationMsToSeconds(duration)).toBeUndefined();
     }
   });
 });
 
 describe('durationSecondsToMs', () => {
   test('converts seconds to ms', () => {
-    expect(duration2.durationSecondsToMs(0)).toBe(0);
-    expect(duration2.durationSecondsToMs(1.2344)).toBe(1234);
-    expect(duration2.durationSecondsToMs(1.2345)).toBe(1235);
+    expect(durationUtils.durationSecondsToMs(0)).toBe(0);
+    expect(durationUtils.durationSecondsToMs(1.2344)).toBe(1234);
+    expect(durationUtils.durationSecondsToMs(1.2345)).toBe(1235);
   });
 
   test('rejects invalid seconds', () => {
     for (const duration of invalidDurations) {
-      expect(duration2.durationSecondsToMs(duration)).toBeUndefined();
+      expect(durationUtils.durationSecondsToMs(duration)).toBeUndefined();
     }
   });
 });
 
 describe('positiveDurationSeconds', () => {
   test('keeps positive seconds', () => {
-    expect(duration2.positiveDurationSeconds(0.001)).toBe(0.001);
-    expect(duration2.positiveDurationSeconds(0)).toBeUndefined();
+    expect(durationUtils.positiveDurationSeconds(0.001)).toBe(0.001);
+    expect(durationUtils.positiveDurationSeconds(0)).toBeUndefined();
 
     for (const duration of invalidDurations) {
-      expect(duration2.positiveDurationSeconds(duration)).toBeUndefined();
+      expect(durationUtils.positiveDurationSeconds(duration)).toBeUndefined();
     }
   });
 });

@@ -1,19 +1,26 @@
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { ArrowLeft, CaretLeft } from 'phosphor-react-native';
 import { Platform } from 'react-native';
 
-export const BackButton = () => {
-  if (!router.canGoBack()) return null;
+export const BackButton = ({ fallbackHref = '/' }: { fallbackHref?: Href }) => {
+  const canGoBack = router.canGoBack();
 
   return (
     <Button
       className="size-11"
-      onPress={() => router.back()}
       size="icon"
       variant="link"
       wrapperClassName="md:-ml-4 md:mr-4"
+      onPress={() => {
+        if (canGoBack) {
+          router.back();
+          return;
+        }
+
+        router.replace(fallbackHref);
+      }}
     >
       <Icon
         className="color-foreground"

@@ -17,5 +17,9 @@ export const redeemInviteLink = async ({ token }: { token: string }) => {
     throw new Error(body?.message ?? 'Failed to redeem invite link');
   }
 
-  return (await res.json()) as { status: string; teamId: string };
+  return (await res.json()) as {
+    logIds?: string[];
+    status: string;
+    teamId: string;
+  };
 };

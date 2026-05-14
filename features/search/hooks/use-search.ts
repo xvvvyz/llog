@@ -6,9 +6,9 @@ import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import * as queryFilters from '@/features/search/lib/query-filters';
 import type * as searchTypes from '@/features/search/types/search';
 import { db } from '@/lib/db';
+import * as searchLib from '@/lib/search';
 import type { SearchResult as MiniSearchResult } from 'minisearch';
 import * as React from 'react';
-import * as search2 from '@/lib/search';
 
 type SearchDocument = {
   id: string;
@@ -111,13 +111,13 @@ const filterMatchingItems = <Item>(
   if (!items?.length || terms.length === 0) return [];
 
   const normalizedTerms = terms
-    .map(search2.normalizeSearchText)
+    .map(searchLib.normalizeSearchText)
     .filter(Boolean);
 
   if (!normalizedTerms.length) return [];
 
   return items.filter((item) => {
-    const normalizedText = search2.normalizeSearchText(getText(item));
+    const normalizedText = searchLib.normalizeSearchText(getText(item));
     return normalizedTerms.some((term) => normalizedText.includes(term));
   });
 };
@@ -137,7 +137,7 @@ const uniqueStrings = (values: string[]) => {
   const unique: string[] = [];
 
   for (const value of values) {
-    const key = search2.normalizeSearchText(value);
+    const key = searchLib.normalizeSearchText(value);
     if (!key || seen.has(key)) continue;
     seen.add(key);
     unique.push(value);
@@ -154,7 +154,7 @@ export const useSearch = ({ query }: { query: string }) => {
   const deferredQuery = React.useDeferredValue(trimmedQuery);
 
   const parsedQuery = React.useMemo(
-    () => search2.parseSearchQuery(deferredQuery),
+    () => searchLib.parseSearchQuery(deferredQuery),
     [deferredQuery]
   );
 
@@ -328,7 +328,7 @@ export const useSearch = ({ query }: { query: string }) => {
   }, [data]);
 
   const miniSearch = React.useMemo(() => {
-    return search2.createSearchIndex<SearchDocument>({
+    return searchLib.createSearchIndex<SearchDocument>({
       documents,
       fields: [
         'text',

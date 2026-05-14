@@ -1,4 +1,4 @@
-import * as reactions2 from '@/domain/records/reactions';
+import * as reactionDomain from '@/domain/records/reactions';
 import { resolveProfileAndTeam } from '@/features/account/queries/resolve-profile-and-team';
 import { db } from '@/lib/db';
 import { id } from '@instantdb/react-native';
@@ -12,7 +12,7 @@ export const toggleReaction = async ({
   recordId,
   replyId,
 }: {
-  emoji: reactions2.ReactionEmoji;
+  emoji: reactionDomain.ReactionEmoji;
   existingReactionId?: string;
   logId?: string;
   profileId?: string;
@@ -29,7 +29,7 @@ export const toggleReaction = async ({
 
   if (logId) {
     return db.transact(
-      reactions2.buildAddReactionTransactions({
+      reactionDomain.buildAddReactionTransactions({
         activityId: id(),
         db,
         emoji,
@@ -45,7 +45,7 @@ export const toggleReaction = async ({
   }
 
   return db.transact(
-    reactions2.buildAddReactionTransactions({
+    reactionDomain.buildAddReactionTransactions({
       db,
       emoji,
       profileId: resolved.profileId,

@@ -146,12 +146,53 @@ const renderAppIconPng = async ({
       : null),
   });
 
+const SOCIAL_IMAGE_WIDTH = 1200;
+const SOCIAL_IMAGE_HEIGHT = 630;
 const ICON_PADDING = 0.22;
 const ICON_RADIUS = 0.48;
 const MASKABLE_PADDING = 0.1;
 const MASKABLE_RADIUS = ICON_RADIUS;
 const ANDROID_ADAPTIVE_CONTENT_SCALE = 0.61;
 const lightBackground = UI.light.background;
+
+const renderSocialImage = async () => {
+  const markSize = 300;
+
+  const markSvg = renderToStaticMarkup(
+    React.createElement(AppIcon, {
+      backgroundColor: 'transparent',
+      colorScheme: 'dark',
+      size: markSize,
+    })
+  );
+
+  const markSrc = `data:image/svg+xml;base64,${Buffer.from(markSvg).toString('base64')}`;
+
+  const svg = await satori(
+    React.createElement(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          width: SOCIAL_IMAGE_WIDTH,
+          height: SOCIAL_IMAGE_HEIGHT,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: NATIVE_SPLASH_BACKGROUNDS.dark,
+        },
+      },
+      React.createElement('img', {
+        alt: '',
+        height: markSize,
+        src: markSrc,
+        width: markSize,
+      })
+    ),
+    { fonts: [], height: SOCIAL_IMAGE_HEIGHT, width: SOCIAL_IMAGE_WIDTH }
+  );
+
+  return renderSvgToPng(svg);
+};
 
 const sharedNativeIconOutputs = [
   {
@@ -282,6 +323,7 @@ const badgeOutputPath = publicPath('badge-72.png');
 const faviconSvgPath = publicPath('favicon.svg');
 const favicon32Path = publicPath('favicon-32.png');
 const faviconIcoPath = publicPath('favicon.ico');
+const socialImagePath = publicPath('og-image.png');
 const startupOutputDirectory = publicPath('apple-startup');
 
 const startupOutputPaths = startupImages.appleStartupImageSpecs.flatMap(
@@ -320,6 +362,7 @@ export async function generateMedia(
         faviconSvgPath,
         favicon32Path,
         faviconIcoPath,
+        socialImagePath,
         ...startupOutputPaths,
       ]
     : [];
@@ -368,6 +411,8 @@ export async function generateMedia(
   }
 
   if (platforms.web) {
+    log('Rendering social preview image');
+    await Bun.write(socialImagePath, await renderSocialImage());
     log('Rendering notification badge');
 
     // Badge — monochrome (white pills, transparent background) for use in notification status bar

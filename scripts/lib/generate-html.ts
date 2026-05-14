@@ -9,6 +9,19 @@ import { getServiceWorkerBootstrapScript } from './service-worker-bootstrap';
 const publicPath = (...segments: string[]) =>
   join(process.cwd(), 'public', ...segments);
 
+const trimTrailingSlashes = (value: string) => value.trim().replace(/\/+$/, '');
+
+const getPublicUrl = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const appUrl = process.env.EXPO_PUBLIC_APP_URL;
+  if (!appUrl) return normalizedPath;
+  const normalizedAppUrl = trimTrailingSlashes(appUrl);
+
+  return normalizedAppUrl
+    ? `${normalizedAppUrl}${normalizedPath}`
+    : normalizedPath;
+};
+
 export async function generateHtml(platforms: AssetPlatformSelection) {
   const { flush, log, progress } = createLogger('generate-html');
 
@@ -19,6 +32,10 @@ export async function generateHtml(platforms: AssetPlatformSelection) {
 
   const light = UI.light.background;
   const dark = UI.dark.background;
+  const title = 'llog';
+  const description = 'Track anything in your world.';
+  const siteUrl = getPublicUrl('/');
+  const socialImageUrl = getPublicUrl('/og-image.png');
 
   const startupLinks = startupImages.appleStartupImageSpecs.flatMap((spec) =>
     startupImages.appleStartupImageOrientations.flatMap((orientation) =>
@@ -42,12 +59,27 @@ export async function generateHtml(platforms: AssetPlatformSelection) {
 
   const tags = [
     `<meta charset="utf-8"/>`,
-    `<title>llog</title>`,
+    `<title>${title}</title>`,
     `<meta name="apple-mobile-web-app-capable" content="yes"/>`,
     `<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>`,
-    `<meta name="apple-mobile-web-app-title" content="llog"/>`,
+    `<meta name="apple-mobile-web-app-title" content="${title}"/>`,
     `<meta name="color-scheme" content="light dark"/>`,
-    `<meta name="description" content="Track anything in your world."/>`,
+    `<meta name="description" content="${description}"/>`,
+    `<meta property="og:type" content="website"/>`,
+    `<meta property="og:url" content="${siteUrl}"/>`,
+    `<meta property="og:site_name" content="${title}"/>`,
+    `<meta property="og:title" content="${title}"/>`,
+    `<meta property="og:description" content="${description}"/>`,
+    `<meta property="og:image" content="${socialImageUrl}"/>`,
+    `<meta property="og:image:width" content="1200"/>`,
+    `<meta property="og:image:height" content="630"/>`,
+    `<meta property="og:image:type" content="image/png"/>`,
+    `<meta property="og:image:alt" content="llog app mark on a dark background"/>`,
+    `<meta name="twitter:card" content="summary_large_image"/>`,
+    `<meta name="twitter:title" content="${title}"/>`,
+    `<meta name="twitter:description" content="${description}"/>`,
+    `<meta name="twitter:image" content="${socialImageUrl}"/>`,
+    `<meta name="twitter:image:alt" content="llog app mark on a dark background"/>`,
     `<meta name="theme-color" content="${dark}" media="(prefers-color-scheme: dark)"/>`,
     `<meta name="theme-color" content="${light}" media="(prefers-color-scheme: light)"/>`,
     `<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,interactive-widget=resizes-content,user-scalable=no,viewport-fit=auto"/>`,

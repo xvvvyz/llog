@@ -7,7 +7,9 @@ const {
   getHighlightedRecordDetailHref,
   getLogHref,
   getRecordDetailHref,
+  getRecordDetailUrl,
   getRecordMediaHref,
+  getRecordReplyDetailUrl,
   openRecordDetail,
 } = await import('@/features/records/lib/route');
 
@@ -26,6 +28,16 @@ describe('record routes', () => {
     expect(getRecordMediaHref('record/id', 'file#1')).toBe(
       '/records/record%2Fid/files/file%231'
     );
+  });
+
+  test('builds share URLs', () => {
+    expect(getRecordDetailUrl('record/id', ' https://llog.example/// ')).toBe(
+      'https://llog.example/records/record%2Fid'
+    );
+
+    expect(
+      getRecordReplyDetailUrl('record/id', 'reply?id=1', 'https://llog.example')
+    ).toBe('https://llog.example/records/record%2Fid?replyId=reply%3Fid%3D1');
   });
 
   test('opens record routes', () => {

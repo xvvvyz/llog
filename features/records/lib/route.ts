@@ -1,4 +1,5 @@
 import { type Href, router } from 'expo-router';
+import { getAppUrl } from '@/lib/app-url';
 
 export const getLogHref = (logId: string) =>
   `/${encodeURIComponent(logId)}` as Href;
@@ -6,8 +7,21 @@ export const getLogHref = (logId: string) =>
 export const getRecordDetailHref = (recordId: string) =>
   `/records/${encodeURIComponent(recordId)}` as Href;
 
+export const getRecordDetailUrl = (recordId: string, appUrl?: string) =>
+  getAppUrl(`/records/${encodeURIComponent(recordId)}`, appUrl);
+
 export const getRecordReplyDetailHref = (recordId: string, replyId: string) =>
   ({ pathname: '/records/[recordId]', params: { recordId, replyId } }) as Href;
+
+export const getRecordReplyDetailUrl = (
+  recordId: string,
+  replyId: string,
+  appUrl?: string
+) => {
+  const recordUrl = getRecordDetailUrl(recordId, appUrl);
+  if (!recordUrl) return undefined;
+  return `${recordUrl}?replyId=${encodeURIComponent(replyId)}`;
+};
 
 export const getHighlightedRecordDetailHref = (recordId: string) =>
   ({

@@ -134,6 +134,7 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
     if (tx.length) await c.var.db.transact(tx);
 
     return c.json({
+      logIds,
       status: desiredRole !== existingRole.role ? 'role_updated' : 'logs_added',
       teamId,
     });
@@ -156,7 +157,7 @@ app.post('/:token/redeem', db(), auth(), async (c) => {
     ...memberJoinedActivity(c.var.db, actorId, teamId),
   ]);
 
-  return c.json({ status: 'joined', teamId });
+  return c.json({ logIds, status: 'joined', teamId });
 });
 
 export default app;

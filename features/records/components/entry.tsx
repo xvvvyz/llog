@@ -82,11 +82,20 @@ export const Entry = ({
 
     const canPin = rawEntryMenuState.canPin;
     const canRetry = record.localOutboxStatus === 'error';
+    const canShare = rawEntryMenuState.canShare;
     const canTag = rawEntryMenuState.canTag;
-    const hasActionsAboveDelete = canEdit || canRetry || canTag || canPin;
+
+    const hasActionsAboveDelete =
+      canEdit || canRetry || canTag || canPin || canShare;
 
     const hasMenu =
-      canDelete || canDuplicate || canEdit || canRetry || canPin || canTag;
+      canDelete ||
+      canDuplicate ||
+      canEdit ||
+      canRetry ||
+      canPin ||
+      canShare ||
+      canTag;
 
     return {
       ...rawEntryMenuState,
@@ -95,6 +104,7 @@ export const Entry = ({
       canEdit,
       canPin,
       canRetry,
+      canShare,
       canTag,
       hasActionsAboveDelete,
       hasMenu,

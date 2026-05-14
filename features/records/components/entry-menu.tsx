@@ -2,15 +2,17 @@ import { canDeleteOwnOrManagedResource } from '@/domain/teams/permissions';
 import { useProfile } from '@/features/account/queries/use-profile';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
+import * as route from '@/features/records/lib/route';
 import { createRecordCopyDraft } from '@/features/records/mutations/create-record-copy-draft';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
-import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
+import * as copyTargetQueries from '@/features/records/queries/use-copy-targets';
 import { useConnectivity } from '@/features/offline/connectivity';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
+import { shareUrl } from '@/lib/share';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -24,6 +26,7 @@ import {
   DotsThreeVertical,
   NotePencil,
   PushPin,
+  ShareNetwork,
   StackSimple,
   Tag,
   Trash,
@@ -42,12 +45,34 @@ type EntryMenuProps = {
   teamId?: string;
 };
 
+export type EntryMenuState = {
+  canDelete: boolean;
+  canDuplicate: boolean;
+  canEdit: boolean;
+  canPin: boolean;
+  canRetry: boolean;
+  canShare: boolean;
+  canTag: boolean;
+  copyTargetLogs: copyTargetQueries.CopyTargetLog[];
+  hasActionsAboveDelete: boolean;
+  hasMenu: boolean;
+  isDeleteDisabled: boolean;
+  isDuplicateDisabled: boolean;
+  isEditDisabled: boolean;
+  isPinDisabled: boolean;
+  isRetryDisabled: boolean;
+  isTagDisabled: boolean;
+};
+
 export const useEntryMenuState = ({
   authorId,
   logId,
   replyId,
   teamId,
-}: Pick<EntryMenuProps, 'authorId' | 'logId' | 'replyId' | 'teamId'>) => {
+}: Pick<
+  EntryMenuProps,
+  'authorId' | 'logId' | 'replyId' | 'teamId'
+>): EntryMenuState => {
   const myRole = useMyRole({ teamId });
   const profile = useProfile();
   const connectivity = useConnectivity();
@@ -73,7 +98,7 @@ export const useEntryMenuState = ({
 
   const canDuplicateRecord = !replyId && isAuthor;
 
-  const copyTargets = useCopyTargets({
+  const copyTargets = copyTargetQueries.useCopyTargets({
     enabled: canDuplicateRecord && !!logId,
   });
 
@@ -85,8 +110,11 @@ export const useEntryMenuState = ({
       !connectivity.canRunNetworkActions);
 
   const canPin = !replyId && myRole.canPinRecords;
-  const hasActionsAboveDelete = canEdit || canTag || canPin;
-  const hasMenu = canDelete || canDuplicate || canEdit || canPin || canTag;
+  const canShare = true;
+  const hasActionsAboveDelete = canEdit || canTag || canPin || canShare;
+
+  const hasMenu =
+    canDelete || canDuplicate || canEdit || canPin || canShare || canTag;
 
   return {
     canDelete,
@@ -94,6 +122,7 @@ export const useEntryMenuState = ({
     canEdit,
     canPin,
     canRetry: false,
+    canShare,
     canTag,
     copyTargetLogs: copyTargets.logs,
     hasActionsAboveDelete,
@@ -107,8 +136,6 @@ export const useEntryMenuState = ({
     isTagDisabled: !connectivity.canRunNetworkActions,
   };
 };
-
-export type EntryMenuState = ReturnType<typeof useEntryMenuState>;
 
 const EntryMenuDropdownContent = ({
   accentColor,
@@ -130,6 +157,7 @@ const EntryMenuDropdownContent = ({
     canEdit,
     canPin,
     canRetry,
+    canShare,
     canTag,
     copyTargetLogs,
     hasActionsAboveDelete,
@@ -143,6 +171,12 @@ const EntryMenuDropdownContent = ({
   } = state;
 
   if (!hasMenu) return null;
+
+  const shareTargetUrl = isLocalPending
+    ? undefined
+    : replyId
+      ? route.getRecordReplyDetailUrl(recordId, replyId)
+      : route.getRecordDetailUrl(recordId);
 
   const duplicateRecord = async () => {
     const [targetLog] = copyTargetLogs;
@@ -272,6 +306,24 @@ const EntryMenuDropdownContent = ({
               weight={isPinned ? 'fill' : 'regular'}
             />
             <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
+          </Menu.Item>
+        )}
+        {canShare && (
+          <Menu.Item
+            closeOnPress={false}
+            disabled={!shareTargetUrl}
+            onPress={async () => {
+              if (!shareTargetUrl) return;
+
+              try {
+                await shareUrl({ title: 'llog', url: shareTargetUrl });
+              } catch {
+                // noop
+              }
+            }}
+          >
+            <Icon className="text-placeholder" icon={ShareNetwork} />
+            <Text>Share</Text>
           </Menu.Item>
         )}
         {(canDuplicate || canDelete) && (

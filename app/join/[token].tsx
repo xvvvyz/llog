@@ -2,6 +2,7 @@ import type { InviteLinkInfo } from '@/domain/invites/invite-link';
 import { getSignInHref } from '@/features/account/lib/auth-redirect';
 import * as storage from '@/features/invites/lib/storage';
 import { redeemInviteLink } from '@/features/invites/mutations/redeem-link';
+import { getLogHref } from '@/features/records/lib/route';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { alert } from '@/lib/alert';
@@ -89,7 +90,7 @@ export default function InviteLink() {
     setIsRedeeming(true);
 
     try {
-      const { teamId } = await redeemInviteLink({ token });
+      const { logIds, teamId } = await redeemInviteLink({ token });
 
       await AsyncStorage.multiRemove([
         storage.PENDING_INVITE_KEY,
@@ -97,7 +98,7 @@ export default function InviteLink() {
       ]);
 
       await switchTeam({ teamId });
-      router.replace('/');
+      router.replace(logIds?.length === 1 ? getLogHref(logIds[0]) : '/');
     } catch (e) {
       alert({
         message: e instanceof Error ? e.message : 'Failed to join team',
