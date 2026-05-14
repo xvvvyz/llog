@@ -23,7 +23,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
   }: AudioPlaylistProps) => {
     const {
       activeAutoPlayKey,
-      activeItem: activeClip,
+      activeIndex,
       handleDidFinish,
       handlePause,
       handlePlayStart,
@@ -36,37 +36,41 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
       setAudioPlaybackRate: setPlaybackRate,
     } = useUiAudioPlaybackRate();
 
-    if (!activeClip) return null;
+    if (clips.length === 0) return null;
+
+    const hasMultipleClips = clips.length > 1;
 
     return (
       <PressPropagationBoundary className={cn('min-w-0 gap-2', className)}>
-        {clips.map((clip, index) => (
-          <AudioPlayer
-            key={clip.id}
-            assetKey={clip.assetKey}
-            canAnalyzeAudio={canAnalyzeAudio}
-            durationSeconds={durationMsToSeconds(clip.duration)}
-            fileId={clip.id}
-            isIdentifying={clip.isIdentifying}
-            isTranscribing={clip.isTranscribing}
-            name={clip.name}
-            onDidFinish={() => handleDidFinish(index)}
-            onNextClip={clips.length > 1 ? showNext : undefined}
-            onPause={handlePause}
-            onPlaybackRateChange={setPlaybackRate}
-            onPlayStart={() => handlePlayStart(index)}
-            onPreviousClip={clips.length > 1 ? showPrevious : undefined}
-            playbackRate={playbackRate}
-            size={clip.size}
-            tracks={clip.tracks}
-            transcript={clip.transcript}
-            type={clip.type}
-            uri={clip.uri}
-            autoPlayKey={
-              clip.id === activeClip.id ? activeAutoPlayKey : undefined
-            }
-          />
-        ))}
+        {clips.map((clip, index) => {
+          const isActive = index === activeIndex;
+
+          return (
+            <AudioPlayer
+              key={`${clip.id}:${index}`}
+              assetKey={clip.assetKey}
+              autoPlayKey={isActive ? activeAutoPlayKey : undefined}
+              canAnalyzeAudio={canAnalyzeAudio}
+              durationSeconds={durationMsToSeconds(clip.duration)}
+              fileId={clip.id}
+              isIdentifying={clip.isIdentifying}
+              isTranscribing={clip.isTranscribing}
+              name={clip.name}
+              onDidFinish={isActive ? () => handleDidFinish(index) : undefined}
+              onNextClip={hasMultipleClips ? showNext : undefined}
+              onPause={isActive ? handlePause : undefined}
+              onPlaybackRateChange={setPlaybackRate}
+              onPlayStart={() => handlePlayStart(index)}
+              onPreviousClip={hasMultipleClips ? showPrevious : undefined}
+              playbackRate={playbackRate}
+              size={clip.size}
+              tracks={clip.tracks}
+              transcript={clip.transcript}
+              type={clip.type}
+              uri={clip.uri}
+            />
+          );
+        })}
       </PressPropagationBoundary>
     );
   };

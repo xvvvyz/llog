@@ -112,12 +112,12 @@ const getAudioAnalysisMenuState = ({
     file.tracks == null
       ? isAudioTooShort
         ? 'Too short to identify'
-        : 'Identify music'
+        : 'Identify songs'
       : hasIdentifiedMusic
-        ? 'Music identified'
+        ? 'Songs identified'
         : isAudioTooShort
           ? 'Too short to identify'
-          : 'No music';
+          : 'No songs found';
 
   return {
     canClearTranscription,
