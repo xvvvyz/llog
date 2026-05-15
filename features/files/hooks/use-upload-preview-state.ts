@@ -255,6 +255,8 @@ export const useFileUploadPreviewState = ({
               asset,
               fileId,
               order,
+              persistBinary:
+                !connectivity.canRunNetworkActions || deferQueuedUploads,
             });
 
             if (connectivity.canRunNetworkActions) {
@@ -288,6 +290,7 @@ export const useFileUploadPreviewState = ({
       clearFocusedAudioId,
       actionsDisabled,
       connectivity.canRunNetworkActions,
+      deferQueuedUploads,
       queuedAttachments,
       removeLocalPreviewUri,
       uploadQueuedAttachment,

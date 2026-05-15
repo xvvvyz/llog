@@ -250,6 +250,7 @@ export const RecordAudioSheet = () => {
         order,
         parentId: draftId,
         parentType: audioContext.type,
+        persistBinary: !connectivity.canRunNetworkActions,
         recordId:
           audioContext.type === 'reply' ? audioContext.recordId : draftId,
       });

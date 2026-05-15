@@ -8,6 +8,7 @@ type QueuePickedAttachmentInput = types.QueuedParent & {
   asset: pickedFiles.PickedFileAsset;
   fileId: string;
   order: number;
+  persistBinary?: boolean;
 };
 
 type QueueAudioAttachmentInput = types.QueuedParent & {
@@ -15,6 +16,7 @@ type QueueAudioAttachmentInput = types.QueuedParent & {
   duration?: number;
   fileId: string;
   order: number;
+  persistBinary?: boolean;
 };
 
 export const useOutbox = outboxStore.useOutboxSnapshot;
@@ -44,19 +46,22 @@ export const queuePickedAttachment = async ({
   asset,
   fileId,
   order,
+  persistBinary = true,
   ...parent
 }: QueuePickedAttachmentInput) => {
-  const saved = await outboxStorage.saveAttachmentBinary(fileId, { asset });
+  const saved = persistBinary
+    ? await outboxStorage.saveAttachmentBinary(fileId, { asset })
+    : undefined;
 
   return outboxStore.queueAttachment({
     ...parent,
     height: asset.height,
     id: fileId,
-    localUri: saved.localUri,
-    mimeType: saved.mimeType ?? asset.mimeType,
+    localUri: saved?.localUri ?? asset.uri,
+    mimeType: saved?.mimeType ?? asset.mimeType,
     name: asset.fileName,
     order,
-    size: saved.size ?? asset.size,
+    size: saved?.size ?? asset.size,
     type: asset.type,
     width: asset.width,
   });
@@ -67,20 +72,23 @@ export const queueAudioAttachment = async ({
   duration,
   fileId,
   order,
+  persistBinary = true,
   ...parent
 }: QueueAudioAttachmentInput) => {
-  const saved = await outboxStorage.saveAttachmentBinary(fileId, { audioUri });
+  const saved = persistBinary
+    ? await outboxStorage.saveAttachmentBinary(fileId, { audioUri })
+    : undefined;
 
   return outboxStore.queueAttachment({
     ...parent,
     duration,
     id: fileId,
     isRecording: true,
-    localUri: saved.localUri,
-    mimeType: saved.mimeType,
+    localUri: saved?.localUri ?? audioUri,
+    mimeType: saved?.mimeType,
     name: 'recording',
     order,
-    size: saved.size,
+    size: saved?.size,
     type: 'audio',
   });
 };
