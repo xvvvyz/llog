@@ -1,7 +1,6 @@
 import { recordTagFields, recordTagLogsQuery } from '@/domain/tags/query';
-import schema from '@/instant.schema';
+import type { Tag } from '@/features/tags/types/tag';
 import { normalizeSearchText } from '@/lib/search';
-import { InstaQLEntity } from '@instantdb/react-native';
 
 export const logTemplateFields = [
   'id' as const,
@@ -32,13 +31,8 @@ export const templateQuery = { log: templateLogQuery, tags: templateTagsQuery };
 
 type OrderedTemplate = { order?: number | null };
 type TemplateSearchItem = { tags?: { name: string }[]; text?: string | null };
-type TemplateTagEntity = InstaQLEntity<typeof schema, 'tags'>;
-
-type CopyTemplateSourceTag = Partial<
-  Pick<TemplateTagEntity, 'color' | 'id' | 'name'>
->;
-
-type CopyTemplateTargetTag = Partial<Pick<TemplateTagEntity, 'id' | 'name'>>;
+type CopyTemplateSourceTag = Partial<Pick<Tag, 'color' | 'id' | 'name'>>;
+type CopyTemplateTargetTag = Partial<Pick<Tag, 'id' | 'name'>>;
 
 export const getNextTemplateOrder = (templates: OrderedTemplate[]) =>
   templates.reduce((max, template) => Math.max(max, template.order ?? -1), -1) +

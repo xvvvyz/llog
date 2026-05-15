@@ -1,5 +1,6 @@
 import { SpectrumSwatchPicker } from '@/features/tags/components/spectrum-swatch-picker';
 import { updateTag } from '@/features/tags/mutations/update-tag';
+import type { Tag } from '@/features/tags/types/tag';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { SPECTRUM, resolveSpectrumColor, type Color } from '@/theme/spectrum';
@@ -14,6 +15,16 @@ import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
+type TagRowProps = Pick<Tag, 'color' | 'id' | 'name'> & {
+  canManageColor?: boolean;
+  canSort?: boolean;
+  canToggle?: boolean;
+  canManageDefinitions?: boolean;
+  isSelected: boolean;
+  onCheckedChange?: (selected: boolean) => void;
+  onColorChange?: (color: Color) => void;
+};
+
 export const TagRow = ({
   canManageColor,
   canSort = true,
@@ -25,18 +36,7 @@ export const TagRow = ({
   name,
   onCheckedChange,
   onColorChange,
-}: {
-  canManageColor?: boolean;
-  canSort?: boolean;
-  canToggle?: boolean;
-  canManageDefinitions?: boolean;
-  color: number;
-  id: string;
-  isSelected: boolean;
-  name: string;
-  onCheckedChange?: (selected: boolean) => void;
-  onColorChange?: (color: Color) => void;
-}) => {
+}: TagRowProps) => {
   const [isDeleteButtonVisible, setIsDeleteButtonVisible] =
     React.useState(false);
 

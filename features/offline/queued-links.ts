@@ -1,13 +1,10 @@
 import type * as types from '@/features/offline/types';
+import type { Link } from '@/features/records/types/link';
 
-export type QueuedLinkSnapshotInput = {
-  id: string;
-  label: string;
-  localStatus?: unknown;
-  order: number;
-  teamId: string;
-  url: string;
-};
+export type QueuedLinkSnapshotInput = Pick<
+  Link,
+  'id' | 'label' | 'order' | 'teamId' | 'url'
+> & { localStatus?: unknown };
 
 export const isQueuedLinkLocalStatus = (
   value: unknown

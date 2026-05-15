@@ -1,4 +1,5 @@
 import { R2_MULTIPART_PART_SIZE } from '@/domain/files/r2-multipart';
+import { getAudioAssetDuration } from '@/features/files/lib/audio-duration';
 import { PickedFileAsset } from '@/features/files/lib/picked';
 import { apiOrThrow } from '@/lib/api';
 import { Platform } from 'react-native';
@@ -62,6 +63,14 @@ const getNativeFileSize = async (uri: string, fallback?: number | null) => {
   return info.size;
 };
 
+const getPickedAudioDuration = async (
+  asset: PickedFileAsset,
+  duration?: number
+) =>
+  asset.type === 'audio'
+    ? (duration ?? (await getAudioAssetDuration(asset)))
+    : undefined;
+
 const getUploadSource = async ({
   asset,
   audioUri,
@@ -104,6 +113,7 @@ const getUploadSource = async ({
 
     return {
       blob,
+      duration: await getPickedAudioDuration(asset, duration),
       fileName: asset.fileName ?? undefined,
       mimeType: asset.mimeType || blob.type || undefined,
       size: blob.size,
@@ -112,6 +122,7 @@ const getUploadSource = async ({
   }
 
   return {
+    duration: await getPickedAudioDuration(asset, duration),
     fileName: asset.fileName ?? undefined,
     mimeType: asset.mimeType ?? undefined,
     size: await getNativeFileSize(asset.uri, asset.size),

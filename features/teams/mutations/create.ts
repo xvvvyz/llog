@@ -1,9 +1,10 @@
 import { Role } from '@/domain/teams/role';
 import { getUi } from '@/features/account/queries/get-ui';
+import type { Team } from '@/features/teams/types/team';
 import { db } from '@/lib/db';
 import { id as generateId } from '@instantdb/react-native';
 
-export const createTeam = async ({ name }: { name: string }) => {
+export const createTeam = async ({ name }: Pick<Team, 'name'>) => {
   const auth = await db.getAuth();
   if (!auth) return;
   const ui = await getUi();

@@ -1,4 +1,5 @@
 import * as permissions from '@/domain/teams/permissions';
+import type { Log } from '@/features/logs/types/log';
 import { getActiveTeamId } from '@/features/teams/queries/get-active-team-id';
 import { db } from '@/lib/db';
 import type { Color } from '@/theme/spectrum';
@@ -10,8 +11,8 @@ export const createLog = async ({
   name,
 }: {
   color: Color;
-  id?: string;
-  name: string;
+  id?: Log['id'];
+  name: Log['name'];
 }) => {
   const teamId = await getActiveTeamId();
   if (!teamId) return;

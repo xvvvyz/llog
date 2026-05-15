@@ -1,4 +1,4 @@
-import { formatTime } from '@/lib/format-time';
+import { formatCompactDuration, formatTime } from '@/lib/format-time';
 import { describe, expect, test } from 'bun:test';
 
 describe('formatTime', () => {
@@ -17,5 +17,24 @@ describe('formatTime', () => {
     expect(formatTime(-3)).toBe('0:00');
     expect(formatTime(Number.NaN)).toBe('0:00');
     expect(formatTime(Number.POSITIVE_INFINITY)).toBe('0:00');
+  });
+});
+
+describe('formatCompactDuration', () => {
+  test('formats seconds', () => {
+    expect(formatCompactDuration(5)).toBe('5s');
+    expect(formatCompactDuration(37.2)).toBe('37s');
+  });
+
+  test('formats minutes', () => {
+    expect(formatCompactDuration(60)).toBe('1m');
+    expect(formatCompactDuration(72)).toBe('1m 12s');
+  });
+
+  test('handles invalid time', () => {
+    expect(formatCompactDuration(0.1)).toBeNull();
+    expect(formatCompactDuration(0)).toBeNull();
+    expect(formatCompactDuration(-3)).toBeNull();
+    expect(formatCompactDuration(Number.NaN)).toBeNull();
   });
 });

@@ -33,6 +33,7 @@ type SearchDocument = {
   authorImage?: string;
   people: string;
   files?: searchTypes.SearchFileItem[];
+  links?: searchTypes.SearchLinkItem[];
   profiles?: searchTypes.SearchProfile[];
 };
 
@@ -94,6 +95,29 @@ const getSearchTags = (
 const getMediaItems = (
   files?: { tracks?: unknown; transcript?: unknown }[] | null
 ) => files?.flatMap((file) => mediaMetadata.getMediaSearchItems(file)) ?? [];
+
+const getSearchFiles = (
+  files?: searchTypes.SearchFileItem[] | null
+): searchTypes.SearchFileItem[] | undefined =>
+  files?.length
+    ? files.map((file) => ({
+        assetKey: file.assetKey,
+        duration: file.duration,
+        id: file.id,
+        mimeType: file.mimeType,
+        name: file.name,
+        thumbnailUri: file.thumbnailUri,
+        type: file.type,
+        uri: file.uri,
+      }))
+    : undefined;
+
+const getSearchLinks = (
+  links?: searchTypes.SearchLinkItem[] | null
+): searchTypes.SearchLinkItem[] | undefined =>
+  links?.length
+    ? links.map((link) => ({ id: link.id, label: link.label, url: link.url }))
+    : undefined;
 
 const getMatchedTermsForField = (
   match: MiniSearchResult['match'],
@@ -261,15 +285,8 @@ export const useSearch = ({ query }: { query: string }) => {
         authorAvatarSeedId: record.author?.avatarSeedId,
         authorName: record.author?.name,
         authorImage: record.author?.image?.uri,
-        files: record.files?.length
-          ? record.files.map((m) => ({
-              assetKey: m.assetKey,
-              id: m.id,
-              name: m.name,
-              type: m.type,
-              uri: m.uri,
-            }))
-          : undefined,
+        files: getSearchFiles(record.files),
+        links: getSearchLinks(record.links),
       });
     }
 
@@ -312,15 +329,8 @@ export const useSearch = ({ query }: { query: string }) => {
         authorAvatarSeedId: reply.author?.avatarSeedId,
         authorName: reply.author?.name,
         authorImage: reply.author?.image?.uri,
-        files: reply.files?.length
-          ? reply.files.map((m) => ({
-              assetKey: m.assetKey,
-              id: m.id,
-              name: m.name,
-              type: m.type,
-              uri: m.uri,
-            }))
-          : undefined,
+        files: getSearchFiles(reply.files),
+        links: getSearchLinks(reply.links),
       });
     }
 
@@ -360,6 +370,7 @@ export const useSearch = ({ query }: { query: string }) => {
         'authorImage',
         'people',
         'files',
+        'links',
         'profiles',
       ],
     });
@@ -467,6 +478,7 @@ export const useSearch = ({ query }: { query: string }) => {
             }
           : undefined,
         files: result.files,
+        links: result.links,
         profiles: result.profiles,
       } satisfies searchTypes.SearchResult;
     });

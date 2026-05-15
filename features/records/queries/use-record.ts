@@ -7,12 +7,13 @@ import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import type { EntryRecord } from '@/features/records/types/entry';
 import type { Link } from '@/features/records/types/link';
+import type { Log } from '@/features/logs/types/log';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 import { useCachedRecord } from './record-cache';
 
-type RecordLog = { color?: string; id?: string; name?: string };
+type RecordLog = Partial<Pick<Log, 'color' | 'id' | 'name'>>;
 
 export type UseRecordResult = EntryRecord & {
   files: FileItem[];

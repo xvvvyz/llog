@@ -1,5 +1,6 @@
 import { RecordTagChips } from '@/features/records/components/record-tag-chips';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
+import * as resultAttachmentPreview from '@/features/search/components/result-attachment-preview';
 import { ResultHighlightedText } from '@/features/search/components/result-highlighted-text';
 import { SearchResult } from '@/features/search/types/search';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -57,9 +58,14 @@ export const ResultRecordCard = ({
     mediaSnippets?.length
   );
 
+  const hasAttachmentPreview =
+    resultAttachmentPreview.hasResultAttachmentPreview(result);
+
+  const hasResultContent = hasMatchedText || hasAttachmentPreview;
+
   return (
     <Pressable className={className} onPress={onPress}>
-      <Card className="min-w-0 gap-3">
+      <Card className="min-w-0 gap-3.5">
         {!!tagItems?.length && (
           <View className="pt-4 px-4">
             <RecordTagChips className="w-full justify-start" tags={tagItems} />
@@ -68,7 +74,8 @@ export const ResultRecordCard = ({
         <View
           className={cn(
             'flex-row px-4 gap-2.5 items-center',
-            tagItems?.length ? 'pt-0' : 'pt-4'
+            tagItems?.length ? 'pt-0' : 'pt-4',
+            !hasResultContent && 'pb-4'
           )}
         >
           {result.author && (
@@ -108,51 +115,59 @@ export const ResultRecordCard = ({
             )}
           </View>
         </View>
-        {(!!tagItems?.length || hasMatchedText) && (
+        {hasResultContent && (
           <View className="min-w-0 pb-4 px-4">
-            {hasMatchedText && (
-              <View className="min-w-0 gap-1.5">
-                {!!displayText && (
-                  <ResultHighlightedText
-                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm web:text-pretty"
-                    highlightClassName="font-medium text-foreground text-sm"
-                    numberOfLines={2}
-                    terms={result.textTerms ?? result.terms}
-                    text={displayText}
-                  />
-                )}
-                {attachmentNames?.map((name, index) => (
-                  <ResultHighlightedText
-                    key={`${name}:${index}`}
-                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
-                    highlightClassName="font-medium text-foreground text-sm"
-                    numberOfLines={1}
-                    terms={result.attachmentTerms ?? result.terms}
-                    text={name}
-                  />
-                ))}
-                {attachmentUrls?.map((url, index) => (
-                  <ResultHighlightedText
-                    key={`${url}:${index}`}
-                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
-                    highlightClassName="font-medium text-foreground text-sm"
-                    numberOfLines={1}
-                    terms={result.attachmentTerms ?? result.terms}
-                    text={url}
-                  />
-                ))}
-                {mediaSnippets?.map((snippet, index) => (
-                  <ResultHighlightedText
-                    key={`${snippet}:${index}`}
-                    className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
-                    highlightClassName="font-medium text-foreground text-sm"
-                    numberOfLines={1}
-                    terms={result.mediaTerms ?? result.terms}
-                    text={snippet}
-                  />
-                ))}
-              </View>
-            )}
+            <View className="min-w-0 gap-3.5">
+              {hasMatchedText && (
+                <View className="min-w-0 gap-1.5">
+                  {!!displayText && (
+                    <ResultHighlightedText
+                      className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm web:text-pretty"
+                      highlightClassName="font-medium text-foreground text-sm"
+                      numberOfLines={2}
+                      terms={result.textTerms ?? result.terms}
+                      text={displayText}
+                    />
+                  )}
+                  {attachmentNames?.map((name, index) => (
+                    <ResultHighlightedText
+                      key={`${name}:${index}`}
+                      className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
+                      highlightClassName="font-medium text-foreground text-sm"
+                      numberOfLines={1}
+                      terms={result.attachmentTerms ?? result.terms}
+                      text={name}
+                    />
+                  ))}
+                  {attachmentUrls?.map((url, index) => (
+                    <ResultHighlightedText
+                      key={`${url}:${index}`}
+                      className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
+                      highlightClassName="font-medium text-foreground text-sm"
+                      numberOfLines={1}
+                      terms={result.attachmentTerms ?? result.terms}
+                      text={url}
+                    />
+                  ))}
+                  {mediaSnippets?.map((snippet, index) => (
+                    <ResultHighlightedText
+                      key={`${snippet}:${index}`}
+                      className="-my-0.5 min-w-0 leading-tight text-muted-foreground text-sm"
+                      highlightClassName="font-medium text-foreground text-sm"
+                      numberOfLines={1}
+                      terms={result.mediaTerms ?? result.terms}
+                      text={snippet}
+                    />
+                  ))}
+                </View>
+              )}
+              {hasAttachmentPreview && (
+                <resultAttachmentPreview.ResultAttachmentPreview
+                  files={result.files}
+                  links={result.links}
+                />
+              )}
+            </View>
           </View>
         )}
       </Card>

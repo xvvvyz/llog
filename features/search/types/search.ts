@@ -1,13 +1,23 @@
 import type { Profile } from '@/features/account/types/profile';
 import type { FileItem } from '@/features/files/types/file';
+import type { Link } from '@/features/records/types/link';
 import type { Tag } from '@/features/tags/types/tag';
 
 export type SearchResultType = 'record' | 'reply' | 'log';
 
 export type SearchFileItem = Pick<
   FileItem,
-  'assetKey' | 'id' | 'name' | 'type' | 'uri'
+  | 'assetKey'
+  | 'duration'
+  | 'id'
+  | 'mimeType'
+  | 'name'
+  | 'thumbnailUri'
+  | 'type'
+  | 'uri'
 >;
+
+export type SearchLinkItem = Pick<Link, 'id' | 'label' | 'url'>;
 
 type SearchPerson = Pick<Profile, 'avatarSeedId' | 'id' | 'name'>;
 
@@ -38,5 +48,6 @@ export type SearchResult = {
   recordId?: string;
   author?: SearchAuthor;
   files?: SearchFileItem[];
+  links?: SearchLinkItem[];
   profiles?: SearchProfile[];
 };

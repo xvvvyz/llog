@@ -1,4 +1,6 @@
 import { DropdownMenu } from '@/features/logs/components/dropdown-menu';
+import type { FileItem } from '@/features/files/types/file';
+import type { Profile } from '@/features/account/types/profile';
 import * as lookup from '@/features/search/lib/lookup';
 import { TagChipList } from '@/features/tags/components/tag-chip-list';
 import { Tag } from '@/features/tags/types/tag';
@@ -11,6 +13,10 @@ import { DotsThree } from 'phosphor-react-native';
 import { Pressable, View } from 'react-native';
 
 type SearchableLogTag = Pick<Tag, 'id'> & { name?: string | null };
+
+type ListItemProfile = Pick<Profile, 'avatarSeedId' | 'id' | 'name'> & {
+  image?: Pick<FileItem, 'uri'>;
+};
 
 const getTagSearchHref = (tag: SearchableLogTag) =>
   lookup.getLookupHref(lookup.getTagSearchQuery(tag));
@@ -27,12 +33,7 @@ export const ListItem = ({
   color: { darker: string; default: string; lighter: string };
   id: string;
   name: string;
-  profiles: {
-    avatarSeedId?: string;
-    id: string;
-    name: string;
-    image?: { uri: string };
-  }[];
+  profiles: ListItemProfile[];
   tags: Tag[];
 }) => {
   const titleLineCount = tags.length <= 1 ? 3 : 2;
