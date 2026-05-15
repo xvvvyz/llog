@@ -139,6 +139,7 @@ export const RecordCreateSheet = () => {
           attachmentCount={composer.fileCount}
           autoFocusOnNative={!composer.canOpenTemplates}
           filePreview={composer.filePreview}
+          fullscreenPortalName="record-composer-fullscreen"
           hasContent={composer.hasContent}
           isBusy={composer.isBusy}
           isOpen={composer.isOpen}

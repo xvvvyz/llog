@@ -47,7 +47,10 @@ export const AddTagsInput = ({
           {placeholder}
         </Text>
       )}
-      <Icon className="ml-2 text-muted-foreground shrink-0" icon={Plus} />
+      <Icon
+        className="-mr-0.5 ml-2 text-muted-foreground shrink-0"
+        icon={Plus}
+      />
     </Button>
   );
 };

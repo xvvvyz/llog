@@ -16,6 +16,7 @@ export const ReplyCreateSheet = () => {
       <ReplyForm
         attachmentCount={composer.fileCount}
         filePreview={composer.filePreview}
+        fullscreenPortalName="reply-composer-fullscreen"
         hasContent={composer.hasContent}
         isBusy={composer.isBusy}
         isOpen={composer.isOpen}
