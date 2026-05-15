@@ -79,6 +79,8 @@ export type QueuedSubmission =
       isPinned?: boolean;
       links: QueuedLinkSnapshot[];
       logId: string;
+      nextRetryAt?: string;
+      retryCount?: number;
       status: OutboxStatus;
       tagIds: string[];
       tags: QueuedTagSnapshot[];
@@ -96,7 +98,9 @@ export type QueuedSubmission =
       id: string;
       links: QueuedLinkSnapshot[];
       needsDraftReplay?: boolean;
+      nextRetryAt?: string;
       recordId: string;
+      retryCount?: number;
       status: OutboxStatus;
       teamId?: string;
       text: string;

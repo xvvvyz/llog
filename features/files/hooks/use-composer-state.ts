@@ -14,6 +14,7 @@ type UseFileComposerStateOptions = Pick<
   UseFileComposerOptions,
   | 'isOpen'
   | 'actionsDisabled'
+  | 'deferQueuedUploads'
   | 'files'
   | 'onDeleteFile'
   | 'onReorderFiles'
@@ -24,6 +25,7 @@ type UseFileComposerStateOptions = Pick<
 
 export const useFileComposerState = ({
   actionsDisabled,
+  deferQueuedUploads,
   isOpen,
   files,
   onDeleteFile,
@@ -80,6 +82,7 @@ export const useFileComposerState = ({
     uploadAssets,
   } = useFileUploadPreviewState({
     actionsDisabled,
+    deferQueuedUploads,
     onUploadFile,
     parent,
     queuedAttachmentsForParent,

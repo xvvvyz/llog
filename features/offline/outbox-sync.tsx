@@ -16,15 +16,25 @@ export const OutboxSyncRunner = () => {
   React.useEffect(() => {
     if (!connectivity.canRunNetworkActions || !outbox.hydrated) return;
     if (!auth.user?.id || outbox.ownerUserId !== auth.user.id) return;
+    const autoSyncable = outboxStore.getAutoSyncableSubmissions(outbox);
+    const discarded = outboxStore.getDiscardedSubmissions(outbox);
 
-    if (
-      !outboxStore.getAutoSyncableSubmissions(outbox).length &&
-      !outboxStore.getDiscardedSubmissions(outbox).length
-    ) {
-      return;
+    if (!autoSyncable.length && !discarded.length) {
+      const nextRetryTime = outboxStore.getNextAutoRetryTime(outbox);
+      if (nextRetryTime == null) return;
+
+      const timeout = setTimeout(
+        () => void runOutboxSync(),
+        Math.max(0, nextRetryTime - Date.now())
+      );
+
+      return () => clearTimeout(timeout);
     }
 
-    void runOutboxSync();
+    if (autoSyncable.length || discarded.length) {
+      void runOutboxSync();
+      return;
+    }
   }, [auth.user?.id, connectivity.canRunNetworkActions, outbox]);
 
   return null;

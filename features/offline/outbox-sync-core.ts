@@ -9,6 +9,7 @@ import { deleteReplyFile } from '@/features/records/mutations/delete-reply-file'
 import { deleteRecord } from '@/features/records/mutations/delete-record';
 import { deleteReply } from '@/features/records/mutations/delete-reply';
 import { updateReplyDraft } from '@/features/records/mutations/update-reply-draft';
+import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as outboxState from '@/features/offline/outbox-state';
 import * as queuedLinks from '@/features/offline/queued-links';
@@ -138,6 +139,22 @@ const replayQueuedReplyDraft = async (
     authorId: submission.authorId,
     id: submission.contentId,
     recordId: submission.recordId,
+    teamId: submission.teamId,
+    text: submission.text,
+  });
+};
+
+const replayQueuedRecordDraft = async (
+  submission: Extract<types.QueuedSubmission, { type: 'record' }>
+) => {
+  if (!submission.authorId || !submission.teamId) return;
+
+  await updateRecordDraft({
+    authorId: submission.authorId,
+    date: submission.createdAt,
+    id: submission.contentId,
+    logId: submission.logId,
+    tagIds: submission.tagIds,
     teamId: submission.teamId,
     text: submission.text,
   });
@@ -422,7 +439,9 @@ export const syncQueuedSubmission = async (
   outboxStore.setQueuedSubmissionStatus(currentSubmission.id, 'syncing');
   if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
 
-  if (currentSubmission.type === 'reply') {
+  if (currentSubmission.type === 'record') {
+    await replayQueuedRecordDraft(currentSubmission);
+  } else {
     if (isReplyForQueuedRecord(currentSubmission)) {
       await outboxStore.discardQueuedSubmission(currentSubmission.id);
       return;

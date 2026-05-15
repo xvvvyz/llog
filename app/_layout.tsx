@@ -1,6 +1,5 @@
 import * as push from '@/features/account/lib/web-push';
 import { useConnectivity } from '@/features/offline/connectivity';
-import { OfflineBannerProvider } from '@/features/offline/offline-banner';
 import { OutboxSyncRunner } from '@/features/offline/outbox-sync';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
@@ -16,6 +15,7 @@ import { setBackgroundColorAsync } from 'expo-system-ui';
 import * as React from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as offlineBanner from '@/features/offline/offline-banner';
 
 configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
@@ -131,12 +131,13 @@ export default function Layout() {
       >
         <GestureHandlerRootView className="flex-1">
           <SheetManagerProvider disabled={isSignedOut}>
-            <OfflineBannerProvider>
+            <offlineBanner.OfflineBannerProvider>
               <OutboxSyncRunner />
+              <offlineBanner.OfflineBanner />
               <Slot />
               <SheetBackdrop />
               <PortalHost />
-            </OfflineBannerProvider>
+            </offlineBanner.OfflineBannerProvider>
           </SheetManagerProvider>
         </GestureHandlerRootView>
       </ThemeProvider>

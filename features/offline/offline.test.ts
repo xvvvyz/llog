@@ -180,7 +180,7 @@ describe('outbox state', () => {
     expect(outboxState.hasPendingOutboxWork(state)).toBe(true);
   });
 
-  test('hides failed work', () => {
+  test('schedules failed work', () => {
     const state = {
       attachments: [
         queuedAttachment({
@@ -188,45 +188,48 @@ describe('outbox state', () => {
           submissionId: `record:${fixtures.recordId}`,
         }),
       ],
-      submissions: [queuedRecordSubmission({ status: 'error' })],
+      submissions: [
+        queuedRecordSubmission({
+          nextRetryAt: '2999-05-13T00:01:00.000Z',
+          status: 'error',
+        }),
+      ],
     };
-
-    expect(
-      outboxState.getRetryableSubmissions(state).map((item) => item.id)
-    ).toEqual(['record:record-a']);
 
     expect(
       outboxState.getAutoSyncableSubmissions(state).map((item) => item.id)
     ).toEqual([]);
 
+    expect(outboxState.getNextAutoRetryTime(state)).toBe(
+      Date.parse('2999-05-13T00:01:00.000Z')
+    );
+
     expect(outboxState.hasPendingOutboxWork(state)).toBe(false);
   });
 
-  test('retries failed work', () => {
-    const retried = outboxState.retryOutboxSubmission(
-      {
-        attachments: [
-          queuedAttachment({
-            error: 'Upload failed',
-            status: 'error',
-            submissionId: `record:${fixtures.recordId}`,
-          }),
-          queuedAttachment({ id: 'uploaded-file', status: 'uploaded' }),
-        ],
-        submissions: [
-          queuedRecordSubmission({ error: 'Sync failed', status: 'error' }),
-        ],
-      },
-      `record:${fixtures.recordId}`
-    );
+  test('retries due work', () => {
+    const state = {
+      attachments: [],
+      submissions: [
+        queuedRecordSubmission({
+          nextRetryAt: '2000-05-12T23:59:00.000Z',
+          status: 'error',
+        }),
+        queuedRecordSubmission({
+          contentId: 'record-b',
+          id: 'record:record-b',
+          nextRetryAt: '2999-05-13T00:01:00.000Z',
+          status: 'error',
+        }),
+      ],
+    };
 
-    expect(retried.submissions[0]?.error).toBeUndefined();
-    expect(retried.submissions[0]?.status).toBe('pending');
+    expect(
+      outboxState.getAutoSyncableSubmissions(state).map((item) => item.id)
+    ).toEqual(['record:record-a']);
 
-    expect(retried.attachments.map((item) => [item.id, item.status])).toEqual([
-      [fixtures.fileId, 'queued'],
-      ['uploaded-file', 'uploaded'],
-    ]);
+    expect(outboxState.getAutoRetryDelayMs(1)).toBe(5_000);
+    expect(outboxState.getAutoRetryDelayMs(7)).toBe(300_000);
   });
 });
 

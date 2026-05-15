@@ -81,21 +81,12 @@ export const Entry = ({
         : rawEntryMenuState.canEdit;
 
     const canPin = rawEntryMenuState.canPin;
-    const canRetry = record.localOutboxStatus === 'error';
     const canShare = rawEntryMenuState.canShare;
     const canTag = rawEntryMenuState.canTag;
-
-    const hasActionsAboveDelete =
-      canEdit || canRetry || canTag || canPin || canShare;
+    const hasActionsAboveDelete = canEdit || canTag || canPin || canShare;
 
     const hasMenu =
-      canDelete ||
-      canDuplicate ||
-      canEdit ||
-      canRetry ||
-      canPin ||
-      canShare ||
-      canTag;
+      canDelete || canDuplicate || canEdit || canPin || canShare || canTag;
 
     return {
       ...rawEntryMenuState,
@@ -103,7 +94,6 @@ export const Entry = ({
       canDuplicate,
       canEdit,
       canPin,
-      canRetry,
       canShare,
       canTag,
       hasActionsAboveDelete,
@@ -119,7 +109,6 @@ export const Entry = ({
         isSyncedLocalReply ||
         (!canManageLocalPendingEntry && rawEntryMenuState.isEditDisabled),
       isPinDisabled: !connectivity.canRunNetworkActions,
-      isRetryDisabled: !connectivity.canRunNetworkActions,
       isTagDisabled: !connectivity.canRunNetworkActions,
     };
   }, [
@@ -127,7 +116,6 @@ export const Entry = ({
     connectivity.canRunNetworkActions,
     isLocalPending,
     isSyncedLocalReply,
-    record.localOutboxStatus,
     rawEntryMenuState,
   ]);
 

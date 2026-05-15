@@ -36,6 +36,7 @@ export interface VisualPreviewItem {
 
 export interface UseFileComposerOptions {
   actionsDisabled?: boolean;
+  deferQueuedUploads?: boolean;
   replyId?: string;
   isOpen: boolean;
   extraAttachmentCount?: number;

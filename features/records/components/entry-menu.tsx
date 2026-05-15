@@ -22,7 +22,6 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 import {
-  ArrowClockwise,
   DotsThreeVertical,
   NotePencil,
   PushPin,
@@ -50,7 +49,6 @@ export type EntryMenuState = {
   canDuplicate: boolean;
   canEdit: boolean;
   canPin: boolean;
-  canRetry: boolean;
   canShare: boolean;
   canTag: boolean;
   copyTargetLogs: copyTargetQueries.CopyTargetLog[];
@@ -60,7 +58,6 @@ export type EntryMenuState = {
   isDuplicateDisabled: boolean;
   isEditDisabled: boolean;
   isPinDisabled: boolean;
-  isRetryDisabled: boolean;
   isTagDisabled: boolean;
 };
 
@@ -121,7 +118,6 @@ export const useEntryMenuState = ({
     canDuplicate,
     canEdit,
     canPin,
-    canRetry: false,
     canShare,
     canTag,
     copyTargetLogs: copyTargets.logs,
@@ -132,7 +128,6 @@ export const useEntryMenuState = ({
       copyTargets.isLoading || !connectivity.canRunNetworkActions,
     isEditDisabled: isSyncedReplyOffline || isSyncedRecordOffline,
     isPinDisabled: !connectivity.canRunNetworkActions,
-    isRetryDisabled: false,
     isTagDisabled: !connectivity.canRunNetworkActions,
   };
 };
@@ -156,7 +151,6 @@ const EntryMenuDropdownContent = ({
     canDuplicate,
     canEdit,
     canPin,
-    canRetry,
     canShare,
     canTag,
     copyTargetLogs,
@@ -166,7 +160,6 @@ const EntryMenuDropdownContent = ({
     isDuplicateDisabled,
     isEditDisabled,
     isPinDisabled,
-    isRetryDisabled,
     isTagDisabled,
   } = state;
 
@@ -243,21 +236,6 @@ const EntryMenuDropdownContent = ({
           >
             <Icon className="text-placeholder" icon={NotePencil} />
             <Text>Edit</Text>
-          </Menu.Item>
-        )}
-        {canRetry && (
-          <Menu.Item
-            disabled={isRetryDisabled}
-            onPress={() => {
-              if (isRetryDisabled) return;
-
-              outboxStore.retryQueuedSubmission(
-                `${replyId ? 'reply' : 'record'}:${replyId ?? recordId}`
-              );
-            }}
-          >
-            <Icon className="text-placeholder" icon={ArrowClockwise} />
-            <Text>Retry sync</Text>
           </Menu.Item>
         )}
         {canTag && (

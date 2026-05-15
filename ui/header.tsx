@@ -1,4 +1,4 @@
-import { OfflineBanner } from '@/features/offline/offline-banner';
+import { useOfflineBannerState } from '@/features/offline/offline-banner';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { Text } from '@/ui/text';
@@ -15,10 +15,10 @@ export const Header = ({
 }) => {
   const height = useHeaderHeight();
   const insets = useSafeAreaInsets();
+  const offlineBannerState = useOfflineBannerState();
 
   return (
-    <View style={{ paddingTop: insets.top }}>
-      <OfflineBanner />
+    <View style={{ paddingTop: offlineBannerState ? 0 : insets.top }}>
       <View
         className="flex-row px-4 items-center justify-between md:px-8"
         style={{ height }}

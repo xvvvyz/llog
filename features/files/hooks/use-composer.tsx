@@ -7,6 +7,7 @@ import * as React from 'react';
 
 export const useFileComposer = ({
   actionsDisabled,
+  deferQueuedUploads,
   replyId,
   isOpen,
   extraAttachmentCount = 0,
@@ -40,6 +41,7 @@ export const useFileComposer = ({
     removeLocalPreviewUri,
   } = useFileComposerState({
     actionsDisabled,
+    deferQueuedUploads,
     isOpen,
     files,
     onDeleteFile,

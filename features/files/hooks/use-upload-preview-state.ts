@@ -14,13 +14,17 @@ import * as existingUpload from '@/features/files/lib/existing-upload';
 
 export const useFileUploadPreviewState = ({
   actionsDisabled,
+  deferQueuedUploads,
   onUploadFile,
   parent,
   queuedAttachmentsForParent,
   scopeKey,
   visibleFiles,
   visualMedia: visualItems,
-}: Pick<fileComposer.UseFileComposerOptions, 'onUploadFile'> & {
+}: Pick<
+  fileComposer.UseFileComposerOptions,
+  'deferQueuedUploads' | 'onUploadFile'
+> & {
   actionsDisabled?: boolean;
   parent?: QueuedParent;
   queuedAttachmentsForParent?: QueuedAttachment[];
@@ -308,7 +312,7 @@ export const useFileUploadPreviewState = ({
   }, [queuedAttachments, visibleFiles]);
 
   React.useEffect(() => {
-    if (!connectivity.canRunNetworkActions) return;
+    if (deferQueuedUploads || !connectivity.canRunNetworkActions) return;
 
     queuedAttachments.forEach((attachment) => {
       if (attachment.submissionId) return;
@@ -321,6 +325,7 @@ export const useFileUploadPreviewState = ({
     });
   }, [
     connectivity.canRunNetworkActions,
+    deferQueuedUploads,
     queuedAttachments,
     uploadQueuedAttachment,
   ]);

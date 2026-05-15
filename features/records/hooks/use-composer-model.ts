@@ -337,6 +337,8 @@ export const useRecordComposerModel = () => {
 
       if (isEdit) {
         if (recordId) {
+          if (!connectivity.canRunNetworkActions) return;
+
           void updateRecordDraft({
             ...recordDraftUpdateFields,
             id: recordId,
@@ -347,6 +349,8 @@ export const useRecordComposerModel = () => {
         return;
       }
 
+      if (!connectivity.canRunNetworkActions) return;
+
       void updateRecordDraft({
         ...recordDraftUpdateFields,
         id: recordId,
@@ -355,6 +359,7 @@ export const useRecordComposerModel = () => {
     },
     [
       areServerEditActionsDisabled,
+      connectivity.canRunNetworkActions,
       isEdit,
       recordDraftUpdateFields,
       recordId,
@@ -371,6 +376,8 @@ export const useRecordComposerModel = () => {
 
       if (isEdit) {
         if (recordId) {
+          if (!connectivity.canRunNetworkActions) return;
+
           void updateRecordDraft({
             ...recordDraftUpdateFields,
             id: recordId,
@@ -380,6 +387,8 @@ export const useRecordComposerModel = () => {
 
         return;
       }
+
+      if (!connectivity.canRunNetworkActions) return;
 
       void updateRecordDraft({
         ...recordDraftUpdateFields,
@@ -401,6 +410,7 @@ export const useRecordComposerModel = () => {
     },
     [
       areServerEditActionsDisabled,
+      connectivity.canRunNetworkActions,
       isEdit,
       latestTextRef,
       recordDraftUpdateFields,
@@ -570,6 +580,7 @@ export const useRecordComposerModel = () => {
     isOpen,
     files: record?.files ?? [],
     onDeleteFile: handleDeleteFile,
+    deferQueuedUploads: shouldReplayRecordDraftIdentity,
     onOpenAudio: () => sheetManager.open('record-audio', recordId, 'record'),
     onRenameFile: handleRenameFile,
     onReorderFiles: handleReorderFiles,
@@ -687,11 +698,13 @@ export const useRecordComposerModel = () => {
     setIsSubmitting(true);
 
     try {
-      await updateRecordDraft({
-        ...recordDraftUpdateFields,
-        id: recordId,
-        text,
-      });
+      if (connectivity.canRunNetworkActions) {
+        await updateRecordDraft({
+          ...recordDraftUpdateFields,
+          id: recordId,
+          text,
+        });
+      }
 
       if (isCopy) {
         await finalizeRecordCopy({ id: recordId, logIds: copyTargetLogIds });
@@ -739,6 +752,7 @@ export const useRecordComposerModel = () => {
   }, [
     closeCopyFlow,
     closeSheet,
+    connectivity.canRunNetworkActions,
     copyTargetLogIds,
     ignoreDraftId,
     isCopy,

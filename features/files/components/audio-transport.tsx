@@ -166,7 +166,6 @@ export const AudioTransport = ({
         <Icon
           icon={isUnavailableOffline ? WifiSlash : isPlaying ? Pause : Play}
           size={iconSize}
-          weight={!isUnavailableOffline && !isPlaying ? 'fill' : 'regular'}
         />
       </Button>
       <View

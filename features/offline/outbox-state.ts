@@ -8,13 +8,6 @@ const AUTO_SYNCABLE_SUBMISSION_STATUSES = new Set<types.OutboxStatus>([
   'publishing',
 ]);
 
-const RETRYABLE_SUBMISSION_STATUSES = new Set<types.OutboxStatus>([
-  'pending',
-  'syncing',
-  'publishing',
-  'error',
-]);
-
 const ACTIVE_SYNC_SUBMISSION_STATUSES = new Set<types.OutboxStatus>([
   'pending',
   'syncing',
@@ -26,6 +19,32 @@ const ACTIVE_ATTACHMENT_STATUSES = new Set<types.QueuedAttachmentStatus>([
   'uploading',
   'error',
 ]);
+
+const AUTO_RETRY_BASE_DELAY_MS = 5_000;
+const AUTO_RETRY_MAX_DELAY_MS = 5 * 60_000;
+
+export const getAutoRetryDelayMs = (retryCount: number) =>
+  Math.min(
+    AUTO_RETRY_BASE_DELAY_MS * 2 ** Math.max(0, retryCount - 1),
+    AUTO_RETRY_MAX_DELAY_MS
+  );
+
+export const getNextAutoRetryAt = ({
+  now = Date.now(),
+  retryCount,
+}: {
+  now?: number;
+  retryCount: number;
+}) => new Date(now + getAutoRetryDelayMs(retryCount)).toISOString();
+
+const isRetryDue = (
+  submission: Pick<types.QueuedSubmission, 'nextRetryAt' | 'status'>,
+  now = Date.now()
+) =>
+  submission.status === 'error' &&
+  (!submission.nextRetryAt ||
+    Number.isNaN(Date.parse(submission.nextRetryAt)) ||
+    Date.parse(submission.nextRetryAt) <= now);
 
 export const submissionOwnsAttachment = (
   submission: types.QueuedSubmission,
@@ -68,21 +87,27 @@ export const getDiscardedSubmissions = (
 ) =>
   state.submissions.filter((submission) => submission.status === 'discarded');
 
-export const getRetryableSubmissions = (
-  state: Pick<OutboxState, 'submissions'>
-) =>
-  state.submissions.filter((submission) =>
-    RETRYABLE_SUBMISSION_STATUSES.has(submission.status)
-  );
-
-export const getSyncableSubmissions = getRetryableSubmissions;
-
 export const getAutoSyncableSubmissions = (
   state: Pick<OutboxState, 'submissions'>
 ) =>
-  state.submissions.filter((submission) =>
-    AUTO_SYNCABLE_SUBMISSION_STATUSES.has(submission.status)
+  state.submissions.filter(
+    (submission) =>
+      AUTO_SYNCABLE_SUBMISSION_STATUSES.has(submission.status) ||
+      isRetryDue(submission)
   );
+
+export const getNextAutoRetryTime = (
+  state: Pick<OutboxState, 'submissions'>
+) => {
+  const times = state.submissions
+    .filter((submission) => submission.status === 'error')
+    .map((submission) =>
+      submission.nextRetryAt ? Date.parse(submission.nextRetryAt) : Date.now()
+    )
+    .filter((time) => !Number.isNaN(time));
+
+  return times.length ? Math.min(...times) : undefined;
+};
 
 export const getPendingOutboxWork = (state: OutboxState) => {
   const submissions = state.submissions.filter((submission) =>
@@ -119,33 +144,15 @@ export const resetInFlightOutboxWork = <T extends OutboxState>(
   ),
   submissions: state.submissions.map((submission) =>
     submission.status === 'syncing' || submission.status === 'publishing'
-      ? { ...submission, error: undefined, status: 'pending' }
+      ? {
+          ...submission,
+          error: undefined,
+          nextRetryAt: undefined,
+          status: 'pending',
+        }
       : submission
   ) as T['submissions'],
 });
-
-export const retryOutboxSubmission = <T extends OutboxState>(
-  state: T,
-  submissionId: string
-): T => {
-  const submission = state.submissions.find((item) => item.id === submissionId);
-  if (!submission) return state;
-
-  return {
-    ...state,
-    attachments: state.attachments.map((attachment) =>
-      submissionOwnsAttachment(submission, attachment) &&
-      (attachment.status === 'error' || attachment.status === 'uploading')
-        ? { ...attachment, error: undefined, status: 'queued' }
-        : attachment
-    ),
-    submissions: state.submissions.map((submission) =>
-      submission.id === submissionId && submission.status === 'error'
-        ? { ...submission, error: undefined, status: 'pending' }
-        : submission
-    ) as T['submissions'],
-  };
-};
 
 const linkSnapshotKey = (
   link: Omit<types.QueuedLinkSnapshot, 'teamId'> & { teamId?: string }

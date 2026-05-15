@@ -1,14 +1,15 @@
 import { useConnectivity } from '@/features/offline/connectivity';
+import * as offlineBannerState from '@/features/offline/offline-banner-state';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { WifiSlash } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
-import * as offlineBannerState from '@/features/offline/offline-banner-state';
 
 const OfflineBannerContext =
   React.createContext<offlineBannerState.OfflineBannerState>(null);
@@ -54,12 +55,19 @@ export const OfflineBannerProvider = ({
   );
 };
 
+export const useOfflineBannerState = () =>
+  React.useContext(OfflineBannerContext);
+
 export const OfflineBanner = () => {
-  const state = React.useContext(OfflineBannerContext);
+  const insets = useSafeAreaInsets();
+  const state = useOfflineBannerState();
   if (!state) return null;
 
   return (
-    <View className="flex-row px-4 py-2 gap-2 items-center justify-center md:px-8 md:justify-start">
+    <View
+      className="flex-row px-4 py-2 gap-2 items-center justify-center md:border-b md:border-border"
+      style={{ paddingTop: insets.top + 8 }}
+    >
       {state === 'offline' ? (
         <Icon className="text-muted-foreground" icon={WifiSlash} size={14} />
       ) : (

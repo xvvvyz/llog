@@ -184,12 +184,10 @@ export const getDiscardedSubmissionAttachments =
 
 export const getDiscardedSubmissions = outboxState.getDiscardedSubmissions;
 
-export const getRetryableSubmissions = outboxState.getRetryableSubmissions;
-
-export const getSyncableSubmissions = outboxState.getSyncableSubmissions;
-
 export const getAutoSyncableSubmissions =
   outboxState.getAutoSyncableSubmissions;
+
+export const getNextAutoRetryTime = outboxState.getNextAutoRetryTime;
 
 export const getPendingOutboxWork = outboxState.getPendingOutboxWork;
 
@@ -781,14 +779,25 @@ export const setQueuedSubmissionStatus = (
 ) => {
   updateQueuedSubmission(submissionId, (submission) => {
     if (submission.status === 'discarded' && status !== 'discarded') return {};
-    return { error: status === 'error' ? error : undefined, status };
-  });
-};
 
-export const retryQueuedSubmission = (submissionId: string) => {
-  setSnapshot((current) =>
-    outboxState.retryOutboxSubmission(current, submissionId)
-  );
+    if (status === 'error') {
+      const retryCount = (submission.retryCount ?? 0) + 1;
+
+      return {
+        error,
+        nextRetryAt: outboxState.getNextAutoRetryAt({ retryCount }),
+        retryCount,
+        status,
+      };
+    }
+
+    return {
+      error: undefined,
+      nextRetryAt: undefined,
+      retryCount: status === 'complete' ? undefined : submission.retryCount,
+      status,
+    };
+  });
 };
 
 export const discardQueuedSubmission = async (submissionId: string) => {
