@@ -29,7 +29,7 @@ const getAudioFileName = (file: AudioFile, contentType?: string | null) => {
 const uploadTooLargeError = () =>
   new HTTPException(413, {
     message:
-      "The audio is larger than OpenAI's 25 MB transcription upload limit.",
+      'The audio is larger than OpenAI’s 25 MB transcription upload limit.',
   });
 
 const isOpenAiUploadSizeError = (result: unknown) => {

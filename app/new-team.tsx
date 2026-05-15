@@ -3,8 +3,7 @@ import { createTeam } from '@/features/teams/mutations/create';
 import { useTeams } from '@/features/teams/queries/use-teams';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
+import { Field } from '@/ui/field';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { Spinner } from '@/ui/spinner';
@@ -32,9 +31,9 @@ export default function NewTeam() {
 
   return (
     <Page className="mx-auto max-w-sm w-full p-6 justify-center">
-      <Label>Create a team</Label>
-      <Input
+      <Field
         autoFocus
+        label="Create a team"
         maxLength={32}
         onChangeText={setRawName}
         onSubmitEditing={handleSubmit}
@@ -46,7 +45,7 @@ export default function NewTeam() {
         className="w-full"
         disabled={isDisabled}
         onPress={handleSubmit}
-        wrapperClassName="mt-6"
+        wrapperClassName="mt-4"
       >
         {isTransitioning ? <Spinner /> : <Text>Continue</Text>}
       </Button>

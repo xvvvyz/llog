@@ -48,6 +48,7 @@ const ROW_BUTTON_CLASS_NAME =
   'h-auto px-8 py-3 rounded-none gap-4 justify-between';
 
 const ROW_BUTTON_WRAPPER_CLASS_NAME = '-mx-8 w-auto rounded-none';
+const TEAM_NAME_INPUT_ID = 'team-name';
 
 export const TeamSheet = () => {
   const sheetManager = useSheetManager();
@@ -214,14 +215,17 @@ export const TeamSheet = () => {
           >
             <Label
               className="p-0 shrink-0"
+              nativeID={`${TEAM_NAME_INPUT_ID}-label`}
               onPress={() => nameInputRef.current?.focus()}
             >
               Name
             </Label>
             <Input
               ref={nameInputRef}
+              accessibilityLabelledBy={`${TEAM_NAME_INPUT_ID}-label`}
               className="min-w-0 pr-0 border-0 rounded-none bg-transparent text-right shrink"
               editable={canManage}
+              id={TEAM_NAME_INPUT_ID}
               maxLength={32}
               selectTextOnFocus
               value={team.name}

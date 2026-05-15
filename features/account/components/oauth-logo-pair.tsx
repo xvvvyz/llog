@@ -1,10 +1,8 @@
-import { SPECTRUM } from '@/theme/spectrum';
-import { UI } from '@/theme/ui';
+import { AppLogoMark } from '@/features/account/components/app-logo-mark';
 import * as React from 'react';
 import { View } from 'react-native';
 
 import Svg, {
-  Circle,
   Defs,
   Ellipse,
   FeBlend,
@@ -14,7 +12,6 @@ import Svg, {
   G,
   Mask,
   Path,
-  Rect,
 } from 'react-native-svg';
 
 const LogoFrame = ({ children }: { children: React.ReactNode }) => (
@@ -23,39 +20,6 @@ const LogoFrame = ({ children }: { children: React.ReactNode }) => (
       {children}
     </View>
   </View>
-);
-
-const LineLogo = () => (
-  <Svg fill="none" height={64} viewBox="0 0 64 64" width={64}>
-    <Rect fill={UI.light.secondary} height={64} width={64} />
-    <Rect
-      fill={SPECTRUM.light[6].lighter}
-      height={8}
-      rx={4}
-      width={38}
-      x={13}
-      y={16}
-    />
-    <Circle cx={17} cy={20} fill={SPECTRUM.light[6].default} r={4} />
-    <Rect
-      fill={SPECTRUM.light[7].lighter}
-      height={8}
-      rx={4}
-      width={32}
-      x={13}
-      y={28}
-    />
-    <Circle cx={17} cy={32} fill={SPECTRUM.light[7].default} r={4} />
-    <Rect
-      fill={SPECTRUM.light[8].lighter}
-      height={8}
-      rx={4}
-      width={26}
-      x={13}
-      y={40}
-    />
-    <Circle cx={17} cy={44} fill={SPECTRUM.light[8].default} r={4} />
-  </Svg>
 );
 
 const ClaudeLogo = () => (
@@ -254,7 +218,7 @@ export const OAuthLogoPair = ({ clientName }: { clientName: string }) => {
   return (
     <View className="flex-row items-center">
       <LogoFrame>
-        <LineLogo />
+        <AppLogoMark framed size={64} />
       </LogoFrame>
       {clientLogo && (
         <View className="-ml-avatar-stack-lg-overlap">

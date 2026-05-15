@@ -10,8 +10,7 @@ import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
+import { Field } from '@/ui/field';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
@@ -348,9 +347,9 @@ export const LinkEditorSheet = () => {
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <View>
-          <Label>Label</Label>
-          <Input
+          <Field
             autoFocus
+            label="Label"
             maxLength={120}
             onChangeText={setLabel}
             placeholder="Website"
@@ -359,10 +358,10 @@ export const LinkEditorSheet = () => {
           />
         </View>
         <View className="mt-4">
-          <Label>URL</Label>
-          <Input
+          <Field
             autoCapitalize="none"
             keyboardType="url"
+            label="URL"
             maxLength={2048}
             onChangeText={setUrl}
             placeholder="https://example.com"

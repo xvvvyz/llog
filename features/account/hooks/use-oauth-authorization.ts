@@ -1,6 +1,6 @@
-import { alert } from '@/lib/alert';
 import { apiOrThrow } from '@/lib/api';
 import { db } from '@/lib/db';
+import { alert } from '@/lib/alert';
 import * as React from 'react';
 import { Platform } from 'react-native';
 
@@ -22,8 +22,6 @@ const getQuery = () =>
     : '';
 
 export const useOAuthAuthorization = () => {
-  const [code, setCode] = React.useState('');
-  const [email, setEmail] = React.useState('');
   const [errorMessage, setErrorMessage] = React.useState<string>();
   const [isAuthorizing, setIsAuthorizing] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
@@ -32,7 +30,6 @@ export const useOAuthAuthorization = () => {
     null
   );
 
-  const [step, setStep] = React.useState<'email' | 'code'>('email');
   const auth = db.useAuth();
   const query = React.useMemo(getQuery, []);
 
@@ -105,50 +102,12 @@ export const useOAuthAuthorization = () => {
     });
   }, [isAuthorizing, query, startTransition]);
 
-  const handleEmailSubmit = React.useCallback(
-    () =>
-      startTransition(async () => {
-        if (!email) return;
-
-        try {
-          await db.auth.sendMagicCode({ email });
-        } catch {
-          alert({ message: 'Invalid email', title: 'Error' });
-          return;
-        }
-
-        setStep('code');
-      }),
-    [email, startTransition]
-  );
-
-  const handleCodeSubmit = React.useCallback(
-    () =>
-      startTransition(async () => {
-        if (!code) return;
-
-        try {
-          await db.auth.signInWithMagicCode({ code: code.trim(), email });
-        } catch {
-          alert({ message: 'Invalid code', title: 'Error' });
-        }
-      }),
-    [code, email, startTransition]
-  );
-
   return {
     auth,
-    code,
-    email,
     errorMessage,
     handleAuthorize,
-    handleCodeSubmit,
-    handleEmailSubmit,
     isAuthorizing,
     isPending,
     preview,
-    setCode,
-    setEmail,
-    step,
   };
 };

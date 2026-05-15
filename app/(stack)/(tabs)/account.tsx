@@ -1,6 +1,6 @@
 import { REACTION_EMOJIS } from '@/domain/records/reactions';
-import * as authRedirect from '@/features/account/lib/auth-redirect';
 import * as push from '@/features/account/lib/web-push';
+import { useSignOut } from '@/features/account/hooks/use-sign-out';
 import { deleteProfileImage } from '@/features/account/mutations/delete-profile-image';
 import { randomizeProfileAvatar } from '@/features/account/mutations/randomize-profile-avatar';
 import { updateProfile } from '@/features/account/mutations/update-profile';
@@ -10,7 +10,6 @@ import { useUi } from '@/features/account/queries/use-ui';
 import { useConnectivity } from '@/features/offline/connectivity';
 import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { db } from '@/lib/db';
 import { Avatar } from '@/ui/avatar';
@@ -22,10 +21,10 @@ import { Icon } from '@/ui/icon';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Page } from '@/ui/page';
+import { Spinner } from '@/ui/spinner';
 import { Switch } from '@/ui/switch';
 import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
-import { router } from 'expo-router';
 import * as React from 'react';
 import { Keyboard, Platform, Pressable, View } from 'react-native';
 
@@ -37,9 +36,11 @@ import {
   UploadSimple,
 } from 'phosphor-react-native';
 
+const ACCOUNT_EMAIL_INPUT_ID = 'account-email';
+const ACCOUNT_NAME_INPUT_ID = 'account-name';
+
 export default function Account() {
   const [isPushPending, setIsPushPending] = React.useState(false);
-  const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   const [pendingPushState, setPendingPushState] =
     React.useState<push.WebPushState | null>(null);
@@ -55,8 +56,8 @@ export default function Account() {
   const connectivity = useConnectivity();
   const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
   const profile = useProfile();
-  const redirectHref = authRedirect.useCurrentRedirectHref();
   const sheetManager = useSheetManager();
+  const { isSigningOut, signOut } = useSignOut();
   const ui = useUi();
 
   const handleUploadProfileImage = React.useCallback(async () => {
@@ -267,14 +268,17 @@ export default function Account() {
               >
                 <Label
                   className="p-0"
+                  nativeID={`${ACCOUNT_NAME_INPUT_ID}-label`}
                   onPress={() => nameInputRef.current?.focus()}
                 >
                   Name
                 </Label>
                 <Input
                   ref={nameInputRef}
+                  accessibilityLabelledBy={`${ACCOUNT_NAME_INPUT_ID}-label`}
                   className="pr-0 border-0 rounded-none bg-transparent text-right"
                   editable={connectivity.canRunNetworkActions}
+                  id={ACCOUNT_NAME_INPUT_ID}
                   maxLength={32}
                   selectTextOnFocus
                   value={profile.name}
@@ -287,10 +291,17 @@ export default function Account() {
             </View>
             <View className="px-4">
               <View className="flex-row border-b border-border items-center justify-between">
-                <Label className="p-0">Email</Label>
+                <Label
+                  className="p-0"
+                  nativeID={`${ACCOUNT_EMAIL_INPUT_ID}-label`}
+                >
+                  Email
+                </Label>
                 <Input
+                  accessibilityLabelledBy={`${ACCOUNT_EMAIL_INPUT_ID}-label`}
                   className="pr-0 border-0 rounded-none bg-transparent text-right"
                   editable={false}
+                  id={ACCOUNT_EMAIL_INPUT_ID}
                   maxLength={32}
                   value={auth.user?.email ?? undefined}
                 />
@@ -403,32 +414,18 @@ export default function Account() {
             <Button
               className="rounded-none justify-between"
               disabled={isSigningOut}
+              onPress={signOut}
               variant="ghost"
               wrapperClassName="rounded-none"
-              onPress={async () => {
-                setIsSigningOut(true);
-
-                try {
-                  if (Platform.OS === 'web') {
-                    try {
-                      await push.detachWebPushSubscription();
-                    } catch (error) {
-                      console.error(
-                        'Failed to detach web push subscription during sign out',
-                        error
-                      );
-                    }
-                  }
-
-                  await db.auth.signOut();
-                  router.navigate(authRedirect.getSignInHref(redirectHref));
-                } finally {
-                  setIsSigningOut(false);
-                }
-              }}
             >
               <Text className="font-normal">Sign out</Text>
-              <Icon className="-mr-0.5 text-placeholder" icon={SignOut} />
+              {isSigningOut ? (
+                <View className="-mr-0.5 w-5 items-center">
+                  <Spinner className="text-placeholder" size="xs" />
+                </View>
+              ) : (
+                <Icon className="-mr-0.5 text-placeholder" icon={SignOut} />
+              )}
             </Button>
           </View>
         </Card>

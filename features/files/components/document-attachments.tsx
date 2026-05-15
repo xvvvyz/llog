@@ -11,9 +11,8 @@ import { alert as showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
+import { Field } from '@/ui/field';
 import { Icon } from '@/ui/icon';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import * as Sortable from '@/ui/sortable';
@@ -715,9 +714,9 @@ export const DocumentAttachments = ({
         >
           <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
             <View>
-              <Label>Name</Label>
-              <Input
+              <Field
                 autoFocus
+                label="Name"
                 maxLength={255}
                 onChangeText={setEditingName}
                 placeholder="Document"

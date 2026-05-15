@@ -1,9 +1,8 @@
+import { MagicCodeSignInForm } from '@/features/account/components/magic-code-sign-in-form';
 import { OAuthLogoPair } from '@/features/account/components/oauth-logo-pair';
 import { useOAuthAuthorization } from '@/features/account/hooks/use-oauth-authorization';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
 import { Spinner } from '@/ui/spinner';
@@ -15,18 +14,11 @@ import { View } from 'react-native';
 export default function Authorize() {
   const {
     auth,
-    code,
-    email,
     errorMessage,
     handleAuthorize,
-    handleCodeSubmit,
-    handleEmailSubmit,
     isAuthorizing,
     isPending,
     preview,
-    setCode,
-    setEmail,
-    step,
   } = useOAuthAuthorization();
 
   if (auth.isLoading || (!preview && !errorMessage)) return <Loading />;
@@ -54,60 +46,19 @@ export default function Authorize() {
 
   if (!preview) return <Loading />;
 
+  const clientName =
+    preview.client?.clientName ?? preview.client?.clientUri ?? 'MCP client';
+
   if (!auth.user) {
     return (
-      <Page className="mx-auto max-w-sm w-full p-6 justify-center">
-        {step === 'email' ? (
-          <>
-            <Label>Email address</Label>
-            <Input
-              autoComplete="email"
-              autoFocus
-              keyboardType="email-address"
-              onChangeText={setEmail}
-              onSubmitEditing={handleEmailSubmit}
-              placeholder="jane@acme.com"
-              returnKeyType="next"
-              value={email}
-            />
-            <Button
-              className="w-full"
-              disabled={isPending}
-              onPress={handleEmailSubmit}
-              wrapperClassName="mt-6"
-            >
-              {isPending ? <Spinner /> : <Text>Sign in</Text>}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Label>
-              Enter the code sent to{' '}
-              <Text className="font-medium">{email}</Text>
-            </Label>
-            <Input
-              keyboardType="number-pad"
-              onChangeText={setCode}
-              onSubmitEditing={handleCodeSubmit}
-              placeholder="123456"
-              value={code}
-            />
-            <Button
-              className="w-full"
-              disabled={isPending}
-              onPress={handleCodeSubmit}
-              wrapperClassName="mt-6"
-            >
-              {isPending ? <Spinner /> : <Text>Confirm</Text>}
-            </Button>
-          </>
-        )}
+      <Page>
+        <MagicCodeSignInForm
+          description={`Sign in before connecting llog to ${clientName}.`}
+          title={`Sign in to authorize ${clientName}`}
+        />
       </Page>
     );
   }
-
-  const clientName =
-    preview.client?.clientName ?? preview.client?.clientUri ?? 'MCP client';
 
   return (
     <Page className="p-6 items-center justify-center">

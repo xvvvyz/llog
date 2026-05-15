@@ -1,101 +1,23 @@
+import { MagicCodeSignInForm } from '@/features/account/components/magic-code-sign-in-form';
 import { getSafeRedirectHref } from '@/features/account/lib/auth-redirect';
-import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
-import { Button } from '@/ui/button';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { Loading } from '@/ui/loading';
 import { Page } from '@/ui/page';
-import { Spinner } from '@/ui/spinner';
-import { Text } from '@/ui/text';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import * as React from 'react';
 
 export default function SignIn() {
-  const [code, setCode] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [isTransitioning, startTransition] = React.useTransition();
-  const [step, setStep] = React.useState<'email' | 'code'>('email');
   const auth = db.useAuth();
   const params = useLocalSearchParams<{ redirect?: string }>();
   const redirectHref = getSafeRedirectHref(params.redirect) ?? '/';
   if (auth.user) return <Redirect href={redirectHref} />;
   if (auth.isLoading) return <Loading />;
 
-  if (step === 'email') {
-    const handleSubmit = () =>
-      startTransition(async () => {
-        if (!email) return;
-
-        try {
-          await db.auth.sendMagicCode({ email });
-        } catch {
-          alert({ message: 'Invalid email', title: 'Error' });
-          return;
-        }
-
-        setStep('code');
-      });
-
-    return (
-      <Page className="mx-auto max-w-sm w-full p-6 justify-center">
-        <Label>Email address</Label>
-        <Input
-          autoComplete="email"
-          autoFocus
-          keyboardType="email-address"
-          onChangeText={setEmail}
-          onSubmitEditing={handleSubmit}
-          placeholder="jane@acme.com"
-          returnKeyType="next"
-          value={email}
-        />
-        <Button
-          className="w-full"
-          disabled={isTransitioning}
-          onPress={handleSubmit}
-          wrapperClassName="mt-6"
-        >
-          {isTransitioning ? <Spinner /> : <Text>Sign in</Text>}
-        </Button>
-      </Page>
-    );
-  }
-
-  const handleSubmit = () =>
-    startTransition(async () => {
-      if (!code) return;
-
-      try {
-        await db.auth.signInWithMagicCode({ email, code: code.trim() });
-      } catch {
-        alert({ message: 'Invalid code', title: 'Error' });
-        return;
-      }
-
-      router.replace(redirectHref);
-    });
-
   return (
-    <Page className="mx-auto max-w-sm w-full p-6 justify-center">
-      <Label>
-        Enter the code sent to <Text className="font-medium">{email}</Text>
-      </Label>
-      <Input
-        keyboardType="number-pad"
-        onChangeText={setCode}
-        onSubmitEditing={handleSubmit}
-        placeholder="123456"
-        value={code}
+    <Page>
+      <MagicCodeSignInForm
+        onSignedIn={() => router.replace(redirectHref)}
+        title="Let’s get you signed in"
       />
-      <Button
-        className="w-full"
-        disabled={isTransitioning}
-        onPress={handleSubmit}
-        wrapperClassName="mt-6"
-      >
-        {isTransitioning ? <Spinner /> : <Text>Confirm</Text>}
-      </Button>
     </Page>
   );
 }

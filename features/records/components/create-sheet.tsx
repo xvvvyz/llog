@@ -149,7 +149,7 @@ export const RecordCreateSheet = () => {
           onChangeText={composer.onChangeText}
           onSubmit={composer.onSubmit}
           onTextareaFocusChange={composer.onTextareaFocusChange}
-          placeholder="What's happening?"
+          placeholder="What’s happening?"
           submitLabel={composer.submitLabel}
           submitVariant={composer.submitVariant}
           text={composer.currentText}
