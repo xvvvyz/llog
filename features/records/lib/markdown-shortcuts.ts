@@ -12,11 +12,48 @@ type MarkdownShortcutEditInput = {
   text: string;
 };
 
+type MarkdownShortcutKeyEvent = {
+  altKey?: boolean;
+  code?: string;
+  ctrlKey?: boolean;
+  isComposing?: boolean;
+  key: string;
+  metaKey?: boolean;
+  nativeEvent?: { isComposing?: boolean };
+  shiftKey?: boolean;
+};
+
 type MarkdownShortcutEdit = {
   selectionEnd: number;
   selectionStart: number;
   text: string;
 };
+
+export function getMarkdownShortcutFromKeyEvent(
+  event: MarkdownShortcutKeyEvent
+): MarkdownShortcut | null {
+  if (event.altKey) return null;
+  if (event.isComposing || event.nativeEvent?.isComposing) return null;
+  if (!event.ctrlKey && !event.metaKey) return null;
+  const key = event.key.toLowerCase();
+
+  if (!event.shiftKey) {
+    if (key === 'b') return 'bold';
+    if (key === 'i') return 'italic';
+    if (key === 'k') return 'link';
+    return null;
+  }
+
+  if (event.code === 'Digit7' || key === '7' || key === '&') {
+    return 'ordered-list';
+  }
+
+  if (event.code === 'Digit8' || key === '8' || key === '*') {
+    return 'unordered-list';
+  }
+
+  return null;
+}
 
 export function getMarkdownShortcutEdit({
   selectionEnd,

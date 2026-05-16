@@ -5,6 +5,7 @@ import { StyleSheet, TextInput } from 'react-native';
 type TextareaProps = React.ComponentPropsWithoutRef<typeof TextInput> & {
   maxRows?: number;
   minRows?: number;
+  onKeyDown?: unknown;
   readOnly?: boolean;
   size?: 'default' | 'sm';
 };
@@ -26,6 +27,7 @@ const Textarea = React.forwardRef<
       numberOfLines,
       onChangeText,
       onContentSizeChange,
+      onKeyDown: _onKeyDown,
       readOnly,
       scrollEnabled,
       size = 'default',
@@ -39,6 +41,7 @@ const Textarea = React.forwardRef<
       value ?? defaultValue ?? ''
     );
 
+    void _onKeyDown;
     const [contentHeight, setContentHeight] = React.useState<number>();
 
     const minHeight = minRows

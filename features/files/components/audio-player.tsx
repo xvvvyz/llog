@@ -4,6 +4,7 @@ import { createAudioPlaylist } from '@/features/files/components/audio-playlist'
 import { AudioTransport } from '@/features/files/components/audio-transport';
 import * as audioMediaSession from '@/features/files/hooks/use-audio-media-session';
 import { useAudioPlayerController } from '@/features/files/hooks/use-audio-player-controller';
+import { useAudioSpacebarShortcut } from '@/features/files/hooks/use-audio-spacebar-shortcut';
 import * as audioMetadataLib from '@/features/files/lib/audio-metadata';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
 import { cn } from '@/lib/cn';
@@ -40,6 +41,12 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   const hasTracks = tracks.length > 0;
   const hasMultipleTracks = tracks.length > 1;
   const controls = useAudioPlayerController(props);
+
+  const claimAudioSpacebarShortcut = useAudioSpacebarShortcut({
+    disabled: controls.isDisabled,
+    isPlaying: controls.isPlaying,
+    togglePlayback: controls.togglePlayback,
+  });
 
   const trackNavigation = React.useMemo(
     () =>
@@ -214,6 +221,8 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 
   return (
     <View
+      onPointerDown={claimAudioSpacebarShortcut}
+      onTouchStart={claimAudioSpacebarShortcut}
       className={cn(
         'min-w-0',
         hasMetadata &&

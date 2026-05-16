@@ -1,10 +1,19 @@
 import { describe, expect, test } from 'bun:test';
-import { getMarkdownShortcutEdit } from '@/features/records/lib/markdown-shortcuts';
+import * as markdownShortcuts from '@/features/records/lib/markdown-shortcuts';
+
+const keyEvent = (
+  event: Partial<
+    Parameters<typeof markdownShortcuts.getMarkdownShortcutFromKeyEvent>[0]
+  >
+): Parameters<typeof markdownShortcuts.getMarkdownShortcutFromKeyEvent>[0] => ({
+  key: '',
+  ...event,
+});
 
 describe('getMarkdownShortcutEdit', () => {
   test('wraps bold selection', () => {
     expect(
-      getMarkdownShortcutEdit({
+      markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 9,
         selectionStart: 5,
         shortcut: 'bold',
@@ -19,7 +28,7 @@ describe('getMarkdownShortcutEdit', () => {
 
   test('inserts italic placeholder', () => {
     expect(
-      getMarkdownShortcutEdit({
+      markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 0,
         selectionStart: 0,
         shortcut: 'italic',
@@ -30,7 +39,7 @@ describe('getMarkdownShortcutEdit', () => {
 
   test('wraps link selection', () => {
     expect(
-      getMarkdownShortcutEdit({
+      markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 4,
         selectionStart: 0,
         shortcut: 'link',
@@ -41,7 +50,7 @@ describe('getMarkdownShortcutEdit', () => {
 
   test('inserts link placeholder', () => {
     expect(
-      getMarkdownShortcutEdit({
+      markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 0,
         selectionStart: 0,
         shortcut: 'link',
@@ -52,7 +61,7 @@ describe('getMarkdownShortcutEdit', () => {
 
   test('prefixes unordered list lines', () => {
     expect(
-      getMarkdownShortcutEdit({
+      markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 7,
         selectionStart: 0,
         shortcut: 'unordered-list',
@@ -63,7 +72,7 @@ describe('getMarkdownShortcutEdit', () => {
 
   test('prefixes ordered list lines', () => {
     expect(
-      getMarkdownShortcutEdit({
+      markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 12,
         selectionStart: 5,
         shortcut: 'ordered-list',
@@ -74,5 +83,65 @@ describe('getMarkdownShortcutEdit', () => {
       selectionStart: 8,
       text: 'skip\n1. one\n2. two\nskip',
     });
+  });
+});
+
+describe('getMarkdownShortcutFromKeyEvent', () => {
+  test('maps text styles', () => {
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(
+        keyEvent({ key: 'b', metaKey: true })
+      )
+    ).toBe('bold');
+
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(
+        keyEvent({ ctrlKey: true, key: 'I' })
+      )
+    ).toBe('italic');
+
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(
+        keyEvent({ ctrlKey: true, key: 'k' })
+      )
+    ).toBe('link');
+  });
+
+  test('maps lists', () => {
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(
+        keyEvent({ code: 'Digit7', ctrlKey: true, key: '&', shiftKey: true })
+      )
+    ).toBe('ordered-list');
+
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(
+        keyEvent({ code: 'Digit8', metaKey: true, key: '*', shiftKey: true })
+      )
+    ).toBe('unordered-list');
+  });
+
+  test('ignores plain keys', () => {
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(keyEvent({ key: 'b' }))
+    ).toBeNull();
+  });
+
+  test('ignores modified input', () => {
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(
+        keyEvent({ altKey: true, ctrlKey: true, key: 'b' })
+      )
+    ).toBeNull();
+
+    expect(
+      markdownShortcuts.getMarkdownShortcutFromKeyEvent(
+        keyEvent({
+          ctrlKey: true,
+          key: 'b',
+          nativeEvent: { isComposing: true },
+        })
+      )
+    ).toBeNull();
   });
 });
