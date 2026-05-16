@@ -23,6 +23,7 @@ const copyTargetsSchema = z.object({
 const offlineDraftReplaySchema = z.object({
   authorId: z.string().min(1),
   date: z.union([z.string(), z.number()]).optional(),
+  isPinned: z.boolean().optional(),
   logId: z.string().min(1),
   tagIds: z.array(z.string().min(1)).max(100).optional(),
   teamId: z.string().min(1),
@@ -512,6 +513,7 @@ app.put(
     const {
       authorId,
       date,
+      isPinned,
       logId,
       tagIds = [],
       teamId,
@@ -539,6 +541,7 @@ app.put(
           authorId,
           date: date ?? new Date().toISOString(),
           isDraft: true,
+          ...(isPinned != null ? { isPinned } : {}),
           logId,
           teamId,
           text,

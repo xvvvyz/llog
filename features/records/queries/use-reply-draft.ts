@@ -1,6 +1,5 @@
 import { replyDraftQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import { createReplyDraft } from '@/features/records/mutations/create-reply-draft';
 import { useRecord } from '@/features/records/queries/use-record';
@@ -19,7 +18,6 @@ export const useReplyDraft = ({
   teamId?: string;
 }) => {
   const profile = useProfile();
-  const connectivity = useConnectivity();
   const outbox = useOutbox();
   const record = useRecord({ id: recordId });
   const replyIdRef = React.useRef(id());
@@ -31,10 +29,10 @@ export const useReplyDraft = ({
     key: string;
     needsIdentityReplay: boolean;
     recordId: string;
-    teamId: string;
+    teamId?: string;
   } | null>(null);
 
-  const { data, isLoading } = db.useQuery(
+  const { data } = db.useQuery(
     recordId && profile.id
       ? {
           replies: {
@@ -76,11 +74,7 @@ export const useReplyDraft = ({
   );
 
   const recordTeamId = record.teamId ?? teamId;
-
-  const draftCreationKey =
-    recordId && profile.id && recordTeamId
-      ? `${profile.id}:${recordId}:${recordTeamId}`
-      : undefined;
+  const draftCreationKey = recordId ? `reply:${recordId}` : undefined;
 
   const fallbackReply = React.useMemo(():
     | (typeof replies)[number]
@@ -111,15 +105,6 @@ export const useReplyDraft = ({
   const hasReply = !!reply;
   const isLocalParentRecord = !!record.localStatus;
 
-  const hasStaleResult =
-    !!recordId && hasCurrentResult && reusableReplies.length > 0 && !hasReply;
-
-  const draftIsLoading =
-    !!queryKey &&
-    !isLocalParentRecord &&
-    !connectivity.isOffline &&
-    (isLoading || !hasCurrentResult || hasStaleResult);
-
   React.useEffect(() => {
     if (!queriedReply) return;
     creatingDraftKeyRef.current = undefined;
@@ -144,15 +129,12 @@ export const useReplyDraft = ({
   }, [createdDraft, ignoredDraftIds, outboxDraftIds]);
 
   React.useEffect(() => {
-    const teamId = recordTeamId;
+    const targetTeamId = recordTeamId;
     const targetRecordId = recordId;
 
     if (
-      draftIsLoading ||
       isLocalParentRecord ||
-      record.isLoading ||
       hasReply ||
-      !teamId ||
       !targetRecordId ||
       !draftCreationKey ||
       creatingDraftKeyRef.current === draftCreationKey
@@ -170,11 +152,11 @@ export const useReplyDraft = ({
         key: draftCreationKey,
         needsIdentityReplay: true,
         recordId: targetRecordId,
-        teamId,
+        teamId: targetTeamId,
       });
     };
 
-    if (!connectivity.canRunNetworkActions) {
+    if (!targetTeamId || !profile.id) {
       createLocalDraft();
       return;
     }
@@ -183,20 +165,25 @@ export const useReplyDraft = ({
       try {
         const replyId = replyIdRef.current;
 
-        await createReplyDraft({
+        const createdReplyId = await createReplyDraft({
           replyId,
           recordId: targetRecordId,
           profileId: profile.id,
-          teamId,
+          teamId: targetTeamId,
         });
+
+        if (!createdReplyId) {
+          createLocalDraft();
+          return;
+        }
 
         setCreatedDraft({
           date: new Date().toISOString(),
           id: replyId,
           key: draftCreationKey,
-          needsIdentityReplay: !connectivity.canRunNetworkActions,
+          needsIdentityReplay: false,
           recordId: targetRecordId,
-          teamId,
+          teamId: targetTeamId,
         });
       } catch {
         createLocalDraft();
@@ -205,13 +192,9 @@ export const useReplyDraft = ({
 
     void createDraft();
   }, [
-    draftIsLoading,
     draftCreationKey,
     hasReply,
-    connectivity.canRunNetworkActions,
-    connectivity.isOffline,
     isLocalParentRecord,
-    record.isLoading,
     recordTeamId,
     recordId,
     profile.id,
@@ -219,5 +202,5 @@ export const useReplyDraft = ({
 
   const files = reply?.files ?? [];
   const links = reply?.links ?? [];
-  return { ...reply, links, files, isLoading: draftIsLoading };
+  return { ...reply, links, files, isLoading: false };
 };

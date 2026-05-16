@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { getConnectivityState } from '@/features/offline/connectivity-state';
 import * as localEntry from '@/features/offline/local-entry';
-import { getNextOfflineBannerState } from '@/features/offline/offline-banner-state';
 import * as outboxNormalize from '@/features/offline/outbox-normalize';
 import * as outboxState from '@/features/offline/outbox-state';
 import * as persistence from '@/features/offline/persistence';
@@ -86,6 +84,7 @@ describe('persistence', () => {
     expect(persistence.normalizePersistedOutbox({ submissions: [] })).toEqual({
       attachments: [],
       drafts: [],
+      recordPins: [],
       submissions: [],
       version: 1,
     });
@@ -295,6 +294,14 @@ describe('outbox state', () => {
         drafts: [],
         hydrated: false,
         ownerUserId: 'user-a',
+        recordPins: [
+          {
+            id: 'record-pin:new-record',
+            isPinned: true,
+            recordId: 'new-record',
+            updatedAt: fixtures.date,
+          },
+        ],
         submissions: [queuedRecordSubmission({ contentId: 'new-record' })],
         version: 1,
       },
@@ -304,6 +311,14 @@ describe('outbox state', () => {
         ],
         drafts: [],
         ownerUserId: 'user-a',
+        recordPins: [
+          {
+            id: 'record-pin:persisted-record',
+            isPinned: false,
+            recordId: 'persisted-record',
+            updatedAt: fixtures.date,
+          },
+        ],
         submissions: [
           queuedRecordSubmission({
             contentId: 'persisted-record',
@@ -326,6 +341,13 @@ describe('outbox state', () => {
     expect(merged.submissions.map((item) => [item.id, item.status])).toEqual([
       ['record:persisted-record', 'pending'],
       ['record:record-a', 'pending'],
+    ]);
+
+    expect(
+      merged.recordPins.map((item) => [item.recordId, item.isPinned])
+    ).toEqual([
+      ['persisted-record', false],
+      ['new-record', true],
     ]);
   });
 });
@@ -494,6 +516,37 @@ describe('pending entries', () => {
     expect(record.localStatus).toBe('pending');
   });
 
+  test('keeps sync errors', () => {
+    const queuedRecord = pendingEntries.queuedRecordToEntry({
+      attachments: [],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedRecordSubmission({
+        error: 'Upload failed because the file is too large.',
+        status: 'error',
+      }),
+    });
+
+    expect(queuedRecord.syncError).toBe(
+      'Upload failed because the file is too large.'
+    );
+
+    const queuedReply = pendingEntries.queuedReplyToEntry({
+      attachments: [
+        queuedAttachment({
+          error: 'Upload timed out.',
+          parentId: fixtures.replyId,
+          parentType: 'reply',
+          recordId: fixtures.recordId,
+          status: 'error',
+          submissionId: `reply:${fixtures.replyId}`,
+        }),
+      ],
+      submission: queuedReplySubmission(),
+    });
+
+    expect(queuedReply.syncError).toBe('Upload timed out.');
+  });
+
   test('merges records', () => {
     const queuedRecord = pendingEntries.queuedRecordToEntry({
       attachments: [queuedAttachment({ id: 'queued-file' })],
@@ -551,6 +604,26 @@ describe('pending entries', () => {
     ).toEqual(['reply-b', 'reply-a']);
   });
 
+  test('orders replies', () => {
+    const queuedReply = pendingEntries.queuedReplyToEntry({
+      attachments: [],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedReplySubmission({
+        createdAt: '2026-05-13T00:00:00.000Z',
+        status: 'pending',
+      }),
+    });
+
+    expect(
+      pendingEntries
+        .mergePendingReplies(
+          [{ date: '2026-05-13T12:00:00.000Z', id: 'reply-b' }],
+          [queuedReply]
+        )
+        .map((reply) => reply.id)
+    ).toEqual(['reply-a', 'reply-b']);
+  });
+
   test('keeps pending reply data', () => {
     const queuedReply = pendingEntries.queuedReplyToEntry({
       attachments: [],
@@ -598,121 +671,5 @@ describe('pending entries', () => {
 
     expect(replayReply.localNeedsDraftReplay).toBe(true);
     expect(replayReply.localOutboxStatus).toBe('complete');
-  });
-});
-
-describe('connectivity state', () => {
-  test('separates reconnect lag', () => {
-    const state = getConnectivityState({
-      browserOnline: true,
-      instantStatus: 'closed',
-      netInfoOnline: null,
-      reachabilityOnline: true,
-    });
-
-    expect(state.isOffline).toBe(true);
-    expect(state.isNetworkOffline).toBe(false);
-    expect(state.canRunNetworkActions).toBe(false);
-  });
-
-  test('keeps browser offline visible', () => {
-    const state = getConnectivityState({
-      browserOnline: false,
-      instantStatus: 'authenticated',
-      netInfoOnline: null,
-      reachabilityOnline: true,
-    });
-
-    expect(state.isOffline).toBe(true);
-    expect(state.isNetworkOffline).toBe(true);
-    expect(state.canRunNetworkActions).toBe(false);
-  });
-
-  test('detects unreachable api', () => {
-    const state = getConnectivityState({
-      browserOnline: true,
-      instantStatus: 'authenticated',
-      netInfoOnline: true,
-      reachabilityOnline: false,
-    });
-
-    expect(state.isOffline).toBe(true);
-    expect(state.isNetworkOffline).toBe(true);
-    expect(state.canRunNetworkActions).toBe(false);
-  });
-
-  test('waits for reachability before network actions', () => {
-    const state = getConnectivityState({
-      browserOnline: true,
-      instantStatus: 'authenticated',
-      netInfoOnline: true,
-      reachabilityOnline: null,
-    });
-
-    expect(state.isOffline).toBe(false);
-    expect(state.isNetworkOffline).toBe(false);
-    expect(state.canRunNetworkActions).toBe(false);
-  });
-});
-
-describe('offline banner state', () => {
-  test('delays offline display', () => {
-    expect(
-      getNextOfflineBannerState({
-        currentState: null,
-        hasPendingWork: false,
-        isNetworkOffline: true,
-        outboxHydrated: true,
-        showOffline: false,
-      })
-    ).toBe(null);
-  });
-
-  test('switches offline to syncing', () => {
-    expect(
-      getNextOfflineBannerState({
-        currentState: 'offline',
-        hasPendingWork: true,
-        isNetworkOffline: false,
-        outboxHydrated: true,
-        showOffline: false,
-      })
-    ).toBe('syncing');
-  });
-
-  test('keeps online background work hidden', () => {
-    expect(
-      getNextOfflineBannerState({
-        currentState: null,
-        hasPendingWork: true,
-        isNetworkOffline: false,
-        outboxHydrated: true,
-        showOffline: false,
-      })
-    ).toBe(null);
-  });
-
-  test('keeps banner during hydration', () => {
-    expect(
-      getNextOfflineBannerState({
-        currentState: 'offline',
-        hasPendingWork: false,
-        isNetworkOffline: false,
-        outboxHydrated: false,
-        showOffline: false,
-      })
-    ).toBe('syncing');
-  });
-
-  test('hides once online and synced', () => {
-    expect(
-      getNextOfflineBannerState({
-        currentState: 'syncing',
-        hasPendingWork: false,
-        isNetworkOffline: false,
-        outboxHydrated: true,
-        showOffline: false,
-      })
-    ).toBe(null);
   });
 });

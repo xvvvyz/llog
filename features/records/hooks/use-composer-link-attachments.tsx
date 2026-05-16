@@ -1,5 +1,4 @@
 import { LinkAttachments } from '@/features/records/components/link-attachments';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import { deleteLink } from '@/features/records/mutations/delete-link';
@@ -21,43 +20,24 @@ export const useComposerLinkAttachments = ({
   onReorderLinks?: (links: { id: string }[]) => void;
   parent?: sheetPayloads.RecordSheetParent;
 }) => {
-  const connectivity = useConnectivity();
   const sheetManager = useSheetManager();
 
-  const handleDeleteLink = React.useCallback(
-    (linkId: string) => {
-      const snapshot = outboxStore.getOutboxSnapshot();
+  const handleDeleteLink = React.useCallback((linkId: string) => {
+    const snapshot = outboxStore.getOutboxSnapshot();
 
-      const isQueuedSubmissionLink = snapshot.submissions.some((submission) =>
-        submission.links.some((link) => link.id === linkId)
-      );
+    const isQueuedSubmissionLink = snapshot.submissions.some((submission) =>
+      submission.links.some((link) => link.id === linkId)
+    );
 
-      const isQueuedDraftLink = snapshot.drafts.some((draft) =>
-        draft.links.some((link) => link.id === linkId)
-      );
+    const isQueuedDraftLink = snapshot.drafts.some((draft) =>
+      draft.links.some((link) => link.id === linkId)
+    );
 
-      outboxStore.removeQueuedLink(linkId);
-      outboxStore.removeQueuedDraftLink(linkId);
-
-      if (
-        !connectivity.canRunNetworkActions &&
-        !isQueuedSubmissionLink &&
-        !isQueuedDraftLink
-      ) {
-        return;
-      }
-
-      if (
-        isQueuedSubmissionLink ||
-        (isQueuedDraftLink && !connectivity.canRunNetworkActions)
-      ) {
-        return;
-      }
-
-      void deleteLink({ id: linkId });
-    },
-    [connectivity.canRunNetworkActions]
-  );
+    outboxStore.removeQueuedLink(linkId);
+    outboxStore.removeQueuedDraftLink(linkId);
+    if (isQueuedSubmissionLink || isQueuedDraftLink) return;
+    void deleteLink({ id: linkId });
+  }, []);
 
   const handleOpenLinkEditor = React.useCallback(() => {
     if (actionsDisabled) return;

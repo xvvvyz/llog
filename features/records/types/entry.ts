@@ -20,6 +20,7 @@ export type EntryRecord = Partial<
     replies: EntryRecord[];
     files: FileItem[];
     reactions: (Reaction & { author?: Pick<Profile, 'id'> })[];
+    syncError: string;
     tags: Tag[];
   }
 >;
@@ -34,12 +35,11 @@ export type EntrySharedProps = {
   links: Link[];
   logId?: string;
   logName?: string;
-  networkActionsEnabled?: boolean;
   numberOfLines?: number;
   onDoubleTapReaction: () => void;
   record: EntryRecord;
   recordId: string;
   replyId?: string;
-  syncStatus?: 'not-synced' | 'retrying' | 'syncing';
+  syncStatus?: 'queued' | 'uploading';
   visualMedia: FileItem[];
 };

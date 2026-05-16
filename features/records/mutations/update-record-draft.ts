@@ -5,6 +5,7 @@ export const updateRecordDraft = async ({
   authorId,
   date,
   id,
+  isPinned,
   logId,
   tagIds,
   teamId,
@@ -13,6 +14,7 @@ export const updateRecordDraft = async ({
   authorId?: string;
   date?: string | number;
   id?: string;
+  isPinned?: boolean;
   logId?: string;
   tagIds?: string[];
   teamId?: string;
@@ -33,6 +35,7 @@ export const updateRecordDraft = async ({
           teamId: requiredDraftFields.teamId,
         }
       : {}),
+    ...(isPinned != null ? { isPinned } : {}),
     text,
   };
 

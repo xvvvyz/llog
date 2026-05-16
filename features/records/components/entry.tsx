@@ -2,8 +2,6 @@ import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useLogColor } from '@/features/logs/hooks/use-color';
-import { useConnectivity } from '@/features/offline/connectivity';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { CompactEntry } from '@/features/records/components/compact-entry';
 import { EntryCard } from '@/features/records/components/entry-card';
@@ -43,8 +41,6 @@ export const Entry = ({
   const profile = useProfile();
   const sheetManager = useSheetManager();
   const ui = useUi();
-  const connectivity = useConnectivity();
-  const showOfflineUi = useShowOfflineUi();
   const isLocalPending = !!record.localStatus;
   const isCompletedLocalSubmission = record.localOutboxStatus === 'complete';
 
@@ -56,11 +52,9 @@ export const Entry = ({
     record.localOutboxStatus === 'publishing';
 
   const syncStatus = isActiveLocalSubmission
-    ? isUploadingLocalSubmission && connectivity.canRunNetworkActions
-      ? 'syncing'
-      : record.localOutboxStatus === 'error'
-        ? 'retrying'
-        : 'not-synced'
+    ? isUploadingLocalSubmission
+      ? 'uploading'
+      : 'queued'
     : undefined;
 
   const canManageLocalPendingEntry =
@@ -68,15 +62,13 @@ export const Entry = ({
     !isCompletedLocalSubmission &&
     (!replyId || record.localNeedsDraftReplay === true);
 
-  const isSyncedLocalReply =
-    !!replyId && isLocalPending && isCompletedLocalSubmission;
-
   const { audioMedia, documentFiles, visualMedia } = useFilteredFiles(
     record.files || []
   );
 
   const rawEntryMenuState = useEntryMenuState({
     authorId: record.author?.id,
+    hasSelectedRecordTags: record.tags?.some((tag) => !!tag.id),
     logId,
     replyId,
     teamId: record.teamId,
@@ -90,16 +82,10 @@ export const Entry = ({
         : rawEntryMenuState.canDelete;
 
     const canDuplicate = rawEntryMenuState.canDuplicate;
-
-    const canEdit = canManageLocalPendingEntry
-      ? true
-      : isLocalPending
-        ? rawEntryMenuState.canEdit
-        : rawEntryMenuState.canEdit;
-
+    const canEdit = isLocalPending ? true : rawEntryMenuState.canEdit;
     const canPin = rawEntryMenuState.canPin;
     const canShare = rawEntryMenuState.canShare;
-    const canTag = rawEntryMenuState.canTag;
+    const canTag = isLocalPending && !replyId ? true : rawEntryMenuState.canTag;
     const hasActionsAboveDelete = canEdit || canTag || canPin || canShare;
 
     const hasMenu =
@@ -117,32 +103,25 @@ export const Entry = ({
       hasMenu,
       isDeleteDisabled:
         (isLocalPending && !canManageLocalPendingEntry) ||
-        isSyncedLocalReply ||
         (!canManageLocalPendingEntry && rawEntryMenuState.isDeleteDisabled),
       isDuplicateDisabled:
-        isLocalPending ||
-        rawEntryMenuState.isDuplicateDisabled ||
-        showOfflineUi,
+        isLocalPending || rawEntryMenuState.isDuplicateDisabled,
       isEditDisabled:
         isUploadingLocalSubmission ||
-        (isLocalPending && !canManageLocalPendingEntry) ||
-        isSyncedLocalReply ||
-        (!canManageLocalPendingEntry && rawEntryMenuState.isEditDisabled),
-      isPinDisabled: isLocalPending || showOfflineUi,
-      isTagDisabled: isLocalPending || showOfflineUi,
+        (!isLocalPending && rawEntryMenuState.isEditDisabled),
+      isPinDisabled: false,
+      isTagDisabled: false,
     };
   }, [
     canManageLocalPendingEntry,
     isLocalPending,
     isUploadingLocalSubmission,
-    isSyncedLocalReply,
     rawEntryMenuState,
-    showOfflineUi,
+    replyId,
   ]);
 
   const handleDoubleTapReaction = React.useCallback(() => {
     if (isLocalPending) return;
-    if (!connectivity.canRunNetworkActions) return;
     if (!record.teamId) return;
     const emoji = ui.doubleTapEmoji;
 
@@ -161,7 +140,6 @@ export const Entry = ({
     });
   }, [
     logId,
-    connectivity.canRunNetworkActions,
     isLocalPending,
     profile.id,
     record.reactions,
@@ -181,7 +159,6 @@ export const Entry = ({
     links: record.links ?? [],
     logId,
     logName,
-    networkActionsEnabled: !showOfflineUi && !isLocalPending,
     numberOfLines,
     onDoubleTapReaction: handleDoubleTapReaction,
     record,
@@ -201,15 +178,13 @@ export const Entry = ({
   }, [isLocalPending, record.id, record.teamId, sheetManager]);
 
   const handleUnpin = React.useCallback(() => {
-    if (!connectivity.canRunNetworkActions) return;
-
     if (isLocalPending) {
       outboxStore.updateQueuedRecordPin({ isPinned: false, recordId });
       return;
     }
 
     toggleRecordPin({ id: recordId, isPinned: false });
-  }, [connectivity.canRunNetworkActions, isLocalPending, recordId]);
+  }, [isLocalPending, recordId]);
 
   if (variant === 'compact') {
     return <CompactEntry {...sharedProps} className={className} />;

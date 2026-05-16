@@ -1,5 +1,4 @@
 import * as linkUrl from '@/features/records/lib/link-url';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -91,7 +90,6 @@ export const LinkAttachments = ({
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
-  const showOfflineUi = useShowOfflineUi();
   const sheetManager = useSheetManager();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
@@ -114,17 +112,14 @@ export const LinkAttachments = ({
   const items = React.useMemo(() => [...links].sort(byOrder), [links]);
   const firstItem = items[0];
   const canDeleteSingleLink = !!onDeleteLink && items.length === 1;
-  const canShowNetworkActions = !showOfflineUi;
   const canSortLinkSet = !!onReorderLinks && items.length > 1;
-  const canSortLinks = canSortLinkSet && canShowNetworkActions;
+  const canSortLinks = canSortLinkSet;
   const shouldOpenLinksInline = !onDeleteLink;
 
   const canMutateLink = React.useCallback(
     (item: LinkAttachmentItem) =>
-      !!onDeleteLink &&
-      !actionsDisabled &&
-      (canShowNetworkActions || !!item.localStatus),
-    [actionsDisabled, canShowNetworkActions, onDeleteLink]
+      !!onDeleteLink && !actionsDisabled && (!!item.id || !!item.localStatus),
+    [actionsDisabled, onDeleteLink]
   );
 
   const shouldRenderSheet =

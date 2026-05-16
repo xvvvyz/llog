@@ -14,6 +14,109 @@ import { z } from 'zod/v4';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
+const offlineDraftReplaySchema = z.object({
+  authorId: z.string().min(1),
+  date: z.union([z.string(), z.number()]).optional(),
+  teamId: z.string().min(1),
+  text: z.string().max(10240),
+});
+
+app.put(
+  '/:recordId/replies/:replyId/offline-draft-replay',
+  db(),
+  auth(),
+  zValidator('json', offlineDraftReplaySchema),
+  async (c) => {
+    const user = c.var.user!;
+    const replyId = c.req.param('replyId');
+    const recordId = c.req.param('recordId');
+
+    if (!replyId || !recordId) {
+      throw new HTTPException(400, { message: 'Invalid request' });
+    }
+
+    const { authorId, date, teamId, text } = c.req.valid('json');
+
+    const { profiles, records, replies } = await c.var.db.query({
+      profiles: {
+        $: { fields: ['id' as const], where: { id: authorId } },
+        user: { $: { fields: ['id' as const] } },
+      },
+      records: {
+        $: {
+          fields: ['id' as const, 'teamId' as const],
+          where: { id: recordId },
+        },
+        log: {
+          $: { fields: ['id' as const] },
+          team: {
+            roles: {
+              $: { fields: ['role' as const], where: { userId: user.id } },
+            },
+          },
+          profiles: { user: { $: { fields: ['id' as const] } } },
+        },
+      },
+      replies: {
+        $: {
+          fields: ['id' as const, 'isDraft' as const],
+          where: { id: replyId },
+        },
+        author: {
+          $: { fields: ['id' as const] },
+          user: { $: { fields: ['id' as const] } },
+        },
+        record: { $: { fields: ['id' as const] } },
+      },
+    });
+
+    const profile = profiles[0];
+    const record = records[0];
+    const reply = replies[0];
+    const actorRole = record?.log?.team?.roles?.[0]?.role;
+
+    const isLogMember = !!record?.log?.profiles?.some(
+      (profile) => profile.user?.id === user.id
+    );
+
+    if (
+      !profile?.id ||
+      profile.user?.id !== user.id ||
+      !record?.id ||
+      record.teamId !== teamId ||
+      (!permissions.canManageTeam(actorRole) && !isLogMember)
+    ) {
+      throw new HTTPException(403, { message: 'Forbidden' });
+    }
+
+    if (reply?.id) {
+      if (reply.isDraft !== true) {
+        throw new HTTPException(409, { message: 'Reply already published' });
+      }
+
+      if (reply.author?.user?.id !== user.id || reply.record?.id !== recordId) {
+        throw new HTTPException(403, { message: 'Forbidden' });
+      }
+    }
+
+    await c.var.db.transact(
+      c.var.db.tx.replies[replyId]
+        .update(
+          {
+            date: date ?? new Date().toISOString(),
+            isDraft: true,
+            teamId,
+            text,
+          },
+          { upsert: true }
+        )
+        .link({ author: authorId, record: recordId })
+    );
+
+    return c.json({ success: true });
+  }
+);
+
 app.post(
   '/:recordId/replies/:replyId/publish',
   db(),

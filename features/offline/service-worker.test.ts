@@ -385,15 +385,15 @@ describe('service worker', () => {
     expect(harness.fetchCalls).toEqual([url]);
   });
 
-  test('ignores backend non-images', async () => {
+  test('ignores backend non-media', async () => {
     const path = '/api/v1/files/records/record-1/files/file-1';
 
     const harness = createHarness({
-      [path]: { body: 'audio', headers: { 'content-type': 'audio/mpeg' } },
+      [path]: { body: 'json', headers: { 'content-type': 'application/json' } },
     });
 
     const response = await harness.runFetch(path, { mode: 'no-cors' });
-    expect(await response.text()).toBe('audio');
+    expect(await response.text()).toBe('json');
     expect(harness.currentCachePaths()).toEqual([]);
   });
 
@@ -425,10 +425,7 @@ describe('service worker', () => {
     const externalImageUrl =
       'https://imagedelivery.net/account/image-id/public';
 
-    const audioPath = '/api/v1/files/records/record-1/files/file-1';
-
     const harness = createHarness({
-      [audioPath]: { body: 'audio', headers: { 'content-type': 'audio/mpeg' } },
       [externalImageUrl]: {
         body: 'external-image',
         headers: { 'content-type': 'image/webp' },
@@ -438,11 +435,7 @@ describe('service worker', () => {
 
     await harness.run('message', {
       type: 'LLOG_CACHE_RESOURCES',
-      urls: [
-        `${origin}${imagePath}`,
-        externalImageUrl,
-        `${origin}${audioPath}`,
-      ],
+      urls: [`${origin}${imagePath}`, externalImageUrl],
     });
 
     expect(harness.currentCachePaths()).toEqual([imagePath, externalImageUrl]);

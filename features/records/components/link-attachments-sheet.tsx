@@ -1,5 +1,4 @@
 import { LinkAttachments } from '@/features/records/components/link-attachments';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
@@ -13,7 +12,6 @@ import * as React from 'react';
 
 export const LinkAttachmentsSheet = () => {
   const sheetManager = useSheetManager();
-  const { isOffline } = useConnectivity();
   const outbox = useOutbox();
 
   const isOpen = sheetManager.isOpen(
@@ -23,8 +21,6 @@ export const LinkAttachmentsSheet = () => {
   const parent =
     sheetPayloads.getRecordLinkAttachmentsSheetPayload(sheetManager)?.parent;
 
-  const recordComposerContext = sheetManager.getContext('record-create');
-  const recordComposerId = sheetManager.getId('record-create');
   const isRecord = parent?.type === 'record';
   const isReply = parent?.type === 'reply';
 
@@ -123,22 +119,13 @@ export const LinkAttachmentsSheet = () => {
 
   const isSheetLoading = isRecord
     ? !pendingParent &&
-      !isOffline &&
       !!recordQueryKey &&
       (recordLoading || !hasCurrentRecordResult)
     : isReply
       ? !pendingParent &&
-        !isOffline &&
         !!replyQueryKey &&
         (replyLoading || !hasCurrentReplyResult)
       : false;
-
-  const areActionsDisabled =
-    isOffline &&
-    isRecord &&
-    recordComposerContext === 'edit' &&
-    recordComposerId === parent?.id &&
-    !pendingParent;
 
   const close = React.useCallback(() => {
     sheetManager.close(sheetPayloads.RECORD_LINK_ATTACHMENTS_SHEET);
@@ -160,10 +147,10 @@ export const LinkAttachmentsSheet = () => {
 
       outboxStore.removeQueuedLink(linkId);
       outboxStore.removeQueuedDraftLink(linkId);
-      if (isQueuedSubmissionLink || (isQueuedDraftLink && isOffline)) return;
+      if (isQueuedSubmissionLink || isQueuedDraftLink) return;
       void deleteLink({ id: linkId });
     },
-    [isOffline, outbox.drafts, outbox.submissions]
+    [outbox.drafts, outbox.submissions]
   );
 
   const handleReorderLinks = React.useCallback((links: { id: string }[]) => {
@@ -175,7 +162,6 @@ export const LinkAttachmentsSheet = () => {
 
   return (
     <LinkAttachments
-      actionsDisabled={areActionsDisabled}
       hideTrigger
       links={links}
       onDeleteLink={handleDeleteLink}

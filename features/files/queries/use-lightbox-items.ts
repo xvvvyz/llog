@@ -1,5 +1,4 @@
 import { visibleFileQuery } from '@/domain/files/query';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import { type FileItem } from '@/features/files/types/file';
@@ -21,7 +20,6 @@ export const useLightboxMedia = ({
   mediaId?: string;
   recordId?: string;
 }) => {
-  const { isOffline } = useConnectivity();
   const outbox = useOutbox();
 
   const { data, isLoading } = db.useQuery(
@@ -91,7 +89,6 @@ export const useLightboxMedia = ({
   return {
     isLoading:
       !!recordId &&
-      !isOffline &&
       !pendingMedia.some((item) => item.id === mediaId) &&
       (isLoading || !hasCurrentResult),
     media,

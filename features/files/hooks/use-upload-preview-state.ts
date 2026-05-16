@@ -4,7 +4,6 @@ import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments'
 import * as visualMedia from '@/features/files/lib/visual-media';
 import * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as outbox from '@/features/offline/outbox-hooks';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import type { QueuedAttachment, QueuedParent } from '@/features/offline/types';
@@ -49,7 +48,6 @@ export const useFileUploadPreviewState = ({
     null
   );
 
-  const connectivity = useConnectivity();
   const unsubmittedQueuedAttachments = outbox.useQueuedAttachments(parent);
 
   const queuedAttachments =
@@ -210,23 +208,12 @@ export const useFileUploadPreviewState = ({
           'error',
           error instanceof Error ? error.message : 'Failed to upload files.'
         );
-
-        if (connectivity.canRunNetworkActionsImmediately) {
-          alert({
-            message:
-              error instanceof Error
-                ? error.message
-                : 'Failed to upload files.',
-            title: 'Upload queued',
-          });
-        }
       } finally {
         markUploadInactive(attachment.id);
       }
     },
     [
       activeUploadIds,
-      connectivity.canRunNetworkActionsImmediately,
       markQueuedAttachmentUploaded,
       markUploadActive,
       markUploadInactive,
@@ -309,12 +296,16 @@ export const useFileUploadPreviewState = ({
             void outbox
               .persistPickedAttachmentBinary(fileId, asset)
               .then(() => {
-                if (!connectivity.canRunNetworkActionsImmediately) return;
+                if (deferQueuedUploads) return;
                 outbox.retryFailedOutboxWork();
                 void outboxSyncCore.runOutboxSync();
               })
               .catch((error) => {
-                if (connectivity.canRunNetworkActionsImmediately) return;
+                if (!deferQueuedUploads) {
+                  void uploadQueuedAttachment(attachment, asset);
+                  return;
+                }
+
                 void outbox.removeQueuedAttachment(fileId);
 
                 setOptimisticUploads((current) =>
@@ -328,16 +319,12 @@ export const useFileUploadPreviewState = ({
                   message:
                     error instanceof Error
                       ? error.message
-                      : 'Failed to save file for offline upload.',
+                      : 'Failed to save file for upload.',
                   title: 'Upload failed',
                 });
               });
 
-            if (
-              attachment.status !== 'persisting' &&
-              connectivity.canRunNetworkActionsImmediately &&
-              !deferQueuedUploads
-            ) {
+            if (attachment.status !== 'persisting' && !deferQueuedUploads) {
               await uploadQueuedAttachment(attachment, asset);
             }
           } catch (error) {
@@ -372,7 +359,6 @@ export const useFileUploadPreviewState = ({
     [
       clearFocusedAudioId,
       actionsDisabled,
-      connectivity.canRunNetworkActionsImmediately,
       deferQueuedUploads,
       queuedAttachments,
       removeLocalPreviewUri,
@@ -398,25 +384,14 @@ export const useFileUploadPreviewState = ({
   }, [queuedAttachments, visibleFiles]);
 
   React.useEffect(() => {
-    if (deferQueuedUploads || !connectivity.canRunNetworkActionsImmediately) {
-      return;
-    }
+    if (deferQueuedUploads) return;
 
     queuedAttachments.forEach((attachment) => {
       if (attachment.submissionId) return;
-
-      if (attachment.status !== 'queued' && attachment.status !== 'error') {
-        return;
-      }
-
+      if (attachment.status !== 'queued') return;
       void uploadQueuedAttachment(attachment);
     });
-  }, [
-    connectivity.canRunNetworkActionsImmediately,
-    deferQueuedUploads,
-    queuedAttachments,
-    uploadQueuedAttachment,
-  ]);
+  }, [deferQueuedUploads, queuedAttachments, uploadQueuedAttachment]);
 
   React.useEffect(() => {
     setLocalPreviewUris((prev) => {

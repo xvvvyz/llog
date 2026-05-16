@@ -1,7 +1,6 @@
 import { visibleFileQuery } from '@/domain/files/query';
 import { useFileComposer } from '@/features/files/hooks/use-composer';
 import type { PickedFileAsset } from '@/features/files/lib/picked';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as localEntry from '@/features/offline/local-entry';
 import { reorderFiles } from '@/features/files/mutations/reorder-files';
 import { updateDocumentName } from '@/features/files/mutations/update-document-name';
@@ -24,6 +23,7 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
+import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerLatestText from '@/features/records/hooks/use-composer-latest-text';
 
@@ -42,28 +42,33 @@ export const useReplyComposerModel = () => {
   const sheetManager = useSheetManager();
   const profile = useProfile();
   const outbox = outboxHooks.useOutbox();
-  const connectivity = useConnectivity();
-  const editRecordId = sheetManager.getContext('reply-create');
+  const networkReachability = useOutboxNetworkReachability();
+  const isOpen = sheetManager.isOpen('reply-create');
+
+  const editRecordId = isOpen
+    ? sheetManager.getContext('reply-create')
+    : undefined;
+
   const isEdit = !!editRecordId;
-  const sheetId = sheetManager.getId('reply-create');
+  const sheetId = isOpen ? sheetManager.getId('reply-create') : undefined;
   const recordId = isEdit ? editRecordId : sheetId;
   const editReplyId = isEdit ? sheetId : undefined;
 
-  const createPayload = getReplyCreatePayload(
-    sheetManager.getPayload('reply-create')
-  );
+  const createPayload = isOpen
+    ? getReplyCreatePayload(sheetManager.getPayload('reply-create'))
+    : undefined;
 
-  const record = useRecord({ id: recordId });
+  const record = useRecord({ id: isOpen ? recordId : undefined });
   const logColor = useLogColor({ id: record.log?.id });
 
   const draft = useReplyDraft({
     ignoredDraftIds,
-    recordId: isEdit ? undefined : recordId,
+    recordId: isOpen && !isEdit ? recordId : undefined,
     teamId: createPayload?.teamId,
   });
 
   const { data: editData } = db.useQuery(
-    editReplyId
+    isOpen && editReplyId
       ? {
           replies: {
             $: { where: { id: editReplyId } },
@@ -116,7 +121,6 @@ export const useReplyComposerModel = () => {
   const reply = isEdit ? editReply : draft;
   const replyId = reply?.id;
   const isEditingLocalReply = isEdit && localEntry.hasLocalStatus(editReply);
-  const isOpen = sheetManager.isOpen('reply-create');
   const openSessionKey = composerLatestText.useComposerOpenSessionKey(isOpen);
   const currentText = reply?.text ?? '';
   const replyTeamId = reply?.teamId ?? record.teamId;
@@ -144,7 +148,7 @@ export const useReplyComposerModel = () => {
   );
 
   const canUpdateServerDraft =
-    connectivity.canRunNetworkActions && !shouldReplayReplyDraftIdentity;
+    !shouldReplayReplyDraftIdentity && networkReachability === true;
 
   const updateServerReplyDraft = React.useCallback(
     (input: Parameters<typeof updateReplyDraft>[0]) => {
@@ -185,14 +189,15 @@ export const useReplyComposerModel = () => {
     [queuedReplyDraft?.links, queuedReplyDraft?.linksUpdated, reply?.links]
   );
 
-  const { displayText, latestTextRef, setLatestText } = composerLatestText.useComposerLatestText({
-    resetKey: isOpen
-      ? isEdit
-        ? `edit:${editReplyId ?? ''}:${openSessionKey}`
-        : `create:${recordId ?? ''}:${openSessionKey}`
-      : 'closed',
-    text: currentText,
-  });
+  const { displayText, latestTextRef, setLatestText } =
+    composerLatestText.useComposerLatestText({
+      resetKey: isOpen
+        ? isEdit
+          ? `edit:${editReplyId ?? ''}:${openSessionKey}`
+          : `create:${recordId ?? ''}:${replyId ?? ''}:${openSessionKey}`
+        : 'closed',
+      text: currentText,
+    });
 
   const handleUploadFile = React.useCallback(
     async (asset: PickedFileAsset, fileId: string, order: number) => {
@@ -219,16 +224,12 @@ export const useReplyComposerModel = () => {
     void reorderFiles(files);
   }, []);
 
-  const handleReorderLinks = React.useCallback(
-    (links: { id: string }[]) => {
-      const orderedIds = links.map((link) => link.id);
-      outboxStore.reorderQueuedDraftLinks(orderedIds);
-      outboxStore.reorderQueuedLinks(orderedIds);
-      if (!connectivity.canRunNetworkActions) return;
-      void reorderLinks(links);
-    },
-    [connectivity.canRunNetworkActions]
-  );
+  const handleReorderLinks = React.useCallback((links: { id: string }[]) => {
+    const orderedIds = links.map((link) => link.id);
+    outboxStore.reorderQueuedDraftLinks(orderedIds);
+    outboxStore.reorderQueuedLinks(orderedIds);
+    void reorderLinks(links);
+  }, []);
 
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
@@ -279,8 +280,6 @@ export const useReplyComposerModel = () => {
       }
 
       if (isEdit && !isEditingLocalReply) {
-        if (!connectivity.canRunNetworkActions) return;
-
         void db
           .transact(db.tx.replies[replyId].update({ text: nextText }))
           .catch(() => undefined);
@@ -295,7 +294,6 @@ export const useReplyComposerModel = () => {
       });
     },
     [
-      connectivity.canRunNetworkActions,
       isEdit,
       isEditingLocalReply,
       replyDraftUpdateFields,
@@ -369,9 +367,7 @@ export const useReplyComposerModel = () => {
           parentType: 'reply',
         });
 
-        if (connectivity.canRunNetworkActionsImmediately) {
-          void outboxSyncCore.runOutboxSync();
-        }
+        void outboxSyncCore.runOutboxSync();
       } else {
         patchQueuedReply();
       }
@@ -398,11 +394,8 @@ export const useReplyComposerModel = () => {
       });
 
       outboxStore.clearQueuedDraft({ parentId: replyId, parentType: 'reply' });
-
-      if (connectivity.canRunNetworkActionsImmediately) {
-        void outboxSyncCore.runOutboxSync();
-      }
-
+      void outboxSyncCore.runOutboxSync();
+      setLatestText('');
       ignoreDraftId(replyId);
 
       requestPostSubmitScroll({
@@ -422,7 +415,6 @@ export const useReplyComposerModel = () => {
     isEdit,
     isEditingLocalReply,
     isBusy,
-    connectivity.canRunNetworkActionsImmediately,
     latestTextRef,
     fileCount,
     profile.id,
@@ -431,6 +423,7 @@ export const useReplyComposerModel = () => {
     reply?.files,
     replyTeamId,
     replyId,
+    setLatestText,
     links,
   ]);
 

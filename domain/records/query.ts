@@ -31,7 +31,7 @@ export const recordDetailQuery = {
   log: {},
   reactions: { author: {} },
   replies: {
-    $: { where: publishedContentWhere },
+    $: { order: { date: 'asc' as const }, where: publishedContentWhere },
     author: { image: {} },
     files: visibleFileQuery,
     links: {},

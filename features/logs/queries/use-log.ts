@@ -1,12 +1,9 @@
 import { logTagsQuery } from '@/domain/tags/query';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
 
 export const useLog = ({ id }: { id?: string }) => {
-  const { isOffline } = useConnectivity();
-
   const { data, isLoading } = db.useQuery(
     id
       ? {
@@ -36,8 +33,7 @@ export const useLog = ({ id }: { id?: string }) => {
 
   return {
     ...log,
-    isLoading:
-      !!id && !isOffline && (isLoading || !hasCurrentResult || hasStaleResult),
+    isLoading: !!id && (isLoading || !hasCurrentResult || hasStaleResult),
     tagIdsSet,
     profileIdsSet,
   };

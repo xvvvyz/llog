@@ -11,6 +11,7 @@ const emptyOutboxSnapshot = (ownerUserId?: string): OutboxSnapshot => ({
   drafts: [],
   hydrated: false,
   ownerUserId,
+  recordPins: [],
   submissions: [],
   version: 1,
 });
@@ -30,6 +31,7 @@ const persist = (next: OutboxSnapshot) => {
     attachments: next.attachments,
     drafts: next.drafts,
     ownerUserId: next.ownerUserId,
+    recordPins: next.recordPins,
     submissions: next.submissions,
     version: 1,
   };
@@ -195,6 +197,18 @@ export const getNextAutoRetryTime = outboxState.getNextAutoRetryTime;
 export const getPendingOutboxWork = outboxState.getPendingOutboxWork;
 
 export const hasPendingOutboxWork = outboxState.hasPendingOutboxWork;
+
+export const getQueuedRecordPins = (
+  state: Pick<OutboxSnapshot, 'recordPins'>
+) => state.recordPins;
+
+export const getQueuedRecordPin = (
+  state: Pick<OutboxSnapshot, 'recordPins'>,
+  recordId?: string
+) =>
+  recordId
+    ? state.recordPins.find((recordPin) => recordPin.recordId === recordId)
+    : undefined;
 
 export const retryFailedOutboxWork = () => {
   setSnapshot((current) => {
@@ -442,9 +456,64 @@ export const updateQueuedRecordPin = ({
   isPinned: boolean;
   recordId: string;
 }) => {
-  updateQueuedSubmission(`record:${recordId}`, (submission) =>
-    submission.type === 'record' ? { isPinned } : {}
-  );
+  if (!recordId) return;
+  const submissionId = `record:${recordId}`;
+
+  setSnapshot((current) => {
+    const hasQueuedRecord = current.submissions.some(
+      (submission) => submission.id === submissionId
+    );
+
+    if (hasQueuedRecord) {
+      return {
+        ...current,
+        submissions: current.submissions.map((submission) => {
+          if (submission.id !== submissionId || submission.type !== 'record') {
+            return submission;
+          }
+
+          return {
+            ...submission,
+            isPinned,
+            updatedAt: new Date().toISOString(),
+          } as types.QueuedSubmission;
+        }),
+      };
+    }
+
+    const now = new Date().toISOString();
+
+    return {
+      ...current,
+      recordPins: [
+        ...current.recordPins.filter(
+          (recordPin) => recordPin.recordId !== recordId
+        ),
+        { id: `record-pin:${recordId}`, isPinned, recordId, updatedAt: now },
+      ],
+    };
+  });
+};
+
+export const queueRecordPin = updateQueuedRecordPin;
+
+export const clearQueuedRecordPin = ({
+  isPinned,
+  recordId,
+}: {
+  isPinned?: boolean;
+  recordId: string;
+}) => {
+  if (!recordId) return;
+
+  setSnapshot((current) => ({
+    ...current,
+    recordPins: current.recordPins.filter(
+      (recordPin) =>
+        recordPin.recordId !== recordId ||
+        (isPinned != null && recordPin.isPinned !== isPinned)
+    ),
+  }));
 };
 
 export const updateQueuedRecordTagSelection = ({

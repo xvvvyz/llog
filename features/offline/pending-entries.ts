@@ -33,31 +33,32 @@ const attachmentsForSubmission = (
   attachments: types.QueuedAttachment[],
   submission: types.QueuedSubmission
 ) => {
+  const queuedAttachments = attachments.filter((attachment) => {
+    if (attachment.submissionId) {
+      return attachment.submissionId === submission.id;
+    }
+
+    if (submission.type === 'record') {
+      return (
+        attachment.parentType === 'record' &&
+        attachment.parentId === submission.contentId
+      );
+    }
+
+    return (
+      attachment.parentType === 'reply' &&
+      attachment.parentId === submission.contentId &&
+      attachment.recordId === submission.recordId
+    );
+  });
+
   const uploadedFiles = (submission.files ?? []).map(
     (file) => file as FileItem
   );
 
   const uploadedFileIds = new Set(uploadedFiles.map((file) => file.id));
 
-  const queuedFiles = attachments
-    .filter((attachment) => {
-      if (attachment.submissionId) {
-        return attachment.submissionId === submission.id;
-      }
-
-      if (submission.type === 'record') {
-        return (
-          attachment.parentType === 'record' &&
-          attachment.parentId === submission.contentId
-        );
-      }
-
-      return (
-        attachment.parentType === 'reply' &&
-        attachment.parentId === submission.contentId &&
-        attachment.recordId === submission.recordId
-      );
-    })
+  const queuedFiles = queuedAttachments
     .filter((attachment) => !uploadedFileIds.has(attachment.id))
     .map(queuedAttachmentToFileItem);
 
@@ -65,6 +66,23 @@ const attachmentsForSubmission = (
     (a, b) => (a.order ?? 0) - (b.order ?? 0)
   );
 };
+
+const syncErrorForSubmission = (
+  attachments: types.QueuedAttachment[],
+  submission: types.QueuedSubmission
+) =>
+  submission.error ??
+  attachments.find(
+    (attachment) =>
+      attachment.status === 'error' &&
+      (attachment.submissionId === submission.id ||
+        (submission.type === 'record'
+          ? attachment.parentType === 'record' &&
+            attachment.parentId === submission.contentId
+          : attachment.parentType === 'reply' &&
+            attachment.parentId === submission.contentId &&
+            attachment.recordId === submission.recordId))
+  )?.error;
 
 const getAuthor = (profile?: Partial<Profile>) =>
   profile?.id ? ({ ...profile, id: profile.id } as Profile) : undefined;
@@ -90,6 +108,7 @@ export const queuedRecordToEntry = ({
   localStatus: submission.status === 'error' ? 'error' : 'pending',
   reactions: [],
   replies: [],
+  syncError: syncErrorForSubmission(attachments, submission),
   tags: submission.tags,
   teamId: submission.teamId,
   text: submission.text,
@@ -114,6 +133,7 @@ export const queuedReplyToEntry = ({
   localOutboxStatus: submission.status,
   localStatus: submission.status === 'error' ? 'error' : 'pending',
   reactions: [],
+  syncError: syncErrorForSubmission(attachments, submission),
   teamId: submission.teamId,
   text: submission.text,
 });
@@ -149,7 +169,9 @@ const mergePendingEntryFiles = <T extends { files?: FileItem[] }>(
     files: mergeFiles(entry.files, pending.files),
     localOutboxStatus: pending.localOutboxStatus,
     localStatus: pending.localStatus,
-  }) as T & Pick<EntryRecord, 'localOutboxStatus' | 'localStatus'>;
+    syncError: pending.syncError,
+  }) as T &
+    Pick<EntryRecord, 'localOutboxStatus' | 'localStatus' | 'syncError'>;
 
 const mergePendingEntry = <T extends { files?: FileItem[] }>(
   entry: T,
@@ -160,6 +182,31 @@ const mergePendingEntry = <T extends { files?: FileItem[] }>(
     ...pending,
     files: mergeFiles(entry.files, pending.files),
   }) as T & EntryRecord;
+
+const getEntryDateTime = (entry: { date?: Date | string | number | null }) => {
+  if (!entry.date) return null;
+  const time = new Date(entry.date).getTime();
+  return Number.isFinite(time) ? time : null;
+};
+
+const sortRepliesByDateAsc = <
+  T extends { date?: Date | string | number | null },
+>(
+  replies: T[]
+) =>
+  replies
+    .map((reply, index) => ({ index, reply }))
+    .sort((a, b) => {
+      const aTime = getEntryDateTime(a.reply);
+      const bTime = getEntryDateTime(b.reply);
+
+      if (aTime !== null && bTime !== null && aTime !== bTime) {
+        return aTime - bTime;
+      }
+
+      return a.index - b.index;
+    })
+    .map(({ reply }) => reply);
 
 export const mergePendingRecords = <
   T extends { files?: FileItem[]; id: string },
@@ -193,7 +240,11 @@ export const mergePendingRecords = <
 };
 
 export const mergePendingReplies = <
-  T extends { files?: FileItem[]; id?: string },
+  T extends {
+    date?: Date | string | number | null;
+    files?: FileItem[];
+    id?: string;
+  },
 >(
   replies: T[],
   pendingReplies: EntryRecord[]
@@ -206,7 +257,7 @@ export const mergePendingReplies = <
       .map((reply) => [reply.id, reply])
   );
 
-  return [
+  return sortRepliesByDateAsc([
     ...replies.map((reply) => {
       const pendingReply = reply.id ? pendingById.get(reply.id) : undefined;
       return pendingReply ? mergePendingEntry(reply, pendingReply) : reply;
@@ -214,5 +265,5 @@ export const mergePendingReplies = <
     ...pendingReplies.filter(
       (reply) => !!reply.id && !existingIds.has(reply.id)
     ),
-  ];
+  ]);
 };

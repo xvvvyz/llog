@@ -25,7 +25,6 @@ export const CompactEntry = ({
   links,
   logId,
   logName,
-  networkActionsEnabled = true,
   numberOfLines,
   onDoubleTapReaction,
   record,
@@ -94,6 +93,7 @@ export const CompactEntry = ({
               recordId={recordId}
               replyId={replyId}
               state={entryMenuState}
+              tags={record.tags}
               teamId={record.teamId}
             />
           </View>
@@ -113,7 +113,6 @@ export const CompactEntry = ({
           {audioMedia.length > 0 && (
             <View className="mt-4 gap-2">
               <AudioPlaylist
-                analysisActionsDisabled={!networkActionsEnabled}
                 canAnalyzeAudio={canAnalyzeAudio}
                 clips={audioMedia}
               />
@@ -140,7 +139,7 @@ export const CompactEntry = ({
           <ReactionsRow
             accentColor={accentColor}
             className="mt-3"
-            disabled={!networkActionsEnabled}
+            disabled={!!record.localStatus}
             logId={logId}
             onDoubleTapReaction={onDoubleTapReaction}
             record={record}

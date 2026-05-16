@@ -2,11 +2,10 @@ import { VideoPlayer } from '@/features/files/components/video-player';
 import { ZoomableMedia } from '@/features/files/components/zoomable';
 import * as carouselHelpers from '@/features/files/lib/carousel';
 import { getFileSourceUri } from '@/features/files/lib/file-uri-to-src';
+import { useCachedFileSource } from '@/features/files/lib/offline-availability';
 import { FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
-import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
-import { WifiSlash } from 'phosphor-react-native';
 import * as React from 'react';
 import { PixelRatio, Pressable, View } from 'react-native';
 
@@ -16,7 +15,6 @@ type ItemProps = {
   index: number;
   isActiveMediaLoading: boolean;
   isMuted: boolean;
-  isUnavailableOffline: boolean;
   onActiveMediaLoad: (fileId: string, index: number) => void;
   item: FileItem;
   mediaQuality: number;
@@ -42,7 +40,6 @@ const ItemComponent = ({
   index,
   isActiveMediaLoading,
   isMuted,
-  isUnavailableOffline,
   onActiveMediaLoad,
   item,
   mediaQuality,
@@ -78,7 +75,6 @@ const ItemComponent = ({
           isActive={isActive}
           isAdjacent={isAdjacent}
           isMuted={isMuted}
-          isUnavailableOffline={isUnavailableOffline}
           item={item}
           mediaQuality={mediaQuality}
           onActiveMediaLoad={onActiveMediaLoad}
@@ -101,7 +97,6 @@ const ItemComponent = ({
           index={index}
           isActive={isActive}
           isAdjacent={isAdjacent}
-          isUnavailableOffline={isUnavailableOffline}
           item={item}
           mediaQuality={mediaQuality}
           onActiveMediaLoad={onActiveMediaLoad}
@@ -119,14 +114,6 @@ export const Item = React.memo(ItemComponent);
 
 Item.displayName = 'Item';
 
-const UnavailableMediaOverlay = () => (
-  <View className="absolute inset-0 pointer-events-none items-center justify-center">
-    <View className="size-12 border-continuous rounded-full bg-background/50 items-center justify-center">
-      <Icon className="text-muted-foreground" icon={WifiSlash} size={24} />
-    </View>
-  </View>
-);
-
 const CarouselVideoItem = ({
   contentHeight,
   contentWidth,
@@ -134,7 +121,6 @@ const CarouselVideoItem = ({
   isAdjacent,
   shouldRenderInactiveMedia,
   isMuted,
-  isUnavailableOffline,
   index,
   item,
   mediaQuality,
@@ -156,7 +142,6 @@ const CarouselVideoItem = ({
   isAdjacent: boolean;
   shouldRenderInactiveMedia: boolean;
   isMuted: boolean;
-  isUnavailableOffline: boolean;
   index: number;
   item: FileItem;
   mediaQuality: number;
@@ -179,16 +164,21 @@ const CarouselVideoItem = ({
   const hasReportedActiveLoadRef = React.useRef(false);
   const sourceUri = getFileSourceUri(item);
 
-  const shouldRenderVideo =
-    !isUnavailableOffline &&
-    (isActive || (isAdjacent && (shouldRenderInactiveMedia || hasLoaded)));
+  const cachedSource = useCachedFileSource({
+    enabled: true,
+    type: 'media',
+    uri: sourceUri,
+  });
 
-  const canTogglePlay = isActive && !isUnavailableOffline;
+  const shouldRenderVideo =
+    isActive || (isAdjacent && (shouldRenderInactiveMedia || hasLoaded));
+
+  const canTogglePlay = isActive;
 
   React.useEffect(() => {
     setHasLoaded(false);
     hasReportedActiveLoadRef.current = false;
-  }, [item.id, item.thumbnailUri, sourceUri]);
+  }, [cachedSource.src, item.id, item.thumbnailUri, sourceUri]);
 
   React.useEffect(() => {
     if (!isActive) hasReportedActiveLoadRef.current = false;
@@ -239,13 +229,12 @@ const CarouselVideoItem = ({
                 resetToken={resetVideoToken}
                 thumbnailQuality={mediaQuality}
                 thumbnailUri={item.thumbnailUri}
-                uri={sourceUri}
+                uri={cachedSource.src ?? sourceUri}
               />
             </Pressable>
           </ZoomableMedia>
         </React.Fragment>
       )}
-      {isUnavailableOffline && <UnavailableMediaOverlay />}
     </View>
   );
 };
@@ -256,7 +245,6 @@ const CarouselImageItem = ({
   index,
   isActive,
   isAdjacent,
-  isUnavailableOffline,
   item,
   mediaQuality,
   onActiveMediaLoad,
@@ -270,7 +258,6 @@ const CarouselImageItem = ({
   index: number;
   isActive: boolean;
   isAdjacent: boolean;
-  isUnavailableOffline: boolean;
   item: FileItem;
   mediaQuality: number;
   onActiveMediaLoad: (fileId: string, index: number) => void;
@@ -301,6 +288,13 @@ const CarouselImageItem = ({
     carouselHelpers.CAROUSEL_IMAGE_MAX_TARGET_SIZE
   );
 
+  const cachedImage = useCachedFileSource({
+    enabled: true,
+    options: { quality: mediaQuality, targetHeight, targetWidth },
+    type: 'image',
+    uri: sourceUri,
+  });
+
   const shouldRenderImage =
     isActive || (isAdjacent && shouldRenderInactiveMedia) || hasLoaded;
 
@@ -308,7 +302,7 @@ const CarouselImageItem = ({
     setHasLoaded(false);
     setHasDisplayed(false);
     hasReportedActiveLoadRef.current = false;
-  }, [item.id, sourceUri]);
+  }, [cachedImage.src, item.id, sourceUri]);
 
   React.useEffect(() => {
     if (!isActive) hasReportedActiveLoadRef.current = false;
@@ -351,13 +345,13 @@ const CarouselImageItem = ({
         onDisplay={handleDisplay}
         onLoad={handleLoad}
         quality={mediaQuality}
+        src={cachedImage.src}
         targetHeight={targetHeight}
         targetWidth={targetWidth}
         uri={sourceUri}
         width={contentWidth}
         wrapperClassName="bg-transparent"
       />
-      {isUnavailableOffline && <UnavailableMediaOverlay />}
     </ZoomableMedia>
   );
 };

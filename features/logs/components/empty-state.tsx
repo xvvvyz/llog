@@ -21,7 +21,6 @@ type EmptyStateProps = {
   invites: ReturnType<typeof useTeamInvites>['invites'];
   logId: string;
   members: ReturnType<typeof useTeamMembers>['members'];
-  networkActionsEnabled?: boolean;
   showManagerActions?: boolean;
   teamId: string;
 };
@@ -31,7 +30,6 @@ export const EmptyState = ({
   invites,
   logId,
   members,
-  networkActionsEnabled = true,
   showManagerActions = canManage,
   teamId,
 }: EmptyStateProps) => {
@@ -73,7 +71,6 @@ export const EmptyState = ({
   }, [getOrCreateLink]);
 
   const handleInvite = React.useCallback(async () => {
-    if (!networkActionsEnabled) return;
     setIsInviteLoading(true);
 
     try {
@@ -86,7 +83,7 @@ export const EmptyState = ({
     } finally {
       setIsInviteLoading(false);
     }
-  }, [getOrCreateInvite, networkActionsEnabled, sheetManager]);
+  }, [getOrCreateInvite, sheetManager]);
 
   return (
     <View className="flex-1 mx-auto max-w-52 w-full px-3 py-8 gap-3 justify-center">
@@ -106,7 +103,6 @@ export const EmptyState = ({
           {hasMembers && (
             <Button
               className="justify-between"
-              disabled={!networkActionsEnabled}
               onPress={() => sheetManager.open('log-members', logId)}
               size="xs"
               variant="secondary"
@@ -118,7 +114,7 @@ export const EmptyState = ({
           )}
           <Button
             className="justify-between"
-            disabled={!networkActionsEnabled || isInviteLoading}
+            disabled={isInviteLoading}
             onPress={handleInvite}
             size="xs"
             variant="secondary"

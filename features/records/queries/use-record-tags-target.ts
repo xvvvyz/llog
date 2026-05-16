@@ -1,6 +1,5 @@
 import { recordTagTargetQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
@@ -43,7 +42,6 @@ export const useRecordTagsTarget = ({
 }) => {
   const payloadLogId = getPayloadLogId(payload);
   const payloadContext = getPayloadContext(payload);
-  const { isOffline } = useConnectivity();
   const outbox = useOutbox();
   const profile = useProfile();
 
@@ -112,8 +110,7 @@ export const useRecordTagsTarget = ({
   return {
     isLoading:
       !!recordId &&
-      !pendingRecord &&
-      !isOffline &&
+      !resolvedRecord &&
       (isLoading || !hasCurrentResult || hasStaleResult),
     logColor: record?.log?.color,
     logId: resolvedRecord?.log?.id ?? payloadLogId,

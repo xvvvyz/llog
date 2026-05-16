@@ -32,7 +32,6 @@ export const EntryCard = ({
   links,
   logId,
   logName,
-  networkActionsEnabled = true,
   numberOfLines,
   onDoubleTapReaction,
   onOpenReply,
@@ -79,6 +78,7 @@ export const EntryCard = ({
           recordId={recordId}
           replyId={replyId}
           state={entryMenuState}
+          tags={record.tags}
           teamId={record.teamId}
         />
       </View>
@@ -162,11 +162,7 @@ export const EntryCard = ({
       <MediaGrid recordId={recordId} visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
-          <AudioPlaylist
-            analysisActionsDisabled={!networkActionsEnabled}
-            canAnalyzeAudio={canAnalyzeAudio}
-            clips={audioMedia}
-          />
+          <AudioPlaylist canAnalyzeAudio={canAnalyzeAudio} clips={audioMedia} />
         </View>
       )}
       {(hasDocumentFiles || hasLinks) && (
@@ -190,7 +186,7 @@ export const EntryCard = ({
       <ReactionsRow
         accentColor={accentColor}
         className="-mt-1 pb-3 px-3"
-        disabled={!networkActionsEnabled}
+        disabled={!!record.localStatus}
         logId={logId}
         onDoubleTapReaction={onDoubleTapReaction}
         record={record}

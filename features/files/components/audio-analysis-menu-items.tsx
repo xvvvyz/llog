@@ -2,8 +2,6 @@ import * as audioAnalysis from '@/domain/files/audio-analysis';
 import * as audioMetadata from '@/features/files/lib/audio-metadata';
 import * as audioAnalysisMutations from '@/features/files/mutations/audio-analysis';
 import type { FileItem } from '@/features/files/types/file';
-import { useConnectivity } from '@/features/offline/connectivity';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
@@ -193,9 +191,6 @@ export const AudioAnalysisMenuItems = ({
   canAnalyze?: boolean;
   file?: AudioAnalysisMenuFile;
 }) => {
-  const connectivity = useConnectivity();
-  const showOfflineUi = useShowOfflineUi();
-
   const [isRequestingIdentification, setIsRequestingIdentification] =
     React.useState(false);
 
@@ -215,14 +210,11 @@ export const AudioAnalysisMenuItems = ({
 
   const menuState = getAudioAnalysisMenuState({ canAnalyze, file });
   if (!file?.id || !menuState?.hasMenuItems) return null;
-
-  const isNetworkActionUnavailable =
-    actionsDisabled || !connectivity.canRunNetworkActions;
-
-  const isNetworkActionDisabled = actionsDisabled || showOfflineUi;
+  const isActionUnavailable = actionsDisabled;
+  const isActionDisabled = actionsDisabled;
 
   const identifyMusic = async () => {
-    if (!file.id || isNetworkActionUnavailable) return;
+    if (!file.id || isActionUnavailable) return;
     if (isRequestingIdentificationRef.current) return;
     isRequestingIdentificationRef.current = true;
     setIsRequestingIdentification(true);
@@ -238,7 +230,7 @@ export const AudioAnalysisMenuItems = ({
   };
 
   const transcribe = async () => {
-    if (!file.id || isNetworkActionUnavailable) return;
+    if (!file.id || isActionUnavailable) return;
     if (isRequestingTranscriptionRef.current) return;
     isRequestingTranscriptionRef.current = true;
     setIsRequestingTranscription(true);
@@ -254,7 +246,7 @@ export const AudioAnalysisMenuItems = ({
   };
 
   const clearTranscription = async () => {
-    if (!file.id || isNetworkActionUnavailable) return;
+    if (!file.id || isActionUnavailable) return;
     if (isClearingTranscriptionRef.current) return;
     isClearingTranscriptionRef.current = true;
     setIsClearingTranscription(true);
@@ -275,18 +267,16 @@ export const AudioAnalysisMenuItems = ({
     <React.Fragment>
       {menuState.canTranscribe && menuState.transcribeLabel && (
         <AudioAnalysisMenuItem
+          disabled={menuState.isTranscriptionDisabled || isActionDisabled}
           icon={TextT}
           isPending={!!file.isTranscribing || isRequestingTranscription}
           label={menuState.transcribeLabel}
           onPress={transcribe}
-          disabled={
-            menuState.isTranscriptionDisabled || isNetworkActionDisabled
-          }
         />
       )}
       {menuState.canClearTranscription && (
         <AudioAnalysisMenuItem
-          disabled={isNetworkActionDisabled}
+          disabled={isActionDisabled}
           icon={TextTSlash}
           isPending={isClearingTranscription}
           label="Clear transcript"
@@ -295,13 +285,11 @@ export const AudioAnalysisMenuItems = ({
       )}
       {menuState.canIdentify && (
         <AudioAnalysisMenuItem
+          disabled={menuState.isIdentificationDisabled || isActionDisabled}
           icon={MusicNotes}
           isPending={!!file.isIdentifying || isRequestingIdentification}
           label={menuState.identifyMusicLabel}
           onPress={identifyMusic}
-          disabled={
-            menuState.isIdentificationDisabled || isNetworkActionDisabled
-          }
         />
       )}
     </React.Fragment>

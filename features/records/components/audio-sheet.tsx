@@ -1,5 +1,4 @@
 import { useLogColor } from '@/features/logs/hooks/use-color';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as outbox from '@/features/offline/outbox-hooks';
 import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments';
 import { AudioSheetContent } from '@/features/records/components/audio-sheet-content';
@@ -27,7 +26,6 @@ const parseAudioContext = (context?: string): AudioContext => {
 
 export const RecordAudioSheet = () => {
   const [isUploading, setIsUploading] = React.useState(false);
-  const connectivity = useConnectivity();
   const sheetManager = useSheetManager();
   const recorder = useAudioRecorder();
   const draftId = sheetManager.getId('record-audio');
@@ -87,7 +85,7 @@ export const RecordAudioSheet = () => {
   );
 
   const canUploadQueuedAudioNow = React.useMemo(() => {
-    if (!connectivity.canRunNetworkActions || !draftId) return false;
+    if (!draftId) return false;
 
     if (audioContext.type === 'reply') {
       const reply = record.replies.find((reply) => reply.id === draftId);
@@ -97,7 +95,6 @@ export const RecordAudioSheet = () => {
     return record.id === draftId && !record.localStatus;
   }, [
     audioContext.type,
-    connectivity.canRunNetworkActions,
     draftId,
     record.id,
     record.localStatus,
@@ -275,7 +272,7 @@ export const RecordAudioSheet = () => {
         });
       } catch {
         if (!canUploadQueuedAudioNow) {
-          throw new Error('This recording could not be saved for offline use.');
+          throw new Error('This recording could not be saved for upload.');
         }
 
         queued = await outbox.queueAudioAttachment({

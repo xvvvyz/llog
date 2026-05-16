@@ -1,7 +1,6 @@
 import * as recordIdentity from '@/domain/records/identity-fields';
 import { recordDraftQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import { createRecordDraft } from '@/features/records/mutations/create-record-draft';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
@@ -19,7 +18,6 @@ export const useRecordDraft = ({
   teamId?: string;
 }) => {
   const profile = useProfile();
-  const connectivity = useConnectivity();
   const outbox = useOutbox();
   const creatingDraftKeyRef = React.useRef<string | undefined>(undefined);
 
@@ -29,10 +27,10 @@ export const useRecordDraft = ({
     key: string;
     logId: string;
     needsIdentityReplay: boolean;
-    teamId: string;
+    teamId?: string;
   } | null>(null);
 
-  const { data: logData, isLoading: logIsLoading } = db.useQuery(
+  const { data: logData } = db.useQuery(
     logId
       ? {
           logs: {
@@ -45,7 +43,7 @@ export const useRecordDraft = ({
       : null
   );
 
-  const { data, isLoading } = db.useQuery(
+  const { data } = db.useQuery(
     logId && profile.id
       ? {
           records: {
@@ -64,13 +62,7 @@ export const useRecordDraft = ({
   const hasCurrentLogResult = useCurrentQueryResult(logId, logData);
   const logs = logId && hasCurrentLogResult ? (logData?.logs ?? []) : [];
   const log = logs.find((item) => item.id === logId);
-
-  const hasStaleLogResult =
-    !!logId && hasCurrentLogResult && logs.length > 0 && !log;
-
   const logTeamId = log?.teamId ?? teamId;
-  const needsLogTeamLookup = !teamId;
-  const needsDraftLookupBeforeCreate = !teamId;
   const queryKey = logId && profile.id ? `${profile.id}:${logId}` : undefined;
   const hasCurrentResult = useCurrentQueryResult(queryKey, data);
   const records = queryKey && hasCurrentResult ? (data?.records ?? []) : [];
@@ -94,11 +86,7 @@ export const useRecordDraft = ({
   );
 
   const queriedRecord = reusableRecords.find((item) => item.log?.id === logId);
-
-  const draftCreationKey =
-    logId && profile.id && logTeamId
-      ? `${profile.id}:${logId}:${logTeamId}`
-      : undefined;
+  const draftCreationKey = logId ? `record:${logId}` : undefined;
 
   const fallbackRecord = React.useMemo(():
     | (typeof records)[number]
@@ -126,19 +114,8 @@ export const useRecordDraft = ({
     } as (typeof records)[number];
   }, [createdDraft, draftCreationKey, ignoredDraftIds, outboxDraftIds]);
 
-  const record = !connectivity.canRunNetworkActions
-    ? fallbackRecord
-    : (queriedRecord ?? fallbackRecord);
-
+  const record = queriedRecord ?? fallbackRecord;
   const hasRecord = !!record;
-
-  const hasStaleResult =
-    !!logId && hasCurrentResult && reusableRecords.length > 0 && !hasRecord;
-
-  const draftIsLoading =
-    !!queryKey &&
-    connectivity.canRunNetworkActions &&
-    (isLoading || !hasCurrentResult || hasStaleResult);
 
   React.useEffect(() => {
     if (!queriedRecord) return;
@@ -164,15 +141,13 @@ export const useRecordDraft = ({
   }, [createdDraft, ignoredDraftIds, outboxDraftIds]);
 
   React.useEffect(() => {
+    const targetLogId = logId;
+    const targetTeamId = logTeamId;
+
     if (
-      (needsDraftLookupBeforeCreate && draftIsLoading) ||
-      (needsLogTeamLookup &&
-        (logIsLoading || !hasCurrentLogResult || hasStaleLogResult)) ||
       hasRecord ||
       !draftCreationKey ||
-      !logTeamId ||
-      !logId ||
-      !profile.id ||
+      !targetLogId ||
       creatingDraftKeyRef.current === draftCreationKey
     ) {
       return;
@@ -183,15 +158,15 @@ export const useRecordDraft = ({
         date: new Date().toISOString(),
         id: id(),
         key: draftCreationKey,
-        logId,
+        logId: targetLogId,
         needsIdentityReplay: true,
-        teamId: logTeamId,
+        teamId: targetTeamId,
       });
     };
 
     creatingDraftKeyRef.current = draftCreationKey;
 
-    if (!connectivity.canRunNetworkActions) {
+    if (!targetTeamId || !profile.id) {
       createLocalDraft();
       return;
     }
@@ -199,20 +174,23 @@ export const useRecordDraft = ({
     const createDraft = async () => {
       try {
         const recordId = await createRecordDraft({
-          logId,
+          logId: targetLogId,
           profileId: profile.id,
-          teamId: logTeamId,
+          teamId: targetTeamId,
         });
 
-        if (!recordId) return;
+        if (!recordId) {
+          createLocalDraft();
+          return;
+        }
 
         setCreatedDraft({
           date: new Date().toISOString(),
           id: recordId,
           key: draftCreationKey,
-          logId,
-          needsIdentityReplay: !connectivity.canRunNetworkActions,
-          teamId: logTeamId,
+          logId: targetLogId,
+          needsIdentityReplay: false,
+          teamId: targetTeamId,
         });
       } catch {
         createLocalDraft();
@@ -220,22 +198,9 @@ export const useRecordDraft = ({
     };
 
     void createDraft();
-  }, [
-    draftCreationKey,
-    draftIsLoading,
-    hasCurrentLogResult,
-    hasStaleLogResult,
-    logIsLoading,
-    logTeamId,
-    logId,
-    needsDraftLookupBeforeCreate,
-    needsLogTeamLookup,
-    hasRecord,
-    connectivity.canRunNetworkActions,
-    profile.id,
-  ]);
+  }, [draftCreationKey, hasRecord, logTeamId, logId, profile.id]);
 
   const files = record?.files ?? [];
   const links = record?.links ?? [];
-  return { ...record, links, files, isLoading: draftIsLoading };
+  return { ...record, links, files, isLoading: false };
 };

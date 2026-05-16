@@ -1,6 +1,5 @@
 import { canDeleteOwnOrManagedResource } from '@/domain/teams/permissions';
 import { useProfile } from '@/features/account/queries/use-profile';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import * as route from '@/features/records/lib/route';
@@ -8,8 +7,8 @@ import { createRecordCopyDraft } from '@/features/records/mutations/create-recor
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import * as copyTargetQueries from '@/features/records/queries/use-copy-targets';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
+import type { Tag as RecordTag } from '@/features/tags/types/tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
@@ -42,6 +41,7 @@ type EntryMenuProps = {
   isPinned?: boolean;
   logId?: string;
   recordId: string;
+  tags?: RecordTag[];
   teamId?: string;
 };
 
@@ -64,19 +64,16 @@ export type EntryMenuState = {
 
 export const useEntryMenuState = ({
   authorId,
+  hasSelectedRecordTags,
   logId,
   replyId,
   teamId,
-}: Pick<
-  EntryMenuProps,
-  'authorId' | 'logId' | 'replyId' | 'teamId'
->): EntryMenuState => {
+}: Pick<EntryMenuProps, 'authorId' | 'logId' | 'replyId' | 'teamId'> & {
+  hasSelectedRecordTags?: boolean;
+}): EntryMenuState => {
   const myRole = useMyRole({ teamId });
   const profile = useProfile();
-  const showOfflineUi = useShowOfflineUi();
   const isAuthor = !!profile.id && profile.id === authorId;
-  const isSyncedReplyOffline = !!replyId && showOfflineUi;
-  const isSyncedRecordOffline = !replyId && showOfflineUi;
 
   const canDelete = canDeleteOwnOrManagedResource({
     actorRole: myRole.role,
@@ -92,7 +89,9 @@ export const useEntryMenuState = ({
   });
 
   const canTag =
-    !replyId && (myRole.canManage || (isAuthor && recordTags.hasRecordTags));
+    !replyId &&
+    (myRole.canManage ||
+      (isAuthor && (hasSelectedRecordTags || recordTags.hasRecordTags)));
 
   const canDuplicateRecord = !replyId && isAuthor;
 
@@ -103,7 +102,7 @@ export const useEntryMenuState = ({
   const canDuplicate =
     canDuplicateRecord &&
     !!logId &&
-    (copyTargets.logs.length > 0 || copyTargets.isLoading || showOfflineUi);
+    (copyTargets.logs.length > 0 || copyTargets.isLoading);
 
   const canPin = !replyId && myRole.canPinRecords;
   const canShare = true;
@@ -122,16 +121,17 @@ export const useEntryMenuState = ({
     copyTargetLogs: copyTargets.logs,
     hasActionsAboveDelete,
     hasMenu,
-    isDeleteDisabled: isSyncedReplyOffline || isSyncedRecordOffline,
-    isDuplicateDisabled: copyTargets.isLoading || showOfflineUi,
-    isEditDisabled: isSyncedReplyOffline || isSyncedRecordOffline,
-    isPinDisabled: showOfflineUi,
-    isTagDisabled: showOfflineUi,
+    isDeleteDisabled: false,
+    isDuplicateDisabled: copyTargets.isLoading,
+    isEditDisabled: false,
+    isPinDisabled: false,
+    isTagDisabled: false,
   };
 };
 
 const EntryMenuDropdownContent = ({
   accentColor,
+  authorId,
   logId,
   replyId,
   isDetail,
@@ -139,10 +139,11 @@ const EntryMenuDropdownContent = ({
   isPinned,
   recordId,
   state,
+  tags,
+  teamId,
 }: Omit<EntryMenuProps, 'className'> & { state: EntryMenuState }) => {
   const sheetManager = useSheetManager();
   const menu = Menu.useContext();
-  const connectivity = useConnectivity();
   const [isDuplicating, setIsDuplicating] = React.useState(false);
 
   const {
@@ -173,7 +174,6 @@ const EntryMenuDropdownContent = ({
   const duplicateRecord = async () => {
     const [targetLog] = copyTargetLogs;
     if (isDuplicating || isDuplicateDisabled) return;
-    if (!connectivity.canRunNetworkActions) return;
 
     if (!targetLog || copyTargetLogs.length > 1) {
       sheetManager.open('record-copy-to', recordId);
@@ -245,7 +245,13 @@ const EntryMenuDropdownContent = ({
             disabled={isTagDisabled}
             onPress={() => {
               if (isTagDisabled) return;
-              sheetManager.open('record-tags', recordId);
+
+              sheetManager.open('record-tags', recordId, undefined, {
+                authorId,
+                logId,
+                tags: tags ?? [],
+                teamId,
+              });
             }}
           >
             <Icon className="text-placeholder" icon={Tag} />
@@ -268,7 +274,6 @@ const EntryMenuDropdownContent = ({
                 return;
               }
 
-              if (!connectivity.canRunNetworkActions) return;
               void toggleRecordPin({ id: recordId, isPinned: nextIsPinned });
 
               if (nextIsPinned) {
@@ -289,25 +294,7 @@ const EntryMenuDropdownContent = ({
             <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
           </Menu.Item>
         )}
-        {canShare && (
-          <Menu.Item
-            closeOnPress={false}
-            disabled={!shareTargetUrl}
-            onPress={async () => {
-              if (!shareTargetUrl) return;
-
-              try {
-                await shareUrl({ title: 'llog', url: shareTargetUrl });
-              } catch {
-                // noop
-              }
-            }}
-          >
-            <Icon className="text-placeholder" icon={ShareNetwork} />
-            <Text>Share</Text>
-          </Menu.Item>
-        )}
-        {(canDuplicate || canDelete) && (
+        {(canDuplicate || canShare || canDelete) && (
           <React.Fragment>
             {canDuplicate && (
               <Menu.Item
@@ -321,6 +308,24 @@ const EntryMenuDropdownContent = ({
                   <Icon className="text-placeholder" icon={StackSimple} />
                 )}
                 <Text>Duplicate</Text>
+              </Menu.Item>
+            )}
+            {canShare && (
+              <Menu.Item
+                closeOnPress={false}
+                disabled={!shareTargetUrl}
+                onPress={async () => {
+                  if (!shareTargetUrl) return;
+
+                  try {
+                    await shareUrl({ title: 'llog', url: shareTargetUrl });
+                  } catch {
+                    // noop
+                  }
+                }}
+              >
+                <Icon className="text-placeholder" icon={ShareNetwork} />
+                <Text>Share</Text>
               </Menu.Item>
             )}
             {canDelete && (

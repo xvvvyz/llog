@@ -1,7 +1,6 @@
 import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import type { ActivityWithRelations } from '@/features/activity/lib/group-activities';
-import { useConnectivity } from '@/features/offline/connectivity';
 import type { EntryRecord } from '@/features/records/types/entry';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
@@ -96,7 +95,6 @@ const activityLogQuery = {
 };
 
 export const useActivities = () => {
-  const { isOffline } = useConnectivity();
   const auth = db.useAuth();
 
   const { data: viewerData, isLoading: viewerLoading } = db.useQuery(
@@ -306,9 +304,7 @@ export const useActivities = () => {
   }, [activities]);
 
   const canLoadActivitiesNextPage =
-    !isOffline &&
-    shouldQueryRecordActivities &&
-    canLoadRecordActivitiesNextPage;
+    shouldQueryRecordActivities && canLoadRecordActivitiesNextPage;
 
   const handleLoadNextPage = useLoadNextPage({
     canLoadNextPage: canLoadActivitiesNextPage,

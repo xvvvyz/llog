@@ -4,7 +4,6 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { Entry } from '@/features/records/components/entry';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { useRecords } from '@/features/records/queries/use-records';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
@@ -36,7 +35,6 @@ export default function Index() {
   const params = useLocalSearchParams<{ logId: string }>();
   const listRef = React.useRef<ListHandle>(null);
   const sheetManager = useSheetManager();
-  const connectivity = useConnectivity();
   const log = useLog({ id: params.logId });
   const logColor = useLogColor({ id: params.logId });
   const records = useRecords({ logId: params.logId });
@@ -62,8 +60,8 @@ export default function Index() {
       (emptyStateRole.canManage &&
         (!emptyStateMembers.isReady ||
           emptyStateMembers.isLoading ||
-          (connectivity.canRunNetworkActions &&
-            (!emptyStateInvites.isReady || emptyStateInvites.isLoading)))));
+          !emptyStateInvites.isReady ||
+          emptyStateInvites.isLoading)));
 
   const showLoading =
     log.isLoading || recordsLoading || emptyStateActionsLoading;
@@ -155,7 +153,6 @@ export default function Index() {
           invites={emptyStateInvites.invites}
           logId={params.logId}
           members={emptyStateMembers.members}
-          networkActionsEnabled={connectivity.canRunNetworkActions}
           showManagerActions={showEmptyManagerActions}
           teamId={log.teamId!}
         />

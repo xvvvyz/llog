@@ -5,8 +5,6 @@ import { useFilePickerActions } from '@/features/files/hooks/use-picker-actions'
 import { useFileUploadPreviewState } from '@/features/files/hooks/use-upload-preview-state';
 import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments';
 import type { UseFileComposerOptions } from '@/features/files/types/composer';
-import { useConnectivity } from '@/features/offline/connectivity';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as outbox from '@/features/offline/outbox-hooks';
 import type { QueuedParent } from '@/features/offline/types';
 import * as React from 'react';
@@ -36,9 +34,6 @@ export const useFileComposerState = ({
   replyId,
   scopeKey,
 }: UseFileComposerStateOptions) => {
-  const connectivity = useConnectivity();
-  const showOfflineUi = useShowOfflineUi();
-
   const {
     handleDeleteFile: requestDeleteFile,
     isDeleteTransitioning,
@@ -121,16 +116,13 @@ export const useFileComposerState = ({
   const handleReorderFiles = React.useCallback(
     (files: { id: string }[]) => {
       if (actionsDisabled) return;
-      if (!connectivity.canRunNetworkActions) return;
       onReorderFiles?.(files);
     },
-    [actionsDisabled, connectivity.canRunNetworkActions, onReorderFiles]
+    [actionsDisabled, onReorderFiles]
   );
 
   const canReorderFiles =
-    !actionsDisabled &&
-    !showOfflineUi &&
-    queuedAttachmentsForParent.length === 0;
+    !actionsDisabled && queuedAttachmentsForParent.length === 0;
 
   useClipboardFilePaste({
     enabled: isOpen && !actionsDisabled,

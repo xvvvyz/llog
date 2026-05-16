@@ -6,11 +6,9 @@ import { View } from 'react-native';
 
 export const ListEmptyState = ({
   canManage,
-  createDisabled,
   onCreateLog,
 }: {
   canManage?: boolean;
-  createDisabled?: boolean;
   onCreateLog: () => void;
 }) => {
   return (
@@ -21,11 +19,7 @@ export const ListEmptyState = ({
           <Text className="text-center text-muted-foreground">
             Track anything in your world.
           </Text>
-          <Button
-            disabled={createDisabled}
-            onPress={onCreateLog}
-            wrapperClassName="mt-4"
-          >
+          <Button onPress={onCreateLog} wrapperClassName="mt-4">
             <Text>New log</Text>
           </Button>
         </>

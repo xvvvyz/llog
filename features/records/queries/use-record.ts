@@ -1,7 +1,6 @@
 import { recordDetailQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
 import type { FileItem } from '@/features/files/types/file';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
@@ -11,7 +10,7 @@ import type { Log } from '@/features/logs/types/log';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
-import { useCachedRecord } from './record-cache';
+import * as recordCache from './record-cache';
 
 type RecordLog = Partial<Pick<Log, 'color' | 'id' | 'name'>>;
 
@@ -40,7 +39,6 @@ export type UseRecordResult = EntryRecord & {
 export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
   const outbox = useOutbox();
   const profile = useProfile();
-  const { isOffline } = useConnectivity();
 
   const { data, isLoading } = db.useQuery(
     id ? { records: { $: { where: { id } }, ...recordDetailQuery } } : null
@@ -49,7 +47,7 @@ export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
   const hasCurrentResult = useCurrentQueryResult(id, data);
   const records = id && hasCurrentResult ? (data?.records ?? []) : [];
   const record = records.find((item) => item.id === id);
-  const cachedRecord = useCachedRecord(id);
+  const cachedRecord = recordCache.useCachedRecord(id);
 
   const hasStaleResult =
     !!id && hasCurrentResult && records.length > 0 && !record;
@@ -90,7 +88,7 @@ export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
     }
   }, [id, outbox.submissions, record?.replies]);
 
-  const resolvedRecord = (record ??
+  const baseResolvedRecord = (record ??
     cachedRecord ??
     (pendingRecord
       ? pendingEntries.queuedRecordToEntry({
@@ -99,6 +97,20 @@ export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
           submission: pendingRecord,
         })
       : undefined)) as (EntryRecord & { log?: RecordLog }) | undefined;
+
+  const queuedPin = outboxStore.getQueuedRecordPin(outbox, id);
+
+  const resolvedRecord =
+    baseResolvedRecord && queuedPin
+      ? ({
+          ...baseResolvedRecord,
+          isPinned: queuedPin.isPinned,
+        } as EntryRecord & { log?: RecordLog })
+      : baseResolvedRecord;
+
+  React.useEffect(() => {
+    if (record?.id) recordCache.cacheRecords([record]);
+  }, [record]);
 
   const pendingReplies = outbox.submissions
     .filter(
@@ -139,8 +151,7 @@ export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
     files,
     isLoading:
       !!id &&
-      !pendingRecord &&
-      !isOffline &&
+      !resolvedRecord &&
       (isLoading || !hasCurrentResult || hasStaleResult),
   };
 };

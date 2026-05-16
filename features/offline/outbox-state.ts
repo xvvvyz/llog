@@ -135,10 +135,14 @@ export const hasPendingOutboxWork = (state: OutboxState) => {
 };
 
 export const hasOutboxContent = (
-  outbox: Pick<types.PersistedOutbox, 'attachments' | 'drafts' | 'submissions'>
+  outbox: Pick<
+    types.PersistedOutbox,
+    'attachments' | 'drafts' | 'recordPins' | 'submissions'
+  >
 ) =>
   outbox.attachments.length > 0 ||
   outbox.drafts.length > 0 ||
+  outbox.recordPins.length > 0 ||
   outbox.submissions.length > 0;
 
 export const resetInFlightOutboxWork = <T extends OutboxState>(
@@ -235,6 +239,7 @@ export const mergeOutboxForHydration = ({
     drafts: mergeById(normalizedPersisted.drafts, current.drafts),
     hydrated: true,
     ownerUserId: current.ownerUserId ?? normalizedPersisted.ownerUserId,
+    recordPins: mergeById(normalizedPersisted.recordPins, current.recordPins),
     submissions: mergeById(
       normalizedPersisted.submissions,
       current.submissions

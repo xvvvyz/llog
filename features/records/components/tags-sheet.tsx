@@ -1,8 +1,6 @@
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useLog } from '@/features/logs/queries/use-log';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as localEntry from '@/features/offline/local-entry';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
@@ -23,8 +21,6 @@ export const RecordTagsSheet = () => {
   const sheetManager = useSheetManager();
   const recordId = sheetManager.getId('record-tags');
   const profile = useProfile();
-  const connectivity = useConnectivity();
-  const showOfflineUi = useShowOfflineUi();
   const outbox = useOutbox();
   const visibleTagsRef = React.useRef<Tag[]>([]);
 
@@ -41,8 +37,8 @@ export const RecordTagsSheet = () => {
   const logColorIndex = resolveSpectrumColor(target.logColor ?? log.color);
   const myRole = useMyRole({ teamId });
   const canManageDefinitions = !!myRole.canManage;
-  const canMutateDefinitions = canManageDefinitions && !showOfflineUi;
-  const canEditRecordTags = !showOfflineUi;
+  const canMutateDefinitions = canManageDefinitions;
+  const canEditRecordTags = true;
 
   const canManageRecordTags =
     canEditRecordTags &&
@@ -94,8 +90,8 @@ export const RecordTagsSheet = () => {
 
   const isLoading =
     target.isLoading ||
-    (!connectivity.isOffline &&
-      ((needsLogColor && log.isLoading) || (!!teamId && myRole.isLoading)));
+    (needsLogColor && log.isLoading) ||
+    (!!teamId && myRole.isLoading);
 
   const tagTeamIds = React.useMemo(
     () => (teamId && logId ? [teamId] : []),
@@ -128,7 +124,6 @@ export const RecordTagsSheet = () => {
     onCreateTag: React.useCallback(
       ({ id, name }) => {
         if (!logId || !record?.id || !teamId) return;
-        if (!connectivity.canRunNetworkActions) return;
 
         void recordTags.createRecordTag({
           color: logColorIndex,
@@ -168,7 +163,6 @@ export const RecordTagsSheet = () => {
         }
       },
       [
-        connectivity.canRunNetworkActions,
         currentRecordTags,
         logColorIndex,
         logId,
@@ -180,7 +174,7 @@ export const RecordTagsSheet = () => {
     ),
     onReorder: React.useCallback(
       (orderedTags: Tag[]) => {
-        if (!connectivity.canRunNetworkActions || !logId || !teamId) return;
+        if (!logId || !teamId) return;
 
         void reorderTags({
           logId,
@@ -189,11 +183,10 @@ export const RecordTagsSheet = () => {
           type: 'record',
         });
       },
-      [connectivity.canRunNetworkActions, logId, teamId]
+      [logId, teamId]
     ),
     onToggleTag: React.useCallback(
       async (tagId: string, selected: boolean) => {
-        if (!connectivity.canRunNetworkActions) return;
         const tag = visibleTagsRef.current.find((tag) => tag.id === tagId);
 
         if (pendingRecord) {
@@ -223,13 +216,7 @@ export const RecordTagsSheet = () => {
           recordId: record?.id,
         });
       },
-      [
-        connectivity.canRunNetworkActions,
-        currentRecordTags,
-        pendingRecord,
-        record,
-        shouldMirrorQueuedDraftTags,
-      ]
+      [currentRecordTags, pendingRecord, record, shouldMirrorQueuedDraftTags]
     ),
     scopeKey: record?.id,
     selectedIds: selectedTagIds,
@@ -241,8 +228,7 @@ export const RecordTagsSheet = () => {
     visibleTagsRef.current = tagSheet.visibleTags;
   }, [tagSheet.visibleTags]);
 
-  const sheetIsLoading =
-    isLoading || (tagSheet.tagsIsLoading && !tagSheet.hasPendingCreatedTag);
+  const sheetIsLoading = isLoading;
 
   return (
     <Sheet
@@ -269,10 +255,8 @@ export const RecordTagsSheet = () => {
         query={tagSheet.query}
         rawQuery={tagSheet.rawQuery}
         setRawQuery={tagSheet.setRawQuery}
+        sortEnabled={!tagSheet.rawQuery && canMutateDefinitions}
         visibleTags={tagSheet.visibleTags}
-        sortEnabled={
-          !tagSheet.rawQuery && canMutateDefinitions && !showOfflineUi
-        }
       />
     </Sheet>
   );

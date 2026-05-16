@@ -2,10 +2,9 @@ import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
-import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
+import * as offlineAvailability from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { TruncatedText } from '@/features/records/components/truncated-text';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
@@ -15,12 +14,69 @@ import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
 import { TextContext } from '@/ui/text';
-import { Play, WifiSlash } from 'phosphor-react-native';
+import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 const QUOTED_TEXT_LINES = 2;
 const QUOTED_TEXT_CLASS_NAME = 'text-muted-foreground text-sm';
+
+const QuotedRecordThumb = ({
+  item,
+  onPress,
+  recordId,
+}: {
+  item: FileItem;
+  onPress: (fileId: string) => void;
+  recordId?: string;
+}) => {
+  const thumbnailUri = visualMedia.getThumbnailUri(item);
+
+  const cachedThumbnail = offlineAvailability.useCachedFileSource({
+    enabled: true,
+    options: { targetSize: 128 },
+    type: 'image',
+    uri: thumbnailUri,
+  });
+
+  const isProcessing = visualMedia.isProcessing(item);
+  const canOpenMedia = !!recordId && !isProcessing;
+
+  return (
+    <Pressable
+      className="overflow-hidden h-16 w-16 border-continuous rounded-lg shrink-0"
+      disabled={!canOpenMedia}
+      onPress={() => {
+        if (canOpenMedia) onPress(item.id);
+      }}
+    >
+      <Image
+        contentFit="cover"
+        height={64}
+        src={cachedThumbnail.src}
+        targetSize={128}
+        uri={thumbnailUri}
+        width={64}
+      />
+      {item.type === 'video' && (
+        <View className="absolute inset-0 pointer-events-none items-center justify-center">
+          {isProcessing ? (
+            <Spinner />
+          ) : (
+            <View className="size-6 border-continuous rounded-full bg-background/50 items-center justify-center">
+              <Icon
+                className="text-foreground"
+                icon={Play}
+                size={12}
+                weight="fill"
+              />
+            </View>
+          )}
+        </View>
+      )}
+    </Pressable>
+  );
+};
 
 export const QuotedRecord = ({
   canAnalyzeAudio,
@@ -44,7 +100,6 @@ export const QuotedRecord = ({
   } = useFilteredFiles(files || []);
 
   const displayText = trimDisplayText(text);
-  const showOfflineUi = useShowOfflineUi();
   const { openMediaLightbox } = useMediaLightbox({ recordId });
   const hasAudioFiles = audioMedia.length > 0;
   const hasDocumentFiles = documentFiles.length > 0;
@@ -94,61 +149,14 @@ export const QuotedRecord = ({
             )}
           >
             <View className="flex-row gap-0.5">
-              {visualItems.map((item) => {
-                const isProcessing = visualMedia.isProcessing(item);
-                const isAvailableOffline = isFileAvailableOffline(item);
-
-                const isUnavailableOffline =
-                  showOfflineUi && !isAvailableOffline;
-
-                const canOpenMedia =
-                  !!recordId &&
-                  !isProcessing &&
-                  (!showOfflineUi || isAvailableOffline);
-
-                return (
-                  <Pressable
-                    key={item.id}
-                    className="overflow-hidden h-16 w-16 border-continuous rounded-lg shrink-0"
-                    disabled={!canOpenMedia}
-                    onPress={() => {
-                      if (canOpenMedia) openMediaLightbox(item.id);
-                    }}
-                  >
-                    <Image
-                      contentFit="cover"
-                      height={64}
-                      targetSize={128}
-                      uri={visualMedia.getThumbnailUri(item)}
-                      width={64}
-                    />
-                    {(item.type === 'video' || isUnavailableOffline) && (
-                      <View className="absolute inset-0 pointer-events-none items-center justify-center">
-                        {isUnavailableOffline ? (
-                          <View className="size-6 border-continuous rounded-full bg-background/50 items-center justify-center">
-                            <Icon
-                              className="text-muted-foreground"
-                              icon={WifiSlash}
-                              size={12}
-                            />
-                          </View>
-                        ) : isProcessing ? (
-                          <Spinner />
-                        ) : (
-                          <View className="size-6 border-continuous rounded-full bg-background/50 items-center justify-center">
-                            <Icon
-                              className="text-foreground"
-                              icon={Play}
-                              size={12}
-                              weight="fill"
-                            />
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
+              {visualItems.map((item) => (
+                <QuotedRecordThumb
+                  key={item.id}
+                  item={item}
+                  onPress={openMediaLightbox}
+                  recordId={recordId}
+                />
+              ))}
             </View>
           </ScrollView>
         )}

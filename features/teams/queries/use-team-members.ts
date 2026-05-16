@@ -1,6 +1,5 @@
 import * as permissions from '@/domain/teams/permissions';
 import { useUi } from '@/features/account/queries/use-ui';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
@@ -9,7 +8,6 @@ import * as React from 'react';
 export const useTeamMembers = ({ teamId }: { teamId?: string | null } = {}) => {
   const auth = db.useAuth();
   const { activeTeamId } = useUi();
-  const { isOffline } = useConnectivity();
   const resolvedTeamId = teamId === null ? undefined : (teamId ?? activeTeamId);
   const myRole = useMyRole({ teamId: resolvedTeamId });
 
@@ -70,8 +68,6 @@ export const useTeamMembers = ({ teamId }: { teamId?: string | null } = {}) => {
     allMembers: sortedMembers,
     isReady,
     isLoading:
-      !!resolvedTeamId &&
-      !isOffline &&
-      (isLoading || !hasCurrentResult || myRole.isLoading),
+      !!resolvedTeamId && (isLoading || !hasCurrentResult || myRole.isLoading),
   };
 };

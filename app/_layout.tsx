@@ -1,5 +1,4 @@
 import * as push from '@/features/account/lib/web-push';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { OutboxSyncRunner } from '@/features/offline/outbox-sync';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SheetManagerProvider } from '@/hooks/use-sheet-manager';
@@ -7,7 +6,6 @@ import { db } from '@/lib/db';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
 import { SheetBackdrop } from '@/ui/sheet';
-import { configure as configureNetInfo } from '@react-native-community/netinfo';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
@@ -15,9 +13,7 @@ import { setBackgroundColorAsync } from 'expo-system-ui';
 import * as React from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as offlineBanner from '@/features/offline/offline-banner';
 
-configureNetInfo({ reachabilityShouldRun: () => false });
 setBackgroundColorAsync('transparent');
 // react-native-gesture-handler on web throws "Cannot find single active touch"
 // when a pointer is released outside an active gesture. It is benign (no state
@@ -75,7 +71,6 @@ if (Platform.OS === 'web') {
 export default function Layout() {
   const auth = db.useAuth();
   const colorScheme = useColorScheme();
-  const connectivity = useConnectivity();
   const userId = auth.user?.id;
   const isSignedOut = !auth.isLoading && !auth.user;
 
@@ -96,13 +91,7 @@ export default function Layout() {
   }, []);
 
   React.useEffect(() => {
-    if (
-      Platform.OS !== 'web' ||
-      !userId ||
-      !connectivity.canRunNetworkActions
-    ) {
-      return;
-    }
+    if (Platform.OS !== 'web' || !userId) return;
 
     void (async () => {
       try {
@@ -111,7 +100,7 @@ export default function Layout() {
         console.error('Failed to sync web push subscription', error);
       }
     })();
-  }, [connectivity.canRunNetworkActions, userId]);
+  }, [userId]);
 
   return (
     <React.Fragment>
@@ -131,13 +120,10 @@ export default function Layout() {
       >
         <GestureHandlerRootView className="flex-1">
           <SheetManagerProvider disabled={isSignedOut}>
-            <offlineBanner.OfflineBannerProvider>
-              <OutboxSyncRunner />
-              <offlineBanner.OfflineBanner />
-              <Slot />
-              <SheetBackdrop />
-              <PortalHost />
-            </offlineBanner.OfflineBannerProvider>
+            <OutboxSyncRunner />
+            <Slot />
+            <SheetBackdrop />
+            <PortalHost />
           </SheetManagerProvider>
         </GestureHandlerRootView>
       </ThemeProvider>

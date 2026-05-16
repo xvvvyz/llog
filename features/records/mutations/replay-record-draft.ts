@@ -4,6 +4,7 @@ export const replayRecordDraft = async ({
   authorId,
   date,
   id,
+  isPinned,
   logId,
   tagIds,
   teamId,
@@ -12,6 +13,7 @@ export const replayRecordDraft = async ({
   authorId?: string;
   date?: string | number;
   id?: string;
+  isPinned?: boolean;
   logId?: string;
   tagIds?: string[];
   teamId?: string;
@@ -22,7 +24,15 @@ export const replayRecordDraft = async ({
   await apiOrThrow(
     `/records/${id}/offline-draft-replay`,
     {
-      body: JSON.stringify({ authorId, date, logId, tagIds, teamId, text }),
+      body: JSON.stringify({
+        authorId,
+        date,
+        isPinned,
+        logId,
+        tagIds,
+        teamId,
+        text,
+      }),
       headers: { 'Content-Type': 'application/json' },
       method: 'PUT',
     },

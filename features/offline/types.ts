@@ -110,10 +110,18 @@ export type QueuedSubmission =
       updatedAt: string;
     };
 
+export type QueuedRecordPin = {
+  id: string;
+  isPinned: boolean;
+  recordId: string;
+  updatedAt: string;
+};
+
 export type PersistedOutbox = {
   attachments: QueuedAttachment[];
   drafts: QueuedDraft[];
   ownerUserId?: string;
+  recordPins: QueuedRecordPin[];
   submissions: QueuedSubmission[];
   version: 1;
 };

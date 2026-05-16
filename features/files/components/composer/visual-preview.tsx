@@ -1,14 +1,12 @@
 import { PendingVideoPreview } from '@/features/files/components/composer/pending-video-preview';
 import { PreviewImage } from '@/features/files/components/composer/preview-image';
-import { isLocalFileSourceUri } from '@/features/files/lib/offline-availability';
 import type * as fileComposer from '@/features/files/types/composer';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import * as Sortable from '@/ui/sortable';
 import { Spinner } from '@/ui/spinner';
-import { WifiSlash, X } from 'phosphor-react-native';
+import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, View, type GestureResponderEvent } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -20,14 +18,6 @@ const getVisualItemKey = (item: fileComposer.VisualPreviewItem) => item.id;
 
 const areOrderKeysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((id, index) => id === b[index]);
-
-const UnavailableVisualOverlay = () => (
-  <View className="absolute inset-0 z-[6] pointer-events-none items-center justify-center">
-    <View className="size-8 border-continuous rounded-full bg-background/50 items-center justify-center">
-      <Icon className="text-muted-foreground" icon={WifiSlash} size={16} />
-    </View>
-  </View>
-);
 
 export const VisualPreview = ({
   actionsDisabled,
@@ -48,7 +38,6 @@ export const VisualPreview = ({
   showBottomBorder?: boolean;
   visualItems: fileComposer.VisualPreviewItem[];
 }) => {
-  const showOfflineUi = useShowOfflineUi();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
 
   const [localOrderIds, setLocalOrderIds] = React.useState<string[] | null>(
@@ -128,14 +117,7 @@ export const VisualPreview = ({
   const renderItem = (item: fileComposer.VisualPreviewItem) => {
     const canDragItem = canSort;
     const sourceUri = item.localUri ?? item.uri;
-
-    const isUnavailableOffline =
-      showOfflineUi && !isLocalFileSourceUri(sourceUri);
-
-    const canOpenItem =
-      !!sourceUri && (!showOfflineUi || !isUnavailableOffline);
-
-    const isRemoteActionDisabled = !item.pending && showOfflineUi;
+    const canOpenItem = !!sourceUri;
 
     const handleDeletePress = (event: GestureResponderEvent) => {
       event.stopPropagation();
@@ -186,7 +168,6 @@ export const VisualPreview = ({
             <PreviewImage item={item} onRemoteReady={onRemoteReady} />
           </Pressable>
         )}
-        {isUnavailableOffline && <UnavailableVisualOverlay />}
         <View className="absolute inset-x-0 top-0 z-10 h-8 rounded-t-lg bg-gradient-to-b from-background/60 to-background/0 pointer-events-none" />
         {canDragItem && (
           <Sortable.SortableDragHandle
@@ -196,11 +177,11 @@ export const VisualPreview = ({
           />
         )}
         <Pressable
-          disabled={actionsDisabled || isRemoteActionDisabled}
+          disabled={actionsDisabled}
           onPress={handleDeletePress}
           className={cn(
             'absolute right-0 top-0 z-20 size-6 items-center justify-center',
-            (actionsDisabled || isRemoteActionDisabled) && 'opacity-50'
+            actionsDisabled && 'opacity-50'
           )}
         >
           <Icon className="text-foreground" icon={X} size={16} />

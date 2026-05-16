@@ -1,49 +1,57 @@
-import { useConnectivity } from '@/features/offline/connectivity';
 import { runOutboxSync } from '@/features/offline/outbox-sync-core';
+import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { db } from '@/lib/db';
 import * as React from 'react';
+import { AppState } from 'react-native';
 
 export const OutboxSyncRunner = () => {
   const auth = db.useAuth();
-  const connectivity = useConnectivity();
+  const networkReachability = useOutboxNetworkReachability();
   const outbox = outboxStore.useOutboxSnapshot();
-
-  const wasOnlineRef = React.useRef(
-    connectivity.canRunNetworkActionsImmediately
-  );
 
   React.useEffect(() => {
     outboxStore.setOutboxOwnerUserId(auth.user?.id);
   }, [auth.user?.id]);
 
   React.useEffect(() => {
-    if (!auth.user?.id || !connectivity.canRunNetworkActionsImmediately) return;
-    const shouldRetryFailed = wasOnlineRef.current === false;
-    wasOnlineRef.current = true;
+    if (!auth.user?.id) return;
 
     void outboxStore.ensureOutboxHydrated().then(() => {
-      if (shouldRetryFailed) outboxStore.retryFailedOutboxWork();
+      outboxStore.retryFailedOutboxWork();
       void runOutboxSync();
     });
-  }, [auth.user?.id, connectivity.canRunNetworkActionsImmediately]);
+  }, [auth.user?.id]);
 
   React.useEffect(() => {
-    if (connectivity.canRunNetworkActionsImmediately) return;
-    wasOnlineRef.current = false;
-  }, [connectivity.canRunNetworkActionsImmediately]);
+    if (!auth.user?.id) return;
+    if (networkReachability !== true) return;
+    outboxStore.retryFailedOutboxWork();
+    void runOutboxSync();
+  }, [auth.user?.id, networkReachability]);
 
   React.useEffect(() => {
-    if (!connectivity.canRunNetworkActionsImmediately || !outbox.hydrated) {
-      return;
-    }
+    if (!auth.user?.id) return;
 
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      outboxStore.retryFailedOutboxWork();
+      void runOutboxSync();
+    });
+
+    return () => subscription.remove();
+  }, [auth.user?.id]);
+
+  React.useEffect(() => {
+    if (!outbox.hydrated) return;
     if (!auth.user?.id || outbox.ownerUserId !== auth.user.id) return;
     const autoSyncable = outboxStore.getStartableAutoSyncSubmissions(outbox);
     const discarded = outboxStore.getDiscardedSubmissions(outbox);
+    const recordPins = outboxStore.getQueuedRecordPins(outbox);
 
-    if (!autoSyncable.length && !discarded.length) {
+    if (!autoSyncable.length && !discarded.length && !recordPins.length) {
       const nextRetryTime = outboxStore.getNextAutoRetryTime(outbox);
+      if (networkReachability === false) return;
       if (nextRetryTime == null) return;
 
       const timeout = setTimeout(
@@ -54,11 +62,11 @@ export const OutboxSyncRunner = () => {
       return () => clearTimeout(timeout);
     }
 
-    if (autoSyncable.length || discarded.length) {
+    if (autoSyncable.length || discarded.length || recordPins.length) {
       void runOutboxSync();
       return;
     }
-  }, [auth.user?.id, connectivity.canRunNetworkActionsImmediately, outbox]);
+  }, [auth.user?.id, networkReachability, outbox]);
 
   return null;
 };

@@ -10,6 +10,7 @@ export const getPersistedOutboxStorageKey = (ownerUserId?: string) =>
 export const emptyPersistedOutbox = (): PersistedOutbox => ({
   attachments: [],
   drafts: [],
+  recordPins: [],
   submissions: [],
   version: 1,
 });
@@ -26,6 +27,7 @@ export const normalizePersistedOutbox = (
       typeof value.ownerUserId === 'string' && value.ownerUserId.trim()
         ? value.ownerUserId
         : undefined,
+    recordPins: Array.isArray(value.recordPins) ? value.recordPins : [],
     submissions: Array.isArray(value.submissions) ? value.submissions : [],
     version: 1,
   };

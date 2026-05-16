@@ -14,6 +14,7 @@ export const Image = ({
   onDisplay,
   onLoad,
   quality,
+  src,
   style,
   targetHeight,
   targetSize,
@@ -31,6 +32,7 @@ export const Image = ({
   onDisplay?: () => void;
   onLoad?: () => void;
   quality?: number;
+  src?: string | null;
   style?: StyleProp<ImageStyle>;
   targetHeight?: number;
   targetSize?: number;
@@ -53,14 +55,15 @@ export const Image = ({
     }
   }
 
-  const src = useFileUriToSrc(uri, {
+  const resolvedSrc = useFileUriToSrc(uri, {
     quality,
     targetHeight,
     targetSize,
     targetWidth,
   });
 
-  const source = src ? { uri: src } : undefined;
+  const sourceSrc = src === undefined ? resolvedSrc : src;
+  const source = sourceSrc ? { uri: sourceSrc } : undefined;
   const resolvedClassName = useResolveClassNames(className ?? '');
 
   return (

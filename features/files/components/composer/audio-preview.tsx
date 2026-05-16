@@ -4,7 +4,6 @@ import { useUiAudioPlaybackRate } from '@/features/files/hooks/use-ui-audio-play
 import * as attachmentItems from '@/features/files/lib/attachment-items';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { cn } from '@/lib/cn';
 import { durationMsToSeconds } from '@/lib/duration';
 import { Button } from '@/ui/button';
@@ -97,8 +96,6 @@ export const AudioPreview = ({
   onDeleteFile: (fileId: string) => void;
   pendingAudio: fileComposer.PendingAudioUpload[];
 }) => {
-  const showOfflineUi = useShowOfflineUi();
-
   const items = React.useMemo(
     () =>
       attachmentItems.getAttachmentPreviewItems({
@@ -194,7 +191,7 @@ export const AudioPreview = ({
                     trailingAccessory={
                       <Button
                         className="rounded-none"
-                        disabled={actionsDisabled || showOfflineUi}
+                        disabled={actionsDisabled}
                         onPress={() => onDeleteFile(previewItem.item.id)}
                         size="icon-xs"
                         variant="ghost"

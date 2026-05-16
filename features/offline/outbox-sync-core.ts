@@ -9,11 +9,13 @@ import { deleteRecordFile } from '@/features/records/mutations/delete-record-fil
 import { deleteReplyFile } from '@/features/records/mutations/delete-reply-file';
 import { deleteRecord } from '@/features/records/mutations/delete-record';
 import { deleteReply } from '@/features/records/mutations/delete-reply';
-import { updateReplyDraft } from '@/features/records/mutations/update-reply-draft';
-import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
 import { replayRecordDraft } from '@/features/records/mutations/replay-record-draft';
+import { replayReplyDraft } from '@/features/records/mutations/replay-reply-draft';
+import { applyRecordPin } from '@/features/records/mutations/toggle-pin';
+import { fetchOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as outboxState from '@/features/offline/outbox-state';
+import { alert as showAlert } from '@/lib/alert';
 import { db } from '@/lib/db';
 import { rejectAfter, wait } from '@/lib/async';
 import type * as types from '@/features/offline/types';
@@ -29,16 +31,27 @@ const UPLOADED_FILE_READY_RETRY_DELAY_MS = 750;
 const PENDING_STREAM_URI_PREFIX = 'stream-pending:';
 let syncPromise: Promise<void> | null = null;
 let shouldRunAfterCurrentSync = false;
+const alertedSyncErrors = new Set<string>();
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
+
+const canStartOutboxNetworkRequests = async () =>
+  (await fetchOutboxNetworkReachability()) !== false;
+
+const isOutboxNetworkReachable = async () =>
+  (await fetchOutboxNetworkReachability()) === true;
+
+const isOutboxNetworkOffline = async () =>
+  (await fetchOutboxNetworkReachability()) === false;
 
 const hasRunnableOutboxWork = () => {
   const snapshot = outboxStore.getOutboxSnapshot();
 
   return (
     outboxStore.getStartableAutoSyncSubmissions(snapshot).length > 0 ||
-    outboxStore.getDiscardedSubmissions(snapshot).length > 0
+    outboxStore.getDiscardedSubmissions(snapshot).length > 0 ||
+    outboxStore.getQueuedRecordPins(snapshot).length > 0
   );
 };
 
@@ -49,6 +62,9 @@ const isCurrentSubmissionSyncable = (submissionId: string) =>
 
 const isAlreadyPublishedError = (error: unknown) =>
   error instanceof Error && /already published/i.test(error.message);
+
+const isReplyNotFoundError = (error: unknown) =>
+  error instanceof Error && /reply not found/i.test(error.message);
 
 const isExistingFileIdError = (error: unknown) =>
   error instanceof Error && /file id already exists/i.test(error.message);
@@ -115,7 +131,7 @@ const queryReplyDraft = async (
   return result?.data?.replies?.[0];
 };
 
-const queryRecordTeamId = async (recordId: string) => {
+const queryRecordSyncTarget = async (recordId: string) => {
   const result = await db.queryOnce({
     records: {
       $: {
@@ -125,7 +141,32 @@ const queryRecordTeamId = async (recordId: string) => {
     },
   });
 
-  return result?.data?.records?.[0]?.teamId;
+  const record = result?.data?.records?.[0];
+  return { exists: !!record?.id, teamId: record?.teamId };
+};
+
+const queryRecordTeamId = async (recordId: string) =>
+  (await queryRecordSyncTarget(recordId)).teamId;
+
+const queryLogTeamId = async (logId: string) => {
+  const result = await db.queryOnce({
+    logs: {
+      $: { fields: ['id' as const, 'teamId' as const], where: { id: logId } },
+    },
+  });
+
+  return result?.data?.logs?.[0]?.teamId;
+};
+
+const queryCurrentProfileId = async () => {
+  const auth = await db.getAuth();
+  if (!auth?.id) return;
+
+  const result = await db.queryOnce({
+    profiles: { $: { fields: ['id' as const], where: { user: auth.id } } },
+  });
+
+  return result?.data?.profiles?.[0]?.id;
 };
 
 const draftMatchesSubmission = async (submission: types.QueuedSubmission) => {
@@ -168,46 +209,124 @@ const waitForDraftState = async (submission: types.QueuedSubmission) => {
 
 const replayQueuedReplyDraft = async (
   submission: Extract<types.QueuedSubmission, { type: 'reply' }>
-) => {
-  if (!submission.authorId) return;
+): Promise<Extract<types.QueuedSubmission, { type: 'reply' }>> => {
+  const authorId = submission.authorId ?? (await queryCurrentProfileId());
+
+  if (authorId && authorId !== submission.authorId) {
+    outboxStore.updateQueuedSubmission(submission.id, (current) =>
+      current.type === 'reply' ? { authorId } : {}
+    );
+  }
+
+  if (!authorId) throw new Error('Queued reply is missing replay identity.');
 
   const teamId =
     submission.teamId ?? (await queryRecordTeamId(submission.recordId));
 
-  if (!teamId) return;
+  if (teamId && teamId !== submission.teamId) {
+    outboxStore.updateQueuedSubmission(submission.id, (current) =>
+      current.type === 'reply' ? { teamId } : {}
+    );
+  }
 
-  await updateReplyDraft({
-    authorId: submission.authorId,
+  if (!teamId) throw new Error('Queued reply is missing replay identity.');
+
+  await replayReplyDraft({
+    authorId,
     date: submission.createdAt,
     id: submission.contentId,
     recordId: submission.recordId,
     teamId,
     text: submission.text,
   });
+
+  return teamId === submission.teamId && authorId === submission.authorId
+    ? submission
+    : { ...submission, authorId, teamId };
 };
 
 const replayQueuedRecordDraft = async (
   submission: Extract<types.QueuedSubmission, { type: 'record' }>
-) => {
-  if (!submission.authorId || !submission.logId || !submission.teamId) {
-    await updateRecordDraft({
-      id: submission.contentId,
-      tagIds: submission.tagIds,
-      text: submission.text,
-    });
+): Promise<Extract<types.QueuedSubmission, { type: 'record' }>> => {
+  const authorId = submission.authorId ?? (await queryCurrentProfileId());
 
-    return;
+  const teamId =
+    submission.teamId ??
+    (submission.logId ? await queryLogTeamId(submission.logId) : undefined);
+
+  if (authorId && authorId !== submission.authorId) {
+    outboxStore.updateQueuedSubmission(submission.id, (current) =>
+      current.type === 'record' ? { authorId } : {}
+    );
+  }
+
+  if (teamId && teamId !== submission.teamId) {
+    outboxStore.updateQueuedSubmission(submission.id, (current) =>
+      current.type === 'record' ? { teamId } : {}
+    );
+  }
+
+  if (!authorId || !submission.logId || !teamId) {
+    throw new Error('Queued record is missing replay identity.');
   }
 
   await replayRecordDraft({
-    authorId: submission.authorId,
+    authorId,
     date: submission.createdAt,
     id: submission.contentId,
+    isPinned: submission.isPinned,
     logId: submission.logId,
     tagIds: submission.tagIds,
-    teamId: submission.teamId,
+    teamId,
     text: submission.text,
   });
+
+  return teamId === submission.teamId && authorId === submission.authorId
+    ? submission
+    : { ...submission, authorId, teamId };
+};
+
+const discardOrphanedReplySubmission = async (
+  submission: Extract<types.QueuedSubmission, { type: 'reply' }>
+) => {
+  await outboxStore.discardQueuedSubmission(submission.id);
+  await outboxStore.clearCompletedSubmission(submission.id);
+};
+
+const resolveQueuedReplyParent = async (
+  submission: Extract<types.QueuedSubmission, { type: 'reply' }>
+): Promise<
+  | { status: 'missing' }
+  | {
+      status: 'exists';
+      submission: Extract<types.QueuedSubmission, { type: 'reply' }>;
+    }
+> => {
+  const target = await queryRecordSyncTarget(submission.recordId);
+  if (!target.exists) return { status: 'missing' };
+
+  if (target.teamId && target.teamId !== submission.teamId) {
+    outboxStore.updateQueuedSubmission(submission.id, (current) =>
+      current.type === 'reply' ? { teamId: target.teamId } : {}
+    );
+
+    return {
+      status: 'exists',
+      submission: { ...submission, teamId: target.teamId },
+    };
+  }
+
+  return { status: 'exists', submission };
+};
+
+const alertSyncFailure = (
+  submission: types.QueuedSubmission,
+  message: string
+) => {
+  const key = `${submission.id}:${message}`;
+  if (alertedSyncErrors.has(key)) return;
+  alertedSyncErrors.add(key);
+  showAlert({ title: 'Queued item failed', message });
 };
 
 const replayQueuedSubmissionLinks = async (
@@ -587,7 +706,7 @@ const canPublishQueuedReplyDirectly = (
 export const syncQueuedSubmission = async (
   submission: types.QueuedSubmission
 ) => {
-  const currentSubmission = submission;
+  let currentSubmission = submission;
 
   const pendingAttachments = outboxStore.getQueuedAttachmentsForSubmission(
     outboxStore.getOutboxSnapshot(),
@@ -603,6 +722,17 @@ export const syncQueuedSubmission = async (
   outboxStore.setQueuedSubmissionStatus(currentSubmission.id, 'syncing');
   if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
 
+  if (currentSubmission.type === 'reply') {
+    const parent = await resolveQueuedReplyParent(currentSubmission);
+
+    if (parent.status === 'missing') {
+      await discardOrphanedReplySubmission(currentSubmission);
+      return;
+    }
+
+    currentSubmission = parent.submission;
+  }
+
   if (canPublishQueuedReplyDirectly(currentSubmission, pendingAttachments)) {
     await publishQueuedSubmission(currentSubmission);
     return;
@@ -613,7 +743,7 @@ export const syncQueuedSubmission = async (
 
   if (!isAlreadyPublished) {
     if (currentSubmission.type === 'record') {
-      await replayQueuedRecordDraft(currentSubmission);
+      currentSubmission = await replayQueuedRecordDraft(currentSubmission);
     } else {
       if (isReplyForQueuedRecord(currentSubmission)) {
         await outboxStore.discardQueuedSubmission(currentSubmission.id);
@@ -624,7 +754,7 @@ export const syncQueuedSubmission = async (
         currentSubmission.needsDraftReplay === true &&
         (await queuedReplyNeedsDraftReplay(currentSubmission))
       ) {
-        await replayQueuedReplyDraft(currentSubmission);
+        currentSubmission = await replayQueuedReplyDraft(currentSubmission);
       }
     }
 
@@ -660,15 +790,20 @@ export const syncQueuedSubmission = async (
 
 export const syncOutboxOnce = async () => {
   await outboxStore.ensureOutboxHydrated();
+  if (!(await canStartOutboxNetworkRequests())) return;
 
   const syncable = outboxStore.getStartableAutoSyncSubmissions(
     outboxStore.getOutboxSnapshot()
   );
 
   for (const submission of syncable) {
+    if (!(await canStartOutboxNetworkRequests())) return;
+
     try {
       await syncQueuedSubmission(submission);
     } catch (error) {
+      const isNetworkOffline = await isOutboxNetworkOffline();
+
       const currentSubmission = outboxStore
         .getOutboxSnapshot()
         .submissions.find((item) => item.id === submission.id);
@@ -685,18 +820,30 @@ export const syncOutboxOnce = async () => {
           if (attachment.status === 'uploading') {
             outboxStore.setQueuedAttachmentStatus(
               attachment.id,
-              'error',
+              isNetworkOffline ? 'queued' : 'error',
               getErrorMessage(error, 'Upload failed')
             );
           }
         }
       }
 
-      outboxStore.setQueuedSubmissionStatus(
-        submission.id,
-        'error',
-        getErrorMessage(error, 'Sync failed')
-      );
+      if (
+        currentSubmission?.type === 'reply' &&
+        isReplyNotFoundError(error) &&
+        !(await queryRecordSyncTarget(currentSubmission.recordId)).exists
+      ) {
+        await discardOrphanedReplySubmission(currentSubmission);
+        continue;
+      }
+
+      if (isNetworkOffline) {
+        outboxStore.setQueuedSubmissionStatus(submission.id, 'pending');
+        continue;
+      }
+
+      const message = getErrorMessage(error, 'Sync failed');
+      outboxStore.setQueuedSubmissionStatus(submission.id, 'error', message);
+      alertSyncFailure(submission, message);
     }
   }
 
@@ -705,10 +852,40 @@ export const syncOutboxOnce = async () => {
   );
 
   for (const submission of discarded) {
+    if (!(await canStartOutboxNetworkRequests())) return;
+
     try {
       await cleanupDiscardedSubmission(submission);
     } catch {
       // noop
+    }
+  }
+
+  const queuedRecordPins = outboxStore.getQueuedRecordPins(
+    outboxStore.getOutboxSnapshot()
+  );
+
+  for (const recordPin of queuedRecordPins) {
+    if (!(await isOutboxNetworkReachable())) return;
+
+    try {
+      if (!(await queryRecordSyncTarget(recordPin.recordId)).exists) {
+        outboxStore.clearQueuedRecordPin({ recordId: recordPin.recordId });
+        continue;
+      }
+
+      await applyRecordPin({
+        id: recordPin.recordId,
+        isPinned: recordPin.isPinned,
+      });
+
+      outboxStore.clearQueuedRecordPin({
+        isPinned: recordPin.isPinned,
+        recordId: recordPin.recordId,
+      });
+    } catch (error) {
+      if (!(await isOutboxNetworkReachable())) return;
+      console.error('Failed to sync queued record pin', error);
     }
   }
 };

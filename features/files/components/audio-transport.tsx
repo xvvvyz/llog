@@ -18,7 +18,6 @@ import {
   Play,
   Rewind,
   Speedometer,
-  WifiSlash,
 } from 'phosphor-react-native';
 
 const AUDIO_SEEK_STEP_SECONDS = 5;
@@ -33,7 +32,6 @@ export type AudioTransportControls = {
   handleScrubMove: (seconds: number) => void;
   handleScrubStart: () => void;
   isDisabled: boolean;
-  isUnavailableOffline: boolean;
   isPlaying: boolean;
   pendingPlaybackTime: number | null;
   playerDuration: number;
@@ -91,7 +89,6 @@ export const AudioTransport = ({
     handleScrubMove,
     handleScrubStart,
     isDisabled,
-    isUnavailableOffline,
     isPlaying,
     playerDuration,
     progress,
@@ -163,10 +160,7 @@ export const AudioTransport = ({
         variant="ghost"
         wrapperClassName={controlButtonWrapperClassName}
       >
-        <Icon
-          icon={isUnavailableOffline ? WifiSlash : isPlaying ? Pause : Play}
-          size={iconSize}
-        />
+        <Icon icon={isPlaying ? Pause : Play} size={iconSize} />
       </Button>
       <View
         className={cn(

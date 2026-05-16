@@ -1,4 +1,3 @@
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
@@ -23,7 +22,6 @@ const getNextOrder = (links?: { order?: number | null }[]) =>
 
 export const LinkEditorSheet = () => {
   const sheetManager = useSheetManager();
-  const { canRunNetworkActions, isOffline } = useConnectivity();
   const outbox = useOutbox();
   const isOpen = sheetManager.isOpen(sheetPayloads.RECORD_LINK_EDITOR_SHEET);
   const payload = sheetPayloads.getRecordLinkEditorSheetPayload(sheetManager);
@@ -182,19 +180,16 @@ export const LinkEditorSheet = () => {
     isOpen &&
     (isEditingLink
       ? !localEditingLink &&
-        !isOffline &&
         !!linkQueryKey &&
         (linkLoading || !hasCurrentLinkResult)
       : isRecordLink
         ? !pendingCreateParent &&
           !createParent?.teamId &&
-          !isOffline &&
           !!recordQueryKey &&
           (recordLoading || !hasCurrentRecordResult)
         : isReplyLink
           ? !pendingCreateParent &&
             !createParent?.teamId &&
-            !isOffline &&
             !!replyQueryKey &&
             (replyLoading || !hasCurrentReplyResult)
           : false);
@@ -207,11 +202,7 @@ export const LinkEditorSheet = () => {
   const trimmedLabel = label.trim();
 
   const canSubmit = isEditingLink
-    ? !!linkId &&
-      !!editingLink &&
-      !!trimmedLabel &&
-      !!normalizedUrl &&
-      (canRunNetworkActions || !!localEditingLink)
+    ? !!linkId && !!editingLink && !!trimmedLabel && !!normalizedUrl
     : !!createParent && !!parent?.teamId && !!trimmedLabel && !!normalizedUrl;
 
   const close = React.useCallback(() => {
@@ -279,7 +270,7 @@ export const LinkEditorSheet = () => {
       if (!createParent || !parent?.teamId) return;
       const order = getNextOrder(parent.links);
 
-      if (canRunNetworkActions) {
+      try {
         await createLink({
           label: trimmedLabel,
           order,
@@ -291,39 +282,38 @@ export const LinkEditorSheet = () => {
 
         close();
         return;
+      } catch {
+        const createdLinkId = id();
+
+        const link = {
+          id: createdLinkId,
+          label: trimmedLabel,
+          localStatus: 'pending' as const,
+          order,
+          teamId: parent.teamId,
+          url: normalizedUrl,
+        };
+
+        outboxStore.addQueuedDraftLink({
+          baseLinks: parent.links,
+          link,
+          parentId: createParent.id,
+          parentType: createParent.type,
+        });
+
+        outboxStore.addQueuedLink({
+          link,
+          parentId: createParent.id,
+          parentType: createParent.type,
+        });
+
+        close();
       }
-
-      const createdLinkId = id();
-
-      const link = {
-        id: createdLinkId,
-        label: trimmedLabel,
-        localStatus: 'pending' as const,
-        order,
-        teamId: parent.teamId,
-        url: normalizedUrl,
-      };
-
-      outboxStore.addQueuedDraftLink({
-        baseLinks: parent.links,
-        link,
-        parentId: createParent.id,
-        parentType: createParent.type,
-      });
-
-      outboxStore.addQueuedLink({
-        link,
-        parentId: createParent.id,
-        parentType: createParent.type,
-      });
-
-      close();
     } finally {
       setIsSubmitting(false);
     }
   }, [
     canSubmit,
-    canRunNetworkActions,
     close,
     createParent,
     isEditingLink,

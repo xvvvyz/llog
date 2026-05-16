@@ -6,9 +6,7 @@ import { updateDocumentName } from '@/features/files/mutations/update-document-n
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
 import type { LogTemplate } from '@/features/logs/types/template';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as localEntry from '@/features/offline/local-entry';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import * as queuedLinks from '@/features/offline/queued-links';
@@ -38,6 +36,7 @@ import { Icon } from '@/ui/icon';
 import { PushPin, Tag } from 'phosphor-react-native';
 import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
+import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerLatestText from '@/features/records/hooks/use-composer-latest-text';
 
@@ -81,9 +80,8 @@ export const useRecordComposerModel = () => {
   const isSubmittingRef = React.useRef(false);
   const sheetManager = useSheetManager();
   const profile = useProfile();
-  const connectivity = useConnectivity();
-  const showOfflineUi = useShowOfflineUi();
   const outbox = outboxHooks.useOutbox();
+  const networkReachability = useOutboxNetworkReachability();
   const context = sheetManager.getContext('record-create');
   const isEdit = context === 'edit';
   const isCopy = context === 'copy';
@@ -110,9 +108,9 @@ export const useRecordComposerModel = () => {
 
   const isSingleTargetCopy = isCopy && copyTargetLogIds.length === 1;
   const logId = isEdit || isCopy ? undefined : sheetId;
-  const draftLogId = isCreate && outbox.hydrated ? logId : undefined;
-  const editRecordId = isEdit ? sheetId : undefined;
-  const copyDraftRecordId = isCopy ? sheetId : undefined;
+  const draftLogId = isOpen && isCreate && outbox.hydrated ? logId : undefined;
+  const editRecordId = isOpen && isEdit ? sheetId : undefined;
+  const copyDraftRecordId = isOpen && isCopy ? sheetId : undefined;
 
   const draft = useRecordDraft({
     ignoredDraftIds,
@@ -207,9 +205,6 @@ export const useRecordComposerModel = () => {
   const isEditingLocalRecord = isEdit && localEntry.hasLocalStatus(editRecord);
   const isServerRecordEdit = isEdit && !isEditingLocalRecord;
 
-  const areServerEditActionsDisabled =
-    isServerRecordEdit && !connectivity.canRunNetworkActions;
-
   const recordLogId = isEdit
     ? editRecord?.log?.id
     : isCopy
@@ -256,7 +251,7 @@ export const useRecordComposerModel = () => {
   );
 
   const canUpdateServerDraft =
-    connectivity.canRunNetworkActions && !shouldReplayRecordDraftIdentity;
+    !shouldReplayRecordDraftIdentity && networkReachability === true;
 
   const updateServerRecordDraft = React.useCallback(
     (input: Parameters<typeof updateRecordDraft>[0]) => {
@@ -302,7 +297,7 @@ export const useRecordComposerModel = () => {
       return `copy:${copyDraftRecordId ?? ''}:${copyTextResetTargetKey}`;
     }
 
-    return `create:${logId ?? ''}:${openSessionKey}`;
+    return `create:${logId ?? ''}:${recordId ?? ''}:${openSessionKey}`;
   }, [
     copyDraftRecordId,
     copyTextResetTargetKey,
@@ -312,6 +307,7 @@ export const useRecordComposerModel = () => {
     isOpen,
     logId,
     openSessionKey,
+    recordId,
   ]);
 
   const links = React.useMemo(
@@ -353,14 +349,14 @@ export const useRecordComposerModel = () => {
     return selectedRecordTags.map((tag) => tagsById.get(tag.id) ?? tag);
   }, [tagDefinitions.data, selectedRecordTags]);
 
-  const { displayText, latestTextRef, setLatestText } = composerLatestText.useComposerLatestText({
-    resetKey: composerTextResetKey,
-    text: currentText,
-  });
+  const { displayText, latestTextRef, setLatestText } =
+    composerLatestText.useComposerLatestText({
+      resetKey: composerTextResetKey,
+      text: currentText,
+    });
 
   const handleChangeText = React.useCallback(
     (nextText: string) => {
-      if (areServerEditActionsDisabled) return;
       setLatestText(nextText);
 
       if (isEdit) {
@@ -392,7 +388,6 @@ export const useRecordComposerModel = () => {
       });
     },
     [
-      areServerEditActionsDisabled,
       isEdit,
       recordDraftUpdateFields,
       recordId,
@@ -404,7 +399,6 @@ export const useRecordComposerModel = () => {
 
   const handleApplyTemplate = React.useCallback(
     (template: LogTemplate) => {
-      if (areServerEditActionsDisabled) return;
       if (latestTextRef.current.trim()) return;
       const text = template.text;
       setLatestText(text);
@@ -440,7 +434,6 @@ export const useRecordComposerModel = () => {
       }
     },
     [
-      areServerEditActionsDisabled,
       isEdit,
       latestTextRef,
       recordDraftUpdateFields,
@@ -484,14 +477,9 @@ export const useRecordComposerModel = () => {
       }
 
       if (isEditingLocalRecord) outboxStore.reorderQueuedLinks(orderedIds);
-      if (!connectivity.canRunNetworkActions) return;
       void reorderLinks(links);
     },
-    [
-      connectivity.canRunNetworkActions,
-      isEditingLocalRecord,
-      shouldUseQueuedRecordDraft,
-    ]
+    [isEditingLocalRecord, shouldUseQueuedRecordDraft]
   );
 
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
@@ -504,7 +492,6 @@ export const useRecordComposerModel = () => {
 
   const { linkAttachmentCount, linkPreview, linkToolbarItems } =
     useComposerLinkAttachments({
-      actionsDisabled: areServerEditActionsDisabled,
       links,
       onReorderLinks: handleReorderLinks,
       parent: attachmentParent,
@@ -512,7 +499,6 @@ export const useRecordComposerModel = () => {
 
   const handleOpenTags = React.useCallback(() => {
     if (!recordId) return;
-    if (!connectivity.canRunNetworkActions) return;
     blurActiveTextInput();
 
     requestAnimationFrame(() =>
@@ -530,15 +516,16 @@ export const useRecordComposerModel = () => {
     recordTeamId,
     selectedTags,
     sheetManager,
-    connectivity.canRunNetworkActions,
   ]);
 
   const canOpenTags =
     (!isCopy || isSingleTargetCopy) &&
     !!recordId &&
-    (!!myRole.canManage || recordTags.hasRecordTags);
+    (!!myRole.canManage ||
+      recordTags.hasRecordTags ||
+      selectedTags.some((tag) => !!tag.id));
 
-  const isTagsDisabled = showOfflineUi;
+  const isTagsDisabled = false;
   const canToggleCopyPin = !isCopy || isSingleTargetCopy;
 
   const isPinned = shouldUseQueuedRecordDraft
@@ -546,15 +533,15 @@ export const useRecordComposerModel = () => {
     : getRecordIsPinned(record);
 
   const canTogglePin = canToggleCopyPin && !!recordId && myRole.canPinRecords;
-  const isPinDisabled = showOfflineUi;
+  const isPinDisabled = false;
 
   const handleTogglePin = React.useCallback(() => {
     if (!recordId) return;
     if (isPinDisabled) return;
-    if (!connectivity.canRunNetworkActions) return;
 
     if (shouldUseQueuedRecordDraft) {
       outboxStore.updateQueuedDraftRecordPin({ isPinned: !isPinned, recordId });
+      return;
     }
 
     if (isEditingLocalRecord) {
@@ -567,7 +554,6 @@ export const useRecordComposerModel = () => {
     isEditingLocalRecord,
     isPinDisabled,
     isPinned,
-    connectivity.canRunNetworkActions,
     recordId,
     shouldUseQueuedRecordDraft,
   ]);
@@ -605,7 +591,6 @@ export const useRecordComposerModel = () => {
     : null;
 
   const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
-    actionsDisabled: areServerEditActionsDisabled,
     extraAttachmentCount: linkAttachmentCount,
     extraPreview: linkPreview,
     extraToolbarItems: React.createElement(
@@ -709,9 +694,7 @@ export const useRecordComposerModel = () => {
             parentType: 'record',
           });
 
-          if (connectivity.canRunNetworkActionsImmediately) {
-            void outboxSyncCore.runOutboxSync();
-          }
+          void outboxSyncCore.runOutboxSync();
         }
 
         closeSheet();
@@ -789,10 +772,8 @@ export const useRecordComposerModel = () => {
         parentType: 'record',
       });
 
-      if (connectivity.canRunNetworkActionsImmediately) {
-        void outboxSyncCore.runOutboxSync();
-      }
-
+      void outboxSyncCore.runOutboxSync();
+      setLatestText('');
       ignoreDraftId(recordId);
       requestPostSubmitScroll({ id: recordLogId, scope: 'log', target: 'top' });
       closeSheet();
@@ -804,7 +785,6 @@ export const useRecordComposerModel = () => {
     closeCopyFlow,
     closeSheet,
     canUpdateServerDraft,
-    connectivity.canRunNetworkActionsImmediately,
     copyTargetLogIds,
     ignoreDraftId,
     isCopy,
@@ -820,6 +800,7 @@ export const useRecordComposerModel = () => {
     recordLogId,
     recordTeamId,
     record?.files,
+    setLatestText,
     selectedTags,
     isPinned,
     links,
@@ -838,7 +819,7 @@ export const useRecordComposerModel = () => {
     isOpen,
     isPinned,
     isSubmitting,
-    isTextInputDisabled: areServerEditActionsDisabled,
+    isTextInputDisabled: false,
     isTextareaFocused,
     loading: isEdit
       ? !editRecord

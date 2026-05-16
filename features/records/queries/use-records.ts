@@ -1,7 +1,6 @@
 import * as recordIdentity from '@/domain/records/identity-fields';
 import { recordListItemQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
@@ -27,7 +26,6 @@ const compareByDateDesc = (
 export const useRecords = ({ logId }: { logId?: string }) => {
   const outbox = useOutbox();
   const profile = useProfile();
-  const { isOffline } = useConnectivity();
 
   const { data: pinnedData, isLoading: pinnedLoading } = db.useQuery(
     logId
@@ -116,6 +114,8 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     pinnedRecords,
   ]);
 
+  const queuedRecordPins = outbox.recordPins;
+
   const data = React.useMemo(() => {
     const merged = new Map<string, (typeof pinnedRecords)[number]>();
 
@@ -192,9 +192,19 @@ export const useRecords = ({ logId }: { logId?: string }) => {
         return pendingReplies.length
           ? {
               ...record,
-              replies: [...(record.replies ?? []), ...pendingReplies],
+              replies: pendingEntries.mergePendingReplies(
+                record.replies ?? [],
+                pendingReplies
+              ),
             }
           : record;
+      })
+      .map((record) => {
+        const queuedPin = queuedRecordPins.find(
+          (recordPin) => recordPin.recordId === record.id
+        );
+
+        return queuedPin ? { ...record, isPinned: queuedPin.isPinned } : record;
       });
 
     const isPinnedRecord = (record: (typeof mergedRecords)[number]) =>
@@ -213,6 +223,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     pagedRecords,
     pinnedRecords,
     profile,
+    queuedRecordPins,
   ]);
 
   React.useEffect(() => {
@@ -228,7 +239,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   }, [data, logId]);
 
   const currentCanLoadNextPage =
-    !!logId && !isOffline && hasCurrentPagedResult && canLoadNextPage;
+    !!logId && hasCurrentPagedResult && canLoadNextPage;
 
   const handleLoadNextPage = useLoadNextPage({
     canLoadNextPage: currentCanLoadNextPage,
@@ -241,7 +252,6 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   const isQueryLoading =
     !!logId &&
     !hasRecords &&
-    !isOffline &&
     (pinnedLoading || pagedLoading || !hasPinnedResult || !hasPagedResult);
 
   const canShowEmptyResult = !!logId && !isQueryLoading && !hasRecords;

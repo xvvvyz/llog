@@ -18,6 +18,10 @@ export const getCacheableAppResourceUrls = () => {
 
   if (typeof performance !== 'undefined') {
     for (const entry of performance.getEntriesByType('resource')) {
+      if ((entry as PerformanceResourceTiming).initiatorType === 'audio') {
+        continue;
+      }
+
       urls.add(entry.name);
     }
   }

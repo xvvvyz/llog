@@ -7,20 +7,12 @@ import * as React from 'react';
 import { type LayoutChangeEvent, Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue } from 'react-native-reanimated';
-
-import {
-  Pause,
-  Play,
-  SpeakerHigh,
-  SpeakerSlash,
-  WifiSlash,
-} from 'phosphor-react-native';
+import { Pause, Play, SpeakerHigh, SpeakerSlash } from 'phosphor-react-native';
 
 type VideoControlsProps = {
   currentTime: number;
   duration: number;
   isMuted: boolean;
-  isUnavailableOffline: boolean;
   isPlaying: boolean;
   isSwiping: boolean;
   onScrubEnd: (seconds: number) => void;
@@ -35,7 +27,6 @@ export const VideoControls = ({
   currentTime,
   duration,
   isMuted,
-  isUnavailableOffline,
   isPlaying,
   isSwiping,
   onScrubEnd,
@@ -57,7 +48,6 @@ export const VideoControls = ({
         >
           <Button
             className="size-11"
-            disabled={isUnavailableOffline}
             onPress={onTogglePlay}
             size="icon"
             variant="link"
@@ -65,15 +55,14 @@ export const VideoControls = ({
           >
             <Icon
               className="text-popover-foreground"
-              icon={isUnavailableOffline ? WifiSlash : isPlaying ? Pause : Play}
+              icon={isPlaying ? Pause : Play}
               size={Platform.select({ default: 24, ios: 22 })}
-              weight={!isUnavailableOffline && !isPlaying ? 'fill' : 'regular'}
+              weight={!isPlaying ? 'fill' : 'regular'}
             />
           </Button>
           <View className="flex-1 min-w-0">
             <VideoScrubber
               currentTime={currentTime}
-              disabled={isUnavailableOffline}
               duration={duration}
               onScrubEnd={onScrubEnd}
               onScrubMove={onScrubMove}
@@ -82,7 +71,6 @@ export const VideoControls = ({
           </View>
           <Button
             className="size-11"
-            disabled={isUnavailableOffline}
             onPress={onToggleMute}
             size="icon"
             variant="link"
@@ -103,14 +91,12 @@ export const VideoControls = ({
 const VideoScrubber = ({
   currentTime,
   duration,
-  disabled,
   onScrubEnd,
   onScrubMove,
   onScrubStart,
 }: {
   currentTime: number;
   duration: number;
-  disabled?: boolean;
   onScrubEnd: (seconds: number) => void;
   onScrubMove: (seconds: number) => void;
   onScrubStart: () => void;
@@ -194,13 +180,9 @@ const VideoScrubber = ({
       <Text className="min-w-10 font-medium leading-4 text-popover-foreground text-xs">
         {formatTime(currentTime)}
       </Text>
-      {disabled ? (
-        track
-      ) : (
-        <GestureDetector gesture={Gesture.Race(pan, tap)}>
-          {track}
-        </GestureDetector>
-      )}
+      <GestureDetector gesture={Gesture.Race(pan, tap)}>
+        {track}
+      </GestureDetector>
       <Text className="min-w-10 font-medium leading-4 text-popover-foreground text-right text-xs">
         {formatTime(duration)}
       </Text>

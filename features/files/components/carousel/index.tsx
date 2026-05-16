@@ -7,10 +7,8 @@ import { useCarouselMediaState } from '@/features/files/hooks/use-carousel-media
 import { useCarouselPreloading } from '@/features/files/hooks/use-carousel-preloading';
 import { useCarouselVideoControls } from '@/features/files/hooks/use-carousel-video-controls';
 import * as carouselHelpers from '@/features/files/lib/carousel';
-import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
 import { FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
-import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
@@ -62,7 +60,6 @@ export const Carousel = ({
   videoPlaybackRate?: number;
 }) => {
   const insets = useSafeAreaInsets();
-  const showOfflineUi = useShowOfflineUi();
   const carouselRef = React.useRef<ICarouselInstance>(null);
   const localVideoHandleRef = React.useRef<VideoPlayerHandle | null>(null);
   const videoHandleRef = externalVideoHandleRef ?? localVideoHandleRef;
@@ -164,34 +161,10 @@ export const Carousel = ({
   const scrubberBottomOffset = 44 + insets.bottom;
   const activeMedia = files[activeIndexState];
   const isActiveVideo = activeMedia?.type === 'video';
-
-  const isActiveMediaUnavailableOffline =
-    !!activeMedia && showOfflineUi && !isFileAvailableOffline(activeMedia);
-
   const isOverlaySheetOpen = isTrackSheetOpen || isTranscriptSheetOpen;
 
   const showImageLoadingIndicator =
-    activeMedia?.type === 'image' &&
-    isActiveMediaLoading &&
-    !isActiveMediaUnavailableOffline;
-
-  React.useEffect(() => {
-    if (!isActiveMediaUnavailableOffline || activeMedia?.type !== 'video') {
-      return;
-    }
-
-    videoHandleRef.current?.pause();
-    setVideoPlaybackIntent(activeMedia.id, false);
-    setIsPlaying(false);
-    resetVideoUiState();
-  }, [
-    activeMedia?.id,
-    activeMedia?.type,
-    isActiveMediaUnavailableOffline,
-    resetVideoUiState,
-    setVideoPlaybackIntent,
-    videoHandleRef,
-  ]);
+    activeMedia?.type === 'image' && isActiveMediaLoading;
 
   const shouldShowImageLoadingIndicator = useDelayedTrue(
     showImageLoadingIndicator,
@@ -500,7 +473,6 @@ export const Carousel = ({
           index={index}
           isActiveMediaLoading={isActiveMediaLoading}
           isMuted={isMuted}
-          isUnavailableOffline={showOfflineUi && !isFileAvailableOffline(item)}
           item={item}
           mediaQuality={carouselHelpers.CAROUSEL_FILE_QUALITY}
           onActiveMediaLoad={handleActiveMediaLoad}
@@ -530,7 +502,6 @@ export const Carousel = ({
       isActiveMediaLoading,
       isMuted,
       setIsPlaying,
-      showOfflineUi,
       videoPlaybackRate,
       videoPlaybackIntentState,
       videoResetTokens,
@@ -614,7 +585,6 @@ export const Carousel = ({
                 isMuted={isMuted}
                 isPlaying={isPlaying}
                 isSwiping={isSwiping}
-                isUnavailableOffline={isActiveMediaUnavailableOffline}
                 onScrubEnd={commitVideoScrub}
                 onScrubMove={previewVideoScrub}
                 onScrubStart={startVideoScrub}

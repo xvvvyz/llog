@@ -1,5 +1,4 @@
 import { useUi } from '@/features/account/queries/use-ui';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { createTeam } from '@/features/teams/mutations/create';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
@@ -27,7 +26,6 @@ const TeamSwitcherContent = () => {
   const breakpoints = useBreakpoints();
   const menu = Menu.useContext();
   const sheetManager = useSheetManager();
-  const connectivity = useConnectivity();
   const ui = useUi();
   const { teams } = useTeams();
 
@@ -37,17 +35,15 @@ const TeamSwitcherContent = () => {
 
   const handleSwitchTeam = React.useCallback(
     (teamId: string) => {
-      if (!connectivity.canRunNetworkActions) return;
       if (teamId === ui.activeTeamId) return;
       void switchTeam({ teamId, uiId: ui.id });
     },
-    [connectivity.canRunNetworkActions, ui.activeTeamId, ui.id]
+    [ui.activeTeamId, ui.id]
   );
 
   const handleCreateTeam = React.useCallback(() => {
-    if (!connectivity.canRunNetworkActions) return;
     void createTeam({ name: 'Team' });
-  }, [connectivity.canRunNetworkActions]);
+  }, []);
 
   const handleOpenTeamSettings = React.useCallback(
     (event: GestureResponderEvent, teamId: string) => {
@@ -94,7 +90,6 @@ const TeamSwitcherContent = () => {
           >
             <Menu.Item
               className="flex-1 pr-2 active:bg-transparent web:focus:bg-transparent web:hover:bg-transparent"
-              disabled={!connectivity.canRunNetworkActions}
               onHoverIn={() => setHighlightedTeamId(t.id)}
               onHoverOut={() => setHighlightedTeamId(null)}
               onPress={() => handleSwitchTeam(t.id)}
@@ -119,7 +114,6 @@ const TeamSwitcherContent = () => {
             </Menu.Item>
             <Button
               className="ml-2"
-              disabled={!connectivity.canRunNetworkActions}
               onPress={(event) => handleOpenTeamSettings(event, t.id)}
               onTouchStart={(event) => event.stopPropagation()}
               size="icon-xs"
@@ -130,24 +124,15 @@ const TeamSwitcherContent = () => {
           </View>
         ))}
         <Menu.Separator />
-        <CreateTeamMenuItem
-          disabled={!connectivity.canRunNetworkActions}
-          onPress={handleCreateTeam}
-        />
+        <CreateTeamMenuItem onPress={handleCreateTeam} />
       </Menu.Content>
     </>
   );
 };
 
-const CreateTeamMenuItem = ({
-  disabled,
-  onPress,
-}: {
-  disabled?: boolean;
-  onPress: () => void;
-}) => {
+const CreateTeamMenuItem = ({ onPress }: { onPress: () => void }) => {
   return (
-    <Menu.Item disabled={disabled} onPress={onPress}>
+    <Menu.Item onPress={onPress}>
       <View className="w-5 items-center">
         <Icon className="text-placeholder" icon={Plus} />
       </View>

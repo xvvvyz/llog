@@ -7,7 +7,6 @@ import { updateProfile } from '@/features/account/mutations/update-profile';
 import { uploadProfileImage } from '@/features/account/mutations/upload-profile-image';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
@@ -53,7 +52,6 @@ export default function Account() {
     React.useState<push.WebPushSupportState>('unsupported');
 
   const auth = db.useAuth();
-  const connectivity = useConnectivity();
   const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
   const profile = useProfile();
   const sheetManager = useSheetManager();
@@ -61,8 +59,6 @@ export default function Account() {
   const ui = useUi();
 
   const handleUploadProfileImage = React.useCallback(async () => {
-    if (!connectivity.canRunNetworkActions) return;
-
     const picker = await launchImageLibraryAsync({
       allowsEditing: true,
       aspect: [1, 1],
@@ -71,12 +67,11 @@ export default function Account() {
 
     if (picker.canceled) return;
     await uploadProfileImage(picker.assets[0]);
-  }, [connectivity.canRunNetworkActions]);
+  }, []);
 
   const handleRandomizeProfileAvatar = React.useCallback(async () => {
-    if (!connectivity.canRunNetworkActions) return;
     await randomizeProfileAvatar({ profileId: profile.id });
-  }, [connectivity.canRunNetworkActions, profile.id]);
+  }, [profile.id]);
 
   React.useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -84,14 +79,7 @@ export default function Account() {
   }, []);
 
   React.useEffect(() => {
-    if (
-      Platform.OS !== 'web' ||
-      !auth.user ||
-      !connectivity.canRunNetworkActions
-    ) {
-      return;
-    }
-
+    if (Platform.OS !== 'web' || !auth.user) return;
     let cancelled = false;
 
     void (async () => {
@@ -108,7 +96,7 @@ export default function Account() {
     return () => {
       cancelled = true;
     };
-  }, [auth.user, connectivity.canRunNetworkActions]);
+  }, [auth.user]);
 
   React.useEffect(() => {
     if (Platform.OS !== 'web' || !auth.user) return;
@@ -135,14 +123,12 @@ export default function Account() {
 
   const isPushToggleDisabled =
     isPushPending ||
-    !connectivity.canRunNetworkActions ||
     pushState.status === 'blocked' ||
     (!auth.user && pushSupport !== 'ios-home-screen-required') ||
     (effectivePushState.status === 'unsupported' &&
       pushSupport !== 'ios-home-screen-required');
 
   const handleTogglePush = React.useCallback(async () => {
-    if (!connectivity.canRunNetworkActions) return;
     if (Platform.OS !== 'web') return;
 
     if (pushSupport === 'ios-home-screen-required') {
@@ -197,13 +183,7 @@ export default function Account() {
     } finally {
       setIsPushPending(false);
     }
-  }, [
-    auth.user,
-    connectivity.canRunNetworkActions,
-    pushState,
-    pushSupport,
-    sheetManager,
-  ]);
+  }, [auth.user, pushState, pushSupport, sheetManager]);
 
   return (
     <Page>
@@ -231,28 +211,19 @@ export default function Account() {
                 </Menu.Trigger>
                 <Menu.Content align="center" className="my-0">
                   {!profile.image && (
-                    <Menu.Item
-                      disabled={!connectivity.canRunNetworkActions}
-                      onPress={handleRandomizeProfileAvatar}
-                    >
+                    <Menu.Item onPress={handleRandomizeProfileAvatar}>
                       <Icon className="text-placeholder" icon={Shuffle} />
                       <Text>Randomize</Text>
                     </Menu.Item>
                   )}
-                  <Menu.Item
-                    disabled={!connectivity.canRunNetworkActions}
-                    onPress={handleUploadProfileImage}
-                  >
+                  <Menu.Item onPress={handleUploadProfileImage}>
                     <Icon className="text-placeholder" icon={UploadSimple} />
                     <Text>Upload</Text>
                   </Menu.Item>
                   {profile.image && (
                     <>
                       <Menu.Separator />
-                      <Menu.Item
-                        disabled={!connectivity.canRunNetworkActions}
-                        onPress={deleteProfileImage}
-                      >
+                      <Menu.Item onPress={deleteProfileImage}>
                         <Icon className="text-destructive" icon={Trash} />
                         <Text className="text-destructive">Remove</Text>
                       </Menu.Item>
@@ -277,13 +248,11 @@ export default function Account() {
                   ref={nameInputRef}
                   accessibilityLabelledBy={`${ACCOUNT_NAME_INPUT_ID}-label`}
                   className="pr-0 border-0 rounded-none bg-transparent text-right"
-                  editable={connectivity.canRunNetworkActions}
                   id={ACCOUNT_NAME_INPUT_ID}
                   maxLength={32}
                   selectTextOnFocus
                   value={profile.name}
                   onChangeText={(text) =>
-                    connectivity.canRunNetworkActions &&
                     updateProfile({ id: profile.id!, name: text })
                   }
                 />
@@ -344,7 +313,6 @@ export default function Account() {
             )}
             <Button
               className="h-auto px-4 py-3 rounded-none gap-4 justify-between"
-              disabled={!connectivity.canRunNetworkActions}
               onPress={() => sheetManager.open('mcp')}
               variant="ghost"
               wrapperClassName="w-full rounded-none"

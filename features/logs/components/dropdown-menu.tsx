@@ -1,7 +1,6 @@
 import { isMemberRole } from '@/domain/teams/permissions';
 import { LogDropdownItems } from '@/features/invites/components/log-dropdown-items';
 import { useLog } from '@/features/logs/queries/use-log';
-import { useConnectivity } from '@/features/offline/connectivity';
 import * as lookup from '@/features/search/lib/lookup';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
@@ -36,7 +35,6 @@ export const DropdownMenu = ({
   triggerWrapperClassName?: string;
 }) => {
   const log = useLog({ id });
-  const connectivity = useConnectivity();
   const { canManage } = useMyRole({ teamId: log.teamId });
   const sheetManager = useSheetManager();
   const { members } = useTeamMembers({ teamId: log.teamId });
@@ -55,8 +53,7 @@ export const DropdownMenu = ({
     [members]
   );
 
-  const networkActionsDisabled = !connectivity.canRunNetworkActions;
-  const shouldShowMembers = hasMembers || networkActionsDisabled;
+  const shouldShowMembers = hasMembers;
   if (!canManage && !searchHref) return null;
 
   return (
@@ -82,30 +79,21 @@ export const DropdownMenu = ({
               <Icon className="text-placeholder" icon={NotePencil} />
               <Text>Edit</Text>
             </Menu.Item>
-            <Menu.Item
-              disabled={networkActionsDisabled}
-              onPress={() => sheetManager.open('log-tags', id)}
-            >
+            <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
               <Icon className="text-placeholder" icon={Tag} />
               <Text>Tags</Text>
             </Menu.Item>
-            <Menu.Item
-              disabled={networkActionsDisabled}
-              onPress={() => sheetManager.open('log-templates', id)}
-            >
+            <Menu.Item onPress={() => sheetManager.open('log-templates', id)}>
               <Icon className="text-placeholder" icon={NoteBlank} />
               <Text>Templates</Text>
             </Menu.Item>
             {shouldShowMembers && (
-              <Menu.Item
-                disabled={networkActionsDisabled}
-                onPress={() => sheetManager.open('log-members', id)}
-              >
+              <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
                 <Icon className="text-placeholder" icon={UsersThree} />
                 <Text>Members</Text>
               </Menu.Item>
             )}
-            <LogDropdownItems disabled={networkActionsDisabled} id={id} />
+            <LogDropdownItems id={id} />
           </>
         )}
         <Menu.Item disabled={!searchHref} href={searchHref}>
@@ -115,10 +103,7 @@ export const DropdownMenu = ({
         {canManage && (
           <>
             <Menu.Separator />
-            <Menu.Item
-              disabled={networkActionsDisabled}
-              onPress={() => sheetManager.open('log-delete', id)}
-            >
+            <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
               <Icon className="text-destructive" icon={Trash} />
               <Text className="text-destructive">Delete</Text>
             </Menu.Item>
