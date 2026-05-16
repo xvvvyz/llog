@@ -23,6 +23,7 @@ const ACTIVE_ATTACHMENT_STATUSES = new Set<types.QueuedAttachmentStatus>([
 
 const AUTO_RETRY_BASE_DELAY_MS = 5_000;
 const AUTO_RETRY_MAX_DELAY_MS = 5 * 60_000;
+const SUBMITTED_RECORD_DRAFT_ID_LIMIT = 200;
 
 export const getAutoRetryDelayMs = (retryCount: number) =>
   Math.min(
@@ -137,13 +138,18 @@ export const hasPendingOutboxWork = (state: OutboxState) => {
 export const hasOutboxContent = (
   outbox: Pick<
     types.PersistedOutbox,
-    'attachments' | 'drafts' | 'recordPins' | 'submissions'
+    | 'attachments'
+    | 'drafts'
+    | 'recordPins'
+    | 'submissions'
+    | 'submittedRecordDraftIds'
   >
 ) =>
   outbox.attachments.length > 0 ||
   outbox.drafts.length > 0 ||
   outbox.recordPins.length > 0 ||
-  outbox.submissions.length > 0;
+  outbox.submissions.length > 0 ||
+  outbox.submittedRecordDraftIds.length > 0;
 
 export const resetInFlightOutboxWork = <T extends OutboxState>(
   state: T
@@ -214,6 +220,14 @@ const mergeById = <T extends { id: string }>(persisted: T[], current: T[]) => {
   return [...merged.values()];
 };
 
+export const mergeSubmittedRecordDraftIds = (
+  persisted: string[],
+  current: string[]
+) =>
+  [...new Set([...persisted, ...current])].slice(
+    -SUBMITTED_RECORD_DRAFT_ID_LIMIT
+  );
+
 export const mergeOutboxForHydration = ({
   current,
   persisted,
@@ -243,6 +257,10 @@ export const mergeOutboxForHydration = ({
     submissions: mergeById(
       normalizedPersisted.submissions,
       current.submissions
+    ),
+    submittedRecordDraftIds: mergeSubmittedRecordDraftIds(
+      normalizedPersisted.submittedRecordDraftIds,
+      current.submittedRecordDraftIds
     ),
     version: 1,
   };

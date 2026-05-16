@@ -12,8 +12,19 @@ export const emptyPersistedOutbox = (): PersistedOutbox => ({
   drafts: [],
   recordPins: [],
   submissions: [],
+  submittedRecordDraftIds: [],
   version: 1,
 });
+
+const normalizeStringIds = (value: unknown) => {
+  if (!Array.isArray(value)) return [];
+
+  const ids = value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+
+  return [...new Set(ids)];
+};
 
 export const normalizePersistedOutbox = (
   value: Partial<PersistedOutbox> | null | undefined
@@ -29,6 +40,7 @@ export const normalizePersistedOutbox = (
         : undefined,
     recordPins: Array.isArray(value.recordPins) ? value.recordPins : [],
     submissions: Array.isArray(value.submissions) ? value.submissions : [],
+    submittedRecordDraftIds: normalizeStringIds(value.submittedRecordDraftIds),
     version: 1,
   };
 };

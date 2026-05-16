@@ -121,6 +121,7 @@ export type PersistedOutbox = {
   ownerUserId?: string;
   recordPins: QueuedRecordPin[];
   submissions: QueuedSubmission[];
+  submittedRecordDraftIds: string[];
   version: 1;
 };
 

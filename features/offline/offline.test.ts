@@ -86,6 +86,7 @@ describe('persistence', () => {
       drafts: [],
       recordPins: [],
       submissions: [],
+      submittedRecordDraftIds: [],
       version: 1,
     });
   });
@@ -303,6 +304,7 @@ describe('outbox state', () => {
           },
         ],
         submissions: [queuedRecordSubmission({ contentId: 'new-record' })],
+        submittedRecordDraftIds: ['new-submitted-draft'],
         version: 1,
       },
       persisted: {
@@ -326,6 +328,7 @@ describe('outbox state', () => {
             status: 'publishing',
           }),
         ],
+        submittedRecordDraftIds: ['persisted-submitted-draft'],
         version: 1,
       },
     });
@@ -348,6 +351,11 @@ describe('outbox state', () => {
     ).toEqual([
       ['persisted-record', false],
       ['new-record', true],
+    ]);
+
+    expect(merged.submittedRecordDraftIds).toEqual([
+      'persisted-submitted-draft',
+      'new-submitted-draft',
     ]);
   });
 });

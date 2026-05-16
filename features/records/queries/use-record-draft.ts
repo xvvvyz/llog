@@ -2,6 +2,7 @@ import * as recordIdentity from '@/domain/records/identity-fields';
 import { recordDraftQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useOutbox } from '@/features/offline/outbox-hooks';
+import { findReusableRecordDraft } from '@/features/records/lib/record-draft-selection';
 import { createRecordDraft } from '@/features/records/mutations/create-record-draft';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
@@ -80,25 +81,31 @@ export const useRecordDraft = ({
     [logId, outbox.submissions]
   );
 
-  const reusableRecords = records.filter(
-    (item) =>
-      item.id && !ignoredDraftIds?.has(item.id) && !outboxDraftIds.has(item.id)
-  );
+  const ignoredSubmittedDraftIds = React.useMemo(() => {
+    const ids = new Set(outbox.submittedRecordDraftIds);
+    ignoredDraftIds?.forEach((id) => ids.add(id));
+    return ids;
+  }, [ignoredDraftIds, outbox.submittedRecordDraftIds]);
 
-  const queriedRecord = reusableRecords.find((item) => item.log?.id === logId);
+  const queriedRecord = findReusableRecordDraft({
+    ignoredDraftIds: ignoredSubmittedDraftIds,
+    logId,
+    outboxDraftIds,
+    records,
+  });
+
   const draftCreationKey = logId ? `record:${logId}` : undefined;
+
+  const createdDraftIsIgnored =
+    !!createdDraft &&
+    (ignoredSubmittedDraftIds.has(createdDraft.id) ||
+      outboxDraftIds.has(createdDraft.id));
 
   const fallbackRecord = React.useMemo(():
     | (typeof records)[number]
     | undefined => {
     if (!createdDraft || createdDraft.key !== draftCreationKey) return;
-
-    if (
-      ignoredDraftIds?.has(createdDraft.id) ||
-      outboxDraftIds.has(createdDraft.id)
-    ) {
-      return;
-    }
+    if (createdDraftIsIgnored) return;
 
     return {
       date: createdDraft.date,
@@ -112,7 +119,7 @@ export const useRecordDraft = ({
       teamId: createdDraft.teamId,
       text: '',
     } as (typeof records)[number];
-  }, [createdDraft, draftCreationKey, ignoredDraftIds, outboxDraftIds]);
+  }, [createdDraft, createdDraftIsIgnored, draftCreationKey]);
 
   const record = queriedRecord ?? fallbackRecord;
   const hasRecord = !!record;
@@ -124,21 +131,14 @@ export const useRecordDraft = ({
   }, [queriedRecord]);
 
   React.useEffect(() => {
-    if (!createdDraft) return;
-
-    if (
-      !ignoredDraftIds?.has(createdDraft.id) &&
-      !outboxDraftIds.has(createdDraft.id)
-    ) {
-      return;
-    }
+    if (!createdDraft || !createdDraftIsIgnored) return;
 
     if (creatingDraftKeyRef.current === createdDraft.key) {
       creatingDraftKeyRef.current = undefined;
     }
 
     setCreatedDraft(null);
-  }, [createdDraft, ignoredDraftIds, outboxDraftIds]);
+  }, [createdDraft, createdDraftIsIgnored]);
 
   React.useEffect(() => {
     const targetLogId = logId;

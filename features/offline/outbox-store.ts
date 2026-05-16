@@ -13,6 +13,7 @@ const emptyOutboxSnapshot = (ownerUserId?: string): OutboxSnapshot => ({
   ownerUserId,
   recordPins: [],
   submissions: [],
+  submittedRecordDraftIds: [],
   version: 1,
 });
 
@@ -33,6 +34,7 @@ const persist = (next: OutboxSnapshot) => {
     ownerUserId: next.ownerUserId,
     recordPins: next.recordPins,
     submissions: next.submissions,
+    submittedRecordDraftIds: next.submittedRecordDraftIds,
     version: 1,
   };
 
@@ -496,6 +498,19 @@ export const updateQueuedRecordPin = ({
 };
 
 export const queueRecordPin = updateQueuedRecordPin;
+
+export const rememberSubmittedRecordDraftId = (recordId?: string) => {
+  const id = recordId?.trim();
+  if (!id) return;
+
+  setSnapshot((current) => ({
+    ...current,
+    submittedRecordDraftIds: outboxState.mergeSubmittedRecordDraftIds(
+      current.submittedRecordDraftIds.filter((item) => item !== id),
+      [id]
+    ),
+  }));
+};
 
 export const clearQueuedRecordPin = ({
   isPinned,

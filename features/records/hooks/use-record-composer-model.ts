@@ -737,6 +737,8 @@ export const useRecordComposerModel = () => {
         type: 'record',
       });
 
+      outboxStore.rememberSubmittedRecordDraftId(recordId);
+
       outboxStore.clearQueuedDraft({
         parentId: recordId,
         parentType: 'record',
