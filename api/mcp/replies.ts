@@ -1,3 +1,6 @@
+import { runBulkItems } from '@/api/mcp/bulk';
+import * as content from '@/api/mcp/content';
+import * as contentQueries from '@/api/mcp/content-queries';
 import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
 import { registerMcpTool } from '@/api/mcp/register-tool';
@@ -8,10 +11,17 @@ import * as recordPublish from '@/domain/records/publish';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import * as content from '@/api/mcp/content';
-import * as contentQueries from '@/api/mcp/content-queries';
 
 const repliesActionSchema = z.enum(['get', 'save']);
+
+const repliesItemSchema = z.object({
+  include: z.array(mcpSchemas.replyIncludeSchema).max(3).optional(),
+  links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),
+  mode: mcpSchemas.saveModeSchema,
+  recordId: z.string().min(1).optional(),
+  replyId: z.string().min(1).optional(),
+  text: z.string().max(10240).optional(),
+});
 
 export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
   const fieldOptions = { appUrl: ctx.env.APP_URL };
@@ -322,26 +332,22 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     server,
     'replies',
     {
-      description: 'Read, draft, publish, and update replies on records.',
+      description:
+        'Batch read, draft, publish, and update replies on records with items.',
       inputSchema: {
         action: repliesActionSchema,
-        links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),
-        include: z.array(mcpSchemas.replyIncludeSchema).max(3).optional(),
-        mode: mcpSchemas.saveModeSchema,
-        recordId: z.string().min(1).optional(),
-        replyId: z.string().min(1).optional(),
-        text: z.string().max(10240).optional(),
+        items: z.array(repliesItemSchema).min(1).max(25),
       },
       outputSchema: mcpSchemas.repliesOutputSchema,
     },
-    async ({ action, include, links, mode, recordId, replyId, text }) => {
+    async ({ action, items }) => {
       switch (action) {
         case 'get': {
-          return getReply({ include, replyId });
+          return runBulkItems({ action, handler: getReply, items });
         }
 
         case 'save': {
-          return saveReply({ links, mode, recordId, replyId, text });
+          return runBulkItems({ action, handler: saveReply, items });
         }
       }
     }

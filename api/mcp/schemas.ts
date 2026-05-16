@@ -143,43 +143,79 @@ export const accountOutputSchema = {
 };
 
 export const logsOutputSchema = {
-  log: logOutputSchema.optional(),
   logs: z.array(logOutputSchema).optional(),
-  records: z.array(recordSummaryOutputSchema).optional(),
+  results: z
+    .array(
+      z.object({
+        log: logOutputSchema.optional(),
+        records: z.array(recordSummaryOutputSchema).optional(),
+      })
+    )
+    .optional(),
 };
 
 export const templatesOutputSchema = {
-  deleted: z.boolean().optional(),
-  template: templateOutputSchema.optional(),
-  templateId: z.string().optional(),
-  templates: z.array(templateOutputSchema).optional(),
+  results: z
+    .array(
+      z.object({
+        deleted: z.boolean().optional(),
+        template: templateOutputSchema.optional(),
+        templateId: z.string().optional(),
+        templates: z.array(templateOutputSchema).optional(),
+      })
+    )
+    .optional(),
 };
 
 export const recordsOutputSchema = {
-  record: recordOutputSchema.optional(),
-  recordId: z.string().optional(),
-  records: z.array(recordSummaryOutputSchema).optional(),
-  status: statusOutputSchema.optional(),
+  results: z
+    .array(
+      z.object({
+        record: recordOutputSchema.optional(),
+        recordId: z.string().optional(),
+        records: z.array(recordSummaryOutputSchema).optional(),
+        status: statusOutputSchema.optional(),
+      })
+    )
+    .optional(),
 };
 
 export const repliesOutputSchema = {
-  reply: replyOutputSchema.optional(),
-  replyId: z.string().optional(),
-  status: statusOutputSchema.optional(),
+  results: z
+    .array(
+      z.object({
+        reply: replyOutputSchema.optional(),
+        replyId: z.string().optional(),
+        status: statusOutputSchema.optional(),
+      })
+    )
+    .optional(),
 };
 
 export const recordTagsOutputSchema = {
-  created: z.boolean().optional(),
-  recordId: z.string().optional(),
-  selected: z.boolean().optional(),
-  tag: tagOutputSchema.optional(),
-  tags: z.array(tagOutputSchema).optional(),
+  results: z
+    .array(
+      z.object({
+        created: z.boolean().optional(),
+        recordId: z.string().optional(),
+        selected: z.boolean().optional(),
+        tag: tagOutputSchema.optional(),
+        tags: z.array(tagOutputSchema).optional(),
+      })
+    )
+    .optional(),
 };
 
 export const recordActionsOutputSchema = {
-  pinned: z.boolean().optional(),
-  reactionId: z.string().optional(),
-  removed: z.boolean().optional(),
+  results: z
+    .array(
+      z.object({
+        pinned: z.boolean().optional(),
+        reactionId: z.string().optional(),
+        removed: z.boolean().optional(),
+      })
+    )
+    .optional(),
 };
 
 const mediaSearchMatchOutputSchema = z.object({
@@ -244,15 +280,19 @@ const searchResultOutputSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
-export const searchOutputSchema = {
-  pagination: z
-    .object({
-      cursor: z.string().optional(),
-      more: z.boolean(),
-      nextCursor: z.string().optional(),
-      scanned: z.number(),
-      scanLimit: z.number(),
-    })
-    .optional(),
+const searchPaginationOutputSchema = z.object({
+  cursor: z.string().optional(),
+  more: z.boolean(),
+  nextCursor: z.string().optional(),
+  scanned: z.number(),
+  scanLimit: z.number(),
+});
+
+const searchItemOutputSchema = z.object({
+  pagination: searchPaginationOutputSchema.optional(),
   results: z.array(searchResultOutputSchema).optional(),
+});
+
+export const searchOutputSchema = {
+  searches: z.array(searchItemOutputSchema).optional(),
 };

@@ -1,3 +1,4 @@
+import { runBulkItems } from '@/api/mcp/bulk';
 import * as mcpFields from '@/api/mcp/fields';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
@@ -10,6 +11,14 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
 const templateActionsSchema = z.enum(['list', 'get', 'save', 'delete']);
+
+const templateItemSchema = z.object({
+  logId: z.string().min(1).optional(),
+  query: z.string().trim().min(1).optional(),
+  tagIds: z.array(z.string().min(1)).max(50).optional(),
+  templateId: z.string().min(1).optional(),
+  text: z.string().max(10240).optional(),
+});
 
 const requireManageTemplates = ({
   teamId,
@@ -303,33 +312,29 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
     'templates',
     {
       description:
-        'List, create, update, and delete reusable record templates.',
+        'Batch list, create, update, and delete reusable record templates with items.',
       inputSchema: {
         action: templateActionsSchema,
-        logId: z.string().min(1).optional(),
-        query: z.string().trim().min(1).optional(),
-        tagIds: z.array(z.string().min(1)).max(50).optional(),
-        templateId: z.string().min(1).optional(),
-        text: z.string().max(10240).optional(),
+        items: z.array(templateItemSchema).min(1).max(50),
       },
       outputSchema: mcpSchemas.templatesOutputSchema,
     },
-    async ({ action, logId, query, tagIds, templateId, text }) => {
+    async ({ action, items }) => {
       switch (action) {
         case 'list': {
-          return listTemplates({ logId, query });
+          return runBulkItems({ action, handler: listTemplates, items });
         }
 
         case 'get': {
-          return getTemplateDetail({ templateId });
+          return runBulkItems({ action, handler: getTemplateDetail, items });
         }
 
         case 'save': {
-          return saveTemplate({ logId, tagIds, templateId, text });
+          return runBulkItems({ action, handler: saveTemplate, items });
         }
 
         case 'delete': {
-          return deleteTemplate({ templateId });
+          return runBulkItems({ action, handler: deleteTemplate, items });
         }
       }
     }

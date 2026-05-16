@@ -1,3 +1,4 @@
+import { runBulkItems } from '@/api/mcp/bulk';
 import * as mcpFields from '@/api/mcp/fields';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
@@ -12,6 +13,12 @@ import { z } from 'zod/v4';
 
 const logsActionSchema = z.enum(['list', 'get', 'create']);
 const LOG_RECORD_PREVIEW_LIMIT = 25;
+
+const logsItemSchema = z.object({
+  logId: z.string().min(1).optional(),
+  name: z.string().trim().min(1).max(32).optional(),
+  teamId: z.string().min(1).optional(),
+});
 
 const recordSummaryQuery = {
   files: recordQueries.countFileQuery,
@@ -170,27 +177,25 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
     server,
     'logs',
     {
-      description: 'List, inspect, and create logs within teams.',
+      description: 'List logs, or batch inspect and create logs with items.',
       inputSchema: {
         action: logsActionSchema,
-        logId: z.string().min(1).optional(),
-        name: z.string().trim().min(1).max(32).optional(),
-        teamId: z.string().min(1).optional(),
+        items: z.array(logsItemSchema).min(1).max(50).optional(),
       },
       outputSchema: mcpSchemas.logsOutputSchema,
     },
-    async ({ action, logId, name, teamId }) => {
+    async ({ action, items }) => {
       switch (action) {
         case 'list': {
           return listLogs();
         }
 
         case 'get': {
-          return getLog({ logId, name });
+          return runBulkItems({ action, handler: getLog, items });
         }
 
         case 'create': {
-          return createLog({ name, teamId });
+          return runBulkItems({ action, handler: createLog, items });
         }
       }
     }

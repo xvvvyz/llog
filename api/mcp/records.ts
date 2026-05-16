@@ -1,3 +1,6 @@
+import { runBulkItems } from '@/api/mcp/bulk';
+import * as content from '@/api/mcp/content';
+import * as contentQueries from '@/api/mcp/content-queries';
 import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
 import { registerMcpTool } from '@/api/mcp/register-tool';
@@ -10,10 +13,21 @@ import * as recordPublish from '@/domain/records/publish';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import * as content from '@/api/mcp/content';
-import * as contentQueries from '@/api/mcp/content-queries';
 
 const recordsActionSchema = z.enum(['list', 'get', 'save', 'update']);
+
+const recordItemSchema = z.object({
+  include: z.array(mcpSchemas.recordIncludeSchema).max(4).optional(),
+  links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  logId: z.string().min(1).optional(),
+  mode: mcpSchemas.saveModeSchema,
+  recordId: z.string().min(1).optional(),
+  recordUrl: z.string().url().optional(),
+  replyLimit: z.number().int().min(1).max(100).optional(),
+  status: mcpSchemas.contentStatusSchema,
+  text: z.string().max(10240).optional(),
+});
 
 const draftRecordError = () =>
   new Error(
@@ -482,50 +496,30 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     server,
     'records',
     {
-      description: 'List, read, draft, publish, and update records.',
+      description:
+        'Batch list, read, draft, publish, and update records with items.',
       inputSchema: {
         action: recordsActionSchema,
-        links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),
-        limit: z.number().int().min(1).max(100).optional(),
-        include: z.array(mcpSchemas.recordIncludeSchema).max(4).optional(),
-        logId: z.string().min(1).optional(),
-        mode: mcpSchemas.saveModeSchema,
-        recordId: z.string().min(1).optional(),
-        recordUrl: z.string().url().optional(),
-        replyLimit: z.number().int().min(1).max(100).optional(),
-        status: mcpSchemas.contentStatusSchema,
-        text: z.string().max(10240).optional(),
+        items: z.array(recordItemSchema).min(1).max(25),
       },
       outputSchema: mcpSchemas.recordsOutputSchema,
     },
-    async ({
-      action,
-      include,
-      links,
-      limit,
-      logId,
-      mode,
-      recordId,
-      recordUrl,
-      replyLimit,
-      status,
-      text,
-    }) => {
+    async ({ action, items }) => {
       switch (action) {
         case 'list': {
-          return listRecords({ limit, logId, status });
+          return runBulkItems({ action, handler: listRecords, items });
         }
 
         case 'get': {
-          return getRecord({ include, recordId, recordUrl, replyLimit });
+          return runBulkItems({ action, handler: getRecord, items });
         }
 
         case 'save': {
-          return saveRecord({ links, logId, mode, recordId, text });
+          return runBulkItems({ action, handler: saveRecord, items });
         }
 
         case 'update': {
-          return updateRecord({ links, recordId, recordUrl, text });
+          return runBulkItems({ action, handler: updateRecord, items });
         }
       }
     }

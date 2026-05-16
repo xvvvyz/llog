@@ -58,7 +58,9 @@ describe('output schemas', () => {
     };
 
     expect(() =>
-      parseShape(mcpSchemas.recordsOutputSchema, { record: item })
+      parseShape(mcpSchemas.recordsOutputSchema, {
+        results: [{ record: item }],
+      })
     ).not.toThrow();
   });
 
@@ -84,7 +86,40 @@ describe('output schemas', () => {
     };
 
     expect(() =>
-      parseShape(mcpSchemas.repliesOutputSchema, { reply: item })
+      parseShape(mcpSchemas.repliesOutputSchema, { results: [{ reply: item }] })
+    ).not.toThrow();
+  });
+
+  test('accepts bulk results', () => {
+    expect(() =>
+      parseShape(mcpSchemas.recordsOutputSchema, {
+        results: [{ recordId: 'record-1', status: 'published' }],
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      parseShape(mcpSchemas.repliesOutputSchema, {
+        results: [{ replyId: 'reply-1', status: 'draft' }],
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      parseShape(mcpSchemas.templatesOutputSchema, {
+        results: [{ deleted: true, templateId: 'template-1' }],
+      })
+    ).not.toThrow();
+  });
+
+  test('accepts bulk searches', () => {
+    expect(() =>
+      parseShape(mcpSchemas.searchOutputSchema, {
+        searches: [
+          {
+            pagination: { more: false, scanned: 1, scanLimit: 1000 },
+            results: [{ log: { id: 'log-1', name: 'Daily' }, type: 'log' }],
+          },
+        ],
+      })
     ).not.toThrow();
   });
 });

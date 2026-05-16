@@ -1,3 +1,4 @@
+import { runBulkItems } from '@/api/mcp/bulk';
 import * as mcpFields from '@/api/mcp/fields';
 import { getReadableRecord } from '@/api/mcp/content';
 import { registerMcpTool } from '@/api/mcp/register-tool';
@@ -17,6 +18,15 @@ const recordTagQuery = {
 };
 
 const recordTagsActionSchema = z.enum(['list', 'set', 'create']);
+
+const recordTagsItemSchema = z.object({
+  logId: z.string().min(1).optional(),
+  name: z.string().trim().min(1).max(16).optional(),
+  query: z.string().trim().min(1).optional(),
+  recordId: z.string().min(1).optional(),
+  selected: z.boolean().optional(),
+  tagId: z.string().min(1).optional(),
+});
 
 const getRecordForTagging = async (ctx: McpContext, recordId: string) =>
   getReadableRecord(ctx, recordId);
@@ -244,30 +254,26 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     server,
     'record_tags',
     {
-      description: 'List, create, apply, and remove record tags.',
+      description:
+        'Batch list, create, apply, and remove record tags with items.',
       inputSchema: {
         action: recordTagsActionSchema,
-        logId: z.string().min(1).optional(),
-        name: z.string().trim().min(1).max(16).optional(),
-        query: z.string().trim().min(1).optional(),
-        recordId: z.string().min(1).optional(),
-        selected: z.boolean().optional(),
-        tagId: z.string().min(1).optional(),
+        items: z.array(recordTagsItemSchema).min(1).max(50),
       },
       outputSchema: mcpSchemas.recordTagsOutputSchema,
     },
-    async ({ action, logId, name, query, recordId, selected, tagId }) => {
+    async ({ action, items }) => {
       switch (action) {
         case 'list': {
-          return listRecordTags({ logId, query });
+          return runBulkItems({ action, handler: listRecordTags, items });
         }
 
         case 'set': {
-          return setRecordTag({ recordId, selected, tagId });
+          return runBulkItems({ action, handler: setRecordTag, items });
         }
 
         case 'create': {
-          return createRecordTag({ name, recordId });
+          return runBulkItems({ action, handler: createRecordTag, items });
         }
       }
     }

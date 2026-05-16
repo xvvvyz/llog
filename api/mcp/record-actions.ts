@@ -1,3 +1,4 @@
+import { runBulkItems } from '@/api/mcp/bulk';
 import { textResult } from '@/api/mcp/fields';
 import { getVisibleRecord } from '@/api/mcp/content';
 import { registerMcpTool } from '@/api/mcp/register-tool';
@@ -11,6 +12,13 @@ import { z } from 'zod/v4';
 
 const recordActionsActionSchema = z.enum(['reaction', 'pin']);
 const reactionEmojiSchema = z.enum(recordReactions.REACTION_EMOJIS);
+
+const recordActionsItemSchema = z.object({
+  emoji: reactionEmojiSchema.nullable().optional(),
+  isPinned: z.boolean().optional(),
+  recordId: z.string().min(1).optional(),
+  replyId: z.string().min(1).optional(),
+});
 
 export const registerActionTools = (server: McpServer, ctx: McpContext) => {
   const setReaction = async ({
@@ -120,24 +128,22 @@ export const registerActionTools = (server: McpServer, ctx: McpContext) => {
     server,
     'record_actions',
     {
-      description: 'React to records or replies, and pin or unpin records.',
+      description:
+        'Batch reactions and pin updates for records or replies with items.',
       inputSchema: {
         action: recordActionsActionSchema,
-        emoji: reactionEmojiSchema.nullable().optional(),
-        isPinned: z.boolean().optional(),
-        recordId: z.string().min(1).optional(),
-        replyId: z.string().min(1).optional(),
+        items: z.array(recordActionsItemSchema).min(1).max(50),
       },
       outputSchema: mcpSchemas.recordActionsOutputSchema,
     },
-    async ({ action, emoji, isPinned, recordId, replyId }) => {
+    async ({ action, items }) => {
       switch (action) {
         case 'reaction': {
-          return setReaction({ emoji, recordId, replyId });
+          return runBulkItems({ action, handler: setReaction, items });
         }
 
         case 'pin': {
-          return setRecordPin({ isPinned, recordId });
+          return runBulkItems({ action, handler: setRecordPin, items });
         }
       }
     }
