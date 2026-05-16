@@ -116,7 +116,9 @@ export const Sheet = ({
   const sheetContentRef =
     React.useRef<React.ComponentRef<typeof Animated.View>>(null);
 
-  const dragMetrics = sheetDragMetrics.useSheetDragMetrics(windowDimensions.height);
+  const dragMetrics = sheetDragMetrics.useSheetDragMetrics(
+    windowDimensions.height
+  );
 
   const sheetStack = useSheetStack({
     backdropFadeDistance: dragMetrics.dismissThreshold,

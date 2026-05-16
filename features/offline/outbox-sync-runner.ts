@@ -1,6 +1,7 @@
 import type * as types from '@/features/offline/types';
 
 const QUEUED_SUBMISSION_PUBLISH_TIMEOUT_MS = 45_000;
+const QUEUED_SUBMISSION_REFRESH_LIMIT = 5;
 
 export type OutboxSyncSnapshot = types.PersistedOutbox & { hydrated: boolean };
 
@@ -116,6 +117,27 @@ const canPublishQueuedReplyDirectly = (
   submission.links.length === 0 &&
   attachments.length === 0;
 
+const linkSyncKey = (link: types.QueuedLinkSnapshot) =>
+  [link.id, link.label, link.order, link.teamId ?? '', link.url].join('\u0000');
+
+const submissionDraftSyncKey = (submission: types.QueuedSubmission) =>
+  submission.type === 'record'
+    ? [
+        submission.type,
+        submission.contentId,
+        submission.isPinned == null ? '' : String(submission.isPinned),
+        submission.text,
+        submission.tagIds.join('\u0000'),
+        submission.links.map(linkSyncKey).join('\u0001'),
+      ].join('\u0002')
+    : [
+        submission.type,
+        submission.contentId,
+        submission.recordId,
+        submission.text,
+        submission.links.map(linkSyncKey).join('\u0001'),
+      ].join('\u0002');
+
 export const createOutboxSyncRunner = (deps: OutboxSyncDependencies) => {
   let syncPromise: Promise<void> | null = null;
   let shouldRunAfterCurrentSync = false;
@@ -139,10 +161,76 @@ export const createOutboxSyncRunner = (deps: OutboxSyncDependencies) => {
     );
   };
 
-  const isCurrentSubmissionSyncable = (submissionId: string) =>
+  const getCurrentSyncableSubmission = (submissionId: string) =>
     deps.outboxStore
       .getAutoSyncableSubmissions(deps.outboxStore.getOutboxSnapshot())
-      .some((submission) => submission.id === submissionId);
+      .find((submission) => submission.id === submissionId);
+
+  const isCurrentSubmissionSyncable = (submissionId: string) =>
+    !!getCurrentSyncableSubmission(submissionId);
+
+  const replayQueuedSubmissionDraftState = async (
+    submission: types.QueuedSubmission
+  ) => {
+    let currentSubmission = submission;
+
+    if (currentSubmission.type === 'record') {
+      currentSubmission = await deps.replayQueuedRecordDraft(currentSubmission);
+    } else {
+      if (deps.isReplyForQueuedRecord(currentSubmission)) {
+        await deps.outboxStore.discardQueuedSubmission(currentSubmission.id);
+        return;
+      }
+
+      if (
+        currentSubmission.needsDraftReplay === true &&
+        (await deps.queuedReplyNeedsDraftReplay(currentSubmission))
+      ) {
+        currentSubmission =
+          await deps.replayQueuedReplyDraft(currentSubmission);
+      }
+    }
+
+    await deps.replayQueuedSubmissionLinks(currentSubmission);
+    if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
+    await deps.waitForDraftState(currentSubmission);
+    if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
+    return currentSubmission;
+  };
+
+  const syncQueuedSubmissionAttachments = async (
+    submission: types.QueuedSubmission
+  ) => {
+    const attachments = deps.outboxStore.getQueuedAttachmentsForSubmission(
+      deps.outboxStore.getOutboxSnapshot(),
+      submission
+    );
+
+    if (attachments.some((attachment) => attachment.status === 'persisting')) {
+      deps.outboxStore.setQueuedSubmissionStatus(submission.id, 'pending');
+      return { status: 'pending' as const };
+    }
+
+    const attemptedAttachmentIds = new Set<string>();
+
+    for (const attachment of attachments) {
+      const latestSubmission = getCurrentSyncableSubmission(submission.id);
+      if (!latestSubmission) return { status: 'stopped' as const };
+
+      const latestAttachment = deps.outboxStore
+        .getQueuedAttachmentsForSubmission(
+          deps.outboxStore.getOutboxSnapshot(),
+          latestSubmission
+        )
+        .find((item) => item.id === attachment.id);
+
+      if (!latestAttachment) continue;
+      attemptedAttachmentIds.add(latestAttachment.id);
+      await deps.uploadQueuedAttachment(latestAttachment, latestSubmission);
+    }
+
+    return { attemptedAttachmentIds, status: 'synced' as const };
+  };
 
   const publishQueuedSubmission = async (
     submission: types.QueuedSubmission
@@ -210,54 +298,65 @@ export const createOutboxSyncRunner = (deps: OutboxSyncDependencies) => {
       return;
     }
 
-    const isAlreadyPublished =
+    let isAlreadyPublished =
       await deps.queuedSubmissionIsPublished(currentSubmission);
 
-    if (!isAlreadyPublished) {
-      if (currentSubmission.type === 'record') {
-        currentSubmission =
-          await deps.replayQueuedRecordDraft(currentSubmission);
-      } else {
-        if (deps.isReplyForQueuedRecord(currentSubmission)) {
-          await deps.outboxStore.discardQueuedSubmission(currentSubmission.id);
-          return;
-        }
+    for (
+      let refreshAttempt = 0;
+      refreshAttempt < QUEUED_SUBMISSION_REFRESH_LIMIT;
+      refreshAttempt += 1
+    ) {
+      if (!isAlreadyPublished) {
+        const replayed =
+          await replayQueuedSubmissionDraftState(currentSubmission);
 
-        if (
-          currentSubmission.needsDraftReplay === true &&
-          (await deps.queuedReplyNeedsDraftReplay(currentSubmission))
-        ) {
-          currentSubmission =
-            await deps.replayQueuedReplyDraft(currentSubmission);
-        }
+        if (!replayed) return;
+        currentSubmission = replayed;
       }
 
-      await deps.replayQueuedSubmissionLinks(currentSubmission);
-      if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
-      await deps.waitForDraftState(currentSubmission);
-      if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
-    }
+      const attachmentSync =
+        await syncQueuedSubmissionAttachments(currentSubmission);
 
-    const attachments = deps.outboxStore.getQueuedAttachmentsForSubmission(
-      deps.outboxStore.getOutboxSnapshot(),
-      currentSubmission
-    );
+      if (attachmentSync.status !== 'synced') return;
 
-    if (attachments.some((attachment) => attachment.status === 'persisting')) {
-      deps.outboxStore.setQueuedSubmissionStatus(
-        currentSubmission.id,
-        'pending'
+      const latestSubmission = getCurrentSyncableSubmission(
+        currentSubmission.id
       );
 
-      return;
-    }
+      if (!latestSubmission) return;
 
-    for (const attachment of attachments) {
-      if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
-      await deps.uploadQueuedAttachment(attachment, currentSubmission);
-    }
+      const latestAttachments =
+        deps.outboxStore.getQueuedAttachmentsForSubmission(
+          deps.outboxStore.getOutboxSnapshot(),
+          latestSubmission
+        );
 
-    if (!isCurrentSubmissionSyncable(currentSubmission.id)) return;
+      const hasNewAttachments = latestAttachments.some(
+        (attachment) =>
+          attachment.status !== 'uploaded' &&
+          !attachmentSync.attemptedAttachmentIds.has(attachment.id)
+      );
+
+      const hasDraftChanges =
+        !isAlreadyPublished &&
+        submissionDraftSyncKey(latestSubmission) !==
+          submissionDraftSyncKey(currentSubmission);
+
+      currentSubmission = latestSubmission;
+      if (!hasNewAttachments && !hasDraftChanges) break;
+
+      if (refreshAttempt === QUEUED_SUBMISSION_REFRESH_LIMIT - 1) {
+        deps.outboxStore.setQueuedSubmissionStatus(
+          currentSubmission.id,
+          'pending'
+        );
+
+        return;
+      }
+
+      isAlreadyPublished =
+        await deps.queuedSubmissionIsPublished(currentSubmission);
+    }
 
     if (isAlreadyPublished) {
       deps.outboxStore.setQueuedSubmissionStatus(

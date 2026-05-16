@@ -229,6 +229,66 @@ describe('outbox sync runner', () => {
     ]);
   });
 
+  test('replays sync edits', async () => {
+    const snapshot = emptySnapshot();
+    const submission = queuedRecordSubmission();
+
+    const replayed: { isPinned?: boolean; tagIds: string[]; text: string }[] =
+      [];
+
+    let edited = false;
+    snapshot.submissions = [submission];
+
+    const { runner } = createHarness({
+      dependencies: {
+        replayQueuedRecordDraft: async (submission) => {
+          replayed.push({
+            isPinned: submission.isPinned,
+            tagIds: submission.tagIds,
+            text: submission.text,
+          });
+
+          return submission;
+        },
+        waitForDraftState: async (submission) => {
+          if (edited) return;
+          edited = true;
+
+          snapshot.submissions = snapshot.submissions.map((item) =>
+            item.id === submission.id
+              ? {
+                  ...item,
+                  isPinned: true,
+                  tagIds: ['tag-a'],
+                  tags: [
+                    {
+                      color: 0,
+                      id: 'tag-a',
+                      name: 'Tag A',
+                      order: 0,
+                      teamId: 'team-a',
+                      type: 'record',
+                    },
+                  ],
+                  text: 'Edited record',
+                }
+              : item
+          );
+        },
+      },
+      snapshot,
+    });
+
+    await runner.syncQueuedSubmission(submission);
+
+    expect(replayed).toEqual([
+      { isPinned: undefined, tagIds: [], text: 'Queued record' },
+      { isPinned: true, tagIds: ['tag-a'], text: 'Edited record' },
+    ]);
+
+    expect(snapshot.submissions[0]?.status).toBe('complete');
+  });
+
   test('publishes reply', async () => {
     const snapshot = emptySnapshot();
     const submission = queuedReplySubmission();

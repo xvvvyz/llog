@@ -28,7 +28,10 @@ export const useAudioPlayerController = ({
   const status = useAudioPlayerStatus(player);
   const wasPlayingBeforeScrub = React.useRef(false);
   const isScrubbingRef = React.useRef(false);
-  const pendingSeekRef = React.useRef<audioPlayerControllerState.PendingSeek | null>(null);
+
+  const pendingSeekRef =
+    React.useRef<audioPlayerControllerState.PendingSeek | null>(null);
+
   const seekRequestIdRef = React.useRef(0);
   const lastAutoPlayKeyRef = React.useRef<number | undefined>(undefined);
   const lastPlaybackRequestAtRef = React.useRef(0);
@@ -69,7 +72,9 @@ export const useAudioPlayerController = ({
   });
 
   const playbackTime = Math.min(status.currentTime, playerDuration);
-  const playbackWaiting = audioPlayerControllerState.isWaitingForPlayback(status);
+
+  const playbackWaiting =
+    audioPlayerControllerState.isWaitingForPlayback(status);
 
   const effectivePlaybackTime = webPlaybackSnapshot
     ? Math.min(webPlaybackSnapshot.currentTime, playerDuration)
@@ -302,12 +307,13 @@ export const useAudioPlayerController = ({
     const playbackRequestId = playbackRequestIdRef.current;
 
     const timeouts = [
-      ...audioPlayerControllerState.PLAYBACK_START_RETRY_DELAYS_MS.map((delay) =>
-        setTimeout(() => {
-          if (playbackRequestIdRef.current !== playbackRequestId) return;
-          if (isUnderlyingPlaybackActive()) return;
-          player.play();
-        }, delay)
+      ...audioPlayerControllerState.PLAYBACK_START_RETRY_DELAYS_MS.map(
+        (delay) =>
+          setTimeout(() => {
+            if (playbackRequestIdRef.current !== playbackRequestId) return;
+            if (isUnderlyingPlaybackActive()) return;
+            player.play();
+          }, delay)
       ),
       setTimeout(() => {
         if (playbackRequestIdRef.current !== playbackRequestId) return;

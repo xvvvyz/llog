@@ -51,6 +51,8 @@ export const Entry = ({
     record.localOutboxStatus === 'syncing' ||
     record.localOutboxStatus === 'publishing';
 
+  const isPublishingLocalSubmission = record.localOutboxStatus === 'publishing';
+
   const syncStatus = isActiveLocalSubmission
     ? isUploadingLocalSubmission
       ? 'uploading'
@@ -107,17 +109,17 @@ export const Entry = ({
       isDuplicateDisabled:
         isLocalPending || rawEntryMenuState.isDuplicateDisabled,
       isEditDisabled:
-        isUploadingLocalSubmission ||
+        isPublishingLocalSubmission ||
         (!isLocalPending && rawEntryMenuState.isEditDisabled),
       isPinDisabled:
-        isUploadingLocalSubmission || rawEntryMenuState.isPinDisabled,
+        isPublishingLocalSubmission || rawEntryMenuState.isPinDisabled,
       isTagDisabled:
-        isUploadingLocalSubmission || rawEntryMenuState.isTagDisabled,
+        isPublishingLocalSubmission || rawEntryMenuState.isTagDisabled,
     };
   }, [
     canManageLocalPendingEntry,
     isLocalPending,
-    isUploadingLocalSubmission,
+    isPublishingLocalSubmission,
     rawEntryMenuState,
     replyId,
   ]);

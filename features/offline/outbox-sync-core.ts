@@ -35,7 +35,8 @@ const defaultDependencies: outboxSyncRunner.OutboxSyncDependencies = {
   waitForDraftState: outboxSyncDraftReplay.waitForDraftState,
 };
 
-const defaultRunner = outboxSyncRunner.createOutboxSyncRunner(defaultDependencies);
+const defaultRunner =
+  outboxSyncRunner.createOutboxSyncRunner(defaultDependencies);
 
 export const syncQueuedSubmission = defaultRunner.syncQueuedSubmission;
 

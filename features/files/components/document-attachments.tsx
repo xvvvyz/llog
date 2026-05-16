@@ -96,7 +96,11 @@ export const DocumentAttachments = ({
     [documents, pendingDocuments]
   );
 
-  const totalSizeText = React.useMemo(() => documentAttachmentPrimitives.getTotalSizeText(items), [items]);
+  const totalSizeText = React.useMemo(
+    () => documentAttachmentPrimitives.getTotalSizeText(items),
+    [items]
+  );
+
   const firstItem = items[0];
   const { downloadingDocumentIds, openDocument } = useDocumentDownloads(items);
 
@@ -120,7 +124,10 @@ export const DocumentAttachments = ({
     (!canDeleteSingleDocument || hideTrigger || isSheetOpen);
 
   const showSummarySize = items.length === 1;
-  const firstDocumentName = firstItem ? documentAttachmentPrimitives.getDocumentName(firstItem.item) : null;
+
+  const firstDocumentName = firstItem
+    ? documentAttachmentPrimitives.getDocumentName(firstItem.item)
+    : null;
 
   const firstDocumentIcon = firstItem
     ? documentAttachmentPrimitives.getDocumentIcon(firstItem.item)
@@ -209,7 +216,9 @@ export const DocumentAttachments = ({
     const DocumentIcon = documentAttachmentPrimitives.getDocumentIcon(item);
 
     const documentSource =
-      previewItem.kind === 'file' ? documentAttachmentPrimitives.getDocumentSource(item) : null;
+      previewItem.kind === 'file'
+        ? documentAttachmentPrimitives.getDocumentSource(item)
+        : null;
 
     const canOpenDocument = previewItem.kind === 'file' && !!documentSource;
 
@@ -231,7 +240,9 @@ export const DocumentAttachments = ({
         <documentAttachmentPrimitives.DocumentTextRow
           label={documentAttachmentPrimitives.getDocumentName(item)}
           trailing={
-            <documentAttachmentPrimitives.DocumentMetaText>{documentAttachmentPrimitives.getDocumentSizeText(item)}</documentAttachmentPrimitives.DocumentMetaText>
+            <documentAttachmentPrimitives.DocumentMetaText>
+              {documentAttachmentPrimitives.getDocumentSizeText(item)}
+            </documentAttachmentPrimitives.DocumentMetaText>
           }
         />
       </View>
@@ -324,7 +335,9 @@ export const DocumentAttachments = ({
     const DocumentIcon = documentAttachmentPrimitives.getDocumentIcon(item);
 
     const documentSource =
-      previewItem.kind === 'file' ? documentAttachmentPrimitives.getDocumentSource(item) : null;
+      previewItem.kind === 'file'
+        ? documentAttachmentPrimitives.getDocumentSource(item)
+        : null;
 
     const canOpenDocument = previewItem.kind === 'file' && !!documentSource;
 
@@ -344,7 +357,9 @@ export const DocumentAttachments = ({
             className={cn('text-placeholder', triggerIconClassName)}
             icon={DocumentIcon}
           />
-          <documentAttachmentPrimitives.DocumentTextRow label={documentAttachmentPrimitives.getDocumentName(item)} />
+          <documentAttachmentPrimitives.DocumentTextRow
+            label={documentAttachmentPrimitives.getDocumentName(item)}
+          />
           {previewItem.item.status === 'uploading' && <Spinner size="xs" />}
         </View>
       );
@@ -377,7 +392,9 @@ export const DocumentAttachments = ({
         <documentAttachmentPrimitives.DocumentTextRow
           label={documentAttachmentPrimitives.getDocumentName(item)}
           trailing={
-            <documentAttachmentPrimitives.DocumentMetaText>{documentAttachmentPrimitives.getDocumentSizeText(item)}</documentAttachmentPrimitives.DocumentMetaText>
+            <documentAttachmentPrimitives.DocumentMetaText>
+              {documentAttachmentPrimitives.getDocumentSizeText(item)}
+            </documentAttachmentPrimitives.DocumentMetaText>
           }
         />
       </Button>
@@ -414,7 +431,9 @@ export const DocumentAttachments = ({
                   label={firstDocumentName}
                   trailing={
                     <documentAttachmentPrimitives.DocumentMetaText>
-                      {documentAttachmentPrimitives.getDocumentSizeText(firstItem.item)}
+                      {documentAttachmentPrimitives.getDocumentSizeText(
+                        firstItem.item
+                      )}
                     </documentAttachmentPrimitives.DocumentMetaText>
                   }
                 />
@@ -431,7 +450,9 @@ export const DocumentAttachments = ({
                   label={firstDocumentName}
                   trailing={
                     <documentAttachmentPrimitives.DocumentMetaText>
-                      {documentAttachmentPrimitives.getDocumentSizeText(firstItem.item)}
+                      {documentAttachmentPrimitives.getDocumentSizeText(
+                        firstItem.item
+                      )}
                     </documentAttachmentPrimitives.DocumentMetaText>
                   }
                 />
@@ -488,10 +509,14 @@ export const DocumentAttachments = ({
             label={firstDocumentName}
             trailing={
               moreDocumentsText ? (
-                <documentAttachmentPrimitives.DocumentMetaText>{moreDocumentsText}</documentAttachmentPrimitives.DocumentMetaText>
+                <documentAttachmentPrimitives.DocumentMetaText>
+                  {moreDocumentsText}
+                </documentAttachmentPrimitives.DocumentMetaText>
               ) : (
                 showSummarySize && (
-                  <documentAttachmentPrimitives.DocumentMetaText>{totalSizeText}</documentAttachmentPrimitives.DocumentMetaText>
+                  <documentAttachmentPrimitives.DocumentMetaText>
+                    {totalSizeText}
+                  </documentAttachmentPrimitives.DocumentMetaText>
                 )
               )
             }
