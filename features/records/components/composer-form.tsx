@@ -9,9 +9,57 @@ import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
-import { CornersOut } from 'phosphor-react-native';
+import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
+import * as markdownShortcuts from '@/features/records/lib/markdown-shortcuts';
+
+import {
+  CornersOut,
+  LinkSimple,
+  ListBullets,
+  ListNumbers,
+  TextB,
+  TextItalic,
+} from 'phosphor-react-native';
+
+const COMPOSER_TEXT_MAX_LENGTH = 10240;
+type TextSelection = { end: number; start: number };
+
+type TextareaSelectionChangeEvent = {
+  nativeEvent: { selection: TextSelection };
+};
+
+type ButtonTouchStartEvent = Parameters<
+  NonNullable<React.ComponentPropsWithoutRef<typeof Button>['onTouchStart']>
+>[0];
+
+type WebPreventableTouchEvent = {
+  nativeEvent?: { preventDefault?: () => void };
+  preventDefault?: () => void;
+};
+
+type MarkdownShortcutItem = {
+  accessibilityLabel: string;
+  icon: React.ComponentType<PhosphorIconProps>;
+  shortcut: markdownShortcuts.MarkdownShortcut;
+};
+
+const MARKDOWN_SHORTCUTS: MarkdownShortcutItem[] = [
+  { accessibilityLabel: 'Bold', icon: TextB, shortcut: 'bold' },
+  { accessibilityLabel: 'Italic', icon: TextItalic, shortcut: 'italic' },
+  { accessibilityLabel: 'Link', icon: LinkSimple, shortcut: 'link' },
+  {
+    accessibilityLabel: 'Bulleted list',
+    icon: ListBullets,
+    shortcut: 'unordered-list',
+  },
+  {
+    accessibilityLabel: 'Numbered list',
+    icon: ListNumbers,
+    shortcut: 'ordered-list',
+  },
+];
 
 export const ComposerForm = ({
   attachmentCount,
@@ -71,6 +119,22 @@ export const ComposerForm = ({
   const showInputActionOverlay = showInputAction || showFullscreenAction;
   const [isFullscreenOpen, setIsFullscreenOpen] = React.useState(false);
 
+  const fullscreenTextareaRef =
+    React.useRef<React.ComponentRef<typeof Textarea>>(null);
+
+  const latestTextRef = React.useRef(text);
+
+  const fullscreenSelectionRef = React.useRef<TextSelection>({
+    end: text.length,
+    start: text.length,
+  });
+
+  const lastSelectedTextRangeRef = React.useRef<TextSelection | null>(null);
+
+  React.useEffect(() => {
+    latestTextRef.current = text;
+  }, [text]);
+
   React.useEffect(() => {
     if (isOpen) return;
     onTextareaFocusChange(false);
@@ -82,6 +146,14 @@ export const ComposerForm = ({
     onTextareaFocusChange(true);
   }, [isTextInputDisabled, onTextareaFocusChange]);
 
+  const setComposerText = React.useCallback(
+    (nextText: string) => {
+      latestTextRef.current = nextText;
+      onChangeText(nextText);
+    },
+    [onChangeText]
+  );
+
   const handleTextareaBlur = React.useCallback(
     (event: unknown) => {
       if (isTextInputDisabled) {
@@ -91,10 +163,121 @@ export const ComposerForm = ({
 
       const rawText = readTextareaBlurText(event, text);
       const nextText = rawText.trim();
-      if (nextText !== rawText || nextText !== text) onChangeText(nextText);
+      if (nextText !== rawText || nextText !== text) setComposerText(nextText);
       onTextareaFocusChange(false);
     },
-    [isTextInputDisabled, onChangeText, onTextareaFocusChange, text]
+    [isTextInputDisabled, onTextareaFocusChange, setComposerText, text]
+  );
+
+  const handleFullscreenSelectionChange = React.useCallback(
+    (event: TextareaSelectionChangeEvent) => {
+      const selection = event.nativeEvent.selection;
+      fullscreenSelectionRef.current = selection;
+
+      if (selection.start !== selection.end) {
+        lastSelectedTextRangeRef.current = selection;
+      }
+    },
+    []
+  );
+
+  const handleFullscreenTextareaTouchStart = React.useCallback(() => {
+    lastSelectedTextRangeRef.current = null;
+  }, []);
+
+  const readFullscreenTextareaSelection = React.useCallback(() => {
+    const textarea = fullscreenTextareaRef.current as unknown as {
+      selectionEnd?: number;
+      selectionStart?: number;
+    } | null;
+
+    if (
+      typeof textarea?.selectionStart !== 'number' ||
+      typeof textarea.selectionEnd !== 'number'
+    ) {
+      return;
+    }
+
+    const selection = {
+      end: textarea.selectionEnd,
+      start: textarea.selectionStart,
+    };
+
+    fullscreenSelectionRef.current = selection;
+
+    if (selection.start !== selection.end) {
+      lastSelectedTextRangeRef.current = selection;
+    }
+  }, []);
+
+  const handleMarkdownShortcutTouchStart = React.useCallback(
+    (event: ButtonTouchStartEvent) => {
+      readFullscreenTextareaSelection();
+      // Mobile web can collapse textarea selection when a toolbar button is
+      // touched, so capture the DOM range before the eventual button press.
+      const preventableEvent = event as unknown as WebPreventableTouchEvent;
+      preventableEvent.preventDefault?.();
+      preventableEvent.nativeEvent?.preventDefault?.();
+    },
+    [readFullscreenTextareaSelection]
+  );
+
+  const restoreFullscreenSelection = React.useCallback(
+    ({ end, start }: TextSelection) => {
+      requestAnimationFrame(() => {
+        const textarea = fullscreenTextareaRef.current as unknown as {
+          focus?: () => void;
+          setNativeProps?: (props: { selection: TextSelection }) => void;
+          setSelectionRange?: (start: number, end: number) => void;
+        } | null;
+
+        textarea?.focus?.();
+
+        if (textarea?.setSelectionRange) {
+          textarea.setSelectionRange(start, end);
+          return;
+        }
+
+        textarea?.setNativeProps?.({ selection: { end, start } });
+      });
+    },
+    []
+  );
+
+  const handleMarkdownShortcut = React.useCallback(
+    (shortcut: markdownShortcuts.MarkdownShortcut) => {
+      if (isTextInputDisabled) return;
+      const currentText = latestTextRef.current;
+      const currentSelection = fullscreenSelectionRef.current;
+
+      const selection =
+        currentSelection.start === currentSelection.end
+          ? (lastSelectedTextRangeRef.current ?? currentSelection)
+          : currentSelection;
+
+      const edit = markdownShortcuts.getMarkdownShortcutEdit({
+        selectionEnd: Math.min(selection.end, currentText.length),
+        selectionStart: Math.min(selection.start, currentText.length),
+        shortcut,
+        text: currentText,
+      });
+
+      if (edit.text.length > COMPOSER_TEXT_MAX_LENGTH) return;
+      setComposerText(edit.text);
+
+      fullscreenSelectionRef.current = {
+        end: edit.selectionEnd,
+        start: edit.selectionStart,
+      };
+
+      lastSelectedTextRangeRef.current = null;
+
+      restoreFullscreenSelection({
+        end: edit.selectionEnd,
+        start: edit.selectionStart,
+      });
+    },
+    [isTextInputDisabled, restoreFullscreenSelection, setComposerText]
   );
 
   const textareaPaddingClassName = showInputAction
@@ -118,11 +301,11 @@ export const ComposerForm = ({
             <View className="relative">
               <Textarea
                 autoFocus={shouldAutoFocus}
-                maxLength={10240}
+                maxLength={COMPOSER_TEXT_MAX_LENGTH}
                 maxRows={7}
                 minRows={1}
                 onBlur={handleTextareaBlur}
-                onChangeText={onChangeText}
+                onChangeText={setComposerText}
                 onFocus={handleTextareaFocus}
                 placeholder={placeholder}
                 readOnly={isTextInputDisabled}
@@ -159,7 +342,7 @@ export const ComposerForm = ({
             {isComposerCompact ? null : filePreview}
           </View>
           <View className="flex-row px-4 gap-3 items-center shrink-0">
-            <View className="flex-1 flex-row gap-3 items-center">
+            <View className="flex-1 flex-row gap-2 items-center">
               {isComposerCompact ? (
                 <AttachmentSummary count={attachmentCount} />
               ) : (
@@ -194,11 +377,14 @@ export const ComposerForm = ({
             <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
               <View className="relative flex-1 overflow-hidden min-h-0 border-border-secondary border-continuous rounded-2xl bg-input border">
                 <Textarea
+                  ref={fullscreenTextareaRef}
                   autoFocus
-                  maxLength={10240}
+                  maxLength={COMPOSER_TEXT_MAX_LENGTH}
                   onBlur={handleTextareaBlur}
-                  onChangeText={onChangeText}
+                  onChangeText={setComposerText}
                   onFocus={handleTextareaFocus}
+                  onSelectionChange={handleFullscreenSelectionChange}
+                  onTouchStart={handleFullscreenTextareaTouchStart}
                   placeholder={placeholder}
                   readOnly={isTextInputDisabled}
                   style={Platform.OS === 'web' ? { height: '100%' } : undefined}
@@ -210,7 +396,21 @@ export const ComposerForm = ({
                 />
               </View>
               <View className="flex-row px-4 gap-3 items-center shrink-0">
-                <View className="flex-1" />
+                <View className="flex-1 flex-row gap-2 items-center">
+                  {MARKDOWN_SHORTCUTS.map((item) => (
+                    <Button
+                      key={item.shortcut}
+                      accessibilityLabel={item.accessibilityLabel}
+                      disabled={isTextInputDisabled}
+                      onPress={() => handleMarkdownShortcut(item.shortcut)}
+                      onTouchStart={handleMarkdownShortcutTouchStart}
+                      size="icon-xs"
+                      variant="secondary"
+                    >
+                      <Icon icon={item.icon} />
+                    </Button>
+                  ))}
+                </View>
                 <Button
                   onPress={() => setIsFullscreenOpen(false)}
                   size="xs"

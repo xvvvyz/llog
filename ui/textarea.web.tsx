@@ -5,11 +5,17 @@ import TextareaAutosize from 'react-textarea-autosize';
 
 export const Textarea = React.forwardRef<
   React.ComponentRef<typeof TextareaAutosize>,
-  Omit<React.ComponentPropsWithoutRef<typeof TextareaAutosize>, 'onChange'> & {
+  Omit<
+    React.ComponentPropsWithoutRef<typeof TextareaAutosize>,
+    'onChange' | 'onSelectionChange'
+  > & {
     maxRows?: number;
     minRows?: number;
     numberOfLines?: number;
     onChangeText?: (text: string) => void;
+    onSelectionChange?: (event: {
+      nativeEvent: { selection: { end: number; start: number } };
+    }) => void;
     onSubmitEditing?: () => void;
     size?: 'default' | 'sm';
   }
@@ -25,6 +31,8 @@ export const Textarea = React.forwardRef<
       numberOfLines,
       onChangeText,
       onKeyDown,
+      onSelect,
+      onSelectionChange,
       onSubmitEditing,
       onTouchStart,
       placeholder,
@@ -101,6 +109,23 @@ export const Textarea = React.forwardRef<
         }
       },
       [onTouchStart, props.disabled, readOnly]
+    );
+
+    const handleSelect = React.useCallback(
+      (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        onSelect?.(event);
+        const textarea = event.currentTarget;
+
+        onSelectionChange?.({
+          nativeEvent: {
+            selection: {
+              end: textarea.selectionEnd,
+              start: textarea.selectionStart,
+            },
+          },
+        });
+      },
+      [onSelect, onSelectionChange]
     );
 
     const applyTextEdit = React.useCallback(
@@ -198,6 +223,7 @@ export const Textarea = React.forwardRef<
         minRows={minRows}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onSelect={handleSelect}
         onTouchStart={handleTouchStart}
         placeholder={placeholder}
         readOnly={readOnly}
