@@ -3,6 +3,13 @@ import { CACHE_RESOURCES_MESSAGE } from '@/features/offline/service-worker-cache
 const hasServiceWorkerSupport = () =>
   typeof window !== 'undefined' && 'serviceWorker' in navigator;
 
+const MEDIA_RESOURCE_INITIATORS = new Set(['audio', 'video']);
+
+const isMediaResourceEntry = (entry: PerformanceEntry) =>
+  MEDIA_RESOURCE_INITIATORS.has(
+    (entry as PerformanceResourceTiming).initiatorType
+  );
+
 export const getCacheableAppResourceUrls = () => {
   if (typeof window === 'undefined') return [];
   const urls = new Set<string>(['/', '/index.html']);
@@ -18,10 +25,7 @@ export const getCacheableAppResourceUrls = () => {
 
   if (typeof performance !== 'undefined') {
     for (const entry of performance.getEntriesByType('resource')) {
-      if ((entry as PerformanceResourceTiming).initiatorType === 'audio') {
-        continue;
-      }
-
+      if (isMediaResourceEntry(entry)) continue;
       urls.add(entry.name);
     }
   }

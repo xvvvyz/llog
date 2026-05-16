@@ -441,6 +441,21 @@ describe('service worker', () => {
     expect(harness.currentCachePaths()).toEqual([imagePath, externalImageUrl]);
   });
 
+  test('skips message audio', async () => {
+    const audioPath = '/api/v1/files/records/record-1/files/file-1';
+
+    const harness = createHarness({
+      [audioPath]: { body: 'audio', headers: { 'content-type': 'audio/mpeg' } },
+    });
+
+    await harness.run('message', {
+      type: 'LLOG_CACHE_RESOURCES',
+      urls: [`${origin}${audioPath}`],
+    });
+
+    expect(harness.currentCachePaths()).toEqual([]);
+  });
+
   test('keeps notification local', async () => {
     const harness = createHarness({});
     await harness.runNotificationClick('https://evil.test/records/a');

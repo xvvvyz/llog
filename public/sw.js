@@ -13,6 +13,8 @@ const HTML_RESOURCE_ATTRIBUTE_PATTERN =
 const EXPO_RESOURCE_PATTERN = /\/_expo\/[^"'`\s)<>\\]+/g;
 const TEXT_RESOURCE_PATTERN = /\.(?:css|html|js|json|webmanifest)(?:[?#]|$)/;
 const IMAGE_RESPONSE_PATTERN = /^image\//i;
+const MEDIA_RESPONSE_PATTERN = /^(?:audio|video)\//i;
+const MEDIA_REQUEST_DESTINATIONS = new Set(['audio', 'video']);
 
 const STATIC_RESOURCE_URLS = [
   '/manifest.webmanifest',
@@ -132,9 +134,18 @@ const isCacheableExternalImageRequest = (request, url) =>
 const isImageResponse = (response) =>
   IMAGE_RESPONSE_PATTERN.test(response.headers.get('content-type') ?? '');
 
+const isMediaRequest = (request) =>
+  MEDIA_REQUEST_DESTINATIONS.has(request.destination);
+
+const isMediaResponse = (response) =>
+  MEDIA_RESPONSE_PATTERN.test(response.headers.get('content-type') ?? '');
+
 const isCacheableImageResponse = (response) =>
   response.type === 'opaque' ||
-  (response.ok && response.status !== 206 && isImageResponse(response));
+  (response.ok &&
+    response.status !== 206 &&
+    !isMediaResponse(response) &&
+    isImageResponse(response));
 
 const unique = (values) => [...new Set(values)];
 
@@ -439,7 +450,7 @@ const cacheFirstResource = async (request) => {
 const cacheFirstImage = async (request) => {
   if (request.headers.has('Range')) return fetch(request);
   const cached = await matchCurrentCache(request);
-  if (cached) return cached;
+  if (cached && isCacheableImageResponse(cached)) return cached;
   const response = await fetch(request);
 
   if (isCacheableImageResponse(response)) {
@@ -453,6 +464,7 @@ const cacheFirstImage = async (request) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+  if (isMediaRequest(request)) return;
   const url = new URL(request.url);
 
   if (isCacheableExternalImageRequest(request, url)) {
