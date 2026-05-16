@@ -4,6 +4,7 @@ import * as localEntry from '@/features/offline/local-entry';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
+import * as queuedTags from '@/features/offline/queued-tags';
 import * as recordTags from '@/features/records/mutations/record-tags';
 import { useRecordTagsTarget } from '@/features/records/queries/use-record-tags-target';
 import { TagSheetContent } from '@/features/tags/components/tag-sheet-content';
@@ -81,6 +82,14 @@ export const RecordTagsSheet = () => {
     [pendingRecord, queuedRecordDraft, record?.isDraft, record?.tags]
   );
 
+  const currentQueuedRecordTags = React.useMemo(
+    () =>
+      currentRecordTags.every(queuedTags.isQueuedTagSnapshot)
+        ? currentRecordTags
+        : undefined,
+    [currentRecordTags]
+  );
+
   const shouldMirrorQueuedDraftTags = !!record?.isDraft && !pendingRecord;
 
   const selectedTagIds = React.useMemo(
@@ -154,7 +163,7 @@ export const RecordTagsSheet = () => {
 
         if (shouldMirrorQueuedDraftTags) {
           outboxStore.updateQueuedDraftRecordTagSelection({
-            baseTags: currentRecordTags,
+            baseTags: currentQueuedRecordTags,
             recordId: record.id,
             selected: true,
             tag,
@@ -163,7 +172,7 @@ export const RecordTagsSheet = () => {
         }
       },
       [
-        currentRecordTags,
+        currentQueuedRecordTags,
         logColorIndex,
         logId,
         pendingRecord,
@@ -200,7 +209,7 @@ export const RecordTagsSheet = () => {
 
         if (shouldMirrorQueuedDraftTags) {
           outboxStore.updateQueuedDraftRecordTagSelection({
-            baseTags: currentRecordTags,
+            baseTags: currentQueuedRecordTags,
             recordId: record?.id ?? '',
             selected,
             tag,
@@ -216,7 +225,12 @@ export const RecordTagsSheet = () => {
           recordId: record?.id,
         });
       },
-      [currentRecordTags, pendingRecord, record, shouldMirrorQueuedDraftTags]
+      [
+        currentQueuedRecordTags,
+        pendingRecord,
+        record,
+        shouldMirrorQueuedDraftTags,
+      ]
     ),
     scopeKey: record?.id,
     selectedIds: selectedTagIds,

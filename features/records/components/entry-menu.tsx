@@ -7,6 +7,7 @@ import { createRecordCopyDraft } from '@/features/records/mutations/create-recor
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import * as copyTargetQueries from '@/features/records/queries/use-copy-targets';
+import type { EntryMenuState } from '@/features/records/types/entry-menu';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import type { Tag as RecordTag } from '@/features/tags/types/tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -43,23 +44,6 @@ type EntryMenuProps = {
   recordId: string;
   tags?: RecordTag[];
   teamId?: string;
-};
-
-export type EntryMenuState = {
-  canDelete: boolean;
-  canDuplicate: boolean;
-  canEdit: boolean;
-  canPin: boolean;
-  canShare: boolean;
-  canTag: boolean;
-  copyTargetLogs: copyTargetQueries.CopyTargetLog[];
-  hasActionsAboveDelete: boolean;
-  hasMenu: boolean;
-  isDeleteDisabled: boolean;
-  isDuplicateDisabled: boolean;
-  isEditDisabled: boolean;
-  isPinDisabled: boolean;
-  isTagDisabled: boolean;
 };
 
 export const useEntryMenuState = ({

@@ -1,6 +1,6 @@
 import { Profile } from '@/features/account/types/profile';
 import { FileItem } from '@/features/files/types/file';
-import { type EntryMenuState } from '@/features/records/components/entry-menu';
+import { type EntryMenuState } from '@/features/records/types/entry-menu';
 import { Link } from '@/features/records/types/link';
 import { Log } from '@/features/logs/types/log';
 import { Reaction } from '@/features/records/types/reaction';

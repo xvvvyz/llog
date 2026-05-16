@@ -1,9 +1,6 @@
+import type { Invite } from '@/domain/entities';
 import { getInviteUrl } from '@/features/invites/lib/url';
 import type { SheetManager } from '@/hooks/use-sheet-manager';
-import schema from '@/instant.schema';
-import { InstaQLEntity } from '@instantdb/react-native';
-
-type Invite = InstaQLEntity<typeof schema, 'invites'>;
 
 export type InviteSheetLink = Pick<Invite, 'id' | 'teamId' | 'token'>;
 

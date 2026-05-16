@@ -1,7 +1,7 @@
 import * as mediaMetadata from '@/domain/files/media-metadata';
+import * as recordMarkdown from '@/domain/records/markdown';
 import * as recordQueries from '@/domain/records/query';
 import { logTagsQuery } from '@/domain/tags/query';
-import * as recordMarkdown from '@/features/records/lib/record-markdown';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import * as queryFilters from '@/features/search/lib/query-filters';
 import type * as searchTypes from '@/features/search/types/search';

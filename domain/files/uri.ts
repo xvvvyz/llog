@@ -1,4 +1,4 @@
-import type { FileItem } from '@/features/files/types/file';
+import type { FileItem } from '@/domain/entities';
 
 export type ResolvedFileUrl = string | null;
 

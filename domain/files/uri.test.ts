@@ -1,4 +1,4 @@
-import * as fileUriToSrcShared from '@/features/files/lib/file-uri-to-src.shared';
+import * as fileUriToSrcShared from '@/domain/files/uri';
 import { afterEach, describe, expect, test } from 'bun:test';
 
 const originalApiUrl = process.env.EXPO_PUBLIC_API_URL;

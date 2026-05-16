@@ -14,11 +14,7 @@ import { View } from 'react-native';
 export const TeamDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const ui = useUi();
-
-  const payload = sheetManager.getPayload('team-delete') as
-    | { teamId?: string }
-    | undefined;
-
+  const payload = sheetManager.getPayload('team-delete');
   const teamId = payload?.teamId ?? ui.activeTeamId;
   const team = useTeam({ teamId });
   const { teams, isLoading: teamsLoading } = useTeams();

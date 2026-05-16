@@ -16,11 +16,7 @@ export const InviteLogsSheet = () => {
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('invite-logs');
   const { activeTeamId } = useUi();
-
-  const payload = sheetManager.getPayload('invite-logs') as
-    | { teamId?: string }
-    | undefined;
-
+  const payload = sheetManager.getPayload('invite-logs');
   const teamId = payload?.teamId ?? activeTeamId;
   const { invites, isLoading: invitesLoading } = useTeamInvites({ teamId });
 

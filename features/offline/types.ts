@@ -1,7 +1,5 @@
 import type { FileKind } from '@/domain/files/file-kind';
-import type { FileItem } from '@/features/files/types/file';
-import type { Link } from '@/features/records/types/link';
-import type { Tag } from '@/features/tags/types/tag';
+import type { FileItem, Link, Tag } from '@/domain/entities';
 
 export type OutboxStatus =
   | 'pending'

@@ -12,11 +12,7 @@ export const TeamLeaveSheet = () => {
   const sheetManager = useSheetManager();
   const { teams, isLoading: teamsLoading } = useTeams();
   const ui = useUi();
-
-  const payload = sheetManager.getPayload('team-leave') as
-    | { teamId?: string }
-    | undefined;
-
+  const payload = sheetManager.getPayload('team-leave');
   const teamId = payload?.teamId ?? ui.activeTeamId;
 
   return (

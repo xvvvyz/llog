@@ -1,6 +1,6 @@
 import type { Db } from '@/api/middleware/db';
+import { recordMarkdownToPlainText } from '@/domain/records/markdown';
 import * as permissions from '@/domain/teams/permissions';
-import { recordMarkdownToPlainText } from '@/features/records/lib/record-markdown';
 import schema from '@/instant.schema';
 import type { InstaQLEntity } from '@instantdb/admin';
 import { buildPushHTTPRequest } from '@pushforge/builder';

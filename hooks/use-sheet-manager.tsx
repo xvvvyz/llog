@@ -1,25 +1,29 @@
-import { SheetName } from '@/lib/sheet-names';
 import * as React from 'react';
 import { Keyboard } from 'react-native';
+import type * as sheetNames from '@/lib/sheet-names';
 
 type SheetStackItem = {
   context?: string;
   id?: string;
-  name: SheetName;
+  name: sheetNames.SheetName;
   payload?: unknown;
 };
 
 export type SheetManager = {
-  close: (name: SheetName) => void;
-  getContext: (name: SheetName) => string | undefined;
-  getId: (name: SheetName) => string | undefined;
-  getPayload: (name: SheetName) => unknown;
-  isOpen: (name: SheetName) => boolean;
-  open: (
-    name: SheetName,
+  close: (name: sheetNames.SheetName) => void;
+  getContext: <Name extends sheetNames.SheetName>(
+    name: Name
+  ) => sheetNames.SheetContextValue<Name> | undefined;
+  getId: (name: sheetNames.SheetName) => string | undefined;
+  getPayload: <Name extends sheetNames.SheetName>(
+    name: Name
+  ) => sheetNames.SheetPayload<Name> | undefined;
+  isOpen: (name: sheetNames.SheetName) => boolean;
+  open: <Name extends sheetNames.SheetName>(
+    name: Name,
     id?: string,
-    context?: string,
-    payload?: unknown
+    context?: sheetNames.SheetContextValue<Name>,
+    payload?: sheetNames.SheetPayload<Name>
   ) => void;
 };
 
@@ -39,7 +43,7 @@ export const SheetManagerProvider = ({
     setSheetStack((prev) => (prev.length === 0 ? prev : []));
   }, [disabled]);
 
-  const close = React.useCallback((name: SheetName) => {
+  const close = React.useCallback((name: sheetNames.SheetName) => {
     setSheetStack((prev) => {
       const index = prev.findIndex((item) => item.name === name);
       if (index === -1) return prev;
@@ -48,27 +52,40 @@ export const SheetManagerProvider = ({
   }, []);
 
   const getContext = React.useCallback(
-    (name: SheetName) => sheetStack.find((item) => item.name === name)?.context,
+    <Name extends sheetNames.SheetName>(name: Name) =>
+      sheetStack.find((item) => item.name === name)?.context as
+        | sheetNames.SheetContextValue<Name>
+        | undefined,
     [sheetStack]
   );
 
   const getId = React.useCallback(
-    (name: SheetName) => sheetStack.find((item) => item.name === name)?.id,
+    (name: sheetNames.SheetName) =>
+      sheetStack.find((item) => item.name === name)?.id,
     [sheetStack]
   );
 
   const getPayload = React.useCallback(
-    (name: SheetName) => sheetStack.find((item) => item.name === name)?.payload,
+    <Name extends sheetNames.SheetName>(name: Name) =>
+      sheetStack.find((item) => item.name === name)?.payload as
+        | sheetNames.SheetPayload<Name>
+        | undefined,
     [sheetStack]
   );
 
   const isOpen = React.useCallback(
-    (name: SheetName) => sheetStack.some((item) => item.name === name),
+    (name: sheetNames.SheetName) =>
+      sheetStack.some((item) => item.name === name),
     [sheetStack]
   );
 
   const open = React.useCallback(
-    (name: SheetName, id?: string, context?: string, payload?: unknown) => {
+    <Name extends sheetNames.SheetName>(
+      name: Name,
+      id?: string,
+      context?: sheetNames.SheetContextValue<Name>,
+      payload?: sheetNames.SheetPayload<Name>
+    ) => {
       if (disabled) return;
       Keyboard.dismiss();
 

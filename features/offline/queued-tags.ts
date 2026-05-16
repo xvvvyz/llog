@@ -20,3 +20,13 @@ export const toQueuedTagSnapshot = ({
 
 export const toQueuedTagSnapshots = (tags: QueuedTagSnapshotInput[] = []) =>
   tags.map(toQueuedTagSnapshot);
+
+export const isQueuedTagSnapshot = (
+  tag: Partial<types.QueuedTagSnapshot>
+): tag is types.QueuedTagSnapshot =>
+  typeof tag.color === 'number' &&
+  typeof tag.id === 'string' &&
+  typeof tag.name === 'string' &&
+  typeof tag.order === 'number' &&
+  typeof tag.teamId === 'string' &&
+  typeof tag.type === 'string';

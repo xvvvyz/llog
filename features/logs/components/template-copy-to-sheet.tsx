@@ -13,18 +13,13 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 
-type TemplateCopyToPayload = { hasTemplateTags?: boolean };
-
-const getPayload = (payload: unknown): TemplateCopyToPayload =>
-  payload && typeof payload === 'object' ? payload : {};
-
 export const LogTemplateCopyToSheet = () => {
   const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const templateId = sheetManager.getId('log-template-copy-to');
   const sourceLogId = sheetManager.getContext('log-template-copy-to');
   const open = sheetManager.isOpen('log-template-copy-to');
-  const payload = getPayload(sheetManager.getPayload('log-template-copy-to'));
+  const payload = sheetManager.getPayload('log-template-copy-to') ?? {};
   const hasTemplateTags = !!payload.hasTemplateTags;
 
   const [shouldCreateMissingTags, setShouldCreateMissingTags] =

@@ -11,23 +11,11 @@ import { Textarea } from '@/ui/textarea';
 import * as React from 'react';
 import { View } from 'react-native';
 
-type TemplateCopyEditorPayload = {
-  createMissingTags?: boolean;
-  logIds?: string[];
-};
-
-const getPayload = (payload: unknown): TemplateCopyEditorPayload =>
-  payload && typeof payload === 'object' ? payload : {};
-
 export const LogTemplateCopyEditorSheet = () => {
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('log-template-copy-editor');
   const templateId = sheetManager.getId('log-template-copy-editor');
-
-  const payload = getPayload(
-    sheetManager.getPayload('log-template-copy-editor')
-  );
-
+  const payload = sheetManager.getPayload('log-template-copy-editor') ?? {};
   const template = useLogTemplate({ enabled: open, id: templateId });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [text, setText] = React.useState('');

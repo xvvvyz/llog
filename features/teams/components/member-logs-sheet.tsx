@@ -22,11 +22,7 @@ export const MemberLogsSheet = () => {
   const open = sheetManager.isOpen('member-logs');
   const roleId = sheetManager.getId('member-logs');
   const { activeTeamId } = useUi();
-
-  const payload = sheetManager.getPayload('member-logs') as
-    | { teamId?: string }
-    | undefined;
-
+  const payload = sheetManager.getPayload('member-logs');
   const teamId = payload?.teamId ?? activeTeamId;
   const colorScheme = useColorScheme();
 

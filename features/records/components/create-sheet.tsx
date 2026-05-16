@@ -1,7 +1,7 @@
 import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { ComposerForm } from '@/features/records/components/composer-form';
-import { useRecordComposerModel } from '@/features/records/hooks/use-composer-model';
+import { useRecordComposerModel } from '@/features/records/hooks/use-record-composer-model';
 import { AddTagsInput } from '@/features/tags/components/add-tags-input';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';

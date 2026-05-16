@@ -1,6 +1,9 @@
-import type { Link } from '@/features/records/types/link';
 import type { SheetManager } from '@/hooks/use-sheet-manager';
-import type { SheetName } from '@/lib/sheet-names';
+import type {
+  RecordSheetParent,
+  SheetName,
+  SheetPayload,
+} from '@/lib/sheet-names';
 
 export const RECORD_LINK_ATTACHMENTS_SHEET =
   'record-link-attachments' satisfies SheetName;
@@ -8,32 +11,19 @@ export const RECORD_LINK_ATTACHMENTS_SHEET =
 export const RECORD_LINK_EDITOR_SHEET =
   'record-link-editor' satisfies SheetName;
 
-type LinkSnapshot = Pick<Link, 'id' | 'label' | 'order' | 'teamId' | 'url'> & {
-  localStatus?: 'error' | 'pending';
-};
+export type { RecordSheetParent };
 
-export type RecordSheetParent =
-  | { id: string; links?: LinkSnapshot[]; teamId?: string; type: 'record' }
-  | {
-      id: string;
-      links?: LinkSnapshot[];
-      recordId: string;
-      teamId?: string;
-      type: 'reply';
-    };
+type RecordLinkAttachmentsSheetPayload = SheetPayload<
+  typeof RECORD_LINK_ATTACHMENTS_SHEET
+>;
 
-type RecordLinkAttachmentsSheetPayload = { parent: RecordSheetParent };
-
-type RecordLinkEditorSheetPayload =
-  | { mode: 'create'; parent: RecordSheetParent }
-  | { linkId: string; mode: 'edit' };
+type RecordLinkEditorSheetPayload = SheetPayload<
+  typeof RECORD_LINK_EDITOR_SHEET
+>;
 
 export const getRecordLinkAttachmentsSheetPayload = (
   sheetManager: SheetManager
-) =>
-  sheetManager.getPayload(RECORD_LINK_ATTACHMENTS_SHEET) as
-    | RecordLinkAttachmentsSheetPayload
-    | undefined;
+) => sheetManager.getPayload(RECORD_LINK_ATTACHMENTS_SHEET);
 
 export const openRecordLinkAttachmentsSheet = (
   sheetManager: SheetManager,
@@ -47,9 +37,7 @@ export const openRecordLinkAttachmentsSheet = (
   );
 
 export const getRecordLinkEditorSheetPayload = (sheetManager: SheetManager) =>
-  sheetManager.getPayload(RECORD_LINK_EDITOR_SHEET) as
-    | RecordLinkEditorSheetPayload
-    | undefined;
+  sheetManager.getPayload(RECORD_LINK_EDITOR_SHEET);
 
 export const openRecordLinkEditorSheet = (
   sheetManager: SheetManager,

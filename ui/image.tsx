@@ -1,4 +1,4 @@
-import { useFileUriToSrc } from '@/features/files/lib/file-uri-to-src';
+import { useFileUriToSrc } from '@/domain/files/uri';
 import { cn } from '@/lib/cn';
 import { Image as ExpoImage, ImageContentFit, ImageStyle } from 'expo-image';
 import { StyleProp, StyleSheet, View } from 'react-native';

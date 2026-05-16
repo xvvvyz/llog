@@ -4,31 +4,25 @@ import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
+import type { SheetPayload } from '@/lib/sheet-names';
 
-const getPayloadLogId = (payload: unknown) => {
-  if (!payload || typeof payload !== 'object' || !('logId' in payload)) return;
-  const logId = (payload as { logId?: unknown }).logId;
+type RecordTagsSheetPayload = SheetPayload<'record-tags'>;
+
+const getPayloadLogId = (payload?: RecordTagsSheetPayload) => {
+  const logId = payload?.logId;
   return typeof logId === 'string' && logId.trim() ? logId : undefined;
 };
 
-const getPayloadContext = (payload: unknown) => {
-  if (!payload || typeof payload !== 'object') return {};
-
-  const value = payload as {
-    authorId?: unknown;
-    tags?: unknown;
-    teamId?: unknown;
-  };
-
+const getPayloadContext = (payload?: RecordTagsSheetPayload) => {
   return {
     authorId:
-      typeof value.authorId === 'string' && value.authorId.trim()
-        ? value.authorId
+      typeof payload?.authorId === 'string' && payload.authorId.trim()
+        ? payload.authorId
         : undefined,
-    tags: Array.isArray(value.tags) ? value.tags : [],
+    tags: Array.isArray(payload?.tags) ? payload.tags : [],
     teamId:
-      typeof value.teamId === 'string' && value.teamId.trim()
-        ? value.teamId
+      typeof payload?.teamId === 'string' && payload.teamId.trim()
+        ? payload.teamId
         : undefined,
   };
 };
@@ -37,7 +31,7 @@ export const useRecordTagsTarget = ({
   payload,
   recordId,
 }: {
-  payload: unknown;
+  payload?: RecordTagsSheetPayload;
   recordId?: string;
 }) => {
   const payloadLogId = getPayloadLogId(payload);

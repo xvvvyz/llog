@@ -1,10 +1,10 @@
+import * as recordMarkdown from '@/domain/records/markdown';
 import { cn } from '@/lib/cn';
 import { Text } from '@/ui/text';
 import LinkifyIt from 'linkify-it';
 import * as React from 'react';
 import { Linking, Platform } from 'react-native';
 import tlds from 'tlds';
-import * as recordMarkdown from '@/features/records/lib/record-markdown';
 
 const linkify = new LinkifyIt().tlds(tlds);
 const LIST_INDENT_CH = 2;

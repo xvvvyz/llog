@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import * as recordMarkdown from '@/features/records/lib/record-markdown';
+import * as recordMarkdown from '@/domain/records/markdown';
 
 describe('parseRecordMarkdown', () => {
   test('parses headings', () => {

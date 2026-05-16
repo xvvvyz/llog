@@ -14,8 +14,8 @@ import * as queuedTags from '@/features/offline/queued-tags';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
+import * as composerPayloads from '@/features/records/lib/composer-payloads';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
-import type { RecordSheetParent } from '@/features/records/lib/sheet-payloads';
 import { deleteRecord } from '@/features/records/mutations/delete-record';
 import { deleteRecordFile } from '@/features/records/mutations/delete-record-file';
 import { finalizeRecordCopy } from '@/features/records/mutations/finalize-record-copy';
@@ -31,6 +31,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { db } from '@/lib/db';
+import type { RecordSheetParent } from '@/lib/sheet-names';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { PushPin, Tag } from 'phosphor-react-native';
@@ -39,38 +40,6 @@ import * as outboxHooks from '@/features/offline/outbox-hooks';
 import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerLatestText from '@/features/records/hooks/use-composer-latest-text';
-
-const getCopyTargetLogIds = (payload: unknown) => {
-  if (!payload || typeof payload !== 'object' || !('logIds' in payload)) {
-    return [];
-  }
-
-  const logIds = (payload as { logIds?: unknown }).logIds;
-  if (!Array.isArray(logIds)) return [];
-
-  return [
-    ...new Set(
-      logIds
-        .filter((logId): logId is string => typeof logId === 'string')
-        .map((logId) => logId.trim())
-        .filter(Boolean)
-    ),
-  ];
-};
-
-const getPayloadTeamId = (payload: unknown) => {
-  if (!payload || typeof payload !== 'object' || !('teamId' in payload)) return;
-  const teamId = (payload as { teamId?: unknown }).teamId;
-  return typeof teamId === 'string' && teamId.trim() ? teamId : undefined;
-};
-
-const getRecordIsPinned = (value: unknown) =>
-  !!(
-    value &&
-    typeof value === 'object' &&
-    'isPinned' in value &&
-    (value as { isPinned?: unknown }).isPinned
-  );
 
 export const useRecordComposerModel = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -99,10 +68,10 @@ export const useRecordComposerModel = () => {
     ? sheetManager.getPayload('record-create')
     : undefined;
 
-  const createTeamId = getPayloadTeamId(createPayload);
+  const createTeamId = composerPayloads.getPayloadTeamId(createPayload);
 
   const copyTargetLogIds = React.useMemo(
-    () => getCopyTargetLogIds(copyPayload),
+    () => composerPayloads.getCopyTargetLogIds(copyPayload),
     [copyPayload]
   );
 
@@ -529,8 +498,9 @@ export const useRecordComposerModel = () => {
   const canToggleCopyPin = !isCopy || isSingleTargetCopy;
 
   const isPinned = shouldUseQueuedRecordDraft
-    ? (queuedRecordDraft?.isPinned ?? getRecordIsPinned(record))
-    : getRecordIsPinned(record);
+    ? (queuedRecordDraft?.isPinned ??
+      composerPayloads.getRecordIsPinned(record))
+    : composerPayloads.getRecordIsPinned(record);
 
   const canTogglePin = canToggleCopyPin && !!recordId && myRole.canPinRecords;
   const isPinDisabled = false;

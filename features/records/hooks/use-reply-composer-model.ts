@@ -27,13 +27,6 @@ import { useOutboxNetworkReachability } from '@/features/offline/outbox-network'
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerLatestText from '@/features/records/hooks/use-composer-latest-text';
 
-const getReplyCreatePayload = (
-  value: unknown
-): { teamId?: string } | undefined =>
-  value && typeof value === 'object'
-    ? (value as { teamId?: string })
-    : undefined;
-
 export const useReplyComposerModel = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
@@ -55,7 +48,7 @@ export const useReplyComposerModel = () => {
   const editReplyId = isEdit ? sheetId : undefined;
 
   const createPayload = isOpen
-    ? getReplyCreatePayload(sheetManager.getPayload('reply-create'))
+    ? sheetManager.getPayload('reply-create')
     : undefined;
 
   const record = useRecord({ id: isOpen ? recordId : undefined });
