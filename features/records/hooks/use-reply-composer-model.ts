@@ -1,20 +1,18 @@
 import { visibleFileQuery } from '@/domain/files/query';
 import { useFileComposer } from '@/features/files/hooks/use-composer';
-import type { PickedFileAsset } from '@/features/files/lib/picked';
 import * as localEntry from '@/features/offline/local-entry';
-import { reorderFiles } from '@/features/files/mutations/reorder-files';
-import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import * as queuedLinks from '@/features/offline/queued-links';
 import { useProfile } from '@/features/account/queries/use-profile';
+import { useComposerFileCallbacks } from '@/features/records/hooks/use-composer-file-callbacks';
+import { useComposerLinkReorder } from '@/features/records/hooks/use-composer-link-reorder';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import type { RecordSheetParent } from '@/features/records/lib/sheet-payloads';
 import { deleteReplyFile } from '@/features/records/mutations/delete-reply-file';
-import { reorderLinks } from '@/features/records/mutations/reorder-links';
 import { updateReplyDraft } from '@/features/records/mutations/update-reply-draft';
 import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
@@ -25,7 +23,7 @@ import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
 import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
-import * as composerLatestText from '@/features/records/hooks/use-composer-latest-text';
+import * as composerTextSession from '@/features/records/hooks/use-composer-text-session';
 
 export const useReplyComposerModel = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -114,7 +112,6 @@ export const useReplyComposerModel = () => {
   const reply = isEdit ? editReply : draft;
   const replyId = reply?.id;
   const isEditingLocalReply = isEdit && localEntry.hasLocalStatus(editReply);
-  const openSessionKey = composerLatestText.useComposerOpenSessionKey(isOpen);
   const currentText = reply?.text ?? '';
   const replyTeamId = reply?.teamId ?? record.teamId;
 
@@ -183,46 +180,39 @@ export const useReplyComposerModel = () => {
   );
 
   const { displayText, latestTextRef, setLatestText } =
-    composerLatestText.useComposerLatestText({
-      resetKey: isOpen
-        ? isEdit
+    composerTextSession.useComposerTextSession({
+      getOpenResetKey: (openSessionKey) =>
+        isEdit
           ? `edit:${editReplyId ?? ''}:${openSessionKey}`
-          : `create:${recordId ?? ''}:${replyId ?? ''}:${openSessionKey}`
-        : 'closed',
+          : `create:${recordId ?? ''}:${replyId ?? ''}:${openSessionKey}`,
+      isOpen,
       text: currentText,
     });
 
-  const handleUploadFile = React.useCallback(
-    async (asset: PickedFileAsset, fileId: string, order: number) => {
-      await uploadReplyFile({ asset, fileId, order, recordId, replyId });
-    },
-    [recordId, replyId]
-  );
+  const {
+    handleDeleteFile,
+    handleRenameFile,
+    handleReorderFiles,
+    handleUploadFile,
+  } = useComposerFileCallbacks({
+    onDeleteFile: React.useCallback(
+      async (fileId: string) => {
+        await deleteReplyFile({ fileId, recordId, replyId });
+      },
+      [recordId, replyId]
+    ),
+    onUploadFile: React.useCallback(
+      async (asset, fileId, order) => {
+        await uploadReplyFile({ asset, fileId, order, recordId, replyId });
+      },
+      [recordId, replyId]
+    ),
+  });
 
-  const handleDeleteFile = React.useCallback(
-    async (fileId: string) => {
-      await deleteReplyFile({ fileId, recordId, replyId });
-    },
-    [recordId, replyId]
-  );
-
-  const handleRenameFile = React.useCallback(
-    async (fileId: string, name: string) => {
-      await updateDocumentName({ id: fileId, name });
-    },
-    []
-  );
-
-  const handleReorderFiles = React.useCallback((files: { id: string }[]) => {
-    void reorderFiles(files);
-  }, []);
-
-  const handleReorderLinks = React.useCallback((links: { id: string }[]) => {
-    const orderedIds = links.map((link) => link.id);
-    outboxStore.reorderQueuedDraftLinks(orderedIds);
-    outboxStore.reorderQueuedLinks(orderedIds);
-    void reorderLinks(links);
-  }, []);
+  const handleReorderLinks = useComposerLinkReorder({
+    shouldReorderQueuedDraftLinks: true,
+    shouldReorderQueuedLinks: true,
+  });
 
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
@@ -259,42 +249,30 @@ export const useReplyComposerModel = () => {
   const hasContent = !!displayText.trim() || fileCount > 0;
   const canSubmitForm = isEdit || hasContent;
 
-  const handleChangeText = React.useCallback(
-    (nextText: string) => {
-      setLatestText(nextText);
-      if (!replyId) return;
-
-      if (isEdit && isEditingLocalReply) {
-        outboxStore.updateQueuedSubmission(`reply:${replyId}`, (submission) =>
-          submission.type === 'reply' ? { text: nextText } : {}
-        );
-
-        return;
-      }
-
-      if (isEdit && !isEditingLocalReply) {
-        void db
-          .transact(db.tx.replies[replyId].update({ text: nextText }))
-          .catch(() => undefined);
-
-        return;
-      }
-
+  const handleChangeText = composerTextSession.useComposerDraftTextChange({
+    contentId: replyId,
+    isEdit,
+    isEditingLocalEntry: isEditingLocalReply,
+    setLatestText,
+    skipMissingContentId: true,
+    updateLocalSubmissionText: (contentId, nextText) => {
+      outboxStore.updateQueuedSubmission(`reply:${contentId}`, (submission) =>
+        submission.type === 'reply' ? { text: nextText } : {}
+      );
+    },
+    updateServerDraftText: (nextText) => {
       updateServerReplyDraft({
         ...replyDraftUpdateFields,
         id: replyId,
         text: nextText,
       });
     },
-    [
-      isEdit,
-      isEditingLocalReply,
-      replyDraftUpdateFields,
-      replyId,
-      setLatestText,
-      updateServerReplyDraft,
-    ]
-  );
+    updateServerEditText: (contentId, nextText) => {
+      void db
+        .transact(db.tx.replies[contentId].update({ text: nextText }))
+        .catch(() => undefined);
+    },
+  });
 
   const close = React.useCallback(() => {
     sheetManager.close('reply-create');

@@ -4,22 +4,10 @@ import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import * as audioPlaybackRate from '@/features/files/lib/media-playback-rate';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
 import { clamp } from '@/lib/clamp';
-import { positiveDurationSeconds } from '@/lib/duration';
 import * as React from 'react';
 import { Platform } from 'react-native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-
-const SEEK_SYNC_TOLERANCE_SECONDS = 0.15;
-const EXACT_SEEK_TOLERANCE_MS = 0;
-const PLAYBACK_REQUEST_PAUSE_GRACE_MS = 1500;
-const PLAYBACK_START_RETRY_DELAYS_MS = [120, 400, 900] as const;
-type PendingSeek = { id: number; resumePlayback: boolean; seconds: number };
-type SeekOptions = { skipIfAlreadyThere?: boolean };
-
-const isWaitingForPlayback = (status: {
-  isBuffering: boolean;
-  timeControlStatus: string;
-}) => status.isBuffering || status.timeControlStatus === 'waiting';
+import * as audioPlayerControllerState from '@/features/files/hooks/audio-player-controller-state';
 
 export const useAudioPlayerController = ({
   active = true,
@@ -40,7 +28,7 @@ export const useAudioPlayerController = ({
   const status = useAudioPlayerStatus(player);
   const wasPlayingBeforeScrub = React.useRef(false);
   const isScrubbingRef = React.useRef(false);
-  const pendingSeekRef = React.useRef<PendingSeek | null>(null);
+  const pendingSeekRef = React.useRef<audioPlayerControllerState.PendingSeek | null>(null);
   const seekRequestIdRef = React.useRef(0);
   const lastAutoPlayKeyRef = React.useRef<number | undefined>(undefined);
   const lastPlaybackRequestAtRef = React.useRef(0);
@@ -73,15 +61,15 @@ export const useAudioPlayerController = ({
       isPlaybackRequested
     );
 
-  const playerDuration =
-    positiveDurationSeconds(durationSeconds) ??
-    metadataDuration ??
-    positiveDurationSeconds(status.duration) ??
-    positiveDurationSeconds(player.duration) ??
-    0;
+  const playerDuration = audioPlayerControllerState.getPlayerDuration({
+    durationSeconds,
+    metadataDuration,
+    playerDuration: player.duration,
+    statusDuration: status.duration,
+  });
 
   const playbackTime = Math.min(status.currentTime, playerDuration);
-  const playbackWaiting = isWaitingForPlayback(status);
+  const playbackWaiting = audioPlayerControllerState.isWaitingForPlayback(status);
 
   const effectivePlaybackTime = webPlaybackSnapshot
     ? Math.min(webPlaybackSnapshot.currentTime, playerDuration)
@@ -94,19 +82,14 @@ export const useAudioPlayerController = ({
 
   const webDidFinish = !!webPlaybackSnapshot?.ended;
 
-  const isPreviewingScrubTime =
-    !effectiveIsPlaying && Math.abs(displayTime - effectivePlaybackTime) > 0.05;
-
-  const hasPausedProgress = !effectiveIsPlaying && displayTime > 0.05;
-
-  const timeLabelTime =
-    effectiveIsPlaying ||
-    hasPausedProgress ||
-    isPreviewingScrubTime ||
-    isScrubbingRef.current ||
-    pendingSeekRef.current
-      ? displayTime
-      : playerDuration;
+  const timeLabelTime = audioPlayerControllerState.getTimeLabelTime({
+    displayTime,
+    effectiveIsPlaying,
+    effectivePlaybackTime,
+    pendingSeek: pendingSeekRef.current,
+    playerDuration,
+    scrubbing: isScrubbingRef.current,
+  });
 
   const isPlaying =
     isPlaybackRequested ||
@@ -206,7 +189,7 @@ export const useAudioPlayerController = ({
     (seconds: number) => {
       return (
         Math.abs(getObservedPlaybackTime() - seconds) <=
-        SEEK_SYNC_TOLERANCE_SECONDS
+        audioPlayerControllerState.SEEK_SYNC_TOLERANCE_SECONDS
       );
     },
     [getObservedPlaybackTime]
@@ -248,7 +231,7 @@ export const useAudioPlayerController = ({
 
     if (
       Math.abs(effectivePlaybackTime - pendingSeek.seconds) >
-      SEEK_SYNC_TOLERANCE_SECONDS
+      audioPlayerControllerState.SEEK_SYNC_TOLERANCE_SECONDS
     ) {
       return;
     }
@@ -280,7 +263,7 @@ export const useAudioPlayerController = ({
     if (!shouldClearInterruptedPlaybackRequest()) return;
 
     const remainingGraceTime =
-      PLAYBACK_REQUEST_PAUSE_GRACE_MS -
+      audioPlayerControllerState.PLAYBACK_REQUEST_PAUSE_GRACE_MS -
       (Date.now() - lastPlaybackRequestAtRef.current);
 
     const clearInterruptedPlaybackRequest = () => {
@@ -319,7 +302,7 @@ export const useAudioPlayerController = ({
     const playbackRequestId = playbackRequestIdRef.current;
 
     const timeouts = [
-      ...PLAYBACK_START_RETRY_DELAYS_MS.map((delay) =>
+      ...audioPlayerControllerState.PLAYBACK_START_RETRY_DELAYS_MS.map((delay) =>
         setTimeout(() => {
           if (playbackRequestIdRef.current !== playbackRequestId) return;
           if (isUnderlyingPlaybackActive()) return;
@@ -330,7 +313,7 @@ export const useAudioPlayerController = ({
         if (playbackRequestIdRef.current !== playbackRequestId) return;
         if (isUnderlyingPlaybackActive()) return;
         clearPlaybackRequest();
-      }, PLAYBACK_REQUEST_PAUSE_GRACE_MS),
+      }, audioPlayerControllerState.PLAYBACK_REQUEST_PAUSE_GRACE_MS),
     ];
 
     return () => {
@@ -414,7 +397,7 @@ export const useAudioPlayerController = ({
     async (
       seconds: number,
       resumePlayback: boolean,
-      options: SeekOptions = {}
+      options: audioPlayerControllerState.SeekOptions = {}
     ) => {
       if (!src) return;
       const seekSeconds = clamp(seconds, 0, playerDuration);
@@ -442,8 +425,8 @@ export const useAudioPlayerController = ({
 
       const seekPromise = player.seekTo(
         seekSeconds,
-        EXACT_SEEK_TOLERANCE_MS,
-        EXACT_SEEK_TOLERANCE_MS
+        audioPlayerControllerState.EXACT_SEEK_TOLERANCE_MS,
+        audioPlayerControllerState.EXACT_SEEK_TOLERANCE_MS
       );
 
       if (
@@ -494,8 +477,11 @@ export const useAudioPlayerController = ({
   const handlePlay = React.useCallback(async () => {
     if (!src) return;
 
-    const startTime =
-      effectiveDidFinish || displayTime >= playerDuration ? 0 : displayTime;
+    const startTime = audioPlayerControllerState.getPlaybackStartTime({
+      didFinish: effectiveDidFinish,
+      displayTime,
+      playerDuration,
+    });
 
     if (!effectiveDidFinish && isAtPlaybackTime(startTime)) {
       cancelPendingSeek();

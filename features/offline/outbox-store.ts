@@ -1,10 +1,12 @@
 import * as outboxStorage from '@/features/offline/storage';
 import * as outboxState from '@/features/offline/outbox-state';
 import * as outboxNormalize from '@/features/offline/outbox-normalize';
+import * as outboxDraftState from '@/features/offline/outbox-draft-state';
+import * as outboxSelectors from '@/features/offline/outbox-selectors';
 import * as React from 'react';
 import type * as types from '@/features/offline/types';
 
-type OutboxSnapshot = types.PersistedOutbox & { hydrated: boolean };
+type OutboxSnapshot = outboxSelectors.OutboxSnapshot;
 
 const emptyOutboxSnapshot = (ownerUserId?: string): OutboxSnapshot => ({
   attachments: [],
@@ -167,50 +169,31 @@ export const useOutboxSnapshot = () => {
   );
 };
 
-export const sortQueuedAttachments = <
-  T extends Pick<types.QueuedAttachment, 'order'>,
->(
-  attachments: T[]
-) => [...attachments].sort((a, b) => a.order - b.order);
+export const sortQueuedAttachments = outboxSelectors.sortQueuedAttachments;
 
-const sameParent = (
-  attachment: types.QueuedAttachment,
-  parent: types.QueuedParent
-) =>
-  attachment.parentType === parent.parentType &&
-  attachment.parentId === parent.parentId &&
-  attachment.recordId === parent.recordId;
-
-export const submissionOwnsAttachment = outboxState.submissionOwnsAttachment;
+export const submissionOwnsAttachment =
+  outboxSelectors.submissionOwnsAttachment;
 
 export const getDiscardedSubmissionAttachments =
-  outboxState.getDiscardedSubmissionAttachments;
+  outboxSelectors.getDiscardedSubmissionAttachments;
 
-export const getDiscardedSubmissions = outboxState.getDiscardedSubmissions;
+export const getDiscardedSubmissions = outboxSelectors.getDiscardedSubmissions;
 
 export const getAutoSyncableSubmissions =
-  outboxState.getAutoSyncableSubmissions;
+  outboxSelectors.getAutoSyncableSubmissions;
 
 export const getStartableAutoSyncSubmissions =
-  outboxState.getStartableAutoSyncSubmissions;
+  outboxSelectors.getStartableAutoSyncSubmissions;
 
-export const getNextAutoRetryTime = outboxState.getNextAutoRetryTime;
+export const getNextAutoRetryTime = outboxSelectors.getNextAutoRetryTime;
 
-export const getPendingOutboxWork = outboxState.getPendingOutboxWork;
+export const getPendingOutboxWork = outboxSelectors.getPendingOutboxWork;
 
-export const hasPendingOutboxWork = outboxState.hasPendingOutboxWork;
+export const hasPendingOutboxWork = outboxSelectors.hasPendingOutboxWork;
 
-export const getQueuedRecordPins = (
-  state: Pick<OutboxSnapshot, 'recordPins'>
-) => state.recordPins;
+export const getQueuedRecordPins = outboxSelectors.getQueuedRecordPins;
 
-export const getQueuedRecordPin = (
-  state: Pick<OutboxSnapshot, 'recordPins'>,
-  recordId?: string
-) =>
-  recordId
-    ? state.recordPins.find((recordPin) => recordPin.recordId === recordId)
-    : undefined;
+export const getQueuedRecordPin = outboxSelectors.getQueuedRecordPin;
 
 export const retryFailedOutboxWork = () => {
   setSnapshot((current) => {
@@ -245,28 +228,11 @@ export const retryFailedOutboxWork = () => {
   });
 };
 
-export const getQueuedAttachmentsForParent = (
-  state: Pick<OutboxSnapshot, 'attachments'>,
-  parent?: types.QueuedParent
-) => {
-  if (!parent) return [];
+export const getQueuedAttachmentsForParent =
+  outboxSelectors.getQueuedAttachmentsForParent;
 
-  return sortQueuedAttachments(
-    state.attachments.filter(
-      (attachment) => sameParent(attachment, parent) && !attachment.submissionId
-    )
-  );
-};
-
-export const getQueuedAttachmentsForSubmission = (
-  state: Pick<OutboxSnapshot, 'attachments'>,
-  submission: types.QueuedSubmission
-) =>
-  sortQueuedAttachments(
-    state.attachments.filter((attachment) =>
-      submissionOwnsAttachment(submission, attachment)
-    )
-  );
+export const getQueuedAttachmentsForSubmission =
+  outboxSelectors.getQueuedAttachmentsForSubmission;
 
 export const queueAttachment = (input: types.QueueAttachmentInput) => {
   const attachment: types.QueuedAttachment = {
@@ -557,65 +523,10 @@ export const updateQueuedRecordTagSelection = ({
   });
 };
 
-const sortQueuedLinks = (links: types.QueuedLinkSnapshot[]) =>
-  [...links].sort((a, b) => a.order - b.order);
+const patchQueuedSubmissionLinks = outboxDraftState.patchQueuedSubmissionLinks;
+const patchQueuedDraftLinks = outboxDraftState.patchQueuedDraftLinks;
 
-const patchQueuedSubmissionLinks = (links: types.QueuedLinkSnapshot[]) => ({
-  links: sortQueuedLinks(links),
-});
-
-const patchQueuedDraftLinks = (links: types.QueuedLinkSnapshot[]) => ({
-  linksUpdated: true,
-  links: sortQueuedLinks(links),
-});
-
-const getSubmissionIdForParent = ({
-  parentId,
-  parentType,
-}: {
-  parentId: string;
-  parentType: 'record' | 'reply';
-}) => `${parentType}:${parentId}`;
-
-const getDraftIdForParent = ({
-  parentId,
-  parentType,
-}: {
-  parentId: string;
-  parentType: 'record' | 'reply';
-}) => `${parentType}:${parentId}`;
-
-const createEmptyDraft = ({
-  parentId,
-  parentType,
-}: {
-  parentId: string;
-  parentType: 'record' | 'reply';
-}): types.QueuedDraft => {
-  const now = new Date().toISOString();
-  const id = getDraftIdForParent({ parentId, parentType });
-
-  return parentType === 'record'
-    ? {
-        contentId: parentId,
-        id,
-        links: [],
-        tagIds: [],
-        tags: [],
-        type: 'record',
-        updatedAt: now,
-      }
-    : { contentId: parentId, id, links: [], type: 'reply', updatedAt: now };
-};
-
-export const getQueuedDraftForParent = (
-  state: Pick<OutboxSnapshot, 'drafts'>,
-  parent?: { parentId: string; parentType: 'record' | 'reply' }
-) => {
-  if (!parent) return;
-  const id = getDraftIdForParent(parent);
-  return state.drafts.find((draft) => draft.id === id);
-};
+export const getQueuedDraftForParent = outboxDraftState.getQueuedDraftForParent;
 
 const updateQueuedDraft = (
   parent: { parentId: string; parentType: 'record' | 'reply' },
@@ -623,12 +534,12 @@ const updateQueuedDraft = (
     | Partial<types.QueuedDraft>
     | ((draft: types.QueuedDraft) => Partial<types.QueuedDraft>)
 ) => {
-  const id = getDraftIdForParent(parent);
+  const id = outboxDraftState.getDraftIdForParent(parent);
 
   setSnapshot((current) => {
     const existing =
       current.drafts.find((draft) => draft.id === id) ??
-      createEmptyDraft(parent);
+      outboxDraftState.createEmptyDraft(parent);
 
     const nextPatch = typeof patch === 'function' ? patch(existing) : patch;
 
@@ -655,7 +566,7 @@ export const addQueuedLink = ({
   parentType: 'record' | 'reply';
 }) => {
   updateQueuedSubmission(
-    getSubmissionIdForParent({ parentId, parentType }),
+    outboxDraftState.getSubmissionIdForParent({ parentId, parentType }),
     (submission) =>
       patchQueuedSubmissionLinks([
         link,
@@ -885,7 +796,7 @@ export const clearQueuedDraft = ({
   parentType: 'record' | 'reply';
 }) => {
   if (!parentId) return;
-  const id = getDraftIdForParent({ parentId, parentType });
+  const id = outboxDraftState.getDraftIdForParent({ parentId, parentType });
 
   setSnapshot((current) => ({
     ...current,

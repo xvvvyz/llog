@@ -1,9 +1,10 @@
 import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
+import { SHEET_SORTABLE_DRAG_HANDLE_PROPS } from '@/ui/sheet-drag-constants';
+import { useSheetDragLock } from '@/ui/sheet-drag-context';
 import { DotsSixVertical } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
-import * as sheetDrag from '@/ui/sheet-drag';
 
 import Sortable, {
   type SortableGridDragEndParams,
@@ -30,7 +31,7 @@ export function SortableGrid<T>({
   sortEnabled = true,
   ...props
 }: AppSortableGridProps<T>) {
-  const sheetDragLock = sheetDrag.useSheetDragLock();
+  const sheetDragLock = useSheetDragLock();
 
   const handleDragStart = React.useCallback<
     NonNullable<SortableGridProps<T>['onDragStart']>
@@ -84,7 +85,7 @@ export const SortableDragHandle = ({
   iconClassName,
   iconSize,
 }: SortableDragHandleProps) => {
-  const sheetDragLock = sheetDrag.useSheetDragLock();
+  const sheetDragLock = useSheetDragLock();
 
   const content = (
     <View
@@ -103,7 +104,7 @@ export const SortableDragHandle = ({
 
   return (
     <View
-      {...(disabled ? {} : sheetDrag.SHEET_SORTABLE_DRAG_HANDLE_PROPS)}
+      {...(disabled ? {} : SHEET_SORTABLE_DRAG_HANDLE_PROPS)}
       onTouchCancel={disabled ? undefined : sheetDragLock.unlock}
       onTouchEnd={disabled ? undefined : sheetDragLock.unlock}
       onTouchStart={disabled ? undefined : sheetDragLock.lock}

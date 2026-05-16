@@ -1,8 +1,5 @@
 import * as attachmentItems from '@/features/files/lib/attachment-items';
-import { downloadFile } from '@/features/files/lib/download-file';
-import { formatFileSize } from '@/features/files/lib/file-size';
-import { getFileTypeIcon } from '@/features/files/lib/file-type-icon';
-import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
+import { useDocumentDownloads } from '@/features/files/hooks/use-document-downloads';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -20,6 +17,7 @@ import { Files as DocumentsIcon, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import * as documentAttachmentPrimitives from '@/features/files/components/document-attachment-primitives';
 
 type DocumentAttachmentItem = attachmentItems.AttachmentPreviewItem<
   FileItem,
@@ -27,62 +25,6 @@ type DocumentAttachmentItem = attachmentItems.AttachmentPreviewItem<
 >;
 
 const NO_PENDING_DOCUMENTS: fileComposer.PendingDocumentUpload[] = [];
-
-const getDocumentName = (item: { name?: string | null }) =>
-  item.name?.trim() || 'Document';
-
-const getDocumentSizeText = (item: { size?: number | null }) =>
-  formatFileSize(item.size) || 'Unknown size';
-
-const getDocumentSource = (item: FileItem) =>
-  fileUriSources.fileUriToSrc(fileUriSources.getFileSourceUri(item));
-
-const getTotalSizeText = (items: DocumentAttachmentItem[]) => {
-  const sizes = items
-    .map(({ item }) => item.size)
-    .filter(
-      (size): size is number =>
-        Number.isFinite(size) && size != null && size >= 0
-    );
-
-  if (!sizes.length) return 'Unknown size';
-  const total = sizes.reduce((sum, size) => sum + size, 0);
-  const hasUnknownSize = sizes.length !== items.length;
-  return `${formatFileSize(total)}${hasUnknownSize ? '+' : ''}`;
-};
-
-const DocumentTextRow = ({
-  label,
-  trailing,
-}: {
-  label: React.ReactNode;
-  trailing?: React.ReactNode;
-}) => (
-  <View className="flex-1 flex-row min-w-0 gap-4 items-baseline justify-between">
-    <Text
-      className="font-normal text-muted-foreground text-sm shrink"
-      numberOfLines={1}
-    >
-      {label}
-    </Text>
-    {trailing}
-  </View>
-);
-
-const DocumentMetaText = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <Text
-    className={cn('font-normal text-placeholder text-xs shrink-0', className)}
-    numberOfLines={1}
-  >
-    {children}
-  </Text>
-);
 
 export const DocumentAttachments = ({
   actionsDisabled,
@@ -123,11 +65,6 @@ export const DocumentAttachments = ({
 
   const [editingName, setEditingName] = React.useState('');
   const [isRenaming, setIsRenaming] = React.useState(false);
-
-  const [downloadingDocumentIds, setDownloadingDocumentIds] = React.useState(
-    () => new Set<string>()
-  );
-
   const sheetId = React.useId();
   const isSheetOpen = sheetOpen ?? localSheetOpen;
   const placeholderColor = UI[colorScheme].placeholder;
@@ -159,8 +96,9 @@ export const DocumentAttachments = ({
     [documents, pendingDocuments]
   );
 
-  const totalSizeText = React.useMemo(() => getTotalSizeText(items), [items]);
+  const totalSizeText = React.useMemo(() => documentAttachmentPrimitives.getTotalSizeText(items), [items]);
   const firstItem = items[0];
+  const { downloadingDocumentIds, openDocument } = useDocumentDownloads(items);
 
   const hasUploadingPendingDocuments = pendingDocuments.some(
     (item) => item.status === 'uploading'
@@ -182,10 +120,10 @@ export const DocumentAttachments = ({
     (!canDeleteSingleDocument || hideTrigger || isSheetOpen);
 
   const showSummarySize = items.length === 1;
-  const firstDocumentName = firstItem ? getDocumentName(firstItem.item) : null;
+  const firstDocumentName = firstItem ? documentAttachmentPrimitives.getDocumentName(firstItem.item) : null;
 
   const firstDocumentIcon = firstItem
-    ? getFileTypeIcon(firstItem.item)
+    ? documentAttachmentPrimitives.getDocumentIcon(firstItem.item)
     : DocumentsIcon;
 
   const trimmedEditingName = editingName.trim();
@@ -196,28 +134,6 @@ export const DocumentAttachments = ({
   const moreDocumentsText =
     items.length > 1 ? `+${items.length - 1} more` : null;
 
-  const handleOpenDocument = React.useCallback(async (item: FileItem) => {
-    const src = getDocumentSource(item);
-    if (!src) return;
-    setDownloadingDocumentIds((current) => new Set(current).add(item.id));
-
-    try {
-      await downloadFile({
-        fileName: getDocumentName(item),
-        mimeType: item.mimeType ?? undefined,
-        url: src,
-      });
-    } catch {
-      // noop
-    } finally {
-      setDownloadingDocumentIds((current) => {
-        const next = new Set(current);
-        next.delete(item.id);
-        return next;
-      });
-    }
-  }, []);
-
   const handleOpenSheet = React.useCallback(() => {
     setIsSheetOpen(true);
   }, [setIsSheetOpen]);
@@ -227,7 +143,7 @@ export const DocumentAttachments = ({
       if (actionsDisabled) return;
       if (!canRenameDocuments) return;
       setEditingDocument(item);
-      setEditingName(getDocumentName(item));
+      setEditingName(documentAttachmentPrimitives.getDocumentName(item));
     },
     [actionsDisabled, canRenameDocuments]
   );
@@ -288,33 +204,12 @@ export const DocumentAttachments = ({
     setEditingName('');
   }, [editingDocument, items]);
 
-  React.useEffect(() => {
-    setDownloadingDocumentIds((current) => {
-      const fileIds = new Set(
-        items.filter((item) => item.kind === 'file').map((item) => item.item.id)
-      );
-
-      const next = new Set(
-        [...current].filter((fileId) => fileIds.has(fileId))
-      );
-
-      if (
-        next.size === current.size &&
-        [...current].every((fileId) => next.has(fileId))
-      ) {
-        return current;
-      }
-
-      return next;
-    });
-  }, [items]);
-
   const renderSheetItem = (previewItem: DocumentAttachmentItem) => {
     const item = previewItem.item;
-    const DocumentIcon = getFileTypeIcon(item);
+    const DocumentIcon = documentAttachmentPrimitives.getDocumentIcon(item);
 
     const documentSource =
-      previewItem.kind === 'file' ? getDocumentSource(item) : null;
+      previewItem.kind === 'file' ? documentAttachmentPrimitives.getDocumentSource(item) : null;
 
     const canOpenDocument = previewItem.kind === 'file' && !!documentSource;
 
@@ -333,10 +228,10 @@ export const DocumentAttachments = ({
         ) : (
           <Icon className="text-placeholder" icon={DocumentIcon} />
         )}
-        <DocumentTextRow
-          label={getDocumentName(item)}
+        <documentAttachmentPrimitives.DocumentTextRow
+          label={documentAttachmentPrimitives.getDocumentName(item)}
           trailing={
-            <DocumentMetaText>{getDocumentSizeText(item)}</DocumentMetaText>
+            <documentAttachmentPrimitives.DocumentMetaText>{documentAttachmentPrimitives.getDocumentSizeText(item)}</documentAttachmentPrimitives.DocumentMetaText>
           }
         />
       </View>
@@ -372,7 +267,7 @@ export const DocumentAttachments = ({
               documentDetails
             )}
             <Button
-              accessibilityLabel={`Remove ${getDocumentName(item)}`}
+              accessibilityLabel={`Remove ${documentAttachmentPrimitives.getDocumentName(item)}`}
               disabled={!canDeleteDocument}
               onPress={() => handleDeleteDocument(previewItem.item.id)}
               size="icon-xs"
@@ -393,7 +288,7 @@ export const DocumentAttachments = ({
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           onPress={() => {
-            void handleOpenDocument(previewItem.item);
+            void openDocument(previewItem.item);
           }}
         >
           {documentDetails}
@@ -410,7 +305,7 @@ export const DocumentAttachments = ({
         {isUploading && <Spinner size="xs" />}
         {!!onDeleteFile && (
           <Button
-            accessibilityLabel={`Remove ${getDocumentName(item)}`}
+            accessibilityLabel={`Remove ${documentAttachmentPrimitives.getDocumentName(item)}`}
             disabled={!canDeleteDocument}
             onPress={() => handleDeleteDocument(item.id)}
             size="icon-xs"
@@ -426,10 +321,10 @@ export const DocumentAttachments = ({
 
   const renderOpenDocument = (previewItem: DocumentAttachmentItem) => {
     const item = previewItem.item;
-    const DocumentIcon = getFileTypeIcon(item);
+    const DocumentIcon = documentAttachmentPrimitives.getDocumentIcon(item);
 
     const documentSource =
-      previewItem.kind === 'file' ? getDocumentSource(item) : null;
+      previewItem.kind === 'file' ? documentAttachmentPrimitives.getDocumentSource(item) : null;
 
     const canOpenDocument = previewItem.kind === 'file' && !!documentSource;
 
@@ -449,7 +344,7 @@ export const DocumentAttachments = ({
             className={cn('text-placeholder', triggerIconClassName)}
             icon={DocumentIcon}
           />
-          <DocumentTextRow label={getDocumentName(item)} />
+          <documentAttachmentPrimitives.DocumentTextRow label={documentAttachmentPrimitives.getDocumentName(item)} />
           {previewItem.item.status === 'uploading' && <Spinner size="xs" />}
         </View>
       );
@@ -459,7 +354,7 @@ export const DocumentAttachments = ({
       <Button
         key={previewItem.id}
         disabled={downloadingDocumentIds.has(item.id) || !canOpenDocument}
-        onPress={() => void handleOpenDocument(item)}
+        onPress={() => void openDocument(item)}
         variant="link"
         wrapperClassName="w-full overflow-visible rounded-lg"
         className={cn(
@@ -479,10 +374,10 @@ export const DocumentAttachments = ({
             icon={DocumentIcon}
           />
         )}
-        <DocumentTextRow
-          label={getDocumentName(item)}
+        <documentAttachmentPrimitives.DocumentTextRow
+          label={documentAttachmentPrimitives.getDocumentName(item)}
           trailing={
-            <DocumentMetaText>{getDocumentSizeText(item)}</DocumentMetaText>
+            <documentAttachmentPrimitives.DocumentMetaText>{documentAttachmentPrimitives.getDocumentSizeText(item)}</documentAttachmentPrimitives.DocumentMetaText>
           }
         />
       </Button>
@@ -515,12 +410,12 @@ export const DocumentAttachments = ({
                   className={cn('text-placeholder', triggerIconClassName)}
                   icon={firstDocumentIcon}
                 />
-                <DocumentTextRow
+                <documentAttachmentPrimitives.DocumentTextRow
                   label={firstDocumentName}
                   trailing={
-                    <DocumentMetaText>
-                      {getDocumentSizeText(firstItem.item)}
-                    </DocumentMetaText>
+                    <documentAttachmentPrimitives.DocumentMetaText>
+                      {documentAttachmentPrimitives.getDocumentSizeText(firstItem.item)}
+                    </documentAttachmentPrimitives.DocumentMetaText>
                   }
                 />
               </View>
@@ -532,12 +427,12 @@ export const DocumentAttachments = ({
                   className={cn('text-placeholder', triggerIconClassName)}
                   icon={firstDocumentIcon}
                 />
-                <DocumentTextRow
+                <documentAttachmentPrimitives.DocumentTextRow
                   label={firstDocumentName}
                   trailing={
-                    <DocumentMetaText>
-                      {getDocumentSizeText(firstItem.item)}
-                    </DocumentMetaText>
+                    <documentAttachmentPrimitives.DocumentMetaText>
+                      {documentAttachmentPrimitives.getDocumentSizeText(firstItem.item)}
+                    </documentAttachmentPrimitives.DocumentMetaText>
                   }
                 />
               </View>
@@ -546,7 +441,7 @@ export const DocumentAttachments = ({
           <View className="flex-row gap-2 items-center shrink-0">
             {firstItem.kind === 'file' ? (
               <Button
-                accessibilityLabel={`Remove ${getDocumentName(firstItem.item)}`}
+                accessibilityLabel={`Remove ${documentAttachmentPrimitives.getDocumentName(firstItem.item)}`}
                 disabled={actionsDisabled}
                 onPress={() => handleDeleteDocument(firstItem.item.id)}
                 size="icon-xs"
@@ -560,7 +455,7 @@ export const DocumentAttachments = ({
                 {firstItem.item.status === 'uploading' && <Spinner size="xs" />}
                 {!!onDeleteFile && (
                   <Button
-                    accessibilityLabel={`Remove ${getDocumentName(firstItem.item)}`}
+                    accessibilityLabel={`Remove ${documentAttachmentPrimitives.getDocumentName(firstItem.item)}`}
                     disabled={actionsDisabled}
                     onPress={() => handleDeleteDocument(firstItem.item.id)}
                     size="icon-xs"
@@ -589,14 +484,14 @@ export const DocumentAttachments = ({
             className={cn('text-placeholder', triggerIconClassName)}
             icon={items.length === 1 ? firstDocumentIcon : DocumentsIcon}
           />
-          <DocumentTextRow
+          <documentAttachmentPrimitives.DocumentTextRow
             label={firstDocumentName}
             trailing={
               moreDocumentsText ? (
-                <DocumentMetaText>{moreDocumentsText}</DocumentMetaText>
+                <documentAttachmentPrimitives.DocumentMetaText>{moreDocumentsText}</documentAttachmentPrimitives.DocumentMetaText>
               ) : (
                 showSummarySize && (
-                  <DocumentMetaText>{totalSizeText}</DocumentMetaText>
+                  <documentAttachmentPrimitives.DocumentMetaText>{totalSizeText}</documentAttachmentPrimitives.DocumentMetaText>
                 )
               )
             }

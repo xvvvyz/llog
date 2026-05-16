@@ -1,6 +1,6 @@
 import { REACTION_EMOJIS } from '@/domain/records/reactions';
-import * as push from '@/features/account/lib/web-push';
 import { useSignOut } from '@/features/account/hooks/use-sign-out';
+import { useWebPushNotifications } from '@/features/account/hooks/use-web-push-notifications';
 import { deleteProfileImage } from '@/features/account/mutations/delete-profile-image';
 import { randomizeProfileAvatar } from '@/features/account/mutations/randomize-profile-avatar';
 import { updateProfile } from '@/features/account/mutations/update-profile';
@@ -39,24 +39,23 @@ const ACCOUNT_EMAIL_INPUT_ID = 'account-email';
 const ACCOUNT_NAME_INPUT_ID = 'account-name';
 
 export default function Account() {
-  const [isPushPending, setIsPushPending] = React.useState(false);
-
-  const [pendingPushState, setPendingPushState] =
-    React.useState<push.WebPushState | null>(null);
-
-  const [pushState, setPushState] = React.useState<push.WebPushState>({
-    status: 'unsupported',
-  });
-
-  const [pushSupport, setPushSupport] =
-    React.useState<push.WebPushSupportState>('unsupported');
-
   const auth = db.useAuth();
   const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
   const profile = useProfile();
   const sheetManager = useSheetManager();
   const { isSigningOut, signOut } = useSignOut();
   const ui = useUi();
+
+  const handleIosPushSetupRequired = React.useCallback(
+    () => sheetManager.open('web-push-ios-setup'),
+    [sheetManager]
+  );
+
+  const { handleTogglePush, isPushToggleDisabled, pushEnabled, pushState } =
+    useWebPushNotifications({
+      isSignedIn: !!auth.user,
+      onIosSetupRequired: handleIosPushSetupRequired,
+    });
 
   const handleUploadProfileImage = React.useCallback(async () => {
     const picker = await launchImageLibraryAsync({
@@ -72,111 +71,6 @@ export default function Account() {
   const handleRandomizeProfileAvatar = React.useCallback(async () => {
     await randomizeProfileAvatar({ profileId: profile.id });
   }, [profile.id]);
-
-  React.useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    setPushSupport(push.getWebPushSupportState());
-  }, []);
-
-  React.useEffect(() => {
-    if (Platform.OS !== 'web' || !auth.user) return;
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const state = await push.syncWebPushSubscription();
-        if (!cancelled) setPushState(state);
-      } catch (error) {
-        console.error('Failed to refresh web push state', error);
-        const state = await push.getWebPushState();
-        if (!cancelled) setPushState(state);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [auth.user]);
-
-  React.useEffect(() => {
-    if (Platform.OS !== 'web' || !auth.user) return;
-
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState !== 'visible') return;
-
-      try {
-        setPushState(await push.getWebPushState());
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [auth.user]);
-
-  const effectivePushState = pendingPushState ?? pushState;
-  const pushEnabled = effectivePushState.status === 'enabled';
-
-  const isPushToggleDisabled =
-    isPushPending ||
-    pushState.status === 'blocked' ||
-    (!auth.user && pushSupport !== 'ios-home-screen-required') ||
-    (effectivePushState.status === 'unsupported' &&
-      pushSupport !== 'ios-home-screen-required');
-
-  const handleTogglePush = React.useCallback(async () => {
-    if (Platform.OS !== 'web') return;
-
-    if (pushSupport === 'ios-home-screen-required') {
-      sheetManager.open('web-push-ios-setup');
-      return;
-    }
-
-    if (
-      pushState.status === 'unsupported' ||
-      pushState.status === 'blocked' ||
-      !auth.user
-    ) {
-      return;
-    }
-
-    const optimisticState =
-      pushState.status === 'enabled'
-        ? ({ status: 'disabled' } satisfies push.WebPushState)
-        : ({
-            endpoint: pushState.endpoint,
-            status: 'enabled',
-          } satisfies push.WebPushState);
-
-    setPendingPushState(optimisticState);
-    setIsPushPending(true);
-
-    try {
-      const nextState =
-        pushState.status === 'enabled'
-          ? await push.disableWebPush()
-          : await push.enableWebPush();
-
-      if (nextState.status === 'blocked') {
-        alert({
-          message: 'Allow access to send notifications.',
-          title: 'Notifications',
-        });
-      }
-
-      setPushState(nextState);
-      setPendingPushState(null);
-    } catch {
-      setPendingPushState(null);
-      // noop
-    } finally {
-      setIsPushPending(false);
-    }
-  }, [auth.user, pushState, pushSupport, sheetManager]);
 
   return (
     <Page>

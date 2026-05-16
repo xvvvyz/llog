@@ -1,11 +1,14 @@
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
-import * as upload from '@/api/files/file-upload';
+import { uploadFile } from '@/api/files/upload/file';
+import { createDirectVideoUploadDraft } from '@/api/files/upload/stream';
 import { auth, type Db, db } from '@/api/middleware/db';
 import * as permissions from '@/domain/teams/permissions';
 import schema from '@/instant.schema';
 import type { InstaQLEntity } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import * as r2Multipart from '@/api/files/upload/r2-multipart';
+import * as validators from '@/api/files/upload/validators';
 
 export type FileContext = {
   env: CloudflareEnv;
@@ -60,12 +63,12 @@ export const createFileRouter = <const TPath extends string>({
     `${basePath}/video-upload`,
     db(),
     auth(),
-    upload.directVideoUploadValidator,
+    validators.directVideoUploadValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
       const { fileId, order, size } = c.req.valid('json');
 
-      const created = await upload.createDirectVideoUploadDraft({
+      const created = await createDirectVideoUploadDraft({
         creatorId: c.var.user.id,
         db: c.var.db,
         env: c.env,
@@ -85,14 +88,14 @@ export const createFileRouter = <const TPath extends string>({
     `${basePath}/multipart-upload`,
     db(),
     auth(),
-    upload.r2MultipartUploadValidator,
+    validators.r2MultipartUploadValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
 
       const { duration, fileName, fileId, mimeType, order, size, type } =
         c.req.valid('json');
 
-      const created = await upload.createR2MultipartUploadDraft({
+      const created = await r2Multipart.createR2MultipartUploadDraft({
         creatorId: c.var.user.id,
         db: c.var.db,
         duration,
@@ -117,12 +120,12 @@ export const createFileRouter = <const TPath extends string>({
     `${basePath}/multipart-upload/part`,
     db(),
     auth(),
-    upload.r2MultipartUploadPartValidator,
+    validators.r2MultipartUploadPartValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
       const { encoding, fileId, partNumber, uploadId } = c.req.valid('query');
 
-      const part = await upload.uploadR2MultipartPart({
+      const part = await r2Multipart.uploadR2MultipartPart({
         creatorId: c.var.user.id,
         db: c.var.db,
         encoding,
@@ -145,7 +148,7 @@ export const createFileRouter = <const TPath extends string>({
     `${basePath}/multipart-upload/complete`,
     db(),
     auth(),
-    upload.r2MultipartUploadCompleteValidator,
+    validators.r2MultipartUploadCompleteValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
 
@@ -161,7 +164,7 @@ export const createFileRouter = <const TPath extends string>({
         uploadId,
       } = c.req.valid('json');
 
-      await upload.completeR2MultipartUpload({
+      await r2Multipart.completeR2MultipartUpload({
         creatorId: c.var.user.id,
         db: c.var.db,
         duration,
@@ -188,12 +191,12 @@ export const createFileRouter = <const TPath extends string>({
     `${basePath}/multipart-upload/abort`,
     db(),
     auth(),
-    upload.r2MultipartUploadAbortValidator,
+    validators.r2MultipartUploadAbortValidator,
     async (c) => {
       const target = await resolveUploadTarget(c);
       const { fileId, uploadId } = c.req.valid('json');
 
-      await upload.abortR2MultipartUpload({
+      await r2Multipart.abortR2MultipartUpload({
         creatorId: c.var.user.id,
         db: c.var.db,
         env: c.env,
@@ -209,13 +212,13 @@ export const createFileRouter = <const TPath extends string>({
     }
   );
 
-  app.put(basePath, db(), auth(), upload.fileValidator, async (c) => {
+  app.put(basePath, db(), auth(), validators.fileValidator, async (c) => {
     const target = await resolveUploadTarget(c);
 
     const { duration, file, fileName, fileId, mimeType, order, size } =
       c.req.valid('form');
 
-    await upload.uploadFile({
+    await uploadFile({
       creatorId: c.var.user.id,
       db: c.var.db,
       duration,

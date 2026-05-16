@@ -1,8 +1,5 @@
 import { visibleFileQuery } from '@/domain/files/query';
 import { useFileComposer } from '@/features/files/hooks/use-composer';
-import type { PickedFileAsset } from '@/features/files/lib/picked';
-import { reorderFiles } from '@/features/files/mutations/reorder-files';
-import { updateDocumentName } from '@/features/files/mutations/update-document-name';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
 import type { LogTemplate } from '@/features/logs/types/template';
@@ -12,6 +9,8 @@ import * as pendingEntries from '@/features/offline/pending-entries';
 import * as queuedLinks from '@/features/offline/queued-links';
 import * as queuedTags from '@/features/offline/queued-tags';
 import { useProfile } from '@/features/account/queries/use-profile';
+import { useComposerFileCallbacks } from '@/features/records/hooks/use-composer-file-callbacks';
+import { useComposerLinkReorder } from '@/features/records/hooks/use-composer-link-reorder';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import * as composerPayloads from '@/features/records/lib/composer-payloads';
@@ -19,7 +18,6 @@ import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scro
 import { deleteRecord } from '@/features/records/mutations/delete-record';
 import { deleteRecordFile } from '@/features/records/mutations/delete-record-file';
 import { finalizeRecordCopy } from '@/features/records/mutations/finalize-record-copy';
-import { reorderLinks } from '@/features/records/mutations/reorder-links';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
 import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
@@ -39,7 +37,7 @@ import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
 import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
-import * as composerLatestText from '@/features/records/hooks/use-composer-latest-text';
+import * as composerTextSession from '@/features/records/hooks/use-composer-text-session';
 
 export const useRecordComposerModel = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -57,7 +55,6 @@ export const useRecordComposerModel = () => {
   const isCreate = !isEdit && !isCopy;
   const isOpen = sheetManager.isOpen('record-create');
   const sheetId = sheetManager.getId('record-create');
-  const openSessionKey = composerLatestText.useComposerOpenSessionKey(isOpen);
   const colorScheme = useColorScheme();
 
   const copyPayload = isCopy
@@ -256,28 +253,6 @@ export const useRecordComposerModel = () => {
   );
 
   const shouldUseQueuedRecordDraft = !!record?.isDraft || isEditingLocalRecord;
-  const copyTextResetTargetKey = copyTargetLogIds.join('\u0000');
-
-  const composerTextResetKey = React.useMemo(() => {
-    if (!isOpen) return 'closed';
-    if (isEdit) return `edit:${editRecordId ?? ''}`;
-
-    if (isCopy) {
-      return `copy:${copyDraftRecordId ?? ''}:${copyTextResetTargetKey}`;
-    }
-
-    return `create:${logId ?? ''}:${recordId ?? ''}:${openSessionKey}`;
-  }, [
-    copyDraftRecordId,
-    copyTextResetTargetKey,
-    editRecordId,
-    isCopy,
-    isEdit,
-    isOpen,
-    logId,
-    openSessionKey,
-    recordId,
-  ]);
 
   const links = React.useMemo(
     () =>
@@ -318,53 +293,41 @@ export const useRecordComposerModel = () => {
     return selectedRecordTags.map((tag) => tagsById.get(tag.id) ?? tag);
   }, [tagDefinitions.data, selectedRecordTags]);
 
+  const copyTextResetTargetKey = copyTargetLogIds.join('\u0000');
+
   const { displayText, latestTextRef, setLatestText } =
-    composerLatestText.useComposerLatestText({
-      resetKey: composerTextResetKey,
+    composerTextSession.useComposerTextSession({
+      getOpenResetKey: (openSessionKey) => {
+        if (isEdit) return `edit:${editRecordId ?? ''}`;
+
+        if (isCopy) {
+          return `copy:${copyDraftRecordId ?? ''}:${copyTextResetTargetKey}`;
+        }
+
+        return `create:${logId ?? ''}:${recordId ?? ''}:${openSessionKey}`;
+      },
+      isOpen,
       text: currentText,
     });
 
-  const handleChangeText = React.useCallback(
-    (nextText: string) => {
-      setLatestText(nextText);
-
-      if (isEdit) {
-        if (isEditingLocalRecord) {
-          outboxStore.updateQueuedSubmission(
-            `record:${recordId}`,
-            (submission) =>
-              submission.type === 'record' ? { text: nextText } : {}
-          );
-
-          return;
-        }
-
-        if (recordId) {
-          updateServerRecordDraft({
-            ...recordDraftUpdateFields,
-            id: recordId,
-            text: nextText,
-          });
-        }
-
-        return;
-      }
-
+  const handleChangeText = composerTextSession.useComposerDraftTextChange({
+    contentId: recordId,
+    isEdit,
+    isEditingLocalEntry: isEditingLocalRecord,
+    setLatestText,
+    updateLocalSubmissionText: (contentId, nextText) => {
+      outboxStore.updateQueuedSubmission(`record:${contentId}`, (submission) =>
+        submission.type === 'record' ? { text: nextText } : {}
+      );
+    },
+    updateServerDraftText: (nextText) => {
       updateServerRecordDraft({
         ...recordDraftUpdateFields,
         id: recordId,
         text: nextText,
       });
     },
-    [
-      isEdit,
-      recordDraftUpdateFields,
-      recordId,
-      isEditingLocalRecord,
-      setLatestText,
-      updateServerRecordDraft,
-    ]
-  );
+  });
 
   const handleApplyTemplate = React.useCallback(
     (template: LogTemplate) => {
@@ -412,44 +375,30 @@ export const useRecordComposerModel = () => {
     ]
   );
 
-  const handleUploadFile = React.useCallback(
-    async (asset: PickedFileAsset, fileId: string, order: number) => {
-      await uploadRecordFile({ asset, fileId, order, recordId });
-    },
-    [recordId]
-  );
+  const {
+    handleDeleteFile,
+    handleRenameFile,
+    handleReorderFiles,
+    handleUploadFile,
+  } = useComposerFileCallbacks({
+    onDeleteFile: React.useCallback(
+      async (fileId: string) => {
+        await deleteRecordFile({ fileId, recordId });
+      },
+      [recordId]
+    ),
+    onUploadFile: React.useCallback(
+      async (asset, fileId, order) => {
+        await uploadRecordFile({ asset, fileId, order, recordId });
+      },
+      [recordId]
+    ),
+  });
 
-  const handleDeleteFile = React.useCallback(
-    async (fileId: string) => {
-      await deleteRecordFile({ fileId, recordId });
-    },
-    [recordId]
-  );
-
-  const handleRenameFile = React.useCallback(
-    async (fileId: string, name: string) => {
-      await updateDocumentName({ id: fileId, name });
-    },
-    []
-  );
-
-  const handleReorderFiles = React.useCallback((files: { id: string }[]) => {
-    void reorderFiles(files);
-  }, []);
-
-  const handleReorderLinks = React.useCallback(
-    (links: { id: string }[]) => {
-      const orderedIds = links.map((link) => link.id);
-
-      if (shouldUseQueuedRecordDraft) {
-        outboxStore.reorderQueuedDraftLinks(orderedIds);
-      }
-
-      if (isEditingLocalRecord) outboxStore.reorderQueuedLinks(orderedIds);
-      void reorderLinks(links);
-    },
-    [isEditingLocalRecord, shouldUseQueuedRecordDraft]
-  );
+  const handleReorderLinks = useComposerLinkReorder({
+    shouldReorderQueuedDraftLinks: shouldUseQueuedRecordDraft,
+    shouldReorderQueuedLinks: isEditingLocalRecord,
+  });
 
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>

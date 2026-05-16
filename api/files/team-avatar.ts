@@ -1,6 +1,5 @@
 import * as cloudflareImages from '@/api/files/cloudflare-images';
 import { deleteFileAssets } from '@/api/files/delete-file-assets';
-import * as upload from '@/api/files/file-upload';
 import { db } from '@/api/middleware/db';
 import { fileLike } from '@/domain/files/file-like';
 import * as permissions from '@/domain/teams/permissions';
@@ -9,6 +8,7 @@ import { id } from '@instantdb/admin';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
+import * as fileValidation from '@/api/files/upload/file-validation';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -19,8 +19,8 @@ app.put(
   async (c) => {
     const teamId = c.req.param('teamId');
     if (!teamId) throw new HTTPException(400, { message: 'Team not found' });
-    const file = upload.requireUploadedFile(c.req.valid('form').file);
-    upload.validateUpload(file, ['image']);
+    const file = fileValidation.requireUploadedFile(c.req.valid('form').file);
+    fileValidation.validateUpload(file, ['image']);
 
     const result = await c.var.db.query({
       roles: { $: { where: { team: teamId, userId: c.var.user.id } } },

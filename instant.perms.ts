@@ -2,49 +2,7 @@
 
 import { InstantRules } from '@instantdb/react-native';
 import { Role } from './domain/teams/role';
-
-const and = (...conditions: string[]) => conditions.join(' && ');
-const or = (...conditions: string[]) => conditions.join(' || ');
-const group = (condition: string) => `(${condition})`;
-const refSize = (path: string) => `size(data.ref('${path}'))`;
-
-const hasExactlyOneRef = (...paths: string[]) =>
-  `${paths.map(refSize).join(' + ')} == 1`;
-
-const authRolesKeyRef = "auth.ref('$user.roles.key')";
-const currentTeamRolesKeyRef = "data.ref('team.roles.key')";
-
-const authRoleKey = (role: Role, teamIdRef: string) =>
-  `'${role}_' + auth.id + '_' + ${teamIdRef}`;
-
-const authRoleIn = (role: Role, teamIdRef: string, rolesKeyRef: string) =>
-  `${authRoleKey(role, teamIdRef)} in ${rolesKeyRef}`;
-
-const authRoleExistsFor = (role: Role, teamIdRef: string) =>
-  `data.ref('${teamIdRef}').exists(teamId, ${authRoleIn(
-    role,
-    'teamId',
-    authRolesKeyRef
-  )})`;
-
-const canManageAuthTeam = (teamIdRef: string) =>
-  or(
-    authRoleIn(Role.Owner, teamIdRef, authRolesKeyRef),
-    authRoleIn(Role.Admin, teamIdRef, authRolesKeyRef)
-  );
-
-const isOwner = authRoleIn(Role.Owner, 'data.teamId', currentTeamRolesKeyRef);
-const isAdmin = authRoleIn(Role.Admin, 'data.teamId', currentTeamRolesKeyRef);
-const canManageCurrentTeam = or(isOwner, isAdmin);
-
-const isOwnerFor = (teamIdRef: string) =>
-  authRoleExistsFor(Role.Owner, teamIdRef);
-
-const isAdminFor = (teamIdRef: string) =>
-  authRoleExistsFor(Role.Admin, teamIdRef);
-
-const canManageFor = (teamIdRef: string) =>
-  or(isOwnerFor(teamIdRef), isAdminFor(teamIdRef));
+import * as ruleStrings from './permissions/rule-strings';
 
 const tagColorValues = '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
 const logNameMaxLength = 32;
@@ -61,7 +19,7 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
-      canManageCurrentTeam,
+      ruleStrings.canManageCurrentTeam,
       'hasReaction',
       "size(data.ref('reaction.id')) > 0",
       'isReactionAuthor',
@@ -77,23 +35,36 @@ const rules = {
       'isReactionReplyTeamMember',
       "auth.id in data.ref('reaction.reply.record.log.team.roles.user.id')",
       'canManageReactionRecord',
-      canManageFor('reaction.record.log.team.id'),
+      ruleStrings.canManageFor('reaction.record.log.team.id'),
       'canManageReactionReply',
-      canManageFor('reaction.reply.record.log.team.id'),
+      ruleStrings.canManageFor('reaction.reply.record.log.team.id'),
     ],
     allow: {
       view: 'isTeamMember && (!hasLog || canManage || isLogMember)',
       create: 'isTeamMember',
       update: 'false',
-      delete: and(
+      delete: ruleStrings.and(
         'hasReaction',
-        group(
-          or(
+        ruleStrings.group(
+          ruleStrings.or(
             'isReactionAuthor',
-            group(and('isReactionRecordAuthor', 'isReactionRecordTeamMember')),
-            group(and('isReactionReplyAuthor', 'isReactionReplyTeamMember')),
-            group(
-              and('isReactionReplyRecordAuthor', 'isReactionReplyTeamMember')
+            ruleStrings.group(
+              ruleStrings.and(
+                'isReactionRecordAuthor',
+                'isReactionRecordTeamMember'
+              )
+            ),
+            ruleStrings.group(
+              ruleStrings.and(
+                'isReactionReplyAuthor',
+                'isReactionReplyTeamMember'
+              )
+            ),
+            ruleStrings.group(
+              ruleStrings.and(
+                'isReactionReplyRecordAuthor',
+                'isReactionReplyTeamMember'
+              )
             ),
             'canManageReactionRecord',
             'canManageReactionReply'
@@ -123,7 +94,7 @@ const rules = {
       'onlyModifiesText',
       "request.modifiedFields.all(field, field in ['text'])",
       'onlyPublishesDraft',
-      and(
+      ruleStrings.and(
         "request.modifiedFields.all(field, field in ['isDraft', 'text'])",
         'newData.isDraft == false'
       ),
@@ -134,7 +105,7 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('record.log.profiles.user.id')",
       'canManage',
-      canManageFor('record.log.team.id'),
+      ruleStrings.canManageFor('record.log.team.id'),
       'canDeleteOwn',
       'isAuthor && isTeamMember',
       'canDeleteFromOwnRecord',
@@ -144,16 +115,21 @@ const rules = {
       view: 'isTeamMember && ((!isDraft && (canManage || isLogMember)) || isAuthor)',
       create:
         'isAuthor && isTeamMember && (canManage || isLogMember) && isValidNewText',
-      update: or(
-        group(
-          and('isAuthor', 'isTeamMember', 'onlyModifiesText', 'isValidNewText')
+      update: ruleStrings.or(
+        ruleStrings.group(
+          ruleStrings.and(
+            'isAuthor',
+            'isTeamMember',
+            'onlyModifiesText',
+            'isValidNewText'
+          )
         ),
-        group(
-          and(
+        ruleStrings.group(
+          ruleStrings.and(
             'isAuthor',
             'isTeamMember',
             'isDraft',
-            group(or('canManage', 'isLogMember')),
+            ruleStrings.group(ruleStrings.or('canManage', 'isLogMember')),
             'onlyPublishesDraft',
             'isValidNewText'
           )
@@ -170,7 +146,12 @@ const rules = {
   files: {
     bind: [
       'hasOneLink',
-      hasExactlyOneRef('record.id', 'reply.id', 'profile.id', 'team.id'),
+      ruleStrings.hasExactlyOneRef(
+        'record.id',
+        'reply.id',
+        'profile.id',
+        'team.id'
+      ),
       'isDocument',
       "data.type == 'document'",
       'isValidDocumentName',
@@ -182,7 +163,7 @@ const rules = {
       'isProfileOwner',
       "auth.id in data.ref('profile.user.id')",
       'isTeamImageManager',
-      canManageFor('team.id'),
+      ruleStrings.canManageFor('team.id'),
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'isRecordAuthor',
@@ -202,9 +183,9 @@ const rules = {
       'isReplyLogMember',
       "auth.id in data.ref('reply.record.log.profiles.user.id')",
       'canManageRecord',
-      canManageFor('record.log.team.id'),
+      ruleStrings.canManageFor('record.log.team.id'),
       'canManageReply',
-      canManageFor('reply.record.log.team.id'),
+      ruleStrings.canManageFor('reply.record.log.team.id'),
       'canViewRecordFiles',
       'isRecordTeamMember && (canManageRecord || isRecordLogMember)',
       'canViewReplyFiles',
@@ -213,7 +194,7 @@ const rules = {
       "auth.id in data.ref('profile.user.roles.team.roles.user.id')",
     ],
     allow: {
-      view: or(
+      view: ruleStrings.or(
         'isProfileOwner',
         'isTeammate',
         'isTeamMember',
@@ -222,12 +203,12 @@ const rules = {
         'isLoglessDraftRecordFile'
       ),
       create: 'hasOneLink && (isProfileOwner || isTeamImageManager)',
-      update: and(
+      update: ruleStrings.and(
         'hasOneLink',
-        group(
-          or(
-            group(
-              and(
+        ruleStrings.group(
+          ruleStrings.or(
+            ruleStrings.group(
+              ruleStrings.and(
                 'isDocument',
                 'onlyModifiesDocumentName',
                 'isValidDocumentName'
@@ -236,22 +217,32 @@ const rules = {
             'onlyModifiesFileOrder'
           )
         ),
-        group(
-          or(
-            group(and('isRecordAuthor', 'isRecordTeamMember')),
-            group(and('isReplyAuthor', 'isReplyTeamMember')),
+        ruleStrings.group(
+          ruleStrings.or(
+            ruleStrings.group(
+              ruleStrings.and('isRecordAuthor', 'isRecordTeamMember')
+            ),
+            ruleStrings.group(
+              ruleStrings.and('isReplyAuthor', 'isReplyTeamMember')
+            ),
             'canManageRecord',
             'canManageReply',
             'isLoglessDraftRecordFile'
           )
         )
       ),
-      delete: or(
+      delete: ruleStrings.or(
         'isProfileOwner',
         'isTeamImageManager',
-        group(and('isRecordAuthor', 'isRecordTeamMember')),
-        group(and('isReplyAuthor', 'isReplyTeamMember')),
-        group(and('isReplyRecordAuthor', 'isReplyTeamMember')),
+        ruleStrings.group(
+          ruleStrings.and('isRecordAuthor', 'isRecordTeamMember')
+        ),
+        ruleStrings.group(
+          ruleStrings.and('isReplyAuthor', 'isReplyTeamMember')
+        ),
+        ruleStrings.group(
+          ruleStrings.and('isReplyRecordAuthor', 'isReplyTeamMember')
+        ),
         'canManageRecord',
         'canManageReply',
         'isLoglessDraftRecordFile'
@@ -263,9 +254,9 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'isTeamOwner',
-      isOwner,
+      ruleStrings.isOwner,
       'isTeamAdmin',
-      isAdmin,
+      ruleStrings.isAdmin,
       'canManage',
       'isTeamOwner || isTeamAdmin',
     ],
@@ -279,13 +270,13 @@ const rules = {
   links: {
     bind: [
       'hasOneLink',
-      hasExactlyOneRef('record.id', 'reply.id'),
+      ruleStrings.hasExactlyOneRef('record.id', 'reply.id'),
       'isValidLabel',
       'newData.label != null && size(newData.label) > 0 && size(newData.label) <= 120',
       'isValidUrl',
       'newData.url != null && size(newData.url) > 0 && size(newData.url) <= 2048',
       'isValidTeamId',
-      or(
+      ruleStrings.or(
         "newData.teamId in data.ref('record.log.team.id')",
         "newData.teamId in data.ref('reply.record.log.team.id')"
       ),
@@ -312,9 +303,9 @@ const rules = {
       'isReplyLogMember',
       "auth.id in data.ref('reply.record.log.profiles.user.id')",
       'canManageRecord',
-      canManageFor('record.log.team.id'),
+      ruleStrings.canManageFor('record.log.team.id'),
       'canManageReply',
-      canManageFor('reply.record.log.team.id'),
+      ruleStrings.canManageFor('reply.record.log.team.id'),
       'canViewRecord',
       'isRecordTeamMember && (canManageRecord || isRecordLogMember)',
       'canViewReply',
@@ -323,73 +314,109 @@ const rules = {
       "true in data.ref('record.isDraft') && data.ref('record.log.id') == [] && isRecordAuthor",
     ],
     allow: {
-      view: or(
+      view: ruleStrings.or(
         'canViewRecord',
         'canViewReply',
         'isRecordAuthor',
         'isReplyAuthor',
-        group(and('isLoglessDraftRecordLink', 'hasLoglessDraftRecordTeamId'))
+        ruleStrings.group(
+          ruleStrings.and(
+            'isLoglessDraftRecordLink',
+            'hasLoglessDraftRecordTeamId'
+          )
+        )
       ),
-      create: and(
+      create: ruleStrings.and(
         'hasOneLink',
         'isValidLabel',
         'isValidUrl',
-        group(
-          or(
-            group(
-              and(
+        ruleStrings.group(
+          ruleStrings.or(
+            ruleStrings.group(
+              ruleStrings.and(
                 'isValidTeamId',
-                group(
-                  or(
-                    group(and('isRecordAuthor', 'isRecordTeamMember')),
-                    group(and('isReplyAuthor', 'isReplyTeamMember')),
+                ruleStrings.group(
+                  ruleStrings.or(
+                    ruleStrings.group(
+                      ruleStrings.and('isRecordAuthor', 'isRecordTeamMember')
+                    ),
+                    ruleStrings.group(
+                      ruleStrings.and('isReplyAuthor', 'isReplyTeamMember')
+                    ),
                     'canManageRecord',
                     'canManageReply'
                   )
                 )
               )
             ),
-            group(
-              and('isLoglessDraftRecordLink', 'isValidLoglessDraftRecordTeamId')
+            ruleStrings.group(
+              ruleStrings.and(
+                'isLoglessDraftRecordLink',
+                'isValidLoglessDraftRecordTeamId'
+              )
             )
           )
         )
       ),
-      update: and(
-        group(
-          or(
-            group(and('onlyModifiesLinkDetails', 'isValidLabel', 'isValidUrl')),
+      update: ruleStrings.and(
+        ruleStrings.group(
+          ruleStrings.or(
+            ruleStrings.group(
+              ruleStrings.and(
+                'onlyModifiesLinkDetails',
+                'isValidLabel',
+                'isValidUrl'
+              )
+            ),
             'onlyModifiesLinkOrder'
           )
         ),
-        group(
-          or(
-            group(
-              and(
+        ruleStrings.group(
+          ruleStrings.or(
+            ruleStrings.group(
+              ruleStrings.and(
                 'isValidTeamId',
-                group(
-                  or(
-                    group(and('isRecordAuthor', 'isRecordTeamMember')),
-                    group(and('isReplyAuthor', 'isReplyTeamMember')),
+                ruleStrings.group(
+                  ruleStrings.or(
+                    ruleStrings.group(
+                      ruleStrings.and('isRecordAuthor', 'isRecordTeamMember')
+                    ),
+                    ruleStrings.group(
+                      ruleStrings.and('isReplyAuthor', 'isReplyTeamMember')
+                    ),
                     'canManageRecord',
                     'canManageReply'
                   )
                 )
               )
             ),
-            group(
-              and('isLoglessDraftRecordLink', 'isValidLoglessDraftRecordTeamId')
+            ruleStrings.group(
+              ruleStrings.and(
+                'isLoglessDraftRecordLink',
+                'isValidLoglessDraftRecordTeamId'
+              )
             )
           )
         )
       ),
-      delete: or(
-        group(and('isRecordAuthor', 'isRecordTeamMember')),
-        group(and('isReplyAuthor', 'isReplyTeamMember')),
-        group(and('isReplyRecordAuthor', 'isReplyTeamMember')),
+      delete: ruleStrings.or(
+        ruleStrings.group(
+          ruleStrings.and('isRecordAuthor', 'isRecordTeamMember')
+        ),
+        ruleStrings.group(
+          ruleStrings.and('isReplyAuthor', 'isReplyTeamMember')
+        ),
+        ruleStrings.group(
+          ruleStrings.and('isReplyRecordAuthor', 'isReplyTeamMember')
+        ),
         'canManageRecord',
         'canManageReply',
-        group(and('isLoglessDraftRecordLink', 'hasLoglessDraftRecordTeamId'))
+        ruleStrings.group(
+          ruleStrings.and(
+            'isLoglessDraftRecordLink',
+            'hasLoglessDraftRecordTeamId'
+          )
+        )
       ),
     },
   },
@@ -400,7 +427,7 @@ const rules = {
       'isValidType',
       "newData.type in ['log', 'record']",
       'isValidColor',
-      and(
+      ruleStrings.and(
         'newData.color != null',
         "newData.type in ['log', 'record']",
         `newData.color in ${tagColorValues}`
@@ -410,7 +437,7 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'canManage',
-      canManageCurrentTeam,
+      ruleStrings.canManageCurrentTeam,
     ],
     allow: {
       view: 'isTeamMember',
@@ -435,7 +462,7 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
-      canManageFor('log.team.id'),
+      ruleStrings.canManageFor('log.team.id'),
       'hasOnlyRecordTags',
       "data.ref('tags.type').all(type, type == 'record')",
       'hasSameTeamTags',
@@ -450,7 +477,7 @@ const rules = {
         'canManage && onlyModifiesTemplateDetails && isValidText && isValidOrder && isValidTeamId',
       delete: 'canManage',
       link: {
-        tags: and(
+        tags: ruleStrings.and(
           'canManage',
           'hasOnlyRecordTags',
           'hasSameTeamTags',
@@ -469,7 +496,7 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('profiles.user.id')",
       'canManage',
-      canManageCurrentTeam,
+      ruleStrings.canManageCurrentTeam,
     ],
     allow: {
       view: 'isTeamMember && (canManage || isLogMember)',
@@ -490,9 +517,9 @@ const rules = {
       'hasSharedLogAccess',
       "auth.id != null && auth.id in data.ref('logs.profiles.user.id')",
       'hasManagedTeamOwnerAccess',
-      isOwnerFor('user.roles.team.id'),
+      ruleStrings.isOwnerFor('user.roles.team.id'),
       'hasManagedTeamAdminAccess',
-      isAdminFor('user.roles.team.id'),
+      ruleStrings.isAdminFor('user.roles.team.id'),
       'hasManagedTeamAccess',
       'hasManagedTeamOwnerAccess || hasManagedTeamAdminAccess',
     ],
@@ -537,9 +564,9 @@ const rules = {
       'isReplyLogMember',
       "auth.id in data.ref('reply.record.log.profiles.user.id')",
       'canManageRecord',
-      canManageFor('record.log.team.id'),
+      ruleStrings.canManageFor('record.log.team.id'),
       'canManageReply',
-      canManageFor('reply.record.log.team.id'),
+      ruleStrings.canManageFor('reply.record.log.team.id'),
       'canViewRecord',
       'isRecordTeamMember && (canManageRecord || isRecordLogMember)',
       'canViewReply',
@@ -548,11 +575,17 @@ const rules = {
     allow: {
       view: 'canViewRecord || canViewReply',
       create: 'isAuthor && (canViewRecord || canViewReply)',
-      delete: or(
+      delete: ruleStrings.or(
         'isAuthor',
-        group(and('isRecordAuthor', 'isRecordTeamMember')),
-        group(and('isReplyAuthor', 'isReplyTeamMember')),
-        group(and('isReplyRecordAuthor', 'isReplyTeamMember')),
+        ruleStrings.group(
+          ruleStrings.and('isRecordAuthor', 'isRecordTeamMember')
+        ),
+        ruleStrings.group(
+          ruleStrings.and('isReplyAuthor', 'isReplyTeamMember')
+        ),
+        ruleStrings.group(
+          ruleStrings.and('isReplyRecordAuthor', 'isReplyTeamMember')
+        ),
         'canManageRecord',
         'canManageReply'
       ),
@@ -571,7 +604,7 @@ const rules = {
       'onlyModifiesPinnedState',
       "request.modifiedFields.all(field, field in ['isPinned'])",
       'onlyPublishesDraft',
-      and(
+      ruleStrings.and(
         "request.modifiedFields.all(field, field in ['isDraft', 'text'])",
         'newData.isDraft == false'
       ),
@@ -586,13 +619,13 @@ const rules = {
       'isLogMember',
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
-      canManageFor('log.team.id'),
+      ruleStrings.canManageFor('log.team.id'),
       'canDeleteOwn',
       'isAuthor && isTeamMember',
       'isTeamMemberByTeamId',
       "data.teamId in auth.ref('$user.roles.team.id')",
       'canManageByTeamId',
-      canManageAuthTeam('data.teamId'),
+      ruleStrings.canManageAuthTeam('data.teamId'),
       'canManageRecordTags',
       'isTeamMemberByTeamId && (isAuthor || canManageByTeamId)',
       'hasOnlyRecordTags',
@@ -603,13 +636,20 @@ const rules = {
       "!hasLog || data.ref('tags.logs.id').all(logId, logId in data.ref('log.id'))",
     ],
     allow: {
-      view: or(
-        group(
-          and(
+      view: ruleStrings.or(
+        ruleStrings.group(
+          ruleStrings.and(
             'isTeamMember',
-            group(
-              or(
-                group(and('!isDraft', group(or('canManage', 'isLogMember')))),
+            ruleStrings.group(
+              ruleStrings.or(
+                ruleStrings.group(
+                  ruleStrings.and(
+                    '!isDraft',
+                    ruleStrings.group(
+                      ruleStrings.or('canManage', 'isLogMember')
+                    )
+                  )
+                ),
                 'isAuthor'
               )
             )
@@ -619,33 +659,44 @@ const rules = {
       ),
       create:
         'isAuthor && isTeamMember && (canManage || isLogMember) && isValidNewText',
-      update: or(
-        group(
-          and('isAuthor', 'isTeamMember', 'onlyModifiesText', 'isValidNewText')
+      update: ruleStrings.or(
+        ruleStrings.group(
+          ruleStrings.and(
+            'isAuthor',
+            'isTeamMember',
+            'onlyModifiesText',
+            'isValidNewText'
+          )
         ),
-        group(
-          and(
+        ruleStrings.group(
+          ruleStrings.and(
             'isAuthor',
             'isTeamMember',
             'isDraft',
-            group(or('canManage', 'isLogMember')),
+            ruleStrings.group(ruleStrings.or('canManage', 'isLogMember')),
             'onlyPublishesDraft',
             'isValidNewText'
           )
         ),
-        group(and('canManage', 'onlyModifiesPinnedState')),
-        group(
-          and(
+        ruleStrings.group(
+          ruleStrings.and('canManage', 'onlyModifiesPinnedState')
+        ),
+        ruleStrings.group(
+          ruleStrings.and(
             'isAuthorOwnedLoglessDraft',
             'canManageByTeamId',
             'onlyModifiesPinnedState'
           )
         ),
-        group(
-          and('isAuthorOwnedLoglessDraft', 'onlyModifiesText', 'isValidNewText')
+        ruleStrings.group(
+          ruleStrings.and(
+            'isAuthorOwnedLoglessDraft',
+            'onlyModifiesText',
+            'isValidNewText'
+          )
         ),
-        group(
-          and(
+        ruleStrings.group(
+          ruleStrings.and(
             'isDraft',
             'canManageRecordTags',
             'onlyModifiesTextAndTags',
@@ -662,7 +713,7 @@ const rules = {
         replies: 'auth.id != null',
         reactions: 'auth.id != null',
         activities: 'auth.id != null',
-        tags: and(
+        tags: ruleStrings.and(
           'canManageRecordTags',
           'hasOnlyRecordTags',
           'hasSameTeamTags',
@@ -689,37 +740,39 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'isTeamAdmin',
-      isAdmin,
+      ruleStrings.isAdmin,
       'isTeamOwner',
-      isOwner,
+      ruleStrings.isOwner,
     ],
     allow: {
       view: 'isTeamMember',
-      create: and(
-        group(or('isFirstRole', 'isTeamOwner', 'isTeamAdmin')),
+      create: ruleStrings.and(
+        ruleStrings.group(
+          ruleStrings.or('isFirstRole', 'isTeamOwner', 'isTeamAdmin')
+        ),
         'isValidRole',
         'isValidUserId',
         'isValidTeamId',
         'isValidKey'
       ),
-      update: and(
-        group(
-          or(
+      update: ruleStrings.and(
+        ruleStrings.group(
+          ruleStrings.or(
             'isTeamOwner',
-            group(
-              and(
+            ruleStrings.group(
+              ruleStrings.and(
                 'isTeamAdmin',
                 '!isRoleOwner',
-                group(
-                  or(
-                    group(
-                      and(
+                ruleStrings.group(
+                  ruleStrings.or(
+                    ruleStrings.group(
+                      ruleStrings.and(
                         `data.role == '${Role.Member}'`,
                         `newData.role == '${Role.Admin}'`
                       )
                     ),
-                    group(
-                      and(
+                    ruleStrings.group(
+                      ruleStrings.and(
                         `data.role == '${Role.Admin}'`,
                         `newData.role == '${Role.Member}'`
                       )
@@ -747,9 +800,9 @@ const rules = {
       'isTeamMember',
       "auth.id in data.ref('roles.user.id')",
       'isTeamOwner',
-      authRoleIn(Role.Owner, 'data.id', "data.ref('roles.key')"),
+      ruleStrings.authRoleIn(Role.Owner, 'data.id', "data.ref('roles.key')"),
       'isTeamAdmin',
-      authRoleIn(Role.Admin, 'data.id', "data.ref('roles.key')"),
+      ruleStrings.authRoleIn(Role.Admin, 'data.id', "data.ref('roles.key')"),
       'canManage',
       'isTeamOwner || isTeamAdmin',
       'hasTeamId',

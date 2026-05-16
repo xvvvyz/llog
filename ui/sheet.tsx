@@ -3,6 +3,9 @@ import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { BREAKPOINT_VALUES } from '@/theme/tokens';
 import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
+import { useSheetDragBehavior } from '@/ui/sheet-drag-behavior';
+import { SHEET_DRAG_SURFACE_PROPS } from '@/ui/sheet-drag-constants';
+import { SheetDragProviders } from '@/ui/sheet-drag-context';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
 import { useSheetStack, useSheetStackBackdrop } from '@/ui/sheet-stack';
 import { Spinner } from '@/ui/spinner';
@@ -10,7 +13,7 @@ import { Portal } from '@rn-primitives/portal';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { GestureDetector } from 'react-native-gesture-handler';
-import * as sheetDrag from '@/ui/sheet-drag';
+import * as sheetDragMetrics from '@/ui/sheet-drag-metrics';
 
 import {
   KeyboardAvoidingView,
@@ -28,11 +31,12 @@ import Animated, {
   FadeOutDown,
 } from 'react-native-reanimated';
 
+export { SHEET_SORTABLE_DRAG_HANDLE_PROPS } from '@/ui/sheet-drag-constants';
+
 export {
-  SHEET_SORTABLE_DRAG_HANDLE_PROPS,
   useSheetDragLock,
   useSheetScrollHandler,
-} from '@/ui/sheet-drag';
+} from '@/ui/sheet-drag-context';
 
 export const SHEET_LAYERS = {
   route: OVERLAY_LAYERS.routeSheet,
@@ -58,7 +62,7 @@ const sheetLoadingVariants = cva(
 export const SheetBackdrop = () => {
   const backdrop = useSheetStackBackdrop();
 
-  const backdropDragStyle = sheetDrag.useSheetBackdropDragStyle(
+  const backdropDragStyle = sheetDragMetrics.useSheetBackdropDragStyle(
     backdrop.translateY,
     backdrop.fadeDistance
   );
@@ -112,13 +116,11 @@ export const Sheet = ({
   const sheetContentRef =
     React.useRef<React.ComponentRef<typeof Animated.View>>(null);
 
-  const sheetDragMetrics = sheetDrag.useSheetDragMetrics(
-    windowDimensions.height
-  );
+  const dragMetrics = sheetDragMetrics.useSheetDragMetrics(windowDimensions.height);
 
   const sheetStack = useSheetStack({
-    backdropFadeDistance: sheetDragMetrics.dismissThreshold,
-    backdropTranslateY: sheetDragMetrics.translateY,
+    backdropFadeDistance: dragMetrics.dismissThreshold,
+    backdropTranslateY: dragMetrics.translateY,
     layer,
     onDismiss,
     open,
@@ -145,8 +147,8 @@ export const Sheet = ({
   const heightStyle = { maxHeight: availableHeight };
   const shouldRenderInlineBackdrop = !isWeb || portalHostName != null;
 
-  const sheetDragBehavior = sheetDrag.useSheetDragBehavior({
-    ...sheetDragMetrics,
+  const sheetDragBehavior = useSheetDragBehavior({
+    ...dragMetrics,
     isTopSheet: sheetStack.isTopSheet,
     isWeb,
     onDismiss,
@@ -162,7 +164,7 @@ export const Sheet = ({
         loading && 'min-h-24',
         className
       )}
-      {...sheetDrag.SHEET_DRAG_SURFACE_PROPS}
+      {...SHEET_DRAG_SURFACE_PROPS}
       {...sheetDragBehavior.webTouchHandlers}
     >
       <View
@@ -174,7 +176,7 @@ export const Sheet = ({
       >
         <View className="h-1.5 w-11 rounded-full bg-border-secondary" />
       </View>
-      <sheetDrag.SheetDragProviders
+      <SheetDragProviders
         dragLock={sheetDragBehavior.dragLockContext}
         scroll={sheetDragBehavior.scrollContext}
       >
@@ -188,7 +190,7 @@ export const Sheet = ({
             <Spinner />
           </Animated.View>
         )}
-      </sheetDrag.SheetDragProviders>
+      </SheetDragProviders>
     </Animated.View>
   );
 

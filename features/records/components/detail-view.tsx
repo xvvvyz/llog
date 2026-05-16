@@ -6,7 +6,7 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Page } from '@/ui/page';
-import { useSheetScrollHandler } from '@/ui/sheet-drag';
+import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { Animated, Easing, ScrollView, View } from 'react-native';
