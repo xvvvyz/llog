@@ -29,6 +29,7 @@ app.post(
     }
 
     const { text } = c.req.valid('json');
+    const trimmedText = text.trim();
 
     const { replies } = await c.var.db.query({
       replies: {
@@ -51,7 +52,78 @@ app.post(
 
     const reply = replies[0];
 
-    if (!reply || reply.record?.id !== recordId) {
+    if (!reply) {
+      const { records, profiles } = await c.var.db.query({
+        profiles: { $: { fields: ['id', 'name'], where: { user: user.id } } },
+        records: {
+          $: { fields: ['id', 'teamId'], where: { id: recordId } },
+          log: {
+            $: { fields: ['id', 'name'] },
+            ...notificationRecipientLogQuery,
+          },
+        },
+      });
+
+      const record = records[0];
+      const profile = profiles[0];
+
+      if (!record?.id) {
+        throw new HTTPException(404, { message: 'Reply not found' });
+      }
+
+      const actorRole = record.log?.team?.roles?.find(
+        (role) => role.userId === user.id
+      )?.role;
+
+      const isLogMember = !!record.log?.profiles?.some(
+        (profile) => profile.user?.id === user.id
+      );
+
+      if (!permissions.canManageTeam(actorRole) && !isLogMember) {
+        throw new HTTPException(403, { message: 'Forbidden' });
+      }
+
+      if (!trimmedText || !profile?.id || !record.log?.id || !record.teamId) {
+        throw new HTTPException(400, { message: 'Invalid reply draft' });
+      }
+
+      const now = new Date().toISOString();
+
+      await c.var.db.transact(
+        recordPublish.buildCreatePublishedReplyTransactions({
+          activityId: id(),
+          authorId: profile.id,
+          db: c.var.db,
+          logId: record.log.id,
+          now,
+          recordId,
+          replyId,
+          teamId: record.teamId,
+          text: trimmedText,
+        })
+      );
+
+      await push.sendPushNotifications(
+        c.env,
+        push.collectRecipientSubscriptions({
+          actorUserId: user.id,
+          logProfiles: record.log.profiles,
+          roles: record.log.team?.roles,
+        }),
+        push.buildReplyNotification({
+          authorName: profile.name,
+          replyId,
+          logName: record.log.name,
+          recordId,
+          text: trimmedText,
+        }),
+        { staleSubscriptionDb: c.var.db }
+      );
+
+      return c.json({ success: true });
+    }
+
+    if (reply.record?.id !== recordId) {
       throw new HTTPException(404, { message: 'Reply not found' });
     }
 
@@ -73,8 +145,6 @@ app.post(
       throw new HTTPException(409, { message: 'Reply already published' });
     }
 
-    const trimmedText = text.trim();
-
     const hasContent =
       !!trimmedText || !!reply.files?.length || !!reply.links?.length;
 
@@ -94,7 +164,7 @@ app.post(
         activityDate: now,
         activityId: id(),
         actorId: reply.author.id,
-        contentDate: now,
+        contentDate: reply.date ?? now,
         db: c.var.db,
         logId: reply.record.log.id,
         recordId,

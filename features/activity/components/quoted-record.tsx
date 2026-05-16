@@ -5,7 +5,7 @@ import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
 import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
-import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { TruncatedText } from '@/features/records/components/truncated-text';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
@@ -44,7 +44,7 @@ export const QuotedRecord = ({
   } = useFilteredFiles(files || []);
 
   const displayText = trimDisplayText(text);
-  const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const { openMediaLightbox } = useMediaLightbox({ recordId });
   const hasAudioFiles = audioMedia.length > 0;
   const hasDocumentFiles = documentFiles.length > 0;
@@ -99,12 +99,12 @@ export const QuotedRecord = ({
                 const isAvailableOffline = isFileAvailableOffline(item);
 
                 const isUnavailableOffline =
-                  connectivity.isOffline && !isAvailableOffline;
+                  showOfflineUi && !isAvailableOffline;
 
                 const canOpenMedia =
                   !!recordId &&
                   !isProcessing &&
-                  (!connectivity.isOffline || isAvailableOffline);
+                  (!showOfflineUi || isAvailableOffline);
 
                 return (
                   <Pressable

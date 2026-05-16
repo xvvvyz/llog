@@ -2,6 +2,7 @@ import { useProfile } from '@/features/account/queries/use-profile';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useConnectivity } from '@/features/offline/connectivity';
 import * as localEntry from '@/features/offline/local-entry';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
@@ -23,6 +24,7 @@ export const RecordTagsSheet = () => {
   const recordId = sheetManager.getId('record-tags');
   const profile = useProfile();
   const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const outbox = useOutbox();
   const visibleTagsRef = React.useRef<Tag[]>([]);
 
@@ -39,11 +41,8 @@ export const RecordTagsSheet = () => {
   const logColorIndex = resolveSpectrumColor(target.logColor ?? log.color);
   const myRole = useMyRole({ teamId });
   const canManageDefinitions = !!myRole.canManage;
-
-  const canMutateDefinitions =
-    canManageDefinitions && connectivity.canRunNetworkActions;
-
-  const canEditRecordTags = connectivity.canRunNetworkActions;
+  const canMutateDefinitions = canManageDefinitions && !showOfflineUi;
+  const canEditRecordTags = !showOfflineUi;
 
   const canManageRecordTags =
     canEditRecordTags &&
@@ -272,9 +271,7 @@ export const RecordTagsSheet = () => {
         setRawQuery={tagSheet.setRawQuery}
         visibleTags={tagSheet.visibleTags}
         sortEnabled={
-          !tagSheet.rawQuery &&
-          canMutateDefinitions &&
-          connectivity.canRunNetworkActions
+          !tagSheet.rawQuery && canMutateDefinitions && !showOfflineUi
         }
       />
     </Sheet>

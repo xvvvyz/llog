@@ -11,7 +11,7 @@ export const getExistingFileForQueuedParent = async ({
 }) => {
   if (!fileId || !parent) return;
 
-  const { data } = await db.queryOnce({
+  const result = await db.queryOnce({
     files: {
       $: { ...visibleFileQuery.$, where: { id: fileId } },
       record: { $: { fields: ['id' as const] } },
@@ -19,7 +19,7 @@ export const getExistingFileForQueuedParent = async ({
     },
   });
 
-  const file = data.files?.[0];
+  const file = result?.data?.files?.[0];
   if (!file?.id) return;
 
   const linkedToParent =

@@ -19,7 +19,7 @@ export const useRecordDraft = ({
   teamId?: string;
 }) => {
   const profile = useProfile();
-  const { isOffline } = useConnectivity();
+  const connectivity = useConnectivity();
   const outbox = useOutbox();
   const creatingDraftKeyRef = React.useRef<string | undefined>(undefined);
 
@@ -126,7 +126,10 @@ export const useRecordDraft = ({
     } as (typeof records)[number];
   }, [createdDraft, draftCreationKey, ignoredDraftIds, outboxDraftIds]);
 
-  const record = isOffline ? fallbackRecord : (queriedRecord ?? fallbackRecord);
+  const record = !connectivity.canRunNetworkActions
+    ? fallbackRecord
+    : (queriedRecord ?? fallbackRecord);
+
   const hasRecord = !!record;
 
   const hasStaleResult =
@@ -134,7 +137,7 @@ export const useRecordDraft = ({
 
   const draftIsLoading =
     !!queryKey &&
-    !isOffline &&
+    connectivity.canRunNetworkActions &&
     (isLoading || !hasCurrentResult || hasStaleResult);
 
   React.useEffect(() => {
@@ -175,9 +178,7 @@ export const useRecordDraft = ({
       return;
     }
 
-    creatingDraftKeyRef.current = draftCreationKey;
-
-    if (isOffline) {
+    const createLocalDraft = () => {
       setCreatedDraft({
         date: new Date().toISOString(),
         id: id(),
@@ -186,7 +187,12 @@ export const useRecordDraft = ({
         needsIdentityReplay: true,
         teamId: logTeamId,
       });
+    };
 
+    creatingDraftKeyRef.current = draftCreationKey;
+
+    if (!connectivity.canRunNetworkActions) {
+      createLocalDraft();
       return;
     }
 
@@ -205,15 +211,11 @@ export const useRecordDraft = ({
           id: recordId,
           key: draftCreationKey,
           logId,
-          needsIdentityReplay: isOffline,
+          needsIdentityReplay: !connectivity.canRunNetworkActions,
           teamId: logTeamId,
         });
-      } catch (error) {
-        if (creatingDraftKeyRef.current === draftCreationKey) {
-          creatingDraftKeyRef.current = undefined;
-        }
-
-        console.error('Failed to create record draft', error);
+      } catch {
+        createLocalDraft();
       }
     };
 
@@ -229,7 +231,7 @@ export const useRecordDraft = ({
     needsDraftLookupBeforeCreate,
     needsLogTeamLookup,
     hasRecord,
-    isOffline,
+    connectivity.canRunNetworkActions,
     profile.id,
   ]);
 

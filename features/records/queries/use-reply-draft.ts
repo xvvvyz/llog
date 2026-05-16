@@ -163,7 +163,7 @@ export const useReplyDraft = ({
     creatingDraftKeyRef.current = draftCreationKey;
     replyIdRef.current = id();
 
-    if (!connectivity.canRunNetworkActions) {
+    const createLocalDraft = () => {
       setCreatedDraft({
         date: new Date().toISOString(),
         id: replyIdRef.current,
@@ -172,7 +172,10 @@ export const useReplyDraft = ({
         recordId: targetRecordId,
         teamId,
       });
+    };
 
+    if (!connectivity.canRunNetworkActions) {
+      createLocalDraft();
       return;
     }
 
@@ -191,16 +194,12 @@ export const useReplyDraft = ({
           date: new Date().toISOString(),
           id: replyId,
           key: draftCreationKey,
-          needsIdentityReplay: connectivity.isOffline,
+          needsIdentityReplay: !connectivity.canRunNetworkActions,
           recordId: targetRecordId,
           teamId,
         });
-      } catch (error) {
-        if (creatingDraftKeyRef.current === draftCreationKey) {
-          creatingDraftKeyRef.current = undefined;
-        }
-
-        console.error('Failed to create reply draft', error);
+      } catch {
+        createLocalDraft();
       }
     };
 

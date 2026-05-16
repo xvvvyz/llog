@@ -10,6 +10,7 @@ type AudioPlayerComponent =
   React.ComponentType<audioPlayerTypes.AudioPlayerProps>;
 
 type AudioPlaylistProps = {
+  analysisActionsDisabled?: boolean;
   canAnalyzeAudio?: boolean;
   className?: string;
   clips: audioPlayerTypes.AudioClip[];
@@ -17,6 +18,7 @@ type AudioPlaylistProps = {
 
 export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
   const AudioPlaylist = ({
+    analysisActionsDisabled,
     canAnalyzeAudio,
     className,
     clips,
@@ -47,6 +49,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
           return (
             <AudioPlayer
               key={`${clip.id}:${index}`}
+              analysisActionsDisabled={analysisActionsDisabled}
               assetKey={clip.assetKey}
               autoPlayKey={isActive ? activeAutoPlayKey : undefined}
               canAnalyzeAudio={canAnalyzeAudio}

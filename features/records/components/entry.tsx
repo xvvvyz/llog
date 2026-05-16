@@ -3,6 +3,7 @@ import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { CompactEntry } from '@/features/records/components/compact-entry';
 import { EntryCard } from '@/features/records/components/entry-card';
@@ -43,8 +44,24 @@ export const Entry = ({
   const sheetManager = useSheetManager();
   const ui = useUi();
   const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const isLocalPending = !!record.localStatus;
   const isCompletedLocalSubmission = record.localOutboxStatus === 'complete';
+
+  const isActiveLocalSubmission =
+    isLocalPending && record.localOutboxStatus !== 'complete';
+
+  const isUploadingLocalSubmission =
+    record.localOutboxStatus === 'syncing' ||
+    record.localOutboxStatus === 'publishing';
+
+  const syncStatus = isActiveLocalSubmission
+    ? isUploadingLocalSubmission && connectivity.canRunNetworkActions
+      ? 'syncing'
+      : record.localOutboxStatus === 'error'
+        ? 'retrying'
+        : 'not-synced'
+    : undefined;
 
   const canManageLocalPendingEntry =
     isLocalPending &&
@@ -69,7 +86,7 @@ export const Entry = ({
     const canDelete = canManageLocalPendingEntry
       ? true
       : isLocalPending
-        ? isSyncedLocalReply && rawEntryMenuState.canDelete
+        ? rawEntryMenuState.canDelete
         : rawEntryMenuState.canDelete;
 
     const canDuplicate = rawEntryMenuState.canDuplicate;
@@ -77,7 +94,7 @@ export const Entry = ({
     const canEdit = canManageLocalPendingEntry
       ? true
       : isLocalPending
-        ? isSyncedLocalReply && rawEntryMenuState.canEdit
+        ? rawEntryMenuState.canEdit
         : rawEntryMenuState.canEdit;
 
     const canPin = rawEntryMenuState.canPin;
@@ -99,24 +116,28 @@ export const Entry = ({
       hasActionsAboveDelete,
       hasMenu,
       isDeleteDisabled:
+        (isLocalPending && !canManageLocalPendingEntry) ||
         isSyncedLocalReply ||
         (!canManageLocalPendingEntry && rawEntryMenuState.isDeleteDisabled),
       isDuplicateDisabled:
         isLocalPending ||
         rawEntryMenuState.isDuplicateDisabled ||
-        !connectivity.canRunNetworkActions,
+        showOfflineUi,
       isEditDisabled:
+        isUploadingLocalSubmission ||
+        (isLocalPending && !canManageLocalPendingEntry) ||
         isSyncedLocalReply ||
         (!canManageLocalPendingEntry && rawEntryMenuState.isEditDisabled),
-      isPinDisabled: !connectivity.canRunNetworkActions,
-      isTagDisabled: !connectivity.canRunNetworkActions,
+      isPinDisabled: isLocalPending || showOfflineUi,
+      isTagDisabled: isLocalPending || showOfflineUi,
     };
   }, [
     canManageLocalPendingEntry,
-    connectivity.canRunNetworkActions,
     isLocalPending,
+    isUploadingLocalSubmission,
     isSyncedLocalReply,
     rawEntryMenuState,
+    showOfflineUi,
   ]);
 
   const handleDoubleTapReaction = React.useCallback(() => {
@@ -160,12 +181,13 @@ export const Entry = ({
     links: record.links ?? [],
     logId,
     logName,
-    networkActionsEnabled: connectivity.canRunNetworkActions && !isLocalPending,
+    networkActionsEnabled: !showOfflineUi && !isLocalPending,
     numberOfLines,
     onDoubleTapReaction: handleDoubleTapReaction,
     record,
     recordId,
     replyId,
+    syncStatus,
     visualMedia,
   };
 

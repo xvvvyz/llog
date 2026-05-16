@@ -6,6 +6,7 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export const DestructiveConfirmSheet = ({
+  isConfirmDisabled,
   isPending,
   onConfirm,
   onDismiss,
@@ -13,6 +14,7 @@ export const DestructiveConfirmSheet = ({
   portalName,
   title,
 }: {
+  isConfirmDisabled?: boolean;
   isPending: boolean;
   onConfirm: () => Promise<void>;
   onDismiss: () => void;
@@ -30,7 +32,7 @@ export const DestructiveConfirmSheet = ({
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">{title}</Text>
         <Button
-          disabled={isPending}
+          disabled={isPending || isConfirmDisabled}
           onPress={onConfirm}
           variant="destructive"
           wrapperClassName="mt-12"

@@ -10,9 +10,7 @@ import { Text } from '@/ui/text';
 import { WifiSlash } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
-
-const OfflineBannerContext =
-  React.createContext<offlineBannerState.OfflineBannerState>(null);
+import * as offlineUiState from '@/features/offline/offline-ui-state';
 
 export const OfflineBannerProvider = ({
   children,
@@ -49,18 +47,17 @@ export const OfflineBannerProvider = ({
   }, [hasPendingWork, isNetworkOffline, outbox.hydrated, showOffline]);
 
   return (
-    <OfflineBannerContext.Provider value={state}>
+    <offlineUiState.OfflineBannerStateProvider state={state}>
       {children}
-    </OfflineBannerContext.Provider>
+    </offlineUiState.OfflineBannerStateProvider>
   );
 };
 
-export const useOfflineBannerState = () =>
-  React.useContext(OfflineBannerContext);
+export { useOfflineBannerState, useShowOfflineUi } from './offline-ui-state';
 
 export const OfflineBanner = () => {
   const insets = useSafeAreaInsets();
-  const state = useOfflineBannerState();
+  const state = offlineUiState.useOfflineBannerState();
   if (!state) return null;
 
   return (
@@ -76,7 +73,7 @@ export const OfflineBanner = () => {
       <Text className="text-muted-foreground text-sm" numberOfLines={1}>
         {state === 'offline'
           ? 'Offline. Features are limited.'
-          : 'Syncing offline changes.'}
+          : 'Uploading offline changes…'}
       </Text>
     </View>
   );

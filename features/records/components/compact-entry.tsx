@@ -1,8 +1,10 @@
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { EntryMenuContent } from '@/features/records/components/entry-menu';
+import { EntrySyncStatus } from '@/features/records/components/entry-sync-status';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
+import { RecordTagChips } from '@/features/records/components/record-tag-chips';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
 import { TruncatedText } from '@/features/records/components/truncated-text';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
@@ -22,17 +24,21 @@ export const CompactEntry = ({
   entryMenuState,
   links,
   logId,
+  logName,
   networkActionsEnabled = true,
   numberOfLines,
   onDoubleTapReaction,
   record,
   recordId,
   replyId,
+  syncStatus,
   visualMedia,
 }: EntrySharedProps & { className?: string }) => {
   const displayText = trimDisplayText(record.text);
   const hasDocumentFiles = documentFiles.length > 0;
   const hasLinks = links.length > 0;
+  const hasRecordTags = record.tags?.some((tag) => !!tag.name);
+  const hasTopMeta = hasRecordTags || !!syncStatus;
 
   return (
     <View
@@ -41,6 +47,21 @@ export const CompactEntry = ({
         className
       )}
     >
+      {hasTopMeta && (
+        <View className="flex-row flex-wrap mb-3 gap-1 items-start">
+          {syncStatus && (
+            <EntrySyncStatus className="shrink-0" status={syncStatus} />
+          )}
+          {hasRecordTags && (
+            <RecordTagChips
+              className="flex-1 gap-1 justify-start"
+              linkToSearch
+              logName={logName}
+              tags={record.tags}
+            />
+          )}
+        </View>
+      )}
       <View className="flex-row gap-3">
         <Avatar
           avatar={record.author?.image?.uri}
@@ -92,6 +113,7 @@ export const CompactEntry = ({
           {audioMedia.length > 0 && (
             <View className="mt-4 gap-2">
               <AudioPlaylist
+                analysisActionsDisabled={!networkActionsEnabled}
                 canAnalyzeAudio={canAnalyzeAudio}
                 clips={audioMedia}
               />
@@ -117,7 +139,7 @@ export const CompactEntry = ({
           )}
           <ReactionsRow
             accentColor={accentColor}
-            className="mt-3 gap-1.5"
+            className="mt-3"
             disabled={!networkActionsEnabled}
             logId={logId}
             onDoubleTapReaction={onDoubleTapReaction}

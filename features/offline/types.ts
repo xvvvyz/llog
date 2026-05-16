@@ -12,6 +12,7 @@ export type OutboxStatus =
   | 'discarded';
 
 export type QueuedAttachmentStatus =
+  | 'persisting'
   | 'queued'
   | 'uploading'
   | 'uploaded'
@@ -79,6 +80,7 @@ export type QueuedSubmission =
       isPinned?: boolean;
       links: QueuedLinkSnapshot[];
       logId: string;
+      needsDraftReplay?: boolean;
       nextRetryAt?: string;
       retryCount?: number;
       status: OutboxStatus;
@@ -148,6 +150,7 @@ export type QueueAttachmentInput = QueuedParent & {
   name?: string | null;
   order: number;
   size?: number | null;
+  status?: QueuedAttachmentStatus;
   type: FileKind;
   width?: number;
 };
@@ -160,6 +163,7 @@ export type QueueSubmissionInput =
       isPinned?: boolean;
       links?: QueuedLinkSnapshot[];
       logId: string;
+      needsDraftReplay?: boolean;
       tags?: QueuedTagSnapshot[];
       teamId?: string;
       text: string;

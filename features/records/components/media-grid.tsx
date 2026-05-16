@@ -3,7 +3,7 @@ import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
 import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
-import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
@@ -22,7 +22,7 @@ export const MediaGrid = ({
     visualItems.length
   );
 
-  const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const { openMediaLightbox } = useMediaLightbox({ recordId });
 
   const handlePress = React.useCallback(
@@ -42,14 +42,10 @@ export const MediaGrid = ({
 
       const isProcessing = visualMedia.isProcessing(item) && !isLocalVideo;
       const isAvailableOffline = isFileAvailableOffline(item);
-
-      const isUnavailableOffline =
-        connectivity.isOffline && !isAvailableOffline;
+      const isUnavailableOffline = showOfflineUi && !isAvailableOffline;
 
       const canOpenMedia =
-        !!recordId &&
-        !isProcessing &&
-        (!connectivity.isOffline || isAvailableOffline);
+        !!recordId && !isProcessing && (!showOfflineUi || isAvailableOffline);
 
       return (
         <Pressable
@@ -99,7 +95,7 @@ export const MediaGrid = ({
         </Pressable>
       );
     },
-    [connectivity.isOffline, handlePress, recordId, timelineTargetWidth]
+    [handlePress, recordId, showOfflineUi, timelineTargetWidth]
   );
 
   if (!visualItems.length) return null;

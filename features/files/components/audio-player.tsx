@@ -12,6 +12,7 @@ import { View } from 'react-native';
 
 export const AudioPlayer = (props: AudioPlayerProps) => {
   const {
+    analysisActionsDisabled,
     fileId,
     canAnalyzeAudio,
     isIdentifying,
@@ -205,6 +206,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
       file: audioFile,
     }) ? (
       <audioAnalysisMenuItems.AudioAnalysisMenuItems
+        actionsDisabled={analysisActionsDisabled}
         canAnalyze={canAnalyzeAudio}
         file={audioFile}
       />

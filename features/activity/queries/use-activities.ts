@@ -2,11 +2,13 @@ import { visibleFileQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
 import type { ActivityWithRelations } from '@/features/activity/lib/group-activities';
 import { useConnectivity } from '@/features/offline/connectivity';
+import type { EntryRecord } from '@/features/records/types/entry';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
+import * as recordCache from '@/features/records/queries/record-cache';
 
 const ACTIVITIES_PAGE_SIZE = 25;
 const MEMBER_ACTIVITY_TYPES = ['member_joined', 'member_left'] as const;
@@ -264,6 +266,44 @@ export const useActivities = () => {
       ),
     [memberActivities, recordActivities]
   );
+
+  React.useEffect(() => {
+    const recordsById = new Map<string, EntryRecord>();
+
+    for (const activity of activities) {
+      if (!activity.record?.id) continue;
+      const existing = recordsById.get(activity.record.id);
+
+      const record: EntryRecord = {
+        ...existing,
+        ...activity.record,
+        author:
+          activity.type === 'record_published'
+            ? activity.actor
+            : existing?.author,
+        log: activity.log ?? existing?.log,
+        reactions: existing?.reactions ?? [],
+        replies: existing?.replies ?? [],
+      };
+
+      if (activity.reply?.id) {
+        const reply = {
+          ...activity.reply,
+          author: activity.type === 'reply_posted' ? activity.actor : undefined,
+          reactions: [],
+        };
+
+        record.replies = [
+          ...(record.replies ?? []).filter((item) => item.id !== reply.id),
+          reply,
+        ];
+      }
+
+      recordsById.set(activity.record.id, record);
+    }
+
+    recordCache.cacheRecords([...recordsById.values()]);
+  }, [activities]);
 
   const canLoadActivitiesNextPage =
     !isOffline &&

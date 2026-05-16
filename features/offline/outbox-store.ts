@@ -187,11 +187,47 @@ export const getDiscardedSubmissions = outboxState.getDiscardedSubmissions;
 export const getAutoSyncableSubmissions =
   outboxState.getAutoSyncableSubmissions;
 
+export const getStartableAutoSyncSubmissions =
+  outboxState.getStartableAutoSyncSubmissions;
+
 export const getNextAutoRetryTime = outboxState.getNextAutoRetryTime;
 
 export const getPendingOutboxWork = outboxState.getPendingOutboxWork;
 
 export const hasPendingOutboxWork = outboxState.hasPendingOutboxWork;
+
+export const retryFailedOutboxWork = () => {
+  setSnapshot((current) => {
+    const hasFailedAttachment = current.attachments.some(
+      (attachment) => attachment.status === 'error'
+    );
+
+    const hasFailedSubmission = current.submissions.some(
+      (submission) => submission.status === 'error'
+    );
+
+    if (!hasFailedAttachment && !hasFailedSubmission) return current;
+
+    return {
+      ...current,
+      attachments: current.attachments.map((attachment) =>
+        attachment.status === 'error'
+          ? { ...attachment, error: undefined, status: 'queued' }
+          : attachment
+      ),
+      submissions: current.submissions.map((submission) =>
+        submission.status === 'error'
+          ? {
+              ...submission,
+              error: undefined,
+              nextRetryAt: undefined,
+              status: 'pending',
+            }
+          : submission
+      ) as typeof current.submissions,
+    };
+  });
+};
 
 export const getQueuedAttachmentsForParent = (
   state: Pick<OutboxSnapshot, 'attachments'>,
@@ -223,7 +259,7 @@ export const queueAttachment = (input: types.QueueAttachmentInput) => {
     mimeType: outboxNormalize.normalizeOptionalString(input.mimeType),
     name: outboxNormalize.normalizeOptionalString(input.name),
     size: outboxNormalize.normalizeOptionalNumber(input.size),
-    status: 'queued',
+    status: input.status ?? 'queued',
   };
 
   setSnapshot((current) => ({
@@ -330,6 +366,7 @@ export const queueSubmission = (input: types.QueueSubmissionInput) => {
           isPinned: input.isPinned,
           links,
           logId: input.logId,
+          needsDraftReplay: input.needsDraftReplay,
           status: 'pending',
           tagIds: (input.tags ?? []).map((tag) => tag.id),
           tags: input.tags ?? [],

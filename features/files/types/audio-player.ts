@@ -19,6 +19,7 @@ export type AudioPlayerProps = {
   active?: boolean;
   assetKey?: string | null;
   autoPlayKey?: number;
+  analysisActionsDisabled?: boolean;
   canAnalyzeAudio?: boolean;
   disabled?: boolean;
   durationSeconds?: number;

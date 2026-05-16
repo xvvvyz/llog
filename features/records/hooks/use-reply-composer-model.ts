@@ -10,7 +10,6 @@ import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import * as queuedLinks from '@/features/offline/queued-links';
 import { useProfile } from '@/features/account/queries/use-profile';
-import { useComposerLatestText } from '@/features/records/hooks/use-composer-latest-text';
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
@@ -25,6 +24,8 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
+import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
+import * as composerLatestText from '@/features/records/hooks/use-composer-latest-text';
 
 const getReplyCreatePayload = (
   value: unknown
@@ -116,6 +117,7 @@ export const useReplyComposerModel = () => {
   const replyId = reply?.id;
   const isEditingLocalReply = isEdit && localEntry.hasLocalStatus(editReply);
   const isOpen = sheetManager.isOpen('reply-create');
+  const openSessionKey = composerLatestText.useComposerOpenSessionKey(isOpen);
   const currentText = reply?.text ?? '';
   const replyTeamId = reply?.teamId ?? record.teamId;
 
@@ -141,6 +143,17 @@ export const useReplyComposerModel = () => {
     ]
   );
 
+  const canUpdateServerDraft =
+    connectivity.canRunNetworkActions && !shouldReplayReplyDraftIdentity;
+
+  const updateServerReplyDraft = React.useCallback(
+    (input: Parameters<typeof updateReplyDraft>[0]) => {
+      if (!canUpdateServerDraft) return;
+      void updateReplyDraft(input).catch(() => undefined);
+    },
+    [canUpdateServerDraft]
+  );
+
   const draftParent = React.useMemo(
     () =>
       replyId ? { parentId: replyId, parentType: 'reply' as const } : undefined,
@@ -152,6 +165,18 @@ export const useReplyComposerModel = () => {
   const queuedReplyDraft =
     queuedDraft?.type === 'reply' ? queuedDraft : undefined;
 
+  const queuedReplyAttachments = React.useMemo(
+    () =>
+      replyId && recordId
+        ? outboxStore.getQueuedAttachmentsForParent(outbox, {
+            parentId: replyId,
+            parentType: 'reply',
+            recordId,
+          })
+        : [],
+    [outbox, recordId, replyId]
+  );
+
   const links = React.useMemo(
     () =>
       queuedReplyDraft?.linksUpdated
@@ -160,8 +185,12 @@ export const useReplyComposerModel = () => {
     [queuedReplyDraft?.links, queuedReplyDraft?.linksUpdated, reply?.links]
   );
 
-  const { displayText, latestTextRef, setLatestText } = useComposerLatestText({
-    resetKey: replyId,
+  const { displayText, latestTextRef, setLatestText } = composerLatestText.useComposerLatestText({
+    resetKey: isOpen
+      ? isEdit
+        ? `edit:${editReplyId ?? ''}:${openSessionKey}`
+        : `create:${recordId ?? ''}:${openSessionKey}`
+      : 'closed',
     text: currentText,
   });
 
@@ -190,12 +219,16 @@ export const useReplyComposerModel = () => {
     void reorderFiles(files);
   }, []);
 
-  const handleReorderLinks = React.useCallback((links: { id: string }[]) => {
-    const orderedIds = links.map((link) => link.id);
-    outboxStore.reorderQueuedDraftLinks(orderedIds);
-    outboxStore.reorderQueuedLinks(orderedIds);
-    void reorderLinks(links);
-  }, []);
+  const handleReorderLinks = React.useCallback(
+    (links: { id: string }[]) => {
+      const orderedIds = links.map((link) => link.id);
+      outboxStore.reorderQueuedDraftLinks(orderedIds);
+      outboxStore.reorderQueuedLinks(orderedIds);
+      if (!connectivity.canRunNetworkActions) return;
+      void reorderLinks(links);
+    },
+    [connectivity.canRunNetworkActions]
+  );
 
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
@@ -218,6 +251,7 @@ export const useReplyComposerModel = () => {
     extraToolbarItems: linkToolbarItems,
     isOpen,
     files: reply?.files ?? [],
+    deferQueuedUploads: !isEdit || shouldReplayReplyDraftIdentity,
     onDeleteFile: handleDeleteFile,
     onOpenAudio: () =>
       sheetManager.open('record-audio', replyId, `reply:${recordId}`),
@@ -229,27 +263,35 @@ export const useReplyComposerModel = () => {
   });
 
   const hasContent = !!displayText.trim() || fileCount > 0;
+  const canSubmitForm = isEdit || hasContent;
 
   const handleChangeText = React.useCallback(
     (nextText: string) => {
       setLatestText(nextText);
       if (!replyId) return;
 
-      if (isEdit && !isEditingLocalReply) {
-        void db.transact(db.tx.replies[replyId].update({ text: nextText }));
+      if (isEdit && isEditingLocalReply) {
+        outboxStore.updateQueuedSubmission(`reply:${replyId}`, (submission) =>
+          submission.type === 'reply' ? { text: nextText } : {}
+        );
+
         return;
       }
 
-      if (!connectivity.canRunNetworkActions) return;
+      if (isEdit && !isEditingLocalReply) {
+        if (!connectivity.canRunNetworkActions) return;
 
-      void updateReplyDraft({
+        void db
+          .transact(db.tx.replies[replyId].update({ text: nextText }))
+          .catch(() => undefined);
+
+        return;
+      }
+
+      updateServerReplyDraft({
         ...replyDraftUpdateFields,
         id: replyId,
         text: nextText,
-      }).catch((error) => {
-        if (connectivity.canRunNetworkActions) {
-          console.error('Failed to update reply draft', error);
-        }
       });
     },
     [
@@ -259,6 +301,7 @@ export const useReplyComposerModel = () => {
       replyDraftUpdateFields,
       replyId,
       setLatestText,
+      updateServerReplyDraft,
     ]
   );
 
@@ -269,7 +312,15 @@ export const useReplyComposerModel = () => {
 
   const handleSubmit = React.useCallback(async () => {
     const text = latestTextRef.current.trim();
-    if (isBusy || (!text && fileCount === 0) || !replyId || !recordId) return;
+
+    if (
+      isBusy ||
+      (!isEdit && !text && fileCount === 0) ||
+      !replyId ||
+      !recordId
+    ) {
+      return;
+    }
 
     if (isEdit) {
       const patchQueuedReply = () => {
@@ -288,28 +339,43 @@ export const useReplyComposerModel = () => {
           parentType: 'reply',
         });
 
-        if (connectivity.canRunNetworkActions) {
-          const updateLocalReplyDraft = async () => {
-            try {
-              await updateReplyDraft({
-                ...replyDraftUpdateFields,
-                id: replyId,
-                text,
-              });
-            } catch (error) {
-              console.error('Failed to update local reply draft', error);
-            }
-          };
-
-          void updateLocalReplyDraft();
-        }
-
         close();
         return;
       }
 
-      await db.transact(db.tx.replies[replyId].update({ text }));
-      patchQueuedReply();
+      try {
+        await db.transact(db.tx.replies[replyId].update({ text }));
+      } catch {
+        patchQueuedReply();
+        close();
+        return;
+      }
+
+      if (queuedReplyAttachments.length > 0) {
+        outboxHooks.queueSubmission({
+          authorId: profile.id,
+          contentId: replyId,
+          files: reply?.files ?? [],
+          links: links.map(queuedLinks.toQueuedLinkSnapshot),
+          needsDraftReplay: false,
+          recordId,
+          teamId: replyTeamId,
+          text,
+          type: 'reply',
+        });
+
+        outboxStore.clearQueuedDraft({
+          parentId: replyId,
+          parentType: 'reply',
+        });
+
+        if (connectivity.canRunNetworkActionsImmediately) {
+          void outboxSyncCore.runOutboxSync();
+        }
+      } else {
+        patchQueuedReply();
+      }
+
       close();
       return;
     }
@@ -319,20 +385,12 @@ export const useReplyComposerModel = () => {
     setIsSubmitting(true);
 
     try {
-      if (connectivity.canRunNetworkActions) {
-        await updateReplyDraft({
-          ...replyDraftUpdateFields,
-          id: replyId,
-          text,
-        });
-      }
-
       outboxHooks.queueSubmission({
         authorId: profile.id,
         contentId: replyId,
         files: reply?.files ?? [],
         links: links.map(queuedLinks.toQueuedLinkSnapshot),
-        needsDraftReplay: !connectivity.canRunNetworkActions,
+        needsDraftReplay: true,
         recordId,
         teamId: replyTeamId,
         text,
@@ -340,6 +398,11 @@ export const useReplyComposerModel = () => {
       });
 
       outboxStore.clearQueuedDraft({ parentId: replyId, parentType: 'reply' });
+
+      if (connectivity.canRunNetworkActionsImmediately) {
+        void outboxSyncCore.runOutboxSync();
+      }
+
       ignoreDraftId(replyId);
 
       requestPostSubmitScroll({
@@ -359,13 +422,13 @@ export const useReplyComposerModel = () => {
     isEdit,
     isEditingLocalReply,
     isBusy,
-    connectivity.canRunNetworkActions,
+    connectivity.canRunNetworkActionsImmediately,
     latestTextRef,
     fileCount,
     profile.id,
+    queuedReplyAttachments.length,
     recordId,
     reply?.files,
-    replyDraftUpdateFields,
     replyTeamId,
     replyId,
     links,
@@ -373,7 +436,7 @@ export const useReplyComposerModel = () => {
 
   return {
     currentText: displayText,
-    hasContent,
+    hasContent: canSubmitForm,
     isBusy,
     isOpen,
     isSubmitting,

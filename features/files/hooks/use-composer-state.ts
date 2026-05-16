@@ -6,6 +6,7 @@ import { useFileUploadPreviewState } from '@/features/files/hooks/use-upload-pre
 import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments';
 import type { UseFileComposerOptions } from '@/features/files/types/composer';
 import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as outbox from '@/features/offline/outbox-hooks';
 import type { QueuedParent } from '@/features/offline/types';
 import * as React from 'react';
@@ -36,6 +37,7 @@ export const useFileComposerState = ({
   scopeKey,
 }: UseFileComposerStateOptions) => {
   const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
 
   const {
     handleDeleteFile: requestDeleteFile,
@@ -127,7 +129,7 @@ export const useFileComposerState = ({
 
   const canReorderFiles =
     !actionsDisabled &&
-    connectivity.canRunNetworkActions &&
+    !showOfflineUi &&
     queuedAttachmentsForParent.length === 0;
 
   useClipboardFilePaste({

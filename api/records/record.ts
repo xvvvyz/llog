@@ -20,6 +20,15 @@ const copyTargetsSchema = z.object({
   logIds: z.array(z.string()).min(1).max(100),
 });
 
+const offlineDraftReplaySchema = z.object({
+  authorId: z.string().min(1),
+  date: z.union([z.string(), z.number()]).optional(),
+  logId: z.string().min(1),
+  tagIds: z.array(z.string().min(1)).max(100).optional(),
+  teamId: z.string().min(1),
+  text: z.string().max(10240),
+});
+
 type FileEntity = InstaQLEntity<typeof schema, 'files'>;
 type LinkEntity = InstaQLEntity<typeof schema, 'links'>;
 type LogEntity = InstaQLEntity<typeof schema, 'logs'>;
@@ -177,6 +186,113 @@ const assertAccessibleTargetLogs = async ({
 
     return { id: log.id, teamId: log.teamId };
   });
+};
+
+const authorizeRecordDraftReplay = async ({
+  authorId,
+  dbClient,
+  logId,
+  recordId,
+  tagIds,
+  teamId,
+  userId,
+}: {
+  authorId: string;
+  dbClient: Db;
+  logId: string;
+  recordId: string;
+  tagIds: string[];
+  teamId: string;
+  userId: string;
+}) => {
+  const uniqueTagIds = [...new Set(tagIds)];
+
+  const { profiles, logs, records } = await dbClient.query({
+    profiles: {
+      $: { fields: ['id' as const], where: { id: authorId } },
+      user: { $: { fields: ['id' as const] } },
+    },
+    logs: {
+      $: { fields: ['id' as const, 'teamId' as const], where: { id: logId } },
+      team: { roles: { $: { fields: ['role' as const], where: { userId } } } },
+      profiles: { user: { $: { fields: ['id' as const] } } },
+    },
+    records: {
+      $: {
+        fields: ['id' as const, 'isDraft' as const],
+        where: { id: recordId },
+      },
+      author: {
+        $: { fields: ['id' as const] },
+        user: { $: { fields: ['id' as const] } },
+      },
+      tags: { $: { fields: ['id' as const] } },
+    },
+  });
+
+  const { tags } = uniqueTagIds.length
+    ? await dbClient.query({
+        tags: {
+          $: {
+            fields: ['id' as const, 'teamId' as const, 'type' as const],
+            where: { id: { $in: uniqueTagIds } },
+          },
+          logs: { $: { fields: ['id' as const] } },
+        },
+      })
+    : { tags: [] };
+
+  const profile = profiles[0];
+  const log = logs[0];
+  const existingRecord = records[0];
+  const role = log?.team?.roles?.[0]?.role;
+
+  const isLogMember = !!log?.profiles?.some(
+    (profile) => profile.user?.id === userId
+  );
+
+  if (
+    !profile?.id ||
+    profile.user?.id !== userId ||
+    !log?.id ||
+    log.teamId !== teamId ||
+    (!permissions.canManageTeam(role) && !isLogMember)
+  ) {
+    throw new HTTPException(403, { message: 'Forbidden' });
+  }
+
+  if (existingRecord?.id) {
+    if (existingRecord.isDraft !== true) {
+      throw new HTTPException(409, { message: 'Record already published' });
+    }
+
+    if (existingRecord.author?.user?.id !== userId) {
+      throw new HTTPException(403, { message: 'Forbidden' });
+    }
+  }
+
+  if (tags.length !== uniqueTagIds.length) {
+    throw new HTTPException(400, { message: 'Invalid record tags' });
+  }
+
+  for (const tag of tags) {
+    const belongsToLog = !!tag.logs?.some((log) => log.id === logId);
+
+    if (tag.teamId !== teamId || tag.type !== 'record' || !belongsToLog) {
+      throw new HTTPException(400, { message: 'Invalid record tags' });
+    }
+  }
+
+  const requestedTagIds = new Set(uniqueTagIds);
+
+  const staleTagIds =
+    existingRecord?.tags
+      ?.map((tag) => tag.id)
+      .filter(
+        (tagId): tagId is string => !!tagId && !requestedTagIds.has(tagId)
+      ) ?? [];
+
+  return { staleTagIds, tagIds: uniqueTagIds };
 };
 
 const getCopyDraftTeamId = ({
@@ -355,7 +471,7 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
       activityDate: now,
       activityId: id(),
       actorId: record.author.id,
-      contentDate: now,
+      contentDate: record.date ?? now,
       db: c.var.db,
       logId: record.log.id,
       recordId,
@@ -382,6 +498,68 @@ app.post('/:recordId/publish', db(), auth(), async (c) => {
 
   return c.json({ success: true });
 });
+
+app.put(
+  '/:recordId/offline-draft-replay',
+  db(),
+  auth(),
+  zValidator('json', offlineDraftReplaySchema),
+  async (c) => {
+    const user = c.var.user;
+    const recordId = c.req.param('recordId');
+    if (!recordId) throw new HTTPException(400, { message: 'Invalid request' });
+
+    const {
+      authorId,
+      date,
+      logId,
+      tagIds = [],
+      teamId,
+      text,
+    } = c.req.valid('json');
+
+    const { staleTagIds, tagIds: uniqueTagIds } =
+      await authorizeRecordDraftReplay({
+        authorId,
+        dbClient: c.var.db,
+        logId,
+        recordId,
+        tagIds,
+        teamId,
+        userId: user.id,
+      });
+
+    // This is intentionally API-backed instead of a client Instant mutation:
+    // after a full offline refresh, the optimistic draft row may not exist yet,
+    // and allowing clients to recreate identity links directly would make the
+    // general Instant permissions too broad.
+    const recordTx = c.var.db.tx.records[recordId]
+      .update(
+        {
+          authorId,
+          date: date ?? new Date().toISOString(),
+          isDraft: true,
+          logId,
+          teamId,
+          text,
+        },
+        { upsert: true }
+      )
+      .link({ author: authorId, log: logId });
+
+    await c.var.db.transact([
+      recordTx,
+      ...staleTagIds.map((tagId) =>
+        c.var.db.tx.records[recordId].unlink({ tags: tagId })
+      ),
+      ...uniqueTagIds.map((tagId) =>
+        c.var.db.tx.records[recordId].link({ tags: tagId })
+      ),
+    ]);
+
+    return c.json({ success: true });
+  }
+);
 
 app.post(
   '/:recordId/copy-draft',

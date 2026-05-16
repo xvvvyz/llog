@@ -7,20 +7,26 @@ export const getConnectivityState = ({
   browserOnline,
   instantStatus,
   netInfoOnline,
+  reachabilityOnline,
 }: {
   browserOnline: boolean;
   instantStatus: ConnectionStatus;
   netInfoOnline: boolean | null;
+  reachabilityOnline: boolean | null;
 }) => {
   const hasKnownOfflineSignal =
-    browserOnline === false || netInfoOnline === false;
+    browserOnline === false ||
+    netInfoOnline === false ||
+    reachabilityOnline === false;
 
   const instantUnavailable =
     instantStatus === 'closed' || instantStatus === 'errored';
 
   return {
     canRunNetworkActions:
-      !hasKnownOfflineSignal && isInstantOnline(instantStatus),
+      !hasKnownOfflineSignal &&
+      reachabilityOnline === true &&
+      isInstantOnline(instantStatus),
     instantStatus,
     isOffline: hasKnownOfflineSignal || instantUnavailable,
     isNetworkOffline: hasKnownOfflineSignal,

@@ -40,5 +40,6 @@ export type EntrySharedProps = {
   record: EntryRecord;
   recordId: string;
   replyId?: string;
+  syncStatus?: 'not-synced' | 'retrying' | 'syncing';
   visualMedia: FileItem[];
 };

@@ -27,6 +27,20 @@ export const getNextComposerTextMirrorState = ({
 
   const hasLocalEdit = current.latestText !== current.lastExternalText;
 
+  const externalTextDisappeared =
+    current.latestText.trim().length > 0 &&
+    current.lastExternalText === current.latestText &&
+    text === '';
+
+  if (externalTextDisappeared) {
+    return {
+      displayText: current.latestText,
+      lastExternalText: text,
+      latestText: current.latestText,
+      resetKey,
+    };
+  }
+
   if (!hasLocalEdit || text === current.latestText) {
     return {
       displayText: text,
@@ -81,4 +95,12 @@ export const useComposerLatestText = ({
   }, []);
 
   return { displayText, latestTextRef, setLatestText };
+};
+
+export const useComposerOpenSessionKey = (isOpen: boolean) => {
+  const sessionRef = React.useRef(0);
+  const wasOpenRef = React.useRef(isOpen);
+  if (isOpen && !wasOpenRef.current) sessionRef.current += 1;
+  wasOpenRef.current = isOpen;
+  return isOpen ? String(sessionRef.current) : 'closed';
 };

@@ -1,5 +1,6 @@
 import { canDeleteOwnOrManagedResource } from '@/domain/teams/permissions';
 import { useProfile } from '@/features/account/queries/use-profile';
+import { useConnectivity } from '@/features/offline/connectivity';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import * as route from '@/features/records/lib/route';
@@ -7,7 +8,7 @@ import { createRecordCopyDraft } from '@/features/records/mutations/create-recor
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import * as copyTargetQueries from '@/features/records/queries/use-copy-targets';
-import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { alert } from '@/lib/alert';
@@ -72,10 +73,10 @@ export const useEntryMenuState = ({
 >): EntryMenuState => {
   const myRole = useMyRole({ teamId });
   const profile = useProfile();
-  const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const isAuthor = !!profile.id && profile.id === authorId;
-  const isSyncedReplyOffline = !!replyId && connectivity.isOffline;
-  const isSyncedRecordOffline = !replyId && connectivity.isOffline;
+  const isSyncedReplyOffline = !!replyId && showOfflineUi;
+  const isSyncedRecordOffline = !replyId && showOfflineUi;
 
   const canDelete = canDeleteOwnOrManagedResource({
     actorRole: myRole.role,
@@ -102,9 +103,7 @@ export const useEntryMenuState = ({
   const canDuplicate =
     canDuplicateRecord &&
     !!logId &&
-    (copyTargets.logs.length > 0 ||
-      copyTargets.isLoading ||
-      !connectivity.canRunNetworkActions);
+    (copyTargets.logs.length > 0 || copyTargets.isLoading || showOfflineUi);
 
   const canPin = !replyId && myRole.canPinRecords;
   const canShare = true;
@@ -123,12 +122,11 @@ export const useEntryMenuState = ({
     copyTargetLogs: copyTargets.logs,
     hasActionsAboveDelete,
     hasMenu,
-    isDeleteDisabled: isSyncedReplyOffline,
-    isDuplicateDisabled:
-      copyTargets.isLoading || !connectivity.canRunNetworkActions,
+    isDeleteDisabled: isSyncedReplyOffline || isSyncedRecordOffline,
+    isDuplicateDisabled: copyTargets.isLoading || showOfflineUi,
     isEditDisabled: isSyncedReplyOffline || isSyncedRecordOffline,
-    isPinDisabled: !connectivity.canRunNetworkActions,
-    isTagDisabled: !connectivity.canRunNetworkActions,
+    isPinDisabled: showOfflineUi,
+    isTagDisabled: showOfflineUi,
   };
 };
 
@@ -144,6 +142,7 @@ const EntryMenuDropdownContent = ({
 }: Omit<EntryMenuProps, 'className'> & { state: EntryMenuState }) => {
   const sheetManager = useSheetManager();
   const menu = Menu.useContext();
+  const connectivity = useConnectivity();
   const [isDuplicating, setIsDuplicating] = React.useState(false);
 
   const {
@@ -174,6 +173,7 @@ const EntryMenuDropdownContent = ({
   const duplicateRecord = async () => {
     const [targetLog] = copyTargetLogs;
     if (isDuplicating || isDuplicateDisabled) return;
+    if (!connectivity.canRunNetworkActions) return;
 
     if (!targetLog || copyTargetLogs.length > 1) {
       sheetManager.open('record-copy-to', recordId);
@@ -227,6 +227,8 @@ const EntryMenuDropdownContent = ({
           <Menu.Item
             disabled={isEditDisabled}
             onPress={() => {
+              if (isEditDisabled) return;
+
               if (replyId) {
                 sheetManager.open('reply-create', replyId, recordId);
               } else {
@@ -266,6 +268,7 @@ const EntryMenuDropdownContent = ({
                 return;
               }
 
+              if (!connectivity.canRunNetworkActions) return;
               void toggleRecordPin({ id: recordId, isPinned: nextIsPinned });
 
               if (nextIsPinned) {
@@ -326,6 +329,8 @@ const EntryMenuDropdownContent = ({
                 <Menu.Item
                   disabled={isDeleteDisabled}
                   onPress={() => {
+                    if (isDeleteDisabled) return;
+
                     if (replyId) {
                       sheetManager.open(
                         'reply-delete',

@@ -4,7 +4,7 @@ import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import * as audioPlaybackRate from '@/features/files/lib/media-playback-rate';
 import { isLocalFileSourceUri } from '@/features/files/lib/offline-availability';
 import type { AudioPlayerProps } from '@/features/files/types/audio-player';
-import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { clamp } from '@/lib/clamp';
 import { positiveDurationSeconds } from '@/lib/duration';
 import * as React from 'react';
@@ -36,11 +36,11 @@ export const useAudioPlayerController = ({
   assetKey,
   uri,
 }: AudioPlayerProps) => {
-  const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const sourceUri = fileUriSources.getFileSourceUri({ assetKey, uri });
 
   const sourceUnavailableOffline =
-    connectivity.isOffline && !isLocalFileSourceUri(sourceUri);
+    showOfflineUi && !isLocalFileSourceUri(sourceUri);
 
   const src = fileUriSources.useFileUriToSrc(
     sourceUnavailableOffline ? null : sourceUri

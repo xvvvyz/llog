@@ -2,7 +2,7 @@ import { PendingVideoPreview } from '@/features/files/components/composer/pendin
 import { PreviewImage } from '@/features/files/components/composer/preview-image';
 import { isLocalFileSourceUri } from '@/features/files/lib/offline-availability';
 import type * as fileComposer from '@/features/files/types/composer';
-import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
@@ -48,7 +48,7 @@ export const VisualPreview = ({
   showBottomBorder?: boolean;
   visualItems: fileComposer.VisualPreviewItem[];
 }) => {
-  const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
 
   const [localOrderIds, setLocalOrderIds] = React.useState<string[] | null>(
@@ -130,10 +130,12 @@ export const VisualPreview = ({
     const sourceUri = item.localUri ?? item.uri;
 
     const isUnavailableOffline =
-      connectivity.isOffline && !isLocalFileSourceUri(sourceUri);
+      showOfflineUi && !isLocalFileSourceUri(sourceUri);
 
     const canOpenItem =
-      !!sourceUri && (!connectivity.isOffline || !isUnavailableOffline);
+      !!sourceUri && (!showOfflineUi || !isUnavailableOffline);
+
+    const isRemoteActionDisabled = !item.pending && showOfflineUi;
 
     const handleDeletePress = (event: GestureResponderEvent) => {
       event.stopPropagation();
@@ -194,17 +196,12 @@ export const VisualPreview = ({
           />
         )}
         <Pressable
+          disabled={actionsDisabled || isRemoteActionDisabled}
           onPress={handleDeletePress}
           className={cn(
             'absolute right-0 top-0 z-20 size-6 items-center justify-center',
-            (actionsDisabled ||
-              (!item.pending && !connectivity.canRunNetworkActions)) &&
-              'opacity-50'
+            (actionsDisabled || isRemoteActionDisabled) && 'opacity-50'
           )}
-          disabled={
-            actionsDisabled ||
-            (!item.pending && !connectivity.canRunNetworkActions)
-          }
         >
           <Icon className="text-foreground" icon={X} size={16} />
         </Pressable>

@@ -6,6 +6,7 @@ import * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
 import { useConnectivity } from '@/features/offline/connectivity';
 import * as outbox from '@/features/offline/outbox-hooks';
+import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import type { QueuedAttachment, QueuedParent } from '@/features/offline/types';
 import { alert } from '@/lib/alert';
 import { id } from '@instantdb/react-native';
@@ -40,6 +41,10 @@ export const useFileUploadPreviewState = ({
     () => new Set<string>()
   );
 
+  const [optimisticUploads, setOptimisticUploads] = React.useState<
+    fileComposer.PendingUpload[]
+  >([]);
+
   const [focusedAudioId, setFocusedAudioId] = React.useState<string | null>(
     null
   );
@@ -56,7 +61,7 @@ export const useFileUploadPreviewState = ({
     parentRef.current = parent;
   }, [parent]);
 
-  const pendingUploads = React.useMemo(
+  const queuedPendingUploads = React.useMemo(
     (): fileComposer.PendingUpload[] =>
       queuedAttachments.map((attachment) => ({
         height: attachment.height,
@@ -74,6 +79,29 @@ export const useFileUploadPreviewState = ({
     [queuedAttachments]
   );
 
+  const queuedUploadIds = React.useMemo(
+    () => new Set(queuedPendingUploads.map((item) => item.id)),
+    [queuedPendingUploads]
+  );
+
+  const pendingUploads = React.useMemo(
+    () =>
+      [
+        ...queuedPendingUploads,
+        ...optimisticUploads.filter((item) => !queuedUploadIds.has(item.id)),
+      ].sort((a, b) => a.order - b.order),
+    [optimisticUploads, queuedPendingUploads, queuedUploadIds]
+  );
+
+  React.useEffect(() => {
+    if (!queuedUploadIds.size) return;
+
+    setOptimisticUploads((current) => {
+      const next = current.filter((item) => !queuedUploadIds.has(item.id));
+      return next.length === current.length ? current : next;
+    });
+  }, [queuedUploadIds]);
+
   const removeLocalPreviewUri = React.useCallback((fileId: string) => {
     setLocalPreviewUris((prev) => {
       if (!(fileId in prev)) return prev;
@@ -89,6 +117,7 @@ export const useFileUploadPreviewState = ({
 
   React.useEffect(() => {
     setLocalPreviewUris({});
+    setOptimisticUploads([]);
     setFocusedAudioId(null);
     setActiveUploadIds(new Set());
   }, [scopeKey]);
@@ -116,8 +145,8 @@ export const useFileUploadPreviewState = ({
             fileId: attachment.id,
             parent: attachment,
           });
-        } catch (error) {
-          console.error('Failed to refresh uploaded file snapshot', error);
+        } catch {
+          // The file snapshot is best-effort; the outbox can still complete.
         }
       }
 
@@ -182,7 +211,7 @@ export const useFileUploadPreviewState = ({
           error instanceof Error ? error.message : 'Failed to upload files.'
         );
 
-        if (connectivity.canRunNetworkActions) {
+        if (connectivity.canRunNetworkActionsImmediately) {
           alert({
             message:
               error instanceof Error
@@ -197,7 +226,7 @@ export const useFileUploadPreviewState = ({
     },
     [
       activeUploadIds,
-      connectivity.canRunNetworkActions,
+      connectivity.canRunNetworkActionsImmediately,
       markQueuedAttachmentUploaded,
       markUploadActive,
       markUploadInactive,
@@ -247,6 +276,24 @@ export const useFileUploadPreviewState = ({
         order: baseOrder + i,
       }));
 
+      setOptimisticUploads((current) => [
+        ...current.filter((item) => !fileIds.includes(item.id)),
+        ...queue.map(
+          ({ asset, fileId, order }): fileComposer.PendingUpload => ({
+            height: asset.height,
+            id: fileId,
+            mimeType: asset.mimeType ?? undefined,
+            name: asset.fileName ?? undefined,
+            order,
+            size: asset.size ?? undefined,
+            status: 'queued',
+            type: asset.type,
+            uri: asset.uri,
+            width: asset.width,
+          })
+        ),
+      ]);
+
       const run = async (items: typeof queue) => {
         for (const { asset, fileId, order } of items) {
           try {
@@ -255,15 +302,51 @@ export const useFileUploadPreviewState = ({
               asset,
               fileId,
               order,
-              persistBinary:
-                !connectivity.canRunNetworkActions || deferQueuedUploads,
+              persistBinary: false,
+              status: 'persisting',
             });
 
-            if (connectivity.canRunNetworkActions) {
+            void outbox
+              .persistPickedAttachmentBinary(fileId, asset)
+              .then(() => {
+                if (!connectivity.canRunNetworkActionsImmediately) return;
+                outbox.retryFailedOutboxWork();
+                void outboxSyncCore.runOutboxSync();
+              })
+              .catch((error) => {
+                if (connectivity.canRunNetworkActionsImmediately) return;
+                void outbox.removeQueuedAttachment(fileId);
+
+                setOptimisticUploads((current) =>
+                  current.filter((item) => item.id !== fileId)
+                );
+
+                removeLocalPreviewUri(fileId);
+                clearFocusedAudioId(fileId);
+
+                alert({
+                  message:
+                    error instanceof Error
+                      ? error.message
+                      : 'Failed to save file for offline upload.',
+                  title: 'Upload failed',
+                });
+              });
+
+            if (
+              attachment.status !== 'persisting' &&
+              connectivity.canRunNetworkActionsImmediately &&
+              !deferQueuedUploads
+            ) {
               await uploadQueuedAttachment(attachment, asset);
             }
           } catch (error) {
             void outbox.removeQueuedAttachment(fileId);
+
+            setOptimisticUploads((current) =>
+              current.filter((item) => item.id !== fileId)
+            );
+
             removeLocalPreviewUri(fileId);
             clearFocusedAudioId(fileId);
 
@@ -289,7 +372,7 @@ export const useFileUploadPreviewState = ({
     [
       clearFocusedAudioId,
       actionsDisabled,
-      connectivity.canRunNetworkActions,
+      connectivity.canRunNetworkActionsImmediately,
       deferQueuedUploads,
       queuedAttachments,
       removeLocalPreviewUri,
@@ -315,7 +398,9 @@ export const useFileUploadPreviewState = ({
   }, [queuedAttachments, visibleFiles]);
 
   React.useEffect(() => {
-    if (deferQueuedUploads || !connectivity.canRunNetworkActions) return;
+    if (deferQueuedUploads || !connectivity.canRunNetworkActionsImmediately) {
+      return;
+    }
 
     queuedAttachments.forEach((attachment) => {
       if (attachment.submissionId) return;
@@ -327,7 +412,7 @@ export const useFileUploadPreviewState = ({
       void uploadQueuedAttachment(attachment);
     });
   }, [
-    connectivity.canRunNetworkActions,
+    connectivity.canRunNetworkActionsImmediately,
     deferQueuedUploads,
     queuedAttachments,
     uploadQueuedAttachment,

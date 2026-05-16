@@ -5,7 +5,7 @@ import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
 import { isFileAvailableOffline } from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
 import { FileItem } from '@/features/files/types/file';
-import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { Link } from '@/features/records/types/link';
 import { Icon } from '@/ui/icon';
@@ -34,7 +34,7 @@ export const ItemFiles = ({
 
   const hasDocumentFiles = documentFiles.length > 0;
   const hasLinks = links.length > 0;
-  const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const { openMediaLightbox } = useMediaLightbox({ recordId });
 
   if (
@@ -53,12 +53,10 @@ export const ItemFiles = ({
   const renderMediaThumb = (item: FileItem) => {
     const isProcessing = visualMedia.isProcessing(item);
     const isAvailableOffline = isFileAvailableOffline(item);
-    const isUnavailableOffline = connectivity.isOffline && !isAvailableOffline;
+    const isUnavailableOffline = showOfflineUi && !isAvailableOffline;
 
     const canOpenMedia =
-      !!recordId &&
-      !isProcessing &&
-      (!connectivity.isOffline || isAvailableOffline);
+      !!recordId && !isProcessing && (!showOfflineUi || isAvailableOffline);
 
     return (
       <Pressable

@@ -170,6 +170,7 @@ export default function Index() {
           listRef={listRef}
           onEndReached={records.loadNextPage}
           onEndReachedThreshold={1}
+          recycleItems={false}
           wrapperClassName="flex-1"
           renderItem={({ index, item }) => (
             <Entry

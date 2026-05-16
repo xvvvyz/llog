@@ -15,6 +15,7 @@ const ACTIVE_SYNC_SUBMISSION_STATUSES = new Set<types.OutboxStatus>([
 ]);
 
 const ACTIVE_ATTACHMENT_STATUSES = new Set<types.QueuedAttachmentStatus>([
+  'persisting',
   'queued',
   'uploading',
   'error',
@@ -94,6 +95,13 @@ export const getAutoSyncableSubmissions = (
     (submission) =>
       AUTO_SYNCABLE_SUBMISSION_STATUSES.has(submission.status) ||
       isRetryDue(submission)
+  );
+
+export const getStartableAutoSyncSubmissions = (
+  state: Pick<OutboxState, 'submissions'>
+) =>
+  state.submissions.filter(
+    (submission) => submission.status === 'pending' || isRetryDue(submission)
   );
 
 export const getNextAutoRetryTime = (

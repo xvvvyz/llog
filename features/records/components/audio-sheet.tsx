@@ -8,6 +8,7 @@ import { uploadRecordFile } from '@/features/records/mutations/upload-record-fil
 import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { alert } from '@/lib/alert';
 import { durationSecondsToMs } from '@/lib/duration';
 import { Sheet } from '@/ui/sheet';
 import { id } from '@instantdb/react-native';
@@ -84,6 +85,24 @@ export const RecordAudioSheet = () => {
         : record.files,
     [audioContext.type, draftId, record.files, record.replies]
   );
+
+  const canUploadQueuedAudioNow = React.useMemo(() => {
+    if (!connectivity.canRunNetworkActions || !draftId) return false;
+
+    if (audioContext.type === 'reply') {
+      const reply = record.replies.find((reply) => reply.id === draftId);
+      return !!reply?.id && !reply.localStatus;
+    }
+
+    return record.id === draftId && !record.localStatus;
+  }, [
+    audioContext.type,
+    connectivity.canRunNetworkActions,
+    draftId,
+    record.id,
+    record.localStatus,
+    record.replies,
+  ]);
 
   const logColor = useLogColor({ id: record.log?.id });
   const saveColor = record.log?.id ? logColor.default : undefined;
@@ -168,12 +187,13 @@ export const RecordAudioSheet = () => {
               fileId,
               parent,
             });
-          } catch (error) {
-            console.error('Failed to refresh uploaded audio snapshot', error);
+          } catch {
+            // The file snapshot is best-effort; the outbox can still complete.
           }
         }
 
         outbox.markQueuedAttachmentUploaded(fileId, file);
+        return true;
       };
 
       try {
@@ -183,10 +203,7 @@ export const RecordAudioSheet = () => {
             parent,
           });
 
-        if (existingFile?.id) {
-          await markUploaded(existingFile);
-          return;
-        }
+        if (existingFile?.id) return await markUploaded(existingFile);
 
         if (audioContext.type === 'reply') {
           await uploadReplyFile({
@@ -207,7 +224,7 @@ export const RecordAudioSheet = () => {
           });
         }
 
-        await markUploaded();
+        return await markUploaded();
       } catch (error) {
         if (existingUpload.isExistingFileIdError(error)) {
           const existingFile =
@@ -216,10 +233,7 @@ export const RecordAudioSheet = () => {
               parent,
             });
 
-          if (existingFile?.id) {
-            await markUploaded(existingFile);
-            return;
-          }
+          if (existingFile?.id) return await markUploaded(existingFile);
         }
 
         outbox.setQueuedAttachmentStatus(
@@ -227,6 +241,8 @@ export const RecordAudioSheet = () => {
           'error',
           error instanceof Error ? error.message : 'Failed to upload audio.'
         );
+
+        return false;
       }
     },
     [audioContext, audioParent, draftId]
@@ -243,19 +259,54 @@ export const RecordAudioSheet = () => {
         queuedAttachments,
       });
 
-      const queued = await outbox.queueAudioAttachment({
-        audioUri: uri,
-        duration,
-        fileId,
-        order,
-        parentId: draftId,
-        parentType: audioContext.type,
-        persistBinary: !connectivity.canRunNetworkActions,
-        recordId:
-          audioContext.type === 'reply' ? audioContext.recordId : draftId,
-      });
+      let queued: Awaited<ReturnType<typeof outbox.queueAudioAttachment>>;
 
-      if (connectivity.canRunNetworkActions) {
+      try {
+        queued = await outbox.queueAudioAttachment({
+          audioUri: uri,
+          duration,
+          fileId,
+          order,
+          parentId: draftId,
+          parentType: audioContext.type,
+          persistBinary: true,
+          recordId:
+            audioContext.type === 'reply' ? audioContext.recordId : draftId,
+        });
+      } catch {
+        if (!canUploadQueuedAudioNow) {
+          throw new Error('This recording could not be saved for offline use.');
+        }
+
+        queued = await outbox.queueAudioAttachment({
+          audioUri: uri,
+          duration,
+          fileId,
+          order,
+          parentId: draftId,
+          parentType: audioContext.type,
+          persistBinary: false,
+          recordId:
+            audioContext.type === 'reply' ? audioContext.recordId : draftId,
+        });
+
+        const uploaded = await uploadQueuedAudio({
+          duration,
+          fileId,
+          localUri: queued.localUri,
+          order,
+        });
+
+        if (!uploaded) {
+          await outbox.removeQueuedAttachment(fileId);
+          throw new Error('This recording could not be uploaded.');
+        }
+
+        recorder.reset();
+        return;
+      }
+
+      if (canUploadQueuedAudioNow) {
         void uploadQueuedAudio({
           duration,
           fileId,
@@ -268,7 +319,7 @@ export const RecordAudioSheet = () => {
     },
     [
       audioContext,
-      connectivity.canRunNetworkActions,
+      canUploadQueuedAudioNow,
       draftId,
       existingFiles,
       queuedAttachments,
@@ -293,8 +344,16 @@ export const RecordAudioSheet = () => {
 
       await queueAudio(uri);
       close();
-    } catch {
+    } catch (error) {
       isClosingRef.current = false;
+
+      alert({
+        message:
+          error instanceof Error
+            ? error.message
+            : 'This recording could not be saved.',
+        title: 'Recording not saved',
+      });
     } finally {
       setIsUploading(false);
     }

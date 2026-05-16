@@ -9,6 +9,7 @@ type QueuePickedAttachmentInput = types.QueuedParent & {
   fileId: string;
   order: number;
   persistBinary?: boolean;
+  status?: types.QueuedAttachmentStatus;
 };
 
 type QueueAudioAttachmentInput = types.QueuedParent & {
@@ -47,11 +48,14 @@ export const queuePickedAttachment = async ({
   fileId,
   order,
   persistBinary = true,
+  status,
   ...parent
 }: QueuePickedAttachmentInput) => {
   const saved = persistBinary
     ? await outboxStorage.saveAttachmentBinary(fileId, { asset })
     : undefined;
+
+  const queuedStatus: types.QueuedAttachmentStatus | undefined = status;
 
   return outboxStore.queueAttachment({
     ...parent,
@@ -62,8 +66,23 @@ export const queuePickedAttachment = async ({
     name: asset.fileName,
     order,
     size: saved?.size ?? asset.size,
+    ...(queuedStatus ? { status: queuedStatus } : {}),
     type: asset.type,
     width: asset.width,
+  });
+};
+
+export const persistPickedAttachmentBinary = async (
+  fileId: string,
+  asset: pickedFiles.PickedFileAsset
+) => {
+  const saved = await outboxStorage.saveAttachmentBinary(fileId, { asset });
+
+  outboxStore.updateQueuedAttachment(fileId, {
+    localUri: saved.localUri,
+    mimeType: saved.mimeType ?? asset.mimeType ?? undefined,
+    size: saved.size ?? asset.size ?? undefined,
+    status: 'queued',
   });
 };
 
@@ -99,6 +118,8 @@ export const setQueuedAttachmentStatus = outboxStore.setQueuedAttachmentStatus;
 
 export const queueSubmission = (input: types.QueueSubmissionInput) =>
   outboxStore.queueSubmission(input);
+
+export const retryFailedOutboxWork = outboxStore.retryFailedOutboxWork;
 
 export const markQueuedAttachmentUploaded =
   outboxStore.markQueuedAttachmentUploaded;

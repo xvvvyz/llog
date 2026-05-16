@@ -15,6 +15,7 @@ import { HTTPException } from 'hono/http-exception';
 installConsoleErrorSerializer();
 const api = new Hono().basePath('/api/v1');
 api.use(headers());
+api.get('/health', (c) => c.text('ok'));
 api.route('/files', files);
 api.route('/internal', internal);
 api.route('/logs', logs);

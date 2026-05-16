@@ -9,14 +9,37 @@ export const OutboxSyncRunner = () => {
   const connectivity = useConnectivity();
   const outbox = outboxStore.useOutboxSnapshot();
 
+  const wasOnlineRef = React.useRef(
+    connectivity.canRunNetworkActionsImmediately
+  );
+
   React.useEffect(() => {
     outboxStore.setOutboxOwnerUserId(auth.user?.id);
   }, [auth.user?.id]);
 
   React.useEffect(() => {
-    if (!connectivity.canRunNetworkActions || !outbox.hydrated) return;
+    if (!auth.user?.id || !connectivity.canRunNetworkActionsImmediately) return;
+    const shouldRetryFailed = wasOnlineRef.current === false;
+    wasOnlineRef.current = true;
+
+    void outboxStore.ensureOutboxHydrated().then(() => {
+      if (shouldRetryFailed) outboxStore.retryFailedOutboxWork();
+      void runOutboxSync();
+    });
+  }, [auth.user?.id, connectivity.canRunNetworkActionsImmediately]);
+
+  React.useEffect(() => {
+    if (connectivity.canRunNetworkActionsImmediately) return;
+    wasOnlineRef.current = false;
+  }, [connectivity.canRunNetworkActionsImmediately]);
+
+  React.useEffect(() => {
+    if (!connectivity.canRunNetworkActionsImmediately || !outbox.hydrated) {
+      return;
+    }
+
     if (!auth.user?.id || outbox.ownerUserId !== auth.user.id) return;
-    const autoSyncable = outboxStore.getAutoSyncableSubmissions(outbox);
+    const autoSyncable = outboxStore.getStartableAutoSyncSubmissions(outbox);
     const discarded = outboxStore.getDiscardedSubmissions(outbox);
 
     if (!autoSyncable.length && !discarded.length) {
@@ -35,7 +58,7 @@ export const OutboxSyncRunner = () => {
       void runOutboxSync();
       return;
     }
-  }, [auth.user?.id, connectivity.canRunNetworkActions, outbox]);
+  }, [auth.user?.id, connectivity.canRunNetworkActionsImmediately, outbox]);
 
   return null;
 };

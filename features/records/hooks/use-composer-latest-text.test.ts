@@ -42,6 +42,26 @@ describe('useComposerLatestText', () => {
     });
   });
 
+  test('keeps text when external draft disappears', () => {
+    expect(
+      getNextComposerTextMirrorState({
+        current: {
+          displayText: 'Recording note',
+          lastExternalText: 'Recording note',
+          latestText: 'Recording note',
+          resetKey: 'record-a',
+        },
+        resetKey: 'record-a',
+        text: '',
+      })
+    ).toEqual({
+      displayText: 'Recording note',
+      lastExternalText: '',
+      latestText: 'Recording note',
+      resetKey: 'record-a',
+    });
+  });
+
   test('resets on draft change', () => {
     expect(
       getNextComposerTextMirrorState({
@@ -79,6 +99,26 @@ describe('useComposerLatestText', () => {
       lastExternalText: '',
       latestText: '',
       resetKey: 'create:log-a',
+    });
+  });
+
+  test('clears posted text on new open', () => {
+    expect(
+      getNextComposerTextMirrorState({
+        current: {
+          displayText: 'Posted record',
+          lastExternalText: 'Posted record',
+          latestText: 'Posted record',
+          resetKey: 'create:log-a:1',
+        },
+        resetKey: 'create:log-a:2',
+        text: '',
+      })
+    ).toEqual({
+      displayText: '',
+      lastExternalText: '',
+      latestText: '',
+      resetKey: 'create:log-a:2',
     });
   });
 });

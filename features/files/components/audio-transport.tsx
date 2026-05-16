@@ -236,7 +236,7 @@ export const AudioTransport = ({
             ))}
           {shouldShowOptionsMenu && (
             <Menu.Root>
-              <Menu.Trigger asChild>
+              <Menu.Trigger asChild disabled={isDisabled}>
                 <Button
                   accessibilityLabel="Audio options"
                   className={controlButtonClassName}

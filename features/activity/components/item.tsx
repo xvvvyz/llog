@@ -2,7 +2,6 @@ import { ItemContent } from '@/features/activity/components/item-content';
 import { ItemFiles } from '@/features/activity/components/item-files';
 import { QuotedRecord } from '@/features/activity/components/quoted-record';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
-import { useConnectivity } from '@/features/offline/connectivity';
 import { openRecordDetail } from '@/features/records/lib/route';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -31,7 +30,6 @@ export const Item = ({
   className?: string;
   group: GroupedActivity;
 }) => {
-  const connectivity = useConnectivity();
   const colorScheme = useColorScheme();
   const first = group.activities[0];
   const actor = first.actor;
@@ -40,10 +38,7 @@ export const Item = ({
   const team = first.team;
   const logColor = log?.color != null ? SPECTRUM[colorScheme][log.color] : null;
   const category = CATEGORY_LABELS[group.type];
-
-  const canOpenRecord =
-    Boolean(record?.id) && connectivity.canRunNetworkActions;
-
+  const canOpenRecord = Boolean(record?.id);
   const uniqueActors = [...new Set(group.activities.map((a) => a.actor?.id))];
 
   const othersCount =

@@ -40,6 +40,14 @@ export const useComposerLinkAttachments = ({
       outboxStore.removeQueuedDraftLink(linkId);
 
       if (
+        !connectivity.canRunNetworkActions &&
+        !isQueuedSubmissionLink &&
+        !isQueuedDraftLink
+      ) {
+        return;
+      }
+
+      if (
         isQueuedSubmissionLink ||
         (isQueuedDraftLink && !connectivity.canRunNetworkActions)
       ) {

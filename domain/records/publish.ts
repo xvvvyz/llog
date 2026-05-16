@@ -9,7 +9,16 @@ type Transaction = TransactionChunk<
 >;
 
 type DbWithTransactions = { tx: typeof clientDb.tx };
-const optionalDate = (date?: string) => (date ? { date } : {});
+
+const normalizeDate = (date?: string | number) => {
+  if (!date) return undefined;
+  return typeof date === 'string' ? date : new Date(date).toISOString();
+};
+
+const optionalDate = (date?: string | number) => {
+  const normalizedDate = normalizeDate(date);
+  return normalizedDate ? { date: normalizedDate } : {};
+};
 
 export const buildRecordPublishedActivityTransaction = ({
   activityId,
@@ -46,7 +55,7 @@ export const buildPublishDraftRecordTransactions = ({
   activityId: string;
   activityDate: string;
   actorId: string;
-  contentDate?: string;
+  contentDate?: string | number;
   db: DbWithTransactions;
   logId: string;
   recordId: string;
@@ -155,7 +164,7 @@ export const buildPublishDraftReplyTransactions = ({
   activityId: string;
   activityDate: string;
   actorId: string;
-  contentDate?: string;
+  contentDate?: string | number;
   db: DbWithTransactions;
   logId: string;
   recordId: string;

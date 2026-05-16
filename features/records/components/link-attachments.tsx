@@ -1,5 +1,5 @@
 import * as linkUrl from '@/features/records/lib/link-url';
-import { useConnectivity } from '@/features/offline/connectivity';
+import { useShowOfflineUi } from '@/features/offline/offline-ui-state';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -39,6 +39,29 @@ const LinkUrlText = ({
   </Text>
 );
 
+const LinkAttachmentDetails = ({
+  iconClassName,
+  label,
+  trailing,
+}: {
+  iconClassName?: string;
+  label: React.ReactNode;
+  trailing?: React.ReactNode;
+}) => (
+  <>
+    <Icon className={cn('text-placeholder', iconClassName)} icon={LinkSimple} />
+    <View className="flex-1 flex-row min-w-0 gap-4 items-baseline justify-between">
+      <Text
+        className="font-normal text-muted-foreground text-sm shrink"
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      {trailing}
+    </View>
+  </>
+);
+
 export const LinkAttachments = ({
   actionsDisabled,
   className,
@@ -68,7 +91,7 @@ export const LinkAttachments = ({
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
-  const connectivity = useConnectivity();
+  const showOfflineUi = useShowOfflineUi();
   const sheetManager = useSheetManager();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
@@ -91,17 +114,17 @@ export const LinkAttachments = ({
   const items = React.useMemo(() => [...links].sort(byOrder), [links]);
   const firstItem = items[0];
   const canDeleteSingleLink = !!onDeleteLink && items.length === 1;
-  const canRunNetworkActions = connectivity.canRunNetworkActions;
+  const canShowNetworkActions = !showOfflineUi;
   const canSortLinkSet = !!onReorderLinks && items.length > 1;
-  const canSortLinks = canSortLinkSet && canRunNetworkActions;
+  const canSortLinks = canSortLinkSet && canShowNetworkActions;
   const shouldOpenLinksInline = !onDeleteLink;
 
   const canMutateLink = React.useCallback(
     (item: LinkAttachmentItem) =>
       !!onDeleteLink &&
       !actionsDisabled &&
-      (canRunNetworkActions || !!item.localStatus),
-    [actionsDisabled, canRunNetworkActions, onDeleteLink]
+      (canShowNetworkActions || !!item.localStatus),
+    [actionsDisabled, canShowNetworkActions, onDeleteLink]
   );
 
   const shouldRenderSheet =
@@ -178,60 +201,29 @@ export const LinkAttachments = ({
       variant="link"
       wrapperClassName="w-full overflow-visible rounded-lg"
       className={cn(
-        'flex-row w-full min-w-0 gap-4 justify-between px-4',
+        'flex-row w-full min-w-0 gap-2 items-center px-4',
         triggerClassName
       )}
     >
-      <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-        <Icon
-          className={cn('text-placeholder', triggerIconClassName)}
-          icon={LinkSimple}
-        />
-        <Text
-          className="font-normal text-muted-foreground text-sm shrink"
-          numberOfLines={1}
-        >
-          {getLinkLabel(item)}
-        </Text>
-      </View>
-      <View className="flex-row max-w-[45%] min-w-0 items-center justify-end shrink-0">
-        <LinkUrlText className="font-normal" url={item.url} />
-      </View>
-    </Button>
-  );
-
-  const firstLinkDetails = (
-    <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-      <Icon
-        className={cn('text-placeholder', triggerIconClassName)}
-        icon={LinkSimple}
+      <LinkAttachmentDetails
+        iconClassName={triggerIconClassName}
+        label={getLinkLabel(item)}
+        trailing={
+          <LinkUrlText className="max-w-[45%] font-normal" url={item.url} />
+        }
       />
-      <Text
-        className="font-normal text-muted-foreground text-sm shrink"
-        numberOfLines={1}
-      >
-        {getLinkLabel(firstItem)}
-      </Text>
-    </View>
+    </Button>
   );
 
   const renderSheetItem = (item: LinkAttachmentItem) => {
     const isMutateDisabled = !canMutateLink(item);
 
     const linkDetails = (
-      <View className="flex-1 flex-row min-w-0 gap-4 items-center justify-between">
-        <View className="flex-1 flex-row min-w-0 gap-2 items-center">
-          <Icon className="text-placeholder" icon={LinkSimple} />
-          <Text
-            className="font-normal text-muted-foreground text-sm shrink"
-            numberOfLines={1}
-          >
-            {getLinkLabel(item)}
-          </Text>
-        </View>
-        <View className="flex-row max-w-[45%] min-w-0 items-center justify-end shrink-0">
-          <LinkUrlText url={item.url} />
-        </View>
+      <View className="flex-1 flex-row min-w-0 gap-2 items-center">
+        <LinkAttachmentDetails
+          label={getLinkLabel(item)}
+          trailing={<LinkUrlText className="max-w-[45%]" url={item.url} />}
+        />
       </View>
     );
 
@@ -273,21 +265,27 @@ export const LinkAttachments = ({
       ) : canDeleteSingleLink ? (
         <View
           className={cn(
-            'flex-row w-full min-w-0 gap-2 justify-between px-4',
+            'flex-row w-full min-w-0 gap-2 items-center justify-between px-4',
             triggerClassName
           )}
         >
           <Button
-            className="flex-1 flex-row min-w-0 gap-4 justify-between"
+            className="flex-1 flex-row min-w-0 gap-2 items-center"
             disabled={!canMutateLink(firstItem)}
             onPress={() => handleEditLink(firstItem)}
             variant="link"
             wrapperClassName="flex-1 overflow-visible rounded-lg"
           >
-            {firstLinkDetails}
-            <View className="flex-row max-w-[45%] min-w-0 items-center justify-end shrink-0">
-              <LinkUrlText className="font-normal" url={firstItem.url} />
-            </View>
+            <LinkAttachmentDetails
+              iconClassName={triggerIconClassName}
+              label={getLinkLabel(firstItem)}
+              trailing={
+                <LinkUrlText
+                  className="max-w-[45%] font-normal"
+                  url={firstItem.url}
+                />
+              }
+            />
           </Button>
           <View className="flex-row gap-2 items-center shrink-0">
             <Button
@@ -309,19 +307,22 @@ export const LinkAttachments = ({
           variant="link"
           wrapperClassName="w-full overflow-visible rounded-lg"
           className={cn(
-            'flex-row w-full min-w-0 gap-4 justify-between px-4',
+            'flex-row w-full min-w-0 gap-2 items-center px-4',
             triggerClassName
           )}
         >
-          {firstLinkDetails}
-          <View className="shrink-0">
-            <Text
-              className="font-normal text-placeholder text-xs"
-              numberOfLines={1}
-            >
-              {moreLinksText}
-            </Text>
-          </View>
+          <LinkAttachmentDetails
+            iconClassName={triggerIconClassName}
+            label={getLinkLabel(firstItem)}
+            trailing={
+              <Text
+                className="font-normal text-placeholder text-xs shrink-0"
+                numberOfLines={1}
+              >
+                {moreLinksText}
+              </Text>
+            }
+          />
         </Button>
       )}
       {shouldRenderSheet && (

@@ -231,6 +231,35 @@ describe('outbox state', () => {
     expect(outboxState.getAutoRetryDelayMs(1)).toBe(5_000);
     expect(outboxState.getAutoRetryDelayMs(7)).toBe(300_000);
   });
+
+  test('starts runnable work only', () => {
+    const state = {
+      attachments: [],
+      submissions: [
+        queuedRecordSubmission({ status: 'pending' }),
+        queuedRecordSubmission({
+          contentId: 'record-b',
+          id: 'record:record-b',
+          status: 'syncing',
+        }),
+        queuedRecordSubmission({
+          contentId: 'record-c',
+          id: 'record:record-c',
+          nextRetryAt: '2000-05-12T23:59:00.000Z',
+          status: 'error',
+        }),
+        queuedRecordSubmission({
+          contentId: 'record-d',
+          id: 'record:record-d',
+          status: 'discarded',
+        }),
+      ],
+    };
+
+    expect(
+      outboxState.getStartableAutoSyncSubmissions(state).map((item) => item.id)
+    ).toEqual(['record:record-a', 'record:record-c']);
+  });
 });
 
 describe('outbox normalize', () => {
@@ -578,6 +607,7 @@ describe('connectivity state', () => {
       browserOnline: true,
       instantStatus: 'closed',
       netInfoOnline: null,
+      reachabilityOnline: true,
     });
 
     expect(state.isOffline).toBe(true);
@@ -590,10 +620,37 @@ describe('connectivity state', () => {
       browserOnline: false,
       instantStatus: 'authenticated',
       netInfoOnline: null,
+      reachabilityOnline: true,
     });
 
     expect(state.isOffline).toBe(true);
     expect(state.isNetworkOffline).toBe(true);
+    expect(state.canRunNetworkActions).toBe(false);
+  });
+
+  test('detects unreachable api', () => {
+    const state = getConnectivityState({
+      browserOnline: true,
+      instantStatus: 'authenticated',
+      netInfoOnline: true,
+      reachabilityOnline: false,
+    });
+
+    expect(state.isOffline).toBe(true);
+    expect(state.isNetworkOffline).toBe(true);
+    expect(state.canRunNetworkActions).toBe(false);
+  });
+
+  test('waits for reachability before network actions', () => {
+    const state = getConnectivityState({
+      browserOnline: true,
+      instantStatus: 'authenticated',
+      netInfoOnline: true,
+      reachabilityOnline: null,
+    });
+
+    expect(state.isOffline).toBe(false);
+    expect(state.isNetworkOffline).toBe(false);
     expect(state.canRunNetworkActions).toBe(false);
   });
 });

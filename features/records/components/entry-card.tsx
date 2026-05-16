@@ -1,6 +1,7 @@
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { EntryMenuContent } from '@/features/records/components/entry-menu';
+import { EntrySyncStatus } from '@/features/records/components/entry-sync-status';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
@@ -39,6 +40,7 @@ export const EntryCard = ({
   record,
   recordId,
   replyId,
+  syncStatus,
   visualMedia,
 }: EntrySharedProps & {
   canUnpinRecord: boolean;
@@ -52,6 +54,7 @@ export const EntryCard = ({
   const hasPinnedAction = 'isPinned' in record && !!record.isPinned;
   const hasHeaderActions = hasPinnedAction || entryMenuState.hasMenu;
   const hasRecordTags = record.tags?.some((tag) => !!tag.name);
+  const hasTopMeta = hasRecordTags || !!syncStatus;
 
   const headerActions = hasHeaderActions && (
     <View className="max-w-52 items-end shrink">
@@ -84,19 +87,28 @@ export const EntryCard = ({
 
   return (
     <Card className={cn('gap-4', className)}>
-      {hasRecordTags ? (
+      {hasTopMeta ? (
         <View className="pt-4 px-4 gap-4">
           <View className="relative">
-            <RecordTagChips
-              linkToSearch
-              logName={logName}
-              tags={record.tags}
+            <View
               className={cn(
-                'w-full justify-start',
+                'flex-row flex-wrap gap-1 items-start',
                 hasPinnedAction && 'pr-20',
                 !hasPinnedAction && hasHeaderActions && 'pr-12'
               )}
-            />
+            >
+              {syncStatus && (
+                <EntrySyncStatus className="shrink-0" status={syncStatus} />
+              )}
+              {hasRecordTags && (
+                <RecordTagChips
+                  className="flex-1 gap-1 justify-start"
+                  linkToSearch
+                  logName={logName}
+                  tags={record.tags}
+                />
+              )}
+            </View>
             {headerActions && (
               <View className="absolute right-0 top-0">{headerActions}</View>
             )}
@@ -150,7 +162,11 @@ export const EntryCard = ({
       <MediaGrid recordId={recordId} visualMedia={visualMedia} />
       {audioMedia.length > 0 && (
         <View className="px-4 gap-2">
-          <AudioPlaylist canAnalyzeAudio={canAnalyzeAudio} clips={audioMedia} />
+          <AudioPlaylist
+            analysisActionsDisabled={!networkActionsEnabled}
+            canAnalyzeAudio={canAnalyzeAudio}
+            clips={audioMedia}
+          />
         </View>
       )}
       {(hasDocumentFiles || hasLinks) && (
@@ -173,7 +189,7 @@ export const EntryCard = ({
       )}
       <ReactionsRow
         accentColor={accentColor}
-        className="-mt-1 pb-3 px-3 gap-3"
+        className="-mt-1 pb-3 px-3"
         disabled={!networkActionsEnabled}
         logId={logId}
         onDoubleTapReaction={onDoubleTapReaction}

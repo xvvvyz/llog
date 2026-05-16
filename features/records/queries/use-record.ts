@@ -15,6 +15,18 @@ import { useCachedRecord } from './record-cache';
 
 type RecordLog = Partial<Pick<Log, 'color' | 'id' | 'name'>>;
 
+const hasOwn = (value: object, key: keyof EntryRecord) =>
+  Object.prototype.hasOwnProperty.call(value, key);
+
+const hasLoadedReplyDetail = (reply: EntryRecord) =>
+  !!reply.localStatus ||
+  hasOwn(reply, 'author') ||
+  hasOwn(reply, 'date') ||
+  hasOwn(reply, 'files') ||
+  hasOwn(reply, 'links') ||
+  hasOwn(reply, 'reactions') ||
+  hasOwn(reply, 'text');
+
 export type UseRecordResult = EntryRecord & {
   files: FileItem[];
   id?: string;
@@ -110,10 +122,9 @@ export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
 
   const replies = pendingEntries
     .mergePendingReplies(
-      ((resolvedRecord?.replies ?? []) as EntryRecord[]).map((reply) => ({
-        ...reply,
-        files: reply.files ?? [],
-      })),
+      ((resolvedRecord?.replies ?? []) as EntryRecord[])
+        .filter(hasLoadedReplyDetail)
+        .map((reply) => ({ ...reply, files: reply.files ?? [] })),
       pendingReplies
     )
     .map((reply) => ({ ...reply, files: reply.files ?? [] }));
