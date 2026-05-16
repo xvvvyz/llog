@@ -1,6 +1,5 @@
 import { useCopy } from '@/hooks/use-copy';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert } from '@/lib/alert';
 import { apiOrThrow } from '@/lib/api';
 import { getDateLabel } from '@/lib/time';
 import { Button } from '@/ui/button';
@@ -48,12 +47,8 @@ export const McpSheet = () => {
       const response = await apiOrThrow('/oauth/grants');
       const data = (await response.json()) as { grants: Grant[] };
       setGrants(data.grants);
-    } catch (error) {
-      alert({
-        message:
-          error instanceof Error ? error.message : 'Failed to load MCP clients',
-        title: 'Error',
-      });
+    } catch {
+      // noop
     } finally {
       if (showLoading) setIsLoading(false);
     }
@@ -70,12 +65,8 @@ export const McpSheet = () => {
       try {
         await apiOrThrow(`/oauth/grants/${grantId}`, { method: 'DELETE' });
         await refresh({ showLoading: false });
-      } catch (error) {
-        alert({
-          message:
-            error instanceof Error ? error.message : 'Failed to revoke client',
-          title: 'Error',
-        });
+      } catch {
+        // noop
       } finally {
         setRevokingGrantId(undefined);
       }

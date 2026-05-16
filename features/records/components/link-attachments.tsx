@@ -2,7 +2,6 @@ import * as linkUrl from '@/features/records/lib/link-url';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert as showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
@@ -132,21 +131,14 @@ export const LinkAttachments = ({
     const url = linkUrl.normalizeLinkUrl(item.url);
 
     if (!url) {
-      showAlert({
-        message: 'Could not open this link.',
-        title: 'Link unavailable',
-      });
-
+      // noop
       return;
     }
 
     try {
       await Linking.openURL(url);
     } catch {
-      showAlert({
-        message: 'Could not open this link.',
-        title: 'Link unavailable',
-      });
+      // noop
     }
   }, []);
 

@@ -2,7 +2,6 @@ import * as limits from '@/features/logs/lib/limits';
 import { copyTemplate } from '@/features/logs/mutations/copy-template';
 import { useLogTemplate } from '@/features/logs/queries/use-templates';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert } from '@/lib/alert';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -57,14 +56,9 @@ export const LogTemplateCopyEditorSheet = () => {
       });
 
       sheetManager.close('log-template-copy-to');
-    } catch (error) {
+    } catch {
       setIsSubmitting(false);
-
-      alert({
-        message:
-          error instanceof Error ? error.message : 'Failed to copy template',
-        title: 'Error',
-      });
+      // noop
     }
   }, [
     canSubmit,

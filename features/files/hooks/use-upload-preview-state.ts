@@ -7,7 +7,6 @@ import type { FileItem } from '@/features/files/types/file';
 import * as outbox from '@/features/offline/outbox-hooks';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import type { QueuedAttachment, QueuedParent } from '@/features/offline/types';
-import { alert } from '@/lib/alert';
 import { id } from '@instantdb/react-native';
 import * as React from 'react';
 import * as existingUpload from '@/features/files/lib/existing-upload';
@@ -300,7 +299,7 @@ export const useFileUploadPreviewState = ({
                 outbox.retryFailedOutboxWork();
                 void outboxSyncCore.runOutboxSync();
               })
-              .catch((error) => {
+              .catch(() => {
                 if (!deferQueuedUploads) {
                   void uploadQueuedAttachment(attachment, asset);
                   return;
@@ -314,20 +313,13 @@ export const useFileUploadPreviewState = ({
 
                 removeLocalPreviewUri(fileId);
                 clearFocusedAudioId(fileId);
-
-                alert({
-                  message:
-                    error instanceof Error
-                      ? error.message
-                      : 'Failed to save file for upload.',
-                  title: 'Upload failed',
-                });
+                // noop
               });
 
             if (attachment.status !== 'persisting' && !deferQueuedUploads) {
               await uploadQueuedAttachment(attachment, asset);
             }
-          } catch (error) {
+          } catch {
             void outbox.removeQueuedAttachment(fileId);
 
             setOptimisticUploads((current) =>
@@ -336,14 +328,7 @@ export const useFileUploadPreviewState = ({
 
             removeLocalPreviewUri(fileId);
             clearFocusedAudioId(fileId);
-
-            alert({
-              message:
-                error instanceof Error
-                  ? error.message
-                  : 'Failed to upload files.',
-              title: 'Upload failed',
-            });
+            // noop
           }
         }
       };

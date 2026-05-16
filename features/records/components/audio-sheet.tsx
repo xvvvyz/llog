@@ -7,7 +7,6 @@ import { uploadRecordFile } from '@/features/records/mutations/upload-record-fil
 import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert } from '@/lib/alert';
 import { durationSecondsToMs } from '@/lib/duration';
 import { Sheet } from '@/ui/sheet';
 import { id } from '@instantdb/react-native';
@@ -341,16 +340,9 @@ export const RecordAudioSheet = () => {
 
       await queueAudio(uri);
       close();
-    } catch (error) {
+    } catch {
       isClosingRef.current = false;
-
-      alert({
-        message:
-          error instanceof Error
-            ? error.message
-            : 'This recording could not be saved.',
-        title: 'Recording not saved',
-      });
+      // noop
     } finally {
       setIsUploading(false);
     }

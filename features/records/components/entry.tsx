@@ -109,8 +109,10 @@ export const Entry = ({
       isEditDisabled:
         isUploadingLocalSubmission ||
         (!isLocalPending && rawEntryMenuState.isEditDisabled),
-      isPinDisabled: false,
-      isTagDisabled: false,
+      isPinDisabled:
+        isUploadingLocalSubmission || rawEntryMenuState.isPinDisabled,
+      isTagDisabled:
+        isUploadingLocalSubmission || rawEntryMenuState.isTagDisabled,
     };
   }, [
     canManageLocalPendingEntry,

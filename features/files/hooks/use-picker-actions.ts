@@ -89,11 +89,7 @@ export const useFilePickerActions = ({
       .filter((asset): asset is pickedFiles.PickedFileAsset => !!asset);
 
     if (!assets.length) {
-      alert({
-        message: 'Choose a document to attach.',
-        title: 'Unsupported document',
-      });
-
+      // noop
       return;
     }
 

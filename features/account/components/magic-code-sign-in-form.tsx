@@ -1,5 +1,4 @@
 import { AppLogoMark } from '@/features/account/components/app-logo-mark';
-import { alert } from '@/lib/alert';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
 import { Field } from '@/ui/field';
@@ -67,7 +66,7 @@ export const MagicCodeSignInForm = ({
         try {
           await db.auth.sendMagicCode({ email: nextEmail });
         } catch {
-          alert({ message: 'Invalid email', title: 'Error' });
+          // noop
           return;
         }
 
@@ -108,7 +107,7 @@ export const MagicCodeSignInForm = ({
           });
         } catch {
           submittedCodeRef.current = null;
-          alert({ message: 'Invalid code', title: 'Error' });
+          // noop
           return;
         }
 

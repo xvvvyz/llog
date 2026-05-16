@@ -1,6 +1,5 @@
 import { apiOrThrow } from '@/lib/api';
 import { db } from '@/lib/db';
-import { alert } from '@/lib/alert';
 import * as React from 'react';
 import { Platform } from 'react-native';
 
@@ -88,16 +87,9 @@ export const useOAuthAuthorization = () => {
         }
 
         setIsAuthorizing(false);
-      } catch (error) {
+      } catch {
         setIsAuthorizing(false);
-
-        alert({
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to authorize client',
-          title: 'Error',
-        });
+        // noop
       }
     });
   }, [isAuthorizing, query, startTransition]);

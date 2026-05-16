@@ -6,7 +6,6 @@ import * as fileUriSources from '@/features/files/lib/file-uri-to-src';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { alert as showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
@@ -209,10 +208,7 @@ export const DocumentAttachments = ({
         url: src,
       });
     } catch {
-      showAlert({
-        message: 'Could not download this document.',
-        title: 'Document unavailable',
-      });
+      // noop
     } finally {
       setDownloadingDocumentIds((current) => {
         const next = new Set(current);
@@ -274,10 +270,7 @@ export const DocumentAttachments = ({
       setEditingDocument(null);
       setEditingName('');
     } catch {
-      showAlert({
-        message: 'Could not rename this document.',
-        title: 'Document unavailable',
-      });
+      // noop
     } finally {
       setIsRenaming(false);
     }

@@ -170,16 +170,9 @@ export default function Account() {
 
       setPushState(nextState);
       setPendingPushState(null);
-    } catch (error) {
+    } catch {
       setPendingPushState(null);
-
-      alert({
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update notifications',
-        title: 'Error',
-      });
+      // noop
     } finally {
       setIsPushPending(false);
     }

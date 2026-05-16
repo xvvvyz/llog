@@ -1,7 +1,6 @@
 import { getInviteSheetPayload } from '@/features/invites/lib/sheet';
 import { deleteInviteLink } from '@/features/invites/mutations/delete-link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert } from '@/lib/alert';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -31,16 +30,9 @@ export const InviteLinkDeleteSheet = () => {
       await deleteInviteLink({ id: payload.inviteId, teamId: payload.teamId });
       sheetManager.close('invite-link-delete');
       sheetManager.close('invite');
-    } catch (error) {
+    } catch {
       setIsLoading(false);
-
-      alert({
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to invalidate invite link',
-        title: 'Error',
-      });
+      // noop
     }
   }, [payload, sheetManager]);
 

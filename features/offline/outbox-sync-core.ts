@@ -15,7 +15,6 @@ import { applyRecordPin } from '@/features/records/mutations/toggle-pin';
 import { fetchOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as outboxState from '@/features/offline/outbox-state';
-import { alert as showAlert } from '@/lib/alert';
 import { db } from '@/lib/db';
 import { rejectAfter, wait } from '@/lib/async';
 import type * as types from '@/features/offline/types';
@@ -31,7 +30,6 @@ const UPLOADED_FILE_READY_RETRY_DELAY_MS = 750;
 const PENDING_STREAM_URI_PREFIX = 'stream-pending:';
 let syncPromise: Promise<void> | null = null;
 let shouldRunAfterCurrentSync = false;
-const alertedSyncErrors = new Set<string>();
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
@@ -317,16 +315,6 @@ const resolveQueuedReplyParent = async (
   }
 
   return { status: 'exists', submission };
-};
-
-const alertSyncFailure = (
-  submission: types.QueuedSubmission,
-  message: string
-) => {
-  const key = `${submission.id}:${message}`;
-  if (alertedSyncErrors.has(key)) return;
-  alertedSyncErrors.add(key);
-  showAlert({ title: 'Queued item failed', message });
 };
 
 const replayQueuedSubmissionLinks = async (
@@ -843,7 +831,7 @@ export const syncOutboxOnce = async () => {
 
       const message = getErrorMessage(error, 'Sync failed');
       outboxStore.setQueuedSubmissionStatus(submission.id, 'error', message);
-      alertSyncFailure(submission, message);
+      // noop
     }
   }
 

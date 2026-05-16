@@ -5,7 +5,6 @@ import { redeemInviteLink } from '@/features/invites/mutations/redeem-link';
 import { getLogHref } from '@/features/records/lib/route';
 import { switchTeam } from '@/features/teams/mutations/switch';
 import { useTeams } from '@/features/teams/queries/use-teams';
-import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { db } from '@/lib/db';
 import { Avatar } from '@/ui/avatar';
@@ -99,11 +98,8 @@ export default function InviteLink() {
 
       await switchTeam({ teamId });
       router.replace(logIds?.length === 1 ? getLogHref(logIds[0]) : '/');
-    } catch (e) {
-      alert({
-        message: e instanceof Error ? e.message : 'Failed to join team',
-        title: 'Error',
-      });
+    } catch {
+      // noop
     } finally {
       setIsRedeeming(false);
     }

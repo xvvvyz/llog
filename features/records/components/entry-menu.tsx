@@ -11,7 +11,6 @@ import type { EntryMenuState } from '@/features/records/types/entry-menu';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import type { Tag as RecordTag } from '@/features/tags/types/tag';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { shareUrl } from '@/lib/share';
 import { Button } from '@/ui/button';
@@ -183,14 +182,9 @@ const EntryMenuDropdownContent = ({
 
       setIsDuplicating(false);
       menu.onOpenChange(false);
-    } catch (error) {
+    } catch {
       setIsDuplicating(false);
-
-      alert({
-        message:
-          error instanceof Error ? error.message : 'Failed to copy record',
-        title: 'Error',
-      });
+      // noop
     }
   };
 

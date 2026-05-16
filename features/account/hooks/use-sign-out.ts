@@ -1,5 +1,4 @@
 import * as push from '@/features/account/lib/web-push';
-import { alert } from '@/lib/alert';
 import { waitAtMost } from '@/lib/async';
 import { db } from '@/lib/db';
 import { router } from 'expo-router';
@@ -32,13 +31,9 @@ export const useSignOut = () => {
 
       await db.auth.signOut();
       router.replace('/sign-in');
-    } catch (error) {
-      alert({
-        message: error instanceof Error ? error.message : 'Failed to sign out.',
-        title: 'Error',
-      });
-
+    } catch {
       setIsSigningOut(false);
+      // noop
     }
   }, [isSigningOut]);
 

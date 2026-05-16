@@ -3,7 +3,6 @@ import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { alert } from '@/lib/alert';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
@@ -73,14 +72,9 @@ export const RecordCopyToSheet = () => {
       sheetManager.open('record-create', draft.draftRecordId, 'copy', {
         logIds: draft.targetLogIds,
       });
-    } catch (error) {
+    } catch {
       setIsSubmitting(false);
-
-      alert({
-        message:
-          error instanceof Error ? error.message : 'Failed to copy record',
-        title: 'Error',
-      });
+      // noop
     }
   }, [recordId, selectedLogIds, sheetManager]);
 
