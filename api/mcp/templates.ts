@@ -2,7 +2,7 @@ import * as mcpFields from '@/api/mcp/fields';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext, McpTag, McpTemplate } from '@/api/mcp/types';
-import { getViewer } from '@/api/mcp/viewer';
+import { getViewer, getVisibleLog } from '@/api/mcp/viewer';
 import * as logTemplates from '@/domain/logs/templates';
 import * as permissions from '@/domain/teams/permissions';
 import { id } from '@instantdb/admin';
@@ -26,10 +26,7 @@ const requireManageTemplates = ({
 };
 
 const getTemplateLog = async (ctx: McpContext, logId: string) => {
-  const viewer = await getViewer(ctx.db, ctx.props.userId);
-  const log = viewer.visibleLogs.find((log) => log.id === logId);
-  if (!log?.teamId) throw new Error('Log not found or not visible');
-  return { log: { id: log.id, name: log.name, teamId: log.teamId }, viewer };
+  return getVisibleLog(ctx, logId);
 };
 
 const getTemplate = async (ctx: McpContext, templateId: string) => {
@@ -118,11 +115,9 @@ const validateTemplateTags = async ({
 
 export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
   const listTemplates = async ({
-    limit = 50,
     logId,
     query,
   }: {
-    limit?: number;
     logId?: string;
     query?: string;
   }) => {
@@ -142,7 +137,6 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
 
     const items = logTemplates
       .filterTemplatesByQuery(templates ?? [], query)
-      .slice(0, limit)
       .map(mcpFields.templateFields);
 
     return mcpFields.textResult(
@@ -309,10 +303,9 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
     'templates',
     {
       description:
-        'List, create, copy, update, and delete reusable record templates.',
+        'List, create, update, and delete reusable record templates.',
       inputSchema: {
         action: templateActionsSchema,
-        limit: z.number().int().min(1).max(100).optional(),
         logId: z.string().min(1).optional(),
         query: z.string().trim().min(1).optional(),
         tagIds: z.array(z.string().min(1)).max(50).optional(),
@@ -321,10 +314,10 @@ export const registerTemplateTools = (server: McpServer, ctx: McpContext) => {
       },
       outputSchema: mcpSchemas.templatesOutputSchema,
     },
-    async ({ action, limit, logId, query, tagIds, templateId, text }) => {
+    async ({ action, logId, query, tagIds, templateId, text }) => {
       switch (action) {
         case 'list': {
-          return listTemplates({ limit, logId, query });
+          return listTemplates({ logId, query });
         }
 
         case 'get': {

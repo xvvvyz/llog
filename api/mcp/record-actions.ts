@@ -1,5 +1,5 @@
 import { textResult } from '@/api/mcp/fields';
-import { getVisibleRecord } from '@/api/mcp/records';
+import { getVisibleRecord } from '@/api/mcp/content';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext } from '@/api/mcp/types';

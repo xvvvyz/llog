@@ -1,6 +1,5 @@
 import * as mcpFields from '@/api/mcp/fields';
-import { getReadableRecord } from '@/api/mcp/records';
-import { getReadableReply } from '@/api/mcp/replies';
+import { getReadableRecord, getReadableReply } from '@/api/mcp/content';
 import type { McpContext } from '@/api/mcp/types';
 
 import {

@@ -1,9 +1,9 @@
 import * as mcpFields from '@/api/mcp/fields';
-import { getCallerDraftRecord, getVisibleRecord } from '@/api/mcp/records';
+import { getReadableRecord } from '@/api/mcp/content';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
-import type { McpContext, McpLog, McpRecord, McpTag } from '@/api/mcp/types';
-import { requireVisibleLog } from '@/api/mcp/viewer';
+import type { McpContext, McpRecord, McpTag } from '@/api/mcp/types';
+import { getVisibleLog } from '@/api/mcp/viewer';
 import { recordTagFields, recordTagLogsQuery } from '@/domain/tags/query';
 import { findExactTagId, searchTags } from '@/domain/tags/search-tags';
 import * as permissions from '@/domain/teams/permissions';
@@ -18,31 +18,12 @@ const recordTagQuery = {
 
 const recordTagsActionSchema = z.enum(['list', 'set', 'create']);
 
-const getRecordForTagging = async (
-  ctx: McpContext,
-  recordId: string,
-  status: 'draft' | 'published'
-) =>
-  status === 'draft'
-    ? getCallerDraftRecord(ctx, recordId)
-    : getVisibleRecord(ctx, recordId);
+const getRecordForTagging = async (ctx: McpContext, recordId: string) =>
+  getReadableRecord(ctx, recordId);
 
 const getLogForRecordTags = async (ctx: McpContext, logId: string) => {
-  await requireVisibleLog(ctx, logId);
-
-  const { logs } = (await ctx.db.query({
-    logs: {
-      $: {
-        fields: ['id' as const, 'name' as const, 'teamId' as const],
-        where: { id: logId },
-      },
-    },
-  })) as { logs?: McpLog[] };
-
-  const log = logs?.[0];
-  const teamId = log?.teamId;
-  if (!teamId) throw new Error('Log not found or not visible');
-  return { ...log, teamId };
+  const { log } = await getVisibleLog(ctx, logId);
+  return log;
 };
 
 const requireRecordTagAccess = (
@@ -103,12 +84,10 @@ const requireRecordTagMatchesRecord = ({
 
 const listRecordTagsForLog = async ({
   ctx,
-  limit,
   logId,
   query,
 }: {
   ctx: McpContext;
-  limit?: number;
   logId: string;
   query?: string;
 }) => {
@@ -124,25 +103,19 @@ const listRecordTagsForLog = async ({
     },
   })) as { tags?: McpTag[] };
 
-  const matchingTags = query ? searchTags(tags ?? [], query) : (tags ?? []);
-
-  return typeof limit === 'number'
-    ? matchingTags.slice(0, limit)
-    : matchingTags;
+  return query ? searchTags(tags ?? [], query) : (tags ?? []);
 };
 
 export const registerTagTools = (server: McpServer, ctx: McpContext) => {
   const listRecordTags = async ({
-    limit = 50,
     logId,
     query,
   }: {
-    limit?: number;
     logId?: string;
     query?: string;
   }) => {
     if (!logId) throw new Error('logId is required to list record tags');
-    const tags = await listRecordTagsForLog({ ctx, limit, logId, query });
+    const tags = await listRecordTagsForLog({ ctx, logId, query });
     const items = tags.map(mcpFields.tagFields);
 
     return mcpFields.textResult(
@@ -157,12 +130,10 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
   const setRecordTag = async ({
     recordId,
     selected,
-    status = 'published',
     tagId,
   }: {
     recordId?: string;
     selected?: boolean;
-    status?: 'draft' | 'published';
     tagId?: string;
   }) => {
     if (!recordId) throw new Error('recordId is required to set a record tag');
@@ -174,7 +145,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     if (!tagId) throw new Error('tagId is required to set a record tag');
 
     const [{ record, viewer }, tag] = await Promise.all([
-      getRecordForTagging(ctx, recordId, status),
+      getRecordForTagging(ctx, recordId),
       getRecordTag(ctx, tagId),
     ]);
 
@@ -203,11 +174,9 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
   const createRecordTag = async ({
     name,
     recordId,
-    status = 'published',
   }: {
     name?: string;
     recordId?: string;
-    status?: 'draft' | 'published';
   }) => {
     if (!name) throw new Error('name is required to create a record tag');
 
@@ -216,7 +185,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     }
 
     const trimmedName = name.trim();
-    const { record, viewer } = await getRecordForTagging(ctx, recordId, status);
+    const { record, viewer } = await getRecordForTagging(ctx, recordId);
     const target = requireRecordTagAccess(record, viewer);
 
     if (!target.canManageDefinitions) {
@@ -275,42 +244,30 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     server,
     'record_tags',
     {
-      description: 'List, create, apply, remove, and pin record tags.',
+      description: 'List, create, apply, and remove record tags.',
       inputSchema: {
         action: recordTagsActionSchema,
-        limit: z.number().int().min(1).max(100).optional(),
         logId: z.string().min(1).optional(),
         name: z.string().trim().min(1).max(16).optional(),
         query: z.string().trim().min(1).optional(),
         recordId: z.string().min(1).optional(),
         selected: z.boolean().optional(),
-        status: mcpSchemas.contentStatusSchema,
         tagId: z.string().min(1).optional(),
       },
       outputSchema: mcpSchemas.recordTagsOutputSchema,
     },
-    async ({
-      action,
-      limit,
-      logId,
-      name,
-      query,
-      recordId,
-      selected,
-      status,
-      tagId,
-    }) => {
+    async ({ action, logId, name, query, recordId, selected, tagId }) => {
       switch (action) {
         case 'list': {
-          return listRecordTags({ limit, logId, query });
+          return listRecordTags({ logId, query });
         }
 
         case 'set': {
-          return setRecordTag({ recordId, selected, status, tagId });
+          return setRecordTag({ recordId, selected, tagId });
         }
 
         case 'create': {
-          return createRecordTag({ name, recordId, status });
+          return createRecordTag({ name, recordId });
         }
       }
     }

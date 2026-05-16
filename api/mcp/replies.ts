@@ -1,178 +1,17 @@
 import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
-import { getNotificationLog, getVisibleRecord } from '@/api/mcp/records';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
-import type { McpContext, McpLog, McpRecord, McpReply } from '@/api/mcp/types';
-import { getViewer } from '@/api/mcp/viewer';
+import type { McpContext, McpReply } from '@/api/mcp/types';
 import * as push from '@/api/push/web-push';
-import { visibleFileQuery } from '@/domain/files/query';
 import * as recordPublish from '@/domain/records/publish';
-import * as recordQueries from '@/domain/records/query';
-import { recordTagsQuery } from '@/domain/tags/query';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
+import * as content from '@/api/mcp/content';
+import * as contentQueries from '@/api/mcp/content-queries';
 
 const repliesActionSchema = z.enum(['get', 'save']);
-type ReplyInclude = z.infer<typeof mcpSchemas.replyIncludeSchema>;
-
-const replyDetailQuery = ({ include }: { include: Set<ReplyInclude> }) => ({
-  author: recordQueries.summaryProfileQuery,
-  files: include.has('files') ? visibleFileQuery : recordQueries.countFileQuery,
-  links: include.has('links') ? {} : recordQueries.countLinkQuery,
-  reactions: recordQueries.countReactionQuery,
-  record: {
-    $: { fields: ['id' as const, 'teamId' as const] },
-    log: { $: { fields: ['id' as const, 'name' as const] } },
-    tags: recordTagsQuery,
-  },
-});
-
-const replyPublishQuery = {
-  author: { image: {}, user: {} },
-  files: visibleFileQuery,
-  links: {},
-  record: {
-    $: { fields: ['id' as const, 'teamId' as const] },
-    log: { $: { fields: ['id' as const, 'name' as const] } },
-    tags: recordTagsQuery,
-  },
-};
-
-const replyTargetRecordQuery = {
-  author: recordQueries.summaryProfileQuery,
-  files: recordQueries.countFileQuery,
-  links: recordQueries.countLinkQuery,
-  log: { $: { fields: ['id' as const, 'name' as const] } },
-  reactions: recordQueries.countReactionQuery,
-  tags: recordTagsQuery,
-};
-
-const getCallerDraftReply = async (
-  ctx: McpContext,
-  replyId: string,
-  { query }: { query?: object } = {}
-) => {
-  const [{ replies }, viewer] = await Promise.all([
-    ctx.db.query({
-      replies: {
-        $: { where: { id: replyId, isDraft: true } },
-        ...(query ?? {
-          author: { image: {}, user: {} },
-          files: visibleFileQuery,
-          links: {},
-          record: {
-            $: { fields: ['id', 'teamId'] },
-            log: { team: { $: { fields: ['id' as const] } } },
-            tags: recordTagsQuery,
-          },
-        }),
-      },
-    }) as Promise<{
-      replies?: (McpReply & {
-        record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
-      })[];
-    }>,
-    getViewer(ctx.db, ctx.props.userId),
-  ]);
-
-  const reply = replies?.[0];
-
-  if (
-    !reply?.record?.id ||
-    !reply.record.log?.id ||
-    !viewer.profile?.id ||
-    reply.author?.id !== viewer.profile.id
-  ) {
-    throw new Error('Draft reply not found or not visible');
-  }
-
-  return { reply, viewer };
-};
-
-const getVisibleReply = async (
-  ctx: McpContext,
-  replyId: string,
-  { query }: { query?: object } = {}
-) => {
-  const [{ replies }, viewer] = await Promise.all([
-    ctx.db.query({
-      replies: {
-        $: { where: { id: replyId, isDraft: false } },
-        ...(query ?? {
-          author: { image: {}, user: {} },
-          files: visibleFileQuery,
-          links: {},
-          reactions: { author: {} },
-          record: {
-            $: { fields: ['id', 'teamId'] },
-            log: { $: { fields: ['id' as const, 'name' as const] } },
-            tags: recordTagsQuery,
-          },
-        }),
-      },
-    }) as Promise<{
-      replies?: (McpReply & {
-        record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
-      })[];
-    }>,
-    getViewer(ctx.db, ctx.props.userId),
-  ]);
-
-  const reply = replies?.[0];
-
-  if (!reply?.record?.log?.id) {
-    throw new Error('Reply not found or not visible');
-  }
-
-  return { reply, viewer };
-};
-
-export const getReadableReply = async (
-  ctx: McpContext,
-  replyId: string,
-  { query }: { query?: object } = {}
-) => {
-  const [{ replies }, viewer] = await Promise.all([
-    ctx.db.query({
-      replies: {
-        $: { where: { id: replyId } },
-        ...(query ?? {
-          author: { image: {}, user: {} },
-          files: visibleFileQuery,
-          links: {},
-          reactions: { author: {} },
-          record: {
-            $: { fields: ['id', 'teamId'] },
-            log: { $: { fields: ['id' as const, 'name' as const] } },
-            tags: recordTagsQuery,
-          },
-        }),
-      },
-    }) as Promise<{
-      replies?: (McpReply & {
-        record?: Pick<McpRecord, 'id' | 'tags' | 'teamId'> & { log?: McpLog };
-      })[];
-    }>,
-    getViewer(ctx.db, ctx.props.userId),
-  ]);
-
-  const reply = replies?.[0];
-
-  if (!reply?.record?.log?.id) {
-    throw new Error('Reply not found or not visible');
-  }
-
-  if (
-    reply.isDraft &&
-    (!viewer.profile?.id || reply.author?.id !== viewer.profile.id)
-  ) {
-    throw new Error('Reply not found or not visible');
-  }
-
-  return { reply, viewer };
-};
 
 export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
   const fieldOptions = { appUrl: ctx.env.APP_URL };
@@ -180,23 +19,14 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
   const getReply = async ({
     include = [],
     replyId,
-    status,
   }: {
-    include?: ReplyInclude[];
+    include?: contentQueries.ReplyInclude[];
     replyId?: string;
-    status?: 'draft' | 'published';
   }) => {
     if (!replyId) throw new Error('replyId is required to get a reply');
     const includeSet = new Set(include);
-    const query = replyDetailQuery({ include: includeSet });
-
-    const { reply } =
-      status === 'draft'
-        ? await getCallerDraftReply(ctx, replyId, { query })
-        : status === 'published'
-          ? await getVisibleReply(ctx, replyId, { query })
-          : await getReadableReply(ctx, replyId, { query });
-
+    const query = contentQueries.replyDetailQuery({ include: includeSet });
+    const { reply } = await content.getReadableReply(ctx, replyId, { query });
     const record = reply.record;
     if (!record) throw new Error('Invalid reply');
 
@@ -262,7 +92,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
   }) => {
     if (mode === 'draft') {
       if (replyId) {
-        const { reply } = await getCallerDraftReply(ctx, replyId);
+        const { reply } = await content.getCallerDraftReply(ctx, replyId);
         if (!reply.teamId) throw new Error('Invalid reply draft');
 
         const transactions = [
@@ -290,7 +120,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
       }
 
       if (!recordId) throw new Error('recordId is required to create a draft');
-      const { record, viewer } = await getVisibleRecord(ctx, recordId);
+      const { record, viewer } = await content.getVisibleRecord(ctx, recordId);
       const profile = viewer.profile;
 
       if (!profile?.id || !record.teamId) {
@@ -338,15 +168,18 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     }
 
     if (replyId) {
-      const { reply } = await getCallerDraftReply(ctx, replyId, {
-        query: replyPublishQuery,
+      const { reply } = await content.getCallerDraftReply(ctx, replyId, {
+        query: contentQueries.replyPublishQuery,
       });
 
       const nextText = (text ?? reply.text ?? '').trim();
       const nextLinks = links ?? reply.links ?? [];
 
-      const hasContent =
-        !!nextText || !!reply.files?.length || nextLinks.length > 0;
+      const hasContent = content.hasLinkedContent({
+        files: reply.files,
+        links: nextLinks,
+        text: nextText,
+      });
 
       if (
         !hasContent ||
@@ -360,7 +193,7 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
         throw new Error('Invalid reply draft');
       }
 
-      const notificationLog = await getNotificationLog(
+      const notificationLog = await content.getNotificationLog(
         ctx,
         reply.record.log.id
       );
@@ -418,12 +251,12 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
     const nextLinks = links ?? [];
     const trimmedText = (text ?? '').trim();
 
-    if (!trimmedText && nextLinks.length === 0) {
+    if (!content.hasLinkedContent({ links: nextLinks, text: trimmedText })) {
       throw new Error('Reply content cannot be empty');
     }
 
-    const { record, viewer } = await getVisibleRecord(ctx, recordId, {
-      query: replyTargetRecordQuery,
+    const { record, viewer } = await content.getVisibleRecord(ctx, recordId, {
+      query: contentQueries.replyTargetRecordQuery,
     });
 
     const profile = viewer.profile;
@@ -432,7 +265,11 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('Invalid reply target');
     }
 
-    const notificationLog = await getNotificationLog(ctx, record.log.id);
+    const notificationLog = await content.getNotificationLog(
+      ctx,
+      record.log.id
+    );
+
     const teamId = record.teamId;
     const newReplyId = id();
     const now = new Date().toISOString();
@@ -493,24 +330,14 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
         mode: mcpSchemas.saveModeSchema,
         recordId: z.string().min(1).optional(),
         replyId: z.string().min(1).optional(),
-        status: mcpSchemas.contentStatusSchema,
         text: z.string().max(10240).optional(),
       },
       outputSchema: mcpSchemas.repliesOutputSchema,
     },
-    async ({
-      action,
-      include,
-      links,
-      mode,
-      recordId,
-      replyId,
-      status,
-      text,
-    }) => {
+    async ({ action, include, links, mode, recordId, replyId, text }) => {
       switch (action) {
         case 'get': {
-          return getReply({ include, replyId, status });
+          return getReply({ include, replyId });
         }
 
         case 'save': {

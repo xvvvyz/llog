@@ -2,289 +2,19 @@ import * as mcpFields from '@/api/mcp/fields';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type * as mcpTypes from '@/api/mcp/types';
-import * as mediaMetadata from '@/domain/files/media-metadata';
 import { recordSearchQuery } from '@/domain/records/query';
 import { logTagsQuery } from '@/domain/tags/query';
 import { normalizeSearchText, parseSearchQuery } from '@/lib/search';
-import type { ParsedSearchQuery } from '@/lib/search';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
+import * as searchHelpers from '@/api/mcp/search-helpers';
 
-type SearchResult =
-  | { log: mcpTypes.McpLog; type: 'log' }
-  | {
-      matches?: mcpTypes.McpMediaSearchMatch[];
-      record: ReturnType<typeof mcpFields.recordSummaryFields>;
-      type: 'record';
-    }
-  | {
-      matches?: mcpTypes.McpMediaSearchMatch[];
-      record: {
-        id: string;
-        log?: mcpTypes.McpLog | null;
-        tags?: mcpTypes.McpTag[];
-        url?: string;
-      };
-      reply: ReturnType<typeof mcpFields.replySummaryFields>;
-      type: 'reply';
-    };
-
-type ReplySearchRecord = Extract<SearchResult, { type: 'reply' }>['record'];
-
-const searchTagFields = (tag: { name: string; order?: number | null }) => ({
-  name: tag.name,
-  order: tag.order ?? undefined,
-});
-
-const searchLogFields = (
-  log?: {
-    id: string;
-    name: string;
-    tags?: { name: string; order?: number | null }[];
-  } | null
-) =>
-  log
-    ? { id: log.id, name: log.name, tags: log.tags?.map(searchTagFields) }
-    : undefined;
-
-const searchMediaMatchFields = ({
-  fileId: _fileId,
-  ...match
-}: mcpTypes.McpMediaSearchMatch) => match;
-
-const searchRecordFields = (
-  record: ReturnType<typeof mcpFields.recordSummaryFields>
-) => ({
-  date: record.date,
-  fileCount: record.fileCount,
-  isPinned: record.isPinned,
-  linkCount: record.linkCount,
-  log: searchLogFields(record.log),
-  reactionCount: record.reactionCount,
-  replyCount: record.replyCount,
-  tags: record.tags?.map(searchTagFields),
-  text: record.text,
-  url: record.url,
-});
-
-const searchRecordRefFields = (record: ReplySearchRecord) => ({
-  log: searchLogFields(record.log),
-  tags: record.tags?.map(searchTagFields),
-  url: record.url,
-});
-
-const searchReplyFields = (
-  reply: ReturnType<typeof mcpFields.replySummaryFields>
-) => ({
-  date: reply.date,
-  fileCount: reply.fileCount,
-  linkCount: reply.linkCount,
-  reactionCount: reply.reactionCount,
-  text: reply.text,
-});
-
-const searchResultFields = (result: SearchResult) => {
-  if (result.type === 'log') {
-    return { log: searchLogFields(result.log), type: result.type };
-  }
-
-  const matches = result.matches?.map(searchMediaMatchFields);
-
-  if (result.type === 'record') {
-    return {
-      matches,
-      record: searchRecordFields(result.record),
-      type: result.type,
-    };
-  }
-
-  return {
-    matches,
-    record: searchRecordRefFields(result.record),
-    reply: searchReplyFields(result.reply),
-    type: result.type,
-  };
-};
+export {
+  getFileMediaMatches,
+  parseSearchCursor,
+} from '@/api/mcp/search-helpers';
 
 const SEARCH_RECORD_SCAN_LIMIT = 1000;
-type SearchCursor = { offset: number; skip: number };
-const initialSearchCursor: SearchCursor = { offset: 0, skip: 0 };
-
-const isNonNegativeInteger = (value: number) =>
-  Number.isInteger(value) && value >= 0;
-
-export const parseSearchCursor = (cursor?: string): SearchCursor => {
-  if (!cursor) return initialSearchCursor;
-  const trimmed = cursor.trim();
-  const parts = trimmed.split(':');
-
-  if (!trimmed || parts.length < 1 || parts.length > 2) {
-    throw new Error('Invalid search cursor');
-  }
-
-  if (parts.some((part) => !part)) throw new Error('Invalid search cursor');
-  const offset = Number(parts[0]);
-  const skip = parts[1] == null ? 0 : Number(parts[1]);
-
-  if (!isNonNegativeInteger(offset) || !isNonNegativeInteger(skip)) {
-    throw new Error('Invalid search cursor');
-  }
-
-  return { offset, skip };
-};
-
-const formatSearchCursor = ({ offset, skip }: SearchCursor) =>
-  skip > 0 ? `${offset}:${skip}` : String(offset);
-
-type FileMediaSearchItem = {
-  file: mcpTypes.McpFile;
-  item: mediaMetadata.MediaSearchItem;
-};
-
-const getFileMediaSearchItems = (
-  files: mcpTypes.McpFile[] | undefined
-): FileMediaSearchItem[] =>
-  (files ?? []).flatMap((file) =>
-    mediaMetadata.getMediaSearchItems(file).map((item) => ({ file, item }))
-  );
-
-const getFileMediaSearchText = (items: readonly FileMediaSearchItem[]) =>
-  mediaMetadata.getMediaSearchText(items.map(({ item }) => item));
-
-const searchHaystack = (values: (string | null | undefined)[]) =>
-  normalizeSearchText(values.filter(Boolean).join(' '));
-
-const includesNormalized = (value: string | undefined, query: string) => {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) return true;
-  return normalizeSearchText(value ?? '').includes(normalizedQuery);
-};
-
-const matchesEveryFilter = (
-  filters: string[],
-  values: (string | undefined)[]
-) =>
-  filters.every((filter) =>
-    values.some((value) => includesNormalized(value, filter))
-  );
-
-const matchesTagFilters = (
-  tags: { id: string; name?: string | null }[] | undefined,
-  filters: string[]
-) =>
-  matchesEveryFilter(
-    filters,
-    (tags ?? []).flatMap((tag) => [tag.name ?? undefined, tag.id])
-  );
-
-const matchesLogFilters = (
-  log: { id: string; name?: string | null } | undefined | null,
-  filters: string[]
-) => matchesEveryFilter(filters, [log?.name ?? undefined, log?.id]);
-
-const matchesAuthorFilters = (
-  author: { id?: string; name?: string | null } | undefined | null,
-  filters: string[]
-) => matchesEveryFilter(filters, [author?.name ?? undefined, author?.id]);
-
-const matchesLogSearchFilters = (
-  log: mcpTypes.McpLog,
-  filters: ParsedSearchQuery['filters']
-) =>
-  filters.author.length === 0 &&
-  matchesLogFilters(log, filters.log) &&
-  matchesTagFilters(log.tags, filters.tag);
-
-const matchesRecordSearchFilters = (
-  record: mcpTypes.McpRecord,
-  filters: ParsedSearchQuery['filters']
-) =>
-  matchesLogFilters(record.log, filters.log) &&
-  matchesTagFilters(record.tags, filters.tag) &&
-  matchesAuthorFilters(record.author, filters.author);
-
-const matchesReplySearchFilters = (
-  record: mcpTypes.McpRecord,
-  reply: mcpTypes.McpReply,
-  filters: ParsedSearchQuery['filters']
-) =>
-  matchesLogFilters(record.log, filters.log) &&
-  matchesTagFilters(record.tags, filters.tag) &&
-  matchesAuthorFilters(reply.author, filters.author);
-
-const getFileMediaMatchesFromItems = (
-  items: readonly FileMediaSearchItem[],
-  query: string
-): mcpTypes.McpMediaSearchMatch[] => {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) return [];
-
-  return items
-    .filter(({ item }) =>
-      normalizeSearchText(item.text).includes(normalizedQuery)
-    )
-    .map(({ file, item }) => ({
-      ...(item.endSeconds != null ? { endSeconds: item.endSeconds } : {}),
-      fileId: file.id,
-      ...(file.name ? { fileName: file.name } : {}),
-      kind: item.kind,
-      snippet: item.snippet,
-      ...(item.startSeconds != null ? { startSeconds: item.startSeconds } : {}),
-      ...(item.trackDurationSeconds != null
-        ? { trackDurationSeconds: item.trackDurationSeconds }
-        : {}),
-    }));
-};
-
-export const getFileMediaMatches = (
-  files: mcpTypes.McpFile[] | undefined,
-  query: string
-): mcpTypes.McpMediaSearchMatch[] =>
-  getFileMediaMatchesFromItems(getFileMediaSearchItems(files), query);
-
-const resultText = (result: SearchResult) => {
-  if (result.type === 'log') return result.log.name;
-
-  const text =
-    result.type === 'record' ? result.record.text : result.reply.text;
-
-  const mediaText = result.matches?.map((match) => match.snippet).join('; ');
-  return [text, mediaText].filter(Boolean).join(' | ');
-};
-
-const searchResultsTable = (results: SearchResult[]) =>
-  mcpFields.table(
-    ['Type', 'Where', 'Text/Name', 'Tags', 'URL/ID'],
-    results.map((result) => {
-      if (result.type === 'log') {
-        return [
-          'log',
-          '',
-          result.log.name,
-          result.log.tags?.map((tag) => tag.name).join(', '),
-          result.log.id,
-        ];
-      }
-
-      if (result.type === 'record') {
-        return [
-          'record',
-          result.record.log?.name,
-          mcpFields.textPreview(resultText(result)),
-          result.record.tags?.map((tag) => tag.name).join(', '),
-          result.record.url,
-        ];
-      }
-
-      return [
-        'reply',
-        result.record.log?.name,
-        mcpFields.textPreview(resultText(result)),
-        result.record.tags?.map((tag) => tag.name).join(', '),
-        result.record.url,
-      ];
-    })
-  );
 
 export const registerSearchTool = (
   server: McpServer,
@@ -297,7 +27,7 @@ export const registerSearchTool = (
     'search',
     {
       description:
-        'Search logs, records, replies, links, files, and media text. Supports keyword filters like log:"Daily", tag:"Work", and author:"Cade".',
+        'Search logs, records, replies, links, files, and media text. Supports keyword filters like log:"Daily", tag:"Work", and author:"Person".',
       inputSchema: {
         cursor: z.string().trim().min(1).optional(),
         keyword: z.string().trim().min(1),
@@ -308,14 +38,14 @@ export const registerSearchTool = (
     },
     async ({ cursor, keyword, limit = 25, recordTagIds }) => {
       const parsedQuery = parseSearchQuery(keyword);
-      const q = normalizeSearchText(parsedQuery.text);
-      const searchCursor = parseSearchCursor(cursor);
+      const query = normalizeSearchText(parsedQuery.text);
+      const searchCursor = searchHelpers.parseSearchCursor(cursor);
 
       const recordTagIdSet = recordTagIds?.length
         ? new Set(recordTagIds)
         : undefined;
 
-      const pageResults: SearchResult[] = [];
+      const pageResults: searchHelpers.SearchResult[] = [];
 
       if (!recordTagIdSet && searchCursor.offset === 0) {
         const { logs } = (await ctx.db.query({
@@ -323,17 +53,13 @@ export const registerSearchTool = (
         })) as { logs?: mcpTypes.McpLog[] };
 
         for (const log of logs ?? []) {
-          const haystack = searchHaystack([
-            log.name,
-            ...(log.tags ?? []).map((tag) => tag.name),
-          ]);
+          const result = searchHelpers.getLogSearchResult({
+            log,
+            parsedQuery,
+            query,
+          });
 
-          if (
-            matchesLogSearchFilters(log, parsedQuery.filters) &&
-            haystack.includes(q)
-          ) {
-            pageResults.push({ log, type: 'log' });
-          }
+          if (result) pageResults.push(result);
         }
       }
 
@@ -355,76 +81,15 @@ export const registerSearchTool = (
       const hasMoreRecords = (records ?? []).length > recordScanLimit;
 
       for (const record of recordPage) {
-        if (!record.log?.id) continue;
-
-        const hasSelectedRecordTag =
-          !recordTagIdSet ||
-          record.tags?.some((tag) => recordTagIdSet.has(tag.id));
-
-        const recordMediaItems = getFileMediaSearchItems(record.files);
-
-        const recordHaystack = searchHaystack([
-          record.text,
-          record.log?.name,
-          ...(record.tags ?? []).map((tag) => tag.name),
-          ...(record.links ?? []).map((link) => link.label),
-          ...(record.links ?? []).map((link) => link.url),
-          ...(record.files ?? []).map((file) => file.name),
-          getFileMediaSearchText(recordMediaItems),
-        ]);
-
-        const recordMediaMatches = getFileMediaMatchesFromItems(
-          recordMediaItems,
-          q
+        pageResults.push(
+          ...searchHelpers.getRecordSearchResults({
+            fieldOptions,
+            parsedQuery,
+            query,
+            record,
+            recordTagIdSet,
+          })
         );
-
-        if (
-          hasSelectedRecordTag &&
-          matchesRecordSearchFilters(record, parsedQuery.filters) &&
-          recordHaystack.includes(q)
-        ) {
-          pageResults.push({
-            ...(recordMediaMatches.length
-              ? { matches: recordMediaMatches }
-              : {}),
-            record: mcpFields.recordSummaryFields(record, fieldOptions),
-            type: 'record',
-          });
-        }
-
-        for (const reply of record.replies ?? []) {
-          const replyMediaItems = getFileMediaSearchItems(reply.files);
-
-          const replyHaystack = searchHaystack([
-            reply.text,
-            record.log?.name,
-            ...(record.tags ?? []).map((tag) => tag.name),
-            ...(reply.links ?? []).map((link) => link.label),
-            ...(reply.links ?? []).map((link) => link.url),
-            ...(reply.files ?? []).map((file) => file.name),
-            getFileMediaSearchText(replyMediaItems),
-          ]);
-
-          const replyMediaMatches = getFileMediaMatchesFromItems(
-            replyMediaItems,
-            q
-          );
-
-          if (
-            hasSelectedRecordTag &&
-            matchesReplySearchFilters(record, reply, parsedQuery.filters) &&
-            replyHaystack.includes(q)
-          ) {
-            pageResults.push({
-              ...(replyMediaMatches.length
-                ? { matches: replyMediaMatches }
-                : {}),
-              record: mcpFields.recordRefFields(record, fieldOptions),
-              reply: mcpFields.replySummaryFields(reply, fieldOptions),
-              type: 'reply',
-            });
-          }
-        }
       }
 
       const limited = pageResults.slice(
@@ -436,12 +101,12 @@ export const registerSearchTool = (
 
       const nextCursor =
         consumedPageResults < pageResults.length
-          ? formatSearchCursor({
+          ? searchHelpers.formatSearchCursor({
               offset: searchCursor.offset,
               skip: consumedPageResults,
             })
           : hasMoreRecords
-            ? formatSearchCursor({
+            ? searchHelpers.formatSearchCursor({
                 offset: searchCursor.offset + recordPage.length,
                 skip: 0,
               })
@@ -456,10 +121,10 @@ export const registerSearchTool = (
             scanned: recordPage.length,
             scanLimit: recordScanLimit,
           },
-          results: limited.map(searchResultFields),
+          results: limited.map(searchHelpers.searchResultFields),
         },
         limited.length
-          ? searchResultsTable(limited)
+          ? searchHelpers.searchResultsTable(limited)
           : nextCursor
             ? `No results in this page. Continue with cursor: ${nextCursor}`
             : 'No results.'

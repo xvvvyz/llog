@@ -63,13 +63,18 @@ export const getViewer = async (db: Db, userId: string): Promise<McpViewer> => {
 };
 
 export const requireVisibleLog = async (ctx: McpContext, logId: string) => {
-  const [{ logs }, viewer] = await Promise.all([
-    ctx.db.query({
-      logs: { $: { fields: ['id' as const], where: { id: logId } } },
-    }) as Promise<{ logs?: { id: string }[] }>,
-    getViewer(ctx.db, ctx.props.userId),
-  ]);
+  const viewer = await getViewer(ctx.db, ctx.props.userId);
 
-  if (!logs?.[0]?.id) throw new Error('Log not found or not visible');
+  if (!viewer.visibleLogIds.has(logId)) {
+    throw new Error('Log not found or not visible');
+  }
+
   return viewer;
+};
+
+export const getVisibleLog = async (ctx: McpContext, logId: string) => {
+  const viewer = await requireVisibleLog(ctx, logId);
+  const log = viewer.visibleLogs.find((log) => log.id === logId);
+  if (!log?.teamId) throw new Error('Log not found or not visible');
+  return { log: { id: log.id, name: log.name, teamId: log.teamId }, viewer };
 };

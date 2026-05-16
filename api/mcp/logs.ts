@@ -11,6 +11,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 
 const logsActionSchema = z.enum(['list', 'get', 'create']);
+const LOG_RECORD_PREVIEW_LIMIT = 25;
 
 const recordSummaryQuery = {
   files: recordQueries.countFileQuery,
@@ -55,15 +56,7 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
     );
   };
 
-  const getLog = async ({
-    limit = 25,
-    logId,
-    name,
-  }: {
-    limit?: number;
-    logId?: string;
-    name?: string;
-  }) => {
+  const getLog = async ({ logId, name }: { logId?: string; name?: string }) => {
     if (!logId && !name) throw new Error('logId or name is required');
     const viewer = await getViewer(ctx.db, ctx.props.userId);
     const normalizedName = name?.trim().toLowerCase();
@@ -91,7 +84,7 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
             'teamId' as const,
             'text' as const,
           ],
-          limit,
+          limit: LOG_RECORD_PREVIEW_LIMIT,
           order: { date: 'desc' },
           where: { isDraft: false, log: log.id },
         },
@@ -180,21 +173,20 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
       description: 'List, inspect, and create logs within teams.',
       inputSchema: {
         action: logsActionSchema,
-        limit: z.number().int().min(1).max(100).optional(),
         logId: z.string().min(1).optional(),
         name: z.string().trim().min(1).max(32).optional(),
         teamId: z.string().min(1).optional(),
       },
       outputSchema: mcpSchemas.logsOutputSchema,
     },
-    async ({ action, limit, logId, name, teamId }) => {
+    async ({ action, logId, name, teamId }) => {
       switch (action) {
         case 'list': {
           return listLogs();
         }
 
         case 'get': {
-          return getLog({ limit, logId, name });
+          return getLog({ logId, name });
         }
 
         case 'create': {

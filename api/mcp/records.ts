@@ -2,224 +2,23 @@ import * as mcpFields from '@/api/mcp/fields';
 import { replaceLinkTransactions } from '@/api/mcp/links';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
-import type { McpContext, McpLog, McpRecord } from '@/api/mcp/types';
-import { getViewer, requireVisibleLog } from '@/api/mcp/viewer';
-import { notificationRecipientLogQuery } from '@/api/push/query';
+import type { McpContext, McpRecord } from '@/api/mcp/types';
+import { getVisibleLog, requireVisibleLog } from '@/api/mcp/viewer';
 import * as push from '@/api/push/web-push';
-import { visibleFileQuery } from '@/domain/files/query';
 import * as recordIdentity from '@/domain/records/identity-fields';
 import * as recordPublish from '@/domain/records/publish';
-import * as recordQueries from '@/domain/records/query';
-import { recordTagsQuery } from '@/domain/tags/query';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-
-const recordQuery = {
-  author: { image: {}, user: {} },
-  files: visibleFileQuery,
-  links: {},
-  log: { team: { $: { fields: ['id' as const] } } },
-  reactions: { author: {} },
-  tags: recordTagsQuery,
-  replies: {
-    $: { order: { date: 'asc' as const }, where: { isDraft: { $not: true } } },
-    author: { image: {} },
-    files: visibleFileQuery,
-    links: {},
-    reactions: { author: {} },
-  },
-};
-
-const recordSummaryQuery = {
-  files: recordQueries.countFileQuery,
-  links: recordQueries.countLinkQuery,
-  log: { $: { fields: ['id' as const, 'name' as const] } },
-  reactions: recordQueries.countReactionQuery,
-  replies: {
-    $: {
-      fields: ['id' as const, 'isDraft' as const],
-      where: { isDraft: { $not: true } },
-    },
-  },
-  tags: recordTagsQuery,
-};
-
-const recordPublishQuery = {
-  ...recordQuery,
-  log: { $: { fields: ['id' as const, 'name' as const, 'teamId' as const] } },
-};
+import * as content from '@/api/mcp/content';
+import * as contentQueries from '@/api/mcp/content-queries';
 
 const recordsActionSchema = z.enum(['list', 'get', 'save', 'update']);
-type RecordInclude = z.infer<typeof mcpSchemas.recordIncludeSchema>;
-
-const recordIdFromUrl = (recordUrl?: string) => {
-  if (!recordUrl) return undefined;
-
-  try {
-    const url = new URL(recordUrl);
-    const [, resource, recordId] = url.pathname.split('/');
-
-    return resource === 'records' && recordId
-      ? decodeURIComponent(recordId)
-      : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-const recordDetailQuery = ({
-  include,
-  replyLimit,
-}: {
-  include: Set<RecordInclude>;
-  replyLimit: number;
-}) => {
-  const includeFiles = include.has('files');
-  const includeLinks = include.has('links');
-
-  return {
-    author: recordQueries.summaryProfileQuery,
-    files: includeFiles ? visibleFileQuery : recordQueries.countFileQuery,
-    links: includeLinks ? {} : recordQueries.countLinkQuery,
-    log: { $: { fields: ['id' as const, 'name' as const] } },
-    reactions: recordQueries.countReactionQuery,
-    replies: {
-      $: {
-        fields: [
-          'date' as const,
-          'id' as const,
-          'isDraft' as const,
-          'text' as const,
-        ],
-        limit: replyLimit,
-        order: { date: 'asc' as const },
-        where: { isDraft: { $not: true } },
-      },
-      author: recordQueries.summaryProfileQuery,
-      files: includeFiles ? visibleFileQuery : recordQueries.countFileQuery,
-      links: includeLinks ? {} : recordQueries.countLinkQuery,
-      reactions: recordQueries.countReactionQuery,
-    },
-    tags: recordTagsQuery,
-  };
-};
-
-const getPublishedReplyCount = async (ctx: McpContext, recordId: string) => {
-  const { replies } = (await ctx.db.query({
-    replies: {
-      $: {
-        fields: ['id' as const],
-        where: { isDraft: { $not: true }, record: recordId },
-      },
-    },
-  })) as { replies?: { id: string }[] };
-
-  return replies?.length ?? 0;
-};
 
 const draftRecordError = () =>
   new Error(
     'Draft record not found. For published records, use action: update.'
   );
-
-export const getVisibleRecord = async (
-  ctx: McpContext,
-  recordId: string,
-  { query }: { query?: object } = {}
-) => {
-  const queryShape = query ?? recordQuery;
-
-  const [{ records }, viewer] = await Promise.all([
-    ctx.db.query({
-      records: {
-        $: { where: { id: recordId, isDraft: false } },
-        ...(queryShape as typeof recordQuery),
-      },
-    }) as Promise<{ records?: McpRecord[] }>,
-    getViewer(ctx.db, ctx.props.userId),
-  ]);
-
-  const record = records?.[0];
-  if (!record?.log?.id) throw new Error('Record not found or not visible');
-  return { record, viewer };
-};
-
-export const getCallerDraftRecord = async (
-  ctx: McpContext,
-  recordId: string,
-  { query }: { query?: object } = {}
-) => {
-  const queryShape = query ?? recordQuery;
-
-  const [{ records }, viewer] = await Promise.all([
-    ctx.db.query({
-      records: {
-        $: { where: { id: recordId, isDraft: true } },
-        ...(queryShape as typeof recordQuery),
-      },
-    }) as Promise<{ records?: McpRecord[] }>,
-    getViewer(ctx.db, ctx.props.userId),
-  ]);
-
-  const record = records?.[0];
-
-  if (
-    !record?.log?.id ||
-    !viewer.profile?.id ||
-    record.author?.id !== viewer.profile.id
-  ) {
-    throw new Error('Draft record not found or not visible');
-  }
-
-  return { record, viewer };
-};
-
-export const getReadableRecord = async (
-  ctx: McpContext,
-  recordId: string,
-  { query }: { query?: object } = {}
-) => {
-  const queryShape = query ?? recordQuery;
-
-  const [{ records }, viewer] = await Promise.all([
-    ctx.db.query({
-      records: {
-        $: { where: { id: recordId } },
-        ...(queryShape as typeof recordQuery),
-      },
-    }) as Promise<{ records?: McpRecord[] }>,
-    getViewer(ctx.db, ctx.props.userId),
-  ]);
-
-  const record = records?.[0];
-  if (!record?.log?.id) throw new Error('Record not found or not visible');
-
-  if (
-    record.isDraft &&
-    (!viewer.profile?.id || record.author?.id !== viewer.profile.id)
-  ) {
-    throw new Error('Record not found or not visible');
-  }
-
-  return { record, viewer };
-};
-
-export const getNotificationLog = async (ctx: McpContext, logId: string) => {
-  const { logs } = (await ctx.notificationDb.query({
-    logs: {
-      $: {
-        fields: ['id' as const, 'name' as const, 'teamId' as const],
-        where: { id: logId },
-      },
-      ...notificationRecipientLogQuery,
-    },
-  })) as { logs?: McpLog[] };
-
-  const log = logs?.[0];
-  if (!log?.id) throw new Error('Notification log not found');
-  return log;
-};
 
 export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   const fieldOptions = { appUrl: ctx.env.APP_URL };
@@ -259,7 +58,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
                 })
               : recordIdentity.getPublishedLogRecordWhere(logId),
         },
-        ...recordSummaryQuery,
+        ...contentQueries.recordSummaryQuery,
       },
     })) as unknown as { records?: McpRecord[] };
 
@@ -287,37 +86,30 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     recordId,
     recordUrl,
     replyLimit = 25,
-    status,
   }: {
-    include?: RecordInclude[];
+    include?: contentQueries.RecordInclude[];
     recordId?: string;
     recordUrl?: string;
     replyLimit?: number;
-    status?: 'draft' | 'published';
   }) => {
-    const resolvedRecordId = recordId ?? recordIdFromUrl(recordUrl);
+    const resolvedRecordId = recordId ?? content.recordIdFromUrl(recordUrl);
 
     if (!resolvedRecordId) {
       throw new Error('recordId or recordUrl is required to get a record');
     }
 
     const includeSet = new Set(include);
-    const detailQuery = recordDetailQuery({ include: includeSet, replyLimit });
 
-    const { record } =
-      status === 'draft'
-        ? await getCallerDraftRecord(ctx, resolvedRecordId, {
-            query: detailQuery,
-          })
-        : status === 'published'
-          ? await getVisibleRecord(ctx, resolvedRecordId, {
-              query: detailQuery,
-            })
-          : await getReadableRecord(ctx, resolvedRecordId, {
-              query: detailQuery,
-            });
+    const detailQuery = contentQueries.recordDetailQuery({
+      include: includeSet,
+      replyLimit,
+    });
 
-    const replyCount = await getPublishedReplyCount(ctx, record.id);
+    const { record } = await content.getReadableRecord(ctx, resolvedRecordId, {
+      query: detailQuery,
+    });
+
+    const replyCount = await content.getPublishedReplyCount(ctx, record.id);
 
     const detailFieldOptions = {
       ...fieldOptions,
@@ -396,11 +188,11 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   }) => {
     if (mode === 'draft') {
       if (recordId) {
-        const { record } = await getCallerDraftRecord(ctx, recordId).catch(
-          () => {
+        const { record } = await content
+          .getCallerDraftRecord(ctx, recordId)
+          .catch(() => {
             throw draftRecordError();
-          }
-        );
+          });
 
         if (!record.teamId) throw new Error('Invalid record draft');
 
@@ -429,16 +221,9 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
       }
 
       if (!logId) throw new Error('logId is required to create a draft');
-      const viewer = await requireVisibleLog(ctx, logId);
+      const { log, viewer } = await getVisibleLog(ctx, logId);
       const profile = viewer.profile;
       if (!profile?.id) throw new Error('Profile not found');
-
-      const { logs } = (await ctx.db.query({
-        logs: { $: { where: { id: logId } } },
-      })) as { logs?: McpLog[] };
-
-      const log = logs?.[0];
-      if (!log?.teamId) throw new Error('Invalid log');
       const teamId = log.teamId;
 
       const { records } = (await ctx.db.query({
@@ -489,17 +274,22 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     }
 
     if (recordId) {
-      const { record } = await getCallerDraftRecord(ctx, recordId, {
-        query: recordPublishQuery,
-      }).catch(() => {
-        throw draftRecordError();
-      });
+      const { record } = await content
+        .getCallerDraftRecord(ctx, recordId, {
+          query: contentQueries.recordPublishQuery,
+        })
+        .catch(() => {
+          throw draftRecordError();
+        });
 
       const nextText = (text ?? record.text ?? '').trim();
       const nextLinks = links ?? record.links ?? [];
 
-      const hasContent =
-        !!nextText || !!record.files?.length || nextLinks.length > 0;
+      const hasContent = content.hasLinkedContent({
+        files: record.files,
+        links: nextLinks,
+        text: nextText,
+      });
 
       if (
         !hasContent ||
@@ -512,7 +302,11 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         throw new Error('Invalid record draft');
       }
 
-      const notificationLog = await getNotificationLog(ctx, record.log.id);
+      const notificationLog = await content.getNotificationLog(
+        ctx,
+        record.log.id
+      );
+
       const now = new Date().toISOString();
 
       await ctx.db.transact([
@@ -564,14 +358,14 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     const nextLinks = links ?? [];
     const trimmedText = (text ?? '').trim();
 
-    if (!trimmedText && nextLinks.length === 0) {
+    if (!content.hasLinkedContent({ links: nextLinks, text: trimmedText })) {
       throw new Error('Record content cannot be empty');
     }
 
     const viewer = await requireVisibleLog(ctx, logId);
     const profile = viewer.profile;
     if (!profile?.id) throw new Error('Profile not found');
-    const log = await getNotificationLog(ctx, logId);
+    const log = await content.getNotificationLog(ctx, logId);
     if (!log?.teamId) throw new Error('Invalid log');
     const teamId = log.teamId;
     const newRecordId = id();
@@ -630,7 +424,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     recordUrl?: string;
     text?: string;
   }) => {
-    const resolvedRecordId = recordId ?? recordIdFromUrl(recordUrl);
+    const resolvedRecordId = recordId ?? content.recordIdFromUrl(recordUrl);
 
     if (!resolvedRecordId) {
       throw new Error('recordId or recordUrl is required to update a record');
@@ -640,8 +434,8 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('text or links is required to update a record');
     }
 
-    const { record } = await getVisibleRecord(ctx, resolvedRecordId, {
-      query: recordPublishQuery,
+    const { record } = await content.getVisibleRecord(ctx, resolvedRecordId, {
+      query: contentQueries.recordPublishQuery,
     });
 
     if (record.author?.user?.id !== ctx.props.userId) {
@@ -652,8 +446,11 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     const nextText = text === undefined ? (record.text ?? '') : text.trim();
     const nextLinks = links ?? record.links ?? [];
 
-    const hasContent =
-      !!nextText || !!record.files?.length || nextLinks.length > 0;
+    const hasContent = content.hasLinkedContent({
+      files: record.files,
+      links: nextLinks,
+      text: nextText,
+    });
 
     if (!hasContent) throw new Error('Record content cannot be empty');
 
@@ -720,13 +517,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         }
 
         case 'get': {
-          return getRecord({
-            include,
-            recordId,
-            recordUrl,
-            replyLimit,
-            status,
-          });
+          return getRecord({ include, recordId, recordUrl, replyLimit });
         }
 
         case 'save': {

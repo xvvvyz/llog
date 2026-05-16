@@ -1,12 +1,12 @@
 import { registerAccountTool } from '@/api/mcp/account';
-import { registerActionTools } from '@/api/mcp/actions';
 import { MCP_SERVER_INSTRUCTIONS } from '@/api/mcp/instructions';
 import { registerLogTools } from '@/api/mcp/logs';
+import { registerActionTools } from '@/api/mcp/record-actions';
+import { registerTagTools } from '@/api/mcp/record-tags';
 import { registerRecordTools } from '@/api/mcp/records';
 import { registerReplyTools } from '@/api/mcp/replies';
 import { registerResources } from '@/api/mcp/resources';
 import { registerSearchTool } from '@/api/mcp/search';
-import { registerTagTools } from '@/api/mcp/tags';
 import { registerTemplateTools } from '@/api/mcp/templates';
 import type { McpContext, OAuthProps } from '@/api/mcp/types';
 import { createAdminDb } from '@/api/middleware/db';
