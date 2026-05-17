@@ -300,20 +300,7 @@ export const useFileUploadPreviewState = ({
                 void outboxSyncCore.runOutboxSync();
               })
               .catch(() => {
-                if (!deferQueuedUploads) {
-                  void uploadQueuedAttachment(attachment, asset);
-                  return;
-                }
-
-                void outbox.removeQueuedAttachment(fileId);
-
-                setOptimisticUploads((current) =>
-                  current.filter((item) => item.id !== fileId)
-                );
-
-                removeLocalPreviewUri(fileId);
-                clearFocusedAudioId(fileId);
-                // noop
+                void uploadQueuedAttachment(attachment, asset);
               });
 
             if (attachment.status !== 'persisting' && !deferQueuedUploads) {
