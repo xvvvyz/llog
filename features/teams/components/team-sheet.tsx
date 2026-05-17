@@ -105,7 +105,7 @@ export const TeamSheet = () => {
   }, [teamId]);
 
   const getOrCreateAdminLink = React.useCallback(async () => {
-    const existing = invites.find((l) => l.role === Role.Admin);
+    const existing = invites.find((l) => l.role === Role.Admin && l.key);
     if (existing) return existing;
     if (!teamId) return null;
     const invite = await createInviteLink({ teamId, role: Role.Admin });

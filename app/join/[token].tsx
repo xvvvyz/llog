@@ -1,5 +1,6 @@
 import type { InviteLinkInfo } from '@/domain/invites/invite-link';
 import { getSignInHref } from '@/features/account/lib/auth-redirect';
+import { getInviteLinkInfo } from '@/features/invites/lib/invite-link';
 import * as storage from '@/features/invites/lib/storage';
 import { redeemInviteLink } from '@/features/invites/mutations/redeem-link';
 import { getLogHref } from '@/features/records/lib/route';
@@ -45,11 +46,7 @@ export default function InviteLink() {
 
     void (async () => {
       try {
-        const response = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/teams/invite-links/${token}`
-        );
-
-        const data = await response.json();
+        const data = await getInviteLinkInfo(token);
         if (!cancelled) setLinkInfo(data);
       } catch {
         if (!cancelled) setLinkInfo({ isValid: false });

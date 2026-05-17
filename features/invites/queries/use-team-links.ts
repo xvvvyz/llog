@@ -10,7 +10,16 @@ export const useTeamInvites = ({ teamId }: { teamId?: string | null } = {}) => {
     resolvedTeamId
       ? {
           invites: {
-            $: { where: { team: resolvedTeamId } },
+            $: {
+              fields: [
+                'id' as const,
+                'key' as const,
+                'role' as const,
+                'teamId' as const,
+                'token' as const,
+              ],
+              where: { team: resolvedTeamId },
+            },
             creator: {},
             logs: { $: { fields: ['id'] } },
           },

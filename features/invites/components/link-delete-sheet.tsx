@@ -27,7 +27,7 @@ export const InviteLinkDeleteSheet = () => {
     setIsLoading(true);
 
     try {
-      await deleteInviteLink({ id: payload.inviteId, teamId: payload.teamId });
+      await deleteInviteLink({ id: payload.inviteId });
       sheetManager.close('invite-link-delete');
       sheetManager.close('invite');
     } catch {

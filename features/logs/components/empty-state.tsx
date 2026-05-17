@@ -40,6 +40,7 @@ export const EmptyState = ({
 
   const getOrCreateLink = React.useCallback(async () => {
     const existing = invites.find((link) => {
+      if (!link.key) return false;
       if (link.role !== Role.Member) return false;
       const logIds = link.logs?.map((l) => l.id) ?? [];
       return logIds.length === 1 && logIds[0] === logId;

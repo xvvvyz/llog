@@ -7,7 +7,7 @@ import { describe, expect, test } from 'bun:test';
 
 type Invite = InstaQLEntity<typeof schema, 'invites'>;
 
-type TestInvite = Pick<Invite, 'id' | 'role'> & {
+type TestInvite = Pick<Invite, 'id' | 'key' | 'role'> & {
   logs?: Pick<Log, 'id'>[] | null;
 };
 
@@ -16,11 +16,13 @@ describe('findMemberInviteByLogs', () => {
     const invites: TestInvite[] = [
       {
         id: 'admin-invite',
+        key: 'admin-key',
         logs: [{ id: 'log-b' }, { id: 'log-a' }],
         role: 'admin',
       },
       {
         id: 'member-invite',
+        key: 'member-key',
         logs: [{ id: 'log-b' }, { id: 'log-a' }],
         role: Role.Member,
       },
@@ -35,9 +37,15 @@ describe('findMemberInviteByLogs', () => {
 
   test('requires exact logs', () => {
     const invites: TestInvite[] = [
-      { id: 'missing-log', logs: [{ id: 'log-a' }], role: Role.Member },
+      {
+        id: 'missing-log',
+        key: 'missing-key',
+        logs: [{ id: 'log-a' }],
+        role: Role.Member,
+      },
       {
         id: 'extra-log',
+        key: 'extra-key',
         logs: [{ id: 'log-a' }, { id: 'log-b' }, { id: 'log-c' }],
         role: Role.Member,
       },
@@ -48,11 +56,24 @@ describe('findMemberInviteByLogs', () => {
 
   test('handles empty logs', () => {
     const invites: TestInvite[] = [
-      { id: 'empty-null', logs: null, role: Role.Member },
-      { id: 'empty-missing', role: Role.Member },
+      {
+        id: 'empty-null',
+        key: 'empty-null-key',
+        logs: null,
+        role: Role.Member,
+      },
+      { id: 'empty-missing', key: 'empty-missing-key', role: Role.Member },
     ];
 
     expect(findMemberInviteByLogs(invites, [])?.id).toBe('empty-null');
+    expect(findMemberInviteByLogs(invites, ['log-a'])).toBeUndefined();
+  });
+
+  test('ignores keyless invites', () => {
+    const invites: TestInvite[] = [
+      { id: 'old-invite', logs: [{ id: 'log-a' }], role: Role.Member },
+    ];
+
     expect(findMemberInviteByLogs(invites, ['log-a'])).toBeUndefined();
   });
 });

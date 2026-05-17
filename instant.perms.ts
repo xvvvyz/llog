@@ -23,7 +23,7 @@ const rules = {
       'hasReaction',
       "size(data.ref('reaction.id')) > 0",
       'isReactionAuthor',
-      "data.ref('reaction.author.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('reaction.author.user.id')",
       'isReactionRecordAuthor',
       "auth.id in data.ref('reaction.record.author.user.id')",
       'isReactionReplyAuthor',
@@ -74,9 +74,17 @@ const rules = {
     },
   },
   $users: {
-    bind: ['isTeammate', "data.id in data.ref('ui.team.roles.user.id')"],
+    bind: [
+      'isTeammate',
+      "data.id in data.ref('ui.team.roles.user.id')",
+      'hasInviteTokenAccess',
+      ruleStrings.or(
+        "ruleParams.inviteToken in data.ref('roles.team.invites.token')",
+        "ruleParams.inviteToken in data.ref('profile.logs.invites.token')"
+      ),
+    ],
     allow: {
-      view: 'auth.id == data.id || isTeammate',
+      view: 'auth.id == data.id || isTeammate || hasInviteTokenAccess',
       create: 'true',
       delete: 'false',
       update: 'false',
@@ -88,9 +96,9 @@ const rules = {
       'isValidNewText',
       'newData.text == null || size(newData.text) <= 10240',
       'isAuthor',
-      "data.ref('author.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('author.user.id')",
       'isRecordAuthor',
-      "data.ref('record.author.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('record.author.user.id')",
       'onlyModifiesText',
       "request.modifiedFields.all(field, field in ['text'])",
       'onlyPublishesDraft',
@@ -137,9 +145,9 @@ const rules = {
       ),
       delete: 'canDeleteOwn || canDeleteFromOwnRecord || canManage',
       link: {
-        links: 'auth.id != null',
-        reactions: 'auth.id != null',
-        activities: 'auth.id != null',
+        links: 'isTeamMember && (isAuthor || canManage || isLogMember)',
+        reactions: 'isTeamMember && (isAuthor || canManage || isLogMember)',
+        activities: 'isTeamMember && (isAuthor || canManage || isLogMember)',
       },
     },
   },
@@ -160,8 +168,6 @@ const rules = {
       "request.modifiedFields.all(field, field in ['name'])",
       'onlyModifiesFileOrder',
       "request.modifiedFields.all(field, field in ['order'])",
-      'isProfileOwner',
-      "auth.id in data.ref('profile.user.id')",
       'isTeamImageManager',
       ruleStrings.canManageFor('team.id'),
       'isTeamMember',
@@ -192,17 +198,24 @@ const rules = {
       'isReplyTeamMember && (canManageReply || isReplyLogMember)',
       'isTeammate',
       "auth.id in data.ref('profile.user.roles.team.roles.user.id')",
+      'hasInviteTokenProfileAccess',
+      ruleStrings.or(
+        "ruleParams.inviteToken in data.ref('profile.user.roles.team.invites.token')",
+        "ruleParams.inviteToken in data.ref('profile.logs.invites.token')"
+      ),
     ],
     allow: {
       view: ruleStrings.or(
-        'isProfileOwner',
+        "auth.id in data.ref('profile.user.id')",
         'isTeammate',
         'isTeamMember',
         'canViewRecordFiles',
         'canViewReplyFiles',
-        'isLoglessDraftRecordFile'
+        'isLoglessDraftRecordFile',
+        'hasInviteTokenProfileAccess'
       ),
-      create: 'hasOneLink && (isProfileOwner || isTeamImageManager)',
+      create:
+        "hasOneLink && (auth.id in data.ref('profile.user.id') || isTeamImageManager)",
       update: ruleStrings.and(
         'hasOneLink',
         ruleStrings.group(
@@ -232,7 +245,7 @@ const rules = {
         )
       ),
       delete: ruleStrings.or(
-        'isProfileOwner',
+        "auth.id in data.ref('profile.user.id')",
         'isTeamImageManager',
         ruleStrings.group(
           ruleStrings.and('isRecordAuthor', 'isRecordTeamMember')
@@ -251,6 +264,32 @@ const rules = {
   },
   invites: {
     bind: [
+      'hasInviteToken',
+      'data.token == ruleParams.inviteToken',
+      'isValidToken',
+      'newData.token != null && size(newData.token) > 0 && size(newData.token) <= 64',
+      'isValidRole',
+      `newData.role in ['${Role.Admin}', '${Role.Member}']`,
+      'isValidTeamId',
+      "newData.teamId in data.ref('team.id')",
+      'isValidKey',
+      "newData.key == newData.token + '_' + newData.role + '_' + newData.teamId",
+      'isCreator',
+      "auth.id in data.ref('creator.user.id')",
+      'logsBelongToTeam',
+      "data.ref('logs.teamId').all(teamId, teamId == data.teamId)",
+      'isValidLogScope',
+      ruleStrings.or(
+        ruleStrings.and(
+          `newData.role == '${Role.Admin}'`,
+          "size(data.ref('logs.id')) == 0"
+        ),
+        ruleStrings.and(
+          `newData.role == '${Role.Member}'`,
+          "size(data.ref('logs.id')) > 0",
+          'logsBelongToTeam'
+        )
+      ),
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'isTeamOwner',
@@ -261,10 +300,19 @@ const rules = {
       'isTeamOwner || isTeamAdmin',
     ],
     allow: {
-      view: 'isTeamMember',
-      create: 'false',
+      view: 'isTeamMember || hasInviteToken',
+      create:
+        'canManage && isCreator && isValidToken && isValidRole && isValidTeamId && isValidKey && isValidLogScope',
       update: 'false',
       delete: 'canManage',
+      link: {
+        creator: ruleStrings.canManageAuthTeam('data.teamId'),
+        logs: ruleStrings.and(
+          ruleStrings.canManageAuthTeam('data.teamId'),
+          'isValidLogScope'
+        ),
+        team: ruleStrings.canManageAuthTeam('data.teamId'),
+      },
     },
   },
   links: {
@@ -495,15 +543,29 @@ const rules = {
       "auth.id in data.ref('team.roles.user.id')",
       'isLogMember',
       "auth.id in data.ref('profiles.user.id')",
+      'hasInviteToken',
+      "ruleParams.inviteToken in data.ref('invites.token')",
+      'isLinkedProfileOwner',
+      'linkedData.user == auth.id',
       'canManage',
       ruleStrings.canManageCurrentTeam,
     ],
     allow: {
-      view: 'isTeamMember && (canManage || isLogMember)',
+      view: 'hasInviteToken || (isTeamMember && (canManage || isLogMember))',
       create: 'canManage && isValidName',
       update: 'canManage && isValidName',
       delete: 'canManage',
-      link: { records: 'auth.id != null', activities: 'auth.id != null' },
+      link: {
+        activities: 'isTeamMember && (canManage || isLogMember)',
+        invites: 'auth.id != null',
+        profiles: ruleStrings.or(
+          'canManage',
+          ruleStrings.group(
+            ruleStrings.and('hasInviteToken', 'isLinkedProfileOwner')
+          )
+        ),
+        records: 'isTeamMember && (canManage || isLogMember)',
+      },
     },
   },
   profiles: {
@@ -512,10 +574,13 @@ const rules = {
       'newData.name == null || size(newData.name) <= 32',
       'isAuthenticated',
       'auth.id != null',
-      'isProfileOwner',
-      "data.ref('user.id') == auth.ref('$user.id')",
       'hasSharedLogAccess',
       "auth.id != null && auth.id in data.ref('logs.profiles.user.id')",
+      'hasInviteTokenAccess',
+      ruleStrings.or(
+        "ruleParams.inviteToken in data.ref('user.roles.team.invites.token')",
+        "ruleParams.inviteToken in data.ref('logs.invites.token')"
+      ),
       'hasManagedTeamOwnerAccess',
       ruleStrings.isOwnerFor('user.roles.team.id'),
       'hasManagedTeamAdminAccess',
@@ -524,20 +589,21 @@ const rules = {
       'hasManagedTeamOwnerAccess || hasManagedTeamAdminAccess',
     ],
     allow: {
-      view: 'isProfileOwner || hasSharedLogAccess || hasManagedTeamAccess',
+      view: "auth.id in data.ref('user.id') || hasSharedLogAccess || hasManagedTeamAccess || hasInviteTokenAccess",
       create: 'isAuthenticated && isValidName',
-      update: 'isProfileOwner && isValidName',
-      delete: 'isProfileOwner',
+      update: "auth.id in data.ref('user.id') && isValidName",
+      delete: "auth.id in data.ref('user.id')",
       link: {
         records: 'auth.id != null',
         replies: 'auth.id != null',
         reactions: 'auth.id != null',
         actorActivities: 'auth.id != null',
+        invites: 'auth.id != null',
       },
     },
   },
   subscriptions: {
-    bind: ['isOwner', "data.ref('user.id') == auth.ref('$user.id')"],
+    bind: ['isOwner', "auth.id in data.ref('user.id')"],
     allow: {
       view: 'isOwner',
       create: 'isOwner',
@@ -548,7 +614,7 @@ const rules = {
   reactions: {
     bind: [
       'isAuthor',
-      "data.ref('author.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('author.user.id')",
       'isRecordAuthor',
       "auth.id in data.ref('record.author.user.id')",
       'isReplyAuthor',
@@ -596,7 +662,7 @@ const rules = {
       'isValidNewText',
       'newData.text == null || size(newData.text) <= 10240',
       'isAuthor',
-      "data.ref('author.user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('author.user.id')",
       'onlyModifiesText',
       "request.modifiedFields.all(field, field in ['text'])",
       'onlyModifiesTextAndTags',
@@ -709,10 +775,14 @@ const rules = {
       ),
       delete: 'canDeleteOwn || canManage || isAuthorOwnedLoglessDraft',
       link: {
-        links: 'auth.id != null',
-        replies: 'auth.id != null',
-        reactions: 'auth.id != null',
-        activities: 'auth.id != null',
+        links:
+          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
+        replies:
+          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
+        reactions:
+          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
+        activities:
+          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
         tags: ruleStrings.and(
           'canManageRecordTags',
           'hasOnlyRecordTags',
@@ -733,22 +803,34 @@ const rules = {
       "newData.teamId in data.ref('team.id')",
       'isValidKey',
       "newData.key == newData.role + '_' + newData.userId + '_' + newData.teamId",
+      'hasInviteKey',
+      "ruleParams.inviteToken + '_' + newData.role + '_' + newData.teamId in data.ref('team.invites.key')",
       'isFirstRole',
       "size(data.ref('team.roles.id')) == 1",
       'isRoleOwner',
-      "data.ref('user.id') == auth.ref('$user.id')",
+      "auth.id in data.ref('user.id')",
       'isTeamMember',
       "auth.id in data.ref('team.roles.user.id')",
       'isTeamAdmin',
       ruleStrings.isAdmin,
       'isTeamOwner',
       ruleStrings.isOwner,
+      'hasInviteTokenPreviewAccess',
+      ruleStrings.and(
+        "ruleParams.inviteToken in data.ref('team.invites.token')",
+        `data.role in ['${Role.Owner}', '${Role.Admin}']`
+      ),
     ],
     allow: {
-      view: 'isTeamMember',
+      view: 'isTeamMember || hasInviteTokenPreviewAccess',
       create: ruleStrings.and(
         ruleStrings.group(
-          ruleStrings.or('isFirstRole', 'isTeamOwner', 'isTeamAdmin')
+          ruleStrings.or(
+            'isFirstRole',
+            'isTeamOwner',
+            'isTeamAdmin',
+            ruleStrings.group(ruleStrings.and('isRoleOwner', 'hasInviteKey'))
+          )
         ),
         'isValidRole',
         'isValidUserId',
@@ -759,6 +841,14 @@ const rules = {
         ruleStrings.group(
           ruleStrings.or(
             'isTeamOwner',
+            ruleStrings.group(
+              ruleStrings.and(
+                'isRoleOwner',
+                'hasInviteKey',
+                `data.role == '${Role.Member}'`,
+                `newData.role == '${Role.Admin}'`
+              )
+            ),
             ruleStrings.group(
               ruleStrings.and(
                 'isTeamAdmin',
@@ -807,16 +897,21 @@ const rules = {
       'isTeamOwner || isTeamAdmin',
       'hasTeamId',
       'data.id == ruleParams.teamId',
+      'hasInviteToken',
+      "ruleParams.inviteToken in data.ref('invites.token')",
+      'onlyModifiesRoles',
+      "request.modifiedFields.all(field, field in ['roles'])",
     ],
     allow: {
-      view: 'isTeamMember || hasTeamId',
+      view: 'isTeamMember || hasTeamId || hasInviteToken',
       create: 'isAuthenticated && isValidName',
-      update: 'canManage && isValidName',
+      update:
+        'canManage && isValidName || (isAuthenticated && hasInviteToken && onlyModifiesRoles)',
       delete: 'isTeamOwner',
-      link: { activities: 'auth.id != null' },
+      link: { activities: 'isTeamMember', invites: 'auth.id != null' },
     },
   },
-  ui: { allow: { $default: "data.ref('user.id') == auth.ref('$user.id')" } },
+  ui: { allow: { $default: "auth.id in data.ref('user.id')" } },
 } satisfies InstantRules;
 
 export default rules;

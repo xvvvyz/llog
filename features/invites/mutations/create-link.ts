@@ -1,4 +1,8 @@
-import { api } from '@/lib/api';
+import { getProfile } from '@/features/account/queries/get-profile';
+import { db } from '@/lib/db';
+import { id } from '@instantdb/react-native';
+import { nanoid } from 'nanoid';
+import * as inviteLink from '@/features/invites/lib/invite-link';
 
 export const createInviteLink = async ({
   teamId,
@@ -9,23 +13,22 @@ export const createInviteLink = async ({
   role: string;
   logIds?: string[];
 }) => {
-  const res = await api(`/teams/${teamId}/invite-links`, {
-    body: JSON.stringify({ role, logIds }),
-    headers: { 'Content-Type': 'application/json' },
-    method: 'POST',
-  });
+  const creator = await getProfile();
+  if (!creator?.id) throw new Error('Profile not found');
+  const token = nanoid(8);
+  const inviteId = id();
+  const normalizedLogIds = inviteLink.normalizeInviteLogIds(logIds);
+  const key = inviteLink.getInviteKey({ role, teamId, token });
 
-  if (!res?.ok) {
-    let body: { message?: string } | null = null;
+  await db.transact(
+    db.tx.invites[inviteId]
+      .update({ key, role, teamId, token })
+      .link({
+        creator: creator.id,
+        team: teamId,
+        ...(normalizedLogIds.length ? { logs: normalizedLogIds } : {}),
+      })
+  );
 
-    try {
-      body = await res?.json();
-    } catch {
-      body = null;
-    }
-
-    throw new Error(body?.message ?? 'Failed to create invite link');
-  }
-
-  return (await res.json()) as { id: string; token: string };
+  return { id: inviteId, key, token };
 };
