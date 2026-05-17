@@ -6,6 +6,7 @@ import * as outboxStore from '@/features/offline/outbox-store';
 import { CompactEntry } from '@/features/records/components/compact-entry';
 import { EntryCard } from '@/features/records/components/entry-card';
 import { useEntryMenuState } from '@/features/records/components/entry-menu';
+import { resolveEntryMenuState } from '@/features/records/lib/entry-menu-state';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { toggleReaction } from '@/features/records/mutations/toggle-reaction';
 import type * as EntryTypes from '@/features/records/types/entry';
@@ -77,51 +78,17 @@ export const Entry = ({
   });
 
   const entryMenuState = React.useMemo(() => {
-    const canDelete = canManageLocalPendingEntry
-      ? true
-      : isLocalPending
-        ? rawEntryMenuState.canDelete
-        : rawEntryMenuState.canDelete;
-
-    const canDuplicate = rawEntryMenuState.canDuplicate;
-    const canEdit = isLocalPending ? true : rawEntryMenuState.canEdit;
-    const canPin = rawEntryMenuState.canPin;
-    const canShare = rawEntryMenuState.canShare;
-    const canTag = isLocalPending && !replyId ? true : rawEntryMenuState.canTag;
-    const hasActionsAboveDelete = canEdit || canTag || canPin || canShare;
-
-    const hasMenu =
-      canDelete || canDuplicate || canEdit || canPin || canShare || canTag;
-
-    return {
-      ...rawEntryMenuState,
-      canDelete,
-      canDuplicate,
-      canEdit,
-      canPin,
-      canShare,
-      canTag,
-      hasActionsAboveDelete,
-      hasMenu,
-      isDeleteDisabled:
-        (isLocalPending && !canManageLocalPendingEntry) ||
-        (!canManageLocalPendingEntry && rawEntryMenuState.isDeleteDisabled),
-      isDuplicateDisabled:
-        isLocalPending || rawEntryMenuState.isDuplicateDisabled,
-      isEditDisabled:
-        isPublishingLocalSubmission ||
-        (!isLocalPending && rawEntryMenuState.isEditDisabled),
-      isPinDisabled:
-        isPublishingLocalSubmission || rawEntryMenuState.isPinDisabled,
-      isTagDisabled:
-        isPublishingLocalSubmission || rawEntryMenuState.isTagDisabled,
-    };
+    return resolveEntryMenuState({
+      canManageLocalPendingEntry,
+      isLocalPending,
+      isPublishingLocalSubmission,
+      rawState: rawEntryMenuState,
+    });
   }, [
     canManageLocalPendingEntry,
     isLocalPending,
     isPublishingLocalSubmission,
     rawEntryMenuState,
-    replyId,
   ]);
 
   const handleDoubleTapReaction = React.useCallback(() => {
