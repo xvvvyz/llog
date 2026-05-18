@@ -2,6 +2,7 @@ import { createLink } from '@/features/records/mutations/create-link';
 import { deleteLink } from '@/features/records/mutations/delete-link';
 import { replayRecordDraft } from '@/features/records/mutations/replay-record-draft';
 import { replayReplyDraft } from '@/features/records/mutations/replay-reply-draft';
+import * as queuedLinks from '@/features/offline/queued-links';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as outboxState from '@/features/offline/outbox-state';
 import type * as types from '@/features/offline/types';
@@ -266,7 +267,7 @@ export const replayQueuedSubmissionLinks = async (
         (linkId): linkId is string => !!linkId && !expectedLinkIds.has(linkId)
       ) ?? [];
 
-  for (const link of submission.links) {
+  for (const link of queuedLinks.getReplayableQueuedLinks(submission.links)) {
     const teamId = link.teamId || submission.teamId;
     if (!teamId) throw new Error('Queued link is missing a team.');
 
