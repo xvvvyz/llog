@@ -68,14 +68,29 @@ export const Textarea = React.forwardRef<
       [ref]
     );
 
+    const notifySelectionChange = React.useCallback(
+      (textarea: HTMLTextAreaElement) => {
+        onSelectionChange?.({
+          nativeEvent: {
+            selection: {
+              end: textarea.selectionEnd,
+              start: textarea.selectionStart,
+            },
+          },
+        });
+      },
+      [onSelectionChange]
+    );
+
     const handleChange = React.useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (readOnly || props.disabled) return;
         const text = e.target.value;
         setLocalValue(text);
         if (onChangeText) React.startTransition(() => onChangeText(text));
+        notifySelectionChange(e.target);
       },
-      [onChangeText, props.disabled, readOnly]
+      [notifySelectionChange, onChangeText, props.disabled, readOnly]
     );
 
     const handleTouchStart = React.useCallback(
@@ -114,18 +129,9 @@ export const Textarea = React.forwardRef<
     const handleSelect = React.useCallback(
       (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
         onSelect?.(event);
-        const textarea = event.currentTarget;
-
-        onSelectionChange?.({
-          nativeEvent: {
-            selection: {
-              end: textarea.selectionEnd,
-              start: textarea.selectionStart,
-            },
-          },
-        });
+        notifySelectionChange(event.currentTarget);
       },
-      [onSelect, onSelectionChange]
+      [notifySelectionChange, onSelect]
     );
 
     const applyTextEdit = React.useCallback(
@@ -142,10 +148,11 @@ export const Textarea = React.forwardRef<
 
         requestAnimationFrame(() => {
           textarea.setSelectionRange(selectionStart, selectionEnd);
+          notifySelectionChange(textarea);
           keepTextareaScrolledToBottom(textarea, scrollToBottom);
         });
       },
-      [onChangeText, props.disabled, readOnly]
+      [notifySelectionChange, onChangeText, props.disabled, readOnly]
     );
 
     const handleKeyDown = React.useCallback(

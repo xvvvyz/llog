@@ -84,6 +84,26 @@ describe('getMarkdownShortcutEdit', () => {
       text: 'skip\n1. one\n2. two\nskip',
     });
   });
+
+  test('starts lists on blanks', () => {
+    expect(
+      markdownShortcuts.getMarkdownShortcutEdit({
+        selectionEnd: 5,
+        selectionStart: 5,
+        shortcut: 'unordered-list',
+        text: 'one\n\n',
+      })
+    ).toEqual({ selectionEnd: 7, selectionStart: 7, text: 'one\n\n- ' });
+
+    expect(
+      markdownShortcuts.getMarkdownShortcutEdit({
+        selectionEnd: 5,
+        selectionStart: 5,
+        shortcut: 'ordered-list',
+        text: 'one\n\n',
+      })
+    ).toEqual({ selectionEnd: 8, selectionStart: 8, text: 'one\n\n1. ' });
+  });
 });
 
 describe('getMarkdownShortcutFromKeyEvent', () => {

@@ -31,12 +31,8 @@ type TextareaSelectionChangeEvent = {
   nativeEvent: { selection: TextSelection };
 };
 
-type ButtonTouchStartEvent = Parameters<
-  NonNullable<React.ComponentPropsWithoutRef<typeof Button>['onTouchStart']>
->[0];
-
-type WebPreventableTouchEvent = {
-  nativeEvent?: { preventDefault?: () => void };
+type WebPreventablePressStartEvent = {
+  nativeEvent?: { pointerType?: string; preventDefault?: () => void };
   preventDefault?: () => void;
 };
 
@@ -271,12 +267,21 @@ export const ComposerForm = ({
     [createTextareaTouchStartHandler]
   );
 
-  const handleMarkdownShortcutTouchStart = React.useCallback(
-    (event: ButtonTouchStartEvent) => {
+  const handleMarkdownShortcutPressStart = React.useCallback(
+    (event: unknown) => {
       readTextareaSelection('fullscreen');
-      // Mobile web can collapse textarea selection when a toolbar button is
-      // touched, so capture the DOM range before the eventual button press.
-      const preventableEvent = event as unknown as WebPreventableTouchEvent;
+      // Web can blur or collapse textarea selection when a toolbar button is
+      // pressed, so capture the DOM range before the eventual button press.
+      if (Platform.OS !== 'web') return;
+      const preventableEvent = event as WebPreventablePressStartEvent;
+
+      if (
+        preventableEvent.nativeEvent?.pointerType &&
+        preventableEvent.nativeEvent.pointerType !== 'mouse'
+      ) {
+        return;
+      }
+
       preventableEvent.preventDefault?.();
       preventableEvent.nativeEvent?.preventDefault?.();
     },
@@ -522,7 +527,8 @@ export const ComposerForm = ({
                       key={item.shortcut}
                       accessibilityLabel={item.accessibilityLabel}
                       disabled={isTextInputDisabled}
-                      onTouchStart={handleMarkdownShortcutTouchStart}
+                      onPointerDown={handleMarkdownShortcutPressStart}
+                      onTouchStart={handleMarkdownShortcutPressStart}
                       size="icon-xs"
                       variant="secondary"
                       onPress={() =>
