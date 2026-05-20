@@ -79,7 +79,6 @@ export const LogTagsSheet = () => {
 
   return (
     <Sheet
-      loading={isLoading}
       onDismiss={() => sheetManager.close('log-tags')}
       open={sheetManager.isOpen('log-tags')}
       portalName="log-tags"

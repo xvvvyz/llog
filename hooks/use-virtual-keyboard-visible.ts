@@ -45,6 +45,8 @@ export const useVirtualKeyboardVisible = (enabled: boolean) => {
           visualViewport?.width ?? window.innerWidth
         );
 
+        const layoutHeight = Math.round(window.innerHeight);
+        const baselineCandidate = Math.max(viewportHeight, layoutHeight);
         const textEntryFocused = isTextEntryFocused();
 
         if (
@@ -59,7 +61,7 @@ export const useVirtualKeyboardVisible = (enabled: boolean) => {
         if (!enabled || !textEntryFocused) {
           baselineHeightRef.current = Math.max(
             baselineHeightRef.current,
-            viewportHeight
+            baselineCandidate
           );
 
           setIsVisible(false);
@@ -67,39 +69,50 @@ export const useVirtualKeyboardVisible = (enabled: boolean) => {
         }
 
         if (!baselineHeightRef.current) {
-          baselineHeightRef.current = viewportHeight;
+          baselineHeightRef.current = baselineCandidate;
         }
 
+        const baselineHeight = Math.max(
+          baselineHeightRef.current,
+          layoutHeight
+        );
+
         const nextIsVisible =
-          baselineHeightRef.current - viewportHeight >=
-          VIRTUAL_KEYBOARD_MIN_HEIGHT;
+          baselineHeight - viewportHeight >= VIRTUAL_KEYBOARD_MIN_HEIGHT;
 
         if (!nextIsVisible) {
           baselineHeightRef.current = Math.max(
             baselineHeightRef.current,
-            viewportHeight
+            baselineCandidate
           );
         }
 
         setIsVisible(nextIsVisible);
       };
 
-      update();
+      const scheduleUpdate = () => {
+        update();
+        requestAnimationFrame(update);
+      };
+
+      scheduleUpdate();
       const visualViewport = window.visualViewport;
-      visualViewport?.addEventListener('resize', update);
-      visualViewport?.addEventListener('scroll', update);
-      window.addEventListener('resize', update);
-      window.addEventListener('orientationchange', update);
-      window.addEventListener('focusin', update);
-      window.addEventListener('focusout', update);
+      visualViewport?.addEventListener('resize', scheduleUpdate);
+      visualViewport?.addEventListener('scroll', scheduleUpdate);
+      window.addEventListener('resize', scheduleUpdate);
+      window.addEventListener('orientationchange', scheduleUpdate);
+      window.addEventListener('focusin', scheduleUpdate);
+      window.addEventListener('focusout', scheduleUpdate);
+      window.addEventListener('pageshow', scheduleUpdate);
 
       return () => {
-        visualViewport?.removeEventListener('resize', update);
-        visualViewport?.removeEventListener('scroll', update);
-        window.removeEventListener('resize', update);
-        window.removeEventListener('orientationchange', update);
-        window.removeEventListener('focusin', update);
-        window.removeEventListener('focusout', update);
+        visualViewport?.removeEventListener('resize', scheduleUpdate);
+        visualViewport?.removeEventListener('scroll', scheduleUpdate);
+        window.removeEventListener('resize', scheduleUpdate);
+        window.removeEventListener('orientationchange', scheduleUpdate);
+        window.removeEventListener('focusin', scheduleUpdate);
+        window.removeEventListener('focusout', scheduleUpdate);
+        window.removeEventListener('pageshow', scheduleUpdate);
       };
     }
 

@@ -180,7 +180,7 @@ export const useRecordComposerModel = () => {
   const recordTeamId = record?.teamId ?? createTeamId;
   const logColor = useLogColor({ id: recordLogId });
   const accentColor = logColor[colorScheme === 'dark' ? 'lighter' : 'darker'];
-  const myRole = useMyRole({ teamId: recordTeamId });
+  const myRole = useMyRole({ teamId: recordTeamId ?? null });
 
   const canCheckRecordTags =
     (!isCopy || isSingleTargetCopy) && !myRole.isLoading && !myRole.canManage;
@@ -288,10 +288,14 @@ export const useRecordComposerModel = () => {
   });
 
   const selectedTags = React.useMemo(() => {
-    if (!tagDefinitions.data.length) return selectedRecordTags;
+    if (tagDefinitions.isLoading) return selectedRecordTags;
     const tagsById = new Map(tagDefinitions.data.map((tag) => [tag.id, tag]));
-    return selectedRecordTags.map((tag) => tagsById.get(tag.id) ?? tag);
-  }, [tagDefinitions.data, selectedRecordTags]);
+
+    return selectedRecordTags.flatMap((tag) => {
+      const tagDefinition = tagsById.get(tag.id);
+      return tagDefinition ? [tagDefinition] : [];
+    });
+  }, [selectedRecordTags, tagDefinitions.data, tagDefinitions.isLoading]);
 
   const copyTextResetTargetKey = copyTargetLogIds.join('\u0000');
 
@@ -758,6 +762,7 @@ export const useRecordComposerModel = () => {
     onTextareaFocusChange: setIsTextareaFocused,
     onTogglePin: handleTogglePin,
     selectedTags,
+    showFormattingControls: myRole.canManage,
     submitLabel: isEdit ? 'Done' : 'Record',
     submitVariant: isEdit ? ('secondary' as const) : undefined,
     templates: isCreate ? templates.data : [],

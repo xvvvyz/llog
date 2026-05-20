@@ -3,7 +3,10 @@ import { getLogHref } from '@/features/records/lib/route';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { NotFound } from '@/ui/not-found';
+import { Button } from '@/ui/button';
 import { Sheet, SHEET_LAYERS } from '@/ui/sheet';
+import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
+import { Text } from '@/ui/text';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 
@@ -51,12 +54,24 @@ export default function RecordDetailRoute() {
   return (
     <Sheet
       layer={SHEET_LAYERS.route}
-      loading={record.isLoading}
       onDismiss={exitRoute}
       open={sheetOpen}
       portalName="record-detail"
     >
-      {isNotFound ? (
+      {record.isLoading ? (
+        <>
+          <SheetListScrollView
+            className="max-h-none md:max-h-none"
+            contentContainerClassName="mx-auto w-full max-w-lg"
+            loading
+          />
+          <SheetFooter>
+            <Button onPress={exitRoute} size="sm" variant="secondary">
+              <Text>Close</Text>
+            </Button>
+          </SheetFooter>
+        </>
+      ) : isNotFound ? (
         <NotFound />
       ) : (
         !!record.id && (

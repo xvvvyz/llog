@@ -12,7 +12,7 @@ describe('parseRecordMarkdown', () => {
   test('parses inline styles', () => {
     expect(
       recordMarkdown.parseRecordMarkdown(
-        '**bold** ~~strike~~ ++underline++ *italic* _also italic_'
+        '**bold** ~~strike~~ <u>underline</u> *italic* _also italic_'
       )[0]
     ).toMatchObject({
       children: [

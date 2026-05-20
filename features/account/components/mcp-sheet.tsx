@@ -76,13 +76,15 @@ export const McpSheet = () => {
 
   return (
     <Sheet
-      loading={isLoading}
       onDismiss={() => sheetManager.close('mcp')}
       open={isOpen}
       portalName="mcp"
       variant="list"
     >
-      <SheetListScrollView contentContainerClassName="gap-5 py-5">
+      <SheetListScrollView
+        contentContainerClassName="gap-5 py-5"
+        loading={isLoading}
+      >
         {grants.length > 0 ? (
           <View>
             {grants.map((grant) => {

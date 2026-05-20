@@ -81,16 +81,17 @@ export const MemberLogsSheet = () => {
     selectedIds: profileLogIds,
   });
 
+  const sheetIsLoading = !!queryKey && (isLoading || !hasCurrentResult);
+
   return (
     <Sheet
-      loading={!!queryKey && (isLoading || !hasCurrentResult)}
       onDismiss={() => sheetManager.close('member-logs')}
       open={open}
       portalName="member-logs"
       variant="list"
     >
-      {!!visibleLogs.length && (
-        <SheetListScrollView variant="rows">
+      {(sheetIsLoading || !!visibleLogs.length) && (
+        <SheetListScrollView loading={sheetIsLoading} variant="rows">
           {visibleLogs.map((log) => {
             const isSelected = getSelected(log.id);
             const color = SPECTRUM[colorScheme][log.color ?? 11];
@@ -118,12 +119,6 @@ export const MemberLogsSheet = () => {
         </SheetListScrollView>
       )}
       <SheetFooter contentClassName="flex-row gap-4">
-        <SearchInput
-          query={query}
-          setQuery={setQuery}
-          size="sm"
-          wrapperClassName="flex-1 min-w-0"
-        />
         <Button
           onPress={() => sheetManager.close('member-logs')}
           size="sm"
@@ -132,6 +127,12 @@ export const MemberLogsSheet = () => {
         >
           <Text>Close</Text>
         </Button>
+        <SearchInput
+          query={query}
+          setQuery={setQuery}
+          size="sm"
+          wrapperClassName="flex-1 min-w-0"
+        />
       </SheetFooter>
     </Sheet>
   );

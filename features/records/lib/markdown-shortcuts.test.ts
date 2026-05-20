@@ -37,6 +37,21 @@ describe('getMarkdownShortcutEdit', () => {
     ).toEqual({ selectionEnd: 7, selectionStart: 1, text: '*italic*' });
   });
 
+  test('wraps underline selection', () => {
+    expect(
+      markdownShortcuts.getMarkdownShortcutEdit({
+        selectionEnd: 9,
+        selectionStart: 5,
+        shortcut: 'underline',
+        text: 'make this underlined',
+      })
+    ).toEqual({
+      selectionEnd: 12,
+      selectionStart: 8,
+      text: 'make <u>this</u> underlined',
+    });
+  });
+
   test('wraps link selection', () => {
     expect(
       markdownShortcuts.getMarkdownShortcutEdit({

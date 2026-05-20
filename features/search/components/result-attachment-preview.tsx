@@ -6,7 +6,7 @@ import { formatCompactDuration } from '@/lib/format-time';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Text } from '@/ui/text';
-import { FileAudio, LinkSimple, Play } from 'phosphor-react-native';
+import { FileAudio, Link as LinkIcon, Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
@@ -78,7 +78,7 @@ const InlineTile = ({
 );
 
 const LinkTile = ({ link }: { link: search.SearchLinkItem }) => (
-  <InlineTile icon={LinkSimple} label={getLinkLabel(link)} />
+  <InlineTile icon={LinkIcon} label={getLinkLabel(link)} />
 );
 
 const AttachmentTile = ({ file }: { file: search.SearchFileItem }) => {

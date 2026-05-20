@@ -14,6 +14,7 @@ import { ViewStyle } from 'react-native';
 
 import {
   MagnifyingGlass,
+  Cards,
   NoteBlank,
   NotePencil,
   Tag,
@@ -82,6 +83,10 @@ export const DropdownMenu = ({
             <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
               <Icon className="text-placeholder" icon={Tag} />
               <Text>Tags</Text>
+            </Menu.Item>
+            <Menu.Item onPress={() => sheetManager.open('log-cards', id)}>
+              <Icon className="text-placeholder" icon={Cards} />
+              <Text>Cards</Text>
             </Menu.Item>
             <Menu.Item onPress={() => sheetManager.open('log-templates', id)}>
               <Icon className="text-placeholder" icon={NoteBlank} />

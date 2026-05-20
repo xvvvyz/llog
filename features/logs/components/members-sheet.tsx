@@ -74,14 +74,13 @@ export const LogMembersSheet = () => {
 
   return (
     <Sheet
-      loading={isLoading}
       onDismiss={() => sheetManager.close('log-members')}
       open={open}
       portalName="log-members"
       variant="list"
     >
-      {!!visibleMemberRows.length && (
-        <SheetListScrollView variant="rows">
+      {(isLoading || !!visibleMemberRows.length) && (
+        <SheetListScrollView loading={isLoading} variant="rows">
           {visibleMemberRows.map(({ member, profile }) => {
             const isSelected = getSelected(profile.id);
 
@@ -113,12 +112,6 @@ export const LogMembersSheet = () => {
         </SheetListScrollView>
       )}
       <SheetFooter contentClassName="flex-row gap-4">
-        <SearchInput
-          query={query}
-          setQuery={setQuery}
-          size="sm"
-          wrapperClassName="flex-1 min-w-0"
-        />
         <Button
           onPress={() => sheetManager.close('log-members')}
           size="sm"
@@ -127,6 +120,12 @@ export const LogMembersSheet = () => {
         >
           <Text>Close</Text>
         </Button>
+        <SearchInput
+          query={query}
+          setQuery={setQuery}
+          size="sm"
+          wrapperClassName="flex-1 min-w-0"
+        />
       </SheetFooter>
     </Sheet>
   );

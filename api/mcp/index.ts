@@ -65,6 +65,7 @@ export const mcpHandler = {
     const server = createServer({
       db: adminDb.asUser({ email: props.email }),
       env,
+      executionCtx: ctx,
       notificationDb: adminDb,
       props,
     });

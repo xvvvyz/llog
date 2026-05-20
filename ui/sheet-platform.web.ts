@@ -5,15 +5,13 @@ import type * as sheetPlatformTypes from '@/ui/sheet-platform-types';
 const WEB_SHEET_BOTTOM_OVERSCAN = 128;
 
 export const useSheetPlatformLayout = ({
-  activeElementRootRef,
   bottomInset,
   keyboardAvoidingEnabled = true,
   open,
   windowHeight,
 }: sheetPlatformTypes.SheetPlatformLayoutOptions): sheetPlatformTypes.SheetPlatformLayout => {
   const webViewport = useWebSheetVisualViewport(
-    open && keyboardAvoidingEnabled,
-    activeElementRootRef
+    open && keyboardAvoidingEnabled
   );
 
   useWebSheetScrollLock(open);

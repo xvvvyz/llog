@@ -1,16 +1,76 @@
 import { recognizeAudioFileMusic } from '@/api/audio-analysis/audd-client';
 import * as openai from '@/api/audio-analysis/openai';
-import { updateAudioFile } from '@/api/audio-analysis/repository';
+import { getAudioFile, updateAudioFile } from '@/api/audio-analysis/repository';
 import * as audioSource from '@/api/audio-analysis/source';
 import type * as audioAnalysisTypes from '@/api/audio-analysis/types';
 import { type Db } from '@/api/middleware/db';
 import * as audioAnalysis from '@/domain/files/audio-analysis';
 
+export const AUDIO_STREAM_PENDING_RETRY_DELAY_SECONDS = 60;
+
+export const AUDIO_ANALYSIS_FAILURE_RETRY_DELAY_SECONDS = 60;
+
 const isTooShortForAnalysis = (file: audioAnalysisTypes.AudioFile) =>
   audioAnalysis.isAudioAnalysisDurationTooShort(file.duration);
 
-const clearIdentifying = (db: Db, fileId: string) =>
-  updateAudioFile(db, fileId, { isIdentifying: false });
+const timeValue = (value?: Date | number | string | null) => {
+  if (value == null) return;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : undefined;
+};
+
+const isSameRequest = (
+  requestDate: Date | number | string | null | undefined,
+  requestedAt: string
+) => timeValue(requestDate) === timeValue(requestedAt);
+
+const updateAudioFileIfCurrentRequest = async ({
+  db,
+  fields,
+  fileId,
+  requestField,
+  requestedAt,
+}: {
+  db: Db;
+  fields: Record<string, unknown>;
+  fileId: string;
+  requestField: 'identificationRequestedAt' | 'transcriptionRequestedAt';
+  requestedAt: string;
+}) => {
+  const file = await getAudioFile(db, fileId);
+  if (!isSameRequest(file?.[requestField], requestedAt)) return false;
+  await updateAudioFile(db, fileId, fields);
+  return true;
+};
+
+type CurrentAudioRequestUpdate = {
+  db: Db;
+  fields?: Record<string, unknown>;
+  fileId: string;
+  requestedAt: string;
+};
+
+const clearTranscriptionRequest = (params: CurrentAudioRequestUpdate) =>
+  updateAudioFileIfCurrentRequest({
+    ...params,
+    fields: {
+      isTranscribing: false,
+      transcriptionRequestedAt: null,
+      ...params.fields,
+    },
+    requestField: 'transcriptionRequestedAt',
+  });
+
+const clearIdentificationRequest = (params: CurrentAudioRequestUpdate) =>
+  updateAudioFileIfCurrentRequest({
+    ...params,
+    fields: {
+      identificationRequestedAt: null,
+      isIdentifying: false,
+      ...params.fields,
+    },
+    requestField: 'identificationRequestedAt',
+  });
 
 const transcribeAudioSource = async ({
   env,
@@ -36,29 +96,42 @@ const transcribeAudioSource = async ({
 export const transcribeAudioFile = async ({
   db,
   env,
-  file,
+  fileId,
+  isFinalAttempt,
+  requestedAt,
 }: {
   db: Db;
   env: CloudflareEnv;
-  file?: audioAnalysisTypes.AudioFile;
+  fileId: string;
+  isFinalAttempt?: boolean;
+  requestedAt: string;
 }) => {
+  const file = await getAudioFile(db, fileId);
+
   if (
     !audioSource.hasAudioAnalysisAssetFile(file) ||
     file.transcript != null ||
-    file.isTranscribing
+    !file.isTranscribing ||
+    !isSameRequest(file.transcriptionRequestedAt, requestedAt)
   ) {
+    await clearTranscriptionRequest({ db, fileId, requestedAt });
     return false;
   }
 
-  let didStart = false;
-
   try {
     if (isTooShortForAnalysis(file)) {
-      await updateAudioFile(db, file.id, { transcript: [] });
+      await clearTranscriptionRequest({
+        db,
+        fields: { transcript: [] },
+        fileId,
+        requestedAt,
+      });
+
       return true;
     }
 
     if (audioAnalysis.isTranscriptionDurationTooLong(file.duration)) {
+      await clearTranscriptionRequest({ db, fileId, requestedAt });
       return false;
     }
 
@@ -66,11 +139,9 @@ export const transcribeAudioFile = async ({
       file.type === 'audio' &&
       audioAnalysis.isTranscriptionUploadTooLarge(file.size)
     ) {
+      await clearTranscriptionRequest({ db, fileId, requestedAt });
       return false;
     }
-
-    await updateAudioFile(db, file.id, { isTranscribing: true });
-    didStart = true;
 
     const sourceResult = await audioSource.resolveAudioAnalysisSource({
       env,
@@ -78,8 +149,15 @@ export const transcribeAudioFile = async ({
     });
 
     if (sourceResult.status === 'pending') {
-      await updateAudioFile(db, file.id, { isTranscribing: false });
-      return false;
+      if (isFinalAttempt) {
+        await clearTranscriptionRequest({ db, fileId, requestedAt });
+        return { success: false };
+      }
+
+      return {
+        retryAfterSeconds: AUDIO_STREAM_PENDING_RETRY_DELAY_SECONDS,
+        success: false,
+      };
     }
 
     const transcript = await transcribeAudioSource({
@@ -87,47 +165,65 @@ export const transcribeAudioFile = async ({
       source: sourceResult.source,
     });
 
-    await updateAudioFile(db, file.id, { isTranscribing: false, transcript });
-    return true;
+    const didWrite = await clearTranscriptionRequest({
+      db,
+      fields: { transcript },
+      fileId,
+      requestedAt,
+    });
+
+    return { success: didWrite };
   } catch (error) {
-    if (didStart || file.type === 'video') {
-      await updateAudioFile(db, file.id, {
-        ...(didStart ? { isTranscribing: false } : {}),
-        ...(file.type === 'video' ? { transcript: [] } : {}),
-      });
+    console.error('Audio transcription failed', { error, fileId });
+
+    if (isFinalAttempt) {
+      await clearTranscriptionRequest({ db, fileId, requestedAt });
+      return { success: false };
     }
 
-    throw error;
+    return {
+      retryAfterSeconds: AUDIO_ANALYSIS_FAILURE_RETRY_DELAY_SECONDS,
+      success: false,
+    };
   }
 };
 
 export const detectAudioFileMusic = async ({
   db,
   env,
-  file,
+  fileId,
+  isFinalAttempt,
+  requestedAt,
 }: {
   db: Db;
   env: CloudflareEnv;
-  file?: audioAnalysisTypes.AudioFile;
+  fileId: string;
+  isFinalAttempt?: boolean;
+  requestedAt: string;
 }) => {
+  const file = await getAudioFile(db, fileId);
+
   if (
     !audioSource.hasAudioAnalysisAssetFile(file) ||
     file.tracks != null ||
-    file.isIdentifying
+    !file.isIdentifying ||
+    !isSameRequest(file.identificationRequestedAt, requestedAt)
   ) {
+    await clearIdentificationRequest({ db, fileId, requestedAt });
     return false;
   }
 
-  let didStart = false;
-
   try {
     if (isTooShortForAnalysis(file)) {
-      await updateAudioFile(db, file.id, { tracks: [] });
+      await clearIdentificationRequest({
+        db,
+        fields: { tracks: [] },
+        fileId,
+        requestedAt,
+      });
+
       return true;
     }
-
-    await updateAudioFile(db, file.id, { isIdentifying: true });
-    didStart = true;
 
     const sourceResult = await audioSource.resolveAudioAnalysisSource({
       env,
@@ -135,8 +231,15 @@ export const detectAudioFileMusic = async ({
     });
 
     if (sourceResult.status === 'pending') {
-      await clearIdentifying(db, file.id);
-      return false;
+      if (isFinalAttempt) {
+        await clearIdentificationRequest({ db, fileId, requestedAt });
+        return { success: false };
+      }
+
+      return {
+        retryAfterSeconds: AUDIO_STREAM_PENDING_RETRY_DELAY_SECONDS,
+        success: false,
+      };
     }
 
     const recognition = await recognizeAudioFileMusic({
@@ -145,15 +248,25 @@ export const detectAudioFileMusic = async ({
       url: sourceResult.source.url,
     });
 
-    await updateAudioFile(db, file.id, {
-      audd: recognition.audd,
-      isIdentifying: false,
-      tracks: recognition.tracks,
+    const didWrite = await clearIdentificationRequest({
+      db,
+      fields: { audd: recognition.audd, tracks: recognition.tracks },
+      fileId,
+      requestedAt,
     });
 
-    return true;
+    return { success: didWrite };
   } catch (error) {
-    if (didStart) await clearIdentifying(db, file.id);
-    throw error;
+    console.error('Audio identification failed', { error, fileId });
+
+    if (isFinalAttempt) {
+      await clearIdentificationRequest({ db, fileId, requestedAt });
+      return { success: false };
+    }
+
+    return {
+      retryAfterSeconds: AUDIO_ANALYSIS_FAILURE_RETRY_DELAY_SECONDS,
+      success: false,
+    };
   }
 };

@@ -1,7 +1,25 @@
 import { db } from '@/lib/db';
+import * as cardMutations from '@/features/cards/mutations/cards';
 import { getPrependTagOrderTransactions } from '@/features/tags/mutations/prepend-tag-order';
 import type { Color } from '@/theme/spectrum';
 import { id as generateId } from '@instantdb/react-native';
+
+const queueRecordCardRefresh = async ({
+  recordId,
+  tagId,
+}: {
+  recordId?: string;
+  tagId: string;
+}) => {
+  if (!recordId) return false;
+
+  try {
+    await cardMutations.refreshRecordCards({ recordId, tagIds: [tagId] });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 const addRecordTag = async ({
   recordId,
@@ -11,7 +29,9 @@ const addRecordTag = async ({
   tagId: string;
 }) => {
   if (!recordId) return;
-  return db.transact(db.tx.records[recordId].link({ tags: tagId }));
+  const queued = await queueRecordCardRefresh({ recordId, tagId });
+  if (!queued) return;
+  await db.transact(db.tx.records[recordId].link({ tags: tagId }));
 };
 
 const removeRecordTag = async ({
@@ -22,7 +42,9 @@ const removeRecordTag = async ({
   tagId: string;
 }) => {
   if (!recordId) return;
-  return db.transact(db.tx.records[recordId].unlink({ tags: tagId }));
+  const queued = await queueRecordCardRefresh({ recordId, tagId });
+  if (!queued) return;
+  await db.transact(db.tx.records[recordId].unlink({ tags: tagId }));
 };
 
 export const toggleRecordTag = async ({
@@ -34,9 +56,12 @@ export const toggleRecordTag = async ({
   selected: boolean;
   tagId: string;
 }) => {
-  return selected
-    ? addRecordTag({ recordId, tagId })
-    : removeRecordTag({ recordId, tagId });
+  if (selected) {
+    await addRecordTag({ recordId, tagId });
+    return;
+  }
+
+  await removeRecordTag({ recordId, tagId });
 };
 
 export const createRecordTag = async ({
@@ -65,7 +90,7 @@ export const createRecordTag = async ({
     type: 'record',
   });
 
-  return db.transact([
+  await db.transact([
     db.tx.tags[tagId]
       .update({ color, name: trimmedName, order: 0, teamId, type: 'record' })
       .link({ logs: logId, team: teamId }),
@@ -99,7 +124,7 @@ export const createRecordTagDefinition = async ({
     type: 'record',
   });
 
-  return db.transact([
+  await db.transact([
     db.tx.tags[tagId]
       .update({ color, name: trimmedName, order: 0, teamId, type: 'record' })
       .link({ logs: logId, team: teamId }),

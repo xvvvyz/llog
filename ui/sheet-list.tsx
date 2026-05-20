@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
+import { Spinner } from '@/ui/spinner';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
@@ -18,6 +19,7 @@ type SheetListScrollViewProps = React.ComponentPropsWithoutRef<
   VariantProps<typeof sheetListContentVariants> & {
     className?: string;
     contentContainerClassName?: string;
+    loading?: boolean;
   };
 
 export const SheetListScrollView = React.forwardRef<
@@ -27,9 +29,11 @@ export const SheetListScrollView = React.forwardRef<
   (
     {
       className,
+      children,
       contentContainerClassName,
       keyboardDismissMode = 'on-drag',
       keyboardShouldPersistTaps = 'always',
+      loading,
       onScroll,
       showsVerticalScrollIndicator = false,
       scrollEventThrottle = 16,
@@ -56,10 +60,13 @@ export const SheetListScrollView = React.forwardRef<
         )}
         contentContainerClassName={cn(
           sheetListContentVariants({ variant }),
-          contentContainerClassName
+          contentContainerClassName,
+          loading && 'min-h-24 items-center justify-center'
         )}
         {...props}
-      />
+      >
+        {loading ? <Spinner /> : children}
+      </ScrollView>
     );
   }
 );

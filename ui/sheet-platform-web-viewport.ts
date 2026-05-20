@@ -8,24 +8,10 @@ const EMPTY_WEB_VISUAL_VIEWPORT: WebVisualViewport = {
   height: undefined,
 };
 
-const isTextEntryInRoot = (root: unknown, target: EventTarget | null) =>
-  root instanceof HTMLElement &&
-  target instanceof HTMLElement &&
-  isTextEntryElement(target) &&
-  root.contains(target);
-
-const getWebVisualViewport = (
-  baselineHeight?: number,
-  activeElementRoot?: unknown
-): WebVisualViewport => {
+const getWebVisualViewport = (baselineHeight?: number): WebVisualViewport => {
   if (typeof window === 'undefined') return EMPTY_WEB_VISUAL_VIEWPORT;
   const activeElement = document.activeElement as HTMLElement | null;
   if (!isTextEntryElement(activeElement)) return EMPTY_WEB_VISUAL_VIEWPORT;
-
-  if (!isTextEntryInRoot(activeElementRoot, activeElement)) {
-    return EMPTY_WEB_VISUAL_VIEWPORT;
-  }
-
   const viewport = window.visualViewport;
   const documentHeight = document.documentElement?.clientHeight ?? 0;
 
@@ -44,10 +30,7 @@ const getWebVisualViewport = (
   };
 };
 
-export const useWebSheetVisualViewport = (
-  open: boolean,
-  activeElementRootRef?: { current: unknown }
-): WebVisualViewport => {
+export const useWebSheetVisualViewport = (open: boolean): WebVisualViewport => {
   const baselineHeightRef = React.useRef(0);
   const baselineWidthRef = React.useRef(0);
 
@@ -77,11 +60,7 @@ export const useWebSheetVisualViewport = (
         documentHeight
       );
 
-      const nextViewport = getWebVisualViewport(
-        baselineHeightRef.current,
-        activeElementRootRef?.current
-      );
-
+      const nextViewport = getWebVisualViewport(baselineHeightRef.current);
       setViewport(nextViewport);
     };
 
@@ -102,7 +81,7 @@ export const useWebSheetVisualViewport = (
       window.removeEventListener('focusin', update);
       window.removeEventListener('focusout', update);
     };
-  }, [activeElementRootRef, open]);
+  }, [open]);
 
   if (!open) return EMPTY_WEB_VISUAL_VIEWPORT;
   return viewport;

@@ -1,7 +1,11 @@
+import cards from '@/api/cards';
 import files from '@/api/files';
 import internal from '@/api/internal';
+import { parseJob } from '@/api/jobs/payload';
+import { getJobRetryDelay, processJob } from '@/api/jobs/processor';
 import { installConsoleErrorSerializer } from '@/api/lib/logging';
 import logs from '@/api/logs';
+import { createAdminDb } from '@/api/middleware/db';
 import { headers } from '@/api/middleware/headers';
 import oauth from '@/api/oauth';
 import { handleAuthorizationCodeReplay } from '@/api/oauth/authorization-code-replay';
@@ -14,7 +18,10 @@ import { HTTPException } from 'hono/http-exception';
 
 installConsoleErrorSerializer();
 const api = new Hono().basePath('/api/v1');
+// wrangler.jsonc sets max_retries to 5, so the sixth delivery is final.
+const MAX_QUEUE_JOB_DELIVERY_ATTEMPTS = 6;
 api.use(headers());
+api.route('/cards', cards);
 api.route('/files', files);
 api.route('/internal', internal);
 api.route('/logs', logs);
@@ -62,5 +69,22 @@ export default {
       env,
       (nextRequest) => oauthProvider.fetch(nextRequest, env, ctx)
     );
+  },
+  async queue(batch: MessageBatch<unknown>, env: CloudflareEnv) {
+    const db = createAdminDb(env);
+
+    for (const message of batch.messages) {
+      const job = parseJob(message.body);
+
+      const isFinalAttempt =
+        message.attempts >= MAX_QUEUE_JOB_DELIVERY_ATTEMPTS;
+
+      const result = await processJob({ db, env, isFinalAttempt, job });
+      const retryDelay = getJobRetryDelay(result);
+
+      if (retryDelay != null && !isFinalAttempt) {
+        message.retry({ delaySeconds: retryDelay });
+      }
+    }
   },
 };

@@ -91,19 +91,20 @@ export const InviteLogsSheet = () => {
     sheetManager.close('invite-logs');
   }, [sheetManager]);
 
+  const isSheetLoading =
+    (!!logsQueryKey && (logsLoading || !hasCurrentLogsResult)) ||
+    invitesLoading;
+
   return (
     <Sheet
       onDismiss={handleDismiss}
       open={open}
       portalName="invite-logs"
       variant="list"
-      loading={
-        (!!logsQueryKey && (logsLoading || !hasCurrentLogsResult)) ||
-        invitesLoading
-      }
     >
       <LogsSheetContent
         isLoading={isLoading}
+        isSheetLoading={isSheetLoading}
         logs={logs}
         onConfirm={handleConfirm}
         onToggleLog={toggleLog}

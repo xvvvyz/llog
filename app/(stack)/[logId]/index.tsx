@@ -2,6 +2,8 @@ import { DropdownMenu } from '@/features/logs/components/dropdown-menu';
 import { EmptyState } from '@/features/logs/components/empty-state';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
+import { CardsHeader } from '@/features/cards/components/cards-header';
+import { useLogCards } from '@/features/cards/queries/use-cards';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
@@ -12,7 +14,6 @@ import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { cn } from '@/lib/cn';
 import { BackButton } from '@/ui/back-button';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';
@@ -28,6 +29,8 @@ import { DotsThreeVertical, Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 
+const TimelineRecordSeparator = () => <View className="h-4" />;
+
 export default function Index() {
   const breakpoints = useBreakpoints();
   const headerHeight = useHeaderHeight();
@@ -37,8 +40,10 @@ export default function Index() {
   const sheetManager = useSheetManager();
   const log = useLog({ id: params.logId });
   const logColor = useLogColor({ id: params.logId });
+  const cards = useLogCards({ logId: params.logId });
   const records = useRecords({ logId: params.logId });
   const recordData = records.data;
+  const cardsLoading = cards.isLoading;
   const recordsLoading = records.isLoading;
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
   const hasRecords = recordData.length > 0;
@@ -64,7 +69,7 @@ export default function Index() {
           emptyStateInvites.isLoading)));
 
   const showLoading =
-    log.isLoading || recordsLoading || emptyStateActionsLoading;
+    log.isLoading || cardsLoading || recordsLoading || emptyStateActionsLoading;
 
   const showFab = hasRecords && !breakpoints.md;
   const showEmptyManagerActions = emptyStateRole.canManage;
@@ -160,6 +165,7 @@ export default function Index() {
         <List
           contentContainerClassName="mx-auto w-full max-w-lg px-4"
           data={recordData}
+          ItemSeparatorComponent={TimelineRecordSeparator}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always"
           keyExtractor={(record) => record.id}
@@ -169,9 +175,16 @@ export default function Index() {
           onEndReachedThreshold={1}
           recycleItems={false}
           wrapperClassName="flex-1"
-          renderItem={({ index, item }) => (
+          ListHeaderComponent={
+            <CardsHeader
+              cards={cards.data}
+              logColor={log.color}
+              logId={params.logId}
+              teamId={log.teamId}
+            />
+          }
+          renderItem={({ item }) => (
             <Entry
-              className={cn('mt-4', index === 0 && 'md:mt-8')}
               logId={params.logId}
               logName={log.name}
               numberOfLines={7}

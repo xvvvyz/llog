@@ -5,11 +5,13 @@ export type AudioClip = {
   assetKey?: string | null;
   duration?: number | null;
   id: string;
+  identificationRequestedAt?: number | string | null;
   isIdentifying?: boolean | null;
   isTranscribing?: boolean | null;
   name?: string | null;
   size?: number | null;
   tracks?: unknown;
+  transcriptionRequestedAt?: number | string | null;
   transcript?: unknown;
   type?: string | null;
   uri?: string | null;
@@ -24,6 +26,7 @@ export type AudioPlayerProps = {
   disabled?: boolean;
   durationSeconds?: number;
   fileId?: string | null;
+  identificationRequestedAt?: number | string | null;
   isIdentifying?: boolean | null;
   isTranscribing?: boolean | null;
   name?: string | null;
@@ -39,6 +42,7 @@ export type AudioPlayerProps = {
   showPlaybackRate?: boolean;
   trailingAccessory?: React.ReactNode;
   tracks?: unknown;
+  transcriptionRequestedAt?: number | string | null;
   transcript?: unknown;
   type?: string | null;
   uri?: string | null;

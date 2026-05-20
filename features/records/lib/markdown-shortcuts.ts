@@ -1,6 +1,7 @@
 export type MarkdownShortcut =
   | 'bold'
   | 'italic'
+  | 'underline'
   | 'link'
   | 'ordered-list'
   | 'unordered-list';
@@ -84,6 +85,17 @@ export function getMarkdownShortcutEdit({
     });
   }
 
+  if (shortcut === 'underline') {
+    return getWrappedEdit({
+      closeMarker: '</u>',
+      end,
+      marker: '<u>',
+      placeholder: 'underline',
+      start,
+      text,
+    });
+  }
+
   if (shortcut === 'link') return getLinkEdit({ end, start, text });
 
   return getListEdit({
@@ -95,12 +107,14 @@ export function getMarkdownShortcutEdit({
 }
 
 function getWrappedEdit({
+  closeMarker,
   end,
   marker,
   placeholder,
   start,
   text,
 }: {
+  closeMarker?: string;
   end: number;
   marker: string;
   placeholder: string;
@@ -109,9 +123,14 @@ function getWrappedEdit({
 }): MarkdownShortcutEdit {
   const selectedText = text.slice(start, end);
   const content = selectedText || placeholder;
+  const resolvedCloseMarker = closeMarker ?? marker;
 
   const nextText =
-    text.slice(0, start) + marker + content + marker + text.slice(end);
+    text.slice(0, start) +
+    marker +
+    content +
+    resolvedCloseMarker +
+    text.slice(end);
 
   const nextSelectionStart = start + marker.length;
 

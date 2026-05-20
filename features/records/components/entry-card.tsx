@@ -57,7 +57,7 @@ export const EntryCard = ({
 
   const headerActions = hasHeaderActions && (
     <View className="max-w-52 items-end shrink">
-      <View className="flex-row -mr-1.5 -mt-1.5 gap-1.5 items-center justify-end">
+      <View className="flex-row -mr-1.5 -mt-1.5 gap-1 items-center justify-end">
         {hasPinnedAction && (
           <Button
             disabled={!canUnpinRecord}

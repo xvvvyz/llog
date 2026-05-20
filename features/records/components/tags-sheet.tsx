@@ -246,7 +246,6 @@ export const RecordTagsSheet = () => {
 
   return (
     <Sheet
-      loading={sheetIsLoading}
       onDismiss={() => sheetManager.close('record-tags')}
       open={sheetManager.isOpen('record-tags')}
       portalName="record-tags"

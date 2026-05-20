@@ -1,4 +1,5 @@
 import type { Db } from '@/api/middleware/db';
+import * as cardActions from '@/api/cards/card-actions';
 import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as push from '@/api/push/web-push';
 import * as recordPublish from '@/domain/records/publish';
@@ -29,6 +30,7 @@ export const publishDraftRecord = async ({
       log: { $: { fields: ['id', 'name'] }, ...notificationRecipientLogQuery },
       files: { $: { fields: ['id'] } },
       links: { $: { fields: ['id'] } },
+      tags: { $: { fields: ['id'] } },
     },
   });
 
@@ -77,6 +79,13 @@ export const publishDraftRecord = async ({
       text: trimmedText,
     })
   );
+
+  await cardActions.queuePublishedRecordCardRefreshes({
+    dbClient,
+    env,
+    logId: record.log.id,
+    recordTagIds: record.tags?.map((tag) => tag.id) ?? [],
+  });
 
   await push.sendPushNotifications(
     env,

@@ -106,7 +106,6 @@ export const TemplateTagsPickerSheet = ({
 
   return (
     <Sheet
-      loading={sheetIsLoading}
       onDismiss={onClose}
       open={open}
       portalName="log-template-tags"

@@ -3,12 +3,14 @@ export type AudioFile = {
   assetKey?: string | null;
   duration?: number | null;
   id: string;
+  identificationRequestedAt?: Date | number | string | null;
   isIdentifying?: boolean | null;
   isTranscribing?: boolean | null;
   mimeType?: string | null;
   name?: string | null;
   size?: number | null;
   tracks?: unknown;
+  transcriptionRequestedAt?: Date | number | string | null;
   transcript?: unknown;
   type?: string | null;
   uri?: string | null;

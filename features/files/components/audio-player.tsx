@@ -198,10 +198,12 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
           ? props.durationSeconds * 1000
           : undefined,
         id: fileId,
+        identificationRequestedAt: props.identificationRequestedAt ?? undefined,
         isIdentifying: isIdentifying ?? undefined,
         isTranscribing: isTranscribing ?? undefined,
         size: size ?? undefined,
         tracks: props.tracks,
+        transcriptionRequestedAt: props.transcriptionRequestedAt ?? undefined,
         transcript: props.transcript,
         type: type ?? 'audio',
       }

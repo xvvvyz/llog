@@ -229,6 +229,14 @@ export const Carousel = ({
     [getClampedIndex]
   );
 
+  const handleDotPress = React.useCallback(
+    (index: number) => {
+      if (isNavigationLocked || isDismissGestureActive) return;
+      setPage(index);
+    },
+    [isDismissGestureActive, isNavigationLocked, setPage]
+  );
+
   React.useEffect(() => {
     if (files.length === 0) {
       resetVideoUiState();
@@ -597,11 +605,16 @@ export const Carousel = ({
         </Animated.View>
       </Animated.View>
       <Animated.View
-        className="absolute left-4 right-4 z-10 pointer-events-none items-center md:left-8 md:right-8"
+        className="absolute left-4 right-4 z-10 items-center md:left-8 md:right-8"
+        pointerEvents={files.length > 1 ? 'box-none' : 'none'}
         style={[overlayOpacityStyle, { bottom: dotsBottomOffset }]}
       >
         {files.length > 1 && (
-          <Dots activeIndex={activeIndex} count={files.length} />
+          <Dots
+            activeIndex={activeIndex}
+            count={files.length}
+            onIndexPress={handleDotPress}
+          />
         )}
       </Animated.View>
     </View>

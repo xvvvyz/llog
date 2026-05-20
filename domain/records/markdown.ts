@@ -16,6 +16,7 @@ export type RecordMarkdownBlock =
     };
 
 type InlineToken = {
+  closeMarker?: string;
   kind: Exclude<RecordMarkdownInline['kind'], 'link' | 'text'>;
   marker: string;
 };
@@ -23,7 +24,7 @@ type InlineToken = {
 const INLINE_TOKENS: InlineToken[] = [
   { kind: 'bold', marker: '**' },
   { kind: 'strikethrough', marker: '~~' },
-  { kind: 'underline', marker: '++' },
+  { closeMarker: '</u>', kind: 'underline', marker: '<u>' },
   { kind: 'italic', marker: '*' },
   { kind: 'italic', marker: '_' },
 ];
@@ -102,7 +103,8 @@ export function parseRecordMarkdownInline(
     }
 
     const contentStart = next.index + next.marker.length;
-    const closeIndex = findClosingInlineToken(text, next.marker, contentStart);
+    const closeMarker = next.closeMarker ?? next.marker;
+    const closeIndex = findClosingInlineToken(text, closeMarker, contentStart);
 
     if (closeIndex === -1) {
       nodes.push({ kind: 'text', text: text.slice(next.index) });
@@ -114,7 +116,7 @@ export function parseRecordMarkdownInline(
       kind: next.style,
     });
 
-    index = closeIndex + next.marker.length;
+    index = closeIndex + closeMarker.length;
   }
 
   return mergeAdjacentTextNodes(nodes);
@@ -164,6 +166,7 @@ function findNextInlineToken(text: string, start: number) {
     | {
         index: number;
         kind: 'style';
+        closeMarker?: string;
         marker: string;
         style: InlineToken['kind'];
       }
@@ -189,7 +192,13 @@ function findNextInlineToken(text: string, start: number) {
       index < next.index ||
       (index === next.index && token.marker.length > next.marker.length)
     ) {
-      next = { index, kind: 'style', marker: token.marker, style: token.kind };
+      next = {
+        closeMarker: token.closeMarker,
+        index,
+        kind: 'style',
+        marker: token.marker,
+        style: token.kind,
+      };
     }
   }
 

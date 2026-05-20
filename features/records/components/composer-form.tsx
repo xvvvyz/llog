@@ -1,4 +1,6 @@
 import { AttachmentSummary } from '@/features/records/components/attachment-summary';
+import { MarkdownShortcutToolbar } from '@/features/records/components/markdown-shortcut-toolbar';
+import { useMarkdownTextareaShortcuts } from '@/features/records/hooks/use-markdown-textarea-shortcuts';
 import { readTextareaBlurText } from '@/features/records/lib/read-textarea-blur-text';
 import { useVirtualKeyboardVisible } from '@/hooks/use-virtual-keyboard-visible';
 import { cn } from '@/lib/cn';
@@ -9,62 +11,13 @@ import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
-import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
+import { CornersOut } from 'phosphor-react-native';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
-import * as markdownShortcuts from '@/features/records/lib/markdown-shortcuts';
-
-import {
-  CornersOut,
-  LinkSimple,
-  ListBullets,
-  ListNumbers,
-  TextB,
-  TextItalic,
-} from 'phosphor-react-native';
+import { Keyboard, Platform, Pressable, View } from 'react-native';
 
 const COMPOSER_TEXT_MAX_LENGTH = 10240;
 type ComposerEditor = 'fullscreen' | 'inline';
-type TextSelection = { end: number; start: number };
-
-type TextareaSelectionChangeEvent = {
-  nativeEvent: { selection: TextSelection };
-};
-
-type WebPreventablePressStartEvent = {
-  nativeEvent?: { pointerType?: string; preventDefault?: () => void };
-  preventDefault?: () => void;
-};
-
-type TextareaSelectionHandle = {
-  focus?: (options?: { preventScroll?: boolean }) => void;
-  selectionEnd?: number;
-  selectionStart?: number;
-  setNativeProps?: (props: { selection: TextSelection }) => void;
-  setSelectionRange?: (start: number, end: number) => void;
-};
-
-type MarkdownShortcutItem = {
-  accessibilityLabel: string;
-  icon: React.ComponentType<PhosphorIconProps>;
-  shortcut: markdownShortcuts.MarkdownShortcut;
-};
-
-const MARKDOWN_SHORTCUTS: MarkdownShortcutItem[] = [
-  { accessibilityLabel: 'Bold', icon: TextB, shortcut: 'bold' },
-  { accessibilityLabel: 'Italic', icon: TextItalic, shortcut: 'italic' },
-  { accessibilityLabel: 'Link', icon: LinkSimple, shortcut: 'link' },
-  {
-    accessibilityLabel: 'Bulleted list',
-    icon: ListBullets,
-    shortcut: 'unordered-list',
-  },
-  {
-    accessibilityLabel: 'Numbered list',
-    icon: ListNumbers,
-    shortcut: 'ordered-list',
-  },
-];
+type TextareaBlurHandle = { blur?: () => void };
 
 export const ComposerForm = ({
   attachmentCount,
@@ -84,6 +37,7 @@ export const ComposerForm = ({
   onSubmit,
   onTextareaFocusChange,
   placeholder,
+  showFormattingControls = true,
   submitLabel,
   submitTextClassName,
   submitVariant,
@@ -107,6 +61,7 @@ export const ComposerForm = ({
   onSubmit: () => void;
   onTextareaFocusChange: (isFocused: boolean) => void;
   placeholder: string;
+  showFormattingControls?: boolean;
   submitLabel: string;
   submitTextClassName?: string;
   submitVariant?: React.ComponentPropsWithoutRef<typeof Button>['variant'];
@@ -117,12 +72,20 @@ export const ComposerForm = ({
     Platform.OS !== 'web' && autoFocusOnNative && !isTextInputDisabled;
 
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
-  const isComposerCompact = isTextareaFocused && isVirtualKeyboardVisible;
+  const isComposerCompact = isVirtualKeyboardVisible;
+  const showMarkdownShortcuts = showFormattingControls && isComposerCompact;
   const showInputAccessory = !isComposerCompact && !!inputAccessory;
   const showInputAction = !isComposerCompact && !!inputAction;
-  const showFullscreenAction = !isTextareaFocused;
-  const showInputActionOverlay = showInputAction || showFullscreenAction;
+  const showInputControls = showInputAction || showFormattingControls;
   const [isFullscreenOpen, setIsFullscreenOpen] = React.useState(false);
+
+  const [focusedEditor, setFocusedEditor] =
+    React.useState<ComposerEditor | null>(null);
+
+  const showFocusedAttachmentSummary =
+    isVirtualKeyboardVisible &&
+    focusedEditor === 'inline' &&
+    (showFormattingControls || attachmentCount > 0);
 
   const inlineTextareaRef =
     React.useRef<React.ComponentRef<typeof Textarea>>(null);
@@ -130,47 +93,83 @@ export const ComposerForm = ({
   const fullscreenTextareaRef =
     React.useRef<React.ComponentRef<typeof Textarea>>(null);
 
-  const latestTextRef = React.useRef(text);
+  const cancelPendingFullscreenOpenRef = React.useRef<(() => void) | null>(
+    null
+  );
 
-  const fullscreenSelectionRef = React.useRef<TextSelection>({
-    end: text.length,
-    start: text.length,
-  });
+  const cancelPendingFullscreenOpen = React.useCallback(() => {
+    cancelPendingFullscreenOpenRef.current?.();
+    cancelPendingFullscreenOpenRef.current = null;
+  }, []);
 
-  const inlineSelectionRef = React.useRef<TextSelection>({
-    end: text.length,
-    start: text.length,
-  });
-
-  const lastSelectedTextRangeRef = React.useRef<
-    Record<ComposerEditor, TextSelection | null>
-  >({ fullscreen: null, inline: null });
+  React.useEffect(
+    () => cancelPendingFullscreenOpen,
+    [cancelPendingFullscreenOpen]
+  );
 
   React.useEffect(() => {
-    latestTextRef.current = text;
-  }, [text]);
+    if (showFormattingControls) return;
+    setIsFullscreenOpen(false);
+  }, [showFormattingControls]);
 
   React.useEffect(() => {
     if (isOpen) return;
+    cancelPendingFullscreenOpen();
+    setFocusedEditor(null);
     onTextareaFocusChange(false);
     setIsFullscreenOpen(false);
-  }, [isOpen, onTextareaFocusChange]);
+  }, [cancelPendingFullscreenOpen, isOpen, onTextareaFocusChange]);
 
-  const handleTextareaFocus = React.useCallback(() => {
-    if (isTextInputDisabled) return;
-    onTextareaFocusChange(true);
-  }, [isTextInputDisabled, onTextareaFocusChange]);
+  const handleTextareaFocus = React.useCallback(
+    (editor: ComposerEditor) => {
+      if (isTextInputDisabled) return;
+      setFocusedEditor(editor);
+      onTextareaFocusChange(true);
+    },
+    [isTextInputDisabled, onTextareaFocusChange]
+  );
 
   const setComposerText = React.useCallback(
     (nextText: string) => {
-      latestTextRef.current = nextText;
       onChangeText(nextText);
     },
     [onChangeText]
   );
 
+  const {
+    handleKeyDown: handleInlineKeyDown,
+    handleSelectionChange: handleInlineSelectionChange,
+    handleShortcut: handleInlineMarkdownShortcut,
+    handleShortcutPressStart: handleInlineMarkdownShortcutPressStart,
+    handleTouchStart: handleInlineTextareaTouchStart,
+    readSelection: readInlineSelection,
+  } = useMarkdownTextareaShortcuts({
+    disabled: isTextInputDisabled,
+    maxLength: COMPOSER_TEXT_MAX_LENGTH,
+    setText: setComposerText,
+    text,
+    textareaRef: inlineTextareaRef,
+  });
+
+  const {
+    handleKeyDown: handleFullscreenKeyDown,
+    handleSelectionChange: handleFullscreenSelectionChange,
+    handleShortcut: handleFullscreenMarkdownShortcut,
+    handleShortcutPressStart: handleFullscreenMarkdownShortcutPressStart,
+    handleTouchStart: handleFullscreenTextareaTouchStart,
+    setSelection: setFullscreenSelection,
+  } = useMarkdownTextareaShortcuts({
+    disabled: isTextInputDisabled,
+    maxLength: COMPOSER_TEXT_MAX_LENGTH,
+    setText: setComposerText,
+    text,
+    textareaRef: fullscreenTextareaRef,
+  });
+
   const handleTextareaBlur = React.useCallback(
-    (event: unknown) => {
+    (editor: ComposerEditor, event: unknown) => {
+      setFocusedEditor((current) => (current === editor ? null : current));
+
       if (isTextInputDisabled) {
         onTextareaFocusChange(false);
         return;
@@ -184,229 +183,77 @@ export const ComposerForm = ({
     [isTextInputDisabled, onTextareaFocusChange, setComposerText, text]
   );
 
-  const getTextareaHandle = React.useCallback((editor: ComposerEditor) => {
-    const textarea =
-      editor === 'fullscreen'
-        ? fullscreenTextareaRef.current
-        : inlineTextareaRef.current;
+  const handleInlineTextareaFocus = React.useCallback(() => {
+    handleTextareaFocus('inline');
+  }, [handleTextareaFocus]);
 
-    return textarea as unknown as TextareaSelectionHandle | null;
-  }, []);
+  const handleFullscreenTextareaFocus = React.useCallback(() => {
+    handleTextareaFocus('fullscreen');
+  }, [handleTextareaFocus]);
 
-  const setEditorSelection = React.useCallback(
-    (editor: ComposerEditor, selection: TextSelection) => {
-      if (editor === 'fullscreen') {
-        fullscreenSelectionRef.current = selection;
-      } else {
-        inlineSelectionRef.current = selection;
-      }
-
-      if (selection.start !== selection.end) {
-        lastSelectedTextRangeRef.current[editor] = selection;
-      }
-    },
-    []
-  );
-
-  const getEditorSelection = React.useCallback((editor: ComposerEditor) => {
-    return editor === 'fullscreen'
-      ? fullscreenSelectionRef.current
-      : inlineSelectionRef.current;
-  }, []);
-
-  const createSelectionChangeHandler = React.useCallback(
-    (editor: ComposerEditor) => (event: TextareaSelectionChangeEvent) => {
-      setEditorSelection(editor, event.nativeEvent.selection);
-    },
-    [setEditorSelection]
-  );
-
-  const createTextareaTouchStartHandler = React.useCallback(
-    (editor: ComposerEditor) => () => {
-      lastSelectedTextRangeRef.current[editor] = null;
-    },
-    []
-  );
-
-  const readTextareaSelection = React.useCallback(
-    (editor: ComposerEditor) => {
-      const textarea = getTextareaHandle(editor);
-
-      if (
-        typeof textarea?.selectionStart !== 'number' ||
-        typeof textarea.selectionEnd !== 'number'
-      ) {
-        return;
-      }
-
-      setEditorSelection(editor, {
-        end: textarea.selectionEnd,
-        start: textarea.selectionStart,
-      });
-    },
-    [getTextareaHandle, setEditorSelection]
-  );
-
-  const handleInlineSelectionChange = React.useMemo(
-    () => createSelectionChangeHandler('inline'),
-    [createSelectionChangeHandler]
-  );
-
-  const handleFullscreenSelectionChange = React.useMemo(
-    () => createSelectionChangeHandler('fullscreen'),
-    [createSelectionChangeHandler]
-  );
-
-  const handleInlineTextareaTouchStart = React.useMemo(
-    () => createTextareaTouchStartHandler('inline'),
-    [createTextareaTouchStartHandler]
-  );
-
-  const handleFullscreenTextareaTouchStart = React.useMemo(
-    () => createTextareaTouchStartHandler('fullscreen'),
-    [createTextareaTouchStartHandler]
-  );
-
-  const handleMarkdownShortcutPressStart = React.useCallback(
+  const handleInlineTextareaBlur = React.useCallback(
     (event: unknown) => {
-      readTextareaSelection('fullscreen');
-      // Web can blur or collapse textarea selection when a toolbar button is
-      // pressed, so capture the DOM range before the eventual button press.
-      if (Platform.OS !== 'web') return;
-      const preventableEvent = event as WebPreventablePressStartEvent;
-
-      if (
-        preventableEvent.nativeEvent?.pointerType &&
-        preventableEvent.nativeEvent.pointerType !== 'mouse'
-      ) {
-        return;
-      }
-
-      preventableEvent.preventDefault?.();
-      preventableEvent.nativeEvent?.preventDefault?.();
+      handleTextareaBlur('inline', event);
     },
-    [readTextareaSelection]
+    [handleTextareaBlur]
   );
 
-  const restoreTextareaSelection = React.useCallback(
-    (editor: ComposerEditor, { end, start }: TextSelection) => {
-      requestAnimationFrame(() => {
-        const textarea = getTextareaHandle(editor);
-
-        if (Platform.OS === 'web') {
-          try {
-            textarea?.focus?.({ preventScroll: true });
-          } catch {
-            textarea?.focus?.();
-          }
-        } else {
-          textarea?.focus?.();
-        }
-
-        if (textarea?.setSelectionRange) {
-          textarea.setSelectionRange(start, end);
-          return;
-        }
-
-        textarea?.setNativeProps?.({ selection: { end, start } });
-      });
+  const handleFullscreenTextareaBlur = React.useCallback(
+    (event: unknown) => {
+      handleTextareaBlur('fullscreen', event);
     },
-    [getTextareaHandle]
+    [handleTextareaBlur]
   );
 
-  const handleMarkdownShortcut = React.useCallback(
-    (editor: ComposerEditor, shortcut: markdownShortcuts.MarkdownShortcut) => {
-      if (isTextInputDisabled) return;
-      const currentText = latestTextRef.current;
-      const currentSelection = getEditorSelection(editor);
+  const handleOpenFullscreen = React.useCallback(() => {
+    if (isTextInputDisabled) return;
+    setFullscreenSelection(readInlineSelection());
+    cancelPendingFullscreenOpen();
 
-      const selection =
-        currentSelection.start === currentSelection.end
-          ? (lastSelectedTextRangeRef.current[editor] ?? currentSelection)
-          : currentSelection;
+    if (Platform.OS !== 'web' && isVirtualKeyboardVisible) {
+      let opened = false;
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+      let subscription: { remove: () => void } | null = null;
 
-      const edit = markdownShortcuts.getMarkdownShortcutEdit({
-        selectionEnd: Math.min(selection.end, currentText.length),
-        selectionStart: Math.min(selection.start, currentText.length),
-        shortcut,
-        text: currentText,
-      });
-
-      if (edit.text.length > COMPOSER_TEXT_MAX_LENGTH) return;
-      setComposerText(edit.text);
-
-      const nextSelection = {
-        end: edit.selectionEnd,
-        start: edit.selectionStart,
+      const open = () => {
+        if (opened) return;
+        opened = true;
+        subscription?.remove();
+        if (timeout) clearTimeout(timeout);
+        cancelPendingFullscreenOpenRef.current = null;
+        setIsFullscreenOpen(true);
       };
 
-      if (editor === 'fullscreen') {
-        fullscreenSelectionRef.current = nextSelection;
-      } else {
-        inlineSelectionRef.current = nextSelection;
-      }
+      subscription = Keyboard.addListener('keyboardDidHide', open);
+      timeout = setTimeout(open, 500);
 
-      lastSelectedTextRangeRef.current[editor] = null;
-      restoreTextareaSelection(editor, nextSelection);
-    },
-    [
-      getEditorSelection,
-      isTextInputDisabled,
-      restoreTextareaSelection,
-      setComposerText,
-    ]
-  );
-
-  const handleMarkdownShortcutKeyDown = React.useCallback(
-    (
-      editor: ComposerEditor,
-      event: React.KeyboardEvent<HTMLTextAreaElement>
-    ) => {
-      const shortcut = markdownShortcuts.getMarkdownShortcutFromKeyEvent(
-        event.nativeEvent
-      );
-
-      if (!shortcut) return;
-      if (isTextInputDisabled) return;
-      event.preventDefault();
-
-      const selection = {
-        end: event.currentTarget.selectionEnd,
-        start: event.currentTarget.selectionStart,
+      cancelPendingFullscreenOpenRef.current = () => {
+        opened = true;
+        subscription?.remove();
+        if (timeout) clearTimeout(timeout);
       };
 
-      setEditorSelection(editor, selection);
+      Keyboard.dismiss();
+      return;
+    }
 
-      if (selection.start === selection.end) {
-        lastSelectedTextRangeRef.current[editor] = null;
-      }
+    setIsFullscreenOpen(true);
+  }, [
+    cancelPendingFullscreenOpen,
+    isTextInputDisabled,
+    isVirtualKeyboardVisible,
+    readInlineSelection,
+    setFullscreenSelection,
+  ]);
 
-      handleMarkdownShortcut(editor, shortcut);
-    },
-    [handleMarkdownShortcut, isTextInputDisabled, setEditorSelection]
-  );
-
-  const handleInlineKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      handleMarkdownShortcutKeyDown('inline', event);
-    },
-    [handleMarkdownShortcutKeyDown]
-  );
-
-  const handleFullscreenKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      handleMarkdownShortcutKeyDown('fullscreen', event);
-    },
-    [handleMarkdownShortcutKeyDown]
-  );
-
-  const textareaPaddingClassName = showInputAction
-    ? showFullscreenAction
-      ? 'pr-44'
-      : 'pr-32'
-    : showFullscreenAction
-      ? 'pr-14'
-      : undefined;
+  const handleCompactAttachmentSummaryPress = React.useCallback(() => {
+    if (isTextInputDisabled) return;
+    readInlineSelection();
+    (inlineTextareaRef.current as TextareaBlurHandle | null)?.blur?.();
+    setFocusedEditor(null);
+    if (Platform.OS !== 'web') Keyboard.dismiss();
+    onTextareaFocusChange(false);
+  }, [isTextInputDisabled, onTextareaFocusChange, readInlineSelection]);
 
   return (
     <React.Fragment>
@@ -425,9 +272,9 @@ export const ComposerForm = ({
                 maxLength={COMPOSER_TEXT_MAX_LENGTH}
                 maxRows={7}
                 minRows={1}
-                onBlur={handleTextareaBlur}
+                onBlur={handleInlineTextareaBlur}
                 onChangeText={setComposerText}
-                onFocus={handleTextareaFocus}
+                onFocus={handleInlineTextareaFocus}
                 onKeyDown={handleInlineKeyDown}
                 onSelectionChange={handleInlineSelectionChange}
                 onTouchStart={handleInlineTextareaTouchStart}
@@ -438,17 +285,21 @@ export const ComposerForm = ({
                 className={cn(
                   'border-0 bg-transparent',
                   isTextInputDisabled && 'opacity-50',
-                  textareaPaddingClassName
+                  showFocusedAttachmentSummary && 'min-h-16 pb-8',
+                  showInputAction && showFormattingControls && 'pr-44',
+                  showInputAction && !showFormattingControls && 'pr-32',
+                  !showInputAction && showFormattingControls && 'pr-14'
                 )}
               />
-              {showInputActionOverlay && (
+              {showInputControls && (
                 <View className="absolute right-1 top-1 flex-row gap-1">
                   {showInputAction && inputAction}
-                  {showFullscreenAction && (
+                  {showFormattingControls && (
                     <Button
+                      accessibilityLabel="Open fullscreen composer"
                       className="h-8 w-8 rounded-lg"
                       disabled={isTextInputDisabled}
-                      onPress={() => setIsFullscreenOpen(true)}
+                      onPress={handleOpenFullscreen}
                       size="icon"
                       variant="ghost"
                       wrapperClassName="rounded-lg border-continuous"
@@ -462,13 +313,31 @@ export const ComposerForm = ({
                   )}
                 </View>
               )}
+              {showFocusedAttachmentSummary && (
+                <Pressable
+                  accessibilityLabel="Dismiss keyboard"
+                  accessibilityRole="button"
+                  className="absolute bottom-1 right-3 max-w-[75%]"
+                  hitSlop={8}
+                  onPress={handleCompactAttachmentSummaryPress}
+                >
+                  <AttachmentSummary
+                    count={attachmentCount}
+                    variant="compact"
+                  />
+                </Pressable>
+              )}
             </View>
             {isComposerCompact ? null : filePreview}
           </View>
           <View className="flex-row px-4 gap-3 items-center shrink-0">
             <View className="flex-1 flex-row gap-2 items-center">
-              {isComposerCompact ? (
-                <AttachmentSummary count={attachmentCount} />
+              {showMarkdownShortcuts ? (
+                <MarkdownShortcutToolbar
+                  disabled={isTextInputDisabled}
+                  onShortcut={handleInlineMarkdownShortcut}
+                  onShortcutPressStart={handleInlineMarkdownShortcutPressStart}
+                />
               ) : (
                 toolbar
               )}
@@ -493,7 +362,7 @@ export const ComposerForm = ({
       <Sheet
         className="h-full"
         onDismiss={() => setIsFullscreenOpen(false)}
-        open={isOpen && isFullscreenOpen}
+        open={isOpen && isFullscreenOpen && showFormattingControls}
         portalName={fullscreenPortalName}
       >
         <Page className="flex-col overflow-hidden max-h-full min-h-0 bg-popover">
@@ -504,9 +373,9 @@ export const ComposerForm = ({
                   ref={fullscreenTextareaRef}
                   autoFocus
                   maxLength={COMPOSER_TEXT_MAX_LENGTH}
-                  onBlur={handleTextareaBlur}
+                  onBlur={handleFullscreenTextareaBlur}
                   onChangeText={setComposerText}
-                  onFocus={handleTextareaFocus}
+                  onFocus={handleFullscreenTextareaFocus}
                   onKeyDown={handleFullscreenKeyDown}
                   onSelectionChange={handleFullscreenSelectionChange}
                   onTouchStart={handleFullscreenTextareaTouchStart}
@@ -522,22 +391,13 @@ export const ComposerForm = ({
               </View>
               <View className="flex-row px-4 gap-3 items-center shrink-0">
                 <View className="flex-1 flex-row gap-2 items-center">
-                  {MARKDOWN_SHORTCUTS.map((item) => (
-                    <Button
-                      key={item.shortcut}
-                      accessibilityLabel={item.accessibilityLabel}
-                      disabled={isTextInputDisabled}
-                      onPointerDown={handleMarkdownShortcutPressStart}
-                      onTouchStart={handleMarkdownShortcutPressStart}
-                      size="icon-xs"
-                      variant="secondary"
-                      onPress={() =>
-                        handleMarkdownShortcut('fullscreen', item.shortcut)
-                      }
-                    >
-                      <Icon icon={item.icon} />
-                    </Button>
-                  ))}
+                  <MarkdownShortcutToolbar
+                    disabled={isTextInputDisabled}
+                    onShortcut={handleFullscreenMarkdownShortcut}
+                    onShortcutPressStart={
+                      handleFullscreenMarkdownShortcutPressStart
+                    }
+                  />
                 </View>
                 <Button
                   onPress={() => setIsFullscreenOpen(false)}

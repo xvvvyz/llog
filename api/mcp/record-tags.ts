@@ -1,4 +1,5 @@
 import { runBulkItems } from '@/api/mcp/bulk';
+import * as cardActions from '@/api/cards/card-actions';
 import * as mcpFields from '@/api/mcp/fields';
 import { getReadableRecord } from '@/api/mcp/content';
 import { registerMcpTool } from '@/api/mcp/register-tool';
@@ -117,6 +118,27 @@ const listRecordTagsForLog = async ({
 };
 
 export const registerTagTools = (server: McpServer, ctx: McpContext) => {
+  const queueChangedRecordTagCardsRefresh = ({
+    logId,
+    record,
+    tagId,
+  }: {
+    logId: string;
+    record: McpRecord;
+    tagId: string;
+  }) => {
+    if (record.isDraft) return;
+
+    ctx.executionCtx.waitUntil(
+      cardActions.queuePublishedRecordCardRefreshes({
+        dbClient: ctx.notificationDb,
+        env: ctx.env,
+        logId,
+        recordTagIds: [tagId],
+      })
+    );
+  };
+
   const listRecordTags = async ({
     logId,
     query,
@@ -162,17 +184,30 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     const target = requireRecordTagAccess(record, viewer);
     requireRecordTagMatchesRecord({ ...target, tag });
     const alreadySelected = record.tags?.some((item) => item.id === tag.id);
+    let changed = false;
 
     if (selected && !alreadySelected) {
       await ctx.db.transact(
         ctx.db.tx.records[record.id].link({ tags: tag.id })
       );
+
+      changed = true;
     }
 
     if (!selected && alreadySelected) {
       await ctx.db.transact(
         ctx.db.tx.records[record.id].unlink({ tags: tag.id })
       );
+
+      changed = true;
+    }
+
+    if (changed) {
+      queueChangedRecordTagCardsRefresh({
+        logId: target.logId,
+        record,
+        tagId: tag.id,
+      });
     }
 
     return mcpFields.textResult(
@@ -217,6 +252,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
 
     const tag = existingTag ?? newTag;
     const alreadySelected = record.tags?.some((item) => item.id === tag.id);
+    let changed = false;
 
     if (!existingTag) {
       await ctx.db.transact([
@@ -233,10 +269,22 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
         ),
         ctx.db.tx.records[record.id].link({ tags: tag.id }),
       ]);
+
+      changed = true;
     } else if (!alreadySelected) {
       await ctx.db.transact(
         ctx.db.tx.records[record.id].link({ tags: tag.id })
       );
+
+      changed = true;
+    }
+
+    if (changed) {
+      queueChangedRecordTagCardsRefresh({
+        logId: target.logId,
+        record,
+        tagId: tag.id,
+      });
     }
 
     return mcpFields.textResult(

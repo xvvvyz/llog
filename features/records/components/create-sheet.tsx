@@ -87,14 +87,6 @@ const TemplatePickerSheet = ({
         )}
       </SheetListScrollView>
       <SheetFooter contentClassName="flex-row gap-4">
-        <SearchInput
-          onSubmitEditing={handleSubmitSearch}
-          query={query}
-          setQuery={setQuery}
-          size="sm"
-          submitBehavior="blurAndSubmit"
-          wrapperClassName="flex-1 min-w-0"
-        />
         <Button
           onPress={onClose}
           size="sm"
@@ -103,6 +95,14 @@ const TemplatePickerSheet = ({
         >
           <Text>Close</Text>
         </Button>
+        <SearchInput
+          onSubmitEditing={handleSubmitSearch}
+          query={query}
+          setQuery={setQuery}
+          size="sm"
+          submitBehavior="blurAndSubmit"
+          wrapperClassName="flex-1 min-w-0"
+        />
       </SheetFooter>
     </Sheet>
   );
@@ -151,6 +151,7 @@ export const RecordCreateSheet = () => {
           onSubmit={composer.onSubmit}
           onTextareaFocusChange={composer.onTextareaFocusChange}
           placeholder="What’s happening?"
+          showFormattingControls={composer.showFormattingControls}
           submitLabel={composer.submitLabel}
           submitVariant={composer.submitVariant}
           text={composer.currentText}

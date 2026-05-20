@@ -142,10 +142,10 @@ export const TagRow = ({
           <Checkbox
             checked={isSelected}
             checkedColor={accentColor}
-            className="size-[38px] border-0"
+            className="size-8 border-0"
             disabled={!canToggle}
             onCheckedChange={(selected) => onCheckedChange?.(selected)}
-            wrapperClassName="rounded-full border-continuous"
+            wrapperClassName="mr-1 rounded-full border-continuous"
           />
         )}
       </View>

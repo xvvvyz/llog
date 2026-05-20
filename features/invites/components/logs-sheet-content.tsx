@@ -14,6 +14,7 @@ import { View } from 'react-native';
 type InviteLog = Pick<Log, 'color' | 'id' | 'name'>;
 
 export const LogsSheetContent = ({
+  isSheetLoading,
   isLoading,
   logs,
   onConfirm,
@@ -22,6 +23,7 @@ export const LogsSheetContent = ({
   selectedLogIds,
   setQuery,
 }: {
+  isSheetLoading?: boolean;
   isLoading: boolean;
   logs: InviteLog[];
   onConfirm: () => void;
@@ -35,8 +37,8 @@ export const LogsSheetContent = ({
 
   return (
     <>
-      {!!visibleLogs.length && (
-        <SheetListScrollView variant="rows">
+      {(isSheetLoading || !!visibleLogs.length) && (
+        <SheetListScrollView loading={isSheetLoading} variant="rows">
           {visibleLogs.map((log) => {
             const isSelected = selectedLogIds.has(log.id);
             const color = SPECTRUM[colorScheme][log.color ?? 11];

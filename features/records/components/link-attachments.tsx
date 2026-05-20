@@ -9,7 +9,7 @@ import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import * as Sortable from '@/ui/sortable';
 import { Text } from '@/ui/text';
-import { LinkSimple, X } from 'phosphor-react-native';
+import { Link as LinkIcon, X } from 'phosphor-react-native';
 import * as React from 'react';
 import { Linking, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -47,7 +47,7 @@ const LinkAttachmentDetails = ({
   trailing?: React.ReactNode;
 }) => (
   <>
-    <Icon className={cn('text-placeholder', iconClassName)} icon={LinkSimple} />
+    <Icon className={cn('text-placeholder', iconClassName)} icon={LinkIcon} />
     <View className="flex-1 flex-row min-w-0 gap-4 items-baseline justify-between">
       <Text
         className="font-normal text-muted-foreground text-sm shrink"
@@ -314,7 +314,6 @@ export const LinkAttachments = ({
       )}
       {shouldRenderSheet && (
         <Sheet
-          loading={sheetLoading}
           onDismiss={() => setIsSheetOpen(false)}
           open={isSheetOpen}
           portalName={sheetPortalName}
@@ -323,6 +322,7 @@ export const LinkAttachments = ({
           <SheetListScrollView
             ref={scrollViewRef}
             contentContainerClassName="py-5"
+            loading={sheetLoading}
           >
             {canSortLinks ? (
               <Sortable.SortableGrid

@@ -1,4 +1,8 @@
 export type SheetName =
+  | 'log-card-detail'
+  | 'log-card-editor'
+  | 'log-card-tweak'
+  | 'log-cards'
   | 'reply-create'
   | 'reply-delete'
   | 'invite-delete'
@@ -99,6 +103,7 @@ export type SheetPayload<Name extends SheetName> =
   Name extends keyof SheetPayloadMap ? SheetPayloadMap[Name] : unknown;
 
 export type SheetContextMap = {
+  'log-card-editor': string;
   'log-template-copy-to': string;
   'log-template-editor': string;
   'record-audio': 'record' | `reply:${string}`;

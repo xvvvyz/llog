@@ -27,6 +27,7 @@ export const ReplyCreateSheet = () => {
         onSubmit={composer.onSubmit}
         onTextareaFocusChange={composer.onTextareaFocusChange}
         placeholder="Add a reply…"
+        showFormattingControls={composer.showFormattingControls}
         submitLabel={composer.submitLabel}
         submitTextClassName="text-white"
         submitVariant="secondary"

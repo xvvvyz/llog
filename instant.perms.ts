@@ -7,70 +7,219 @@ import * as ruleStrings from './permissions/rule-strings';
 const tagColorValues = '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
 const logNameMaxLength = 32;
 const templateTextMaxLength = 10240;
+const recordIsAuthor = "auth.id in data.ref('author.user.id')";
+const recordIsDraft = 'data.isDraft == true';
+const recordHasLog = "size(data.ref('log.id')) > 0";
+const recordHasNoLog = "size(data.ref('log.id')) == 0";
+const recordIsTeamMember = "auth.id in data.ref('log.team.roles.user.id')";
+const recordIsLogMember = "auth.id in data.ref('log.profiles.user.id')";
+const recordCanManage = ruleStrings.canManageFor('log.team.id');
+
+const recordIsTeamMemberByTeamId =
+  "data.teamId in auth.ref('$user.roles.team.id')";
+
+const recordCanManageByTeamId = ruleStrings.canManageAuthTeam('data.teamId');
+
+const recordIsAuthorOwnedLoglessDraft = ruleStrings.and(
+  recordIsAuthor,
+  recordIsDraft,
+  recordHasNoLog
+);
+
+const recordCanManageRecordTags = ruleStrings.and(
+  recordIsTeamMemberByTeamId,
+  ruleStrings.group(ruleStrings.or(recordIsAuthor, recordCanManageByTeamId))
+);
+
+const recordHasOnlyRecordTags =
+  "data.ref('tags.type').all(type, type == 'record')";
+
+const recordHasSameTeamTags =
+  "data.ref('tags.teamId').all(teamId, teamId == data.teamId)";
+
+const recordTagsBelongToRecordLog = ruleStrings.or(
+  recordHasNoLog,
+  "data.ref('tags.logs.id').all(logId, logId in data.ref('log.id'))"
+);
+
+const recordCanLinkContent = ruleStrings.or(
+  recordIsAuthorOwnedLoglessDraft,
+  ruleStrings.group(
+    ruleStrings.and(
+      recordIsTeamMember,
+      ruleStrings.group(
+        ruleStrings.or(recordIsAuthor, recordCanManage, recordIsLogMember)
+      )
+    )
+  )
+);
+
+const logIsTeamMember = "auth.id in data.ref('team.roles.user.id')";
+const logIsLogMember = "auth.id in data.ref('profiles.user.id')";
+const logHasInviteToken = "ruleParams.inviteToken in data.ref('invites.token')";
+const logIsLinkedProfileOwner = 'linkedData.user == auth.id';
+const logCanManage = ruleStrings.canManageCurrentTeam;
+
+const logCanLinkContent = ruleStrings.and(
+  logIsTeamMember,
+  ruleStrings.group(ruleStrings.or(logCanManage, logIsLogMember))
+);
+
+const logCanLinkProfiles = ruleStrings.or(
+  logCanManage,
+  ruleStrings.group(ruleStrings.and(logHasInviteToken, logIsLinkedProfileOwner))
+);
+
+const teamIsTeamMember = "auth.id in data.ref('roles.user.id')";
+
+const activityIsTeamMemberByTeamId =
+  "data.teamId in auth.ref('$user.roles.team.id')";
+
+const activityHasNoLog = "size(data.ref('log.id')) == 0";
+const activityIsLogMember = "auth.id in data.ref('log.profiles.user.id')";
+const activityCanManageByTeamId = ruleStrings.canManageAuthTeam('data.teamId');
+const activityHasReaction = "size(data.ref('reaction.id')) > 0";
+
+const activityIsReactionAuthor =
+  "auth.id in data.ref('reaction.author.user.id')";
+
+const activityIsReactionRecordAuthor =
+  "auth.id in data.ref('reaction.record.author.user.id')";
+
+const activityIsReactionReplyAuthor =
+  "auth.id in data.ref('reaction.reply.author.user.id')";
+
+const activityIsReactionReplyRecordAuthor =
+  "auth.id in data.ref('reaction.reply.record.author.user.id')";
+
+const activityIsReactionRecordTeamMember =
+  "auth.id in data.ref('reaction.record.log.team.roles.user.id')";
+
+const activityIsReactionReplyTeamMember =
+  "auth.id in data.ref('reaction.reply.record.log.team.roles.user.id')";
+
+const activityCanManageReactionRecord = ruleStrings.canManageFor(
+  'reaction.record.log.team.id'
+);
+
+const activityCanManageReactionReply = ruleStrings.canManageFor(
+  'reaction.reply.record.log.team.id'
+);
+
+const activityCanView = ruleStrings.and(
+  activityIsTeamMemberByTeamId,
+  ruleStrings.group(
+    ruleStrings.or(
+      activityHasNoLog,
+      activityCanManageByTeamId,
+      activityIsLogMember
+    )
+  )
+);
+
+const activityCanDeleteReaction = ruleStrings.and(
+  activityHasReaction,
+  ruleStrings.group(
+    ruleStrings.or(
+      activityIsReactionAuthor,
+      ruleStrings.group(
+        ruleStrings.and(
+          activityIsReactionRecordAuthor,
+          activityIsReactionRecordTeamMember
+        )
+      ),
+      ruleStrings.group(
+        ruleStrings.and(
+          activityIsReactionReplyAuthor,
+          activityIsReactionReplyTeamMember
+        )
+      ),
+      ruleStrings.group(
+        ruleStrings.and(
+          activityIsReactionReplyRecordAuthor,
+          activityIsReactionReplyTeamMember
+        )
+      ),
+      activityCanManageReactionRecord,
+      activityCanManageReactionReply
+    )
+  )
+);
+
+const activityCanLinkTeam = ruleStrings.and(
+  activityIsTeamMemberByTeamId,
+  'linkedData.id == data.teamId'
+);
+
+const activityCanLinkSameTeamContent = ruleStrings.and(
+  activityIsTeamMemberByTeamId,
+  'linkedData.teamId == data.teamId'
+);
+
+const activityCanLinkLog = ruleStrings.and(
+  activityCanLinkSameTeamContent,
+  ruleStrings.group(
+    ruleStrings.or(
+      activityCanManageByTeamId,
+      "auth.id in linkedData.ref('profiles.user.id')"
+    )
+  )
+);
+
+const activityCanLinkRecord = ruleStrings.and(
+  activityCanLinkSameTeamContent,
+  ruleStrings.group(
+    ruleStrings.or(
+      activityCanManageByTeamId,
+      "auth.id in linkedData.ref('author.user.id')",
+      "auth.id in linkedData.ref('log.profiles.user.id')"
+    )
+  )
+);
+
+const activityCanLinkReply = ruleStrings.and(
+  activityCanLinkSameTeamContent,
+  ruleStrings.group(
+    ruleStrings.or(
+      activityCanManageByTeamId,
+      "auth.id in linkedData.ref('author.user.id')",
+      "auth.id in linkedData.ref('record.log.profiles.user.id')"
+    )
+  )
+);
+
+const activityTeamLink = ruleStrings.or(
+  ruleStrings.group(
+    ruleStrings.and(
+      'linkedData.id == data.teamId',
+      "data.teamId in auth.ref('$user.roles.team.id')"
+    )
+  ),
+  ruleStrings.group(
+    ruleStrings.and(
+      'linkedData.teamId == data.id',
+      "data.id in auth.ref('$user.roles.team.id')"
+    )
+  )
+);
+
+const activityCanLinkActor = 'linkedData.user == auth.id';
 
 const rules = {
   $default: { allow: { $default: `false` } },
   activities: {
-    bind: [
-      'isTeamMember',
-      "auth.id in data.ref('team.roles.user.id')",
-      'hasLog',
-      "size(data.ref('log.id')) > 0",
-      'isLogMember',
-      "auth.id in data.ref('log.profiles.user.id')",
-      'canManage',
-      ruleStrings.canManageCurrentTeam,
-      'hasReaction',
-      "size(data.ref('reaction.id')) > 0",
-      'isReactionAuthor',
-      "auth.id in data.ref('reaction.author.user.id')",
-      'isReactionRecordAuthor',
-      "auth.id in data.ref('reaction.record.author.user.id')",
-      'isReactionReplyAuthor',
-      "auth.id in data.ref('reaction.reply.author.user.id')",
-      'isReactionReplyRecordAuthor',
-      "auth.id in data.ref('reaction.reply.record.author.user.id')",
-      'isReactionRecordTeamMember',
-      "auth.id in data.ref('reaction.record.log.team.roles.user.id')",
-      'isReactionReplyTeamMember',
-      "auth.id in data.ref('reaction.reply.record.log.team.roles.user.id')",
-      'canManageReactionRecord',
-      ruleStrings.canManageFor('reaction.record.log.team.id'),
-      'canManageReactionReply',
-      ruleStrings.canManageFor('reaction.reply.record.log.team.id'),
-    ],
     allow: {
-      view: 'isTeamMember && (!hasLog || canManage || isLogMember)',
-      create: 'isTeamMember',
+      view: activityCanView,
+      create: activityIsTeamMemberByTeamId,
       update: 'false',
-      delete: ruleStrings.and(
-        'hasReaction',
-        ruleStrings.group(
-          ruleStrings.or(
-            'isReactionAuthor',
-            ruleStrings.group(
-              ruleStrings.and(
-                'isReactionRecordAuthor',
-                'isReactionRecordTeamMember'
-              )
-            ),
-            ruleStrings.group(
-              ruleStrings.and(
-                'isReactionReplyAuthor',
-                'isReactionReplyTeamMember'
-              )
-            ),
-            ruleStrings.group(
-              ruleStrings.and(
-                'isReactionReplyRecordAuthor',
-                'isReactionReplyTeamMember'
-              )
-            ),
-            'canManageReactionRecord',
-            'canManageReactionReply'
-          )
-        )
-      ),
+      delete: activityCanDeleteReaction,
+      link: {
+        logs: activityCanLinkLog,
+        profiles: activityCanLinkActor,
+        records: activityCanLinkRecord,
+        replies: activityCanLinkReply,
+        teams: activityCanLinkTeam,
+      },
     },
   },
   $users: {
@@ -540,15 +689,15 @@ const rules = {
       'isValidName',
       `newData.name == null || size(newData.name) <= ${logNameMaxLength}`,
       'isTeamMember',
-      "auth.id in data.ref('team.roles.user.id')",
+      logIsTeamMember,
       'isLogMember',
-      "auth.id in data.ref('profiles.user.id')",
+      logIsLogMember,
       'hasInviteToken',
-      "ruleParams.inviteToken in data.ref('invites.token')",
+      logHasInviteToken,
       'isLinkedProfileOwner',
-      'linkedData.user == auth.id',
+      logIsLinkedProfileOwner,
       'canManage',
-      ruleStrings.canManageCurrentTeam,
+      logCanManage,
     ],
     allow: {
       view: 'hasInviteToken || (isTeamMember && (canManage || isLogMember))',
@@ -556,15 +705,10 @@ const rules = {
       update: 'canManage && isValidName',
       delete: 'canManage',
       link: {
-        activities: 'isTeamMember && (canManage || isLogMember)',
+        activities: logCanLinkContent,
         invites: 'auth.id != null',
-        profiles: ruleStrings.or(
-          'canManage',
-          ruleStrings.group(
-            ruleStrings.and('hasInviteToken', 'isLinkedProfileOwner')
-          )
-        ),
-        records: 'isTeamMember && (canManage || isLogMember)',
+        profiles: logCanLinkProfiles,
+        records: logCanLinkContent,
       },
     },
   },
@@ -657,6 +801,22 @@ const rules = {
       ),
     },
   },
+  cards: {
+    bind: [
+      'isTeamMember',
+      "auth.id in data.ref('team.roles.user.id')",
+      'isLogMember',
+      "auth.id in data.ref('log.profiles.user.id')",
+      'canManage',
+      ruleStrings.canManageFor('team.id'),
+    ],
+    allow: {
+      view: 'isTeamMember && (canManage || isLogMember)',
+      create: 'false',
+      update: 'false',
+      delete: 'false',
+    },
+  },
   records: {
     bind: [
       'isValidNewText',
@@ -675,31 +835,31 @@ const rules = {
         'newData.isDraft == false'
       ),
       'isDraft',
-      'data.isDraft == true',
+      recordIsDraft,
       'hasLog',
-      "size(data.ref('log.id')) > 0",
+      recordHasLog,
       'isAuthorOwnedLoglessDraft',
-      'isAuthor && isDraft && !hasLog',
+      ruleStrings.and(recordIsAuthor, recordIsDraft, recordHasNoLog),
       'isTeamMember',
-      "auth.id in data.ref('log.team.roles.user.id')",
+      recordIsTeamMember,
       'isLogMember',
-      "auth.id in data.ref('log.profiles.user.id')",
+      recordIsLogMember,
       'canManage',
-      ruleStrings.canManageFor('log.team.id'),
+      recordCanManage,
       'canDeleteOwn',
-      'isAuthor && isTeamMember',
+      ruleStrings.and(recordIsAuthor, recordIsTeamMember),
       'isTeamMemberByTeamId',
-      "data.teamId in auth.ref('$user.roles.team.id')",
+      recordIsTeamMemberByTeamId,
       'canManageByTeamId',
-      ruleStrings.canManageAuthTeam('data.teamId'),
+      recordCanManageByTeamId,
       'canManageRecordTags',
-      'isTeamMemberByTeamId && (isAuthor || canManageByTeamId)',
+      recordCanManageRecordTags,
       'hasOnlyRecordTags',
-      "data.ref('tags.type').all(type, type == 'record')",
+      recordHasOnlyRecordTags,
       'hasSameTeamTags',
-      "data.ref('tags.teamId').all(teamId, teamId == data.teamId)",
+      recordHasSameTeamTags,
       'recordTagsBelongToRecordLog',
-      "!hasLog || data.ref('tags.logs.id').all(logId, logId in data.ref('log.id'))",
+      recordTagsBelongToRecordLog,
     ],
     allow: {
       view: ruleStrings.or(
@@ -775,22 +935,18 @@ const rules = {
       ),
       delete: 'canDeleteOwn || canManage || isAuthorOwnedLoglessDraft',
       link: {
-        links:
-          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
-        replies:
-          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
-        reactions:
-          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
-        activities:
-          'isAuthorOwnedLoglessDraft || (isTeamMember && (isAuthor || canManage || isLogMember))',
+        links: recordCanLinkContent,
+        replies: recordCanLinkContent,
+        reactions: recordCanLinkContent,
+        activities: recordCanLinkContent,
         tags: ruleStrings.and(
-          'canManageRecordTags',
-          'hasOnlyRecordTags',
-          'hasSameTeamTags',
-          'recordTagsBelongToRecordLog'
+          recordCanManageRecordTags,
+          recordHasOnlyRecordTags,
+          recordHasSameTeamTags,
+          ruleStrings.group(recordTagsBelongToRecordLog)
         ),
       },
-      unlink: { tags: 'canManageRecordTags' },
+      unlink: { tags: recordCanManageRecordTags },
     },
   },
   roles: {
@@ -888,7 +1044,7 @@ const rules = {
       'isAuthenticated',
       'auth.id != null',
       'isTeamMember',
-      "auth.id in data.ref('roles.user.id')",
+      teamIsTeamMember,
       'isTeamOwner',
       ruleStrings.authRoleIn(Role.Owner, 'data.id', "data.ref('roles.key')"),
       'isTeamAdmin',
@@ -908,7 +1064,7 @@ const rules = {
       update:
         'canManage && isValidName || (isAuthenticated && hasInviteToken && onlyModifiesRoles)',
       delete: 'isTeamOwner',
-      link: { activities: 'isTeamMember', invites: 'auth.id != null' },
+      link: { activities: activityTeamLink, invites: 'auth.id != null' },
     },
   },
   ui: { allow: { $default: "auth.id in data.ref('user.id')" } },

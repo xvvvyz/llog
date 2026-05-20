@@ -10,6 +10,7 @@ export type OAuthProps = { email: string; profileId: string; userId: string };
 export type McpContext = {
   db: Db;
   env: CloudflareEnv;
+  executionCtx: ExecutionContext;
   notificationDb: Db;
   props: OAuthProps;
 };

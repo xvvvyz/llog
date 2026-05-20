@@ -20,10 +20,12 @@ export type AudioAnalysisMenuFile = Pick<
   FileItem,
   | 'duration'
   | 'id'
+  | 'identificationRequestedAt'
   | 'isIdentifying'
   | 'isTranscribing'
   | 'size'
   | 'tracks'
+  | 'transcriptionRequestedAt'
   | 'transcript'
   | 'type'
 >;
@@ -72,10 +74,16 @@ const getAudioAnalysisMenuState = ({
     file.type === 'audio' &&
     audioAnalysis.isTranscriptionUploadTooLarge(file.size);
 
+  const isIdentifying =
+    !!file.identificationRequestedAt || !!file.isIdentifying;
+
+  const isTranscribing =
+    !!file.transcriptionRequestedAt || !!file.isTranscribing;
+
   const canIdentify =
     audioAnalysis.canIdentifyAudioAnalysisFile(file) ||
     isAudioTooShort ||
-    !!file.isIdentifying ||
+    isIdentifying ||
     file.tracks != null;
 
   const canTranscribe =
@@ -84,7 +92,7 @@ const getAudioAnalysisMenuState = ({
     isAudioTooShort ||
     isTranscriptionTooLong ||
     isTranscriptionTooLarge ||
-    !!file.isTranscribing;
+    isTranscribing;
 
   const canClearTranscription = file.transcript != null;
 
@@ -116,7 +124,7 @@ const getAudioAnalysisMenuState = ({
         ? 'Songs identified'
         : isAudioTooShort
           ? 'Too short to identify'
-          : 'No songs found';
+          : 'No songs identified';
 
   return {
     canClearTranscription,
@@ -204,14 +212,76 @@ export const AudioAnalysisMenuItems = ({
   const isRequestingTranscriptionRef = React.useRef(false);
   const isClearingTranscriptionRef = React.useRef(false);
 
+  const clearRequestingIdentification = React.useCallback(() => {
+    isRequestingIdentificationRef.current = false;
+    setIsRequestingIdentification(false);
+  }, []);
+
+  const clearRequestingTranscription = React.useCallback(() => {
+    isRequestingTranscriptionRef.current = false;
+    setIsRequestingTranscription(false);
+  }, []);
+
+  const clearClearingTranscription = React.useCallback(() => {
+    isClearingTranscriptionRef.current = false;
+    setIsClearingTranscription(false);
+  }, []);
+
   React.useEffect(() => {
-    if (file?.transcript == null) setIsClearingTranscription(false);
-  }, [file?.transcript]);
+    clearRequestingIdentification();
+    clearRequestingTranscription();
+    clearClearingTranscription();
+  }, [
+    clearClearingTranscription,
+    clearRequestingIdentification,
+    clearRequestingTranscription,
+    file?.id,
+  ]);
+
+  React.useEffect(() => {
+    if (
+      file?.identificationRequestedAt ||
+      file?.isIdentifying ||
+      file?.tracks != null
+    ) {
+      clearRequestingIdentification();
+    }
+  }, [
+    clearRequestingIdentification,
+    file?.identificationRequestedAt,
+    file?.isIdentifying,
+    file?.tracks,
+  ]);
+
+  React.useEffect(() => {
+    if (
+      file?.transcriptionRequestedAt ||
+      file?.isTranscribing ||
+      file?.transcript != null
+    ) {
+      clearRequestingTranscription();
+    }
+  }, [
+    clearRequestingTranscription,
+    file?.isTranscribing,
+    file?.transcript,
+    file?.transcriptionRequestedAt,
+  ]);
+
+  React.useEffect(() => {
+    if (file?.transcript == null) clearClearingTranscription();
+  }, [clearClearingTranscription, file?.transcript]);
 
   const menuState = getAudioAnalysisMenuState({ canAnalyze, file });
   if (!file?.id || !menuState?.hasMenuItems) return null;
   const isActionUnavailable = actionsDisabled;
   const isActionDisabled = actionsDisabled;
+
+  const isIdentificationQueued =
+    !!file.identificationRequestedAt || !!file.isIdentifying;
+
+  const isTranscriptionQueued =
+    !!file.transcriptionRequestedAt || !!file.isTranscribing;
 
   const identifyMusic = async () => {
     if (!file.id || isActionUnavailable) return;
@@ -222,10 +292,8 @@ export const AudioAnalysisMenuItems = ({
     try {
       await audioAnalysisMutations.detectAudioFileMusic({ fileId: file.id });
     } catch {
+      clearRequestingIdentification();
       // noop
-    } finally {
-      isRequestingIdentificationRef.current = false;
-      setIsRequestingIdentification(false);
     }
   };
 
@@ -238,10 +306,8 @@ export const AudioAnalysisMenuItems = ({
     try {
       await audioAnalysisMutations.transcribeAudioFile({ fileId: file.id });
     } catch {
+      clearRequestingTranscription();
       // noop
-    } finally {
-      isRequestingTranscriptionRef.current = false;
-      setIsRequestingTranscription(false);
     }
   };
 
@@ -256,10 +322,8 @@ export const AudioAnalysisMenuItems = ({
         fileId: file.id,
       });
     } catch {
+      clearClearingTranscription();
       // noop
-    } finally {
-      isClearingTranscriptionRef.current = false;
-      setIsClearingTranscription(false);
     }
   };
 
@@ -269,7 +333,7 @@ export const AudioAnalysisMenuItems = ({
         <AudioAnalysisMenuItem
           disabled={menuState.isTranscriptionDisabled || isActionDisabled}
           icon={TextT}
-          isPending={!!file.isTranscribing || isRequestingTranscription}
+          isPending={isTranscriptionQueued || isRequestingTranscription}
           label={menuState.transcribeLabel}
           onPress={transcribe}
         />
@@ -287,7 +351,7 @@ export const AudioAnalysisMenuItems = ({
         <AudioAnalysisMenuItem
           disabled={menuState.isIdentificationDisabled || isActionDisabled}
           icon={MusicNotes}
-          isPending={!!file.isIdentifying || isRequestingIdentification}
+          isPending={isIdentificationQueued || isRequestingIdentification}
           label={menuState.identifyMusicLabel}
           onPress={identifyMusic}
         />

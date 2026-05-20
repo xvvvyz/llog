@@ -80,7 +80,9 @@ export const TagSheetContent = ({
   const showEmptyState =
     !isLoading && !rawQuery && !hasVisibleTags && !showCreateTag;
 
-  const showScrollArea = hasVisibleTags || showCreateTag || showEmptyState;
+  const showScrollArea =
+    isLoading || hasVisibleTags || showCreateTag || showEmptyState;
+
   const defaultTagColorValue = SPECTRUM[colorScheme][defaultTagColor].default;
 
   return (
@@ -89,6 +91,7 @@ export const TagSheetContent = ({
         <SheetListScrollView
           ref={scrollViewRef}
           keyboardDismissMode="none"
+          loading={isLoading}
           variant="rows"
         >
           {showCreateTag && (
@@ -108,7 +111,7 @@ export const TagSheetContent = ({
               <Text className="flex-1 text-left" numberOfLines={1}>
                 Create tag &ldquo;{query}&rdquo;
               </Text>
-              <View className="size-10 items-center justify-center">
+              <View className="mr-1 h-8 w-8 items-center justify-center">
                 <Icon className="text-placeholder" icon={Plus} />
               </View>
             </Button>
@@ -153,6 +156,14 @@ export const TagSheetContent = ({
         </SheetListScrollView>
       )}
       <SheetFooter contentClassName="flex-row gap-4">
+        <Button
+          onPress={onClose}
+          size="sm"
+          variant="secondary"
+          wrapperClassName="shrink-0"
+        >
+          <Text>Close</Text>
+        </Button>
         <SearchInput
           ref={searchInputRef}
           actionIcon={showCreateTag ? Plus : undefined}
@@ -166,14 +177,6 @@ export const TagSheetContent = ({
           submitBehavior="submit"
           wrapperClassName="flex-1 min-w-0"
         />
-        <Button
-          onPress={onClose}
-          size="sm"
-          variant="secondary"
-          wrapperClassName="shrink-0"
-        >
-          <Text>Close</Text>
-        </Button>
       </SheetFooter>
     </>
   );

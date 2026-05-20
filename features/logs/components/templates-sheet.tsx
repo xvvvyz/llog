@@ -110,44 +110,45 @@ export const LogTemplatesSheet = () => {
 
   return (
     <Sheet
-      loading={templates.isLoading}
       onDismiss={() => sheetManager.close('log-templates')}
       open={sheetManager.isOpen('log-templates')}
       portalName="log-templates"
       variant="list"
     >
-      {!templates.isLoading && (
-        <SheetListScrollView ref={scrollViewRef} variant="rows">
-          {templates.data.length > 0 ? (
-            <Sortable.SortableGrid
-              autoScrollDirection="vertical"
-              columns={1}
-              data={templates.data}
-              onDragEnd={handleDragEnd}
-              rowGap={8}
-              scrollableRef={scrollViewRef}
-              renderItem={({ item }) => (
-                <TemplateRow
-                  onOpen={() => openTemplateEditor(item.id)}
-                  template={item}
-                  onCopy={() =>
-                    sheetManager.open('log-template-copy-to', item.id, logId, {
-                      hasTemplateTags: !!item.tags?.length,
-                    })
-                  }
-                  onDelete={() =>
-                    sheetManager.open('log-template-delete', item.id)
-                  }
-                />
-              )}
-            />
-          ) : (
-            <Text className="mx-auto max-w-56 text-center text-muted-foreground md:py-6">
-              Create reusable templates for new records in this log.
-            </Text>
-          )}
-        </SheetListScrollView>
-      )}
+      <SheetListScrollView
+        ref={scrollViewRef}
+        loading={templates.isLoading}
+        variant="rows"
+      >
+        {templates.data.length > 0 ? (
+          <Sortable.SortableGrid
+            autoScrollDirection="vertical"
+            columns={1}
+            data={templates.data}
+            onDragEnd={handleDragEnd}
+            rowGap={8}
+            scrollableRef={scrollViewRef}
+            renderItem={({ item }) => (
+              <TemplateRow
+                onOpen={() => openTemplateEditor(item.id)}
+                template={item}
+                onCopy={() =>
+                  sheetManager.open('log-template-copy-to', item.id, logId, {
+                    hasTemplateTags: !!item.tags?.length,
+                  })
+                }
+                onDelete={() =>
+                  sheetManager.open('log-template-delete', item.id)
+                }
+              />
+            )}
+          />
+        ) : (
+          <Text className="mx-auto max-w-56 text-center text-muted-foreground md:py-6">
+            Create reusable templates for new records in this log.
+          </Text>
+        )}
+      </SheetListScrollView>
       <SheetFooter contentClassName="flex-row gap-4">
         <Button
           onPress={() => sheetManager.close('log-templates')}

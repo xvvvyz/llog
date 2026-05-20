@@ -87,14 +87,13 @@ export const LogTemplateCopyToSheet = () => {
 
   return (
     <Sheet
-      loading={open && copyTargets.isLoading}
       onDismiss={close}
       open={open}
       portalName="log-template-copy-to"
       variant="list"
     >
-      {!!visibleLogs.length && (
-        <SheetListScrollView variant="rows">
+      {(copyTargets.isLoading || !!visibleLogs.length) && (
+        <SheetListScrollView loading={copyTargets.isLoading} variant="rows">
           {visibleLogs.map((log) => {
             const isSelected = selectedLogIds.has(log.id);
             const color = SPECTRUM[colorScheme][log.color ?? 11];

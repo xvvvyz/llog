@@ -6,7 +6,7 @@ import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { LinkSimple } from 'phosphor-react-native';
+import { Link as LinkIcon } from 'phosphor-react-native';
 import * as React from 'react';
 
 export const useComposerLinkAttachments = ({
@@ -71,7 +71,7 @@ export const useComposerLinkAttachments = ({
       size="icon-xs"
       variant="secondary"
     >
-      <Icon icon={LinkSimple} />
+      <Icon icon={LinkIcon} />
     </Button>
   );
 

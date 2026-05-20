@@ -1,5 +1,9 @@
 import { McpSheet } from '@/features/account/components/mcp-sheet';
 import { WebPushIosSetupSheet } from '@/features/account/components/web-push-ios-setup-sheet';
+import { LogCardDetailSheet } from '@/features/cards/components/card-detail-sheet';
+import { LogCardEditorSheet } from '@/features/cards/components/card-editor-sheet';
+import { LogCardTweakSheet } from '@/features/cards/components/card-tweak-sheet';
+import { LogCardsSheet } from '@/features/cards/components/cards-sheet';
 import { useSignInHref } from '@/features/account/lib/auth-redirect';
 import { InviteDeleteSheet } from '@/features/invites/components/delete-sheet';
 import { InviteSheet } from '@/features/invites/components/invite-sheet';
@@ -66,6 +70,10 @@ export default function Layout() {
       <InviteSheet />
       <InviteLinkDeleteSheet />
       <LogEditSheet />
+      <LogCardsSheet />
+      <LogCardDetailSheet />
+      <LogCardEditorSheet />
+      <LogCardTweakSheet />
       <LogMembersSheet />
       <LogTemplatesSheet />
       <LogTemplateCopyToSheet />

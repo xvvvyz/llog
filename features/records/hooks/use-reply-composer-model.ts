@@ -17,6 +17,7 @@ import { updateReplyDraft } from '@/features/records/mutations/update-reply-draf
 import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file';
 import { useRecord } from '@/features/records/queries/use-record';
 import { useReplyDraft } from '@/features/records/queries/use-reply-draft';
+import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -51,6 +52,10 @@ export const useReplyComposerModel = () => {
 
   const record = useRecord({ id: isOpen ? recordId : undefined });
   const logColor = useLogColor({ id: record.log?.id });
+
+  const myRole = useMyRole({
+    teamId: record.teamId ?? createPayload?.teamId ?? null,
+  });
 
   const draft = useReplyDraft({
     ignoredDraftIds,
@@ -413,6 +418,7 @@ export const useReplyComposerModel = () => {
     onDismiss: close,
     onSubmit: handleSubmit,
     onTextareaFocusChange: setIsTextareaFocused,
+    showFormattingControls: myRole.canManage,
     submitLabel: isEdit ? 'Done' : 'Reply',
     toolbar,
   };

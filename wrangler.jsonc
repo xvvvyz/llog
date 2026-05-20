@@ -5,6 +5,20 @@
   "name": "llog",
   "main": "api/index.ts",
   "kv_namespaces": [{ "binding": "OAUTH_KV" }],
+  "queues": {
+    "producers": [{ "binding": "JOBS_QUEUE", "queue": "llog-jobs" }],
+    "consumers": [
+      {
+        "queue": "llog-jobs",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_concurrency": 3,
+        "max_retries": 5,
+        "retry_delay": 60,
+        "dead_letter_queue": "llog-jobs-dlq",
+      },
+    ],
+  },
   "r2_buckets": [{ "binding": "R2", "bucket_name": "llog", "remote": true }],
   "vars": { "ENV": "development" },
   "env": {
@@ -17,6 +31,20 @@
       },
       "kv_namespaces": [{ "binding": "OAUTH_KV" }],
       "observability": { "logs": { "enabled": true, "invocation_logs": true } },
+      "queues": {
+        "producers": [{ "binding": "JOBS_QUEUE", "queue": "llog-jobs" }],
+        "consumers": [
+          {
+            "queue": "llog-jobs",
+            "max_batch_size": 1,
+            "max_batch_timeout": 1,
+            "max_concurrency": 3,
+            "max_retries": 5,
+            "retry_delay": 60,
+            "dead_letter_queue": "llog-jobs-dlq",
+          },
+        ],
+      },
       "r2_buckets": [{ "binding": "R2", "bucket_name": "llog" }],
       "vars": { "ENV": "production" },
     },

@@ -55,6 +55,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
               canAnalyzeAudio={canAnalyzeAudio}
               durationSeconds={durationMsToSeconds(clip.duration)}
               fileId={clip.id}
+              identificationRequestedAt={clip.identificationRequestedAt}
               isIdentifying={clip.isIdentifying}
               isTranscribing={clip.isTranscribing}
               name={clip.name}
@@ -68,6 +69,7 @@ export const createAudioPlaylist = (AudioPlayer: AudioPlayerComponent) => {
               size={clip.size}
               tracks={clip.tracks}
               transcript={clip.transcript}
+              transcriptionRequestedAt={clip.transcriptionRequestedAt}
               type={clip.type}
               uri={clip.uri}
             />

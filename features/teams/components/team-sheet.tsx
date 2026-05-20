@@ -143,7 +143,6 @@ export const TeamSheet = () => {
 
   return (
     <Sheet
-      loading={team.isLoading}
       onDismiss={() => sheetManager.close('team')}
       open={open}
       portalName="team"
@@ -152,6 +151,7 @@ export const TeamSheet = () => {
       <SheetListScrollView
         className="max-h-96"
         contentContainerClassName="gap-0 pb-4 pt-0"
+        loading={team.isLoading}
         variant="rows"
       >
         <View>
@@ -374,13 +374,12 @@ export const TeamMembersSheet = () => {
 
   return (
     <Sheet
-      loading={isLoading}
       onDismiss={() => sheetManager.close('team-members')}
       open={open}
       portalName="team-members"
       variant="list"
     >
-      <SheetListScrollView variant="rows">
+      <SheetListScrollView loading={isLoading} variant="rows">
         {members.map((member) => {
           const profile = member.user?.profile;
           const isSelf = member.userId === auth.user?.id;
