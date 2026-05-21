@@ -53,7 +53,7 @@ const schema = i.schema({
       uri: i.string().optional(),
     }),
     invites: i.entity({
-      key: i.string().unique().indexed().optional(),
+      key: i.string().unique().indexed(),
       role: i.string(),
       teamId: i.string().indexed(),
       token: i.string().unique().indexed(),

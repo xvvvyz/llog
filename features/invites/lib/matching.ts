@@ -4,10 +4,7 @@ import schema from '@/instant.schema';
 import { InstaQLEntity } from '@instantdb/react-native';
 
 type Invite = InstaQLEntity<typeof schema, 'invites'>;
-
-type InviteLike = Pick<Invite, 'key' | 'role'> & {
-  logs?: Pick<Log, 'id'>[] | null;
-};
+type InviteLike = Pick<Invite, 'role'> & { logs?: Pick<Log, 'id'>[] | null };
 
 export const findMemberInviteByLogs = <T extends InviteLike>(
   invites: T[],
@@ -16,7 +13,6 @@ export const findMemberInviteByLogs = <T extends InviteLike>(
   const sorted = [...logIds].sort();
 
   return invites.find((invite) => {
-    if (!invite.key) return false;
     if (invite.role !== Role.Member) return false;
     const inviteLogIds = [...(invite.logs?.map((l) => l.id) ?? [])].sort();
     if (inviteLogIds.length !== sorted.length) return false;

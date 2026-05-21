@@ -13,7 +13,6 @@ export const useTeamInvites = ({ teamId }: { teamId?: string | null } = {}) => {
             $: {
               fields: [
                 'id' as const,
-                'key' as const,
                 'role' as const,
                 'teamId' as const,
                 'token' as const,

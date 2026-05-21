@@ -77,7 +77,6 @@ describe('invite links', () => {
   test('builds preview info', () => {
     const info = inviteLink.buildInviteLinkInfo({
       id: 'invite-1',
-      key: 'token-1_member_team-1',
       role: Role.Member,
       team: {
         id: 'team-1',
@@ -129,16 +128,6 @@ describe('invite links', () => {
       teamId: 'team-1',
       teamName: 'Team',
     });
-  });
-
-  test('rejects keyless previews', () => {
-    expect(
-      inviteLink.buildInviteLinkInfo({
-        id: 'invite-1',
-        role: Role.Member,
-        team: { id: 'team-1' },
-      })
-    ).toEqual({ isValid: false });
   });
 
   test('builds member redemption', () => {

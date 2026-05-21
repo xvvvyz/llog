@@ -10,10 +10,7 @@ export const redeemInviteLink = async ({ token }: { token: string }) => {
   const { data: inviteData } = await db.queryOnce(
     {
       invites: {
-        $: {
-          fields: ['id' as const, 'key' as const, 'role' as const],
-          where: { token },
-        },
+        $: { fields: ['id' as const, 'role' as const], where: { token } },
         team: { $: { fields: ['id' as const] } },
         logs: { $: { fields: ['id' as const] } },
       },
@@ -22,7 +19,7 @@ export const redeemInviteLink = async ({ token }: { token: string }) => {
   );
 
   const invite = inviteData.invites?.[0];
-  if (!invite?.id || !invite.key) throw new Error('Invite link not found');
+  if (!invite?.id) throw new Error('Invite link not found');
   const teamId = invite.team?.id;
   if (!teamId) throw new Error('Invalid invite link');
 

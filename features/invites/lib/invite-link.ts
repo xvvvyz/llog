@@ -38,7 +38,6 @@ type InviteProfile = {
 
 type InviteRecord = {
   id?: string;
-  key?: string | null;
   role?: string | null;
   team?: {
     id?: string;
@@ -65,7 +64,7 @@ const profileInfo = (profile?: InviteProfile | null) => {
 export const buildInviteLinkInfo = (
   invite?: InviteRecord | null
 ): InviteLinkInfo => {
-  if (!invite?.id || !invite.key || !invite.team?.id) return { isValid: false };
+  if (!invite?.id || !invite.team?.id) return { isValid: false };
 
   const adminMembers = (invite.team.roles ?? [])
     .filter((role) => permissions.isManagedRole(role.role))
@@ -101,10 +100,7 @@ export const getInviteLinkInfo = async (token: string) => {
   const { data } = await db.queryOnce(
     {
       invites: {
-        $: {
-          fields: ['id' as const, 'key' as const, 'role' as const],
-          where: { token },
-        },
+        $: { fields: ['id' as const, 'role' as const], where: { token } },
         team: {
           $: { fields: ['id' as const, 'name' as const] },
           roles: {
