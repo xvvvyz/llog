@@ -1,7 +1,7 @@
 import { deleteActivities } from '@/api/activity/delete-activities';
 import * as cardActions from '@/api/cards/card-actions';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
-import { auth, db } from '@/api/middleware/db';
+import { auth, createAdminDb, db } from '@/api/middleware/db';
 import * as recordCopy from '@/api/records/record-copy';
 import { replayOfflineRecordDraft } from '@/api/records/record-offline-draft-replay';
 import { publishDraftRecord } from '@/api/records/record-publish';
@@ -98,7 +98,7 @@ app.post(
   }
 );
 
-app.delete('/:recordId', db(), auth(), async (c) => {
+app.delete('/:recordId', db({ asUser: true }), async (c) => {
   const recordId = c.req.param('recordId');
   if (!recordId) throw new HTTPException(400, { message: 'Invalid request' });
 
@@ -159,7 +159,7 @@ app.delete('/:recordId', db(), auth(), async (c) => {
     deleteActivities(c.env, activities),
     !record.isDraft && logId && recordTagIds.length
       ? cardActions.queuePublishedRecordCardRefreshes({
-          dbClient: c.var.db,
+          dbClient: createAdminDb(c.env),
           env: c.env,
           logId,
           recordTagIds,

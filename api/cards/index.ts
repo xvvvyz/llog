@@ -24,14 +24,6 @@ const cardTweakSchema = z.object({
   prompt: z.string().min(1).max(cardActions.CARD_TWEAK_PROMPT_MAX_LENGTH),
 });
 
-const cardReorderSchema = z.object({
-  logId: z.string().min(1),
-  orderedIds: z
-    .array(z.string().min(1))
-    .min(1)
-    .max(cardActions.MAX_CARD_REORDER_IDS),
-});
-
 const cardRecordRefreshSchema = z.object({
   recordId: z.string().min(1),
   tagIds: z.array(z.string().min(1)).min(1).max(cardActions.MAX_CARD_TAGS),
@@ -62,22 +54,6 @@ app.post(
     });
 
     return c.json(suggestion);
-  }
-);
-
-app.post(
-  '/reorder',
-  db(),
-  auth(),
-  zValidator('json', cardReorderSchema),
-  async (c) => {
-    const result = await cardActions.reorderCardsForUser({
-      dbClient: c.var.db,
-      input: c.req.valid('json'),
-      userId: c.var.user.id,
-    });
-
-    return c.json(result);
   }
 );
 
@@ -139,16 +115,6 @@ app.post('/:cardId/refresh', db(), auth(), async (c) => {
     cardId: c.req.param('cardId'),
     dbClient: c.var.db,
     env: c.env,
-    userId: c.var.user.id,
-  });
-
-  return c.json(result);
-});
-
-app.delete('/:cardId', db(), auth(), async (c) => {
-  const result = await cardActions.deleteCard({
-    cardId: c.req.param('cardId'),
-    dbClient: c.var.db,
     userId: c.var.user.id,
   });
 

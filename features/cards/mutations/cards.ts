@@ -1,5 +1,7 @@
 import { apiOrThrow } from '@/lib/api';
 import type * as card from '@/features/cards/types/card';
+import { db } from '@/lib/db';
+import { applyOrderedIds, reorderItems } from '@/lib/reorder-items';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
@@ -30,19 +32,26 @@ export const tweakCard = ({ id, prompt }: { id: string; prompt: string }) =>
 export const refreshCard = (id: string) =>
   postJson<{ queued: boolean; success: boolean }>(`/cards/${id}/refresh`);
 
-export const reorderCards = ({
+export const reorderCards = async ({
   logId,
   orderedIds,
 }: {
   logId?: string;
   orderedIds: string[];
 }) => {
-  if (!logId) return;
+  if (!logId || orderedIds.length < 2) return;
 
-  return postJson<{ success: boolean }>('/cards/reorder', {
-    logId,
-    orderedIds,
+  const { data } = await db.queryOnce({
+    cards: {
+      $: { fields: ['id' as const], order: { order: 'asc' }, where: { logId } },
+    },
   });
+
+  const orderedCards = applyOrderedIds(data.cards, orderedIds);
+
+  return reorderItems(orderedCards, (id, order) =>
+    db.tx.cards[id].update({ order })
+  );
 };
 
 export const refreshRecordCards = ({
@@ -77,5 +86,4 @@ export const updateCard = async ({
   }>;
 };
 
-export const deleteCard = (id: string) =>
-  apiOrThrow(`/cards/${id}`, { method: 'DELETE' });
+export const deleteCard = (id: string) => db.transact(db.tx.cards[id].delete());

@@ -15,6 +15,11 @@ describe('permissions', () => {
     );
   });
 
+  test('guards activity cleanup', () => {
+    expect(rules.activities.allow.delete).toContain('reaction.author.user.id');
+    expect(rules.activities.allow.delete).toContain('$user.roles.key');
+  });
+
   test('guards content activities', () => {
     expect(rules.logs.allow.link.activities).toContain('team.roles.key');
 
@@ -23,5 +28,15 @@ describe('permissions', () => {
     );
 
     expect(rules.replies.allow.link.activities).toContain('isLogMember');
+  });
+
+  test('guards card cascades', () => {
+    expect(rules.cards.allow.update).toContain('onlyModifiesCardOrder');
+    expect(rules.cards.allow.delete).toBe('canManage');
+    expect(rules.cardRefreshDebounces.allow.delete).toBe('canManage');
+
+    expect(rules.cardRefreshDebounces.bind.join(' ')).toContain(
+      '$user.roles.key'
+    );
   });
 });

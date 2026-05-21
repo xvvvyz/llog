@@ -15,8 +15,6 @@ export const CARD_TWEAK_PROMPT_MAX_LENGTH = 1000;
 
 export const MAX_CARD_TAGS = 20;
 
-export const MAX_CARD_REORDER_IDS = 100;
-
 export const CARD_REFRESH_DEBOUNCE_MS = 10_000;
 
 export const CARD_GENERATION_FAILURE_RETRY_DELAY_SECONDS = 60;
@@ -32,8 +30,6 @@ export type CardPromptSuggestionInput = {
 };
 
 export type CardTweakInput = { prompt: string };
-
-export type CardReorderInput = { logId: string; orderedIds: string[] };
 
 export type CardRecordRefreshInput = { recordId: string; tagIds: string[] };
 
@@ -313,31 +309,6 @@ const fallbackCardTitle = (prompt: string) => {
 const readCardOutput = (value: unknown) => {
   const parsed = cardOutput.validateCardOutput(value);
   return parsed.success ? parsed.data : undefined;
-};
-
-const applyOrderedCardIds = <T extends { id: string }>(
-  cards: T[],
-  orderedIds: string[]
-) => {
-  if (cards.length < 2 || orderedIds.length < 2) return cards;
-  const cardById = new Map(cards.map((card) => [card.id, card]));
-  const orderedCards: T[] = [];
-  const seenIds = new Set<string>();
-
-  for (const id of orderedIds) {
-    if (seenIds.has(id)) continue;
-    const card = cardById.get(id);
-    if (!card) continue;
-    orderedCards.push(card);
-    seenIds.add(id);
-  }
-
-  if (orderedCards.length < 2) return cards;
-  let orderedIndex = 0;
-
-  return cards.map((card) =>
-    seenIds.has(card.id) ? orderedCards[orderedIndex++] : card
-  );
 };
 
 const getTaggedSourceRecordSelection = async ({
@@ -1052,59 +1023,6 @@ export const updateCard = async ({
   }
 
   return { id: cardId, queued: true, success: true };
-};
-
-export const reorderCardsForUser = async ({
-  dbClient,
-  input,
-  userId,
-}: {
-  dbClient: Db;
-  input: CardReorderInput;
-  userId: string;
-}) => {
-  const access = await getManageableLogAccess({
-    dbClient,
-    logId: input.logId,
-    userId,
-  });
-
-  const orderedIds = [...new Set(input.orderedIds)].filter(Boolean);
-  if (orderedIds.length < 2) return { success: true };
-
-  const { cards } = await dbClient.query({
-    cards: {
-      $: {
-        fields: ['id', 'order'],
-        order: { order: 'asc' },
-        where: { logId: access.logId },
-      },
-    },
-  });
-
-  const orderedCards = applyOrderedCardIds(cards, orderedIds);
-
-  await dbClient.transact(
-    orderedCards.map((card, order) =>
-      dbClient.tx.cards[card.id].update({ order })
-    )
-  );
-
-  return { success: true };
-};
-
-export const deleteCard = async ({
-  cardId,
-  dbClient,
-  userId,
-}: {
-  cardId: string;
-  dbClient: Db;
-  userId: string;
-}) => {
-  await getManageableCard({ cardId, dbClient, userId });
-  await dbClient.transact(dbClient.tx.cards[cardId].delete());
-  return { success: true };
 };
 
 export const refreshCardForUser = async ({

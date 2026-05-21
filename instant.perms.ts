@@ -146,6 +146,11 @@ const activityCanDeleteReaction = ruleStrings.and(
   )
 );
 
+const activityCanDelete = ruleStrings.or(
+  activityCanDeleteReaction,
+  activityCanManageByTeamId
+);
+
 const activityCanLinkTeam = ruleStrings.and(
   activityIsTeamMemberByTeamId,
   'linkedData.id == data.teamId'
@@ -212,7 +217,7 @@ const rules = {
       view: activityCanView,
       create: activityIsTeamMemberByTeamId,
       update: 'false',
-      delete: activityCanDeleteReaction,
+      delete: activityCanDelete,
       link: {
         logs: activityCanLinkLog,
         profiles: activityCanLinkActor,
@@ -809,12 +814,23 @@ const rules = {
       "auth.id in data.ref('log.profiles.user.id')",
       'canManage',
       ruleStrings.canManageFor('team.id'),
+      'onlyModifiesCardOrder',
+      "request.modifiedFields.all(field, field in ['order'])",
     ],
     allow: {
       view: 'isTeamMember && (canManage || isLogMember)',
       create: 'false',
+      update: 'canManage && onlyModifiesCardOrder',
+      delete: 'canManage',
+    },
+  },
+  cardRefreshDebounces: {
+    bind: ['canManage', ruleStrings.canManageFor('team.id')],
+    allow: {
+      view: 'false',
+      create: 'false',
       update: 'false',
-      delete: 'false',
+      delete: 'canManage',
     },
   },
   records: {
