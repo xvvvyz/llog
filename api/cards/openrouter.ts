@@ -121,7 +121,7 @@ const metricTrendRules =
 
 const outputSchemaDescription = {
   chart: `optional { type: "bar" | "line", title?: string, unit?: string, xAxis?: { labelMode?: "auto" | "all" | "sparse" }, yAxis?: { decimals?: 0 | 1 | 2, tickCount?: 3 | 4 | 5 | 6 }, data?: [{ label: string, value: number }], series?: [{ label: string, unit?: string, data: [{ label: string, value: number }] }] }. Limits: ${cardOutput.MAX_CARD_CHART_POINTS} points per series, ${cardOutput.MAX_CARD_CHART_SERIES} series. Bar charts use data. Use series only for multi-measure line charts; when using series, leave data empty. Keep natural record-level points needed by the prompt. Use concise labels and units. Date labels must be the source record.date full ISO timestamp, not YYYY-MM-DD; the UI formats them. Set xAxis/yAxis options only as needed for readability.`,
-  metrics: `optional array of at most 6 { label, value, featured: boolean, unit?, trend: "up" | "down" | "flat" | null }. Mark 1-4 metrics as featured for the preview card. Prefer the highest-signal stats. ${metricTrendRules}`,
+  metrics: `optional array of at most 6 { label, value, unit?, trend: "up" | "down" | "flat" | null }. Order metrics by importance; the first metrics appear on the preview card. Prefer the highest-signal stats. ${metricTrendRules}`,
   milestones:
     'optional array of at most 8 { title, date?, detail?, recordIds? }. Dates must be source record.date full ISO timestamps, not YYYY-MM-DD or invented midnight values. Order newest-first.',
   sourceRecordIds: `optional evidence record ids, at most ${cardOutput.MAX_CARD_SOURCE_RECORD_IDS}. Include ids supporting chart points, metrics, milestones, or summary when practical.`,
@@ -211,13 +211,12 @@ const chartSchema = {
 const metricSchema = {
   additionalProperties: false,
   properties: {
-    featured: { type: 'boolean' },
     label: { type: 'string' },
     trend: { enum: ['up', 'down', 'flat', null], type: ['string', 'null'] },
     unit: nullableStringSchema,
     value: { anyOf: [{ type: 'number' }, { type: 'string' }] },
   },
-  required: ['label', 'value', 'featured', 'unit', 'trend'],
+  required: ['label', 'value', 'unit', 'trend'],
   type: 'object',
 } satisfies JsonSchema;
 
@@ -331,7 +330,7 @@ const buildMessages = ({
       },
       requiredJsonShape:
         'Return { "title": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
-      outputRules: `Include only useful sections; do not pad. Use featured to choose preview metrics. ${metricTrendRules} Put milestones newest-first.`,
+      outputRules: `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`,
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),

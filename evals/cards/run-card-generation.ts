@@ -158,31 +158,27 @@ const durationProgressOutput = (
     },
     metrics: [
       {
-        featured: true,
         label: 'Latest duration',
         trend: 'up',
         unit: 'min',
         value: durationValue(latest),
       },
       {
-        featured: false,
         label: 'Latest distress',
         trend: 'down',
         unit: '0-5',
         value: distressValue(latest),
       },
       {
-        featured: true,
         label: 'Under threshold',
         value: `${underThreshold}/${records.length}`,
       },
       {
-        featured: false,
         label: 'Safe increases',
         unit: 'sessions',
         value: safeIncreaseCount(records),
       },
-      { featured: true, label: 'Regressions', unit: 'sessions', value: 0 },
+      { label: 'Regressions', unit: 'sessions', value: 0 },
     ],
     milestones: [],
     sourceRecordIds: records.map((record) => record.id),
@@ -206,20 +202,18 @@ const durationEndpointsOutput = (
     ...durationProgressOutput(endpoints),
     metrics: [
       {
-        featured: true,
         label: 'Latest duration',
         trend: 'up',
         unit: 'min',
         value: durationValue(latest),
       },
       {
-        featured: false,
         label: 'Latest distress',
         trend: 'down',
         unit: '0-5',
         value: distressValue(latest),
       },
-      { featured: true, label: 'Under threshold', value: '38/47' },
+      { label: 'Under threshold', value: '38/47' },
     ],
     summary: `Duration rose from ${durationValue(first)} to ${durationValue(latest)} minutes.`,
   };

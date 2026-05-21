@@ -53,8 +53,8 @@ describe('separation demo card', () => {
           unit: 'min',
         },
         metrics: [
-          { featured: false, label: 'Sessions', value: 2 },
-          { featured: true, label: 'Best duration', unit: 'min', value: 5 },
+          { label: 'Sessions', value: 2 },
+          { label: 'Best duration', unit: 'min', value: 5 },
         ],
         milestones: [
           {

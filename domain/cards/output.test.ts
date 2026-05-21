@@ -10,7 +10,7 @@ const validOutput: CardOutput = {
     ],
     type: 'line',
   },
-  metrics: [{ featured: true, label: 'Sessions', value: 4 }],
+  metrics: [{ label: 'Sessions', value: 4 }],
   milestones: [{ recordIds: ['record-1'], title: 'Started baseline' }],
   sourceRecordIds: ['record-1'],
   summary: 'Progress is steady.',
@@ -30,9 +30,7 @@ describe('card output', () => {
 
     expect(
       cardOutput.validateCardOutput({
-        metrics: [
-          { featured: true, label: 'Best duration', unit: 'min', value: 5 },
-        ],
+        metrics: [{ label: 'Best duration', unit: 'min', value: 5 }],
       }).success
     ).toBe(true);
 
@@ -101,7 +99,6 @@ describe('card output', () => {
       metrics: [
         {
           extra: true,
-          featured: true,
           label: 'Longest duration',
           trend: 'up',
           unit: 'min.',
@@ -131,7 +128,7 @@ describe('card output', () => {
         xAxis: { labelMode: 'all' },
         yAxis: { decimals: 0, tickCount: 6 },
       },
-      metrics: [{ featured: true, trend: 'up', unit: 'min' }],
+      metrics: [{ label: 'Longest duration', trend: 'up', unit: 'min' }],
       milestones: [{ title: 'Door calm' }],
       sourceRecordIds: ['record-1'],
     });
@@ -139,13 +136,7 @@ describe('card output', () => {
 
   test('preserves label symbols', () => {
     const normalized = cardOutput.normalizeRawCardOutput({
-      metrics: [
-        {
-          featured: true,
-          label: 'Next milestone 60/90/120 min',
-          value: '90 min',
-        },
-      ],
+      metrics: [{ label: 'Next milestone 60/90/120 min', value: '90 min' }],
     });
 
     expect(normalized).toMatchObject({
@@ -256,26 +247,6 @@ describe('card output', () => {
     expect(normalized.milestones[0]?.date).toBe('2026-05-20T03:00:00.000Z');
   });
 
-  test('requires featured metrics', () => {
-    expect(
-      cardOutput.validateCardOutput({
-        metrics: [{ featured: false, label: 'Sessions', value: 4 }],
-      }).success
-    ).toBe(false);
-
-    expect(
-      cardOutput.validateCardOutput({
-        metrics: [
-          { featured: true, label: 'One', value: 1 },
-          { featured: true, label: 'Two', value: 2 },
-          { featured: true, label: 'Three', value: 3 },
-          { featured: true, label: 'Four', value: 4 },
-          { featured: true, label: 'Five', value: 5 },
-        ],
-      }).success
-    ).toBe(false);
-  });
-
   test('merges refresh output', () => {
     const merged = cardOutput.mergeCardOutputRefresh({
       next: {
@@ -294,13 +265,7 @@ describe('card output', () => {
           type: 'line',
         },
         metrics: [
-          {
-            featured: false,
-            label: 'Changed label',
-            trend: 'up',
-            unit: 'sec',
-            value: 8,
-          },
+          { label: 'Changed label', trend: 'up', unit: 'sec', value: 8 },
         ],
         milestones: [{ date: '2026-05-20', title: 'New best' }],
         sourceRecordIds: ['record-2'],
@@ -319,9 +284,7 @@ describe('card output', () => {
           type: 'line',
           yAxis: { decimals: 0 },
         },
-        metrics: [
-          { featured: true, label: 'Best duration', unit: 'min', value: 5 },
-        ],
+        metrics: [{ label: 'Best duration', unit: 'min', value: 5 }],
         milestones: [{ date: '2026-05-01', title: 'Started baseline' }],
         sourceRecordIds: ['record-1'],
         summary: 'Original summary.',
@@ -344,15 +307,7 @@ describe('card output', () => {
         type: 'line',
         yAxis: { decimals: 0 },
       },
-      metrics: [
-        {
-          featured: true,
-          label: 'Best duration',
-          trend: 'up',
-          unit: 'min',
-          value: 8,
-        },
-      ],
+      metrics: [{ label: 'Best duration', trend: 'up', unit: 'min', value: 8 }],
       milestones: [{ title: 'Started baseline' }, { title: 'New best' }],
       sourceRecordIds: ['record-2', 'record-1'],
       summary: 'Updated summary.',
@@ -363,23 +318,19 @@ describe('card output', () => {
     const merged = cardOutput.mergeCardOutputRefresh({
       next: {
         chart: { data: [{ label: 'Jan', value: 1 }], type: 'bar' },
-        metrics: [{ featured: true, label: 'Other', value: 5 }],
+        metrics: [{ label: 'Other', value: 5 }],
         milestones: [{ title: 'Should not add section' }],
         sourceRecordIds: [],
       },
       previous: {
-        metrics: [{ featured: true, label: 'Sessions', value: 1 }],
+        metrics: [{ label: 'Sessions', value: 1 }],
         milestones: [],
         sourceRecordIds: [],
       },
     });
 
     expect(merged.chart).toBeUndefined();
-
-    expect(merged.metrics).toEqual([
-      { featured: true, label: 'Sessions', value: 5 },
-    ]);
-
+    expect(merged.metrics).toEqual([{ label: 'Sessions', value: 5 }]);
     expect(merged.milestones).toEqual([]);
   });
 });

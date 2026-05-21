@@ -12,7 +12,6 @@ export const MAX_CARD_SOURCE_RECORD_IDS = 80;
 
 export const cardMetricSchema = z
   .object({
-    featured: z.boolean(),
     label: z.string().min(1).max(40),
     trend: z.enum(['down', 'flat', 'up']).optional(),
     unit: z.string().max(16).optional(),
@@ -102,16 +101,6 @@ export const cardOutputSchema = z
       output.milestones.length > 0 ||
       !!output.summary?.trim(),
     { message: 'Card output requires content' }
-  )
-  .refine(
-    (output) =>
-      output.metrics.length === 0 ||
-      output.metrics.some((metric) => metric.featured),
-    { message: 'Metrics require at least one featured metric' }
-  )
-  .refine(
-    (output) => output.metrics.filter((metric) => metric.featured).length <= 4,
-    { message: 'Metrics can feature at most four stats' }
   );
 
 export type CardOutput = z.infer<typeof cardOutputSchema>;
@@ -306,7 +295,6 @@ const normalizeMetric = (value: unknown) => {
   const unit = readUnit(metric.unit);
 
   return {
-    featured: metric.featured === true,
     label,
     ...(trend && { trend }),
     ...(unit && { unit }),

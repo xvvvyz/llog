@@ -226,12 +226,9 @@ const getPreviewSectionAlignment = (
   return 'center';
 };
 
-const getFeaturedMetrics = (output: CardOutput) =>
-  output.metrics.filter((metric) => metric.featured);
-
 const getPreviewSections = (output: CardOutput): PreviewSection[] => {
   const hasChart = cardChart.isRenderableChart(output.chart);
-  const hasMetrics = getFeaturedMetrics(output).length > 0;
+  const hasMetrics = output.metrics.length > 0;
   const hasMilestones = output.milestones.length > 0;
   const hasSummary = !!output.summary?.trim();
 
@@ -1607,12 +1604,10 @@ export const ProgressCard = ({
   }: { limit?: number; rows?: number } = {}) => {
     if (!resolvedOutput?.metrics.length) return null;
 
-    const sourceMetrics = isSummary
-      ? getFeaturedMetrics(resolvedOutput)
-      : resolvedOutput.metrics;
-
-    if (!sourceMetrics.length) return null;
-    const metrics = sourceMetrics.slice(0, limit ?? sourceMetrics.length);
+    const metrics = resolvedOutput.metrics.slice(
+      0,
+      limit ?? resolvedOutput.metrics.length
+    );
 
     return (
       <View className="flex-row flex-wrap gap-2">
