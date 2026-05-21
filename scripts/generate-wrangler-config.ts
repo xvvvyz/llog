@@ -1,0 +1,191 @@
+import fs from 'fs';
+import path from 'path';
+import ts from 'typescript';
+
+type QueueConsumerConfig = { max_retries?: unknown; queue?: unknown };
+type QueueProducerConfig = { binding?: unknown; queue?: unknown };
+type QueueConfig = { consumers?: unknown; producers?: unknown };
+type WranglerEnvironmentConfig = { queues?: unknown; vars?: unknown };
+type WranglerConfig = WranglerEnvironmentConfig & { env?: unknown };
+const JOBS_QUEUE_BINDING = 'JOBS_QUEUE';
+const wranglerPath = path.join(process.cwd(), 'wrangler.jsonc');
+const generatedPath = path.join(process.cwd(), 'wrangler.generated.ts');
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseWranglerConfig(): WranglerConfig {
+  const text = fs.readFileSync(wranglerPath, 'utf8');
+  const parsed = ts.parseConfigFileTextToJson(wranglerPath, text);
+
+  if (parsed.error) {
+    throw new Error(
+      ts.flattenDiagnosticMessageText(parsed.error.messageText, '\n')
+    );
+  }
+
+  if (!isObject(parsed.config)) {
+    throw new Error('wrangler.jsonc must contain an object config');
+  }
+
+  return parsed.config;
+}
+
+function asQueueConfig(value: unknown, label: string): QueueConfig {
+  if (!isObject(value)) throw new Error(`${label} must define queues`);
+  return value;
+}
+
+function asProducer(value: unknown, label: string): QueueProducerConfig {
+  if (!isObject(value)) throw new Error(`${label} must be an object`);
+  return value;
+}
+
+function asConsumer(value: unknown, label: string): QueueConsumerConfig {
+  if (!isObject(value)) throw new Error(`${label} must be an object`);
+  return value;
+}
+
+function getString(value: unknown, label: string) {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`${label} must be a non-empty string`);
+  }
+
+  return value;
+}
+
+function getEnvironmentName(
+  config: WranglerEnvironmentConfig,
+  fallback: string
+) {
+  if (!isObject(config.vars)) return fallback;
+  const env = config.vars.ENV;
+  return typeof env === 'string' && env.length > 0 ? env : fallback;
+}
+
+function getJobQueueName(queues: QueueConfig, label: string) {
+  if (!Array.isArray(queues.producers)) {
+    throw new Error(`${label}.producers must be an array`);
+  }
+
+  const producer = queues.producers
+    .map((value, index) => asProducer(value, `${label}.producers[${index}]`))
+    .find((candidate) => candidate.binding === JOBS_QUEUE_BINDING);
+
+  if (!producer) {
+    throw new Error(`${label}.producers must define ${JOBS_QUEUE_BINDING}`);
+  }
+
+  return getString(producer.queue, `${label} ${JOBS_QUEUE_BINDING} queue`);
+}
+
+function getMaxRetries(queues: QueueConfig, queueName: string, label: string) {
+  if (!Array.isArray(queues.consumers)) {
+    throw new Error(`${label}.consumers must be an array`);
+  }
+
+  const consumer = queues.consumers
+    .map((value, index) => asConsumer(value, `${label}.consumers[${index}]`))
+    .find((candidate) => candidate.queue === queueName);
+
+  if (!consumer) {
+    throw new Error(`${label}.consumers must define queue ${queueName}`);
+  }
+
+  if (
+    typeof consumer.max_retries !== 'number' ||
+    !Number.isInteger(consumer.max_retries) ||
+    consumer.max_retries < 0
+  ) {
+    throw new Error(`${label} ${queueName} max_retries must be a number`);
+  }
+
+  return consumer.max_retries;
+}
+
+function getDeliveryAttempts(
+  rootConfig: WranglerConfig,
+  environmentConfig: WranglerEnvironmentConfig,
+  label: string
+) {
+  const queues = asQueueConfig(
+    environmentConfig.queues ?? rootConfig.queues,
+    label
+  );
+
+  const queueName = getJobQueueName(queues, label);
+  return getMaxRetries(queues, queueName, label) + 1;
+}
+
+function getEnvironmentConfigs(config: WranglerConfig) {
+  const environments = new Map<string, WranglerEnvironmentConfig>();
+  environments.set(getEnvironmentName(config, 'development'), config);
+
+  if (config.env != null) {
+    if (!isObject(config.env)) throw new Error('env must be an object');
+
+    for (const [key, value] of Object.entries(config.env)) {
+      if (!isObject(value)) throw new Error(`env.${key} must be an object`);
+      environments.set(getEnvironmentName(value, key), value);
+    }
+  }
+
+  return environments;
+}
+
+function propertyKey(value: string) {
+  return /^[$_A-Za-z][$_0-9A-Za-z]*$/.test(value)
+    ? value
+    : JSON.stringify(value);
+}
+
+function generateConfig(config: WranglerConfig) {
+  const entries = [...getEnvironmentConfigs(config)]
+    .map(
+      ([environment, environmentConfig]) =>
+        [
+          environment,
+          getDeliveryAttempts(config, environmentConfig, environment),
+        ] as const
+    )
+    .sort(([left], [right]) => left.localeCompare(right));
+
+  const attemptsByEnv = entries
+    .map(
+      ([environment, attempts]) => `  ${propertyKey(environment)}: ${attempts},`
+    )
+    .join('\n');
+
+  return `// generated by @/scripts/generate-wrangler-config.ts
+
+export const MAX_QUEUE_JOB_DELIVERY_ATTEMPTS_BY_ENV = {
+${attemptsByEnv}
+} as const;
+
+export type WorkerEnvironment =
+  keyof typeof MAX_QUEUE_JOB_DELIVERY_ATTEMPTS_BY_ENV;
+
+export function getMaxQueueJobDeliveryAttempts(env: {
+  ENV: WorkerEnvironment;
+}) {
+  return MAX_QUEUE_JOB_DELIVERY_ATTEMPTS_BY_ENV[env.ENV];
+}
+`;
+}
+
+const generated = generateConfig(parseWranglerConfig());
+
+if (process.argv.includes('--check')) {
+  const existing = fs.existsSync(generatedPath)
+    ? fs.readFileSync(generatedPath, 'utf8')
+    : '';
+
+  if (existing !== generated) {
+    throw new Error(
+      `${path.relative(process.cwd(), generatedPath)} is out of date. Run bun scripts/generate-wrangler-config.ts.`
+    );
+  }
+} else {
+  fs.writeFileSync(generatedPath, generated);
+}

@@ -1,1 +1,1 @@
-export type { Record } from '@/domain/entities';
+export type { Record } from '@/instant.entities';

@@ -1,1 +1,1 @@
-export type { Reaction } from '@/domain/entities';
+export type { Reaction } from '@/instant.entities';

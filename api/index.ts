@@ -13,13 +13,12 @@ import * as oauthProviderModule from '@/api/oauth/provider';
 import push from '@/api/push';
 import records from '@/api/records';
 import teams from '@/api/teams';
+import { getMaxQueueJobDeliveryAttempts } from '@/wrangler.generated';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 installConsoleErrorSerializer();
 const api = new Hono().basePath('/api/v1');
-// wrangler.jsonc sets max_retries to 5, so the sixth delivery is final.
-const MAX_QUEUE_JOB_DELIVERY_ATTEMPTS = 6;
 api.use(headers());
 api.route('/cards', cards);
 api.route('/files', files);
@@ -72,13 +71,11 @@ export default {
   },
   async queue(batch: MessageBatch<unknown>, env: CloudflareEnv) {
     const db = createAdminDb(env);
+    const maxDeliveryAttempts = getMaxQueueJobDeliveryAttempts(env);
 
     for (const message of batch.messages) {
       const job = parseJob(message.body);
-
-      const isFinalAttempt =
-        message.attempts >= MAX_QUEUE_JOB_DELIVERY_ATTEMPTS;
-
+      const isFinalAttempt = message.attempts >= maxDeliveryAttempts;
       const result = await processJob({ db, env, isFinalAttempt, job });
       const retryDelay = getJobRetryDelay(result);
 

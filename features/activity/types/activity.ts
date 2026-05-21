@@ -1,1 +1,1 @@
-export type { Activity } from '@/domain/entities';
+export type { Activity } from '@/instant.entities';

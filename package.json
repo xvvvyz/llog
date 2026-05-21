@@ -16,7 +16,7 @@
     "format": "bun scripts/format.ts",
     "generate:assets": "bun scripts/assets.ts",
     "generate:vapid": "bunx @pushforge/builder vapid",
-    "lint": "oxfmt --check . && oxlint --deny-warnings . && tsc --noEmit --noUnusedLocals --noUnusedParameters",
+    "lint": "bun scripts/generate-wrangler-config.ts --check && oxfmt --check . && oxlint --deny-warnings . && tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "metro:start": "expo start --offline",
     "metro:android": "expo start --dev-client --android --offline",
     "metro:ios": "expo start --dev-client --ios --offline",
@@ -26,7 +26,7 @@
     "push": "bun push:db && bun push:secrets && bun push:worker",
     "push:db": "NODE_ENV=production instant-cli push -y",
     "push:secrets": "wrangler secret bulk .dev.vars.production --env ''",
-    "push:worker": "bun build:web && wrangler deploy --name llog --env production",
+    "push:worker": "bun scripts/generate-wrangler-config.ts && bun build:web && wrangler deploy --name llog --env production",
     "reprocess:audd": "bun scripts/reprocess-audd.ts",
     "test": "bun test",
     "test:watch": "bun test --watch",
@@ -34,7 +34,7 @@
     "types": "wrangler types --env-interface CloudflareEnv",
     "up": "bun update --latest && expo install --fix --bun && expo install --check",
     "watchman": "watchman watch-del $(pwd) && watchman watch-project $(pwd)",
-    "worker": "wrangler dev --ip 0.0.0.0"
+    "worker": "bun scripts/generate-wrangler-config.ts && wrangler dev --ip 0.0.0.0"
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "^0.5.0",

@@ -1,4 +1,4 @@
-import type { Invite } from '@/domain/entities';
+import type { Invite } from '@/instant.entities';
 import { getInviteUrl } from '@/features/invites/lib/url';
 import type { SheetManager } from '@/hooks/use-sheet-manager';
 

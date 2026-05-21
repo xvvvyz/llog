@@ -1,4 +1,4 @@
-import type { Link } from '@/domain/entities';
+import type { Link } from '@/instant.entities';
 import type * as types from '@/features/offline/types';
 
 export type QueuedLinkSnapshotInput = Pick<

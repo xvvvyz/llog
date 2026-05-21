@@ -1,1 +1,1 @@
-export type { Link } from '@/domain/entities';
+export type { Link } from '@/instant.entities';

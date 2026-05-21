@@ -1,5 +1,5 @@
 import type { FileKind } from '@/domain/files/file-kind';
-import type { FileItem, Link, Tag } from '@/domain/entities';
+import type { FileItem, Link, Tag } from '@/instant.entities';
 
 export type OutboxStatus =
   | 'pending'

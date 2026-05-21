@@ -1,4 +1,4 @@
-import type { Card as EntityCard, Tag } from '@/domain/entities';
+import type { Card as EntityCard, Tag } from '@/instant.entities';
 import type { CardOutput } from '@/domain/cards/output';
 
 export type LogCard = Omit<EntityCard, 'output' | 'tags'> & {

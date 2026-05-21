@@ -1,4 +1,4 @@
-import { Role } from '../domain/teams/role';
+import { Role } from './domain/teams/role';
 
 export const and = (...conditions: string[]) => conditions.join(' && ');
 

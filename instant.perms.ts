@@ -2,7 +2,7 @@
 
 import { InstantRules } from '@instantdb/react-native';
 import { Role } from './domain/teams/role';
-import * as ruleStrings from './permissions/rule-strings';
+import * as ruleStrings from './instant.perms.rules';
 
 const tagColorValues = '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
 const logNameMaxLength = 32;

@@ -1,4 +1,4 @@
-import type { Tag } from '@/domain/entities';
+import type { Tag } from '@/instant.entities';
 import { createSearchIndex, normalizeSearchText } from '@/lib/search';
 import type MiniSearch from 'minisearch';
 

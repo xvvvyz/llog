@@ -1,4 +1,4 @@
-import type { Tag as EntityTag } from '@/domain/entities';
+import type { Tag as EntityTag } from '@/instant.entities';
 
 export type TagType = 'log' | 'record';
 

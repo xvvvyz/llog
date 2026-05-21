@@ -1,1 +1,1 @@
-export type { Team } from '@/domain/entities';
+export type { Team } from '@/instant.entities';

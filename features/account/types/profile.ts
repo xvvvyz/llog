@@ -1,1 +1,1 @@
-export type { Profile } from '@/domain/entities';
+export type { Profile } from '@/instant.entities';

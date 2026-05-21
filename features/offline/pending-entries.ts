@@ -1,4 +1,4 @@
-import type { FileItem } from '@/domain/entities';
+import type { FileItem } from '@/instant.entities';
 import type { Profile } from '@/features/account/types/profile';
 import type { EntryRecord } from '@/features/records/types/entry';
 import type * as types from '@/features/offline/types';

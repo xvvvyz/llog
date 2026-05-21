@@ -1,5 +1,5 @@
 import { recordTagFields, recordTagLogsQuery } from '@/domain/tags/query';
-import type { Tag } from '@/domain/entities';
+import type { Tag } from '@/instant.entities';
 import { normalizeSearchText } from '@/lib/search';
 
 export const logTemplateFields = [

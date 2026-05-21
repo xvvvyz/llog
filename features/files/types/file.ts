@@ -1,1 +1,1 @@
-export type { FileItem } from '@/domain/entities';
+export type { FileItem } from '@/instant.entities';

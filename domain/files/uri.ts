@@ -1,4 +1,4 @@
-import type { FileItem } from '@/domain/entities';
+import type { FileItem } from '@/instant.entities';
 
 export type ResolvedFileUrl = string | null;
 
