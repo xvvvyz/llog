@@ -21,7 +21,7 @@ const state = (overrides: Partial<EntryMenuState> = {}): EntryMenuState => ({
 });
 
 describe('resolveEntryMenuState', () => {
-  test('hides unavailable local actions', () => {
+  test('hides blocked local actions', () => {
     expect(
       resolveEntryMenuState({
         canManageLocalPendingEntry: true,
@@ -41,7 +41,7 @@ describe('resolveEntryMenuState', () => {
     });
   });
 
-  test('keeps local tags when allowed', () => {
+  test('keeps allowed local tags', () => {
     expect(
       resolveEntryMenuState({
         canManageLocalPendingEntry: true,
@@ -52,7 +52,7 @@ describe('resolveEntryMenuState', () => {
     ).toBe(true);
   });
 
-  test('hides unmanageable local delete', () => {
+  test('hides local delete', () => {
     expect(
       resolveEntryMenuState({
         canManageLocalPendingEntry: false,

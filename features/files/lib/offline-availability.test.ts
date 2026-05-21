@@ -2,7 +2,7 @@ import * as cachedMediaSource from '@/features/files/lib/cached-media-source';
 import { describe, expect, test } from 'bun:test';
 
 describe('cached image sources', () => {
-  test('selects largest image variant', () => {
+  test('selects largest variant', () => {
     const requested =
       'https://imagedelivery.net/account/image-id/format=webp,q=75,w=512,h=512';
 
@@ -31,7 +31,7 @@ describe('cached image sources', () => {
     );
   });
 
-  test('falls back to exact cached sources', () => {
+  test('uses exact fallback', () => {
     expect(
       cachedMediaSource.findLargestCachedImageSource(
         'https://example.com/image.jpg',

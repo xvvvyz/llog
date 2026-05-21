@@ -11,8 +11,8 @@ import {
   ArrowClockwise,
   DotsThreeVertical,
   ListNumbers,
+  MagicWand,
   NotePencil,
-  Sparkle,
   Trash,
 } from 'phosphor-react-native';
 
@@ -91,7 +91,7 @@ export const CardActionsMenu = ({
           </Menu.Item>
           {!!onTweak && (
             <Menu.Item disabled={isGenerating} onPress={onTweak}>
-              <Icon className="text-placeholder" icon={Sparkle} />
+              <Icon className="text-placeholder" icon={MagicWand} />
               <Text>Tweak</Text>
             </Menu.Item>
           )}

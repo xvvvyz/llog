@@ -125,6 +125,7 @@ module.exports = {
   fixtureSeries,
   gradingResult,
   includesAll,
+  metricByTerms,
   metricText,
   milestoneDates,
   milestoneForDate,

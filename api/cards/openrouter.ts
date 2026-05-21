@@ -116,21 +116,26 @@ const buildRecordContext = ({
   };
 };
 
+const metricTrendRules =
+  'Set trend to "up", "down", or "flat" only when that exact metric compares a current value against earlier records or an explicit historical baseline. Set trend to null for totals, counts, latest values, one-off facts, or any metric without ordered historical evidence.';
+
 const outputSchemaDescription = {
-  chart: `optional { type: "bar" | "line", title?: string, unit?: string, xAxis?: { labelMode?: "auto" | "all" | "sparse" }, yAxis?: { decimals?: 0 | 1 | 2, tickCount?: 3 | 4 | 5 | 6 }, data?: [{ label: string, value: number }], series?: [{ label: string, unit?: string, data: [{ label: string, value: number }] }] } with at most ${cardOutput.MAX_CARD_CHART_POINTS} points per series and at most ${cardOutput.MAX_CARD_CHART_SERIES} series. Use series only for line charts when the card asks for multiple measures over the same records, for example alone time duration plus peak distress. When using series, leave data empty. Bar charts must use data, not series. Each line series renders as its own graph with a shared key. Use concise series labels and units. Keep every natural data point needed for the requested progress chart; do not drop intermediate record-level points just for compactness. Use the shortest useful data labels. For date data labels, use the full source record.date ISO timestamp, for example "2026-05-20T15:30:00.000Z"; do not output YYYY-MM-DD date-only labels. The UI will format ISO timestamps in the viewer's current timezone. Set xAxis.labelMode to "all" only for a few short labels, "sparse" for dense labels, and "auto" when unsure. Set yAxis.decimals to the smallest useful precision and yAxis.tickCount to the fewest ticks that still makes the scale readable.`,
-  metrics:
-    'optional array of at most 6 { label, value, featured: boolean, unit?, trend?: "up" | "down" | "flat" }. Set featured true only for stats that should appear on the preview card. If returning metrics, mark at least one and at most four as featured. Prefer the most high-signal, glanceable stats; usually feature 1-2 stats unless the card is metrics-only.',
+  chart: `optional { type: "bar" | "line", title?: string, unit?: string, xAxis?: { labelMode?: "auto" | "all" | "sparse" }, yAxis?: { decimals?: 0 | 1 | 2, tickCount?: 3 | 4 | 5 | 6 }, data?: [{ label: string, value: number }], series?: [{ label: string, unit?: string, data: [{ label: string, value: number }] }] }. Limits: ${cardOutput.MAX_CARD_CHART_POINTS} points per series, ${cardOutput.MAX_CARD_CHART_SERIES} series. Bar charts use data. Use series only for multi-measure line charts; when using series, leave data empty. Keep natural record-level points needed by the prompt. Use concise labels and units. Date labels must be the source record.date full ISO timestamp, not YYYY-MM-DD; the UI formats them. Set xAxis/yAxis options only as needed for readability.`,
+  metrics: `optional array of at most 6 { label, value, featured: boolean, unit?, trend: "up" | "down" | "flat" | null }. Mark 1-4 metrics as featured for the preview card. Prefer the highest-signal stats. ${metricTrendRules}`,
   milestones:
-    'optional array of at most 8 { title, date?, status: "complete" | "in_progress" | "blocked" | "upcoming", detail?, recordIds? }. When a milestone has a date, use the full source record.date ISO timestamp, for example "2026-05-20T15:30:00.000Z"; do not output YYYY-MM-DD date-only strings or invented midnight timestamps. The UI will format ISO timestamps in the viewer\'s current timezone. Order milestones newest-first by date so the latest milestone appears first.',
-  sourceRecordIds: `optional array of record ids used as evidence, at most ${cardOutput.MAX_CARD_SOURCE_RECORD_IDS}. When practical, include ids that support returned chart points, metrics, milestones, or summary.`,
+    'optional array of at most 8 { title, date?, detail?, recordIds? }. Dates must be source record.date full ISO timestamps, not YYYY-MM-DD or invented midnight values. Order newest-first.',
+  sourceRecordIds: `optional evidence record ids, at most ${cardOutput.MAX_CARD_SOURCE_RECORD_IDS}. Include ids supporting chart points, metrics, milestones, or summary when practical.`,
   summary: 'optional plain text summary, at most 1200 characters',
 };
 
 const labelStyle =
-  'For card title, chart title, metric labels, series/key labels, milestone titles, and non-date chart labels: use the shortest useful sentence case labels, no ending punctuation, no decorative punctuation, normally 1-4 words.';
+  'Use short sentence case labels, usually 1-4 words, with no ending or decorative punctuation.';
+
+const llogContext =
+  'llog records are dated user log entries. Progress cards summarize selected tagged records and refresh as future matching records are added.';
 
 const sourceRules =
-  'Use timelineChunks for long-range progress stats, baselines, older milestones, first occurrences, and changes across the whole selected history. Use fullTextRecords for richer recent details. Do not base stats or milestones only on the recent full-text window when older timeline evidence is relevant. Use numeric metrics and chart values only when the records provide explicit numbers, dates, or clearly countable events; do not estimate hidden quantities from vague language. totalMatchingRecordCount is the exact matching published record count. If selectedRecordCount is lower than totalMatchingRecordCount, selected records are a sample plus the most recent records: do not treat omitted records as inspected, and avoid exact aggregate counts, totals, averages, rates, or best/worst-ever claims that require omitted record text.';
+  'Use timelineChunks for whole-history evidence: long-range stats, baselines, older milestones, firsts, and changes. Use fullTextRecords for recent detail. Do not base stats or milestones only on recent fullTextRecords when older timeline evidence matters. Use numeric values only when records provide explicit numbers, dates, or countable events. totalMatchingRecordCount is exact. If selectedRecordCount is lower, selected records are a sample plus recent records: do not treat omitted records as inspected, and avoid exact aggregates or best/worst-ever claims that need omitted text.';
 
 type JsonSchema = Record<string, unknown>;
 type CardChatMessage = Extract<ChatMessages, { role: 'system' | 'user' }>;
@@ -222,13 +227,9 @@ const milestoneSchema = {
     date: nullableStringSchema,
     detail: nullableStringSchema,
     recordIds: { items: { type: 'string' }, maxItems: 20, type: 'array' },
-    status: {
-      enum: ['complete', 'in_progress', 'blocked', 'upcoming'],
-      type: 'string',
-    },
     title: { type: 'string' },
   },
-  required: ['title', 'date', 'status', 'detail', 'recordIds'],
+  required: ['title', 'date', 'detail', 'recordIds'],
   type: 'object',
 } satisfies JsonSchema;
 
@@ -307,33 +308,30 @@ const promptSuggestionResponseSchema = jsonResponseSchema({
 
 const buildMessages = ({
   repairMessage,
-  previousTitle,
   prompt,
   records,
   totalRecordCount,
 }: {
   repairMessage?: string;
-  previousTitle?: string | null;
   prompt: string;
   records: CardLlmRecord[];
   totalRecordCount: number;
 }): CardChatMessage[] => [
   {
-    content: `You extract and aggregate progress from llog records. Return only valid JSON. Do not invent facts or use sources outside the provided records. Keep language concise and specific. ${labelStyle}`,
+    content: `Extract progress from llog records. ${llogContext} Return only valid JSON. Use only the provided records. Keep language concise and specific. ${labelStyle}`,
     role: 'system',
   },
   {
     content: JSON.stringify({
-      card: { previousTitle: previousTitle ?? null, prompt },
+      card: { prompt },
       outputSchema: {
         output: outputSchemaDescription,
         title:
           'short generated card title, at most 36 characters, specific to the requested progress view',
       },
       requiredJsonShape:
-        'Return a top-level JSON object with exactly this shape: { "title": string, "output": object }. The output object must contain at least one non-empty useful section: chart, metrics, milestones, or summary.',
-      outputRules:
-        'Return only the output sections that make the card useful. Do not pad the response with a summary, metrics, milestones, or chart if the prompt does not need them. At least one of chart, metrics, milestones, or summary must be present. When returning metrics, use featured to choose which stats appear on the compact preview card. When returning milestones, put the latest milestone first.',
+        'Return { "title": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
+      outputRules: `Include only useful sections; do not pad. Use featured to choose preview metrics. ${metricTrendRules} Put milestones newest-first.`,
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),
@@ -358,7 +356,7 @@ const buildRefreshMessages = ({
   totalRecordCount: number;
 }): CardChatMessage[] => [
   {
-    content: `You refresh an existing llog progress card from new source records. Return only valid JSON. Do not invent facts or use sources outside the provided records. Preserve the existing card format. ${labelStyle}`,
+    content: `Refresh an existing llog progress card from new source records. ${llogContext} Return only valid JSON. Use only the provided records. Preserve the existing format. ${labelStyle}`,
     role: 'system',
   },
   {
@@ -366,9 +364,8 @@ const buildRefreshMessages = ({
       card: { previousOutput, previousTitle: previousTitle ?? null, prompt },
       outputSchema: { output: outputSchemaDescription },
       requiredJsonShape:
-        'Return a top-level JSON object with exactly this shape: { "output": object }. The output object must contain the same visible sections as previousOutput.',
-      outputRules:
-        'Preserve previousOutput shape. Keep metric count, order, labels, units, and featured flags. Keep chart type, title, unit, axes, series count, and series labels. Keep existing milestones unchanged; include them and add only genuinely new milestones if useful and there is room. Do not add a chart, metrics, milestones, or summary section that previousOutput did not have. Update only metric values/trends, chart data points, sourceRecordIds, and summary text when the previous card already has those sections.',
+        'Return { "output": object }. output must contain the same visible sections as previousOutput.',
+      outputRules: `Preserve previousOutput shape: metrics, chart config, sections, and existing milestones. Add only genuinely new milestones when useful and there is room. Do not add absent sections. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules}`,
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),
@@ -395,7 +392,7 @@ const buildTweakMessages = ({
   tweakPrompt: string;
 }): CardChatMessage[] => [
   {
-    content: `You tweak an existing llog progress card. Return only valid JSON. Do not invent facts or use sources outside the provided records. Start from the previous output and apply only the requested tweak. If prompt and tweakPrompt conflict, tweakPrompt overrides prompt. Do not keep an old prompt constraint that the tweak reverses. ${labelStyle}`,
+    content: `Tweak an existing llog progress card. ${llogContext} Return only valid JSON. Use only the provided records. Apply only the requested tweak. Keep unrelated facts and structure stable. ${labelStyle}`,
     role: 'system',
   },
   {
@@ -409,13 +406,12 @@ const buildTweakMessages = ({
       outputSchema: {
         output: outputSchemaDescription,
         title:
-          'optional short generated card title, at most 36 characters, only if the tweak asks for a title change',
-        updatedPrompt: `required standalone editable card prompt, at most ${CARD_PROMPT_MAX_LENGTH} characters, combining the original prompt and requested tweak so future refreshes preserve the new intent. If the requested tweak contradicts the original prompt, remove or rewrite the conflicting original instruction so the tweak takes priority.`,
+          'short generated card title, at most 36 characters, or null to keep the current title',
+        updatedPrompt: `required standalone editable card prompt, at most ${CARD_PROMPT_MAX_LENGTH} characters, for future refreshes`,
       },
       requiredJsonShape:
-        'Return a top-level JSON object with exactly this shape: { "title"?: string, "updatedPrompt": string, "output": object }. The output object must include at least one non-empty useful section: chart, metrics, milestones, or summary.',
-      outputRules:
-        'Modify previousOutput only as requested by tweakPrompt. tweakPrompt overrides prompt when they conflict, including when prompt says not to do something and tweakPrompt asks to do it. You may adjust the output format, labels, chart type, sections, or emphasis if the tweak asks for it. Keep unrelated facts and structure stable. Keep all output grounded in the provided records and previousOutput. Set updatedPrompt to a complete replacement for prompt, not a note about the tweak. updatedPrompt must remove or rewrite any original prompt instruction that conflicts with tweakPrompt, and output must reflect the updatedPrompt.',
+        'Return { "title": string | null, "updatedPrompt": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
+      outputRules: `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules} Set updatedPrompt to the complete future prompt, with any conflicting original instruction removed.`,
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),
@@ -550,13 +546,11 @@ const requestOpenRouterJson = async ({
 
 export const generateCardResult = async ({
   env,
-  previousTitle,
   prompt,
   records,
   totalRecordCount = records.length,
 }: {
   env: CloudflareEnv;
-  previousTitle?: string | null;
   prompt: string;
   records: CardLlmRecord[];
   totalRecordCount?: number;
@@ -566,13 +560,7 @@ export const generateCardResult = async ({
   }
 
   const defaultTitle = defaultTitleFromPrompt(prompt);
-
-  const messages = buildMessages({
-    previousTitle,
-    prompt,
-    records,
-    totalRecordCount,
-  });
+  const messages = buildMessages({ prompt, records, totalRecordCount });
 
   const parsedJson = await requestOpenRouterJson({
     env,
@@ -591,7 +579,6 @@ export const generateCardResult = async ({
   const repairedJson = await requestOpenRouterJson({
     env,
     messages: buildMessages({
-      previousTitle,
       prompt,
       records,
       totalRecordCount,
@@ -649,7 +636,6 @@ export const refreshCardResult = async ({
         next: parsedResult.output,
         previous: previousOutput,
       }),
-      title: previousTitle ?? defaultTitleFromPrompt(prompt),
     };
   }
 
@@ -678,7 +664,6 @@ export const refreshCardResult = async ({
       next: repairedResult.output,
       previous: previousOutput,
     }),
-    title: previousTitle ?? defaultTitleFromPrompt(prompt),
   };
 };
 
@@ -699,8 +684,8 @@ export const tweakCardResult = async ({
   totalRecordCount?: number;
   tweakPrompt: string;
 }) => {
-  const defaultTitle = previousTitle ?? defaultTitleFromPrompt(prompt);
   if (!records.length) throw new Error('Card tweak requires source records');
+  const defaultTitle = previousTitle ?? defaultTitleFromPrompt(prompt);
 
   const messages = buildTweakMessages({
     previousOutput,
@@ -732,7 +717,7 @@ export const tweakCardResult = async ({
       previousTitle,
       prompt,
       records,
-      repairMessage: `${parsedResult.errorMessage}. Return { "title"?: string, "updatedPrompt": string, "output": object } again. Apply only the requested tweak, include a standalone updatedPrompt for future refreshes, and keep the result grounded in the provided records.`,
+      repairMessage: `${parsedResult.errorMessage}. Return { "title": string | null, "updatedPrompt": string, "output": object } again. Apply only the requested tweak, include a standalone updatedPrompt for future refreshes, and keep the result grounded in the provided records.`,
       totalRecordCount,
       tweakPrompt,
     }),
@@ -757,8 +742,7 @@ const buildPromptSuggestionMessages = ({
   records: CardLlmRecord[];
 }): CardChatMessage[] => [
   {
-    content:
-      'You help create concise llog progress card prompts. Return only valid JSON. Do not duplicate existing cards. Suggest a useful progress view that can be answered from the provided records. Favor prompts that produce a concrete chart, metric, milestone list, or focused summary; avoid vague analysis prompts.',
+    content: `Suggest concise reusable llog progress card prompts. ${llogContext} Return only valid JSON. Use the provided records to infer what the card should track. Do not duplicate existing cards. Favor concrete charts, metrics, milestones, or focused summaries over vague analysis.`,
     role: 'system',
   },
   {
@@ -771,14 +755,13 @@ const buildPromptSuggestionMessages = ({
       })),
       outputSchema: {
         prompt:
-          'one concise editable prompt, 1-2 sentences, at most 500 characters, asking for a distinct progress view',
+          'concise editable prompt, 1-2 sentences, at most 500 characters, asking for a distinct progress view',
       },
       outputRules:
-        'Return one user-editable prompt, not JSON instructions. Mention the specific progress signal, timeframe, comparison, or milestone pattern the card should track when the records support one. Keep it distinct from existing card titles/prompts.',
+        'Return one editable prompt for a card that will refresh from future records. Focus on a durable progress signal, comparison, or milestone pattern. Keep it distinct from existing cards.',
       records: records.map((record) => ({
         date: record.date ?? null,
         id: record.id,
-        tags: record.tags?.map((tag) => tag.name).filter(Boolean) ?? [],
         text: compactText(record.text, CARD_PROMPT_SUGGESTION_TEXT_MAX_LENGTH),
       })),
     }),

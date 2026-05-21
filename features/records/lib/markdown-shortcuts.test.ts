@@ -74,7 +74,7 @@ describe('getMarkdownShortcutEdit', () => {
     ).toEqual({ selectionEnd: 5, selectionStart: 1, text: '[text](url)' });
   });
 
-  test('prefixes unordered list lines', () => {
+  test('prefixes bullet lines', () => {
     expect(
       markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 7,

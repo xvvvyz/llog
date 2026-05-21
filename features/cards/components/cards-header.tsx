@@ -124,6 +124,7 @@ export const CardsHeader = ({
   const sideOverflow = Math.max(0, (viewportWidth - pageWidth) / 2);
   const carouselOuterMargin = -(sideOverflow + LIST_SIDE_PADDING);
   const previousCarouselPageWidthRef = React.useRef(carouselPageWidth);
+  const previousVisibleCardCountRef = React.useRef(visibleCards.length);
 
   const controlsWidth = Math.max(
     CARD_ARROW_SIZE * 2,
@@ -219,11 +220,21 @@ export const CardsHeader = ({
   }, []);
 
   React.useEffect(() => {
-    if (!visibleCards.length) return;
-    const nextIndex = clampIndex(activeIndexState, visibleCards.length);
-    if (nextIndex === activeIndexState) return;
+    const previousCount = previousVisibleCardCountRef.current;
+    previousVisibleCardCountRef.current = visibleCards.length;
+
+    if (!visibleCards.length) {
+      activeIndex.value = 0;
+      activeIndexRef.current = 0;
+      setActiveIndexState(0);
+      return;
+    }
+
+    const nextIndex = clampIndex(activeIndexRef.current, visibleCards.length);
+    const didShrink = visibleCards.length < previousCount;
+    if (!didShrink && nextIndex === activeIndexState) return;
     setCardIndex(nextIndex, false);
-  }, [activeIndexState, setCardIndex, visibleCards.length]);
+  }, [activeIndex, activeIndexState, setCardIndex, visibleCards.length]);
 
   React.useEffect(() => {
     if (previousCarouselPageWidthRef.current === carouselPageWidth) return;

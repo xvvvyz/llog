@@ -161,6 +161,7 @@ describe('card openrouter', () => {
 
       return jsonResponse({
         output: { summary: 'Weekly trend includes naps.' },
+        title: null,
         updatedPrompt: 'Track weekly sleep progress, including naps.',
       });
     }) as never;
@@ -201,15 +202,15 @@ describe('card openrouter', () => {
       strict: true,
     });
 
-    expect(systemMessage?.content).toContain('tweakPrompt overrides prompt');
-    expect(userPayload.outputRules).toContain('tweakPrompt overrides prompt');
+    expect(systemMessage?.content).toContain('Apply only the requested tweak');
+    expect(userPayload.outputRules).toContain('tweakPrompt wins');
 
     expect(userPayload.outputRules).toContain(
-      'prompt says not to do something'
+      'conflicting original instruction removed'
     );
 
     expect(userPayload.outputSchema?.updatedPrompt).toContain(
-      'remove or rewrite the conflicting original instruction'
+      'future refreshes'
     );
   });
 
@@ -244,7 +245,11 @@ describe('card openrouter', () => {
     );
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
-      outputSchema?: { output?: { sourceRecordIds?: string } };
+      outputRules?: string;
+      outputSchema?: {
+        output?: { metrics?: string; sourceRecordIds?: string };
+        title?: string;
+      };
       records?: {
         fullTextRecords?: { text?: string }[];
         timelineChunks?: { records?: { text?: string }[] }[];
@@ -288,6 +293,10 @@ describe('card openrouter', () => {
       'at most 80'
     );
 
+    expect(userPayload.outputSchema?.output?.metrics).toContain('Set trend to');
+    expect(userPayload.outputSchema?.title).toContain('short generated');
+    expect(userPayload.outputRules).toContain('ordered historical evidence');
+
     expect(userPayload.sourceRules).toContain(
       'do not treat omitted records as inspected'
     );
@@ -324,12 +333,16 @@ describe('card openrouter', () => {
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
-      records?: { text?: string }[];
+      records?: { tags?: unknown; text?: string }[];
     };
 
-    expect(systemMessage?.content).toContain('avoid vague analysis prompts');
-    expect(userPayload.outputRules).toContain('user-editable prompt');
+    expect(systemMessage?.content).toContain('reusable');
+    expect(systemMessage?.content).toContain('dated user log entries');
+    expect(systemMessage?.content).toContain('future matching records');
+    expect(userPayload.outputRules).toContain('one editable prompt');
+    expect(userPayload.outputRules).toContain('future records');
     expect(userPayload.records?.[0]?.text).toHaveLength(500);
+    expect(userPayload.records?.[0]?.tags).toBeUndefined();
     expect(requestBody?.response_format?.type).toBe('json_schema');
 
     expect(requestBody?.response_format?.json_schema).toMatchObject({

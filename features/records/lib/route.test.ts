@@ -45,7 +45,7 @@ describe('record routes', () => {
     expect(push).toHaveBeenCalledWith('/records/record%2Fid');
   });
 
-  test('opens highlighted record routes', () => {
+  test('opens highlighted routes', () => {
     openRecordDetail('record/id', undefined, { highlight: true });
 
     expect(push).toHaveBeenCalledWith(

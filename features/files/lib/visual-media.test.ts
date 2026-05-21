@@ -11,7 +11,7 @@ describe('getThumbnailUri', () => {
     ).toBe('https://imagedelivery.net/account/image-id/public');
   });
 
-  test('keeps video thumbnail behavior', () => {
+  test('keeps video thumbnails', () => {
     expect(
       visualMedia.getThumbnailUri({
         assetKey: 'records/video.mp4',

@@ -9,8 +9,15 @@ import { Card } from '@/ui/card';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import { MagnifyingGlass, type IconProps } from 'phosphor-react-native';
 import * as React from 'react';
+
+import {
+  MagnifyingGlass,
+  Minus,
+  TrendDown,
+  TrendUp,
+  type IconProps,
+} from 'phosphor-react-native';
 
 import {
   Platform,
@@ -75,6 +82,7 @@ type PreviewSection =
 
 type Milestone = CardOutput['milestones'][number];
 type MilestoneAlignment = 'center' | 'end' | 'start';
+type MetricTrend = NonNullable<CardOutput['metrics'][number]['trend']>;
 
 const CardStatusPill = ({
   className,
@@ -180,6 +188,12 @@ type ChartHoverTarget = { index: number; label: string };
 
 const formatMetricValue = (value: string | number, unit?: string) =>
   typeof value === 'number' ? `${value}${unit ? ` ${unit}` : ''}` : value;
+
+const trendIcons = {
+  down: TrendDown,
+  flat: Minus,
+  up: TrendUp,
+} satisfies Record<MetricTrend, React.ComponentType<IconProps>>;
 
 const addPreviewSpacer = (
   sections: PreviewSection[],
@@ -1617,9 +1631,25 @@ export const ProgressCard = ({
             <Text className="text-muted-foreground text-xs" numberOfLines={1}>
               {metric.label}
             </Text>
-            <Text className="font-semibold text-sm" numberOfLines={1}>
-              {formatMetricValue(metric.value, metric.unit)}
-            </Text>
+            <View className="flex-row min-w-0 gap-2 items-center">
+              <Text className="font-semibold text-sm shrink" numberOfLines={1}>
+                {formatMetricValue(metric.value, metric.unit)}
+              </Text>
+              {!!metric.trend && (
+                <Icon
+                  icon={trendIcons[metric.trend]}
+                  size={16}
+                  className={
+                    metric.trend === 'flat'
+                      ? 'text-muted-foreground'
+                      : undefined
+                  }
+                  color={
+                    metric.trend === 'flat' ? undefined : milestoneDotColor
+                  }
+                />
+              )}
+            </View>
           </View>
         ))}
       </View>
@@ -1730,13 +1760,18 @@ export const ProgressCard = ({
           )}
         >
           <Text
-            className={cn('font-semibold', isSummary ? 'text-base' : 'text-lg')}
             numberOfLines={isSummary ? 1 : undefined}
+            className={cn(
+              'font-semibold',
+              isSummary ? 'text-base' : 'text-lg leading-tight'
+            )}
           >
             {card.title}
           </Text>
         </View>
-        {actionMenu}
+        {actionMenu ? (
+          <View className={cn(!isSummary && '-mt-1')}>{actionMenu}</View>
+        ) : null}
       </View>
       {isGenerating && !resolvedOutput ? (
         <View

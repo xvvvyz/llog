@@ -1,6 +1,31 @@
 import * as cardActions from '@/api/cards/card-actions';
 import { Role } from '@/domain/teams/role';
-import { describe, expect, mock, test } from 'bun:test';
+import { afterEach, describe, expect, mock, test } from 'bun:test';
+
+const originalFetch = globalThis.fetch;
+
+const jsonResponse = (content: unknown) =>
+  new Response(
+    JSON.stringify({
+      choices: [
+        {
+          finish_reason: 'stop',
+          index: 0,
+          message: { content: JSON.stringify(content), role: 'assistant' },
+        },
+      ],
+      created: 1,
+      id: 'chatcmpl-test',
+      model: 'openai/gpt-5.5',
+      object: 'chat.completion',
+      system_fingerprint: null,
+    }),
+    { headers: { 'Content-Type': 'application/json' }, status: 200 }
+  );
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+});
 
 describe('card permissions', () => {
   test('allows managers', () => {
@@ -23,7 +48,7 @@ describe('card permissions', () => {
     ).toBe(false);
   });
 
-  test('refreshes for authors and managers', () => {
+  test('allows authors and managers', () => {
     expect(
       cardActions.canRefreshRecordCards({
         actorRole: Role.Member,
@@ -136,6 +161,108 @@ describe('card generation', () => {
       lastGeneratedAt: null,
       output: null,
       title: 'Track sleep',
+    });
+  });
+});
+
+describe('card tweak', () => {
+  test('writes title', async () => {
+    const requestedAt = '2026-05-20T00:00:00.000Z';
+    const updates: Record<string, unknown>[] = [];
+
+    const card = {
+      generationRequestedAt: requestedAt,
+      id: 'card-1',
+      isGenerating: true,
+      logId: 'log-1',
+      output: {
+        metrics: [],
+        milestones: [],
+        sourceRecordIds: [],
+        summary: 'Sleep is steady.',
+      },
+      prompt: 'Track sleep',
+      tags: [{ id: 'tag-a' }],
+      title: 'Sleep',
+    };
+
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: { summary: 'Weekly sleep improved.' },
+        title: 'Weekly sleep',
+        updatedPrompt: 'Track weekly sleep progress.',
+      })
+    ) as never;
+
+    const entityTx = (entity: string) =>
+      new Proxy(
+        {},
+        {
+          get: (_target, id: string) => ({
+            update: (fields: Record<string, unknown>) => ({
+              entity,
+              fields,
+              id,
+            }),
+          }),
+        }
+      );
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('cards' in query) return { cards: [card] };
+
+        if ('records' in query) {
+          return {
+            records: [
+              {
+                date: '2026-05-20T00:00:00.000Z',
+                id: 'record-1',
+                tags: [{ name: 'sleep' }],
+                text: 'Slept well',
+              },
+            ],
+          };
+        }
+
+        return {};
+      },
+      transact: async (transaction: {
+        entity: string;
+        fields: Record<string, unknown>;
+        id: string;
+      }) => {
+        updates.push(transaction.fields);
+        Object.assign(card, transaction.fields);
+      },
+      tx: { cards: entityTx('cards') },
+    };
+
+    await expect(
+      cardActions.tweakCard({
+        cardId: 'card-1',
+        dbClient: db as never,
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        requestedAt,
+        tweakPrompt: 'Make it weekly',
+      })
+    ).resolves.toMatchObject({
+      prompt: 'Track weekly sleep progress.',
+      success: true,
+      title: 'Weekly sleep',
+    });
+
+    expect(updates.at(-1)).toMatchObject({
+      generationRequestedAt: null,
+      isGenerating: false,
+      output: {
+        metrics: [],
+        milestones: [],
+        sourceRecordIds: [],
+        summary: 'Weekly sleep improved.',
+      },
+      prompt: 'Track weekly sleep progress.',
+      title: 'Weekly sleep',
     });
   });
 });

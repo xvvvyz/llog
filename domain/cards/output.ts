@@ -25,7 +25,6 @@ export const cardMilestoneSchema = z
     date: z.string().max(32).optional(),
     detail: z.string().max(240).optional(),
     recordIds: z.array(z.string().min(1)).max(20).optional(),
-    status: z.enum(['blocked', 'complete', 'in_progress', 'upcoming']),
     title: z.string().min(1).max(80),
   })
   .strict();
@@ -176,7 +175,6 @@ export const normalizeCardDisplayLabel = ({
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/&/g, ' and ')
     .replace(/%/g, ' percent ')
-    .replace(/[_\-+/|]+/g, ' ')
     .replace(/[()[\]{}"'“”‘’`]/g, ' ')
     .replace(/[.,!?;:]+/g, ' ')
     .replace(/\s+/g, ' ')
@@ -268,17 +266,6 @@ const readTrend = (value: unknown) => {
     : undefined;
 };
 
-const readMilestoneStatus = (value: unknown) => {
-  const status = normalizeToken(value);
-
-  return status === 'blocked' ||
-    status === 'complete' ||
-    status === 'in_progress' ||
-    status === 'upcoming'
-    ? status
-    : undefined;
-};
-
 const readXAxisLabelMode = (value: unknown) => {
   const mode = normalizeToken(value);
 
@@ -346,15 +333,12 @@ const normalizeMilestone = (value: unknown) => {
       ? normalizeCardDate(milestone.date)
       : undefined;
 
-  const status = readMilestoneStatus(milestone.status);
-  if (!status) return undefined;
   const recordIds = readRecordIds(milestone.recordIds, 20);
 
   return {
     ...(date && { date }),
     ...(detail && { detail }),
     ...(recordIds.length > 0 && { recordIds }),
-    status,
     title,
   };
 };
@@ -551,11 +535,9 @@ const mergeCardChartRefresh = (
 });
 
 const milestoneKey = (milestone: CardOutput['milestones'][number]) =>
-  [
-    milestone.title.trim().toLowerCase(),
-    milestone.date?.trim() ?? '',
-    milestone.status,
-  ].join('\n');
+  [milestone.title.trim().toLowerCase(), milestone.date?.trim() ?? ''].join(
+    '\n'
+  );
 
 const mergeCardMilestonesRefresh = (
   previous: CardOutput['milestones'],

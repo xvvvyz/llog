@@ -11,9 +11,7 @@ const validOutput: CardOutput = {
     type: 'line',
   },
   metrics: [{ featured: true, label: 'Sessions', value: 4 }],
-  milestones: [
-    { recordIds: ['record-1'], status: 'complete', title: 'Started baseline' },
-  ],
+  milestones: [{ recordIds: ['record-1'], title: 'Started baseline' }],
   sourceRecordIds: ['record-1'],
   summary: 'Progress is steady.',
 };
@@ -40,7 +38,7 @@ describe('card output', () => {
 
     expect(
       cardOutput.validateCardOutput({
-        milestones: [{ status: 'complete', title: 'Started baseline' }],
+        milestones: [{ title: 'Started baseline' }],
       }).success
     ).toBe(true);
   });
@@ -75,11 +73,7 @@ describe('card output', () => {
         {
           ...validOutput,
           milestones: [
-            {
-              recordIds: ['record-1', 'record-2'],
-              status: 'complete',
-              title: 'Started baseline',
-            },
+            { recordIds: ['record-1', 'record-2'], title: 'Started baseline' },
           ],
           sourceRecordIds: ['record-1', 'record-2'],
         },
@@ -119,7 +113,6 @@ describe('card output', () => {
           date: '2026-05-20',
           detail: 'Calm at the door.',
           recordIds: ['record-1'],
-          status: 'complete',
           title: 'Door calm!',
         },
       ],
@@ -138,9 +131,25 @@ describe('card output', () => {
         xAxis: { labelMode: 'all' },
         yAxis: { decimals: 0, tickCount: 6 },
       },
-      metrics: [{ featured: true, unit: 'min' }],
+      metrics: [{ featured: true, trend: 'up', unit: 'min' }],
       milestones: [{ title: 'Door calm' }],
       sourceRecordIds: ['record-1'],
+    });
+  });
+
+  test('preserves label symbols', () => {
+    const normalized = cardOutput.normalizeRawCardOutput({
+      metrics: [
+        {
+          featured: true,
+          label: 'Next milestone 60/90/120 min',
+          value: '90 min',
+        },
+      ],
+    });
+
+    expect(normalized).toMatchObject({
+      metrics: [{ label: 'Next milestone 60/90/120 min' }],
     });
   });
 
@@ -205,15 +214,10 @@ describe('card output', () => {
       {
         ...validOutput,
         milestones: [
-          {
-            recordIds: ['record-2'],
-            status: 'complete',
-            title: 'Calm short absence',
-          },
+          { recordIds: ['record-2'], title: 'Calm short absence' },
           {
             date: '2026-05-19T00:00:00.000Z',
             recordIds: ['record-1'],
-            status: 'complete',
             title: 'Started baseline',
           },
         ],
@@ -230,7 +234,7 @@ describe('card output', () => {
     ]);
   });
 
-  test('uses source ISO milestone dates', () => {
+  test('uses source dates', () => {
     expect(cardOutput.normalizeCardDate('2026-05-20')).toBeUndefined();
 
     expect(cardOutput.normalizeCardDate('2026-05-20T00:00:00.000Z')).toBe(
@@ -243,12 +247,7 @@ describe('card output', () => {
       {
         ...validOutput,
         milestones: [
-          {
-            date: '2026-05-20',
-            recordIds: ['record-1'],
-            status: 'complete',
-            title: 'Door calm',
-          },
+          { date: '2026-05-20', recordIds: ['record-1'], title: 'Door calm' },
         ],
       },
       [{ date: '2026-05-20T03:00:00.000Z', id: 'record-1' }]
@@ -303,9 +302,7 @@ describe('card output', () => {
             value: 8,
           },
         ],
-        milestones: [
-          { date: '2026-05-20', status: 'complete', title: 'New best' },
-        ],
+        milestones: [{ date: '2026-05-20', title: 'New best' }],
         sourceRecordIds: ['record-2'],
         summary: 'Updated summary.',
       },
@@ -325,9 +322,7 @@ describe('card output', () => {
         metrics: [
           { featured: true, label: 'Best duration', unit: 'min', value: 5 },
         ],
-        milestones: [
-          { date: '2026-05-01', status: 'complete', title: 'Started baseline' },
-        ],
+        milestones: [{ date: '2026-05-01', title: 'Started baseline' }],
         sourceRecordIds: ['record-1'],
         summary: 'Original summary.',
       },
@@ -364,12 +359,12 @@ describe('card output', () => {
     });
   });
 
-  test('keeps refresh sections locked', () => {
+  test('locks refresh sections', () => {
     const merged = cardOutput.mergeCardOutputRefresh({
       next: {
         chart: { data: [{ label: 'Jan', value: 1 }], type: 'bar' },
         metrics: [{ featured: true, label: 'Other', value: 5 }],
-        milestones: [{ status: 'complete', title: 'Should not add section' }],
+        milestones: [{ title: 'Should not add section' }],
         sourceRecordIds: [],
       },
       previous: {

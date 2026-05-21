@@ -3,6 +3,7 @@ const {
   fixtureSeries,
   gradingResult,
   includesAll,
+  metricByTerms,
   metricText,
   milestoneDates,
   milestoneForDate,
@@ -60,6 +61,22 @@ const hasExpectedUnderThreshold = (metrics, expected) => {
   );
 };
 
+const metricsHaveNoTrend = (metrics, termGroups) =>
+  termGroups.every((terms) => !metricByTerms(metrics, terms)?.trend);
+
+const durationAggregateMetricTerms = [
+  ['under', 'threshold'],
+  ['safe', 'increase'],
+  ['regression'],
+];
+
+const triggerAggregateMetricTerms = [
+  ['trigger'],
+  ['distress'],
+  ['whine'],
+  ['bark'],
+];
+
 exports.separationAnxiety = (output, context) => {
   const payload = parsePayload(output);
   const fixture = readFixture(context);
@@ -105,7 +122,7 @@ exports.separationAnxiety = (output, context) => {
         pass: payload.fixture?.recordCount === expected.sessionCount,
       },
       {
-        name: 'returns a two-series line chart',
+        name: 'returns line series',
         pass: chart.type === 'line' && series.length === 2,
       },
       {
@@ -113,56 +130,54 @@ exports.separationAnxiety = (output, context) => {
         pass: !Array.isArray(chart.data) || chart.data.length === 0,
       },
       {
-        name: 'duration chart matches every session',
+        name: 'duration matches sessions',
         pass:
           !!duration && sameSeriesData(duration.data ?? [], durationFixture),
       },
       {
-        name: 'distress chart matches every session',
+        name: 'distress matches sessions',
         pass:
           !!distress && sameSeriesData(distress.data ?? [], distressFixture),
       },
       {
-        name: 'latest duration metric is 85',
+        name: 'latest duration is 85',
         pass:
           numericMetric(metrics, ['latest', 'duration']) ===
           expected.latestDuration,
       },
       {
-        name: 'latest distress metric is 2',
+        name: 'latest distress is 2',
         pass:
           numericMetric(metrics, ['latest', 'distress']) ===
           expected.latestDistress,
       },
       {
-        name: 'under threshold metric is 38/47',
+        name: 'threshold is 38/47',
         pass: hasExpectedUnderThreshold(metrics, expected),
       },
       {
-        name: 'safe increases metric is 33',
+        name: 'safe increases is 33',
         pass:
           numericMetric(metrics, ['safe', 'increase']) ===
           expected.safeIncreases,
       },
       {
-        name: 'regressions metric is 3',
+        name: 'regression count is 3',
         pass:
           numericMetric(metrics, ['regression']) ===
           expected.regressions.length,
       },
       {
-        name: 'required milestone dates are present',
+        name: 'aggregate trends omitted',
+        pass: metricsHaveNoTrend(metrics, durationAggregateMetricTerms),
+      },
+      {
+        name: 'milestone dates present',
         pass: milestoneDateList.every((date) => dates.includes(date)),
       },
-      { name: 'milestones are newest-first', pass: newestFirst },
-      {
-        name: 'milestones include source record evidence',
-        pass: milestoneEvidence,
-      },
-      {
-        name: 'sourceRecordIds include milestone evidence',
-        pass: sourceEvidence,
-      },
+      { name: 'milestones newest-first', pass: newestFirst },
+      { name: 'milestone evidence present', pass: milestoneEvidence },
+      { name: 'source evidence present', pass: sourceEvidence },
     ],
     reason: 'Separation anxiety eval passed',
   });
@@ -198,7 +213,7 @@ exports.refreshSeparationAnxiety = (output, context) => {
       },
       { name: 'keeps no milestone section', pass: milestones.length === 0 },
       {
-        name: 'returns refreshed two-series line chart',
+        name: 'returns refreshed line',
         pass: chart.type === 'line' && series.length === 2,
       },
       {
@@ -206,45 +221,49 @@ exports.refreshSeparationAnxiety = (output, context) => {
         pass: !Array.isArray(chart.data) || chart.data.length === 0,
       },
       {
-        name: 'refresh duration chart matches every session',
+        name: 'refresh duration matches',
         pass:
           !!duration && sameSeriesData(duration.data ?? [], durationFixture),
       },
       {
-        name: 'refresh distress chart matches every session',
+        name: 'refresh distress matches',
         pass:
           !!distress && sameSeriesData(distress.data ?? [], distressFixture),
       },
       {
-        name: 'refresh latest duration is 85',
+        name: 'refresh duration is 85',
         pass:
           numericMetric(metrics, ['latest', 'duration']) ===
           expected.latestDuration,
       },
       {
-        name: 'refresh latest distress is 2',
+        name: 'refresh distress is 2',
         pass:
           numericMetric(metrics, ['latest', 'distress']) ===
           expected.latestDistress,
       },
       {
-        name: 'refresh under threshold metric is 38/47',
+        name: 'refresh threshold is 38/47',
         pass: hasExpectedUnderThreshold(metrics, expected),
       },
       {
-        name: 'refresh safe increases metric is 33',
+        name: 'refresh safe increases',
         pass:
           numericMetric(metrics, ['safe', 'increase']) ===
           expected.safeIncreases,
       },
       {
-        name: 'refresh regressions metric is 3',
+        name: 'refresh regression count',
         pass:
           numericMetric(metrics, ['regression']) ===
           expected.regressions.length,
       },
       {
-        name: 'refresh source ids cover all sessions',
+        name: 'refresh trends omitted',
+        pass: metricsHaveNoTrend(metrics, durationAggregateMetricTerms),
+      },
+      {
+        name: 'refresh source coverage',
         pass: includesAll(sourceRecordIds, allRecordIds(fixture.records)),
       },
     ],
@@ -287,29 +306,29 @@ exports.triggerTweak = (output, context) => {
     checks: [
       { name: 'runs tweak mode', pass: payload.mode === 'tweak' },
       {
-        name: 'returns updated trigger prompt',
+        name: 'updates trigger prompt',
         pass:
           updatedPrompt.includes('trigger') ||
           updatedPrompt.includes('noise') ||
           updatedPrompt.includes('resilience'),
       },
       {
-        name: 'returns trigger bar chart',
+        name: 'returns trigger bars',
         pass:
           chart.type === 'bar' &&
           Array.isArray(chart.data) &&
           sameSeriesData(chart.data, triggerData),
       },
       {
-        name: 'bar chart does not use series',
+        name: 'bar skips series',
         pass: !Array.isArray(chart.series) || chart.series.length === 0,
       },
       {
-        name: 'trigger sessions metric is 9',
+        name: 'trigger sessions is 9',
         pass: numericMetric(metrics, ['trigger']) === expected.count,
       },
       {
-        name: 'average distress metric is 2.2',
+        name: 'average distress is 2.2',
         pass:
           numericMetric(metrics, ['avg', 'distress']) ===
             expected.averageDistress ||
@@ -317,25 +336,26 @@ exports.triggerTweak = (output, context) => {
             expected.averageDistress,
       },
       {
-        name: 'whine sessions metric is 3',
+        name: 'whine sessions is 3',
         pass: numericMetric(metrics, ['whine']) === expected.whineSessions,
       },
       {
-        name: 'bark reports metric is 0',
+        name: 'bark reports is 0',
         pass: numericMetric(metrics, ['bark']) === expected.barkReports,
       },
       {
-        name: 'trigger milestones include expected dates',
+        name: 'trigger trends omitted',
+        pass: metricsHaveNoTrend(metrics, triggerAggregateMetricTerms),
+      },
+      {
+        name: 'trigger dates present',
         pass: milestoneDateList.every((date) =>
           milestones.some((milestone) => milestone.date === date)
         ),
       },
+      { name: 'trigger evidence present', pass: milestoneEvidence },
       {
-        name: 'trigger milestones include source record evidence',
-        pass: milestoneEvidence,
-      },
-      {
-        name: 'trigger source ids cover trigger sessions',
+        name: 'trigger source coverage',
         pass: includesAll(sourceRecordIds, allRecordIds(triggerRecords)),
       },
     ],

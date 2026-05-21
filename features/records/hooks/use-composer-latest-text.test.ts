@@ -42,7 +42,7 @@ describe('useComposerLatestText', () => {
     });
   });
 
-  test('keeps text when external draft disappears', () => {
+  test('keeps missing draft text', () => {
     expect(
       getNextComposerTextMirrorState({
         current: {
@@ -102,7 +102,7 @@ describe('useComposerLatestText', () => {
     });
   });
 
-  test('clears posted text on new open', () => {
+  test('clears posted text', () => {
     expect(
       getNextComposerTextMirrorState({
         current: {

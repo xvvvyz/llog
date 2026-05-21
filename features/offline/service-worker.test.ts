@@ -314,7 +314,7 @@ describe('service worker', () => {
     expect(harness.currentCachePaths()).toEqual([]);
   });
 
-  test('rejects missing split bundles', async () => {
+  test('rejects split bundles', async () => {
     const harness = createHarness({
       '/_expo/static/js/web/entry.js':
         'paths: { index: "/_expo/static/js/web/index.js" }',

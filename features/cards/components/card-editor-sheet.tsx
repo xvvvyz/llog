@@ -6,8 +6,6 @@ import type { CardCreatePayload } from '@/features/cards/types/card';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLog } from '@/features/logs/queries/use-log';
 import { CARD_PROMPT_MAX_LENGTH } from '@/domain/cards/constants';
-import { MarkdownShortcutToolbar } from '@/features/records/components/markdown-shortcut-toolbar';
-import { useMarkdownTextareaShortcuts } from '@/features/records/hooks/use-markdown-textarea-shortcuts';
 import { AddTagsInput } from '@/features/tags/components/add-tags-input';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -16,14 +14,13 @@ import { cn } from '@/lib/cn';
 import { resolveSpectrumColor } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
-import { Page } from '@/ui/page';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
-import { CornersOut, Sparkle } from 'phosphor-react-native';
+import { Sparkle } from 'phosphor-react-native';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import * as textareaSelection from '@/features/records/hooks/use-textarea-selection';
 
 export const LogCardEditorSheet = () => {
@@ -40,20 +37,11 @@ export const LogCardEditorSheet = () => {
   const inlineTextareaRef =
     React.useRef<React.ComponentRef<typeof Textarea>>(null);
 
-  const fullscreenTextareaRef =
-    React.useRef<React.ComponentRef<typeof Textarea>>(null);
-
   const [selectedTagIds, setSelectedTagIds] = React.useState<Set<string>>(
     () => new Set()
   );
 
-  const [isPromptFocused, setIsPromptFocused] = React.useState(false);
   const [tagsOpen, setTagsOpen] = React.useState(false);
-  const [isFullscreenOpen, setIsFullscreenOpen] = React.useState(false);
-
-  const [fullscreenInitialSelection, setFullscreenInitialSelection] =
-    React.useState<textareaSelection.TextSelection | null>(null);
-
   const [isSuggestingPrompt, setIsSuggestingPrompt] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const resolvedLogId = logId ?? card.logId ?? undefined;
@@ -62,7 +50,6 @@ export const LogCardEditorSheet = () => {
 
   const {
     handleSelectionChange: handleInlineSelectionChange,
-    readSelection: readInlineSelection,
     setSelection: setInlineSelection,
   } = textareaSelection.useTextareaSelection({
     text: prompt,
@@ -82,7 +69,7 @@ export const LogCardEditorSheet = () => {
   );
 
   const sourceRecords = useHasCardSourceRecords({
-    enabled: isOpen && !prompt.trim(),
+    enabled: isOpen,
     logId: resolvedLogId,
     tagIds: selectedTagIds,
   });
@@ -97,13 +84,17 @@ export const LogCardEditorSheet = () => {
     !isSubmitting &&
     !isSuggestingPrompt;
 
-  const showPromptSuggestion =
+  const showPromptInput = selectedTagIds.size > 0;
+  const showSuggestPrompt = showPromptInput && !prompt.trim();
+
+  const canSuggestPrompt =
+    showSuggestPrompt &&
     !!resolvedLogId &&
     selectedTagIds.size > 0 &&
     sourceRecords.hasSourceRecords &&
     !sourceRecords.isLoading &&
-    !prompt.trim() &&
-    !isPromptFocused;
+    !isSuggestingPrompt &&
+    !isSubmitting;
 
   const close = React.useCallback(() => {
     sheetManager.close('log-card-editor');
@@ -115,9 +106,10 @@ export const LogCardEditorSheet = () => {
   }, [close, isSubmitting]);
 
   const openTags = React.useCallback(() => {
+    if (isSuggestingPrompt) return;
     blurActiveTextInput();
     requestAnimationFrame(() => setTagsOpen(true));
-  }, []);
+  }, [isSuggestingPrompt]);
 
   React.useEffect(() => {
     setIsSubmitting(false);
@@ -127,10 +119,7 @@ export const LogCardEditorSheet = () => {
       setPrompt('');
       setInlineSelection({ end: 0, start: 0 });
       setSelectedTagIds(new Set());
-      setIsPromptFocused(false);
       setTagsOpen(false);
-      setIsFullscreenOpen(false);
-      setFullscreenInitialSelection(null);
       return;
     }
 
@@ -138,9 +127,6 @@ export const LogCardEditorSheet = () => {
       setPrompt('');
       setInlineSelection({ end: 0, start: 0 });
       setSelectedTagIds(new Set());
-      setIsPromptFocused(false);
-      setIsFullscreenOpen(false);
-      setFullscreenInitialSelection(null);
       return;
     }
 
@@ -148,9 +134,7 @@ export const LogCardEditorSheet = () => {
     const cardPrompt = card.prompt ?? '';
     setPrompt(cardPrompt);
     setInlineSelection({ end: cardPrompt.length, start: cardPrompt.length });
-    setFullscreenInitialSelection(null);
     setSelectedTagIds(new Set(card.tags?.map((tag) => tag.id) ?? []));
-    setIsPromptFocused(false);
   }, [card.id, card.prompt, card.tags, isEditing, isOpen, setInlineSelection]);
 
   const buildPayload = React.useCallback((): CardCreatePayload | null => {
@@ -172,7 +156,9 @@ export const LogCardEditorSheet = () => {
       !selectedTagIds.size ||
       !sourceRecords.hasSourceRecords ||
       sourceRecords.isLoading ||
-      prompt.trim()
+      isSuggestingPrompt ||
+      isSubmitting ||
+      !showSuggestPrompt
     ) {
       return;
     }
@@ -194,26 +180,14 @@ export const LogCardEditorSheet = () => {
     }
   }, [
     cardId,
-    prompt,
+    isSubmitting,
+    isSuggestingPrompt,
     resolvedLogId,
     selectedTagIds,
+    showSuggestPrompt,
     sourceRecords.hasSourceRecords,
     sourceRecords.isLoading,
   ]);
-
-  const handleOpenFullscreen = React.useCallback(() => {
-    setFullscreenInitialSelection(readInlineSelection());
-    blurActiveTextInput();
-    requestAnimationFrame(() => setIsFullscreenOpen(true));
-  }, [readInlineSelection]);
-
-  const fullscreenMarkdownShortcuts = useMarkdownTextareaShortcuts({
-    initialSelection: fullscreenInitialSelection,
-    maxLength: CARD_PROMPT_MAX_LENGTH,
-    setText: setPrompt,
-    text: prompt,
-    textareaRef: fullscreenTextareaRef,
-  });
 
   const handleSubmit = React.useCallback(async () => {
     if (!canSubmit) return;
@@ -252,68 +226,62 @@ export const LogCardEditorSheet = () => {
           <View className="p-4 pb-4 md:p-4 sm:pt-8">
             <View className="overflow-hidden border-border-secondary border-continuous rounded-xl bg-input border">
               <AddTagsInput
-                disabled={!resolvedLogId || !teamId}
+                disabled={!resolvedLogId || !teamId || isSuggestingPrompt}
                 onPress={openTags}
-                placeholder="Source tags"
+                placeholder="Select source tags…"
                 tags={selectedTags}
               />
-              <View className="border-border-secondary border-continuous border-t" />
-              <View className="relative">
-                <Textarea
-                  ref={inlineTextareaRef}
-                  maxLength={CARD_PROMPT_MAX_LENGTH}
-                  maxRows={6}
-                  minRows={3}
-                  onBlur={() => setIsPromptFocused(false)}
-                  onChangeText={setPrompt}
-                  onFocus={() => setIsPromptFocused(true)}
-                  onSelectionChange={handleInlineSelectionChange}
-                  placeholder="Track progress, trends, milestones..."
-                  size="sm"
-                  value={prompt}
-                  className={cn(
-                    'border-0 rounded-none bg-transparent',
-                    showPromptSuggestion ? 'pr-24' : 'pr-14'
-                  )}
-                />
-                <View className="absolute right-1 top-1 flex-row gap-1">
-                  {showPromptSuggestion && (
-                    <Button
-                      className="h-8 w-8 rounded-lg"
-                      disabled={isSuggestingPrompt}
-                      onPress={handleSuggestPrompt}
-                      size="icon"
-                      variant="ghost"
-                      wrapperClassName="rounded-lg border-continuous"
-                    >
-                      {isSuggestingPrompt ? (
-                        <Spinner className="text-muted-foreground" size="xs" />
-                      ) : (
-                        <Icon
-                          className="text-muted-foreground"
-                          icon={Sparkle}
-                          size={20}
-                        />
+              {showPromptInput && (
+                <>
+                  <View className="border-border-secondary border-continuous border-t" />
+                  <View className="relative">
+                    <Textarea
+                      ref={inlineTextareaRef}
+                      maxLength={CARD_PROMPT_MAX_LENGTH}
+                      maxRows={6}
+                      minRows={3}
+                      onChangeText={setPrompt}
+                      onSelectionChange={handleInlineSelectionChange}
+                      placeholder="What are we tracking?"
+                      readOnly={isSuggestingPrompt}
+                      size="sm"
+                      value={prompt}
+                      className={cn(
+                        'border-0 rounded-none bg-transparent',
+                        showSuggestPrompt && 'pr-32'
                       )}
-                    </Button>
-                  )}
-                  <Button
-                    accessibilityLabel="Open fullscreen card prompt"
-                    className="h-8 w-8 rounded-lg"
-                    disabled={isSubmitting}
-                    onPress={handleOpenFullscreen}
-                    size="icon"
-                    variant="ghost"
-                    wrapperClassName="rounded-lg border-continuous"
-                  >
-                    <Icon
-                      className="text-muted-foreground"
-                      icon={CornersOut}
-                      size={20}
                     />
-                  </Button>
-                </View>
-              </View>
+                    {showSuggestPrompt && (
+                      <View className="absolute right-1 top-1">
+                        <Button
+                          accessibilityLabel="Suggest card prompt"
+                          className="rounded-lg"
+                          disabled={!canSuggestPrompt}
+                          onPress={handleSuggestPrompt}
+                          size="xs"
+                          variant="ghost"
+                          wrapperClassName="rounded-lg border-continuous"
+                        >
+                          {isSuggestingPrompt ? (
+                            <Spinner
+                              className="text-muted-foreground"
+                              size="xs"
+                            />
+                          ) : (
+                            <Icon
+                              color={logColor.default}
+                              icon={Sparkle}
+                              size={18}
+                              weight="fill"
+                            />
+                          )}
+                          <Text className="mt-px">Suggest</Text>
+                        </Button>
+                      </View>
+                    )}
+                  </View>
+                </>
+              )}
             </View>
           </View>
           <View className="flex-row mx-8 gap-4 md:mx-8">
@@ -352,56 +320,6 @@ export const LogCardEditorSheet = () => {
           selectedTagIds={selectedTagIds}
           teamId={teamId}
         />
-      </Sheet>
-      <Sheet
-        className="h-full"
-        onDismiss={() => setIsFullscreenOpen(false)}
-        open={isOpen && isFullscreenOpen}
-        portalName="log-card-editor-fullscreen"
-      >
-        <Page className="flex-col overflow-hidden max-h-full min-h-0 bg-popover">
-          <View className="flex-1 mx-auto max-h-full max-w-lg min-h-0 w-full">
-            <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
-              <View className="relative flex-1 overflow-hidden min-h-0 border-border-secondary border-continuous rounded-2xl bg-input border">
-                <Textarea
-                  ref={fullscreenTextareaRef}
-                  autoFocus
-                  className="flex-1 min-h-full border-0 rounded-2xl bg-transparent"
-                  maxLength={CARD_PROMPT_MAX_LENGTH}
-                  onBlur={() => setIsPromptFocused(false)}
-                  onChangeText={setPrompt}
-                  onFocus={() => setIsPromptFocused(true)}
-                  onKeyDown={fullscreenMarkdownShortcuts.handleKeyDown}
-                  onTouchStart={fullscreenMarkdownShortcuts.handleTouchStart}
-                  placeholder="Track progress, trends, milestones..."
-                  size="sm"
-                  style={Platform.OS === 'web' ? { height: '100%' } : undefined}
-                  value={prompt}
-                  onSelectionChange={
-                    fullscreenMarkdownShortcuts.handleSelectionChange
-                  }
-                />
-              </View>
-              <View className="flex-row px-4 gap-3 items-center shrink-0">
-                <View className="flex-1 flex-row gap-2 items-center">
-                  <MarkdownShortcutToolbar
-                    onShortcut={fullscreenMarkdownShortcuts.handleShortcut}
-                    onShortcutPressStart={
-                      fullscreenMarkdownShortcuts.handleShortcutPressStart
-                    }
-                  />
-                </View>
-                <Button
-                  onPress={() => setIsFullscreenOpen(false)}
-                  size="xs"
-                  variant="secondary"
-                >
-                  <Text>Done</Text>
-                </Button>
-              </View>
-            </View>
-          </View>
-        </Page>
       </Sheet>
     </>
   );

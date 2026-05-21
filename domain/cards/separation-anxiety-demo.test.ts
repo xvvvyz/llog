@@ -60,7 +60,6 @@ describe('separation demo card', () => {
           {
             detail: 'Reached 5 minutes with calm door behavior.',
             recordIds: ['session-2'],
-            status: 'complete',
             title: 'Calm short absence',
           },
         ],

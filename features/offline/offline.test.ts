@@ -578,7 +578,7 @@ describe('pending entries', () => {
     ).toEqual(['record-a', 'record-b']);
   });
 
-  test('keeps completed submissions visible', () => {
+  test('shows completed submissions', () => {
     const queuedRecord = pendingEntries.queuedRecordToEntry({
       attachments: [],
       profile: { id: fixtures.profileId, name: 'Member' },

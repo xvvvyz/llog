@@ -24,6 +24,21 @@ type EvalInput = {
   tweakPrompt?: string;
 };
 
+const titleFromPrompt = (prompt: string) => {
+  const firstLine = prompt
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  return (
+    cardOutput.normalizeCardDisplayLabel({
+      defaultValue: 'Progress card',
+      maxLength: 80,
+      value: firstLine ?? prompt,
+    }) ?? 'Progress card'
+  );
+};
+
 const readInput = (): EvalInput => {
   const encoded = process.argv[2];
   if (!encoded) throw new Error('Missing eval input');
@@ -268,6 +283,21 @@ const main = async () => {
 
   const validation = cardOutput.validateCardOutput(result.output);
 
+  const updatedPrompt =
+    'updatedPrompt' in result && typeof result.updatedPrompt === 'string'
+      ? result.updatedPrompt
+      : undefined;
+
+  const generatedTitle =
+    'title' in result && typeof result.title === 'string'
+      ? result.title
+      : undefined;
+
+  const title =
+    mode === 'refresh'
+      ? (scenario?.previousTitle ?? titleFromPrompt(prompt))
+      : (generatedTitle ?? titleFromPrompt(updatedPrompt ?? prompt));
+
   console.log(
     JSON.stringify({
       fixture: {
@@ -285,8 +315,8 @@ const main = async () => {
             })),
             success: false,
           },
-      title: result.title,
-      ...('updatedPrompt' in result && { updatedPrompt: result.updatedPrompt }),
+      title,
+      ...(updatedPrompt && { updatedPrompt }),
     })
   );
 };

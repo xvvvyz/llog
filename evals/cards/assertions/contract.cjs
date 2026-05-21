@@ -12,11 +12,11 @@ exports.cardOutput = (output) => {
   return gradingResult({
     checks: [
       {
-        name: 'strict CardOutput validation passes',
+        name: 'validates CardOutput',
         pass: payload.strictValidation?.success === true,
       },
       {
-        name: 'chart points only contain label and value',
+        name: 'chart points are minimal',
         pass: points.every((point) => {
           const keys = Object.keys(point).sort();
 
@@ -26,7 +26,7 @@ exports.cardOutput = (output) => {
         }),
       },
       {
-        name: 'sourceRecordIds are present',
+        name: 'source ids present',
         pass:
           Array.isArray(card.sourceRecordIds) &&
           card.sourceRecordIds.length > 0,

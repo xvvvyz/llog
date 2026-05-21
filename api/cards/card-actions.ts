@@ -258,7 +258,13 @@ const fallbackCardTitle = (prompt: string) => {
     .map((line) => line.trim())
     .find(Boolean);
 
-  return (firstLine || 'Progress card').slice(0, CARD_TITLE_MAX_LENGTH);
+  return (
+    cardOutput.normalizeCardDisplayLabel({
+      defaultValue: 'Progress card',
+      maxLength: CARD_TITLE_MAX_LENGTH,
+      value: firstLine ?? prompt,
+    }) ?? 'Progress card'
+  );
 };
 
 const readCardOutput = (value: unknown) => {
@@ -324,14 +330,12 @@ const generateCardResult = async ({
   dbClient,
   env,
   logId,
-  previousTitle,
   prompt,
   tagIds,
 }: {
   dbClient: Db;
   env: CloudflareEnv;
   logId: string;
-  previousTitle?: string | null;
   prompt: string;
   tagIds: string[];
 }) => {
@@ -345,7 +349,6 @@ const generateCardResult = async ({
 
   return openrouter.generateCardResult({
     env,
-    previousTitle,
     prompt,
     records: sourceSelection.records,
     totalRecordCount: sourceSelection.totalMatchingRecords,
@@ -564,7 +567,6 @@ export const generateCard = async ({
       dbClient,
       env,
       logId: card.logId,
-      previousTitle: card.title,
       prompt: card.prompt,
       tagIds: card.tags?.map((tag) => tag.id) ?? [],
     });
@@ -686,16 +688,17 @@ export const refreshCard = async ({
         isGenerating: false,
         lastGeneratedAt: new Date().toISOString(),
         output: result.output,
-        title: result.title,
       },
       requestedAt,
     });
+
+    const title = card.title ?? fallbackCardTitle(card.prompt);
 
     return {
       output: result.output,
       stale: !didWrite,
       success: didWrite,
-      title: result.title,
+      title,
     };
   } catch (error) {
     console.error('Card refresh failed', { cardId, error });

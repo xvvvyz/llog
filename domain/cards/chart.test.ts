@@ -48,7 +48,7 @@ describe('card charts', () => {
     ).toMatchObject([{ label: 'Best duration', unit: 'min' }]);
   });
 
-  test('does not stack bar series', () => {
+  test('skips bar stacking', () => {
     const barChart = {
       data: [{ label: 'Baseline', value: 1 }],
       series: [
@@ -161,7 +161,7 @@ describe('card charts', () => {
     expect(bars[0].y + bars[0].height).toBe(100);
   });
 
-  test('renders bars with supplied domain', () => {
+  test('uses supplied domain', () => {
     const bars = chart.getBarChartItems({
       chart: spec,
       domain: { max: 4, min: 0 },

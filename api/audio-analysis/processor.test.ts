@@ -174,7 +174,7 @@ describe('audio analysis jobs', () => {
     });
   });
 
-  test('retries failed transcription', async () => {
+  test('retries failures', async () => {
     reset();
 
     transcribeAudioFile.mockImplementationOnce(async () => {
@@ -205,7 +205,7 @@ describe('audio analysis jobs', () => {
     }
   });
 
-  test('clears final transcription failure', async () => {
+  test('clears final failures', async () => {
     reset();
 
     transcribeAudioFile.mockImplementationOnce(async () => {
