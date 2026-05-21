@@ -278,6 +278,7 @@ export const ComposerForm = ({
                 onKeyDown={handleInlineKeyDown}
                 onSelectionChange={handleInlineSelectionChange}
                 onTouchStart={handleInlineTextareaTouchStart}
+                pasteRichTextAsMarkdown
                 placeholder={placeholder}
                 readOnly={isTextInputDisabled}
                 size="sm"
@@ -364,9 +365,10 @@ export const ComposerForm = ({
         onDismiss={() => setIsFullscreenOpen(false)}
         open={isOpen && isFullscreenOpen && showFormattingControls}
         portalName={fullscreenPortalName}
+        width="editor"
       >
         <Page className="flex-col overflow-hidden max-h-full min-h-0 bg-popover">
-          <View className="flex-1 mx-auto max-h-full max-w-lg min-h-0 w-full">
+          <View className="flex-1 mx-auto max-h-full max-w-4xl min-h-0 w-full">
             <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
               <View className="relative flex-1 overflow-hidden min-h-0 border-border-secondary border-continuous rounded-2xl bg-input border">
                 <Textarea
@@ -379,6 +381,7 @@ export const ComposerForm = ({
                   onKeyDown={handleFullscreenKeyDown}
                   onSelectionChange={handleFullscreenSelectionChange}
                   onTouchStart={handleFullscreenTextareaTouchStart}
+                  pasteRichTextAsMarkdown
                   placeholder={placeholder}
                   readOnly={isTextInputDisabled}
                   style={Platform.OS === 'web' ? { height: '100%' } : undefined}

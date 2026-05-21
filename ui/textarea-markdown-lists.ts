@@ -10,7 +10,8 @@ type MarkdownListEnterEdit = {
   text: string;
 };
 
-const MARKDOWN_LIST_ITEM_PATTERN = /^(\s{0,12})([-+*]|\d{1,3}[.)])(\s+)(.*)$/;
+const MARKDOWN_LIST_ITEM_PATTERN = /^(\s{0,12})([-+*–]|\d{1,3}[.)])(\s+)(.*)$/;
+const MARKDOWN_BLOCKQUOTE_PATTERN = /^(\s{0,3})>\s?(.*)$/;
 
 export function getMarkdownListEnterEdit({
   selectionEnd,
@@ -22,6 +23,32 @@ export function getMarkdownListEnterEdit({
   const nextLineBreak = text.indexOf('\n', selectionStart);
   const lineEnd = nextLineBreak === -1 ? text.length : nextLineBreak;
   const line = text.slice(lineStart, lineEnd);
+  const blockquote = MARKDOWN_BLOCKQUOTE_PATTERN.exec(line);
+
+  if (blockquote) {
+    const [, indent, content] = blockquote;
+    const markerEnd = lineStart + line.length - content.length;
+    if (selectionStart < markerEnd) return;
+
+    if (!content.trim()) {
+      return {
+        selectionEnd: lineStart,
+        selectionStart: lineStart,
+        text: text.slice(0, lineStart) + text.slice(lineEnd),
+      };
+    }
+
+    const insertText = `\n${indent}> `;
+    const nextSelection = selectionStart + insertText.length;
+
+    return {
+      selectionEnd: nextSelection,
+      selectionStart: nextSelection,
+      text:
+        text.slice(0, selectionStart) + insertText + text.slice(selectionEnd),
+    };
+  }
+
   const listItem = MARKDOWN_LIST_ITEM_PATTERN.exec(line);
   if (!listItem) return;
   const [, indent, marker, markerSpacing, content] = listItem;
@@ -53,7 +80,7 @@ export function getMarkdownListEnterEdit({
 }
 
 function getNextMarkdownListMarker(marker: string) {
-  if (/^[-+*]$/.test(marker)) return marker;
+  if (/^[-+*–]$/.test(marker)) return marker;
   const orderedMarker = /^(\d{1,3})([.)])$/.exec(marker);
   if (!orderedMarker) return;
   const nextNumber = Number(orderedMarker[1]) + 1;

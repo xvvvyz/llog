@@ -44,10 +44,13 @@ export const SHEET_LAYERS = {
 } as const;
 
 const sheetVariants = cva(
-  'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:max-w-sheet md:rounded-4xl md:border-b border-continuous',
+  'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:rounded-4xl md:border-b border-continuous',
   {
-    defaultVariants: { variant: 'default' },
-    variants: { variant: { default: '', list: 'md:rounded-3xl' } },
+    defaultVariants: { variant: 'default', width: 'default' },
+    variants: {
+      variant: { default: '', list: 'md:rounded-3xl' },
+      width: { default: 'md:max-w-sheet', editor: 'md:max-w-4xl' },
+    },
   }
 );
 
@@ -97,6 +100,7 @@ export const Sheet = ({
   portalName,
   topInset = 72,
   variant,
+  width,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -162,7 +166,7 @@ export const Sheet = ({
       ref={sheetContentRef}
       style={[heightStyle, sheetDragBehavior.sheetStyle]}
       className={cn(
-        sheetVariants({ variant }),
+        sheetVariants({ variant, width }),
         loading && 'min-h-24',
         className
       )}

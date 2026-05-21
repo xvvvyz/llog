@@ -1,5 +1,7 @@
 import { cn } from '@/lib/cn';
+import { applyTextareaEditWithUndo } from '@/ui/textarea-edit';
 import { getMarkdownListEnterEdit } from '@/ui/textarea-markdown-lists';
+import { getRichTextPasteEdit } from '@/ui/textarea-rich-text-paste';
 import * as React from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 
@@ -17,6 +19,7 @@ export const Textarea = React.forwardRef<
       nativeEvent: { selection: { end: number; start: number } };
     }) => void;
     onSubmitEditing?: () => void;
+    pasteRichTextAsMarkdown?: boolean;
     size?: 'default' | 'sm';
   }
 >(
@@ -31,10 +34,12 @@ export const Textarea = React.forwardRef<
       numberOfLines,
       onChangeText,
       onKeyDown,
+      onPaste,
       onSelect,
       onSelectionChange,
       onSubmitEditing,
       onTouchStart,
+      pasteRichTextAsMarkdown,
       placeholder,
       readOnly,
       size = 'default',
@@ -49,6 +54,21 @@ export const Textarea = React.forwardRef<
 
     const textareaRef =
       React.useRef<React.ComponentRef<typeof TextareaAutosize>>(null);
+
+    const pastePlainOnNextPasteRef = React.useRef(false);
+
+    const pastePlainResetTimeoutRef = React.useRef<
+      ReturnType<typeof setTimeout> | undefined
+    >(undefined);
+
+    React.useEffect(
+      () => () => {
+        if (pastePlainResetTimeoutRef.current) {
+          clearTimeout(pastePlainResetTimeoutRef.current);
+        }
+      },
+      []
+    );
 
     React.useEffect(() => {
       if (value !== undefined) setLocalValue(value);
@@ -143,6 +163,13 @@ export const Textarea = React.forwardRef<
         scrollToBottom: boolean
       ) => {
         if (readOnly || props.disabled) return;
+
+        applyTextareaEditWithUndo(textarea, {
+          selectionEnd,
+          selectionStart,
+          text,
+        });
+
         setLocalValue(text);
         if (onChangeText) React.startTransition(() => onChangeText(text));
 
@@ -155,11 +182,75 @@ export const Textarea = React.forwardRef<
       [notifySelectionChange, onChangeText, props.disabled, readOnly]
     );
 
+    const armPlainTextPaste = React.useCallback(() => {
+      pastePlainOnNextPasteRef.current = true;
+
+      if (pastePlainResetTimeoutRef.current) {
+        clearTimeout(pastePlainResetTimeoutRef.current);
+      }
+
+      pastePlainResetTimeoutRef.current = setTimeout(() => {
+        pastePlainOnNextPasteRef.current = false;
+        pastePlainResetTimeoutRef.current = undefined;
+      }, 1000);
+    }, []);
+
+    const handlePaste = React.useCallback(
+      (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        onPaste?.(event);
+        if (event.defaultPrevented) return;
+        if (!pasteRichTextAsMarkdown) return;
+        if (readOnly || props.disabled) return;
+
+        const shouldPastePlain =
+          pastePlainOnNextPasteRef.current || isShiftPasteEvent(event);
+
+        pastePlainOnNextPasteRef.current = false;
+        if (shouldPastePlain) return;
+        const html = event.clipboardData.getData('text/html');
+        if (!html) return;
+        const textarea = event.currentTarget;
+        const scrollToBottom = shouldKeepTextareaScrolledToBottom(textarea);
+
+        const edit = getRichTextPasteEdit({
+          html,
+          maxLength,
+          selectionEnd: textarea.selectionEnd,
+          selectionStart: textarea.selectionStart,
+          text: textarea.value,
+        });
+
+        if (!edit) return;
+        event.preventDefault();
+
+        applyTextEdit(
+          textarea,
+          edit.text,
+          edit.selectionStart,
+          edit.selectionEnd,
+          scrollToBottom
+        );
+      },
+      [
+        applyTextEdit,
+        maxLength,
+        onPaste,
+        pasteRichTextAsMarkdown,
+        props.disabled,
+        readOnly,
+      ]
+    );
+
     const handleKeyDown = React.useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         onKeyDown?.(e);
         if (e.defaultPrevented) return;
         if (readOnly || props.disabled) return;
+
+        if (isPlainTextPasteShortcut(e)) {
+          armPlainTextPaste();
+          return;
+        }
 
         if (!e.shiftKey && e.key === 'Enter' && onSubmitEditing) {
           e.preventDefault();
@@ -213,6 +304,7 @@ export const Textarea = React.forwardRef<
       },
       [
         applyTextEdit,
+        armPlainTextPaste,
         maxLength,
         onKeyDown,
         onSubmitEditing,
@@ -230,6 +322,7 @@ export const Textarea = React.forwardRef<
         minRows={minRows}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         onSelect={handleSelect}
         onTouchStart={handleTouchStart}
         placeholder={placeholder}
@@ -273,6 +366,19 @@ function scrollTextareaToBottomOnNextFrames(textarea: HTMLTextAreaElement) {
 
 function scrollTextareaToBottom(textarea: HTMLTextAreaElement) {
   textarea.scrollTop = textarea.scrollHeight;
+}
+
+function isPlainTextPasteShortcut(
+  event: React.KeyboardEvent<HTMLTextAreaElement>
+) {
+  if (!event.shiftKey) return false;
+  const key = event.key.toLowerCase();
+  return (key === 'v' && (event.metaKey || event.ctrlKey)) || key === 'insert';
+}
+
+function isShiftPasteEvent(event: React.ClipboardEvent<HTMLTextAreaElement>) {
+  return !!(event.nativeEvent as ClipboardEvent & { shiftKey?: boolean })
+    .shiftKey;
 }
 
 function getTextareaScrollTolerance(textarea: HTMLTextAreaElement) {

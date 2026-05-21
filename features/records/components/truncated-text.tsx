@@ -1,10 +1,10 @@
 import { renderRecordMarkdownText } from '@/features/records/components/record-markdown-text';
+import * as trimDisplayText from '@/features/records/lib/trim-display-text';
 import { cn } from '@/lib/cn';
 import { Text } from '@/ui/text';
 import { type TextRef } from '@rn-primitives/types';
 import * as React from 'react';
 import { Platform, Pressable, View } from 'react-native';
-import * as trimDisplayText from '@/features/records/lib/trim-display-text';
 
 export const TruncatedText = ({
   className,
@@ -78,6 +78,12 @@ export const TruncatedText = ({
 
   if (!displayText) return null;
 
+  const renderedText = renderRecordMarkdownText({
+    color,
+    flattenListItems: shouldUseWebNumberOfLines,
+    text: visibleText,
+  });
+
   return (
     <View>
       <Text
@@ -85,11 +91,7 @@ export const TruncatedText = ({
         className={cn('web:whitespace-pre-wrap web:text-pretty', className)}
         numberOfLines={collapsedNumberOfLines}
       >
-        {renderRecordMarkdownText({
-          color,
-          flattenListItems: shouldUseWebNumberOfLines,
-          text: visibleText,
-        })}
+        {renderedText}
       </Text>
       {expandable && truncated && !expanded && (
         <Pressable className="px-4" onPress={() => setExpanded(true)}>

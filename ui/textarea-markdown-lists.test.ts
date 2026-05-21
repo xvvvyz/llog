@@ -3,7 +3,7 @@ import { getMarkdownListEnterEdit } from '@/ui/textarea-markdown-lists';
 
 describe('getMarkdownListEnterEdit', () => {
   test('continues bullets', () => {
-    for (const marker of ['-', '+', '*']) {
+    for (const marker of ['–', '-', '+', '*']) {
       expectEnter(`${marker} one|`, `${marker} one\n${marker} |`);
     }
   });
@@ -26,6 +26,14 @@ describe('getMarkdownListEnterEdit', () => {
 
   test('removes empty numbers', () => {
     expectEnter('1. one\n2. |', '1. one\n|');
+  });
+
+  test('continues blockquotes', () => {
+    expectEnter('> one|', '> one\n> |');
+  });
+
+  test('removes empty blockquotes', () => {
+    expectEnter('> one\n> |', '> one\n|');
   });
 
   test('ignores unsupported markers', () => {

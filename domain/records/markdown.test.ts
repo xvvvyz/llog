@@ -2,11 +2,27 @@ import { describe, expect, test } from 'bun:test';
 import * as recordMarkdown from '@/domain/records/markdown';
 
 describe('parseRecordMarkdown', () => {
-  test('parses headings', () => {
+  test('keeps heading syntax', () => {
     expect(recordMarkdown.parseRecordMarkdown('# Title')[0]).toEqual({
-      children: [{ kind: 'text', text: 'Title' }],
-      kind: 'title',
+      children: [{ kind: 'text', text: '# Title' }],
+      kind: 'paragraph',
     });
+  });
+
+  test('parses blockquotes', () => {
+    expect(
+      recordMarkdown.parseRecordMarkdown('> **one**\n>\n> two\n\nnext')
+    ).toEqual([
+      {
+        children: [
+          { children: [{ kind: 'text', text: 'one' }], kind: 'bold' },
+          { kind: 'text', text: '\n\ntwo' },
+        ],
+        kind: 'blockquote',
+      },
+      { children: [], kind: 'blank-line' },
+      { children: [{ kind: 'text', text: 'next' }], kind: 'paragraph' },
+    ]);
   });
 
   test('parses inline styles', () => {
@@ -30,6 +46,28 @@ describe('parseRecordMarkdown', () => {
     });
   });
 
+  test('parses bold italic', () => {
+    expect(recordMarkdown.parseRecordMarkdown('***both***')[0]).toEqual({
+      children: [
+        {
+          children: [
+            { children: [{ kind: 'text', text: 'both' }], kind: 'italic' },
+          ],
+          kind: 'bold',
+        },
+      ],
+      kind: 'paragraph',
+    });
+  });
+
+  test('parses horizontal rules', () => {
+    expect(recordMarkdown.parseRecordMarkdown('---\n_ _ _\n***')).toEqual([
+      { children: [], kind: 'horizontal-rule' },
+      { children: [], kind: 'horizontal-rule' },
+      { children: [], kind: 'horizontal-rule' },
+    ]);
+  });
+
   test('parses lists', () => {
     expect(
       recordMarkdown.parseRecordMarkdown(
@@ -49,6 +87,28 @@ describe('parseRecordMarkdown', () => {
             href: 'https://two.test',
             kind: 'link',
           },
+        ],
+        indent: 1,
+        kind: 'list-item',
+        marker: '2.',
+      },
+    ]);
+  });
+
+  test('keeps task syntax as list text', () => {
+    expect(
+      recordMarkdown.parseRecordMarkdown('- [ ] one\n  2. [x] **two**')
+    ).toEqual([
+      {
+        children: [{ kind: 'text', text: '[ ] one' }],
+        indent: 0,
+        kind: 'list-item',
+        marker: '-',
+      },
+      {
+        children: [
+          { kind: 'text', text: '[x] ' },
+          { children: [{ kind: 'text', text: 'two' }], kind: 'bold' },
         ],
         indent: 1,
         kind: 'list-item',
@@ -100,14 +160,13 @@ describe('parseRecordMarkdown', () => {
   test('keeps unsupported syntax', () => {
     expect(
       recordMarkdown.parseRecordMarkdown(
-        '![alt](image.jpg)\n---\n| a | b |\n<div>html</div>'
+        '![alt](image.jpg)\n| a | b |\n<div>html</div>'
       )
     ).toEqual([
       {
         children: [{ kind: 'text', text: '![alt](image.jpg)' }],
         kind: 'paragraph',
       },
-      { children: [{ kind: 'text', text: '---' }], kind: 'paragraph' },
       { children: [{ kind: 'text', text: '| a | b |' }], kind: 'paragraph' },
       {
         children: [{ kind: 'text', text: '<div>html</div>' }],
@@ -121,9 +180,9 @@ describe('recordMarkdownToPlainText', () => {
   test('strips markdown', () => {
     expect(
       recordMarkdown.recordMarkdownToPlainText(
-        '# Title\n- **bold** and *italic*\n  2. [docs](https://example.com)'
+        '# Title\n> Quote\n- **bold** and *italic*\n  2. [docs](https://example.com)'
       )
-    ).toBe('Title bold and italic docs');
+    ).toBe('# Title Quote bold and italic docs');
   });
 
   test('keeps plain text', () => {

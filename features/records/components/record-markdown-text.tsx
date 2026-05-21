@@ -7,7 +7,6 @@ import { Linking, Platform } from 'react-native';
 import tlds from 'tlds';
 
 const linkify = new LinkifyIt().tlds(tlds);
-const LIST_INDENT_CH = 2;
 const SHORT_LIST_MARKER_COLUMN_CH = 2.25;
 const LONG_LIST_MARKER_COLUMN_CH = 3.25;
 
@@ -22,28 +21,42 @@ export function renderRecordMarkdownText({
 }) {
   return recordMarkdown
     .parseRecordMarkdown(text)
-    .flatMap((block, index, blocks) => [
-      renderBlock(block, index, color, flattenListItems),
-      getBlockSeparator(block, index, blocks, flattenListItems),
-    ]);
+    .flatMap((block, index, blocks) => {
+      return [
+        renderBlock({ block, color, flattenListItems, index }),
+        getBlockSeparator(block, index, blocks, flattenListItems),
+      ];
+    });
 }
 
-function renderBlock(
-  block: recordMarkdown.RecordMarkdownBlock,
-  index: number,
-  color?: string,
-  flattenListItems = false
-) {
+function renderBlock({
+  block,
+  color,
+  flattenListItems = false,
+  index,
+}: {
+  block: recordMarkdown.RecordMarkdownBlock;
+  color?: string;
+  flattenListItems?: boolean;
+  index: number;
+}) {
   if (block.kind === 'list-item') {
     const indent = block.indent;
     const marker = block.marker;
+    const content = renderInlines(block.children, `${index}`, color);
 
     if (flattenListItems) {
+      const flattenedContent = [
+        '  '.repeat(indent),
+        <Text key="marker" className={getListMarkerClassName(marker)}>
+          {getDisplayListMarker(marker)}{' '}
+        </Text>,
+        ...content,
+      ];
+
       return (
         <React.Fragment key={`block:${index}`}>
-          {'  '.repeat(indent)}
-          <Text className={getListMarkerClassName(marker)}>{marker} </Text>
-          {renderInlines(block.children, `${index}`, color)}
+          {flattenedContent}
         </React.Fragment>
       );
     }
@@ -52,20 +65,43 @@ function renderBlock(
       <Text key={`block:${index}`} style={getListItemStyle({ indent, marker })}>
         {renderNativeListIndent({ indent })}
         {renderListMarker({ indent, marker })}
+        {content}
+      </Text>
+    );
+  }
+
+  if (block.kind === 'blockquote') {
+    return (
+      <Text
+        key={`block:${index}`}
+        className="text-muted-foreground italic"
+        style={getBlockquoteStyle()}
+      >
         {renderInlines(block.children, `${index}`, color)}
       </Text>
     );
   }
 
-  const className = cn(block.kind === 'title' && 'font-bold');
-  const content = renderInlines(block.children, `${index}`, color);
-  if (!className) return content;
+  if (block.kind === 'horizontal-rule') {
+    return (
+      <Text
+        key={`block:${index}`}
+        className="text-muted-foreground"
+        style={getHorizontalRuleStyle()}
+      >
+        {Platform.OS === 'web' ? '' : '────────'}
+      </Text>
+    );
+  }
 
-  return (
-    <Text key={`block:${index}`} className={className}>
-      {content}
-    </Text>
-  );
+  if (block.kind === 'blank-line') return '';
+  const content = renderInlines(block.children, `${index}`, color);
+
+  if (flattenListItems) {
+    return <React.Fragment key={`block:${index}`}>{content}</React.Fragment>;
+  }
+
+  return <Text key={`block:${index}`}>{content}</Text>;
 }
 
 function getBlockSeparator(
@@ -76,8 +112,42 @@ function getBlockSeparator(
 ) {
   if (index >= blocks.length - 1) return null;
   if (flattenListItems) return '\n';
-  if (Platform.OS === 'web' && block.kind === 'list-item') return null;
+
+  if (
+    Platform.OS === 'web' &&
+    (block.kind === 'blockquote' ||
+      block.kind === 'horizontal-rule' ||
+      block.kind === 'list-item')
+  ) {
+    return null;
+  }
+
   return '\n';
+}
+
+function getHorizontalRuleStyle() {
+  if (Platform.OS !== 'web') return undefined;
+
+  return {
+    borderTop: '1px solid currentColor',
+    display: 'block',
+    height: 0,
+    marginBottom: '0.4rem',
+    marginTop: '0.4rem',
+    opacity: 0.5,
+  } as unknown as React.ComponentProps<typeof Text>['style'];
+}
+
+function getBlockquoteStyle() {
+  if (Platform.OS !== 'web') return undefined;
+
+  return {
+    borderLeft: '2px solid currentColor',
+    display: 'block',
+    marginBottom: 0,
+    marginTop: 0,
+    paddingLeft: '0.75rem',
+  } as unknown as React.ComponentProps<typeof Text>['style'];
 }
 
 function getListItemStyle({
@@ -101,7 +171,7 @@ function getListItemStyle({
 }
 
 function getListIndentWidth(indent: number) {
-  return indent * LIST_INDENT_CH;
+  return indent * SHORT_LIST_MARKER_COLUMN_CH;
 }
 
 function getListMarkerColumnWidth(marker: string) {
@@ -112,7 +182,7 @@ function getListMarkerColumnWidth(marker: string) {
 
 function renderNativeListIndent({ indent }: { indent: number }) {
   if (Platform.OS === 'web' || indent <= 0) return null;
-  return '  '.repeat(indent);
+  return <Text key="indent">{'  '.repeat(indent)}</Text>;
 }
 
 function renderListMarker({
@@ -122,12 +192,13 @@ function renderListMarker({
   indent: number;
   marker: string;
 }) {
+  const displayMarker = getDisplayListMarker(marker);
   const className = getListMarkerClassName(marker);
 
   if (Platform.OS !== 'web') {
     return (
       <Text key="marker" className={className}>
-        {marker}{' '}
+        {displayMarker}{' '}
       </Text>
     );
   }
@@ -146,13 +217,20 @@ function renderListMarker({
         } as unknown as React.ComponentProps<typeof Text>['style']
       }
     >
-      {marker}
+      {displayMarker}
     </Text>
   );
 }
 
+function getDisplayListMarker(marker: string) {
+  return /^\d+[.)]$/.test(marker) ? marker.slice(0, -1) : '–';
+}
+
 function getListMarkerClassName(marker: string) {
-  return cn('text-muted-foreground', marker !== '-' && 'tabular-nums');
+  return cn(
+    'text-muted-foreground',
+    /^\d+[.)]$/.test(marker) && 'tabular-nums'
+  );
 }
 
 function renderInlines(
@@ -297,6 +375,7 @@ function renderLink({
       >
         <a
           href={url}
+          onClick={(event) => event.stopPropagation()}
           rel={isExternal ? 'noreferrer noopener' : undefined}
           target={isExternal ? '_blank' : undefined}
         >

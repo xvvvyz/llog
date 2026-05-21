@@ -7,7 +7,9 @@ export type RecordMarkdownInline =
     };
 
 export type RecordMarkdownBlock =
-  | { children: RecordMarkdownInline[]; kind: 'paragraph' | 'title' }
+  | { children: []; kind: 'blank-line' }
+  | { children: RecordMarkdownInline[]; kind: 'blockquote' | 'paragraph' }
+  | { children: []; kind: 'horizontal-rule' }
   | {
       children: RecordMarkdownInline[];
       indent: number;
@@ -15,22 +17,53 @@ export type RecordMarkdownBlock =
       marker: string;
     };
 
+type InlineStyleKind = Exclude<RecordMarkdownInline['kind'], 'link' | 'text'>;
+
 type InlineToken = {
   closeMarker?: string;
-  kind: Exclude<RecordMarkdownInline['kind'], 'link' | 'text'>;
+  kinds: InlineStyleKind[];
   marker: string;
 };
 
 const INLINE_TOKENS: InlineToken[] = [
-  { kind: 'bold', marker: '**' },
-  { kind: 'strikethrough', marker: '~~' },
-  { closeMarker: '</u>', kind: 'underline', marker: '<u>' },
-  { kind: 'italic', marker: '*' },
-  { kind: 'italic', marker: '_' },
+  { kinds: ['bold', 'italic'], marker: '***' },
+  { kinds: ['bold'], marker: '**' },
+  { kinds: ['strikethrough'], marker: '~~' },
+  { closeMarker: '</u>', kinds: ['underline'], marker: '<u>' },
+  { kinds: ['italic'], marker: '*' },
+  { kinds: ['italic'], marker: '_' },
 ];
 
+const UNORDERED_LIST_MARKER = '-';
+
 export function parseRecordMarkdown(text: string): RecordMarkdownBlock[] {
-  return text.split('\n').map((line) => parseRecordMarkdownLine(line));
+  const lines = text.split('\n');
+  const blocks: RecordMarkdownBlock[] = [];
+
+  for (let index = 0; index < lines.length; index++) {
+    const blockquote = parseBlockquoteLine(lines[index]);
+
+    if (blockquote === undefined) {
+      blocks.push(parseRecordMarkdownLine(lines[index]));
+      continue;
+    }
+
+    const quoteLines = [blockquote];
+
+    while (index + 1 < lines.length) {
+      const nextBlockquote = parseBlockquoteLine(lines[index + 1]);
+      if (nextBlockquote === undefined) break;
+      quoteLines.push(nextBlockquote);
+      index++;
+    }
+
+    blocks.push({
+      children: parseRecordMarkdownInline(quoteLines.join('\n')),
+      kind: 'blockquote',
+    });
+  }
+
+  return blocks;
 }
 
 export function recordMarkdownToPlainText(text: string): string {
@@ -42,20 +75,20 @@ export function recordMarkdownToPlainText(text: string): string {
 }
 
 function parseRecordMarkdownLine(line: string): RecordMarkdownBlock {
-  const title = /^(#{1,6})\s+(.+)$/.exec(line);
+  if (!line.trim()) return { children: [], kind: 'blank-line' };
 
-  if (title) {
-    return { children: parseRecordMarkdownInline(title[2]), kind: 'title' };
+  if (isHorizontalRuleLine(line)) {
+    return { children: [], kind: 'horizontal-rule' };
   }
 
-  const unorderedListItem = /^(\s{0,12})([-+*])\s+(.+)$/.exec(line);
+  const unorderedListItem = /^(\s{0,12})([-+*–])\s+(.+)$/.exec(line);
 
   if (unorderedListItem) {
     return {
       children: parseRecordMarkdownInline(unorderedListItem[3]),
       indent: Math.floor(unorderedListItem[1].length / 2),
       kind: 'list-item',
-      marker: '-',
+      marker: UNORDERED_LIST_MARKER,
     };
   }
 
@@ -71,6 +104,14 @@ function parseRecordMarkdownLine(line: string): RecordMarkdownBlock {
   }
 
   return { children: parseRecordMarkdownInline(line), kind: 'paragraph' };
+}
+
+function parseBlockquoteLine(line: string) {
+  return /^\s{0,3}>\s?(.*)$/.exec(line)?.[1];
+}
+
+function isHorizontalRuleLine(line: string) {
+  return /^\s{0,3}(?:(?:-\s*){3,}|(?:_\s*){3,}|(?:\*\s*){3,})$/.test(line);
 }
 
 export function parseRecordMarkdownInline(
@@ -111,10 +152,12 @@ export function parseRecordMarkdownInline(
       break;
     }
 
-    nodes.push({
-      children: parseRecordMarkdownInline(text.slice(contentStart, closeIndex)),
-      kind: next.style,
-    });
+    nodes.push(
+      wrapInlineStyles(
+        parseRecordMarkdownInline(text.slice(contentStart, closeIndex)),
+        next.styles
+      )
+    );
 
     index = closeIndex + closeMarker.length;
   }
@@ -168,7 +211,7 @@ function findNextInlineToken(text: string, start: number) {
         kind: 'style';
         closeMarker?: string;
         marker: string;
-        style: InlineToken['kind'];
+        styles: InlineToken['kinds'];
       }
     | undefined;
 
@@ -197,12 +240,22 @@ function findNextInlineToken(text: string, start: number) {
         index,
         kind: 'style',
         marker: token.marker,
-        style: token.kind,
+        styles: token.kinds,
       };
     }
   }
 
   return next;
+}
+
+function wrapInlineStyles(
+  children: RecordMarkdownInline[],
+  styles: InlineStyleKind[]
+): RecordMarkdownInline {
+  return styles.reduceRight<RecordMarkdownInline[]>(
+    (wrappedChildren, kind) => [{ children: wrappedChildren, kind }],
+    children
+  )[0];
 }
 
 function findClosingInlineToken(text: string, marker: string, start: number) {

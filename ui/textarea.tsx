@@ -6,6 +6,7 @@ type TextareaProps = React.ComponentPropsWithoutRef<typeof TextInput> & {
   maxRows?: number;
   minRows?: number;
   onKeyDown?: unknown;
+  pasteRichTextAsMarkdown?: boolean;
   readOnly?: boolean;
   size?: 'default' | 'sm';
 };
@@ -28,6 +29,7 @@ const Textarea = React.forwardRef<
       onChangeText,
       onContentSizeChange,
       onKeyDown: _onKeyDown,
+      pasteRichTextAsMarkdown: _pasteRichTextAsMarkdown,
       readOnly,
       scrollEnabled,
       size = 'default',
@@ -42,6 +44,7 @@ const Textarea = React.forwardRef<
     );
 
     void _onKeyDown;
+    void _pasteRichTextAsMarkdown;
     const [contentHeight, setContentHeight] = React.useState<number>();
 
     const minHeight = minRows

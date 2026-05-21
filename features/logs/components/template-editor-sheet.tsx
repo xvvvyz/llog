@@ -227,6 +227,7 @@ export const LogTemplateEditorSheet = () => {
                   maxRows={5}
                   onChangeText={setText}
                   onSelectionChange={handleInlineSelectionChange}
+                  pasteRichTextAsMarkdown
                   placeholder="Today I worked on..."
                   size="sm"
                   value={text}
@@ -293,9 +294,10 @@ export const LogTemplateEditorSheet = () => {
         onDismiss={() => setIsFullscreenOpen(false)}
         open={isOpen && isFullscreenOpen}
         portalName="log-template-editor-fullscreen"
+        width="editor"
       >
         <Page className="flex-col overflow-hidden max-h-full min-h-0 bg-popover">
-          <View className="flex-1 mx-auto max-h-full max-w-lg min-h-0 w-full">
+          <View className="flex-1 mx-auto max-h-full max-w-4xl min-h-0 w-full">
             <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
               <View className="relative flex-1 overflow-hidden min-h-0 border-border-secondary border-continuous rounded-2xl bg-input border">
                 <Textarea
@@ -306,6 +308,7 @@ export const LogTemplateEditorSheet = () => {
                   onChangeText={setText}
                   onKeyDown={fullscreenMarkdownShortcuts.handleKeyDown}
                   onTouchStart={fullscreenMarkdownShortcuts.handleTouchStart}
+                  pasteRichTextAsMarkdown
                   placeholder="Today I worked on..."
                   size="sm"
                   style={Platform.OS === 'web' ? { height: '100%' } : undefined}
