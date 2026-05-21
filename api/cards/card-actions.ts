@@ -53,17 +53,6 @@ type CardEntity = {
   title?: string | null;
 };
 
-type CardRefreshDebounceEntity = {
-  id: string;
-  logId?: string | null;
-  requestedAt?: Date | number | string | null;
-  runAfter?: Date | number | string | null;
-  status?: string | null;
-  tagIds?: unknown;
-  teamId?: string | null;
-  token?: string | null;
-};
-
 const trimRequired = (value: string, maxLength: number, message: string) => {
   const trimmed = value.trim();
 
@@ -262,40 +251,6 @@ export const isSameGenerationRequest = ({
   generationRequestedAt?: Date | number | string | null;
   requestedAt: string;
 }) => timeValue(generationRequestedAt) === timeValue(requestedAt);
-
-const addMilliseconds = (date: Date, milliseconds: number) =>
-  new Date(date.getTime() + milliseconds).toISOString();
-
-const readTagIds = (value: unknown) =>
-  Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string' && !!item)
-    : [];
-
-export const mergeCardRefreshTagIds = (
-  currentTagIds: unknown,
-  nextTagIds: string[]
-) =>
-  cardSourceSelection.uniqueCardTagIds([
-    ...readTagIds(currentTagIds),
-    ...nextTagIds,
-  ]);
-
-export const isQueuedRefreshDebounceCurrent = ({
-  debounceMs,
-  now,
-  runAfter,
-  status,
-}: {
-  debounceMs: number;
-  now: Date;
-  runAfter?: Date | number | string | null;
-  status?: string | null;
-}) => {
-  const runAfterTime = timeValue(runAfter);
-  if (status !== 'queued' || runAfterTime == null) return false;
-  const nowTime = now.getTime();
-  return runAfterTime > nowTime && runAfterTime <= nowTime + debounceMs;
-};
 
 const fallbackCardTitle = (prompt: string) => {
   const firstLine = prompt
@@ -878,19 +833,20 @@ const enqueueCardGenerateJob = async ({
 
 const enqueueCardRefreshJob = async ({
   cardId,
+  delaySeconds,
   env,
   requestedAt,
 }: {
   cardId: string;
+  delaySeconds?: number;
   env: CloudflareEnv;
   requestedAt: string;
 }) => {
-  await enqueueJob(env, {
-    cardId,
-    requestedAt,
-    schemaVersion: 1,
-    type: 'card.refresh-one',
-  });
+  await enqueueJob(
+    env,
+    { cardId, requestedAt, schemaVersion: 1, type: 'card.refresh' },
+    delaySeconds == null ? undefined : { delaySeconds }
+  );
 };
 
 const enqueueCardTweakJob = async ({
@@ -1128,7 +1084,7 @@ export const refreshPublishedRecordCards = async ({
   const { cards } = await dbClient.query({
     cards: {
       $: {
-        fields: ['id', 'logId', 'prompt', 'teamId', 'title'],
+        fields: ['id'],
         where: { logId, type: constants.CARD_TYPE_PROGRESS },
       },
       tags: { $: { fields: ['id'] } },
@@ -1140,11 +1096,8 @@ export const refreshPublishedRecordCards = async ({
   );
 
   if (!matchingCards.length) return;
-  const now = new Date();
-  const requestedAt = now.toISOString();
-  const runAfter = addMilliseconds(now, debounceMs);
-  const teamId = matchingCards.find((card) => card.teamId)?.teamId;
-  if (!teamId) return;
+  const requestedAt = new Date().toISOString();
+  const delaySeconds = Math.ceil(debounceMs / 1000);
 
   const markMatchingCardsGenerating = matchingCards.map((card) =>
     dbClient.tx.cards[card.id].update({
@@ -1154,194 +1107,33 @@ export const refreshPublishedRecordCards = async ({
     })
   );
 
-  const gate = await getCardRefreshDebounce({ dbClient, logId });
-
-  const mergedTagIds = mergeCardRefreshTagIds(
-    gate?.tagIds,
-    selectedRecordTagIds
-  );
-
-  if (
-    isQueuedRefreshDebounceCurrent({
-      debounceMs,
-      now,
-      runAfter: gate?.runAfter,
-      status: gate?.status,
-    })
-  ) {
-    await dbClient.transact([
-      ...markMatchingCardsGenerating,
-      dbClient.tx.cardRefreshDebounces[logId]
-        .update({ requestedAt, tagIds: mergedTagIds })
-        .link({ log: logId, team: teamId }),
-    ]);
-
-    return;
-  }
-
-  const token = generateId();
-
-  await dbClient.transact([
-    ...markMatchingCardsGenerating,
-    dbClient.tx.cardRefreshDebounces[logId]
-      .update({
-        logId,
-        requestedAt,
-        runAfter,
-        status: 'queued',
-        tagIds: mergedTagIds,
-        teamId,
-        token,
-      })
-      .link({ log: logId, team: teamId }),
-  ]);
+  await dbClient.transact(markMatchingCardsGenerating);
 
   try {
-    await enqueueJob(
-      env,
-      { logId, requestedAt, schemaVersion: 1, token, type: 'card.refresh' },
-      { delaySeconds: Math.ceil(debounceMs / 1000) }
+    await Promise.all(
+      matchingCards.map((card) =>
+        enqueueCardRefreshJob({
+          cardId: card.id,
+          delaySeconds,
+          env,
+          requestedAt,
+        })
+      )
     );
   } catch (error) {
-    await Promise.all([
-      clearCardRefreshDebounceIfCurrent({ dbClient, logId, token }),
-      ...matchingCards.map((card) =>
+    await Promise.all(
+      matchingCards.map((card) =>
         updateCardIfGenerationCurrent({
           cardId: card.id,
           dbClient,
           fields: { generationRequestedAt: null, isGenerating: false },
           requestedAt,
         })
-      ),
-    ]);
+      )
+    );
 
     throw error;
   }
-};
-
-const getCardRefreshDebounce = async ({
-  dbClient,
-  logId,
-}: {
-  dbClient: Db;
-  logId: string;
-}) => {
-  const { cardRefreshDebounces } = await dbClient.query({
-    cardRefreshDebounces: { $: { where: { id: logId } } },
-  });
-
-  return cardRefreshDebounces[0] as CardRefreshDebounceEntity | undefined;
-};
-
-const clearCardRefreshDebounceIfCurrent = async ({
-  dbClient,
-  logId,
-  token,
-}: {
-  dbClient: Db;
-  logId: string;
-  token: string;
-}) => {
-  const gate = await getCardRefreshDebounce({ dbClient, logId });
-  if (gate?.token !== token) return false;
-
-  await dbClient.transact(
-    dbClient.tx.cardRefreshDebounces[logId].update({
-      requestedAt: null,
-      runAfter: null,
-      status: 'idle',
-      tagIds: [],
-      token: '',
-    })
-  );
-
-  return true;
-};
-
-export const processCardRefreshJob = async ({
-  dbClient,
-  env,
-  isFinalAttempt,
-  logId,
-  requestedAt,
-  token,
-}: {
-  dbClient: Db;
-  env: CloudflareEnv;
-  isFinalAttempt?: boolean;
-  logId: string;
-  requestedAt: string;
-  token: string;
-}) => {
-  const gate = await getCardRefreshDebounce({ dbClient, logId });
-
-  if (gate?.token !== token || gate.status !== 'queued') {
-    return { stale: true, success: false };
-  }
-
-  const runAfterTime = timeValue(gate.runAfter);
-  const now = Date.now();
-
-  if (runAfterTime != null && runAfterTime > now && !isFinalAttempt) {
-    return {
-      retryAfterSeconds: Math.max(1, Math.ceil((runAfterTime - now) / 1000)),
-      success: false,
-    };
-  }
-
-  await dbClient.transact(
-    dbClient.tx.cardRefreshDebounces[logId].update({ requestedAt })
-  );
-
-  const selectedRecordTagIds = new Set(readTagIds(gate.tagIds));
-
-  if (!selectedRecordTagIds.size) {
-    await clearCardRefreshDebounceIfCurrent({ dbClient, logId, token });
-    return { success: true };
-  }
-
-  const { cards } = await dbClient.query({
-    cards: {
-      $: {
-        fields: ['id', 'logId', 'prompt', 'title'],
-        where: { logId, type: constants.CARD_TYPE_PROGRESS },
-      },
-      tags: { $: { fields: ['id'] } },
-    },
-  });
-
-  const refreshCards = (cards as CardEntity[]).filter((card) =>
-    cardMatchesRecordTags(card, selectedRecordTagIds)
-  );
-
-  for (const card of refreshCards) {
-    const generationRequestedAt = new Date().toISOString();
-
-    await dbClient.transact(
-      dbClient.tx.cards[card.id].update({
-        generationRequestedAt,
-        isGenerating: true,
-      })
-    );
-
-    const result = await refreshCard({
-      cardId: card.id,
-      dbClient,
-      env,
-      isFinalAttempt,
-      requestedAt: generationRequestedAt,
-    });
-
-    const retryDelay =
-      result && typeof result === 'object'
-        ? result.retryAfterSeconds
-        : undefined;
-
-    if (typeof retryDelay === 'number' && retryDelay > 0) return result;
-  }
-
-  await clearCardRefreshDebounceIfCurrent({ dbClient, logId, token });
-  return { success: true };
 };
 
 export const queuePublishedRecordCardRefreshes = async (params: {

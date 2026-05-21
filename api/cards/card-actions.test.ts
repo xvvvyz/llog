@@ -67,36 +67,6 @@ describe('card permissions', () => {
       })
     ).toBe(false);
   });
-
-  test('merges debounce tags', () => {
-    expect(cardActions.mergeCardRefreshTagIds(['a', 'b'], ['b', 'c'])).toEqual([
-      'a',
-      'b',
-      'c',
-    ]);
-  });
-
-  test('detects current debounce windows', () => {
-    const now = new Date('2026-05-20T00:00:00.000Z');
-
-    expect(
-      cardActions.isQueuedRefreshDebounceCurrent({
-        debounceMs: 10_000,
-        now,
-        runAfter: '2026-05-20T00:00:10.000Z',
-        status: 'queued',
-      })
-    ).toBe(true);
-
-    expect(
-      cardActions.isQueuedRefreshDebounceCurrent({
-        debounceMs: 10_000,
-        now,
-        runAfter: '2026-05-20T00:00:11.000Z',
-        status: 'queued',
-      })
-    ).toBe(false);
-  });
 });
 
 describe('card generation', () => {
@@ -256,13 +226,12 @@ describe('card refresh queue', () => {
       cardId: 'card-1',
       requestedAt: updates[0]?.generationRequestedAt,
       schemaVersion: 1,
-      type: 'card.refresh-one',
+      type: 'card.refresh',
     });
   });
 
-  test('merges debounce tags', async () => {
+  test('queues record refreshes', async () => {
     const cardUpdates: Record<string, unknown>[] = [];
-    let gate: Record<string, unknown> | undefined;
     const sent: { body: unknown; options?: QueueSendOptions }[] = [];
 
     const entityTx = (entity: string) =>
@@ -295,12 +264,9 @@ describe('card refresh queue', () => {
                 tags: [{ id: 'tag-a' }, { id: 'tag-b' }],
                 teamId: 'team-1',
               },
+              { id: 'card-2', tags: [{ id: 'tag-c' }], teamId: 'team-1' },
             ],
           };
-        }
-
-        if ('cardRefreshDebounces' in query) {
-          return { cardRefreshDebounces: gate ? [gate] : [] };
         }
 
         return {};
@@ -313,19 +279,12 @@ describe('card refresh queue', () => {
         for (const transaction of Array.isArray(transactions)
           ? transactions
           : [transactions]) {
-          if (transaction.entity === 'cardRefreshDebounces') {
-            gate = { id: transaction.id, ...gate, ...transaction.fields };
-          }
-
           if (transaction.entity === 'cards') {
             cardUpdates.push(transaction.fields);
           }
         }
       },
-      tx: {
-        cardRefreshDebounces: entityTx('cardRefreshDebounces'),
-        cards: entityTx('cards'),
-      },
+      tx: { cards: entityTx('cards') },
     };
 
     const env = {
@@ -348,22 +307,20 @@ describe('card refresh queue', () => {
       recordTagIds: ['tag-a'],
     });
 
-    await cardActions.refreshPublishedRecordCards({
-      dbClient: db as never,
-      debounceMs: 10_000,
-      env,
-      logId: 'log-1',
-      recordTagIds: ['tag-b'],
-    });
-
     expect(sent).toHaveLength(1);
-    expect(cardUpdates).toHaveLength(2);
+    expect(cardUpdates).toHaveLength(1);
 
     expect(cardUpdates.every((update) => update.isGenerating === true)).toBe(
       true
     );
 
-    expect(gate?.tagIds).toEqual(['tag-a', 'tag-b']);
+    expect(sent[0]?.body).toMatchObject({
+      cardId: 'card-1',
+      requestedAt: cardUpdates[0]?.generationRequestedAt,
+      schemaVersion: 1,
+      type: 'card.refresh',
+    });
+
     expect(sent[0]?.options?.delaySeconds).toBe(10);
   });
 
@@ -398,17 +355,10 @@ describe('card refresh queue', () => {
           };
         }
 
-        if ('cardRefreshDebounces' in query) {
-          return { cardRefreshDebounces: [] };
-        }
-
         return {};
       },
       transact: async () => undefined,
-      tx: {
-        cardRefreshDebounces: entityTx('cardRefreshDebounces'),
-        cards: entityTx('cards'),
-      },
+      tx: { cards: entityTx('cards') },
     };
 
     const env = {
@@ -509,13 +459,10 @@ describe('record card refreshes', () => {
 
       if ('tags' in query) return { tags };
       if ('cards' in query) return { cards };
-      return { cardRefreshDebounces: [] };
+      return {};
     },
     transact: async () => undefined,
-    tx: {
-      cardRefreshDebounces: entityTx('cardRefreshDebounces'),
-      cards: entityTx('cards'),
-    },
+    tx: { cards: entityTx('cards') },
   });
 
   const env = {

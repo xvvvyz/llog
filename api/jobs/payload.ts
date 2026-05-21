@@ -11,18 +11,10 @@ const cardGenerateJobSchema = z.object({
 });
 
 const cardRefreshJobSchema = z.object({
-  logId: z.string().min(1),
-  requestedAt,
-  schemaVersion,
-  token: z.string().min(1),
-  type: z.literal('card.refresh'),
-});
-
-const cardRefreshCardJobSchema = z.object({
   cardId: z.string().min(1),
   requestedAt,
   schemaVersion,
-  type: z.literal('card.refresh-one'),
+  type: z.literal('card.refresh'),
 });
 
 const cardTweakJobSchema = z.object({
@@ -50,7 +42,6 @@ const audioIdentifyJobSchema = z.object({
 export const jobSchema = z.discriminatedUnion('type', [
   cardGenerateJobSchema,
   cardRefreshJobSchema,
-  cardRefreshCardJobSchema,
   cardTweakJobSchema,
   audioTranscribeJobSchema,
   audioIdentifyJobSchema,

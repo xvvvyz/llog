@@ -28,15 +28,6 @@ const schema = i.schema({
       title: i.string().indexed(),
       type: i.string().indexed(),
     }),
-    cardRefreshDebounces: i.entity({
-      logId: i.string().unique().indexed(),
-      requestedAt: i.date().optional(),
-      runAfter: i.date().optional(),
-      status: i.string().indexed(),
-      tagIds: i.any().optional(),
-      teamId: i.string().indexed(),
-      token: i.string().indexed(),
-    }),
     replies: i.entity({
       date: i.date().indexed(),
       isDraft: i.boolean().optional().indexed(),
@@ -218,16 +209,6 @@ const schema = i.schema({
         onDelete: 'cascade',
       },
     },
-    logsCardRefreshDebounces: {
-      forward: { on: 'logs', has: 'many', label: 'cardRefreshDebounces' },
-      reverse: {
-        on: 'cardRefreshDebounces',
-        has: 'one',
-        label: 'log',
-        required: true,
-        onDelete: 'cascade',
-      },
-    },
     cardsTags: {
       forward: { on: 'cards', has: 'many', label: 'tags' },
       reverse: { on: 'tags', has: 'many', label: 'cards' },
@@ -360,16 +341,6 @@ const schema = i.schema({
       forward: { on: 'teams', has: 'many', label: 'cards' },
       reverse: {
         on: 'cards',
-        has: 'one',
-        label: 'team',
-        required: true,
-        onDelete: 'cascade',
-      },
-    },
-    teamsCardRefreshDebounces: {
-      forward: { on: 'teams', has: 'many', label: 'cardRefreshDebounces' },
-      reverse: {
-        on: 'cardRefreshDebounces',
         has: 'one',
         label: 'team',
         required: true,

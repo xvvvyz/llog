@@ -33,10 +33,5 @@ describe('permissions', () => {
   test('guards card cascades', () => {
     expect(rules.cards.allow.update).toContain('onlyModifiesCardOrder');
     expect(rules.cards.allow.delete).toBe('canManage');
-    expect(rules.cardRefreshDebounces.allow.delete).toBe('canManage');
-
-    expect(rules.cardRefreshDebounces.bind.join(' ')).toContain(
-      '$user.roles.key'
-    );
   });
 });

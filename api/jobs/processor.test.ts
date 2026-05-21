@@ -22,12 +22,8 @@ const processJob = processor.createJobProcessor({
       calls.push({ input, type: 'card.generate' });
       return { success: true };
     }),
-    processCardRefreshJob: mock(async (input: unknown) => {
-      calls.push({ input, type: 'card.refresh' });
-      return { success: true };
-    }),
     refreshCard: mock(async (input: unknown) => {
-      calls.push({ input, type: 'card.refresh-one' });
+      calls.push({ input, type: 'card.refresh' });
       return { success: true };
     }),
     tweakCard: mock(async (input: unknown) => {
@@ -70,14 +66,14 @@ describe('queue processor', () => {
         cardId: 'card-1',
         requestedAt,
         schemaVersion: 1,
-        type: 'card.refresh-one',
+        type: 'card.refresh',
       },
     });
 
     expect(calls.map((call) => call.type)).toEqual([
       'card.generate',
       'audio.identify',
-      'card.refresh-one',
+      'card.refresh',
     ]);
   });
 
@@ -89,10 +85,9 @@ describe('queue processor', () => {
       env,
       isFinalAttempt: true,
       job: {
-        logId: 'log-1',
+        cardId: 'card-1',
         requestedAt,
         schemaVersion: 1,
-        token: 'token-1',
         type: 'card.refresh',
       },
     });

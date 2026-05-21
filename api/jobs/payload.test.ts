@@ -16,10 +16,9 @@ describe('queue jobs', () => {
 
     expect(
       parseJob({
-        logId: 'log-1',
+        cardId: 'card-1',
         requestedAt,
         schemaVersion: 1,
-        token: 'token-1',
         type: 'card.refresh',
       }).type
     ).toBe('card.refresh');
@@ -68,10 +67,9 @@ describe('queue jobs', () => {
     const sent: { job: Job; options?: QueueSendOptions }[] = [];
 
     const job: Job = {
-      logId: 'log-1',
+      cardId: 'card-1',
       requestedAt,
       schemaVersion: 1,
-      token: 'token-1',
       type: 'card.refresh',
     };
 

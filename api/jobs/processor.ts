@@ -18,9 +18,6 @@ type CardJobActions = {
   generateCard: (
     input: Parameters<typeof cardActions.generateCard>[0]
   ) => Promise<JobResult | boolean>;
-  processCardRefreshJob: (
-    input: Parameters<typeof cardActions.processCardRefreshJob>[0]
-  ) => Promise<JobResult | boolean>;
   refreshCard: (
     input: Parameters<typeof cardActions.refreshCard>[0]
   ) => Promise<JobResult | boolean>;
@@ -66,17 +63,6 @@ export const createJobProcessor =
       }
 
       case 'card.refresh': {
-        return cards.processCardRefreshJob({
-          dbClient: db,
-          env,
-          isFinalAttempt,
-          logId: job.logId,
-          requestedAt: job.requestedAt,
-          token: job.token,
-        });
-      }
-
-      case 'card.refresh-one': {
         return cards.refreshCard({
           cardId: job.cardId,
           dbClient: db,

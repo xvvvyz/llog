@@ -824,15 +824,6 @@ const rules = {
       delete: 'canManage',
     },
   },
-  cardRefreshDebounces: {
-    bind: ['canManage', ruleStrings.canManageFor('team.id')],
-    allow: {
-      view: 'false',
-      create: 'false',
-      update: 'false',
-      delete: 'canManage',
-    },
-  },
   records: {
     bind: [
       'isValidNewText',
