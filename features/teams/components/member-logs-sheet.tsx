@@ -119,20 +119,20 @@ export const MemberLogsSheet = () => {
         </SheetListScrollView>
       )}
       <SheetFooter contentClassName="flex-row gap-4">
-        <Button
-          onPress={() => sheetManager.close('member-logs')}
-          size="sm"
-          variant="secondary"
-          wrapperClassName="shrink-0"
-        >
-          <Text>Close</Text>
-        </Button>
         <SearchInput
           query={query}
           setQuery={setQuery}
           size="sm"
           wrapperClassName="flex-1 min-w-0"
         />
+        <Button
+          onPress={() => sheetManager.close('member-logs')}
+          size="sm"
+          variant="secondary"
+          wrapperClassName="shrink-0"
+        >
+          <Text>Done</Text>
+        </Button>
       </SheetFooter>
     </Sheet>
   );

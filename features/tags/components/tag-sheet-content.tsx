@@ -156,19 +156,9 @@ export const TagSheetContent = ({
         </SheetListScrollView>
       )}
       <SheetFooter contentClassName="flex-row gap-4">
-        <Button
-          onPress={onClose}
-          size="sm"
-          variant="secondary"
-          wrapperClassName="shrink-0"
-        >
-          <Text>Close</Text>
-        </Button>
         <SearchInput
           ref={searchInputRef}
-          actionIcon={showCreateTag ? Plus : undefined}
           maxLength={16}
-          onActionPress={showCreateTag ? handleSubmitTag : undefined}
           onSubmitEditing={handleSubmitTag}
           placeholder={canManageDefinitions ? 'Type in a tag' : 'Search'}
           query={rawQuery}
@@ -177,6 +167,14 @@ export const TagSheetContent = ({
           submitBehavior="submit"
           wrapperClassName="flex-1 min-w-0"
         />
+        <Button
+          onPress={onClose}
+          size="sm"
+          variant="secondary"
+          wrapperClassName="shrink-0"
+        >
+          <Text>Done</Text>
+        </Button>
       </SheetFooter>
     </>
   );

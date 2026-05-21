@@ -87,14 +87,6 @@ const TemplatePickerSheet = ({
         )}
       </SheetListScrollView>
       <SheetFooter contentClassName="flex-row gap-4">
-        <Button
-          onPress={onClose}
-          size="sm"
-          variant="secondary"
-          wrapperClassName="shrink-0"
-        >
-          <Text>Close</Text>
-        </Button>
         <SearchInput
           onSubmitEditing={handleSubmitSearch}
           query={query}
@@ -103,6 +95,14 @@ const TemplatePickerSheet = ({
           submitBehavior="blurAndSubmit"
           wrapperClassName="flex-1 min-w-0"
         />
+        <Button
+          onPress={onClose}
+          size="sm"
+          variant="secondary"
+          wrapperClassName="shrink-0"
+        >
+          <Text>Done</Text>
+        </Button>
       </SheetFooter>
     </Sheet>
   );
