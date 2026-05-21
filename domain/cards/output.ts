@@ -412,13 +412,13 @@ const normalizeChart = (value: unknown) => {
   const rawType = normalizeToken(chart.type);
   if (rawType !== 'bar' && rawType !== 'line') return undefined;
   const type = rawType;
-  const data = normalizeChartData(chart.data);
 
   const series = asArray(chart.series)
     .map(normalizeChartSeries)
     .filter((series): series is CardChartSeries => !!series)
     .slice(0, MAX_CARD_CHART_SERIES);
 
+  const data = series.length ? [] : normalizeChartData(chart.data);
   if (!data.length && !series.length) return undefined;
 
   const title = normalizeCardDisplayLabel({

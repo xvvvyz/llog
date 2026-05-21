@@ -158,6 +158,7 @@ describe('card output', () => {
   test('normalizes chart series', () => {
     const normalized = cardOutput.normalizeRawCardOutput({
       chart: {
+        data: [{ label: '2026-05-20', value: 999 }],
         series: [
           {
             data: [
@@ -195,6 +196,8 @@ describe('card output', () => {
         ],
       },
     });
+
+    expect((normalized as CardOutput).chart).not.toHaveProperty('data');
   });
 
   test('fills milestone dates', () => {

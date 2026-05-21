@@ -1,0 +1,47 @@
+description: llog card generation evals
+
+prompts:
+  - id: card-prompt
+    raw: card eval prompt
+
+providers:
+  - id: file://provider.cjs
+    label: llog card generator
+
+tests:
+  - description: generate separation anxiety stats
+    vars:
+      mode: generate
+      fixturePath: evals/cards/fixtures/separation-anxiety-sessions.json
+      promptPath: evals/cards/prompts/duration-progress.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:separationAnxiety
+
+  - description: refresh separation anxiety stats
+    vars:
+      mode: refresh
+      fixturePath: evals/cards/fixtures/separation-anxiety-sessions.json
+      promptPath: evals/cards/prompts/duration-progress.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:refreshSeparationAnxiety
+
+  - description: tweak trigger resilience
+    vars:
+      mode: tweak
+      fixturePath: evals/cards/fixtures/separation-anxiety-sessions.json
+      promptPath: evals/cards/prompts/duration-progress.txt
+      tweakPromptPath: evals/cards/prompts/trigger-resilience-tweak.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:triggerTweak
+
+commandLineOptions:
+  maxConcurrency: 1

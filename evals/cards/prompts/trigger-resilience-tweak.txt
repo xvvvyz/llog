@@ -1,0 +1,3 @@
+Change this card to focus only on trigger resilience. Use only sessions that mention hallway noise or hallway voices, elevator sound, rain, trash truck, neighbor door or neighbor noise, delivery sound, or windy weather. Do not count the Jan 14 record just because it mentions hallway as a location.
+
+Replace the chart with a bar chart of peak distress for each trigger session. Return metrics with exactly these labels: Trigger sessions, Avg distress, Whine sessions, and Bark reports. Return milestones for the two weather-trigger regressions and the latest trigger recovery. Use source record ids for milestone evidence and sourceRecordIds for every trigger session.

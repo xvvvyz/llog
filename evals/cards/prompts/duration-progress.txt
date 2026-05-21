@@ -1,0 +1,7 @@
+Create a separation-anxiety progress card from the Session records.
+
+Return a two-series line chart over every Session record using chart.series only, with no chart.data. The series must be named Duration and Distress. Duration uses minutes, Distress uses the 0-5 scale, and each point must use the source record full ISO date as the chart label.
+
+Return metrics with exactly these labels: Latest duration, Latest distress, Under threshold, Safe increases, and Regressions. Under threshold means peak distress 0-2, and its value must be a count/total string such as "38/47", not only the count. Safe increases means duration increased from the previous Session while peak distress stayed 0-2. Regressions means contextual setbacks above threshold after the initial setup period, not the early baseline ramp.
+
+Return milestones for: latest high-water mark, first hour, first subthreshold duration increase, and each contextual regression. Use source record ids for milestone evidence. Return sourceRecordIds containing every Session record id used for the chart and milestones. Keep milestones newest-first.

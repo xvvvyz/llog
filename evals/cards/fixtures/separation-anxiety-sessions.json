@@ -1,0 +1,335 @@
+{
+  "name": "separation anxiety sessions",
+  "records": [
+    {
+      "id": "0891c033-c349-4e72-8f38-e70b9fdde75d",
+      "date": "2026-01-05T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 2\nPeak distress (0-5): 4\n\nBaseline only: camera check during a very short door close. Barking started quickly, pacing at door, recovered with food scatter after return.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "054b567f-3da2-431a-9959-d84c9babd1ea",
+      "date": "2026-01-06T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 2\nPeak distress (0-5): 3\n\nRepeated 6 tiny exits under one minute plus one 2 minute trial. Less frantic at return when keys were handled earlier.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "4e45efee-c7d4-415a-a120-4c09c30c9945",
+      "date": "2026-01-07T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 3\nPeak distress (0-5): 3\n\nAdded mat settle before exit. One whine at 90 seconds, then sniffed towel. Ended before barking.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "9f9cd03a-d110-482d-b7a2-094039c39107",
+      "date": "2026-01-09T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 3\nPeak distress (0-5): 3\n\nDeparture cue warmup: shoes, coat, sit down again. Final 3 minute absence stayed below bark threshold.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "b094808d-658a-4fbd-bc0e-6772e555c808",
+      "date": "2026-01-10T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 4\nPeak distress (0-5): 3\n\nFour short reps. Mild pacing first minute, took stuffed Kong after 2 minutes. Recovery under one minute.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "791b6eab-61cf-4f48-9fa6-399f115abb38",
+      "date": "2026-01-12T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 5\nPeak distress (0-5): 3\n\nFirst 5 minute target. One window check and brief whine, no scratching. Kept next rep shorter.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "a21b4969-d295-4953-884b-dbd4b68a5453",
+      "date": "2026-01-13T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 6\nPeak distress (0-5): 2\n\nSettled on mat after handler stepped out. Ate most of food puzzle; no vocalizing on camera.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "f4ea9287-fb29-4a7b-82bf-8deec910bbde",
+      "date": "2026-01-14T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 6\nPeak distress (0-5): 2\n\nPracticed with normal bag and keys routine. Calm sniffing, then lying by hallway. Return stayed neutral.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "4603425e-d1ca-423a-ad68-71a8523302d4",
+      "date": "2026-01-16T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 7\nPeak distress (0-5): 2\n\nSlight startle from hallway noise but recovered without escalation. Maintained loose body.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "d5f2ae62-3aa9-48fd-a8f9-7d41266ef575",
+      "date": "2026-01-17T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 8\nPeak distress (0-5): 2\n\nBest early session: watched door for 30 seconds, then worked chew. Ended at 8 minutes.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "b6af2866-0a43-4cc6-a811-3e0615af109f",
+      "date": "2026-01-19T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 7\nPeak distress (0-5): 3\n\nSmall regression after weekend schedule change. Whined twice and paced, so dropped duration and used easier setup.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "09f696db-5353-43f6-b398-3a3da2d998b9",
+      "date": "2026-01-20T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 9\nPeak distress (0-5): 2\n\nBack to sub-threshold. Pre-exit relaxation protocol helped; one yawn, no barking.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "947ec361-2d83-4b8e-9a6e-4d51b4d66b51",
+      "date": "2026-01-21T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 10\nPeak distress (0-5): 2\n\nReached 10 minutes. Dog alternated between bed and chew, checked door once.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "ba4b9707-4a97-4949-900b-490fd9a3a36b",
+      "date": "2026-01-23T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 12\nPeak distress (0-5): 2\n\nAdded mailbox walk route. Stayed relaxed through elevator sound, minor ear perk only.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "9f6b0d87-f18a-4ea1-8ffb-883cf9e43116",
+      "date": "2026-01-24T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 13\nPeak distress (0-5): 2\n\nLonger food puzzle lasted 9 minutes. Last 4 minutes quiet resting near bed.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "e9ce4be3-7f52-4a5f-942c-bb8144950313",
+      "date": "2026-01-26T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 15\nPeak distress (0-5): 2\n\nFirst 15 minute absence. Brief sit by door at minute 12, then returned to mat.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "16a6e415-6e31-4444-86f3-7c3ddf43b703",
+      "date": "2026-01-27T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 14\nPeak distress (0-5): 2\n\nConsolidation day with two reps. No vocalizing; soft body language throughout.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "4016097e-7c08-4f99-898a-88c02599bd35",
+      "date": "2026-01-28T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 16\nPeak distress (0-5): 2\n\nHandler varied exit door timing. Dog noticed but stayed with chew.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "ae078770-a86d-42bd-9ee6-9426d9485056",
+      "date": "2026-01-30T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 18\nPeak distress (0-5): 2\n\nMild pacing during final 2 minutes but no bark or scratch. Recovery immediate.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "79f55838-ea94-4456-9e45-88b1a7a9f779",
+      "date": "2026-01-31T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 20\nPeak distress (0-5): 2\n\nReached 20 minutes. Dog lay down after minute 5 and remained mostly settled.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "df2903b5-6cc8-4d88-8f8e-52641ba7deb8",
+      "date": "2026-02-02T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 18\nPeak distress (0-5): 3\n\nRain and trash truck raised arousal. Cut session at 18 minutes after whining began.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "44f57021-4b66-4951-817e-2230008e03e2",
+      "date": "2026-02-03T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 22\nPeak distress (0-5): 2\n\nReturned to quiet conditions. Watched door briefly, then rested. Good reset after trigger day.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "fc342ee8-37e8-4522-b840-a5d78bbe1e23",
+      "date": "2026-02-04T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 24\nPeak distress (0-5): 2\n\nIntroduced realistic pre-departure movement for 10 minutes before exit. Stayed below threshold.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "0557ecd4-a9e1-4782-aad3-df9aa4ffcf79",
+      "date": "2026-02-06T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 25\nPeak distress (0-5): 2\n\n25 minutes with low arousal. One reposition, no vocalizing, ate chew slowly.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "74439e8f-3bfa-4331-8149-be5bd93450d4",
+      "date": "2026-02-07T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 28\nPeak distress (0-5): 2\n\nAdded coat and car start sound. Alerted to sound but settled within 40 seconds.\n\nNext session: repeat or add 1-3 minutes only if body language stays loose."
+    },
+    {
+      "id": "acfbb7d6-f8f1-4dcb-9dbb-d40bc58ef88b",
+      "date": "2026-02-09T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 30\nPeak distress (0-5): 2\n\nFirst 30 minute target. Quiet resting for final half of session.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "d7d8df91-317e-486f-b042-00eb9f23e3e4",
+      "date": "2026-02-10T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 32\nPeak distress (0-5): 2\n\nSlightly longer than previous, same setup. Calm door check at minute 20.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "74d0ab7d-109e-4470-a833-d90795906b04",
+      "date": "2026-02-11T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 35\nPeak distress (0-5): 2\n\nFood puzzle removed halfway by design. Dog rested without needing continuous food.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "556e98f7-2763-40db-98a4-1cb7216bb774",
+      "date": "2026-02-13T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 38\nPeak distress (0-5): 2\n\nMild hallway noise, no escalation. Body loose, no panting.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "93c10db2-b7e3-48ee-89d4-2dfe99a1001a",
+      "date": "2026-02-14T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 40\nPeak distress (0-5): 1\n\nStrong session. Mostly asleep by camera from minute 14 to return.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "4e9a1119-0a3f-4cb0-8646-eb419db415b6",
+      "date": "2026-02-16T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 36\nPeak distress (0-5): 2\n\nMaintenance drop after 40 minute win. Calm; used easier absence to protect confidence.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "d9dbcf57-df24-4f11-a639-4ea69a6a1f61",
+      "date": "2026-02-17T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 42\nPeak distress (0-5): 2\n\nStretched to 42 minutes. One brief whine at neighbor door, then settled.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "c847cd91-c54b-43fc-8a4b-2fa40f8bc5b5",
+      "date": "2026-02-18T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 45\nPeak distress (0-5): 2\n\nCalm for most of absence. Stood at door when handler returned but no distress signs.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "d177eeab-4505-4541-a77f-f29c5b9b5637",
+      "date": "2026-02-20T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 48\nPeak distress (0-5): 2\n\nLonger grocery-style absence. Dog moved between bed and water bowl, no vocalizing.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "3c8caf81-a7e0-432a-bb5c-b440c9b78c68",
+      "date": "2026-02-21T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 50\nPeak distress (0-5): 1\n\n50 minutes with low distress. Slept through middle third.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "413cf97b-0e66-42ac-9d6b-422dcef9d8df",
+      "date": "2026-02-23T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 45\nPeak distress (0-5): 3\n\nRegression after missed walk and windy weather. Pacing and two whines, ended early.\n\nNext session: reduce duration and simplify cues before increasing again."
+    },
+    {
+      "id": "1991ddc1-5f0c-4102-af3a-051daf926e04",
+      "date": "2026-02-24T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 46\nPeak distress (0-5): 2\n\nRecovery session after regression. Extra decompression walk first; remained under threshold.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "05c6778f-9436-49cd-86a3-d4031f3309a2",
+      "date": "2026-02-25T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 52\nPeak distress (0-5): 2\n\nReturned to progression. Calm sniffing, then bed. No door scratching.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "99a3deb4-eebb-4ca7-87e4-62ff84573bb4",
+      "date": "2026-02-27T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 55\nPeak distress (0-5): 2\n\n55 minutes. Dog alert for delivery sound but did not escalate.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "af5a979e-2bb4-4f29-8ca7-0fcc10edb033",
+      "date": "2026-02-28T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 60\nPeak distress (0-5): 2\n\nFirst 1 hour session. Mostly settled; brief standing stretch at minute 44.\n\nNext session: vary normal departure cues while keeping distress at 0-2."
+    },
+    {
+      "id": "040a1042-c04d-49d0-a947-5235c96d2853",
+      "date": "2026-03-02T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 58\nPeak distress (0-5): 1\n\nMaintenance rep below max. Relaxed from start and ignored pre-departure cues.\n\nNext session: increase by 3-5 minutes or run an easier consolidation rep."
+    },
+    {
+      "id": "e23b94b8-113b-409a-8a54-a59551083523",
+      "date": "2026-03-03T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 65\nPeak distress (0-5): 2\n\n65 minutes with realistic errand timing. Quiet throughout, mild anticipation at return.\n\nNext session: vary normal departure cues while keeping distress at 0-2."
+    },
+    {
+      "id": "31517e9e-7022-4666-a664-60de09730d04",
+      "date": "2026-03-04T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 70\nPeak distress (0-5): 2\n\nDog slept for about 35 minutes. No pacing clusters.\n\nNext session: vary normal departure cues while keeping distress at 0-2."
+    },
+    {
+      "id": "47dc4fa4-d24d-401b-adba-7b2658c282cd",
+      "date": "2026-03-06T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 75\nPeak distress (0-5): 2\n\n75 minute absence. Checked door after hallway voices, recovered quickly.\n\nNext session: vary normal departure cues while keeping distress at 0-2."
+    },
+    {
+      "id": "3d1d13f1-1ab4-4df0-875e-15b56b107ed7",
+      "date": "2026-03-07T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 80\nPeak distress (0-5): 2\n\nLonger weekend session. Took water, rested on rug, no vocalizing.\n\nNext session: vary normal departure cues while keeping distress at 0-2."
+    },
+    {
+      "id": "668ca043-67c0-42d4-b01c-1fc8afd867dc",
+      "date": "2026-03-09T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 75\nPeak distress (0-5): 1\n\nConsolidation at 75 minutes. Very low arousal; settled before handler fully left.\n\nNext session: vary normal departure cues while keeping distress at 0-2."
+    },
+    {
+      "id": "da838853-63ba-4994-b6d9-be5f3f142aa7",
+      "date": "2026-03-10T17:00:00.000Z",
+      "tags": [{ "name": "Session", "type": "record" }],
+      "text": "Alone duration (min): 85\nPeak distress (0-5): 2\n\n85 minutes. Mild alerting at neighbor noise but no bark. Returned to bed.\n\nNext session: vary normal departure cues while keeping distress at 0-2."
+    }
+  ],
+  "expected": {
+    "sessionCount": 47,
+    "latestDuration": 85,
+    "latestDistress": 2,
+    "underThreshold": "38/47",
+    "safeIncreases": 33,
+    "regressions": [
+      "2026-01-19T17:00:00.000Z",
+      "2026-02-02T17:00:00.000Z",
+      "2026-02-23T17:00:00.000Z"
+    ],
+    "firstSubthresholdIncrease": "2026-01-13T17:00:00.000Z",
+    "firstHour": "2026-02-28T17:00:00.000Z",
+    "latestHighWaterMark": "2026-03-10T17:00:00.000Z",
+    "trigger": {
+      "averageDistress": 2.2,
+      "barkReports": 0,
+      "count": 9,
+      "dates": [
+        "2026-01-16T17:00:00.000Z",
+        "2026-01-23T17:00:00.000Z",
+        "2026-02-02T17:00:00.000Z",
+        "2026-02-13T17:00:00.000Z",
+        "2026-02-17T17:00:00.000Z",
+        "2026-02-23T17:00:00.000Z",
+        "2026-02-27T17:00:00.000Z",
+        "2026-03-06T17:00:00.000Z",
+        "2026-03-10T17:00:00.000Z"
+      ],
+      "latestRecovery": "2026-03-10T17:00:00.000Z",
+      "weatherRegressionDates": [
+        "2026-02-02T17:00:00.000Z",
+        "2026-02-23T17:00:00.000Z"
+      ],
+      "whineSessions": 3
+    }
+  },
+  "scenarios": {
+    "refresh": {
+      "previousOutputKind": "durationProgressStart",
+      "previousRecordCount": 10,
+      "previousTitle": "Separation anxiety progress"
+    },
+    "tweak": {
+      "previousOutputKind": "durationEndpoints",
+      "previousTitle": "Separation anxiety progress"
+    }
+  }
+}
