@@ -1,4 +1,4 @@
-import * as openai from '@/api/cards/openai';
+import * as openrouter from '@/api/cards/openrouter';
 import * as cardOutput from '@/domain/cards/output';
 import { readFile } from 'node:fs/promises';
 
@@ -13,7 +13,7 @@ type EvalScenario = {
 
 type EvalFixture = {
   name?: string;
-  records: openai.CardLlmRecord[];
+  records: openrouter.CardLlmRecord[];
   scenarios?: Partial<Record<Exclude<EvalMode, 'generate'>, EvalScenario>>;
 };
 
@@ -66,7 +66,7 @@ const readFixture = async (fixturePath: string): Promise<EvalFixture> => {
   return fixture;
 };
 
-const sessionValue = (record: openai.CardLlmRecord, label: string) => {
+const sessionValue = (record: openrouter.CardLlmRecord, label: string) => {
   const match = (record.text ?? '').match(
     new RegExp(`${label}:\\s*(\\d+(?:\\.\\d+)?)`)
   );
@@ -75,10 +75,10 @@ const sessionValue = (record: openai.CardLlmRecord, label: string) => {
   return Number(match[1]);
 };
 
-const durationValue = (record: openai.CardLlmRecord) =>
+const durationValue = (record: openrouter.CardLlmRecord) =>
   sessionValue(record, 'Alone duration \\(min\\)');
 
-const distressValue = (record: openai.CardLlmRecord) =>
+const distressValue = (record: openrouter.CardLlmRecord) =>
   sessionValue(record, 'Peak distress \\(0-5\\)');
 
 const chartSeries = ({
@@ -88,9 +88,9 @@ const chartSeries = ({
   value,
 }: {
   label: string;
-  records: openai.CardLlmRecord[];
+  records: openrouter.CardLlmRecord[];
   unit: string;
-  value: (record: openai.CardLlmRecord) => number;
+  value: (record: openrouter.CardLlmRecord) => number;
 }) => ({
   data: records.map((record) => ({
     label: String(record.date),
@@ -100,7 +100,7 @@ const chartSeries = ({
   unit,
 });
 
-const safeIncreaseCount = (records: openai.CardLlmRecord[]) =>
+const safeIncreaseCount = (records: openrouter.CardLlmRecord[]) =>
   records.slice(1).filter((record, index) => {
     const previous = records[index];
 
@@ -111,7 +111,7 @@ const safeIncreaseCount = (records: openai.CardLlmRecord[]) =>
   }).length;
 
 const durationProgressOutput = (
-  records: openai.CardLlmRecord[]
+  records: openrouter.CardLlmRecord[]
 ): cardOutput.CardOutput => {
   const latest = records.at(-1);
   if (!latest) throw new Error('Previous output records are required');
@@ -176,7 +176,7 @@ const durationProgressOutput = (
 };
 
 const durationEndpointsOutput = (
-  records: openai.CardLlmRecord[]
+  records: openrouter.CardLlmRecord[]
 ): cardOutput.CardOutput => {
   const first = records[0];
   const latest = records.at(-1);
@@ -214,7 +214,7 @@ const scenarioPreviousOutput = ({
   records,
   scenario,
 }: {
-  records: openai.CardLlmRecord[];
+  records: openrouter.CardLlmRecord[];
   scenario: EvalScenario | undefined;
 }) => {
   if (scenario?.previousOutput) return scenario.previousOutput;
@@ -252,14 +252,14 @@ const main = async () => {
 
   const result =
     mode === 'generate'
-      ? await openai.generateCardResult(commonInput)
+      ? await openrouter.generateCardResult(commonInput)
       : mode === 'refresh'
-        ? await openai.refreshCardResult({
+        ? await openrouter.refreshCardResult({
             ...commonInput,
             previousOutput: requiredPreviousOutput(previousOutput, mode),
             previousTitle: scenario?.previousTitle,
           })
-        : await openai.tweakCardResult({
+        : await openrouter.tweakCardResult({
             ...commonInput,
             previousOutput: requiredPreviousOutput(previousOutput, mode),
             previousTitle: scenario?.previousTitle,

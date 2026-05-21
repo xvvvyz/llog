@@ -1,4 +1,4 @@
-import * as openai from '@/api/cards/openai';
+import * as openrouter from '@/api/cards/openrouter';
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 
 const originalFetch = globalThis.fetch;
@@ -6,19 +6,52 @@ const originalFetch = globalThis.fetch;
 const jsonResponse = (content: unknown) =>
   new Response(
     JSON.stringify({
-      choices: [{ message: { content: JSON.stringify(content) } }],
+      choices: [
+        {
+          finish_reason: 'stop',
+          index: 0,
+          message: { content: JSON.stringify(content), role: 'assistant' },
+        },
+      ],
+      created: 1,
+      id: 'chatcmpl-test',
+      model: 'openai/gpt-5.5',
+      object: 'chat.completion',
+      system_fingerprint: null,
     }),
-    { status: 200 }
+    { headers: { 'Content-Type': 'application/json' }, status: 200 }
   );
 
 const refusalResponse = (refusal: string) =>
   new Response(
-    JSON.stringify({ choices: [{ message: { content: null, refusal } }] }),
-    { status: 200 }
+    JSON.stringify({
+      choices: [
+        {
+          finish_reason: 'stop',
+          index: 0,
+          message: { content: null, refusal, role: 'assistant' },
+        },
+      ],
+      created: 1,
+      id: 'chatcmpl-test',
+      model: 'openai/gpt-5.5',
+      object: 'chat.completion',
+      system_fingerprint: null,
+    }),
+    { headers: { 'Content-Type': 'application/json' }, status: 200 }
   );
+
+const readChatRequest = async (
+  input: RequestInfo | URL,
+  init?: RequestInit
+) => {
+  const request = input instanceof Request ? input : new Request(input, init);
+  return JSON.parse(await request.text()) as ChatCompletionRequest;
+};
 
 type ChatCompletionRequest = {
   messages?: { content?: unknown; role?: unknown }[];
+  model?: unknown;
   response_format?: {
     json_schema?: {
       name?: unknown;
@@ -37,7 +70,7 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-describe('card openai', () => {
+describe('card openrouter', () => {
   test('repairs invalid output', async () => {
     let callCount = 0;
 
@@ -52,8 +85,8 @@ describe('card openai', () => {
     globalThis.fetch = fetch as never;
 
     await expect(
-      openai.generateCardResult({
-        env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+      openrouter.generateCardResult({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
         prompt: 'Track sleep',
         records: [
           {
@@ -88,8 +121,8 @@ describe('card openai', () => {
     ) as never;
 
     await expect(
-      openai.tweakCardResult({
-        env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+      openrouter.tweakCardResult({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
         previousOutput: {
           metrics: [],
           milestones: [],
@@ -123,8 +156,8 @@ describe('card openai', () => {
   test('prioritizes tweak', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
-    globalThis.fetch = mock(async (_url: string | URL | Request, init) => {
-      requestBody = JSON.parse(String(init?.body)) as ChatCompletionRequest;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
 
       return jsonResponse({
         output: { summary: 'Weekly trend includes naps.' },
@@ -132,8 +165,8 @@ describe('card openai', () => {
       });
     }) as never;
 
-    await openai.tweakCardResult({
-      env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+    await openrouter.tweakCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
       previousOutput: {
         metrics: [],
         milestones: [],
@@ -183,8 +216,8 @@ describe('card openai', () => {
   test('compacts record context', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
-    globalThis.fetch = mock(async (_url: string | URL | Request, init) => {
-      requestBody = JSON.parse(String(init?.body)) as ChatCompletionRequest;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
 
       return jsonResponse({
         output: { summary: 'Long record context was summarized.' },
@@ -192,8 +225,8 @@ describe('card openai', () => {
       });
     }) as never;
 
-    await openai.generateCardResult({
-      env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+    await openrouter.generateCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
       prompt: 'Track detailed progress',
       records: [
         {
@@ -226,6 +259,7 @@ describe('card openai', () => {
       | undefined;
 
     const outputProperties = properties?.output?.properties;
+    expect(requestBody?.model).toBe('openai/gpt-5.5');
     expect(requestBody?.response_format?.type).toBe('json_schema');
 
     expect(requestBody?.response_format?.json_schema).toMatchObject({
@@ -262,13 +296,13 @@ describe('card openai', () => {
   test('compacts suggestion context', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
-    globalThis.fetch = mock(async (_url: string | URL | Request, init) => {
-      requestBody = JSON.parse(String(init?.body)) as ChatCompletionRequest;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
       return jsonResponse({ prompt: 'Track weekly progress milestones.' });
     }) as never;
 
-    await openai.generateCardPromptSuggestion({
-      env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+    await openrouter.generateCardPromptSuggestion({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
       existingCards: [],
       records: [
         {
@@ -307,8 +341,8 @@ describe('card openai', () => {
   test('uses refresh schema', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
-    globalThis.fetch = mock(async (_url: string | URL | Request, init) => {
-      requestBody = JSON.parse(String(init?.body)) as ChatCompletionRequest;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
 
       return jsonResponse({
         output: {
@@ -321,8 +355,8 @@ describe('card openai', () => {
       });
     }) as never;
 
-    await openai.refreshCardResult({
-      env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+    await openrouter.refreshCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
       previousOutput: {
         metrics: [],
         milestones: [],
@@ -358,8 +392,8 @@ describe('card openai', () => {
     ) as never;
 
     await expect(
-      openai.generateCardResult({
-        env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+      openrouter.generateCardResult({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
         prompt: 'Track sleep',
         records: [
           {
@@ -370,7 +404,7 @@ describe('card openai', () => {
           },
         ],
       })
-    ).rejects.toThrow('OpenAI card generation refused');
+    ).rejects.toThrow('OpenRouter card generation refused');
   });
 
   test('trims suggestion', async () => {
@@ -378,8 +412,8 @@ describe('card openai', () => {
       jsonResponse({ prompt: 'x'.repeat(600) })
     ) as never;
 
-    const prompt = await openai.generateCardPromptSuggestion({
-      env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+    const prompt = await openrouter.generateCardPromptSuggestion({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
       existingCards: [],
       records: [],
     });

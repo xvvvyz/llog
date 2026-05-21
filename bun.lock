@@ -13,6 +13,7 @@
         "@legendapp/list": "^2.0.19",
         "@likashefqet/react-native-image-zoom": "^4.3.0",
         "@modelcontextprotocol/sdk": "^1.29.0",
+        "@openrouter/sdk": "^0.12.35",
         "@pushforge/builder": "^2.0.5",
         "@react-native-async-storage/async-storage": "2.2.0",
         "@react-native-community/netinfo": "11.5.2",
@@ -48,6 +49,7 @@
         "linkify-it": "^5.0.0",
         "minisearch": "^7.2.0",
         "nanoid": "^5.1.11",
+        "openai": "^6.38.0",
         "phosphor-react-native": "^3.0.6",
         "react": "19.2.0",
         "react-dom": "19.2.0",
@@ -828,6 +830,8 @@
     "@openai/codex-win32-x64": ["@openai/codex@0.128.0-win32-x64", "", { "os": "win32", "cpu": "x64" }, "sha512-k3jmUAFrzkUtvjGTXvSKjQqJLLlzjxp/VoHJDYedgmXUn6j70HxK38IwapzmnYfiBiTuzETvGwjXHzZgzKjhoQ=="],
 
     "@opencode-ai/sdk": ["@opencode-ai/sdk@1.15.6", "", { "dependencies": { "cross-spawn": "7.0.6" } }, "sha512-zeMyjgf7jjp4ge7Y9mp1oza1nHsKZAmOg9RIFixRtrM9S1IPwgNMEybMlJR+wBwPTv2ZDgjvcJasuD0z4XjSDA=="],
+
+    "@openrouter/sdk": ["@openrouter/sdk@0.12.35", "", { "dependencies": { "zod": "^3.25.0 || ^4.0.0" } }, "sha512-s4QVLLnG1AmfW3TjnnHUqGfsCkzwVK+kboGcZmKbde09m1DPqgzl4RUFt/HJ5v97MX8aEaN0UG3mKv2S+qj2Gw=="],
 
     "@opentelemetry/api": ["@opentelemetry/api@1.9.0", "", {}, "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="],
 

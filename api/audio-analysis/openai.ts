@@ -2,14 +2,9 @@ import type { AudioFile, TranscriptSegment } from '@/api/audio-analysis/types';
 import * as audioAnalysis from '@/domain/files/audio-analysis';
 import { asNumber, asString, isRecord } from '@/lib/coerce';
 import { HTTPException } from 'hono/http-exception';
+import OpenAI, { APIError } from 'openai';
 
 const OPENAI_STT_MODEL = 'whisper-1';
-
-const readResponseJson = async (response: Response) => {
-  const text = await response.text();
-  if (!text.trim()) return null;
-  return JSON.parse(text) as unknown;
-};
 
 const getAudioFileName = (file: AudioFile, contentType?: string | null) => {
   const value =
@@ -32,8 +27,15 @@ const uploadTooLargeError = () =>
       'The audio is larger than OpenAI’s 25 MB transcription upload limit.',
   });
 
-const isOpenAiUploadSizeError = (result: unknown) => {
-  const value = JSON.stringify(result ?? '').toLowerCase();
+const describeOpenAiError = (error: unknown) => {
+  if (error instanceof APIError) return error.message;
+  if (error instanceof Error) return error.message;
+  return JSON.stringify(error);
+};
+
+const isOpenAiUploadSizeError = (error: unknown) => {
+  if (error instanceof APIError && error.status === 413) return true;
+  const value = describeOpenAiError(error).toLowerCase();
 
   return (
     value.includes('25 mb') ||
@@ -79,35 +81,28 @@ const transcribeAudioUpload = async ({
 }) => {
   const apiKey = env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is required');
-  const body = new FormData();
+  const client = new OpenAI({ apiKey });
 
-  body.append(
-    'file',
-    new File([upload.bytes], upload.fileName, { type: upload.contentType })
-  );
+  try {
+    const result = await client.audio.transcriptions.create({
+      file: new File([upload.bytes], upload.fileName, {
+        type: upload.contentType,
+      }),
+      model: OPENAI_STT_MODEL,
+      response_format: 'verbose_json',
+      temperature: 0,
+      timestamp_granularities: ['segment'],
+    });
 
-  body.append('model', OPENAI_STT_MODEL);
-  body.append('temperature', '0');
-  body.append('response_format', 'verbose_json');
-  body.append('timestamp_granularities[]', 'segment');
-
-  const response = await fetch(
-    'https://api.openai.com/v1/audio/transcriptions',
-    { body, headers: { Authorization: `Bearer ${apiKey}` }, method: 'POST' }
-  );
-
-  const result = await readResponseJson(response);
-
-  if (!response.ok) {
-    if (failWithUploadLimitError && isOpenAiUploadSizeError(result)) {
+    const segments = parseTranscriptSegments(result);
+    return shouldKeepTranscriptSegments(segments) ? segments : [];
+  } catch (error) {
+    if (failWithUploadLimitError && isOpenAiUploadSizeError(error)) {
       throw uploadTooLargeError();
     }
 
-    throw new Error(`OpenAI transcript failed: ${JSON.stringify(result)}`);
+    throw new Error(`OpenAI transcript failed: ${describeOpenAiError(error)}`);
   }
-
-  const segments = parseTranscriptSegments(result);
-  return shouldKeepTranscriptSegments(segments) ? segments : [];
 };
 
 export const transcribeAudioFile = async ({

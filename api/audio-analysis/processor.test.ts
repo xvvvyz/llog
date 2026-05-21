@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test';
+import { afterAll, describe, expect, mock, test } from 'bun:test';
 
 type TestAudioFile = {
   assetKey?: string;
@@ -61,6 +61,10 @@ mock.module('@/api/audio-analysis/audd-client', () => ({
 const processor = await import('@/api/audio-analysis/processor');
 const db = {} as never;
 const env = { R2: { get: async () => ({}) } } as unknown as CloudflareEnv;
+
+afterAll(() => {
+  mock.restore();
+});
 
 const reset = () => {
   updates.length = 0;

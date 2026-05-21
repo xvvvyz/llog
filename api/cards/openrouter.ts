@@ -1,8 +1,10 @@
 import { CARD_PROMPT_MAX_LENGTH } from '@/domain/cards/constants';
 import * as cardOutput from '@/domain/cards/output';
 import * as cardSourceSelection from '@/domain/cards/source-selection';
+import type { ChatMessages, ChatResult } from '@openrouter/sdk/models';
+import * as openrouter from '@/api/lib/openrouter';
 
-const OPENAI_CARD_MODEL = 'gpt-5.5';
+const OPENROUTER_CARD_MODEL = 'openai/gpt-5.5';
 
 export type CardLlmRecord = {
   date?: Date | number | string | null;
@@ -22,30 +24,8 @@ const CARD_TIMELINE_TEXT_MAX_LENGTH = 280;
 const CARD_FULL_TEXT_MAX_LENGTH = 2000;
 const CARD_PROMPT_SUGGESTION_TEXT_MAX_LENGTH = 500;
 
-const readResponseJson = async (response: Response) => {
-  const text = await response.text();
-  if (!text.trim()) return null;
-  return JSON.parse(text) as unknown;
-};
-
 const getString = (value: unknown) =>
   typeof value === 'string' ? value : undefined;
-
-const getCompletionContent = (result: unknown) => {
-  if (!result || typeof result !== 'object') return undefined;
-  const choices = (result as { choices?: unknown }).choices;
-  if (!Array.isArray(choices)) return undefined;
-  const first = choices[0] as { message?: { content?: unknown } } | undefined;
-  return getString(first?.message?.content);
-};
-
-const getCompletionRefusal = (result: unknown) => {
-  if (!result || typeof result !== 'object') return undefined;
-  const choices = (result as { choices?: unknown }).choices;
-  if (!Array.isArray(choices)) return undefined;
-  const first = choices[0] as { message?: { refusal?: unknown } } | undefined;
-  return getString(first?.message?.refusal);
-};
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -153,6 +133,7 @@ const sourceRules =
   'Use timelineChunks for long-range progress stats, baselines, older milestones, first occurrences, and changes across the whole selected history. Use fullTextRecords for richer recent details. Do not base stats or milestones only on the recent full-text window when older timeline evidence is relevant. Use numeric metrics and chart values only when the records provide explicit numbers, dates, or clearly countable events; do not estimate hidden quantities from vague language. totalMatchingRecordCount is the exact matching published record count. If selectedRecordCount is lower than totalMatchingRecordCount, selected records are a sample plus the most recent records: do not treat omitted records as inspected, and avoid exact aggregate counts, totals, averages, rates, or best/worst-ever claims that require omitted record text.';
 
 type JsonSchema = Record<string, unknown>;
+type CardChatMessage = Extract<ChatMessages, { role: 'system' | 'user' }>;
 const nullableStringSchema = { type: ['string', 'null'] };
 
 const datumSchema = {
@@ -336,7 +317,7 @@ const buildMessages = ({
   prompt: string;
   records: CardLlmRecord[];
   totalRecordCount: number;
-}) => [
+}): CardChatMessage[] => [
   {
     content: `You extract and aggregate progress from llog records. Return only valid JSON. Do not invent facts or use sources outside the provided records. Keep language concise and specific. ${labelStyle}`,
     role: 'system',
@@ -375,7 +356,7 @@ const buildRefreshMessages = ({
   records: CardLlmRecord[];
   repairMessage?: string;
   totalRecordCount: number;
-}) => [
+}): CardChatMessage[] => [
   {
     content: `You refresh an existing llog progress card from new source records. Return only valid JSON. Do not invent facts or use sources outside the provided records. Preserve the existing card format. ${labelStyle}`,
     role: 'system',
@@ -412,7 +393,7 @@ const buildTweakMessages = ({
   repairMessage?: string;
   totalRecordCount: number;
   tweakPrompt: string;
-}) => [
+}): CardChatMessage[] => [
   {
     content: `You tweak an existing llog progress card. Return only valid JSON. Do not invent facts or use sources outside the provided records. Start from the previous output and apply only the requested tweak. If prompt and tweakPrompt conflict, tweakPrompt overrides prompt. Do not keep an old prompt constraint that the tweak reverses. ${labelStyle}`,
     role: 'system',
@@ -461,7 +442,7 @@ const parseCardOutputResult = ({
       .join('; ');
 
     return {
-      errorMessage: `OpenAI card generation returned invalid output${issues ? ` (${issues})` : ''}`,
+      errorMessage: `OpenRouter card generation returned invalid output${issues ? ` (${issues})` : ''}`,
       success: false as const,
     };
   }
@@ -512,7 +493,7 @@ const parseTweakedCardResult = ({
   if (!updatedPrompt) {
     return {
       errorMessage:
-        'OpenAI card tweak returned no updatedPrompt for future refreshes',
+        'OpenRouter card tweak returned no updatedPrompt for future refreshes',
       success: false as const,
     };
   }
@@ -525,41 +506,45 @@ const parseTweakedCardResult = ({
   };
 };
 
-const requestOpenAiJson = async ({
+const requestOpenRouterJson = async ({
   env,
   messages,
   responseSchema,
 }: {
   env: CloudflareEnv;
-  messages: { content: string; role: string }[];
+  messages: CardChatMessage[];
   responseSchema: ReturnType<typeof jsonResponseSchema>;
 }) => {
-  const apiKey = env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY is required');
+  const client = openrouter.createOpenRouter(env);
+  let result: ChatResult;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    body: JSON.stringify({
-      messages,
-      model: OPENAI_CARD_MODEL,
-      response_format: { json_schema: responseSchema, type: 'json_schema' },
-    }),
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-  });
-
-  const result = await readResponseJson(response);
-
-  if (!response.ok) {
-    throw new Error(`OpenAI card generation failed: ${JSON.stringify(result)}`);
+  try {
+    result = await client.chat.send({
+      chatRequest: {
+        messages,
+        model: OPENROUTER_CARD_MODEL,
+        responseFormat: { jsonSchema: responseSchema, type: 'json_schema' },
+      },
+    });
+  } catch (error) {
+    throw new Error(
+      `OpenRouter card generation failed: ${openrouter.describeOpenRouterError(error)}`
+    );
   }
 
-  const refusal = getCompletionRefusal(result);
-  if (refusal) throw new Error(`OpenAI card generation refused: ${refusal}`);
-  const content = getCompletionContent(result);
-  if (!content) throw new Error('OpenAI card generation returned no content');
+  const message = result.choices[0]?.message;
+  const refusal = getString(message?.refusal);
+
+  if (refusal) {
+    throw new Error(`OpenRouter card generation refused: ${refusal}`);
+  }
+
+  const content = getString(message?.content);
+
+  if (!content) {
+    throw new Error('OpenRouter card generation returned no content');
+  }
+
   return JSON.parse(content) as unknown;
 };
 
@@ -589,7 +574,7 @@ export const generateCardResult = async ({
     totalRecordCount,
   });
 
-  const parsedJson = await requestOpenAiJson({
+  const parsedJson = await requestOpenRouterJson({
     env,
     messages,
     responseSchema: generatedCardResponseSchema,
@@ -603,7 +588,7 @@ export const generateCardResult = async ({
 
   if (parsedResult.success) return parsedResult;
 
-  const repairedJson = await requestOpenAiJson({
+  const repairedJson = await requestOpenRouterJson({
     env,
     messages: buildMessages({
       previousTitle,
@@ -650,7 +635,7 @@ export const refreshCardResult = async ({
     totalRecordCount,
   });
 
-  const parsedJson = await requestOpenAiJson({
+  const parsedJson = await requestOpenRouterJson({
     env,
     messages,
     responseSchema: refreshedCardResponseSchema,
@@ -668,7 +653,7 @@ export const refreshCardResult = async ({
     };
   }
 
-  const repairedJson = await requestOpenAiJson({
+  const repairedJson = await requestOpenRouterJson({
     env,
     messages: buildRefreshMessages({
       previousOutput,
@@ -726,7 +711,7 @@ export const tweakCardResult = async ({
     tweakPrompt,
   });
 
-  const parsedJson = await requestOpenAiJson({
+  const parsedJson = await requestOpenRouterJson({
     env,
     messages,
     responseSchema: tweakedCardResponseSchema,
@@ -740,7 +725,7 @@ export const tweakCardResult = async ({
 
   if (parsedResult.success) return parsedResult;
 
-  const repairedJson = await requestOpenAiJson({
+  const repairedJson = await requestOpenRouterJson({
     env,
     messages: buildTweakMessages({
       previousOutput,
@@ -770,7 +755,7 @@ const buildPromptSuggestionMessages = ({
 }: {
   existingCards: CardPromptContextCard[];
   records: CardLlmRecord[];
-}) => [
+}): CardChatMessage[] => [
   {
     content:
       'You help create concise llog progress card prompts. Return only valid JSON. Do not duplicate existing cards. Suggest a useful progress view that can be answered from the provided records. Favor prompts that produce a concrete chart, metric, milestone list, or focused summary; avoid vague analysis prompts.',
@@ -810,7 +795,7 @@ export const generateCardPromptSuggestion = async ({
   existingCards: CardPromptContextCard[];
   records: CardLlmRecord[];
 }) => {
-  const parsedJson = await requestOpenAiJson({
+  const parsedJson = await requestOpenRouterJson({
     env,
     messages: buildPromptSuggestionMessages({ existingCards, records }),
     responseSchema: promptSuggestionResponseSchema,
@@ -819,7 +804,7 @@ export const generateCardPromptSuggestion = async ({
   const prompt = getString(asRecord(parsedJson).prompt)?.trim();
 
   if (!prompt) {
-    throw new Error('OpenAI card prompt suggestion returned no prompt');
+    throw new Error('OpenRouter card prompt suggestion returned no prompt');
   }
 
   return prompt.slice(0, 500);

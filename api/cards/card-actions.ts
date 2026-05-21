@@ -1,5 +1,5 @@
 import type { Db } from '@/api/middleware/db';
-import * as openai from '@/api/cards/openai';
+import * as openrouter from '@/api/cards/openrouter';
 import { enqueueJob } from '@/api/jobs/payload';
 import * as constants from '@/domain/cards/constants';
 import * as cardOutput from '@/domain/cards/output';
@@ -417,7 +417,7 @@ const generateCardResult = async ({
 
   if (!sourceSelection.records.length) return null;
 
-  return openai.generateCardResult({
+  return openrouter.generateCardResult({
     env,
     previousTitle,
     prompt,
@@ -451,7 +451,7 @@ const refreshCardResult = async ({
 
   if (!sourceSelection.records.length) return null;
 
-  return openai.refreshCardResult({
+  return openrouter.refreshCardResult({
     env,
     previousOutput,
     previousTitle,
@@ -488,7 +488,7 @@ const tweakCardResult = async ({
 
   if (!sourceSelection.records.length) return null;
 
-  return openai.tweakCardResult({
+  return openrouter.tweakCardResult({
     env,
     previousOutput,
     previousTitle,
@@ -544,7 +544,7 @@ export const suggestCardPrompt = async ({
     (card) => card.id !== input.cardId
   );
 
-  const prompt = await openai.generateCardPromptSuggestion({
+  const prompt = await openrouter.generateCardPromptSuggestion({
     env,
     existingCards,
     records,
