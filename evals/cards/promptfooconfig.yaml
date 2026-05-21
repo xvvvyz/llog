@@ -31,6 +31,17 @@ tests:
       - type: javascript
         value: file://assertions/index.cjs:refreshSeparationAnxiety
 
+  - description: generate copied card from blueprint
+    vars:
+      mode: blueprint
+      fixturePath: evals/cards/fixtures/sleep-blueprint.json
+      promptPath: evals/cards/prompts/sleep-blueprint.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:blueprint
+
   - description: tweak trigger resilience
     vars:
       mode: tweak
@@ -44,4 +55,4 @@ tests:
         value: file://assertions/index.cjs:triggerTweak
 
 commandLineOptions:
-  maxConcurrency: 1
+  maxConcurrency: 2

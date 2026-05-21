@@ -32,6 +32,16 @@ export const tweakCard = ({ id, prompt }: { id: string; prompt: string }) =>
 export const refreshCard = (id: string) =>
   postJson<{ queued: boolean; success: boolean }>(`/cards/${id}/refresh`);
 
+export const copyCard = ({
+  id,
+  logIds,
+}: card.CardCopyPayload & { id: string }) =>
+  postJson<{
+    cards: { id: string; logId: string }[];
+    queued: boolean;
+    success: boolean;
+  }>(`/cards/${id}/copy`, { logIds });
+
 export const reorderCards = async ({
   logId,
   orderedIds,

@@ -163,6 +163,95 @@ describe('card generation', () => {
       title: 'Track sleep',
     });
   });
+
+  test('keeps copied title', async () => {
+    const requestedAt = '2026-05-20T00:00:00.000Z';
+    const updates: Record<string, unknown>[] = [];
+
+    const card = {
+      blueprint: { summary: true },
+      generationRequestedAt: requestedAt,
+      id: 'card-1',
+      isGenerating: true,
+      logId: 'log-1',
+      prompt: 'Track sleep',
+      tags: [{ id: 'tag-a' }],
+      title: 'Copied sleep',
+    };
+
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: { summary: 'Generated sleep summary.' },
+        title: 'Generated sleep',
+      })
+    ) as never;
+
+    const entityTx = (entity: string) =>
+      new Proxy(
+        {},
+        {
+          get: (_target, id: string) => ({
+            update: (fields: Record<string, unknown>) => ({
+              entity,
+              fields,
+              id,
+            }),
+          }),
+        }
+      );
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('cards' in query) return { cards: [card] };
+
+        if ('records' in query) {
+          return {
+            records: [
+              {
+                date: '2026-05-20T00:00:00.000Z',
+                id: 'record-1',
+                tags: [{ name: 'sleep' }],
+                text: 'Slept well',
+              },
+            ],
+          };
+        }
+
+        return {};
+      },
+      transact: async (transaction: {
+        entity: string;
+        fields: Record<string, unknown>;
+        id: string;
+      }) => {
+        updates.push(transaction.fields);
+        Object.assign(card, transaction.fields);
+      },
+      tx: { cards: entityTx('cards') },
+    };
+
+    await expect(
+      cardActions.generateCard({
+        cardId: 'card-1',
+        dbClient: db as never,
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        requestedAt,
+      })
+    ).resolves.toMatchObject({ success: true, title: 'Copied sleep' });
+
+    expect(updates.at(-1)).toMatchObject({
+      blueprint: null,
+      generationRequestedAt: null,
+      isGenerating: false,
+      output: {
+        metrics: [],
+        milestones: [],
+        sourceRecordIds: [],
+        summary: 'Generated sleep summary.',
+      },
+      title: 'Copied sleep',
+    });
+  });
 });
 
 describe('card tweak', () => {

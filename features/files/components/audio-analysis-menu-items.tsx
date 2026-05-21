@@ -184,9 +184,7 @@ const AudioAnalysisMenuItem = ({
     onPress={onPress}
   >
     <PendingMenuIcon icon={icon} isPending={isPending} />
-    <Text className={disabled || isPending ? 'text-placeholder' : ''}>
-      {label}
-    </Text>
+    <Text>{label}</Text>
   </Menu.Item>
 );
 

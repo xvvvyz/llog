@@ -1,3 +1,4 @@
+import * as cardCopy from '@/api/cards/card-copy';
 import * as cardActions from '@/api/cards/card-actions';
 import { auth, db } from '@/api/middleware/db';
 import { CARD_PROMPT_MAX_LENGTH } from '@/domain/cards/constants';
@@ -18,6 +19,10 @@ const cardPromptSuggestionSchema = z.object({
   cardId: z.string().min(1).optional(),
   logId: z.string().min(1),
   tagIds: z.array(z.string().min(1)).min(1).max(cardActions.MAX_CARD_TAGS),
+});
+
+const cardCopySchema = z.object({
+  logIds: z.array(z.string().min(1)).min(1).max(100),
 });
 
 const cardTweakSchema = z.object({
@@ -89,6 +94,24 @@ app.put(
     });
 
     return c.json(card);
+  }
+);
+
+app.post(
+  '/:cardId/copy',
+  db(),
+  auth(),
+  zValidator('json', cardCopySchema),
+  async (c) => {
+    const result = await cardCopy.copyCard({
+      cardId: c.req.param('cardId'),
+      dbClient: c.var.db,
+      env: c.env,
+      input: c.req.valid('json'),
+      userId: c.var.user.id,
+    });
+
+    return c.json(result);
   }
 );
 

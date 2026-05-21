@@ -19,6 +19,7 @@ import Animated, { useAnimatedRef } from 'react-native-reanimated';
 const CardRow = ({
   card,
   isGenerating,
+  onCopy,
   onDelete,
   onEdit,
   onRefresh,
@@ -26,9 +27,10 @@ const CardRow = ({
 }: {
   card: LogCard;
   isGenerating: boolean;
+  onCopy: () => void;
   onDelete: () => void;
   onEdit: () => void;
-  onRefresh: () => void;
+  onRefresh: () => Promise<unknown> | void;
   onTweak?: () => void;
 }) => (
   <View className="relative h-10 w-full">
@@ -63,6 +65,7 @@ const CardRow = ({
         generatingIndicator="inline"
         iconSize={18}
         isGenerating={isGenerating}
+        onCopy={onCopy}
         onDelete={onDelete}
         onEdit={onEdit}
         onRefresh={onRefresh}
@@ -103,6 +106,13 @@ export const LogCardsSheet = () => {
     [sheetManager]
   );
 
+  const openCopy = React.useCallback(
+    (cardId: string) => {
+      sheetManager.open('log-card-copy-to', cardId, logId);
+    },
+    [logId, sheetManager]
+  );
+
   const handleDragEnd = React.useCallback(
     async (params: Sortable.SortableGridDragEndParams<LogCard>) => {
       try {
@@ -129,13 +139,10 @@ export const LogCardsSheet = () => {
     }
   }, [deletingCardId]);
 
-  const handleRefresh = React.useCallback(async (cardId: string) => {
-    try {
-      await cardMutations.refreshCard(cardId);
-    } catch {
-      // noop
-    }
-  }, []);
+  const handleRefresh = React.useCallback(
+    (cardId: string) => cardMutations.refreshCard(cardId),
+    []
+  );
 
   return (
     <>
@@ -162,6 +169,7 @@ export const LogCardsSheet = () => {
                 <CardRow
                   card={card}
                   isGenerating={!!card.isGenerating}
+                  onCopy={() => openCopy(card.id)}
                   onDelete={() => setDeletingCardId(card.id)}
                   onEdit={() => openEditor(card.id)}
                   onRefresh={() => handleRefresh(card.id)}

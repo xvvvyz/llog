@@ -1,0 +1,43 @@
+{
+  "name": "sleep blueprint copy",
+  "records": [
+    {
+      "id": "sleep-a",
+      "date": "2026-04-01T07:00:00.000Z",
+      "tags": [{ "name": "sleep" }],
+      "text": "Sleep hours: 5\nSleep debt (hrs): 3"
+    },
+    {
+      "id": "sleep-b",
+      "date": "2026-04-02T07:00:00.000Z",
+      "tags": [{ "name": "sleep" }],
+      "text": "Sleep hours: 6\nSleep debt (hrs): 2"
+    }
+  ],
+  "expected": {
+    "blueprint": {
+      "chart": { "decimals": 1, "title": "Sleep trend", "type": "line" },
+      "metricLabels": ["Average sleep", "Sleep debt"],
+      "sourceRecordIds": ["sleep-a", "sleep-b"]
+    }
+  },
+  "scenarios": {
+    "blueprint": {
+      "blueprint": {
+        "chart": {
+          "kind": "data",
+          "title": "Sleep trend",
+          "type": "line",
+          "unit": "hrs",
+          "yAxis": { "decimals": 1 }
+        },
+        "metrics": [
+          { "label": "Average sleep", "unit": "hrs", "value": 8.2 },
+          { "label": "Sleep debt", "unit": "hrs", "value": "0.5 hrs" }
+        ],
+        "milestones": true,
+        "summary": true
+      }
+    }
+  }
+}

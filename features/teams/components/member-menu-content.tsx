@@ -116,11 +116,7 @@ export const TeamMemberMenuContent = ({
                 <Icon icon={Check} />
               ) : null}
             </View>
-            <Text
-              className={isLoadingRole ? 'flex-1 text-placeholder' : 'flex-1'}
-            >
-              {ROLE_LABELS[role]}
-            </Text>
+            <Text className="flex-1">{ROLE_LABELS[role]}</Text>
           </Menu.Item>
         );
       })}

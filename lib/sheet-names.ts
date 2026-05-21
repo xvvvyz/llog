@@ -1,4 +1,5 @@
 export type SheetName =
+  | 'log-card-copy-to'
   | 'log-card-detail'
   | 'log-card-editor'
   | 'log-card-tweak'
@@ -103,6 +104,7 @@ export type SheetPayload<Name extends SheetName> =
   Name extends keyof SheetPayloadMap ? SheetPayloadMap[Name] : unknown;
 
 export type SheetContextMap = {
+  'log-card-copy-to': string;
   'log-card-editor': string;
   'log-template-copy-to': string;
   'log-template-editor': string;

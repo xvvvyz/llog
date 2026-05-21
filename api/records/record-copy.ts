@@ -1,4 +1,5 @@
 import type { Db } from '@/api/middleware/db';
+import * as cardActions from '@/api/cards/card-actions';
 import { copyFileQuery } from '@/domain/files/query';
 import * as copyTags from '@/domain/records/copy-tags';
 import * as recordPublish from '@/domain/records/publish';
@@ -355,12 +356,14 @@ export const createRecordCopyDraft = async ({
 export const finalizeRecordCopy = async ({
   dbClient,
   draftRecordId,
+  env,
   logIds,
   now,
   userId,
 }: {
   dbClient: Db;
   draftRecordId?: string;
+  env: CloudflareEnv;
   logIds: string[];
   now?: string;
   userId: string;
@@ -427,18 +430,21 @@ export const finalizeRecordCopy = async ({
     text: trimmedText,
   });
 
+  const copiedRecordTagIds =
+    targetLogs.length === 1
+      ? copyTags.resolveCopyDraftTagIdsForTargetLog({
+          sourceTags: record.tags,
+          targetLogId: targetLogs[0].id,
+        })
+      : [];
+
   const tagTransactions =
     targetLogs.length === 1
-      ? copyTags
-          .resolveCopyDraftTagIdsForTargetLog({
-            sourceTags: record.tags,
-            targetLogId: targetLogs[0].id,
-          })
-          .flatMap((tagId) =>
-            copiedRecords.map((copiedRecord) =>
-              dbClient.tx.records[copiedRecord.id].link({ tags: tagId })
-            )
+      ? copiedRecordTagIds.flatMap((tagId) =>
+          copiedRecords.map((copiedRecord) =>
+            dbClient.tx.records[copiedRecord.id].link({ tags: tagId })
           )
+        )
       : [];
 
   await dbClient.transact([
@@ -446,6 +452,15 @@ export const finalizeRecordCopy = async ({
     ...tagTransactions,
     dbClient.tx.records[draftRecordId].delete(),
   ]);
+
+  if (targetLogs.length === 1) {
+    await cardActions.queuePublishedRecordCardRefreshes({
+      dbClient,
+      env,
+      logId: targetLogs[0].id,
+      recordTagIds: copiedRecordTagIds,
+    });
+  }
 
   return { records: copiedRecords };
 };

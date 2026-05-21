@@ -1,5 +1,6 @@
 import { McpSheet } from '@/features/account/components/mcp-sheet';
 import { WebPushIosSetupSheet } from '@/features/account/components/web-push-ios-setup-sheet';
+import { LogCardCopyToSheet } from '@/features/cards/components/card-copy-to-sheet';
 import { LogCardDetailSheet } from '@/features/cards/components/card-detail-sheet';
 import { LogCardEditorSheet } from '@/features/cards/components/card-editor-sheet';
 import { LogCardTweakSheet } from '@/features/cards/components/card-tweak-sheet';
@@ -71,6 +72,7 @@ export default function Layout() {
       <InviteLinkDeleteSheet />
       <LogEditSheet />
       <LogCardsSheet />
+      <LogCardCopyToSheet />
       <LogCardDetailSheet />
       <LogCardEditorSheet />
       <LogCardTweakSheet />

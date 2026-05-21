@@ -5,6 +5,7 @@ import { PressPropagationBoundary } from '@/ui/press-propagation-boundary';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { cn } from '@/lib/cn';
+import * as React from 'react';
 import { View } from 'react-native';
 
 import {
@@ -13,6 +14,7 @@ import {
   ListNumbers,
   MagicWand,
   NotePencil,
+  StackSimple,
   Trash,
 } from 'phosphor-react-native';
 
@@ -34,6 +36,92 @@ export const CardGeneratingIndicator = ({
     </View>
   );
 
+const CardActionsMenuContent = ({
+  isGenerating,
+  onCopy,
+  onDelete,
+  onEdit,
+  onManage,
+  onRefresh,
+  onTweak,
+}: {
+  isGenerating?: boolean;
+  onCopy?: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
+  onManage?: () => void;
+  onRefresh?: () => Promise<unknown> | void;
+  onTweak?: () => void;
+}) => {
+  const menu = Menu.useContext();
+  const [isRefreshPending, setIsRefreshPending] = React.useState(false);
+
+  const handleRefresh = React.useCallback(async () => {
+    if (!onRefresh || isRefreshPending) return;
+    setIsRefreshPending(true);
+
+    try {
+      await onRefresh();
+      setIsRefreshPending(false);
+      menu.onOpenChange(false);
+    } catch {
+      setIsRefreshPending(false);
+      // noop
+    }
+  }, [isRefreshPending, menu, onRefresh]);
+
+  return (
+    <Menu.Content align="end">
+      <Menu.Item disabled={isRefreshPending} onPress={onEdit}>
+        <Icon className="text-placeholder" icon={NotePencil} />
+        <Text>Edit</Text>
+      </Menu.Item>
+      {!!onTweak && (
+        <Menu.Item
+          disabled={isGenerating || isRefreshPending}
+          onPress={onTweak}
+        >
+          <Icon className="text-placeholder" icon={MagicWand} />
+          <Text>Tweak</Text>
+        </Menu.Item>
+      )}
+      {!!onRefresh && (
+        <Menu.Item
+          closeOnPress={false}
+          disabled={isGenerating || isRefreshPending}
+          onPress={handleRefresh}
+        >
+          {isRefreshPending ? (
+            <View className="size-5 items-center justify-center">
+              <Spinner className="text-placeholder" size="xs" />
+            </View>
+          ) : (
+            <Icon className="text-placeholder" icon={ArrowClockwise} />
+          )}
+          <Text>Refresh</Text>
+        </Menu.Item>
+      )}
+      {!!onCopy && (
+        <Menu.Item disabled={isRefreshPending} onPress={onCopy}>
+          <Icon className="text-placeholder" icon={StackSimple} />
+          <Text>Copy to</Text>
+        </Menu.Item>
+      )}
+      {!!onManage && (
+        <Menu.Item disabled={isRefreshPending} onPress={onManage}>
+          <Icon className="text-placeholder" icon={ListNumbers} />
+          <Text>Reorder</Text>
+        </Menu.Item>
+      )}
+      <Menu.Separator />
+      <Menu.Item disabled={isRefreshPending} onPress={onDelete}>
+        <Icon className="text-destructive" icon={Trash} />
+        <Text className="text-destructive">Delete</Text>
+      </Menu.Item>
+    </Menu.Content>
+  );
+};
+
 export const CardActionsMenu = ({
   buttonSize = 'icon',
   className,
@@ -41,6 +129,7 @@ export const CardActionsMenu = ({
   iconSize,
   isGenerating,
   onDelete,
+  onCopy,
   onEdit,
   onManage,
   onRefresh,
@@ -54,10 +143,11 @@ export const CardActionsMenu = ({
   generatingIndicator?: 'icon-slot' | 'inline';
   iconSize?: number;
   isGenerating?: boolean;
+  onCopy?: () => void;
   onDelete: () => void;
   onEdit: () => void;
   onManage?: () => void;
-  onRefresh?: () => void;
+  onRefresh?: () => Promise<unknown> | void;
   onTweak?: () => void;
   showGeneratingIndicator?: boolean;
 }) => (
@@ -84,35 +174,15 @@ export const CardActionsMenu = ({
             />
           </Button>
         </Menu.Trigger>
-        <Menu.Content align="end">
-          <Menu.Item onPress={onEdit}>
-            <Icon className="text-placeholder" icon={NotePencil} />
-            <Text>Edit</Text>
-          </Menu.Item>
-          {!!onTweak && (
-            <Menu.Item disabled={isGenerating} onPress={onTweak}>
-              <Icon className="text-placeholder" icon={MagicWand} />
-              <Text>Tweak</Text>
-            </Menu.Item>
-          )}
-          {!!onRefresh && (
-            <Menu.Item disabled={isGenerating} onPress={onRefresh}>
-              <Icon className="text-placeholder" icon={ArrowClockwise} />
-              <Text>Refresh</Text>
-            </Menu.Item>
-          )}
-          {!!onManage && (
-            <Menu.Item onPress={onManage}>
-              <Icon className="text-placeholder" icon={ListNumbers} />
-              <Text>Reorder</Text>
-            </Menu.Item>
-          )}
-          <Menu.Separator />
-          <Menu.Item onPress={onDelete}>
-            <Icon className="text-destructive" icon={Trash} />
-            <Text className="text-destructive">Delete</Text>
-          </Menu.Item>
-        </Menu.Content>
+        <CardActionsMenuContent
+          isGenerating={isGenerating}
+          onCopy={onCopy}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onManage={onManage}
+          onRefresh={onRefresh}
+          onTweak={onTweak}
+        />
       </Menu.Root>
     </View>
   </PressPropagationBoundary>

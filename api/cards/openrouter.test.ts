@@ -302,6 +302,57 @@ describe('card openrouter', () => {
     );
   });
 
+  test('sends blueprint', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        output: {
+          metrics: [{ label: 'Average', unit: 'hrs', value: 7 }],
+          milestones: [],
+          sourceRecordIds: [],
+        },
+        title: 'Sleep',
+      });
+    }) as never;
+
+    await openrouter.generateCardResult({
+      blueprint: {
+        chart: { kind: 'data', title: 'Trend', type: 'line' },
+        metrics: [{ label: 'Average', unit: 'hrs', value: 7 }],
+      },
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      prompt: 'Track sleep',
+      records: [
+        {
+          date: '2026-05-20T00:00:00.000Z',
+          id: 'record-1',
+          tags: [{ name: 'sleep' }],
+          text: 'Slept 7 hours',
+        },
+      ],
+    });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      card?: { blueprint?: unknown };
+      outputRules?: string;
+    };
+
+    expect(userPayload.card?.blueprint).toEqual({
+      chart: { kind: 'data', title: 'Trend', type: 'line' },
+      metrics: [{ label: 'Average', unit: 'hrs', value: 7 }],
+    });
+
+    expect(userPayload.outputRules).toContain('card.blueprint');
+    expect(userPayload.outputRules).toContain('Do not add sections absent');
+  });
+
   test('compacts suggestion context', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 

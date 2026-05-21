@@ -10,6 +10,8 @@ export type CardWritePayload = { prompt: string; tagIds: string[] };
 
 export type CardCreatePayload = CardWritePayload & { logId: string };
 
+export type CardCopyPayload = { logIds: string[] };
+
 export type CardPromptSuggestionPayload = {
   cardId?: string;
   logId: string;

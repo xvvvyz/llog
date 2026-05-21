@@ -52,13 +52,17 @@ const useCardPreviewActions = ({ logId }: { logId?: string }) => {
     [sheetManager]
   );
 
-  const handleRefresh = React.useCallback(async (cardId: string) => {
-    try {
-      await cardMutations.refreshCard(cardId);
-    } catch {
-      // noop
-    }
-  }, []);
+  const openCopy = React.useCallback(
+    (cardId: string) => {
+      sheetManager.open('log-card-copy-to', cardId, logId);
+    },
+    [logId, sheetManager]
+  );
+
+  const handleRefresh = React.useCallback(
+    (cardId: string) => cardMutations.refreshCard(cardId),
+    []
+  );
 
   const handleDelete = React.useCallback(async () => {
     if (!deletingCardId) return;
@@ -79,6 +83,7 @@ const useCardPreviewActions = ({ logId }: { logId?: string }) => {
     handleDelete,
     handleRefresh,
     isDeleting,
+    openCopy,
     openEditor,
     openTweak,
     setDeletingCardId,
@@ -266,6 +271,7 @@ export const CardsHeader = ({
                   className="rounded-lg"
                   containerClassName="-mr-1.5 -mt-1.5"
                   isGenerating={isGenerating}
+                  onCopy={() => cardActions.openCopy(card.id)}
                   onDelete={() => cardActions.setDeletingCardId(card.id)}
                   onEdit={() => cardActions.openEditor(card.id)}
                   onRefresh={() => cardActions.handleRefresh(card.id)}

@@ -16,6 +16,7 @@ const schema = i.schema({
       emoji: i.string().optional(),
     }),
     cards: i.entity({
+      blueprint: i.any().optional(),
       error: i.string().optional(),
       generationRequestedAt: i.date().optional(),
       isGenerating: i.boolean().optional(),

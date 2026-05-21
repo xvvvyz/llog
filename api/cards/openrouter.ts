@@ -1,4 +1,5 @@
 import { CARD_PROMPT_MAX_LENGTH } from '@/domain/cards/constants';
+import type { CardBlueprint } from '@/domain/cards/blueprint';
 import * as cardOutput from '@/domain/cards/output';
 import * as cardSourceSelection from '@/domain/cards/source-selection';
 import type { ChatMessages, ChatResult } from '@openrouter/sdk/models';
@@ -306,11 +307,13 @@ const promptSuggestionResponseSchema = jsonResponseSchema({
 });
 
 const buildMessages = ({
+  blueprint,
   repairMessage,
   prompt,
   records,
   totalRecordCount,
 }: {
+  blueprint?: CardBlueprint;
   repairMessage?: string;
   prompt: string;
   records: CardLlmRecord[];
@@ -322,7 +325,7 @@ const buildMessages = ({
   },
   {
     content: JSON.stringify({
-      card: { prompt },
+      card: { ...(blueprint && { blueprint }), prompt },
       outputSchema: {
         output: outputSchemaDescription,
         title:
@@ -330,7 +333,9 @@ const buildMessages = ({
       },
       requiredJsonShape:
         'Return { "title": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
-      outputRules: `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`,
+      outputRules: blueprint
+        ? `Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true. Do not add sections absent from blueprint. ${metricTrendRules} Put milestones newest-first.`
+        : `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`,
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),
@@ -544,11 +549,13 @@ const requestOpenRouterJson = async ({
 };
 
 export const generateCardResult = async ({
+  blueprint,
   env,
   prompt,
   records,
   totalRecordCount = records.length,
 }: {
+  blueprint?: CardBlueprint;
   env: CloudflareEnv;
   prompt: string;
   records: CardLlmRecord[];
@@ -559,7 +566,13 @@ export const generateCardResult = async ({
   }
 
   const defaultTitle = defaultTitleFromPrompt(prompt);
-  const messages = buildMessages({ prompt, records, totalRecordCount });
+
+  const messages = buildMessages({
+    blueprint,
+    prompt,
+    records,
+    totalRecordCount,
+  });
 
   const parsedJson = await requestOpenRouterJson({
     env,
@@ -578,6 +591,7 @@ export const generateCardResult = async ({
   const repairedJson = await requestOpenRouterJson({
     env,
     messages: buildMessages({
+      blueprint,
       prompt,
       records,
       totalRecordCount,

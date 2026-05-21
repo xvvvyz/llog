@@ -90,6 +90,7 @@ app.post(
     const copy = await recordCopy.finalizeRecordCopy({
       dbClient: c.var.db,
       draftRecordId: c.req.param('recordId'),
+      env: c.env,
       logIds,
       userId: user.id,
     });

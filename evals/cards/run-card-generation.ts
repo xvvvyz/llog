@@ -1,10 +1,12 @@
 import * as openrouter from '@/api/cards/openrouter';
+import type { CardBlueprint } from '@/domain/cards/blueprint';
 import * as cardOutput from '@/domain/cards/output';
 import { readFile } from 'node:fs/promises';
 
-type EvalMode = 'generate' | 'refresh' | 'tweak';
+type EvalMode = 'blueprint' | 'generate' | 'refresh' | 'tweak';
 
 type EvalScenario = {
+  blueprint?: CardBlueprint;
   previousOutputKind?: 'durationEndpoints' | 'durationProgressStart';
   previousOutput?: cardOutput.CardOutput;
   previousRecordCount?: number;
@@ -55,8 +57,13 @@ const readInput = (): EvalInput => {
 
   const mode = input.mode ?? 'generate';
 
-  if (mode !== 'generate' && mode !== 'refresh' && mode !== 'tweak') {
-    throw new Error('mode must be generate, refresh, or tweak');
+  if (
+    mode !== 'blueprint' &&
+    mode !== 'generate' &&
+    mode !== 'refresh' &&
+    mode !== 'tweak'
+  ) {
+    throw new Error('mode must be blueprint, generate, refresh, or tweak');
   }
 
   return {
@@ -262,18 +269,23 @@ const main = async () => {
   const result =
     mode === 'generate'
       ? await openrouter.generateCardResult(commonInput)
-      : mode === 'refresh'
-        ? await openrouter.refreshCardResult({
+      : mode === 'blueprint'
+        ? await openrouter.generateCardResult({
             ...commonInput,
-            previousOutput: requiredPreviousOutput(previousOutput, mode),
-            previousTitle: scenario?.previousTitle,
+            blueprint: requiredBlueprint(scenario?.blueprint),
           })
-        : await openrouter.tweakCardResult({
-            ...commonInput,
-            previousOutput: requiredPreviousOutput(previousOutput, mode),
-            previousTitle: scenario?.previousTitle,
-            tweakPrompt: requiredTweakPrompt(tweakPrompt),
-          });
+        : mode === 'refresh'
+          ? await openrouter.refreshCardResult({
+              ...commonInput,
+              previousOutput: requiredPreviousOutput(previousOutput, mode),
+              previousTitle: scenario?.previousTitle,
+            })
+          : await openrouter.tweakCardResult({
+              ...commonInput,
+              previousOutput: requiredPreviousOutput(previousOutput, mode),
+              previousTitle: scenario?.previousTitle,
+              tweakPrompt: requiredTweakPrompt(tweakPrompt),
+            });
 
   const validation = cardOutput.validateCardOutput(result.output);
 
@@ -324,6 +336,11 @@ const requiredPreviousOutput = (
   }
 
   return previousOutput;
+};
+
+const requiredBlueprint = (value?: CardBlueprint) => {
+  if (!value) throw new Error('blueprint scenario blueprint is required');
+  return value;
 };
 
 const requiredTweakPrompt = (value?: string) => {

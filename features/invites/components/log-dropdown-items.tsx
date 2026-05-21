@@ -77,7 +77,7 @@ export const LogDropdownItems = ({ id }: { id?: string }) => {
       ) : (
         <Icon className="text-placeholder" icon={UserPlus} />
       )}
-      <Text className={isLoading ? 'text-placeholder' : ''}>Invite</Text>
+      <Text>Invite</Text>
     </Menu.Item>
   );
 };

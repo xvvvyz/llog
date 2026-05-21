@@ -57,12 +57,7 @@ export const LogCardDetailSheet = () => {
 
   const handleRefresh = React.useCallback(async () => {
     if (!card.id) return;
-
-    try {
-      await cardMutations.refreshCard(card.id);
-    } catch {
-      // noop
-    }
+    await cardMutations.refreshCard(card.id);
   }, [card.id]);
 
   return (
@@ -91,6 +86,13 @@ export const LogCardDetailSheet = () => {
                     onDelete={() => setDeletingCardId(card.id)}
                     onRefresh={handleRefresh}
                     showGeneratingIndicator={!!card.output}
+                    onCopy={() =>
+                      sheetManager.open(
+                        'log-card-copy-to',
+                        card.id,
+                        card.logId ?? undefined
+                      )
+                    }
                     onEdit={() =>
                       sheetManager.open(
                         'log-card-editor',

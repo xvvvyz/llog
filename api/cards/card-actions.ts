@@ -1,15 +1,17 @@
 import type { Db } from '@/api/middleware/db';
 import * as openrouter from '@/api/cards/openrouter';
 import { enqueueJob } from '@/api/jobs/payload';
+import * as cardBlueprint from '@/domain/cards/blueprint';
 import * as constants from '@/domain/cards/constants';
 import * as cardOutput from '@/domain/cards/output';
 import * as cardSourceSelection from '@/domain/cards/source-selection';
+import * as cardTitle from '@/domain/cards/title';
 import { publishedContentWhere } from '@/domain/records/query';
 import * as permissions from '@/domain/teams/permissions';
 import { id as generateId } from '@instantdb/admin';
 import { HTTPException } from 'hono/http-exception';
 
-export const CARD_TITLE_MAX_LENGTH = 80;
+export const CARD_TITLE_MAX_LENGTH = cardTitle.CARD_TITLE_MAX_LENGTH;
 
 export const CARD_TWEAK_PROMPT_MAX_LENGTH = 1000;
 
@@ -41,6 +43,7 @@ type LogAccess = {
 };
 
 type CardEntity = {
+  blueprint?: unknown;
   generationRequestedAt?: Date | number | string | null;
   id: string;
   isGenerating?: boolean | null;
@@ -236,7 +239,7 @@ const getNextCardOrder = async ({
   return highestOrder + 1;
 };
 
-const CARD_GENERATION_ERROR_MESSAGE = 'Failed to generate card.';
+export const CARD_GENERATION_ERROR_MESSAGE = 'Failed to generate card.';
 
 const timeValue = (value?: Date | number | string | null) => {
   if (value == null) return;
@@ -251,21 +254,6 @@ export const isSameGenerationRequest = ({
   generationRequestedAt?: Date | number | string | null;
   requestedAt: string;
 }) => timeValue(generationRequestedAt) === timeValue(requestedAt);
-
-const fallbackCardTitle = (prompt: string) => {
-  const firstLine = prompt
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find(Boolean);
-
-  return (
-    cardOutput.normalizeCardDisplayLabel({
-      defaultValue: 'Progress card',
-      maxLength: CARD_TITLE_MAX_LENGTH,
-      value: firstLine ?? prompt,
-    }) ?? 'Progress card'
-  );
-};
 
 const readCardOutput = (value: unknown) => {
   const parsed = cardOutput.validateCardOutput(value);
@@ -315,24 +303,28 @@ const getTaggedSourceRecords = async (
 const noSourceRecordGenerationFields = ({
   previousOutput,
   prompt,
+  title,
 }: {
   previousOutput?: unknown;
   prompt: string;
+  title?: string;
 }) => ({
   generationRequestedAt: null,
   isGenerating: false,
   lastGeneratedAt: null,
   ...(previousOutput != null && { output: null }),
-  title: fallbackCardTitle(prompt),
+  title: title ?? cardTitle.fallbackCardTitle(prompt),
 });
 
 const generateCardResult = async ({
+  blueprint,
   dbClient,
   env,
   logId,
   prompt,
   tagIds,
 }: {
+  blueprint?: cardBlueprint.CardBlueprint;
   dbClient: Db;
   env: CloudflareEnv;
   logId: string;
@@ -348,6 +340,7 @@ const generateCardResult = async ({
   if (!sourceSelection.records.length) return null;
 
   return openrouter.generateCardResult({
+    blueprint,
     env,
     prompt,
     records: sourceSelection.records,
@@ -562,8 +555,12 @@ export const generateCard = async ({
     return { error: CARD_GENERATION_ERROR_MESSAGE, success: false };
   }
 
+  const blueprint = cardBlueprint.readCardBlueprint(card.blueprint);
+  const currentTitle = card.title?.trim() || undefined;
+
   try {
     const result = await generateCardResult({
+      blueprint,
       dbClient,
       env,
       logId: card.logId,
@@ -578,12 +575,15 @@ export const generateCard = async ({
         fields: noSourceRecordGenerationFields({
           previousOutput: card.output,
           prompt: card.prompt,
+          ...(blueprint && currentTitle && { title: currentTitle }),
         }),
         requestedAt,
       });
 
       return { empty: true, stale: !didWrite, success: didWrite };
     }
+
+    const title = blueprint && currentTitle ? currentTitle : result.title;
 
     const didWrite = await updateCardIfGenerationCurrent({
       cardId,
@@ -592,8 +592,9 @@ export const generateCard = async ({
         generationRequestedAt: null,
         isGenerating: false,
         lastGeneratedAt: new Date().toISOString(),
+        blueprint: null,
         output: result.output,
-        title: result.title,
+        title,
       },
       requestedAt,
     });
@@ -602,7 +603,7 @@ export const generateCard = async ({
       output: result.output,
       stale: !didWrite,
       success: didWrite,
-      title: result.title,
+      title,
     };
   } catch (error) {
     console.error('Card generation failed', { cardId, error });
@@ -692,7 +693,7 @@ export const refreshCard = async ({
       requestedAt,
     });
 
-    const title = card.title ?? fallbackCardTitle(card.prompt);
+    const title = card.title ?? cardTitle.fallbackCardTitle(card.prompt);
 
     return {
       output: result.output,
@@ -910,7 +911,7 @@ export const createCard = async ({
         order: await getNextCardOrder({ dbClient, logId: access.logId }),
         prompt: normalized.prompt,
         teamId: access.teamId,
-        title: fallbackCardTitle(normalized.prompt),
+        title: cardTitle.fallbackCardTitle(normalized.prompt),
         type: constants.CARD_TYPE_PROGRESS,
       })
       .link({ log: access.logId, team: access.teamId }),
@@ -962,6 +963,7 @@ export const updateCard = async ({
 
   await dbClient.transact([
     dbClient.tx.cards[cardId].update({
+      blueprint: null,
       generationRequestedAt: requestedAt,
       isGenerating: true,
       prompt: normalized.prompt,
