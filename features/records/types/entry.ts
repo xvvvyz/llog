@@ -9,9 +9,14 @@ import { Reply } from '@/features/records/types/reply';
 import { Tag } from '@/features/tags/types/tag';
 import type { OutboxStatus } from '@/features/offline/types';
 
+type EntryAuthorRole = { role?: string | null; teamId?: string | null };
+
 export type EntryRecord = Partial<
   (Record | Reply) & {
-    author: Profile & { image?: FileItem };
+    author: Profile & {
+      image?: FileItem;
+      user?: { roles?: EntryAuthorRole[] | null } | null;
+    };
     links: Link[];
     log: Partial<Pick<Log, 'color' | 'id' | 'name'>>;
     localNeedsDraftReplay: boolean;

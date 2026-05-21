@@ -15,8 +15,13 @@ export const summaryProfileQuery = {
   $: { fields: ['id' as const, 'name' as const] },
 };
 
+export const entryAuthorQuery = {
+  image: {},
+  user: { roles: { $: { fields: ['role' as const, 'teamId' as const] } } },
+};
+
 export const recordListItemQuery = {
-  author: { image: {} },
+  author: entryAuthorQuery,
   files: visibleFileQuery,
   links: {},
   reactions: { author: {} },
@@ -25,14 +30,14 @@ export const recordListItemQuery = {
 };
 
 export const recordDetailQuery = {
-  author: { image: {} },
+  author: entryAuthorQuery,
   files: visibleFileQuery,
   links: {},
   log: {},
   reactions: { author: {} },
   replies: {
     $: { order: { date: 'asc' as const }, where: publishedContentWhere },
-    author: { image: {} },
+    author: entryAuthorQuery,
     files: visibleFileQuery,
     links: {},
     reactions: { author: {} },

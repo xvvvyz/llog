@@ -69,8 +69,16 @@ export const Entry = ({
     record.files || []
   );
 
+  const authorRole = React.useMemo(
+    () =>
+      record.author?.user?.roles?.find((role) => role.teamId === record.teamId)
+        ?.role,
+    [record.author?.user?.roles, record.teamId]
+  );
+
   const rawEntryMenuState = useEntryMenuState({
     authorId: record.author?.id,
+    authorRole,
     hasSelectedRecordTags: record.tags?.some((tag) => !!tag.id),
     logId,
     replyId,

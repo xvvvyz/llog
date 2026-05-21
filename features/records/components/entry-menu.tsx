@@ -1,3 +1,4 @@
+import * as recordPermissions from '@/domain/records/permissions';
 import { canDeleteOwnOrManagedResource } from '@/domain/teams/permissions';
 import { useProfile } from '@/features/account/queries/use-profile';
 import * as outboxStore from '@/features/offline/outbox-store';
@@ -47,11 +48,13 @@ type EntryMenuProps = {
 
 export const useEntryMenuState = ({
   authorId,
+  authorRole,
   hasSelectedRecordTags,
   logId,
   replyId,
   teamId,
 }: Pick<EntryMenuProps, 'authorId' | 'logId' | 'replyId' | 'teamId'> & {
+  authorRole?: string | null;
   hasSelectedRecordTags?: boolean;
 }): EntryMenuState => {
   const myRole = useMyRole({ teamId });
@@ -63,7 +66,11 @@ export const useEntryMenuState = ({
     isAuthor,
   });
 
-  const canEdit = isAuthor;
+  const canEdit = recordPermissions.canEditEntry({
+    actorRole: myRole.role,
+    isAuthor,
+    targetRole: authorRole,
+  });
 
   const recordTags = useHasRecordTagsForLog({
     enabled: !replyId && isAuthor && !myRole.isLoading && !myRole.canManage,

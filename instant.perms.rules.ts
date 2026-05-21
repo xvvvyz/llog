@@ -17,11 +17,27 @@ const currentTeamRolesKeyRef = "data.ref('team.roles.key')";
 const authRoleKey = (role: Role, teamIdRef: string) =>
   `'${role}_' + auth.id + '_' + ${teamIdRef}`;
 
+const userRoleKey = (role: Role, userIdRef: string, teamIdRef: string) =>
+  `'${role}_' + ${userIdRef} + '_' + ${teamIdRef}`;
+
 export const authRoleIn = (
   role: Role,
   teamIdRef: string,
   rolesKeyRef: string
 ) => `${authRoleKey(role, teamIdRef)} in ${rolesKeyRef}`;
+
+export const userRoleIn = (
+  role: Role,
+  userIdRef: string,
+  teamIdRef: string,
+  rolesKeyRef: string
+) => `${userRoleKey(role, userIdRef, teamIdRef)} in ${rolesKeyRef}`;
+
+export const authIsOwnerForTeam = (teamIdRef: string) =>
+  authRoleIn(Role.Owner, teamIdRef, authRolesKeyRef);
+
+export const authIsAdminForTeam = (teamIdRef: string) =>
+  authRoleIn(Role.Admin, teamIdRef, authRolesKeyRef);
 
 const authRoleExistsFor = (role: Role, teamIdRef: string) =>
   `data.ref('${teamIdRef}').exists(teamId, ${authRoleIn(
@@ -31,10 +47,7 @@ const authRoleExistsFor = (role: Role, teamIdRef: string) =>
   )})`;
 
 export const canManageAuthTeam = (teamIdRef: string) =>
-  or(
-    authRoleIn(Role.Owner, teamIdRef, authRolesKeyRef),
-    authRoleIn(Role.Admin, teamIdRef, authRolesKeyRef)
-  );
+  or(authIsOwnerForTeam(teamIdRef), authIsAdminForTeam(teamIdRef));
 
 export const isOwner = authRoleIn(
   Role.Owner,

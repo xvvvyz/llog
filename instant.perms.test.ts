@@ -30,6 +30,24 @@ describe('permissions', () => {
     expect(rules.replies.allow.link.activities).toContain('isLogMember');
   });
 
+  test('allows manager text edits', () => {
+    const managedTextEdit =
+      'canEditManagedText && !isDraft && onlyModifiesText && isValidNewText';
+
+    const managedTextPolicy =
+      'isOwnerByTeamId || (isAdminByTeamId && authorIsMemberByTeamId)';
+
+    const authorMemberRole =
+      "data.ref('author.user.id').exists(userId, 'member_' + userId + '_' + data.teamId in data.ref('author.user.roles.key'))";
+
+    expect(rules.records.allow.update).toContain(managedTextEdit);
+    expect(rules.replies.allow.update).toContain(managedTextEdit);
+    expect(rules.records.bind).toContain(managedTextPolicy);
+    expect(rules.replies.bind).toContain(managedTextPolicy);
+    expect(rules.records.bind).toContain(authorMemberRole);
+    expect(rules.replies.bind).toContain(authorMemberRole);
+  });
+
   test('guards card cascades', () => {
     expect(rules.cards.allow.update).toContain('onlyModifiesCardOrder');
     expect(rules.cards.allow.delete).toBe('canManage');

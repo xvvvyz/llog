@@ -3,6 +3,50 @@ import { Role } from '@/domain/teams/role';
 import { describe, expect, test } from 'bun:test';
 
 describe('record permissions', () => {
+  test('allows managed edits', () => {
+    expect(
+      recordPermissions.canEditEntry({
+        actorRole: Role.Admin,
+        isAuthor: false,
+        targetRole: Role.Member,
+      })
+    ).toBe(true);
+
+    expect(
+      recordPermissions.canEditEntry({
+        actorRole: Role.Owner,
+        isAuthor: false,
+        targetRole: Role.Admin,
+      })
+    ).toBe(true);
+  });
+
+  test('denies unowned edits', () => {
+    expect(
+      recordPermissions.canEditEntry({
+        actorRole: Role.Member,
+        isAuthor: false,
+        targetRole: Role.Member,
+      })
+    ).toBe(false);
+
+    expect(
+      recordPermissions.canEditEntry({
+        actorRole: Role.Admin,
+        isAuthor: false,
+        targetRole: Role.Admin,
+      })
+    ).toBe(false);
+
+    expect(
+      recordPermissions.canEditEntry({
+        actorRole: Role.Admin,
+        isAuthor: false,
+        targetRole: Role.Owner,
+      })
+    ).toBe(false);
+  });
+
   test('allows scoped authors', () => {
     expect(
       recordPermissions.canDeleteRecord({

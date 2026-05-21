@@ -19,6 +19,22 @@ const recordIsTeamMemberByTeamId =
   "data.teamId in auth.ref('$user.roles.team.id')";
 
 const recordCanManageByTeamId = ruleStrings.canManageAuthTeam('data.teamId');
+const contentIsOwnerByTeamId = ruleStrings.authIsOwnerForTeam('data.teamId');
+const contentIsAdminByTeamId = ruleStrings.authIsAdminForTeam('data.teamId');
+
+const contentAuthorIsMemberByTeamId = `data.ref('author.user.id').exists(userId, ${ruleStrings.userRoleIn(
+  Role.Member,
+  'userId',
+  'data.teamId',
+  "data.ref('author.user.roles.key')"
+)})`;
+
+const contentCanEditManagedText = ruleStrings.or(
+  'isOwnerByTeamId',
+  ruleStrings.group(
+    ruleStrings.and('isAdminByTeamId', 'authorIsMemberByTeamId')
+  )
+);
 
 const recordIsAuthorOwnedLoglessDraft = ruleStrings.and(
   recordIsAuthor,
@@ -268,6 +284,14 @@ const rules = {
       "auth.id in data.ref('record.log.profiles.user.id')",
       'canManage',
       ruleStrings.canManageFor('record.log.team.id'),
+      'isOwnerByTeamId',
+      contentIsOwnerByTeamId,
+      'isAdminByTeamId',
+      contentIsAdminByTeamId,
+      'authorIsMemberByTeamId',
+      contentAuthorIsMemberByTeamId,
+      'canEditManagedText',
+      contentCanEditManagedText,
       'canDeleteOwn',
       'isAuthor && isTeamMember',
       'canDeleteFromOwnRecord',
@@ -282,6 +306,14 @@ const rules = {
           ruleStrings.and(
             'isAuthor',
             'isTeamMember',
+            'onlyModifiesText',
+            'isValidNewText'
+          )
+        ),
+        ruleStrings.group(
+          ruleStrings.and(
+            'canEditManagedText',
+            '!isDraft',
             'onlyModifiesText',
             'isValidNewText'
           )
@@ -853,6 +885,14 @@ const rules = {
       recordIsLogMember,
       'canManage',
       recordCanManage,
+      'isOwnerByTeamId',
+      contentIsOwnerByTeamId,
+      'isAdminByTeamId',
+      contentIsAdminByTeamId,
+      'authorIsMemberByTeamId',
+      contentAuthorIsMemberByTeamId,
+      'canEditManagedText',
+      contentCanEditManagedText,
       'canDeleteOwn',
       ruleStrings.and(recordIsAuthor, recordIsTeamMember),
       'isTeamMemberByTeamId',
@@ -897,6 +937,14 @@ const rules = {
           ruleStrings.and(
             'isAuthor',
             'isTeamMember',
+            'onlyModifiesText',
+            'isValidNewText'
+          )
+        ),
+        ruleStrings.group(
+          ruleStrings.and(
+            'canEditManagedText',
+            '!isDraft',
             'onlyModifiesText',
             'isValidNewText'
           )
