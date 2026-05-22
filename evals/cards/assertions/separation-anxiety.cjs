@@ -300,18 +300,9 @@ exports.triggerTweak = (output, context) => {
     );
   });
 
-  const updatedPrompt = normalizeLabel(payload.updatedPrompt);
-
   return gradingResult({
     checks: [
       { name: 'runs tweak mode', pass: payload.mode === 'tweak' },
-      {
-        name: 'updates trigger prompt',
-        pass:
-          updatedPrompt.includes('trigger') ||
-          updatedPrompt.includes('noise') ||
-          updatedPrompt.includes('resilience'),
-      },
       {
         name: 'returns trigger bars',
         pass:

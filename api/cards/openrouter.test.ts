@@ -111,12 +111,11 @@ describe('card openrouter', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
-  test('returns tweak prompt', async () => {
+  test('returns tweak output', async () => {
     globalThis.fetch = mock(async () =>
       jsonResponse({
         output: { summary: 'Weekly trend is steady.' },
         title: 'Weekly sleep',
-        updatedPrompt: 'Track weekly sleep progress.',
       })
     ) as never;
 
@@ -149,7 +148,6 @@ describe('card openrouter', () => {
       },
       success: true,
       title: 'Weekly sleep',
-      updatedPrompt: 'Track weekly sleep progress.',
     });
   });
 
@@ -162,7 +160,6 @@ describe('card openrouter', () => {
       return jsonResponse({
         output: { summary: 'Weekly trend includes naps.' },
         title: null,
-        updatedPrompt: 'Track weekly sleep progress, including naps.',
       });
     }) as never;
 
@@ -192,7 +189,7 @@ describe('card openrouter', () => {
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
-      outputSchema?: { updatedPrompt?: string };
+      outputSchema?: Record<string, unknown>;
     };
 
     expect(requestBody?.response_format?.type).toBe('json_schema');
@@ -204,14 +201,12 @@ describe('card openrouter', () => {
 
     expect(systemMessage?.content).toContain('Apply only the requested tweak');
     expect(userPayload.outputRules).toContain('tweakPrompt wins');
+    expect(userPayload.outputRules).toContain('this output');
 
-    expect(userPayload.outputRules).toContain(
-      'conflicting original instruction removed'
-    );
-
-    expect(userPayload.outputSchema?.updatedPrompt).toContain(
-      'future refreshes'
-    );
+    expect(Object.keys(userPayload.outputSchema ?? {}).sort()).toEqual([
+      'output',
+      'title',
+    ]);
   });
 
   test('compacts record context', async () => {

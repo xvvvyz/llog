@@ -789,7 +789,6 @@ export const tweakCard = async ({
         isGenerating: false,
         lastGeneratedAt: new Date().toISOString(),
         output: result.output,
-        prompt: result.updatedPrompt,
         title: result.title,
       },
       requestedAt,
@@ -797,7 +796,7 @@ export const tweakCard = async ({
 
     return {
       output: result.output,
-      prompt: result.updatedPrompt,
+      prompt: card.prompt,
       stale: !didWrite,
       success: didWrite,
       title: result.title,

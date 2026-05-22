@@ -1,4 +1,3 @@
-import { CARD_PROMPT_MAX_LENGTH } from '@/domain/cards/constants';
 import type { CardBlueprint } from '@/domain/cards/blueprint';
 import * as cardOutput from '@/domain/cards/output';
 import * as cardSourceSelection from '@/domain/cards/source-selection';
@@ -48,12 +47,6 @@ const defaultTitleFromPrompt = (prompt: string) => {
     .find(Boolean);
 
   return cleanTitle(firstLine ?? prompt, 'Progress card');
-};
-
-const cleanPrompt = (value: unknown) => {
-  const prompt = getString(value)?.replace(/\s+/g, ' ').trim();
-  if (!prompt) return undefined;
-  return prompt.slice(0, CARD_PROMPT_MAX_LENGTH);
 };
 
 const compactText = (value?: string | null, maxLength = Infinity) => {
@@ -154,7 +147,7 @@ const buildOutputRules = (options: OutputRulesOptions) => {
         : `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`
       : options.mode === 'refresh'
         ? `Preserve previousOutput shape: metrics, chart config, sections, and existing milestones. Add only genuinely new milestones when useful and there is room. Do not add absent sections. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules}`
-        : `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules} Set updatedPrompt to the complete future prompt, with any conflicting original instruction removed.`;
+        : `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins for this output. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules}`;
 
   return `${rules} ${dateOutputRules}`;
 };
@@ -315,11 +308,7 @@ const refreshedCardResponseSchema = jsonResponseSchema({
 const tweakedCardResponseSchema = jsonResponseSchema({
   description: 'Tweaked llog progress card output.',
   name: 'llog_card_tweak',
-  properties: {
-    title: nullableStringSchema,
-    updatedPrompt: { type: 'string' },
-    output: cardOutputSchema,
-  },
+  properties: { title: nullableStringSchema, output: cardOutputSchema },
 });
 
 const promptSuggestionResponseSchema = jsonResponseSchema({
@@ -434,10 +423,9 @@ const buildTweakMessages = ({
         output: outputSchemaDescription,
         title:
           'short generated card title, at most 36 characters, or null to keep the current title',
-        updatedPrompt: `required standalone editable card prompt, at most ${CARD_PROMPT_MAX_LENGTH} characters, for future refreshes`,
       },
       requiredJsonShape:
-        'Return { "title": string | null, "updatedPrompt": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
+        'Return { "title": string | null, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
       outputRules: buildOutputRules({ mode: 'tweak' }),
       sourceRules,
       ...(repairMessage && { repairMessage }),
@@ -511,21 +499,11 @@ const parseTweakedCardResult = ({
 }) => {
   const parsedOutput = parseCardOutputResult({ parsedJson, records });
   if (!parsedOutput.success) return parsedOutput;
-  const updatedPrompt = cleanPrompt(parsedOutput.root.updatedPrompt);
-
-  if (!updatedPrompt) {
-    return {
-      errorMessage:
-        'OpenRouter card tweak returned no updatedPrompt for future refreshes',
-      success: false as const,
-    };
-  }
 
   return {
     output: parsedOutput.output,
     success: true as const,
     title: cleanTitle(parsedOutput.root.title, defaultTitle),
-    updatedPrompt,
   };
 };
 
@@ -753,7 +731,7 @@ export const tweakCardResult = async ({
       previousTitle,
       prompt,
       records,
-      repairMessage: `${parsedResult.errorMessage}. Return { "title": string | null, "updatedPrompt": string, "output": object } again. Apply only the requested tweak, include a standalone updatedPrompt for future refreshes, and keep the result grounded in the provided records.`,
+      repairMessage: `${parsedResult.errorMessage}. Return { "title": string | null, "output": object } again. Apply only the requested tweak and keep the result grounded in the provided records.`,
       totalRecordCount,
       tweakPrompt,
     }),

@@ -289,11 +289,6 @@ const main = async () => {
 
   const validation = cardOutput.validateCardOutput(result.output);
 
-  const updatedPrompt =
-    'updatedPrompt' in result && typeof result.updatedPrompt === 'string'
-      ? result.updatedPrompt
-      : undefined;
-
   const generatedTitle =
     'title' in result && typeof result.title === 'string'
       ? result.title
@@ -302,7 +297,7 @@ const main = async () => {
   const title =
     mode === 'refresh'
       ? (scenario?.previousTitle ?? titleFromPrompt(prompt))
-      : (generatedTitle ?? titleFromPrompt(updatedPrompt ?? prompt));
+      : (generatedTitle ?? titleFromPrompt(prompt));
 
   console.log(
     JSON.stringify({
@@ -322,7 +317,6 @@ const main = async () => {
             success: false,
           },
       title,
-      ...(updatedPrompt && { updatedPrompt }),
     })
   );
 };

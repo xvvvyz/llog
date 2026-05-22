@@ -279,7 +279,6 @@ describe('card tweak', () => {
       jsonResponse({
         output: { summary: 'Weekly sleep improved.' },
         title: 'Weekly sleep',
-        updatedPrompt: 'Track weekly sleep progress.',
       })
     ) as never;
 
@@ -336,7 +335,7 @@ describe('card tweak', () => {
         tweakPrompt: 'Make it weekly',
       })
     ).resolves.toMatchObject({
-      prompt: 'Track weekly sleep progress.',
+      prompt: 'Track sleep',
       success: true,
       title: 'Weekly sleep',
     });
@@ -350,9 +349,10 @@ describe('card tweak', () => {
         sourceRecordIds: [],
         summary: 'Weekly sleep improved.',
       },
-      prompt: 'Track weekly sleep progress.',
       title: 'Weekly sleep',
     });
+
+    expect(updates.at(-1)).not.toHaveProperty('prompt');
   });
 });
 
