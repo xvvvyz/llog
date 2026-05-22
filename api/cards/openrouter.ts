@@ -118,15 +118,18 @@ const buildRecordContext = ({
 };
 
 const metricTrendRules =
-  'Set trend to "up", "down", or "flat" only when that exact metric compares a current value against earlier records or an explicit historical baseline. Set trend to null for totals, counts, latest values, one-off facts, or any metric without ordered historical evidence.';
+  'Set trend only for numeric point-in-time metrics compared with earlier records or a baseline. Leave trend null for cumulative/extreme/count/date/string metrics like longest, best, first, total, sessions, or ratios.';
+
+const dateOutputRules =
+  'For exact dates/times, use full source record.date ISO timestamps with timezone. Never use date-only YYYY-MM-DD or invented midnight values because timezone conversion can change the local date. Do not write human-formatted calendar dates/times like "May 20" in summary; if summary needs an exact date/time, include the full ISO timestamp token and the UI will format it.';
 
 const outputSchemaDescription = {
   chart: `optional { type: "bar" | "line", title?: string, unit?: string, xAxis?: { labelMode?: "auto" | "all" | "sparse" }, yAxis?: { decimals?: 0 | 1 | 2, tickCount?: 3 | 4 | 5 | 6 }, data?: [{ label: string, value: number }], series?: [{ label: string, unit?: string, data: [{ label: string, value: number }] }] }. Limits: ${cardOutput.MAX_CARD_CHART_POINTS} points per series, ${cardOutput.MAX_CARD_CHART_SERIES} series. Bar charts use data. Use series only for multi-measure line charts; when using series, leave data empty. Keep natural record-level points needed by the prompt. Use concise labels and units. Date labels must be the source record.date full ISO timestamp, not YYYY-MM-DD; the UI formats them. Set xAxis/yAxis options only as needed for readability.`,
-  metrics: `optional array of at most 6 { label, value, unit?, trend: "up" | "down" | "flat" | null }. Order metrics by importance; the first metrics appear on the preview card. Prefer the highest-signal stats. ${metricTrendRules}`,
-  milestones:
-    'optional array of at most 8 { title, date?, detail?, recordIds? }. Dates must be source record.date full ISO timestamps, not YYYY-MM-DD or invented midnight values. Order newest-first.',
+  metrics: `optional array of at most 6 { label, value, unit?, trend: "up" | "down" | "flat" | null, valueFormat?: "date" | "datetime" | null }. Date metric values must put the full source record.date ISO timestamp in value and set valueFormat to "date" when only the local calendar date should show, or "datetime" when the time matters. Order metrics by importance; the first metrics appear on the preview card. Prefer the highest-signal stats. ${metricTrendRules}`,
+  milestones: `optional array of at most 8 { title, date?, detail?, recordIds? }. Dates must be source record.date full ISO timestamps, not YYYY-MM-DD or invented midnight values. Order newest-first.`,
   sourceRecordIds: `optional evidence record ids, at most ${cardOutput.MAX_CARD_SOURCE_RECORD_IDS}. Include ids supporting chart points, metrics, milestones, or summary when practical.`,
-  summary: 'optional plain text summary, at most 1200 characters',
+  summary:
+    'optional plain text summary, at most 1200 characters. Do not write human-formatted dates; use full ISO timestamp tokens when an exact date/time is needed.',
 };
 
 const labelStyle =
@@ -137,6 +140,24 @@ const llogContext =
 
 const sourceRules =
   'Use timelineChunks for whole-history evidence: long-range stats, baselines, older milestones, firsts, and changes. Use fullTextRecords for recent detail. Do not base stats or milestones only on recent fullTextRecords when older timeline evidence matters. Use numeric values only when records provide explicit numbers, dates, or countable events. totalMatchingRecordCount is exact. If selectedRecordCount is lower, selected records are a sample plus recent records: do not treat omitted records as inspected, and avoid exact aggregates or best/worst-ever claims that need omitted text.';
+
+type OutputRulesOptions =
+  | { blueprint?: boolean; mode: 'generate' }
+  | { mode: 'refresh' }
+  | { mode: 'tweak' };
+
+const buildOutputRules = (options: OutputRulesOptions) => {
+  const rules =
+    options.mode === 'generate'
+      ? options.blueprint
+        ? `Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true. Do not add sections absent from blueprint. ${metricTrendRules} Put milestones newest-first.`
+        : `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`
+      : options.mode === 'refresh'
+        ? `Preserve previousOutput shape: metrics, chart config, sections, and existing milestones. Add only genuinely new milestones when useful and there is room. Do not add absent sections. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules}`
+        : `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules} Set updatedPrompt to the complete future prompt, with any conflicting original instruction removed.`;
+
+  return `${rules} ${dateOutputRules}`;
+};
 
 type JsonSchema = Record<string, unknown>;
 type CardChatMessage = Extract<ChatMessages, { role: 'system' | 'user' }>;
@@ -216,8 +237,9 @@ const metricSchema = {
     trend: { enum: ['up', 'down', 'flat', null], type: ['string', 'null'] },
     unit: nullableStringSchema,
     value: { anyOf: [{ type: 'number' }, { type: 'string' }] },
+    valueFormat: { enum: ['date', 'datetime', null], type: ['string', 'null'] },
   },
-  required: ['label', 'value', 'unit', 'trend'],
+  required: ['label', 'value', 'unit', 'trend', 'valueFormat'],
   type: 'object',
 } satisfies JsonSchema;
 
@@ -333,9 +355,10 @@ const buildMessages = ({
       },
       requiredJsonShape:
         'Return { "title": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
-      outputRules: blueprint
-        ? `Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true. Do not add sections absent from blueprint. ${metricTrendRules} Put milestones newest-first.`
-        : `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`,
+      outputRules: buildOutputRules({
+        mode: 'generate',
+        ...(blueprint && { blueprint: true }),
+      }),
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),
@@ -369,7 +392,7 @@ const buildRefreshMessages = ({
       outputSchema: { output: outputSchemaDescription },
       requiredJsonShape:
         'Return { "output": object }. output must contain the same visible sections as previousOutput.',
-      outputRules: `Preserve previousOutput shape: metrics, chart config, sections, and existing milestones. Add only genuinely new milestones when useful and there is room. Do not add absent sections. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules}`,
+      outputRules: buildOutputRules({ mode: 'refresh' }),
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),
@@ -415,7 +438,7 @@ const buildTweakMessages = ({
       },
       requiredJsonShape:
         'Return { "title": string | null, "updatedPrompt": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
-      outputRules: `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules} Set updatedPrompt to the complete future prompt, with any conflicting original instruction removed.`,
+      outputRules: buildOutputRules({ mode: 'tweak' }),
       sourceRules,
       ...(repairMessage && { repairMessage }),
       records: buildRecordContext({ records, totalRecordCount }),

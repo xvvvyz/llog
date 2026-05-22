@@ -17,7 +17,11 @@ describe('card blueprint', () => {
         },
         metrics: [
           { label: 'Average sleep', trend: 'up', unit: 'hrs', value: 7.5 },
-          { label: 'Status', value: 'Improving' },
+          {
+            label: 'First entry',
+            value: '2026-05-20T03:00:00.000Z',
+            valueFormat: 'date',
+          },
         ],
         milestones: [
           {
@@ -40,7 +44,11 @@ describe('card blueprint', () => {
       },
       metrics: [
         { label: 'Average sleep', trend: true, unit: 'hrs', value: 7.5 },
-        { label: 'Status', value: 'Improving' },
+        {
+          label: 'First entry',
+          value: '2026-05-20T03:00:00.000Z',
+          valueFormat: 'date',
+        },
       ],
       milestones: true,
       summary: true,

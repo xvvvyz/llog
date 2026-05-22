@@ -128,7 +128,7 @@ describe('card output', () => {
         xAxis: { labelMode: 'all' },
         yAxis: { decimals: 0, tickCount: 6 },
       },
-      metrics: [{ label: 'Longest duration', trend: 'up', unit: 'min' }],
+      metrics: [{ label: 'Longest duration', unit: 'min' }],
       milestones: [{ title: 'Door calm' }],
       sourceRecordIds: ['record-1'],
     });
@@ -141,6 +141,62 @@ describe('card output', () => {
 
     expect(normalized).toMatchObject({
       metrics: [{ label: 'Next milestone 60/90/120 min' }],
+    });
+  });
+
+  test('normalizes metric date formats', () => {
+    const normalized = cardOutput.normalizeRawCardOutput({
+      metrics: [
+        {
+          label: 'First calm entry',
+          value: '2026-05-20T03:00:00.000Z',
+          valueFormat: 'date',
+        },
+        {
+          label: 'Last check-in',
+          value: '2026-05-21T17:30:00.000Z',
+          valueFormat: 'date_time',
+        },
+      ],
+    });
+
+    expect(cardOutput.validateCardOutput(normalized).success).toBe(true);
+
+    expect(normalized).toMatchObject({
+      metrics: [{ valueFormat: 'date' }, { valueFormat: 'datetime' }],
+    });
+  });
+
+  test('strips noisy metric trends', () => {
+    const normalized = cardOutput.normalizeRawCardOutput({
+      metrics: [
+        { label: 'Latest duration', trend: 'up', unit: 'min', value: 85 },
+        { label: 'Latest minutes', trend: 'up', unit: 'min', value: 85 },
+        { label: 'Longest <=2', trend: 'up', unit: 'min', value: 85 },
+        { label: 'Safe increases', trend: 'up', value: 12 },
+        { label: 'Under threshold', trend: 'up', value: '38/47' },
+        {
+          label: 'First check-in',
+          trend: 'up',
+          value: '2026-05-20T03:00:00.000Z',
+          valueFormat: 'date',
+        },
+      ],
+    });
+
+    expect(normalized).toMatchObject({
+      metrics: [
+        { label: 'Latest duration', trend: 'up', unit: 'min', value: 85 },
+        { label: 'Latest minutes', trend: 'up', unit: 'min', value: 85 },
+        { label: 'Longest <=2', unit: 'min', value: 85 },
+        { label: 'Safe increases', value: 12 },
+        { label: 'Under threshold', value: '38/47' },
+        {
+          label: 'First check-in',
+          value: '2026-05-20T03:00:00.000Z',
+          valueFormat: 'date',
+        },
+      ],
     });
   });
 
@@ -284,7 +340,9 @@ describe('card output', () => {
           type: 'line',
           yAxis: { decimals: 0 },
         },
-        metrics: [{ label: 'Best duration', unit: 'min', value: 5 }],
+        metrics: [
+          { label: 'Best duration', trend: 'up', unit: 'min', value: 5 },
+        ],
         milestones: [{ date: '2026-05-01', title: 'Started baseline' }],
         sourceRecordIds: ['record-1'],
         summary: 'Original summary.',
@@ -307,7 +365,7 @@ describe('card output', () => {
         type: 'line',
         yAxis: { decimals: 0 },
       },
-      metrics: [{ label: 'Best duration', trend: 'up', unit: 'min', value: 8 }],
+      metrics: [{ label: 'Best duration', unit: 'min', value: 8 }],
       milestones: [{ title: 'Started baseline' }, { title: 'New best' }],
       sourceRecordIds: ['record-2', 'record-1'],
       summary: 'Updated summary.',

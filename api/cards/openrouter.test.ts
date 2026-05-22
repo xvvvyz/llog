@@ -247,7 +247,11 @@ describe('card openrouter', () => {
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
       outputSchema?: {
-        output?: { metrics?: string; sourceRecordIds?: string };
+        output?: {
+          metrics?: string;
+          sourceRecordIds?: string;
+          summary?: string;
+        };
         title?: string;
       };
       records?: {
@@ -264,6 +268,11 @@ describe('card openrouter', () => {
       | undefined;
 
     const outputProperties = properties?.output?.properties;
+
+    const metricSchema = outputProperties?.metrics as
+      | { items?: { properties?: Record<string, unknown>; required?: unknown } }
+      | undefined;
+
     expect(requestBody?.model).toBe('openai/gpt-5.5');
     expect(requestBody?.response_format?.type).toBe('json_schema');
 
@@ -293,9 +302,33 @@ describe('card openrouter', () => {
       'at most 80'
     );
 
-    expect(userPayload.outputSchema?.output?.metrics).toContain('Set trend to');
+    expect(userPayload.outputSchema?.output?.metrics).toContain(
+      'Set trend only'
+    );
+
+    expect(userPayload.outputSchema?.output?.metrics).toContain(
+      'cumulative/extreme/count'
+    );
+
+    expect(userPayload.outputSchema?.output?.metrics).toContain('valueFormat');
+
+    expect(userPayload.outputSchema?.output?.metrics).toContain(
+      'full source record.date ISO'
+    );
+
+    expect(userPayload.outputSchema?.output?.summary).toContain(
+      'Do not write human-formatted dates'
+    );
+
     expect(userPayload.outputSchema?.title).toContain('short generated');
-    expect(userPayload.outputRules).toContain('ordered historical evidence');
+    expect(userPayload.outputRules).toContain('numeric point-in-time metrics');
+    expect(userPayload.outputRules).toContain('Never use date-only');
+
+    expect(metricSchema?.items?.properties).toMatchObject({
+      valueFormat: { enum: ['date', 'datetime', null] },
+    });
+
+    expect(metricSchema?.items?.required).toContain('valueFormat');
 
     expect(userPayload.sourceRules).toContain(
       'do not treat omitted records as inspected'

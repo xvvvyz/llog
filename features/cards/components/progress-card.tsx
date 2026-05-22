@@ -10,6 +10,7 @@ import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
+import * as cardDisplay from '@/features/cards/lib/card-display';
 
 import {
   MagnifyingGlass,
@@ -185,9 +186,6 @@ const getChartPalette = ({
 
 type ChartPalette = ReturnType<typeof getChartPalette>;
 type ChartHoverTarget = { index: number; label: string };
-
-const formatMetricValue = (value: string | number, unit?: string) =>
-  typeof value === 'number' ? `${value}${unit ? ` ${unit}` : ''}` : value;
 
 const trendIcons = {
   down: TrendDown,
@@ -640,6 +638,8 @@ const ChartLegend = ({
           unit: item.unit ?? chart.unit,
         });
 
+        const formattedLabel = cardDisplay.formatCardText(label);
+
         return (
           <View
             key={`${label}-${index}`}
@@ -656,7 +656,7 @@ const ChartLegend = ({
                 compact ? 'text-[11px]' : 'text-xs'
               )}
             >
-              {label}
+              {formattedLabel}
             </Text>
           </View>
         );
@@ -1535,14 +1535,11 @@ const MilestoneTimelineItem = ({
             className="font-medium text-sm web:text-balance"
             numberOfLines={2}
           >
-            {milestone.title}
+            {cardDisplay.formatCardText(milestone.title)}
           </Text>
           {!compact && !!milestone.detail && (
-            <Text
-              className="text-muted-foreground text-sm web:text-balance"
-              numberOfLines={3}
-            >
-              {milestone.detail}
+            <Text className="text-muted-foreground text-sm web:text-balance">
+              {cardDisplay.formatCardText(milestone.detail)}
             </Text>
           )}
         </View>
@@ -1624,11 +1621,11 @@ export const ProgressCard = ({
             }
           >
             <Text className="text-muted-foreground text-xs" numberOfLines={1}>
-              {metric.label}
+              {cardDisplay.formatCardText(metric.label)}
             </Text>
             <View className="flex-row min-w-0 gap-2 items-center">
               <Text className="font-semibold text-sm shrink" numberOfLines={1}>
-                {formatMetricValue(metric.value, metric.unit)}
+                {cardDisplay.formatMetricValue(metric)}
               </Text>
               {!!metric.trend && (
                 <Icon
@@ -1691,9 +1688,10 @@ export const ProgressCard = ({
 
   const renderSummary = ({ lines }: { lines?: number } = {}) => {
     if (!summary) return null;
+    const formattedSummary = cardDisplay.formatCardText(summary);
 
     if (isEmptyOutput) {
-      return <CardStatusPill icon={MagnifyingGlass} label={summary} />;
+      return <CardStatusPill icon={MagnifyingGlass} label={formattedSummary} />;
     }
 
     return (
@@ -1704,7 +1702,7 @@ export const ProgressCard = ({
           isSummary && 'text-sm'
         )}
       >
-        {summary}
+        {formattedSummary}
       </Text>
     );
   };
@@ -1761,7 +1759,7 @@ export const ProgressCard = ({
               isSummary ? 'text-base' : 'text-lg leading-tight'
             )}
           >
-            {card.title}
+            {card.title ? cardDisplay.formatCardText(card.title) : card.title}
           </Text>
         </View>
         {actionMenu ? (

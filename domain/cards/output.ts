@@ -16,6 +16,7 @@ export const cardMetricSchema = z
     trend: z.enum(['down', 'flat', 'up']).optional(),
     unit: z.string().max(16).optional(),
     value: z.union([z.string().max(40), z.number()]),
+    valueFormat: z.enum(['date', 'datetime']).optional(),
   })
   .strict();
 
@@ -110,6 +111,8 @@ export type CardChart = z.infer<typeof cardChartSchema>;
 export type CardChartDatum = z.infer<typeof cardChartDatumSchema>;
 
 export type CardChartSeries = z.infer<typeof cardChartSeriesSchema>;
+
+type CardMetricTrend = NonNullable<CardOutput['metrics'][number]['trend']>;
 
 export const validateCardOutput = (value: unknown) =>
   cardOutputSchema.safeParse(value);
@@ -247,12 +250,82 @@ const normalizeToken = (value: unknown) =>
         .replace(/[\s-]+/g, '_')
     : '';
 
-const readTrend = (value: unknown) => {
+const readTrend = (value: unknown): CardMetricTrend | undefined => {
   const trend = normalizeToken(value);
 
   return trend === 'down' || trend === 'flat' || trend === 'up'
     ? trend
     : undefined;
+};
+
+const NON_TRENDABLE_METRIC_LABEL_PATTERNS = [
+  'best',
+  'count',
+  'earliest',
+  'first',
+  'longest',
+  'max',
+  'maximum',
+  'min',
+  'minimum',
+  'record',
+  'regressions',
+  'safe_increases',
+  'sessions',
+  'streak',
+  'total',
+  'under_threshold',
+] as const;
+
+const labelHasTokenPattern = (label: string, pattern: string) => {
+  const labelTokens = normalizeToken(label).split('_').filter(Boolean);
+  const patternTokens = pattern.split('_').filter(Boolean);
+  if (!labelTokens.length || !patternTokens.length) return false;
+
+  return labelTokens.some((_, index) =>
+    patternTokens.every(
+      (token, offset) => labelTokens[index + offset] === token
+    )
+  );
+};
+
+const readMetricTrend = ({
+  label,
+  trend,
+  value,
+  valueFormat,
+}: {
+  label: string;
+  trend: unknown;
+  value: string | number;
+  valueFormat?: 'date' | 'datetime';
+}): CardMetricTrend | undefined => {
+  const parsedTrend = readTrend(trend);
+
+  if (!parsedTrend || valueFormat || typeof value !== 'number') {
+    return undefined;
+  }
+
+  return NON_TRENDABLE_METRIC_LABEL_PATTERNS.some((pattern) =>
+    labelHasTokenPattern(label, pattern)
+  )
+    ? undefined
+    : parsedTrend;
+};
+
+const readMetricValueFormat = (value: unknown) => {
+  const valueFormat = normalizeToken(value);
+  if (valueFormat === 'date') return 'date';
+
+  if (
+    valueFormat === 'datetime' ||
+    valueFormat === 'date_time' ||
+    valueFormat === 'date_and_time'
+  ) {
+    return 'datetime';
+  }
+
+  return undefined;
 };
 
 const readXAxisLabelMode = (value: unknown) => {
@@ -291,14 +364,22 @@ const normalizeMetric = (value: unknown) => {
     readNumber(metric.value) ?? readString(metric.value, 40) ?? undefined;
 
   if (!label || metricValue == null) return undefined;
-  const trend = readTrend(metric.trend);
   const unit = readUnit(metric.unit);
+  const valueFormat = readMetricValueFormat(metric.valueFormat);
+
+  const trend = readMetricTrend({
+    label,
+    trend: metric.trend,
+    value: metricValue,
+    valueFormat,
+  });
 
   return {
     label,
     ...(trend && { trend }),
     ...(unit && { unit }),
     value: metricValue,
+    ...(valueFormat && { valueFormat }),
   };
 };
 
@@ -498,11 +579,28 @@ export const normalizeCardOutputMilestoneDates = (
 const mergeCardMetricRefresh = (
   previous: CardOutput['metrics'][number],
   next?: CardOutput['metrics'][number]
-) => ({
-  ...previous,
-  ...(next?.trend && { trend: next.trend }),
-  value: next?.value ?? previous.value,
-});
+) => {
+  const value = next?.value ?? previous.value;
+  const valueFormat = next?.valueFormat ?? previous.valueFormat;
+
+  const trend = readMetricTrend({
+    label: previous.label,
+    trend: next?.trend ?? previous.trend,
+    value,
+    valueFormat,
+  });
+
+  const base = { ...previous };
+  delete base.trend;
+  delete base.valueFormat;
+
+  return {
+    ...base,
+    ...(trend && { trend }),
+    value,
+    ...(valueFormat && { valueFormat }),
+  };
+};
 
 const mergeCardChartRefresh = (
   previous: CardChart,

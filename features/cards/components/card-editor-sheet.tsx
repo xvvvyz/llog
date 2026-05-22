@@ -286,7 +286,7 @@ export const LogCardEditorSheet = () => {
           </View>
           <View className="flex-row mx-8 gap-4 md:mx-8">
             <Button
-              disabled={isSubmitting || isSuggestingPrompt}
+              disabled={isSubmitting}
               onPress={close}
               size="sm"
               variant="secondary"

@@ -7,6 +7,7 @@ const metricBlueprintSchema = z
     trend: z.boolean().optional(),
     unit: z.string().max(16).optional(),
     value: z.union([z.string().max(40), z.number()]),
+    valueFormat: z.enum(['date', 'datetime']).optional(),
   })
   .strict();
 
@@ -90,6 +91,7 @@ export const createCardBlueprint = (
       ...(metric.trend && { trend: true }),
       ...(metric.unit && { unit: metric.unit }),
       value: metric.value,
+      ...(metric.valueFormat && { valueFormat: metric.valueFormat }),
     }));
   }
 

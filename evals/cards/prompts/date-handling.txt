@@ -1,0 +1,7 @@
+Create a progress card for check-ins that tests date handling.
+
+Return exactly two metrics: First check-in date and Latest check-in time. First check-in date must use the first source record.date as the metric value and set valueFormat to date. Latest check-in time must use the latest source record.date as the metric value and set valueFormat to datetime.
+
+Return a summary sentence that mentions the latest check-in exact date/time by including the full source record.date ISO timestamp token. Do not write a human-formatted date such as May 21, and do not use YYYY-MM-DD date-only text.
+
+Return sourceRecordIds for both check-in records.

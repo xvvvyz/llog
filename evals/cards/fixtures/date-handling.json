@@ -1,0 +1,24 @@
+{
+  "name": "date handling",
+  "records": [
+    {
+      "id": "checkin-a",
+      "date": "2026-05-20T02:30:00.000Z",
+      "tags": [{ "name": "check-in" }],
+      "text": "Check-in status: started tracking hydration and sleep."
+    },
+    {
+      "id": "checkin-b",
+      "date": "2026-05-21T23:45:00.000Z",
+      "tags": [{ "name": "check-in" }],
+      "text": "Check-in status: latest update after evening routine."
+    }
+  ],
+  "expected": {
+    "dateHandling": {
+      "firstDate": "2026-05-20T02:30:00.000Z",
+      "latestDateTime": "2026-05-21T23:45:00.000Z",
+      "sourceRecordIds": ["checkin-a", "checkin-b"]
+    }
+  }
+}

@@ -42,6 +42,17 @@ tests:
       - type: javascript
         value: file://assertions/index.cjs:blueprint
 
+  - description: generate date handling card
+    vars:
+      mode: generate
+      fixturePath: evals/cards/fixtures/date-handling.json
+      promptPath: evals/cards/prompts/date-handling.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:dateHandling
+
   - description: tweak trigger resilience
     vars:
       mode: tweak
