@@ -2,7 +2,6 @@ import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
-import * as React from 'react';
 import { View } from 'react-native';
 
 export const DestructiveConfirmSheet = ({

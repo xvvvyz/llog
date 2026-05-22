@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import '@/theme/global.css';
 import { UI } from '@/theme/ui';
 import { SheetBackdrop } from '@/ui/sheet';
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { PortalHost } from '@rn-primitives/portal';
 import { Slot } from 'expo-router';
 import { setBackgroundColorAsync } from 'expo-system-ui';

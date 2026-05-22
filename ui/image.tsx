@@ -83,7 +83,7 @@ export const Image = ({
         source={source}
         style={
           fill
-            ? [resolvedClassName, StyleSheet.absoluteFillObject, style]
+            ? [resolvedClassName, StyleSheet.absoluteFill, style]
             : [resolvedClassName, { height, width }, style]
         }
       />

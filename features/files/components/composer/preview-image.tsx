@@ -49,7 +49,7 @@ export const PreviewImage = ({
           onLoad={handleRemoteReady}
           source={remoteSource}
           style={{
-            ...StyleSheet.absoluteFillObject,
+            ...StyleSheet.absoluteFill,
             opacity: shouldHoldLocalPreview && !isRemoteReady ? 0 : 1,
           }}
         />

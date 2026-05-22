@@ -1,5 +1,9 @@
 {
-  "compilerOptions": { "paths": { "@/*": ["./*"] }, "strict": true },
+  "compilerOptions": {
+    "paths": { "@/*": ["./*"] },
+    "strict": true,
+    "types": ["bun"]
+  },
   "extends": "expo/tsconfig.base",
   "include": [
     "**/*.ts",
