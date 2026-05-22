@@ -117,31 +117,43 @@ export const registerWebPushServiceWorker = async () => {
   return registrationPromise;
 };
 
-export const getWebPushState = async (): Promise<webPushTypes.WebPushState> => {
-  if (!isSupported()) return { status: 'unsupported' };
-  if (Notification.permission === 'denied') return { status: 'blocked' };
-  const subscription = await getSubscription();
-
-  return subscription && Notification.permission === 'granted'
-    ? { endpoint: subscription.endpoint, status: 'enabled' }
-    : { status: 'disabled' };
+type WebPushSubscriptionSnapshot = {
+  state: webPushTypes.WebPushState;
+  subscription: PushSubscription | null;
 };
+
+const getWebPushSubscriptionSnapshot =
+  async (): Promise<WebPushSubscriptionSnapshot> => {
+    if (!isSupported()) {
+      return { state: { status: 'unsupported' }, subscription: null };
+    }
+
+    const permission = Notification.permission;
+
+    if (permission === 'denied') {
+      return { state: { status: 'blocked' }, subscription: null };
+    }
+
+    const subscription = await getSubscription();
+
+    return {
+      state:
+        subscription && permission === 'granted'
+          ? { endpoint: subscription.endpoint, status: 'enabled' }
+          : { status: 'disabled' },
+      subscription,
+    };
+  };
+
+export const getWebPushState = async (): Promise<webPushTypes.WebPushState> =>
+  (await getWebPushSubscriptionSnapshot()).state;
 
 export const syncWebPushSubscription =
   async (): Promise<webPushTypes.WebPushState> => {
-    if (!isSupported()) return { status: 'unsupported' };
-    if (Notification.permission === 'denied') return { status: 'blocked' };
-    const subscription = await getSubscription();
-
-    if (!subscription || Notification.permission !== 'granted') {
-      return { status: 'disabled' };
-    }
-
-    const freshPermission = await Notification.requestPermission();
-    if (freshPermission === 'denied') return { status: 'blocked' };
-    if (freshPermission !== 'granted') return { status: 'disabled' };
+    const { state, subscription } = await getWebPushSubscriptionSnapshot();
+    if (state.status !== 'enabled' || !subscription) return state;
     await saveSubscription(subscription);
-    return { endpoint: subscription.endpoint, status: 'enabled' };
+    return state;
   };
 
 export const enableWebPush = async () => {
