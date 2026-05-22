@@ -1755,8 +1755,8 @@ export const ProgressCard = ({
           <Text
             numberOfLines={isSummary ? 1 : undefined}
             className={cn(
-              'font-semibold',
-              isSummary ? 'text-base' : 'text-lg leading-tight'
+              'font-semibold leading-tight',
+              isSummary ? 'text-base' : 'text-lg'
             )}
           >
             {card.title ? cardDisplay.formatCardText(card.title) : card.title}

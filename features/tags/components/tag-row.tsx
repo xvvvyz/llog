@@ -3,6 +3,7 @@ import { updateTag } from '@/features/tags/mutations/update-tag';
 import type { Tag } from '@/features/tags/types/tag';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
 import { SPECTRUM, resolveSpectrumColor, type Color } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
@@ -105,7 +106,12 @@ export const TagRow = ({
             </Menu.Content>
           </Menu.Root>
         ) : (
-          <View className="mr-1 h-10 w-8 items-center justify-center">
+          <View
+            className={cn(
+              'mr-1 h-10 w-8 items-center justify-center',
+              !canManageDefinitions && 'ml-1.5'
+            )}
+          >
             <View
               className="size-3 border-border-secondary border-continuous rounded-full border"
               style={{ backgroundColor: accentColor }}
