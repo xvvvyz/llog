@@ -82,6 +82,7 @@ export const LogCardDetailSheet = () => {
               actionMenu={
                 myRole.canManage ? (
                   <cardActionsMenu.CardActionsMenu
+                    containerClassName="-mr-1.5"
                     isGenerating={isGenerating}
                     onDelete={() => setDeletingCardId(card.id)}
                     onRefresh={handleRefresh}

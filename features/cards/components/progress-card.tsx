@@ -1534,7 +1534,7 @@ const MilestoneTimelineItem = ({
             {cardDisplay.formatCardText(milestone.title)}
           </Text>
           {!compact && !!milestone.detail && (
-            <Text className="text-muted-foreground text-sm web:text-balance">
+            <Text className="leading-snug text-muted-foreground text-sm web:text-balance">
               {cardDisplay.formatCardText(milestone.detail)}
             </Text>
           )}
@@ -1694,8 +1694,9 @@ export const ProgressCard = ({
       <Text
         numberOfLines={lines}
         className={cn(
-          'text-muted-foreground web:text-pretty',
-          isSummary && 'text-sm'
+          'web:text-pretty',
+          isSummary && 'text-sm',
+          'leading-snug'
         )}
       >
         {formattedSummary}
@@ -1751,15 +1752,16 @@ export const ProgressCard = ({
           <Text
             numberOfLines={isSummary ? 1 : undefined}
             className={cn(
-              'font-semibold leading-tight',
-              isSummary ? 'text-base' : 'text-lg'
+              'font-semibold',
+              isSummary ? 'text-base' : 'text-lg',
+              'leading-snug'
             )}
           >
             {card.title ? cardDisplay.formatCardText(card.title) : card.title}
           </Text>
         </View>
         {actionMenu ? (
-          <View className={cn(!isSummary && '-mt-1')}>{actionMenu}</View>
+          <View className={cn(!isSummary && '-mt-1.5')}>{actionMenu}</View>
         ) : null}
       </View>
       {isGenerating && !resolvedOutput ? (
@@ -1786,7 +1788,7 @@ export const ProgressCard = ({
             {previewSections.map(renderPreviewSection)}
           </View>
         ) : (
-          <View className="mt-6 w-full gap-8 self-stretch">
+          <View className="mt-8 w-full gap-8 self-stretch">
             {renderMetrics()}
             {hasRenderableChart && resolvedOutput.chart && (
               <View className="w-full gap-2 self-stretch">
