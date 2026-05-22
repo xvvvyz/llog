@@ -134,6 +134,17 @@ describe('card output', () => {
     });
   });
 
+  test('shortens raw summary', () => {
+    const normalized = cardOutput.normalizeRawCardOutput({
+      metrics: [{ label: 'Sessions', value: 2 }],
+      summary: 'x'.repeat(cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH + 20),
+    });
+
+    expect((normalized as CardOutput).summary).toHaveLength(
+      cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH
+    );
+  });
+
   test('preserves label symbols', () => {
     const normalized = cardOutput.normalizeRawCardOutput({
       metrics: [{ label: 'Next milestone 60/90/120 min', value: '90 min' }],
@@ -408,6 +419,24 @@ describe('card output', () => {
         title: 'Baseline began',
       },
     ]);
+  });
+
+  test('drops refreshed summary', () => {
+    const merged = cardOutput.mergeCardOutputRefresh({
+      next: {
+        metrics: [{ label: 'Sessions', value: 3 }],
+        milestones: [],
+        sourceRecordIds: [],
+      },
+      previous: {
+        metrics: [{ label: 'Sessions', value: 2 }],
+        milestones: [],
+        sourceRecordIds: [],
+        summary: 'Sessions increased from 2 to 3.',
+      },
+    });
+
+    expect(merged).not.toHaveProperty('summary');
   });
 
   test('locks refresh sections', () => {

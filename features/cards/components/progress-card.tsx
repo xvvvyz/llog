@@ -228,11 +228,15 @@ const getPreviewSections = (output: CardOutput): PreviewSection[] => {
   const hasChart = cardChart.isRenderableChart(output.chart);
   const hasMetrics = output.metrics.length > 0;
   const hasMilestones = output.milestones.length > 0;
-  const hasSummary = !!output.summary?.trim();
+
+  const structuredSectionCount =
+    Number(hasChart) + Number(hasMetrics) + Number(hasMilestones);
+
+  const hasSummary = !!output.summary?.trim() && structuredSectionCount <= 1;
 
   if (hasChart) {
     const chartRows =
-      hasMetrics || hasSummary || hasMilestones ? 2 : SUMMARY_ROW_COUNT;
+      hasMetrics || hasMilestones || hasSummary ? 2 : SUMMARY_ROW_COUNT;
 
     if (hasMetrics && chartRows < SUMMARY_ROW_COUNT) {
       return addPreviewSpacer([
@@ -266,7 +270,26 @@ const getPreviewSections = (output: CardOutput): PreviewSection[] => {
     return addPreviewSpacer(sections);
   }
 
-  if (hasMetrics && !hasSummary && !hasMilestones) {
+  if (hasMetrics && hasMilestones) {
+    return [
+      { key: 'metrics', limit: SUMMARY_METRIC_LIMIT, rows: 1, type: 'metrics' },
+      { key: 'milestones', limit: 2, rows: 2, type: 'milestones' },
+    ];
+  }
+
+  if (hasMetrics) {
+    if (hasSummary) {
+      return [
+        {
+          key: 'metrics',
+          limit: SUMMARY_METRICS_ONLY_LIMIT,
+          rows: 2,
+          type: 'metrics',
+        },
+        { key: 'summary', lines: 2, rows: 1, type: 'summary' },
+      ];
+    }
+
     return addPreviewSpacer(
       [
         {
@@ -280,7 +303,14 @@ const getPreviewSections = (output: CardOutput): PreviewSection[] => {
     );
   }
 
-  if (hasMilestones && !hasMetrics && !hasSummary) {
+  if (hasMilestones) {
+    if (hasSummary) {
+      return [
+        { key: 'summary', lines: 2, rows: 1, type: 'summary' },
+        { key: 'milestones', limit: 2, rows: 2, type: 'milestones' },
+      ];
+    }
+
     return [
       {
         key: 'milestones',
@@ -291,43 +321,9 @@ const getPreviewSections = (output: CardOutput): PreviewSection[] => {
     ];
   }
 
-  if (hasSummary && !hasMetrics && !hasMilestones) {
+  if (hasSummary) {
     return [
       { key: 'summary', lines: 6, rows: SUMMARY_ROW_COUNT, type: 'summary' },
-    ];
-  }
-
-  if (hasMetrics && hasSummary && hasMilestones) {
-    return [
-      { key: 'metrics', limit: SUMMARY_METRIC_LIMIT, rows: 1, type: 'metrics' },
-      { key: 'summary', lines: 2, rows: 1, type: 'summary' },
-      { key: 'milestones', limit: 1, rows: 1, type: 'milestones' },
-    ];
-  }
-
-  if (hasMetrics && hasSummary) {
-    return [
-      {
-        key: 'metrics',
-        limit: SUMMARY_METRICS_ONLY_LIMIT,
-        rows: 2,
-        type: 'metrics',
-      },
-      { key: 'summary', lines: 2, rows: 1, type: 'summary' },
-    ];
-  }
-
-  if (hasMetrics && hasMilestones) {
-    return [
-      { key: 'metrics', limit: SUMMARY_METRIC_LIMIT, rows: 1, type: 'metrics' },
-      { key: 'milestones', limit: 2, rows: 2, type: 'milestones' },
-    ];
-  }
-
-  if (hasSummary && hasMilestones) {
-    return [
-      { key: 'summary', lines: 2, rows: 1, type: 'summary' },
-      { key: 'milestones', limit: 2, rows: 2, type: 'milestones' },
     ];
   }
 

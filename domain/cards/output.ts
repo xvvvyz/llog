@@ -10,6 +10,8 @@ export const MAX_CARD_MILESTONES = 8;
 
 export const MAX_CARD_SOURCE_RECORD_IDS = 80;
 
+export const MAX_CARD_GENERATED_SUMMARY_LENGTH = 320;
+
 export const cardMetricSchema = z
   .object({
     label: z.string().min(1).max(40),
@@ -498,7 +500,7 @@ const normalizeChart = (value: unknown) => {
 export const normalizeRawCardOutput = (value: unknown): unknown => {
   const output = asRecord(value);
   const chart = normalizeChart(output.chart);
-  const summary = readString(output.summary, 1200);
+  const summary = readString(output.summary, MAX_CARD_GENERATED_SUMMARY_LENGTH);
 
   return {
     ...(chart && { chart }),
@@ -635,20 +637,24 @@ export const mergeCardOutputRefresh = ({
 }: {
   next: CardOutput;
   previous: CardOutput;
-}): CardOutput => ({
-  ...(previous.chart && {
-    chart: mergeCardChartRefresh(previous.chart, next.chart),
-  }),
-  metrics: previous.metrics.map((metric, index) =>
-    mergeCardMetricRefresh(metric, next.metrics[index])
-  ),
-  milestones:
-    previous.milestones.length > 0
-      ? mergeCardMilestonesRefresh(next.milestones)
-      : [],
-  sourceRecordIds: mergeSourceRecordIdsRefresh(
-    previous.sourceRecordIds,
-    next.sourceRecordIds
-  ),
-  ...(previous.summary && { summary: next.summary ?? previous.summary }),
-});
+}): CardOutput => {
+  const summary = previous.summary ? next.summary?.trim() : undefined;
+
+  return {
+    ...(previous.chart && {
+      chart: mergeCardChartRefresh(previous.chart, next.chart),
+    }),
+    metrics: previous.metrics.map((metric, index) =>
+      mergeCardMetricRefresh(metric, next.metrics[index])
+    ),
+    milestones:
+      previous.milestones.length > 0
+        ? mergeCardMilestonesRefresh(next.milestones)
+        : [],
+    sourceRecordIds: mergeSourceRecordIdsRefresh(
+      previous.sourceRecordIds,
+      next.sourceRecordIds
+    ),
+    ...(summary && { summary }),
+  };
+};

@@ -121,8 +121,7 @@ const outputSchemaDescription = {
   metrics: `optional array of at most 6 { label, value, unit?, trend: "up" | "down" | "flat" | null, valueFormat?: "date" | "datetime" | null }. Date metric values must put the full source record.date ISO timestamp in value and set valueFormat to "date" when only the local calendar date should show, or "datetime" when the time matters. Order metrics by importance; the first metrics appear on the preview card. Prefer the highest-signal stats. ${metricTrendRules}`,
   milestones: `optional array of at most 8 { title, date?, detail?, recordIds? }. Dates must be source record.date full ISO timestamps, not YYYY-MM-DD or invented midnight values. Order newest-first.`,
   sourceRecordIds: `optional evidence record ids, at most ${cardOutput.MAX_CARD_SOURCE_RECORD_IDS}. Include ids supporting chart points, metrics, milestones, or summary when practical.`,
-  summary:
-    'optional plain text summary, at most 1200 characters. Do not write human-formatted dates; use full ISO timestamp tokens when an exact date/time is needed.',
+  summary: `optional short summary, at most ${cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH} characters. Use only when it adds context not clear from chart, metrics, or milestones; otherwise return null. Do not write human-formatted dates; use full ISO timestamp tokens when an exact date/time is needed.`,
 };
 
 const labelStyle =
@@ -143,10 +142,10 @@ const buildOutputRules = (options: OutputRulesOptions) => {
   const rules =
     options.mode === 'generate'
       ? options.blueprint
-        ? `Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true. Do not add sections absent from blueprint. ${metricTrendRules} Put milestones newest-first.`
+        ? `Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true and summary only when card.blueprint.summary is true. Do not add sections absent from blueprint. ${metricTrendRules} Put milestones newest-first.`
         : `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`
       : options.mode === 'refresh'
-        ? `Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. When previousOutput has milestones, curate the current best milestone set at up to ${cardOutput.MAX_CARD_MILESTONES}: prefer recent or new milestones when they are more relevant than older ones, and keep durable anchors only when they remain high-signal. If an existing milestone remains among the most relevant, keep its title and detail wording, date, and recordIds exactly unless source records show it is wrong. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules} Put milestones newest-first.`
+        ? `Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. Return summary null when it only repeats other sections. When previousOutput has milestones, curate the current best milestone set at up to ${cardOutput.MAX_CARD_MILESTONES}: prefer recent or new milestones when they are more relevant than older ones, and keep durable anchors only when they remain high-signal. If an existing milestone remains among the most relevant, keep its title and detail wording, date, and recordIds exactly unless source records show it is wrong. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules} Put milestones newest-first.`
         : `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins for this output. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules}`;
 
   return `${rules} ${dateOutputRules}`;

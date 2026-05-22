@@ -315,6 +315,12 @@ describe('card openrouter', () => {
       'Do not write human-formatted dates'
     );
 
+    expect(userPayload.outputSchema?.output?.summary).toContain('320');
+
+    expect(userPayload.outputSchema?.output?.summary).toContain(
+      'not clear from chart'
+    );
+
     expect(userPayload.outputSchema?.title).toContain('short generated');
     expect(userPayload.outputRules).toContain('numeric point-in-time metrics');
     expect(userPayload.outputRules).toContain('Never use date-only');
@@ -378,6 +384,7 @@ describe('card openrouter', () => {
     });
 
     expect(userPayload.outputRules).toContain('card.blueprint');
+    expect(userPayload.outputRules).toContain('card.blueprint.summary');
     expect(userPayload.outputRules).toContain('Do not add sections absent');
   });
 
@@ -489,6 +496,7 @@ describe('card openrouter', () => {
       'curate the current best milestone set'
     );
 
+    expect(userPayload.outputRules).toContain('summary null');
     expect(userPayload.outputRules).toContain('keep its title and detail');
     expect(userPayload.outputRules).toContain('recordIds exactly');
   });
