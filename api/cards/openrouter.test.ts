@@ -226,6 +226,7 @@ describe('card openrouter', () => {
       prompt: 'Track detailed progress',
       records: [
         {
+          author: { name: 'Cade' },
           date: '2026-05-20T00:00:00.000Z',
           id: 'record-1',
           tags: [{ name: 'progress' }],
@@ -250,8 +251,8 @@ describe('card openrouter', () => {
         title?: string;
       };
       records?: {
-        fullTextRecords?: { text?: string }[];
-        timelineChunks?: { records?: { text?: string }[] }[];
+        fullTextRecords?: { author?: unknown; text?: string }[];
+        timelineChunks?: { records?: { author?: unknown; text?: string }[] }[];
       };
       sourceRules?: string;
     };
@@ -288,10 +289,15 @@ describe('card openrouter', () => {
     });
 
     expect(userPayload.records?.fullTextRecords?.[0]?.text).toHaveLength(2000);
+    expect(userPayload.records?.fullTextRecords?.[0]?.author).toBe('Cade');
 
     expect(
       userPayload.records?.timelineChunks?.[0]?.records?.[0]?.text
     ).toHaveLength(280);
+
+    expect(userPayload.records?.timelineChunks?.[0]?.records?.[0]?.author).toBe(
+      'Cade'
+    );
 
     expect(userPayload.outputSchema?.output?.sourceRecordIds).toContain(
       'at most 80'
@@ -486,6 +492,7 @@ describe('card openrouter', () => {
       existingCards: [],
       records: [
         {
+          author: { name: 'Cade' },
           date: '2026-05-20T00:00:00.000Z',
           id: 'record-1',
           tags: [{ name: 'progress' }],
@@ -504,7 +511,7 @@ describe('card openrouter', () => {
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
-      records?: { tags?: unknown; text?: string }[];
+      records?: { author?: unknown; tags?: unknown; text?: string }[];
     };
 
     expect(systemMessage?.content).toContain('reusable');
@@ -513,7 +520,8 @@ describe('card openrouter', () => {
     expect(userPayload.outputRules).toContain('one editable prompt');
     expect(userPayload.outputRules).toContain('future records');
     expect(userPayload.records?.[0]?.text).toHaveLength(500);
-    expect(userPayload.records?.[0]?.tags).toBeUndefined();
+    expect(userPayload.records?.[0]?.author).toBe('Cade');
+    expect(userPayload.records?.[0]?.tags).toEqual(['progress']);
     expect(requestBody?.response_format?.type).toBe('json_schema');
 
     expect(requestBody?.response_format?.json_schema).toMatchObject({

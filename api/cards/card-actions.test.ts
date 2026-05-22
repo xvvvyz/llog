@@ -354,6 +354,7 @@ describe('card generation', () => {
           return {
             records: [
               {
+                author: { name: 'Cade' },
                 date: '2026-05-20T00:00:00.000Z',
                 id: 'record-1',
                 tags: [{ id: 'tag-a', name: 'sleep' }],
@@ -390,6 +391,7 @@ describe('card generation', () => {
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       existingCards?: { id?: string; sections?: { metrics?: unknown[] } }[];
+      records?: { fullTextRecords?: { author?: unknown }[] };
     };
 
     expect(userPayload.existingCards).toHaveLength(1);
@@ -398,6 +400,8 @@ describe('card generation', () => {
       id: 'card-2',
       sections: { metrics: [{ label: 'Average sleep', unit: 'hrs' }] },
     });
+
+    expect(userPayload.records?.fullTextRecords?.[0]?.author).toBe('Cade');
   });
 });
 

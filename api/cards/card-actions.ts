@@ -271,7 +271,29 @@ const getTaggedSourceRecordSelection = async ({
   logId: string;
   tagIds: string[];
 }) => {
-  if (!tagIds.length) return { records: [], totalMatchingRecords: 0 };
+  const records = await getPublishedTaggedSourceRecordRows({
+    dbClient,
+    logId,
+    tagIds,
+  });
+
+  return cardSourceSelection.selectCardSourceRecordCoverage({
+    limit,
+    records,
+    tagIds,
+  });
+};
+
+const getPublishedTaggedSourceRecordRows = async ({
+  dbClient,
+  logId,
+  tagIds,
+}: {
+  dbClient: Db;
+  logId: string;
+  tagIds: string[];
+}) => {
+  if (!tagIds.length) return [];
 
   const { records } = await dbClient.query({
     records: {
@@ -285,20 +307,13 @@ const getTaggedSourceRecordSelection = async ({
           text: { $not: '' },
         },
       },
+      author: { $: { fields: ['name' as const] } },
       tags: { $: { fields: ['id', 'name'] } },
     },
   });
 
-  return cardSourceSelection.selectCardSourceRecordCoverage({
-    limit,
-    records,
-    tagIds,
-  });
+  return records;
 };
-
-const getTaggedSourceRecords = async (
-  params: Parameters<typeof getTaggedSourceRecordSelection>[0]
-) => (await getTaggedSourceRecordSelection(params)).records;
 
 const noSourceRecordGenerationFields = ({
   previousOutput,
@@ -500,10 +515,14 @@ export const suggestCardPrompt = async ({
     teamId: access.teamId,
   });
 
-  const records = await getTaggedSourceRecords({
+  const sourceRecords = await getPublishedTaggedSourceRecordRows({
     dbClient,
-    limit: 20,
     logId: access.logId,
+    tagIds,
+  });
+
+  const records = cardSourceSelection.selectCardPromptSuggestionRecords({
+    records: sourceRecords,
     tagIds,
   });
 

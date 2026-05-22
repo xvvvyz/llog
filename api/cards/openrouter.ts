@@ -7,6 +7,7 @@ import * as openrouter from '@/api/lib/openrouter';
 const OPENROUTER_CARD_MODEL = 'openai/gpt-5.5';
 
 export type CardLlmRecord = {
+  author?: { name?: string | null } | null;
   date?: Date | number | string | null;
   id: string;
   tags?: { name?: string | null }[];
@@ -116,7 +117,11 @@ const buildGenerationCardContext = (cards: CardContextCard[] = []) =>
 const recordTags = (record: CardLlmRecord) =>
   record.tags?.map((tag) => tag.name).filter(Boolean) ?? [];
 
+const recordAuthor = (record: CardLlmRecord) =>
+  record.author?.name?.trim() || null;
+
 const serializeCompactRecord = (record: CardLlmRecord) => ({
+  author: recordAuthor(record),
   date: record.date ?? null,
   id: record.id,
   tags: recordTags(record),
@@ -124,6 +129,7 @@ const serializeCompactRecord = (record: CardLlmRecord) => ({
 });
 
 const serializeFullRecord = (record: CardLlmRecord) => ({
+  author: recordAuthor(record),
   date: record.date ?? null,
   id: record.id,
   tags: recordTags(record),
@@ -850,8 +856,10 @@ const buildPromptSuggestionMessages = ({
       outputRules:
         'Return one editable prompt for a card that will refresh from future records. Focus on a durable progress signal, comparison, or milestone pattern. Keep it distinct from existing cards.',
       records: records.map((record) => ({
+        author: recordAuthor(record),
         date: record.date ?? null,
         id: record.id,
+        tags: recordTags(record),
         text: compactText(record.text, CARD_PROMPT_SUGGESTION_TEXT_MAX_LENGTH),
       })),
     }),

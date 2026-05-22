@@ -6,6 +6,10 @@ export const CARD_ANALYSIS_CHUNK_SIZE = 30;
 
 export const MAX_CARD_SOURCE_RECORDS = MAX_CARD_ANALYSIS_SOURCE_RECORDS;
 
+export const MAX_CARD_PROMPT_SUGGESTION_RECORDS = 40;
+
+export const CARD_PROMPT_SUGGESTION_RECENT_RECORDS = 20;
+
 export type CardSourceRecord = {
   date?: Date | number | string | null;
   id: string;
@@ -63,6 +67,32 @@ const sampleEvenlySpacedRecords = <T extends CardSourceRecord>(
   return selected;
 };
 
+const latestRecordForTag = <T extends CardSourceRecord>(
+  records: T[],
+  tagId: string
+) => {
+  for (let index = records.length - 1; index >= 0; index -= 1) {
+    const record = records[index];
+    if (record?.tags?.some((tag) => tag.id === tagId)) return record;
+  }
+};
+
+const sortRecordsBySourceOrder = <T extends CardSourceRecord>(
+  sourceRecords: T[],
+  records: T[]
+) => {
+  const orderById = new Map<string, number>();
+
+  sourceRecords.forEach((record, index) => {
+    if (!orderById.has(record.id)) orderById.set(record.id, index);
+  });
+
+  return [...records].sort(
+    (left, right) =>
+      (orderById.get(left.id) ?? 0) - (orderById.get(right.id) ?? 0)
+  );
+};
+
 const selectCardTimelineRecords = <T extends CardSourceRecord>({
   limit,
   records,
@@ -116,3 +146,64 @@ export const selectCardSourceRecords = <T extends CardSourceRecord>({
   records: T[];
   tagIds: Iterable<string>;
 }) => selectCardSourceRecordCoverage({ limit, records, tagIds }).records;
+
+// Prompt suggestions need breadth, not exhaustive evidence: cover each selected
+// tag, keep recent context, sample older history, then restore source order.
+export const selectCardPromptSuggestionRecords = <T extends CardSourceRecord>({
+  limit = MAX_CARD_PROMPT_SUGGESTION_RECORDS,
+  records,
+  tagIds,
+}: {
+  limit?: number;
+  records: T[];
+  tagIds: Iterable<string>;
+}) => {
+  const selectedTagIds = uniqueCardTagIds(tagIds);
+  const resolvedLimit = Math.max(0, Math.floor(limit));
+  if (!selectedTagIds.length || !resolvedLimit) return [];
+  const selectedTagIdSet = new Set(selectedTagIds);
+
+  const matchingRecords = records.filter((record) =>
+    recordMatchesCardTags(record, selectedTagIdSet)
+  );
+
+  const selectedRecords: T[] = [];
+  const selectedRecordIds = new Set<string>();
+
+  const addRecord = (record?: T) => {
+    if (
+      !record ||
+      selectedRecords.length >= resolvedLimit ||
+      selectedRecordIds.has(record.id)
+    ) {
+      return;
+    }
+
+    selectedRecords.push(record);
+    selectedRecordIds.add(record.id);
+  };
+
+  for (const tagId of selectedTagIds) {
+    addRecord(latestRecordForTag(matchingRecords, tagId));
+  }
+
+  const recentRecords = matchingRecords.slice(
+    -Math.min(CARD_PROMPT_SUGGESTION_RECENT_RECORDS, resolvedLimit)
+  );
+
+  for (const record of recentRecords) addRecord(record);
+  const remainingCount = resolvedLimit - selectedRecords.length;
+
+  const olderRecords = matchingRecords
+    .slice(0, -CARD_PROMPT_SUGGESTION_RECENT_RECORDS)
+    .filter((record) => !selectedRecordIds.has(record.id));
+
+  for (const record of sampleEvenlySpacedRecords(
+    olderRecords,
+    remainingCount
+  )) {
+    addRecord(record);
+  }
+
+  return sortRecordsBySourceOrder(matchingRecords, selectedRecords);
+};
