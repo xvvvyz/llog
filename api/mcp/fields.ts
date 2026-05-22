@@ -39,6 +39,50 @@ export const compact = (value: unknown): unknown => {
 };
 
 const stringifyCompact = (data: unknown) => JSON.stringify(compact(data));
+type TableCell = string | number | boolean | null | undefined;
+const normalizeLineBreaks = (text: string) => text.replace(/\r\n?/g, '\n');
+
+const codeFence = (text: string) => {
+  const longestRun = Math.max(
+    2,
+    ...(text.match(/`+/g) ?? []).map((run) => run.length)
+  );
+
+  return '`'.repeat(longestRun + 1);
+};
+
+export const textBlock = (label: string, text?: string | null) => {
+  if (!text) return undefined;
+  const fence = codeFence(text);
+  return `${label}:\n${fence}text\n${text}\n${fence}`;
+};
+
+const tableCellValue = (cell: TableCell) =>
+  normalizeLineBreaks(String(cell ?? ''));
+
+const tableCellText = (cell: TableCell) =>
+  tableCellValue(cell).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+
+const hasMultilineTableCell = (rows: TableCell[][]) =>
+  rows.some((row) => row.some((cell) => tableCellValue(cell).includes('\n')));
+
+const tableRowBlock = (
+  headers: string[],
+  row: TableCell[],
+  index: number,
+  total: number
+) =>
+  [
+    total > 1 ? `Item ${index + 1}` : undefined,
+    ...headers.map((header, cellIndex) => {
+      const value = tableCellValue(row[cellIndex]);
+      if (!value) return `${header}:`;
+      if (value.includes('\n')) return textBlock(header, value) ?? `${header}:`;
+      return `${header}: ${value}`;
+    }),
+  ]
+    .filter(Boolean)
+    .join('\n');
 
 export const textResult = (
   data: Record<string, unknown>,
@@ -57,41 +101,31 @@ export const textResult = (
   };
 };
 
-export const table = (
-  headers: string[],
-  rows: (string | number | boolean | null | undefined)[][]
-) => {
+export const table = (headers: string[], rows: TableCell[][]) => {
   if (!rows.length) return 'No results.';
+
+  if (hasMultilineTableCell(rows)) {
+    return rows
+      .map((row, index) => tableRowBlock(headers, row, index, rows.length))
+      .join('\n\n');
+  }
 
   return [
     `| ${headers.join(' | ')} |`,
     `| ${headers.map(() => '---').join(' | ')} |`,
     ...rows.map(
-      (row) =>
-        `| ${row.map((cell) => String(cell ?? '').replace(/\|/g, '\\|')).join(' | ')} |`
+      (row) => `| ${row.map((cell) => tableCellText(cell)).join(' | ')} |`
     ),
   ].join('\n');
 };
 
 export const textPreview = (text?: string | null, max = 160) => {
-  const value = (text ?? '').replace(/\s+/g, ' ').trim();
+  const value = normalizeLineBreaks(text ?? '')
+    .replace(/[^\S\n]+/g, ' ')
+    .trim();
+
   if (value.length <= max) return value;
   return `${value.slice(0, max - 3).trimEnd()}...`;
-};
-
-const codeFence = (text: string) => {
-  const longestRun = Math.max(
-    2,
-    ...(text.match(/`+/g) ?? []).map((run) => run.length)
-  );
-
-  return '`'.repeat(longestRun + 1);
-};
-
-export const textBlock = (label: string, text?: string | null) => {
-  if (!text) return undefined;
-  const fence = codeFence(text);
-  return `${label}:\n${fence}text\n${text}\n${fence}`;
 };
 
 const dateField = (value: string | number | Date) =>
