@@ -13,8 +13,9 @@ export type CardLlmRecord = {
   text?: string | null;
 };
 
-export type CardPromptContextCard = {
+export type CardContextCard = {
   id: string;
+  output?: unknown;
   prompt?: string | null;
   tags?: { name?: string | null }[];
   title?: string | null;
@@ -22,6 +23,10 @@ export type CardPromptContextCard = {
 
 const CARD_TIMELINE_TEXT_MAX_LENGTH = 280;
 const CARD_FULL_TEXT_MAX_LENGTH = 2000;
+const CARD_EXISTING_CARD_CONTEXT_LIMIT = 8;
+const CARD_EXISTING_CARD_MILESTONE_LIMIT = 5;
+const CARD_EXISTING_CARD_PROMPT_MAX_LENGTH = 240;
+const CARD_EXISTING_CARD_SUMMARY_MAX_LENGTH = 180;
 const CARD_PROMPT_SUGGESTION_TEXT_MAX_LENGTH = 500;
 
 const getString = (value: unknown) =>
@@ -54,6 +59,59 @@ const compactText = (value?: string | null, maxLength = Infinity) => {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
 };
+
+const readCardOutput = (value: unknown) => {
+  const parsed = cardOutput.validateCardOutput(value);
+  return parsed.success ? parsed.data : undefined;
+};
+
+const serializeGenerationContextCard = (card: CardContextCard) => {
+  const output = readCardOutput(card.output);
+
+  const metrics =
+    output?.metrics.map((metric) => ({
+      label: metric.label,
+      unit: metric.unit ?? null,
+    })) ?? [];
+
+  const milestoneTitles =
+    output?.milestones
+      .map((milestone) => milestone.title)
+      .slice(0, CARD_EXISTING_CARD_MILESTONE_LIMIT) ?? [];
+
+  const summary = compactText(
+    output?.summary,
+    CARD_EXISTING_CARD_SUMMARY_MAX_LENGTH
+  );
+
+  const chart = output?.chart
+    ? {
+        title: output.chart.title ?? null,
+        type: output.chart.type,
+        unit: output.chart.unit ?? null,
+        seriesLabels: output.chart.series?.map((series) => series.label) ?? [],
+      }
+    : undefined;
+
+  return {
+    id: card.id,
+    prompt: compactText(card.prompt, CARD_EXISTING_CARD_PROMPT_MAX_LENGTH),
+    title: card.title ?? '',
+    ...(output && {
+      sections: {
+        ...(chart && { chart }),
+        ...(metrics.length && { metrics }),
+        ...(milestoneTitles.length && { milestoneTitles }),
+        ...(summary && { summary }),
+      },
+    }),
+  };
+};
+
+const buildGenerationCardContext = (cards: CardContextCard[] = []) =>
+  cards
+    .slice(0, CARD_EXISTING_CARD_CONTEXT_LIMIT)
+    .map(serializeGenerationContextCard);
 
 const recordTags = (record: CardLlmRecord) =>
   record.tags?.map((tag) => tag.name).filter(Boolean) ?? [];
@@ -134,7 +192,7 @@ const sourceRules =
   'Use timelineChunks for whole-history evidence: long-range stats, baselines, older milestones, firsts, and changes. Use fullTextRecords for recent detail. Do not base stats or milestones only on recent fullTextRecords when older timeline evidence matters. Use numeric values only when records provide explicit numbers, dates, or countable events. totalMatchingRecordCount is exact. If selectedRecordCount is lower, selected records are a sample plus recent records: do not treat omitted records as inspected, and avoid exact aggregates or best/worst-ever claims that need omitted text.';
 
 type OutputRulesOptions =
-  | { blueprint?: boolean; mode: 'generate' }
+  | { blueprint?: boolean; existingCards?: boolean; mode: 'generate' }
   | { mode: 'refresh' }
   | { mode: 'tweak' };
 
@@ -148,7 +206,12 @@ const buildOutputRules = (options: OutputRulesOptions) => {
         ? `Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. Return summary null when it only repeats other sections. When previousOutput has milestones, curate the current best milestone set at up to ${cardOutput.MAX_CARD_MILESTONES}: prefer recent or new milestones when they are more relevant than older ones, and keep durable anchors only when they remain high-signal. If an existing milestone remains among the most relevant, keep its title and detail wording, date, and recordIds exactly unless source records show it is wrong. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules} Put milestones newest-first.`
         : `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins for this output. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules}`;
 
-  return `${rules} ${dateOutputRules}`;
+  const existingCardRules =
+    options.mode === 'generate' && options.existingCards
+      ? 'existingCards are sibling progress cards in this log with exactly the same source tags; use them only to avoid duplicate presentation, not as source evidence. Prefer a distinct angle from them when compatible with card.prompt and card.blueprint. Avoid repeating the same metric labels, chart focus, milestone titles, or summary prose unless the requested card explicitly needs that overlap.'
+      : '';
+
+  return [rules, existingCardRules, dateOutputRules].filter(Boolean).join(' ');
 };
 
 type JsonSchema = Record<string, unknown>;
@@ -318,42 +381,52 @@ const promptSuggestionResponseSchema = jsonResponseSchema({
 
 const buildMessages = ({
   blueprint,
+  existingCards = [],
   repairMessage,
   prompt,
   records,
   totalRecordCount,
 }: {
   blueprint?: CardBlueprint;
+  existingCards?: CardContextCard[];
   repairMessage?: string;
   prompt: string;
   records: CardLlmRecord[];
   totalRecordCount: number;
-}): CardChatMessage[] => [
-  {
-    content: `Extract progress from llog records. ${llogContext} Return only valid JSON. Use only the provided records. Keep language concise and specific. ${labelStyle}`,
-    role: 'system',
-  },
-  {
-    content: JSON.stringify({
-      card: { ...(blueprint && { blueprint }), prompt },
-      outputSchema: {
-        output: outputSchemaDescription,
-        title:
-          'short generated card title, at most 36 characters, specific to the requested progress view',
-      },
-      requiredJsonShape:
-        'Return { "title": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
-      outputRules: buildOutputRules({
-        mode: 'generate',
-        ...(blueprint && { blueprint: true }),
+}): CardChatMessage[] => {
+  const generationCardContext = buildGenerationCardContext(existingCards);
+
+  return [
+    {
+      content: `Extract progress from llog records. ${llogContext} Return only valid JSON. Use only the provided records. Keep language concise and specific. ${labelStyle}`,
+      role: 'system',
+    },
+    {
+      content: JSON.stringify({
+        card: { ...(blueprint && { blueprint }), prompt },
+        ...(generationCardContext.length > 0 && {
+          existingCards: generationCardContext,
+        }),
+        outputSchema: {
+          output: outputSchemaDescription,
+          title:
+            'short generated card title, at most 36 characters, specific to the requested progress view',
+        },
+        requiredJsonShape:
+          'Return { "title": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
+        outputRules: buildOutputRules({
+          mode: 'generate',
+          ...(blueprint && { blueprint: true }),
+          ...(generationCardContext.length > 0 && { existingCards: true }),
+        }),
+        sourceRules,
+        ...(repairMessage && { repairMessage }),
+        records: buildRecordContext({ records, totalRecordCount }),
       }),
-      sourceRules,
-      ...(repairMessage && { repairMessage }),
-      records: buildRecordContext({ records, totalRecordCount }),
-    }),
-    role: 'user',
-  },
-];
+      role: 'user',
+    },
+  ];
+};
 
 const buildRefreshMessages = ({
   previousOutput,
@@ -551,12 +624,14 @@ const requestOpenRouterJson = async ({
 export const generateCardResult = async ({
   blueprint,
   env,
+  existingCards,
   prompt,
   records,
   totalRecordCount = records.length,
 }: {
   blueprint?: CardBlueprint;
   env: CloudflareEnv;
+  existingCards?: CardContextCard[];
   prompt: string;
   records: CardLlmRecord[];
   totalRecordCount?: number;
@@ -569,6 +644,7 @@ export const generateCardResult = async ({
 
   const messages = buildMessages({
     blueprint,
+    existingCards,
     prompt,
     records,
     totalRecordCount,
@@ -592,6 +668,7 @@ export const generateCardResult = async ({
     env,
     messages: buildMessages({
       blueprint,
+      existingCards,
       prompt,
       records,
       totalRecordCount,
@@ -751,7 +828,7 @@ const buildPromptSuggestionMessages = ({
   existingCards,
   records,
 }: {
-  existingCards: CardPromptContextCard[];
+  existingCards: CardContextCard[];
   records: CardLlmRecord[];
 }): CardChatMessage[] => [
   {
@@ -788,7 +865,7 @@ export const generateCardPromptSuggestion = async ({
   records,
 }: {
   env: CloudflareEnv;
-  existingCards: CardPromptContextCard[];
+  existingCards: CardContextCard[];
   records: CardLlmRecord[];
 }) => {
   const parsedJson = await requestOpenRouterJson({

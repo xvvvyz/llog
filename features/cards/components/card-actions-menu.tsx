@@ -101,16 +101,16 @@ const CardActionsMenuContent = ({
           <Text>Refresh</Text>
         </Menu.Item>
       )}
-      {!!onCopy && (
-        <Menu.Item disabled={isRefreshPending} onPress={onCopy}>
-          <Icon className="text-placeholder" icon={StackSimple} />
-          <Text>Copy to</Text>
-        </Menu.Item>
-      )}
       {!!onManage && (
         <Menu.Item disabled={isRefreshPending} onPress={onManage}>
           <Icon className="text-placeholder" icon={ListNumbers} />
           <Text>Reorder</Text>
+        </Menu.Item>
+      )}
+      {!!onCopy && (
+        <Menu.Item disabled={isRefreshPending} onPress={onCopy}>
+          <Icon className="text-placeholder" icon={StackSimple} />
+          <Text>Copy to</Text>
         </Menu.Item>
       )}
       <Menu.Separator />

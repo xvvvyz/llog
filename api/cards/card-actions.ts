@@ -316,8 +316,54 @@ const noSourceRecordGenerationFields = ({
   title: title ?? cardTitle.fallbackCardTitle(prompt),
 });
 
+const CARD_GENERATION_CONTEXT_CARD_LIMIT = 8;
+
+const hasExactCardTagMatch = (
+  cardTags: CardEntity['tags'] | undefined,
+  tagIds: string[]
+) => {
+  const selectedTagIds = new Set(tagIds);
+  const cardTagIds = cardTags?.map((tag) => tag.id).filter(Boolean) ?? [];
+  const cardTagIdSet = new Set(cardTagIds);
+  if (cardTagIdSet.size !== selectedTagIds.size) return false;
+  return [...selectedTagIds].every((tagId) => cardTagIdSet.has(tagId));
+};
+
+const getGenerationContextCards = async ({
+  cardId,
+  dbClient,
+  logId,
+  tagIds,
+}: {
+  cardId: string;
+  dbClient: Db;
+  logId: string;
+  tagIds: string[];
+}) => {
+  const { cards } = await dbClient.query({
+    cards: {
+      $: {
+        fields: ['id', 'order', 'output', 'prompt', 'title'],
+        where: { logId, type: constants.CARD_TYPE_PROGRESS },
+      },
+      tags: { $: { fields: ['id'] } },
+    },
+  });
+
+  return (cards as CardEntity[])
+    .filter(
+      (card) =>
+        !!card.id &&
+        card.id !== cardId &&
+        hasExactCardTagMatch(card.tags, tagIds)
+    )
+    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
+    .slice(0, CARD_GENERATION_CONTEXT_CARD_LIMIT);
+};
+
 const generateCardResult = async ({
   blueprint,
+  cardId,
   dbClient,
   env,
   logId,
@@ -325,6 +371,7 @@ const generateCardResult = async ({
   tagIds,
 }: {
   blueprint?: cardBlueprint.CardBlueprint;
+  cardId: string;
   dbClient: Db;
   env: CloudflareEnv;
   logId: string;
@@ -339,9 +386,17 @@ const generateCardResult = async ({
 
   if (!sourceSelection.records.length) return null;
 
+  const existingCards = await getGenerationContextCards({
+    cardId,
+    dbClient,
+    logId,
+    tagIds,
+  });
+
   return openrouter.generateCardResult({
     blueprint,
     env,
+    existingCards,
     prompt,
     records: sourceSelection.records,
     totalRecordCount: sourceSelection.totalMatchingRecords,
@@ -563,6 +618,7 @@ export const generateCard = async ({
       blueprint,
       dbClient,
       env,
+      cardId: card.id,
       logId: card.logId,
       prompt: card.prompt,
       tagIds: card.tags?.map((tag) => tag.id) ?? [],

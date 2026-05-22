@@ -105,6 +105,7 @@ export const CardsHeader = ({
   const windowDimensions = useWindowDimensions();
   const carouselRef = React.useRef<ICarouselInstance>(null);
   const activeIndexRef = React.useRef(0);
+  const activeCardIdRef = React.useRef<string | undefined>(undefined);
   const carouselScrollStartIndexRef = React.useRef<number | null>(null);
   const didCarouselMoveRef = React.useRef(false);
   const suppressCardPressRef = React.useRef(false);
@@ -115,7 +116,11 @@ export const CardsHeader = ({
 
   const activeIndex = useSharedValue(0);
   const [activeIndexState, setActiveIndexState] = React.useState(0);
-  const visibleCards = cards.filter((card) => card.type === 'progress');
+
+  const visibleCards = React.useMemo(
+    () => cards.filter((card) => card.type === 'progress'),
+    [cards]
+  );
 
   const myRole = useMyRole({
     teamId: visibleCards[0]?.teamId ?? teamId ?? null,
@@ -136,15 +141,24 @@ export const CardsHeader = ({
     pageWidth - LIST_SIDE_PADDING * 2 - CARD_CONTROL_EDGE_INSET * 2
   );
 
-  const setCardIndex = React.useCallback(
-    (index: number, animated = true) => {
+  const syncCardIndex = React.useCallback(
+    (index: number) => {
       const nextIndex = clampIndex(index, visibleCards.length);
       activeIndex.value = nextIndex;
       activeIndexRef.current = nextIndex;
+      activeCardIdRef.current = visibleCards[nextIndex]?.id;
       setActiveIndexState(nextIndex);
+      return nextIndex;
+    },
+    [activeIndex, visibleCards]
+  );
+
+  const setCardIndex = React.useCallback(
+    (index: number, animated = true) => {
+      const nextIndex = syncCardIndex(index);
       carouselRef.current?.scrollTo({ animated, index: nextIndex });
     },
-    [activeIndex, visibleCards.length]
+    [syncCardIndex]
   );
 
   const markNextCardPressSuppressed = React.useCallback(() => {
@@ -192,11 +206,18 @@ export const CardsHeader = ({
         visibleCards.length
       );
 
-      if (nextIndex === activeIndexRef.current) return;
-      activeIndexRef.current = nextIndex;
-      setActiveIndexState(nextIndex);
+      const nextCardId = visibleCards[nextIndex]?.id;
+
+      if (
+        nextIndex === activeIndexRef.current &&
+        nextCardId === activeCardIdRef.current
+      ) {
+        return;
+      }
+
+      syncCardIndex(nextIndex);
     },
-    [activeIndex, visibleCards.length]
+    [activeIndex, syncCardIndex, visibleCards]
   );
 
   const handleCardCarouselScrollStart = React.useCallback(() => {
@@ -206,15 +227,12 @@ export const CardsHeader = ({
 
   const handleCardCarouselScrollEnd = React.useCallback(
     (index: number) => {
-      const nextIndex = clampIndex(index, visibleCards.length);
-      activeIndex.value = nextIndex;
-      activeIndexRef.current = nextIndex;
-      setActiveIndexState(nextIndex);
+      syncCardIndex(index);
       if (didCarouselMoveRef.current) markNextCardPressSuppressed();
       carouselScrollStartIndexRef.current = null;
       didCarouselMoveRef.current = false;
     },
-    [activeIndex, markNextCardPressSuppressed, visibleCards.length]
+    [markNextCardPressSuppressed, syncCardIndex]
   );
 
   React.useEffect(() => {
@@ -229,17 +247,38 @@ export const CardsHeader = ({
     previousVisibleCardCountRef.current = visibleCards.length;
 
     if (!visibleCards.length) {
-      activeIndex.value = 0;
-      activeIndexRef.current = 0;
-      setActiveIndexState(0);
+      syncCardIndex(0);
       return;
     }
 
-    const nextIndex = clampIndex(activeIndexRef.current, visibleCards.length);
+    const currentCardId = activeCardIdRef.current;
+
+    const preservedIndex = currentCardId
+      ? visibleCards.findIndex((card) => card.id === currentCardId)
+      : -1;
+
+    const nextIndex =
+      preservedIndex !== -1
+        ? preservedIndex
+        : clampIndex(activeIndexRef.current, visibleCards.length);
+
+    const nextCardId = visibleCards[nextIndex]?.id;
     const didShrink = visibleCards.length < previousCount;
-    if (!didShrink && nextIndex === activeIndexState) return;
-    setCardIndex(nextIndex, false);
-  }, [activeIndex, activeIndexState, setCardIndex, visibleCards.length]);
+
+    if (
+      !didShrink &&
+      nextIndex === activeIndexState &&
+      nextCardId === currentCardId
+    ) {
+      return;
+    }
+
+    syncCardIndex(nextIndex);
+
+    requestAnimationFrame(() => {
+      carouselRef.current?.scrollTo({ animated: false, index: nextIndex });
+    });
+  }, [activeIndexState, syncCardIndex, visibleCards]);
 
   React.useEffect(() => {
     if (previousCarouselPageWidthRef.current === carouselPageWidth) return;
@@ -332,6 +371,7 @@ export const CardsHeader = ({
               ref={carouselRef}
               containerStyle={{ overflow: 'visible' }}
               data={visibleCards}
+              defaultIndex={activeIndexState}
               enabled={visibleCards.length > 1}
               height={CARD_HEIGHT}
               loop={false}

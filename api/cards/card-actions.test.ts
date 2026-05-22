@@ -23,6 +23,17 @@ const jsonResponse = (content: unknown) =>
     { headers: { 'Content-Type': 'application/json' }, status: 200 }
   );
 
+const readChatRequest = async (
+  input: RequestInfo | URL,
+  init?: RequestInit
+) => {
+  const request = input instanceof Request ? input : new Request(input, init);
+
+  return JSON.parse(await request.text()) as {
+    messages?: { content?: unknown; role?: unknown }[];
+  };
+};
+
 afterEach(() => {
   globalThis.fetch = originalFetch;
 });
@@ -250,6 +261,142 @@ describe('card generation', () => {
         summary: 'Generated sleep summary.',
       },
       title: 'Copied sleep',
+    });
+  });
+
+  test('passes exact tag sibling cards', async () => {
+    const requestedAt = '2026-05-20T00:00:00.000Z';
+
+    let requestBody:
+      | { messages?: { content?: unknown; role?: unknown }[] }
+      | undefined;
+
+    const card = {
+      generationRequestedAt: requestedAt,
+      id: 'card-1',
+      isGenerating: true,
+      logId: 'log-1',
+      prompt: 'Track sleep quality',
+      tags: [{ id: 'tag-a' }],
+      title: 'Sleep quality',
+    };
+
+    const siblingCard = {
+      id: 'card-2',
+      logId: 'log-1',
+      order: 2,
+      output: {
+        metrics: [{ label: 'Average sleep', unit: 'hrs', value: 7 }],
+        milestones: [{ title: 'Baseline beat' }],
+        sourceRecordIds: ['record-1'],
+        summary: 'Weekly average already shown.',
+      },
+      prompt: 'Track average sleep',
+      tags: [{ id: 'tag-a', name: 'sleep' }],
+      title: 'Sleep average',
+    };
+
+    const overlappingCard = {
+      id: 'card-3',
+      logId: 'log-1',
+      order: 1,
+      output: {
+        metrics: [{ label: 'Best quality', value: 5 }],
+        milestones: [],
+        sourceRecordIds: ['record-1'],
+      },
+      prompt: 'Track sleep quality with mood',
+      tags: [
+        { id: 'tag-a', name: 'sleep' },
+        { id: 'tag-b', name: 'quality' },
+      ],
+      title: 'Sleep quality',
+    };
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        output: { summary: 'Sleep quality is distinct.' },
+        title: 'Sleep quality',
+      });
+    }) as never;
+
+    const entityTx = (entity: string) =>
+      new Proxy(
+        {},
+        {
+          get: (_target, id: string) => ({
+            update: (fields: Record<string, unknown>) => ({
+              entity,
+              fields,
+              id,
+            }),
+          }),
+        }
+      );
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('cards' in query) {
+          const cardsQuery = query.cards as {
+            $?: { where?: { id?: string; logId?: string } };
+          };
+
+          if (cardsQuery.$?.where?.logId === 'log-1') {
+            return { cards: [card, overlappingCard, siblingCard] };
+          }
+
+          return { cards: [card] };
+        }
+
+        if ('records' in query) {
+          return {
+            records: [
+              {
+                date: '2026-05-20T00:00:00.000Z',
+                id: 'record-1',
+                tags: [{ id: 'tag-a', name: 'sleep' }],
+                text: 'Slept 7 hours and woke rested.',
+              },
+            ],
+          };
+        }
+
+        return {};
+      },
+      transact: async (transaction: {
+        entity: string;
+        fields: Record<string, unknown>;
+        id: string;
+      }) => {
+        Object.assign(card, transaction.fields);
+      },
+      tx: { cards: entityTx('cards') },
+    };
+
+    await expect(
+      cardActions.generateCard({
+        cardId: 'card-1',
+        dbClient: db as never,
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        requestedAt,
+      })
+    ).resolves.toMatchObject({ success: true });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      existingCards?: { id?: string; sections?: { metrics?: unknown[] } }[];
+    };
+
+    expect(userPayload.existingCards).toHaveLength(1);
+
+    expect(userPayload.existingCards?.[0]).toMatchObject({
+      id: 'card-2',
+      sections: { metrics: [{ label: 'Average sleep', unit: 'hrs' }] },
     });
   });
 });

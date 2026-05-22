@@ -388,6 +388,91 @@ describe('card openrouter', () => {
     expect(userPayload.outputRules).toContain('Do not add sections absent');
   });
 
+  test('sends existing card context', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        output: { summary: 'Distinct progress view.' },
+        title: 'Progress',
+      });
+    }) as never;
+
+    await openrouter.generateCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      existingCards: [
+        {
+          id: 'card-existing',
+          output: {
+            chart: {
+              data: [{ label: '2026-05-20T00:00:00.000Z', value: 7 }],
+              title: 'Sleep trend',
+              type: 'line',
+              unit: 'hrs',
+            },
+            metrics: [{ label: 'Average sleep', unit: 'hrs', value: 7 }],
+            milestones: [{ title: 'Baseline beat' }],
+            sourceRecordIds: ['record-1'],
+            summary: 'Sleep trend already covers weekly averages.',
+          },
+          prompt: 'Track average sleep across the week.',
+          tags: [{ name: 'sleep' }],
+          title: 'Sleep trend',
+        },
+      ],
+      prompt: 'Track sleep quality',
+      records: [
+        {
+          date: '2026-05-20T00:00:00.000Z',
+          id: 'record-1',
+          tags: [{ name: 'sleep' }],
+          text: 'Slept 7 hours and felt rested.',
+        },
+      ],
+    });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      existingCards?: {
+        id?: string;
+        sections?: {
+          chart?: unknown;
+          metrics?: unknown[];
+          milestoneTitles?: string[];
+          summary?: string;
+        };
+        tags?: unknown;
+      }[];
+      outputRules?: string;
+    };
+
+    expect(userPayload.existingCards?.[0]).toMatchObject({
+      id: 'card-existing',
+      sections: {
+        chart: {
+          seriesLabels: [],
+          title: 'Sleep trend',
+          type: 'line',
+          unit: 'hrs',
+        },
+        metrics: [{ label: 'Average sleep', unit: 'hrs' }],
+        milestoneTitles: ['Baseline beat'],
+        summary: 'Sleep trend already covers weekly averages.',
+      },
+    });
+
+    expect('tags' in (userPayload.existingCards?.[0] ?? {})).toBe(false);
+    expect(userPayload.outputRules).toContain('existingCards');
+    expect(userPayload.outputRules).toContain('exactly the same source tags');
+    expect(userPayload.outputRules).toContain('distinct angle');
+    expect(userPayload.outputRules).toContain('unless the requested card');
+  });
+
   test('compacts suggestion context', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
