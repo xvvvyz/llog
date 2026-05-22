@@ -54,7 +54,12 @@ const BAR_CORNER_RADIUS = 3;
 const CHART_TOOLTIP_WIDTH = 128;
 const CHART_TOOLTIP_HEIGHT = 46;
 const CHART_TOOLTIP_HORIZONTAL_OVERFLOW = 16;
-const CHART_SVG_STYLE = { overflow: 'visible', userSelect: 'none' } as const;
+
+const CHART_SVG_STYLE = {
+  overflow: 'visible',
+  pointerEvents: 'none',
+  userSelect: 'none',
+} as const;
 
 const chartChromeColors = {
   dark: { axis: '#3f3f46', text: '#a1a1aa' },
@@ -950,8 +955,7 @@ const SingleSeriesChart = ({
 
     return (
       <View
-        className="absolute z-10 px-2 py-1 border-border-secondary rounded-lg bg-popover shadow-sm border web:-translate-x-1/2"
-        pointerEvents="none"
+        className="absolute z-10 px-2 py-1 border-border-secondary rounded-lg bg-popover shadow-sm pointer-events-none border web:-translate-x-1/2"
         style={{ left, maxWidth: CHART_TOOLTIP_WIDTH, top }}
       >
         <Text className="font-medium text-xs" numberOfLines={1}>
@@ -1083,7 +1087,6 @@ const SingleSeriesChart = ({
       >
         <Svg
           height={chartHeight}
-          pointerEvents="none"
           style={CHART_SVG_STYLE}
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
           width="100%"
@@ -1204,7 +1207,6 @@ const SingleSeriesChart = ({
     >
       <Svg
         height={chartHeight}
-        pointerEvents="none"
         style={CHART_SVG_STYLE}
         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
         width="100%"
@@ -1278,9 +1280,8 @@ const SingleSeriesChart = ({
       </Svg>
       {!!lastPoint && !!lastValueLabel && (
         <Text
-          className="absolute text-center text-xs"
+          className="absolute text-center text-xs pointer-events-none"
           numberOfLines={1}
-          pointerEvents="none"
           style={{
             color: colors.text,
             fontSize: axisLabelFontSize,

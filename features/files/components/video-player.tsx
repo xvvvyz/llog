@@ -364,9 +364,12 @@ export const VideoPlayer = ({
         nativeControls={false}
         onFirstFrameRender={markFirstFrameRendered}
         player={player}
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, showThumbnail && { opacity: 0 }]}
         surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
+        style={[
+          StyleSheet.absoluteFill,
+          { pointerEvents: 'none' },
+          showThumbnail && { opacity: 0 },
+        ]}
       />
       {showThumbnail && (
         <View className="absolute inset-0 pointer-events-none">

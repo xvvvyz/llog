@@ -96,8 +96,7 @@ const VideoTranscriptCaptionTrigger = ({
   return (
     <View
       className="absolute left-6 right-6 z-10 items-center md:left-16 md:right-16"
-      pointerEvents="box-none"
-      style={{ bottom: bottomOffset }}
+      style={{ bottom: bottomOffset, pointerEvents: 'box-none' }}
     >
       <Button
         accessibilityLabel="Open transcript"
@@ -213,8 +212,7 @@ export const VideoMetadataOverlay = ({
           renderTrigger={({ currentTrack, openSheet }) => (
             <View
               className="absolute left-4 right-4 z-10 md:right-8"
-              pointerEvents="box-none"
-              style={{ bottom: trackBottomOffset }}
+              style={{ bottom: trackBottomOffset, pointerEvents: 'box-none' }}
             >
               <View className="flex-row min-w-0 w-full gap-3 items-center justify-between">
                 <Pressable

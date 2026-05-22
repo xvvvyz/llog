@@ -549,13 +549,14 @@ export const Carousel = ({
       </Animated.View>
       <Animated.View
         className="absolute inset-0"
-        pointerEvents="box-none"
-        style={overlayOpacityStyle}
+        style={[overlayOpacityStyle, { pointerEvents: 'box-none' }]}
       >
         <Animated.View
           className="absolute inset-0"
-          pointerEvents="box-none"
-          style={activeMediaOverlayProgressStyle}
+          style={[
+            activeMediaOverlayProgressStyle,
+            { pointerEvents: 'box-none' },
+          ]}
         >
           {isActiveVideo && (
             <React.Fragment>
@@ -605,9 +606,14 @@ export const Carousel = ({
         </Animated.View>
       </Animated.View>
       <Animated.View
-        className="absolute left-4 right-4 z-10 items-center md:left-8 md:right-8"
-        pointerEvents={files.length > 1 ? 'box-none' : 'none'}
-        style={[overlayOpacityStyle, { bottom: dotsBottomOffset }]}
+        className={`absolute left-4 right-4 z-10 items-center md:left-8 md:right-8 ${
+          files.length > 1 ? '' : 'pointer-events-none'
+        }`}
+        style={[
+          overlayOpacityStyle,
+          files.length > 1 && { pointerEvents: 'box-none' },
+          { bottom: dotsBottomOffset },
+        ]}
       >
         {files.length > 1 && (
           <Dots

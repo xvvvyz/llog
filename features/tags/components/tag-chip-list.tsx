@@ -57,7 +57,7 @@ export const TagChipList = ({
   return (
     <View
       className={cn('flex-row flex-wrap', className)}
-      pointerEvents="box-none"
+      style={{ pointerEvents: 'box-none' }}
     >
       {visibleTags.map((tag) => {
         const chip = (

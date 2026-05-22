@@ -10,7 +10,7 @@ import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
 import { Link } from 'expo-router';
 import { DotsThree } from 'phosphor-react-native';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 type SearchableLogTag = Pick<Tag, 'id'> & { name?: string | null };
 
@@ -20,6 +20,12 @@ type ListItemProfile = Pick<Profile, 'avatarSeedId' | 'id' | 'name'> & {
 
 const getTagSearchHref = (tag: SearchableLogTag) =>
   lookup.getLookupHref(lookup.getTagSearchQuery(tag));
+
+const nativeBoxNoneStyle =
+  Platform.OS === 'web' ? undefined : ({ pointerEvents: 'box-none' } as const);
+
+const nativePointerNoneStyle =
+  Platform.OS === 'web' ? undefined : ({ pointerEvents: 'none' } as const);
 
 export const ListItem = ({
   className,
@@ -60,13 +66,10 @@ export const ListItem = ({
           />
         </Link>
         <View
-          className="relative z-10 flex flex-col h-full w-full p-4 gap-0 items-start justify-between"
-          pointerEvents="box-none"
+          className="relative z-10 flex flex-col h-full w-full p-4 gap-0 items-start justify-between web:pointer-events-none"
+          style={nativeBoxNoneStyle}
         >
-          <View
-            className="relative z-20 -ml-1.5 -mt-1.5 w-full pr-6"
-            pointerEvents="auto"
-          >
+          <View className="relative z-20 -ml-1.5 -mt-1.5 w-full pr-6 web:pointer-events-auto">
             <TagChipList
               chipClassName="max-w-full dark:bg-background"
               className="gap-0.5"
@@ -79,8 +82,8 @@ export const ListItem = ({
             />
           </View>
           <View
-            className="flex-row w-full gap-3 items-end justify-between"
-            pointerEvents="none"
+            className="flex-row w-full gap-3 items-end justify-between web:pointer-events-none"
+            style={nativePointerNoneStyle}
           >
             <Text
               className="flex-1 -mb-1 min-w-0 leading-tight text-balance text-white web:whitespace-normal"
@@ -111,8 +114,15 @@ export const ListItem = ({
             )}
           </View>
         </View>
-        <View className="absolute right-0 top-0 z-20" pointerEvents="box-none">
-          <DropdownMenu contentClassName="my-0 mr-2.5" id={id}>
+        <View
+          className="absolute right-0 top-0 z-20 web:pointer-events-none"
+          style={nativeBoxNoneStyle}
+        >
+          <DropdownMenu
+            contentClassName="my-0 mr-2.5"
+            id={id}
+            triggerWrapperClassName="web:pointer-events-auto"
+          >
             <View className="size-6 border-continuous rounded-lg bg-white/15 items-center justify-center group-active:bg-white/20 web:transition-colors web:group-hover:bg-white/20">
               <Icon className="text-white" icon={DotsThree} />
             </View>

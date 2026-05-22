@@ -9,7 +9,13 @@ import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { Href, Link } from 'expo-router';
 import { SortAscending, SortDescending } from 'phosphor-react-native';
 import * as React from 'react';
-import { Pressable, View, type GestureResponderEvent } from 'react-native';
+
+import {
+  Platform,
+  Pressable,
+  View,
+  type GestureResponderEvent,
+} from 'react-native';
 
 import Animated, {
   FadeIn,
@@ -89,6 +95,8 @@ const Content = React.forwardRef<
   DropdownMenuPrimitive.ContentRef,
   DropdownMenuPrimitive.ContentProps & { portalHostName?: string }
 >(({ children, className, portalHostName, ...props }, ref) => {
+  const isWeb = Platform.OS === 'web';
+
   const context =
     DropdownMenuPrimitive.useRootContext() as ResettableDropdownRootContext;
 
@@ -112,12 +120,15 @@ const Content = React.forwardRef<
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHostName}>
       <View
-        className="absolute inset-0"
-        pointerEvents="box-none"
-        style={{ zIndex: OVERLAY_LAYERS.dropdownMenu }}
+        className={cn('absolute inset-0', isWeb && 'pointer-events-none')}
+        style={
+          isWeb
+            ? { zIndex: OVERLAY_LAYERS.dropdownMenu }
+            : { pointerEvents: 'box-none', zIndex: OVERLAY_LAYERS.dropdownMenu }
+        }
       >
         <Pressable
-          className="absolute inset-0"
+          className="absolute inset-0 web:pointer-events-auto"
           onPress={handleOverlayPress}
           onStartShouldSetResponder={() => true}
           onTouchEnd={stopOverlayEvent}
@@ -129,7 +140,11 @@ const Content = React.forwardRef<
             exiting={animation(FadeOut)}
           />
         </Pressable>
-        <DropdownMenuPrimitive.Content ref={ref} {...props}>
+        <DropdownMenuPrimitive.Content
+          ref={ref}
+          className="web:pointer-events-auto"
+          {...props}
+        >
           <Animated.View
             entering={animation(FadeInUp)}
             exiting={animation(FadeOutUp)}

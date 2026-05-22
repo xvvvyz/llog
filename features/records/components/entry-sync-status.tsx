@@ -1,3 +1,4 @@
+import { cn } from '@/lib/cn';
 import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import { Icon } from '@/ui/icon';
@@ -12,7 +13,7 @@ const EntrySyncStatusComponent = ({
   className?: string;
   status: 'queued' | 'uploading';
 }) => (
-  <View className={className} pointerEvents="none">
+  <View className={cn('pointer-events-none', className)}>
     <View className="flex-row max-w-full min-w-0 px-1.5 py-0.5 border-continuous rounded-full bg-secondary gap-1.5 items-center">
       {status === 'uploading' ? (
         <View className="size-3 items-center justify-center">

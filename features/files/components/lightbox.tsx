@@ -179,17 +179,17 @@ export const Lightbox = ({
 
   const content = (
     <Animated.View
-      className="absolute inset-0"
       onTouchCancel={webTouchHandlers.onTouchCancel}
       onTouchEnd={webTouchHandlers.onTouchEnd}
       onTouchMove={webTouchHandlers.onTouchMove}
       onTouchStart={webTouchHandlers.onTouchStart}
-      pointerEvents={isClosing ? 'none' : 'auto'}
+      className={`absolute inset-0 ${
+        isClosing ? 'pointer-events-none' : 'pointer-events-auto'
+      }`}
     >
       {Platform.OS !== 'web' && <StatusBar animated hidden />}
       <Animated.View
-        className="absolute inset-0 bg-popover"
-        pointerEvents="none"
+        className="absolute inset-0 bg-popover pointer-events-none"
         style={backgroundStyle}
       />
       <View className="absolute inset-0">

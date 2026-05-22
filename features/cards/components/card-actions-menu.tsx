@@ -29,8 +29,10 @@ export const CardGeneratingIndicator = ({
     <Spinner className={className} size="icon" />
   ) : (
     <View
-      className={cn('h-8 w-8 items-center justify-center', className)}
-      pointerEvents="none"
+      className={cn(
+        'h-8 w-8 pointer-events-none items-center justify-center',
+        className
+      )}
     >
       <Spinner size="icon" />
     </View>

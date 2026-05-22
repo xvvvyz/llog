@@ -75,15 +75,20 @@ export const SheetBackdrop = () => {
   return (
     <Portal name="sheet-backdrop">
       <Animated.View
-        className="fixed inset-0 bg-background/90"
+        className="fixed inset-0"
         entering={animation(FadeIn)}
         exiting={animation(FadeOut)}
-        style={[{ zIndex: backdrop.layer }, backdropDragStyle]}
+        style={{ zIndex: backdrop.layer }}
       >
-        <Pressable
-          className="h-full w-full cursor-default"
-          onPress={backdrop.onDismiss}
-        />
+        <Animated.View
+          className="absolute inset-0 bg-background/90"
+          style={backdropDragStyle}
+        >
+          <Pressable
+            className="h-full w-full cursor-default"
+            onPress={backdrop.onDismiss}
+          />
+        </Animated.View>
       </Animated.View>
     </Portal>
   );
@@ -167,6 +172,7 @@ export const Sheet = ({
       style={[heightStyle, sheetDragBehavior.sheetStyle]}
       className={cn(
         sheetVariants({ variant, width }),
+        isWeb && 'pointer-events-auto',
         loading && 'min-h-24',
         className
       )}
@@ -176,9 +182,8 @@ export const Sheet = ({
       <View
         accessibilityElementsHidden
         aria-hidden
-        className="relative z-20 h-5 items-center justify-center shrink-0 md:hidden"
+        className="relative z-20 h-5 pointer-events-none items-center justify-center shrink-0 md:hidden"
         importantForAccessibility="no-hide-descendants"
-        pointerEvents="none"
       >
         <View className="h-1.5 w-11 rounded-full bg-border-secondary" />
       </View>
@@ -202,31 +207,44 @@ export const Sheet = ({
 
   const sheet = (
     <Animated.View
-      className="absolute inset-0"
       entering={animation(FadeInDown)}
       exiting={animation(isDesktopSheet ? FadeOut : FadeOutDown)}
-      pointerEvents={isWeb ? 'box-none' : 'auto'}
+      className={cn(
+        'absolute inset-0',
+        isWeb ? 'pointer-events-none' : 'pointer-events-auto'
+      )}
     >
       {shouldRenderInlineBackdrop && (
         <Animated.View
-          className="absolute inset-0 bg-background/90"
+          className="absolute inset-0 pointer-events-auto"
           entering={animation(FadeIn)}
           exiting={animation(FadeOut)}
-          style={
-            sheetStack.isLastSheet ? sheetDragBehavior.backdropStyle : undefined
-          }
         >
-          <Pressable
-            className="h-full w-full cursor-default"
-            onPress={onDismiss}
-          />
+          <Animated.View
+            className="absolute inset-0 bg-background/90"
+            style={
+              sheetStack.isLastSheet
+                ? sheetDragBehavior.backdropStyle
+                : undefined
+            }
+          >
+            <Pressable
+              className="h-full w-full cursor-default"
+              onPress={onDismiss}
+            />
+          </Animated.View>
         </Animated.View>
       )}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="absolute inset-0 justify-end md:px-6 md:items-center md:justify-center"
-        pointerEvents="box-none"
-        style={platformLayout.keyboardAvoidingStyle}
+        className={cn(
+          'absolute inset-0 justify-end md:px-6 md:items-center md:justify-center',
+          isWeb && 'pointer-events-none'
+        )}
+        style={[
+          platformLayout.keyboardAvoidingStyle,
+          !isWeb && { pointerEvents: 'box-none' },
+        ]}
       >
         {isWeb ? (
           sheetCard
@@ -253,8 +271,7 @@ export const Sheet = ({
       {isWeb ? (
         open ? (
           <View
-            className="fixed inset-0"
-            pointerEvents="box-none"
+            className="fixed inset-0 pointer-events-none"
             style={{ zIndex: sheetStack.zIndex }}
           >
             {sheet}

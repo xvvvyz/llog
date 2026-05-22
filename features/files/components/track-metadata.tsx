@@ -65,8 +65,10 @@ const TrackArtworkButton = ({
       />
       {showPersistentIcon ? (
         <View
-          className={cn(TRACK_ARTWORK_OVERLAY_CLASS_NAME, 'opacity-100')}
-          pointerEvents="none"
+          className={cn(
+            TRACK_ARTWORK_OVERLAY_CLASS_NAME,
+            'pointer-events-none opacity-100'
+          )}
         >
           <Icon
             className="text-foreground"
@@ -77,10 +79,9 @@ const TrackArtworkButton = ({
         </View>
       ) : (
         <View
-          pointerEvents="none"
           className={cn(
             TRACK_ARTWORK_OVERLAY_CLASS_NAME,
-            'opacity-0 web:transition-opacity web:group-hover:opacity-100'
+            'pointer-events-none opacity-0 web:transition-opacity web:group-hover:opacity-100'
           )}
         >
           <Icon

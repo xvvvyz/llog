@@ -38,7 +38,7 @@ const TargetEntryHighlight = ({
   }, [opacity, targetKey]);
 
   return (
-    <View className="absolute inset-0 overflow-hidden" pointerEvents="none">
+    <View className="absolute inset-0 overflow-hidden pointer-events-none">
       <Animated.View
         className="absolute inset-0"
         style={{

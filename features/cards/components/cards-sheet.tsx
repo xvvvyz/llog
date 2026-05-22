@@ -41,15 +41,15 @@ const CardRow = ({
       variant="secondary"
       wrapperClassName="absolute inset-0 w-full"
     />
-    <View className="flex-row h-10 items-center" pointerEvents="box-none">
+    <View
+      className="flex-row h-10 items-center"
+      style={{ pointerEvents: 'box-none' }}
+    >
       <SortableSheetDragHandle
         className="h-10 w-10"
         contentClassName="h-10 w-10"
       />
-      <View
-        className="flex-1 flex-row min-w-0 gap-3 items-center"
-        pointerEvents="none"
-      >
+      <View className="flex-1 flex-row min-w-0 pointer-events-none gap-3 items-center">
         <TemplateTagSummary tags={card.tags} />
         <Text
           className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
