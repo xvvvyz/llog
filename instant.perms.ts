@@ -73,7 +73,7 @@ const recordCanLinkContent = ruleStrings.or(
 const logIsTeamMember = "auth.id in data.ref('team.roles.user.id')";
 const logIsLogMember = "auth.id in data.ref('profiles.user.id')";
 const logHasInviteToken = "ruleParams.inviteToken in data.ref('invites.token')";
-const logIsLinkedProfileOwner = 'linkedData.user == auth.id';
+const logIsLinkedProfileOwner = "auth.id in linkedData.ref('user.id')";
 const logCanManage = ruleStrings.canManageCurrentTeam;
 
 const logCanLinkContent = ruleStrings.and(
@@ -224,7 +224,7 @@ const activityTeamLink = ruleStrings.or(
   )
 );
 
-const activityCanLinkActor = 'linkedData.user == auth.id';
+const activityCanLinkActor = "auth.id in linkedData.ref('user.id')";
 
 const rules = {
   $default: { allow: { $default: `false` } },
@@ -235,11 +235,11 @@ const rules = {
       update: 'false',
       delete: activityCanDelete,
       link: {
-        logs: activityCanLinkLog,
-        profiles: activityCanLinkActor,
-        records: activityCanLinkRecord,
-        replies: activityCanLinkReply,
-        teams: activityCanLinkTeam,
+        actor: activityCanLinkActor,
+        log: activityCanLinkLog,
+        record: activityCanLinkRecord,
+        reply: activityCanLinkReply,
+        team: activityCanLinkTeam,
       },
     },
   },
@@ -333,7 +333,7 @@ const rules = {
       link: {
         links: 'isTeamMember && (isAuthor || canManage || isLogMember)',
         reactions: 'isTeamMember && (isAuthor || canManage || isLogMember)',
-        activities: 'isTeamMember && (isAuthor || canManage || isLogMember)',
+        activities: activityCanLinkSameTeamContent,
       },
     },
   },
@@ -742,7 +742,7 @@ const rules = {
       update: 'canManage && isValidName',
       delete: 'canManage',
       link: {
-        activities: logCanLinkContent,
+        activities: activityCanLinkSameTeamContent,
         invites: 'auth.id != null',
         profiles: logCanLinkProfiles,
         records: logCanLinkContent,
@@ -993,7 +993,7 @@ const rules = {
         links: recordCanLinkContent,
         replies: recordCanLinkContent,
         reactions: recordCanLinkContent,
-        activities: recordCanLinkContent,
+        activities: activityCanLinkSameTeamContent,
         tags: ruleStrings.and(
           recordCanManageRecordTags,
           recordHasOnlyRecordTags,

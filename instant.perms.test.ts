@@ -4,14 +4,28 @@ import { describe, expect, test } from 'bun:test';
 describe('permissions', () => {
   test('guards activity links', () => {
     const activityLinks = rules.activities.allow.link;
-    expect(activityLinks.logs).toContain("linkedData.ref('profiles.user.id')");
+    expect(activityLinks.actor).toContain("linkedData.ref('user.id')");
+    expect(activityLinks).not.toHaveProperty('profiles');
+    expect(activityLinks).not.toHaveProperty('logs');
+    expect(activityLinks).not.toHaveProperty('records');
+    expect(activityLinks).not.toHaveProperty('replies');
+    expect(activityLinks).not.toHaveProperty('teams');
+    expect(activityLinks.log).toContain("linkedData.ref('profiles.user.id')");
 
-    expect(activityLinks.records).toContain(
+    expect(activityLinks.record).toContain(
       "linkedData.ref('log.profiles.user.id')"
     );
 
-    expect(activityLinks.replies).toContain(
+    expect(activityLinks.reply).toContain(
       "linkedData.ref('record.log.profiles.user.id')"
+    );
+
+    expect(activityLinks.team).toContain('linkedData.id == data.teamId');
+  });
+
+  test('guards log profile links', () => {
+    expect(rules.logs.allow.link.profiles).toContain(
+      "linkedData.ref('user.id')"
     );
   });
 
@@ -21,13 +35,21 @@ describe('permissions', () => {
   });
 
   test('guards content activities', () => {
-    expect(rules.logs.allow.link.activities).toContain('team.roles.key');
-
-    expect(rules.records.allow.link.activities).toContain(
-      "data.ref('log.profiles.user.id')"
+    expect(rules.logs.allow.link.activities).toContain(
+      "auth.ref('$user.roles.team.id')"
     );
 
-    expect(rules.replies.allow.link.activities).toContain('isLogMember');
+    expect(rules.logs.allow.link.activities).toContain(
+      'linkedData.teamId == data.teamId'
+    );
+
+    expect(rules.records.allow.link.activities).toContain(
+      'linkedData.teamId == data.teamId'
+    );
+
+    expect(rules.replies.allow.link.activities).toContain(
+      'linkedData.teamId == data.teamId'
+    );
   });
 
   test('allows manager text edits', () => {
