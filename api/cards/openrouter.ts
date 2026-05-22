@@ -146,7 +146,7 @@ const buildOutputRules = (options: OutputRulesOptions) => {
         ? `Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true. Do not add sections absent from blueprint. ${metricTrendRules} Put milestones newest-first.`
         : `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`
       : options.mode === 'refresh'
-        ? `Preserve previousOutput shape: metrics, chart config, sections, and existing milestones. Add only genuinely new milestones when useful and there is room. Do not add absent sections. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules}`
+        ? `Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. When previousOutput has milestones, curate the current best milestone set at up to ${cardOutput.MAX_CARD_MILESTONES}: prefer recent or new milestones when they are more relevant than older ones, and keep durable anchors only when they remain high-signal. If an existing milestone remains among the most relevant, keep its title and detail wording, date, and recordIds exactly unless source records show it is wrong. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules} Put milestones newest-first.`
         : `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins for this output. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules}`;
 
   return `${rules} ${dateOutputRules}`;
@@ -660,7 +660,7 @@ export const refreshCardResult = async ({
       previousTitle,
       prompt,
       records,
-      repairMessage: `${parsedResult.errorMessage}. Return { "output": object } again. Preserve the existing output shape and update only values/data based on the provided records.`,
+      repairMessage: `${parsedResult.errorMessage}. Return { "output": object } again. Preserve the existing output shape and curate milestones only within an existing milestone section based on the provided records.`,
       totalRecordCount,
     }),
     responseSchema: refreshedCardResponseSchema,

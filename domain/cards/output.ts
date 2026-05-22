@@ -620,28 +620,8 @@ const mergeCardChartRefresh = (
   }),
 });
 
-const milestoneKey = (milestone: CardOutput['milestones'][number]) =>
-  [milestone.title.trim().toLowerCase(), milestone.date?.trim() ?? ''].join(
-    '\n'
-  );
-
-const mergeCardMilestonesRefresh = (
-  previous: CardOutput['milestones'],
-  next: CardOutput['milestones']
-) => {
-  const milestones = previous.slice(0, MAX_CARD_MILESTONES);
-  const seenKeys = new Set(milestones.map(milestoneKey));
-
-  for (const milestone of next) {
-    if (milestones.length >= MAX_CARD_MILESTONES) break;
-    const key = milestoneKey(milestone);
-    if (seenKeys.has(key)) continue;
-    milestones.push(milestone);
-    seenKeys.add(key);
-  }
-
-  return milestones;
-};
+const mergeCardMilestonesRefresh = (next: CardOutput['milestones']) =>
+  next.slice(0, MAX_CARD_MILESTONES);
 
 const mergeSourceRecordIdsRefresh = (previous: string[], next: string[]) =>
   [...new Set([...next, ...previous].filter(Boolean))].slice(
@@ -664,7 +644,7 @@ export const mergeCardOutputRefresh = ({
   ),
   milestones:
     previous.milestones.length > 0
-      ? mergeCardMilestonesRefresh(previous.milestones, next.milestones)
+      ? mergeCardMilestonesRefresh(next.milestones)
       : [],
   sourceRecordIds: mergeSourceRecordIdsRefresh(
     previous.sourceRecordIds,

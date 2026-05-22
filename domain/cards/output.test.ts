@@ -366,10 +366,48 @@ describe('card output', () => {
         yAxis: { decimals: 0 },
       },
       metrics: [{ label: 'Best duration', unit: 'min', value: 8 }],
-      milestones: [{ title: 'Started baseline' }, { title: 'New best' }],
+      milestones: [{ title: 'New best' }],
       sourceRecordIds: ['record-2', 'record-1'],
       summary: 'Updated summary.',
     });
+  });
+
+  test('uses refreshed milestones', () => {
+    const merged = cardOutput.mergeCardOutputRefresh({
+      next: {
+        metrics: [],
+        milestones: [
+          {
+            date: '2026-05-01T00:00:00.000Z',
+            detail: 'Changed detail.',
+            recordIds: ['record-1'],
+            title: 'Baseline began',
+          },
+        ],
+        sourceRecordIds: [],
+      },
+      previous: {
+        metrics: [],
+        milestones: [
+          {
+            date: '2026-05-01T00:00:00.000Z',
+            detail: 'Original detail.',
+            recordIds: ['record-1'],
+            title: 'Started baseline',
+          },
+        ],
+        sourceRecordIds: [],
+      },
+    });
+
+    expect(merged.milestones).toEqual([
+      {
+        date: '2026-05-01T00:00:00.000Z',
+        detail: 'Changed detail.',
+        recordIds: ['record-1'],
+        title: 'Baseline began',
+      },
+    ]);
   });
 
   test('locks refresh sections', () => {

@@ -466,6 +466,14 @@ describe('card openrouter', () => {
       ],
     });
 
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      outputRules?: string;
+    };
+
     expect(requestBody?.response_format?.type).toBe('json_schema');
 
     expect(requestBody?.response_format?.json_schema).toMatchObject({
@@ -476,6 +484,13 @@ describe('card openrouter', () => {
     expect(requestBody?.response_format?.json_schema?.schema?.required).toEqual(
       ['output']
     );
+
+    expect(userPayload.outputRules).toContain(
+      'curate the current best milestone set'
+    );
+
+    expect(userPayload.outputRules).toContain('keep its title and detail');
+    expect(userPayload.outputRules).toContain('recordIds exactly');
   });
 
   test('handles refusal', async () => {
