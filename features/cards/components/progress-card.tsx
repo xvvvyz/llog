@@ -2673,7 +2673,7 @@ export const ProgressCard = ({
           className={cn('flex-1 min-w-0', !!actionMenu && '-mt-0.5 md:mt-0')}
         >
           <Text
-            numberOfLines={isSummary ? 1 : undefined}
+            numberOfLines={1}
             className={cn(
               'font-semibold',
               isSummary ? 'text-base' : 'text-lg',
