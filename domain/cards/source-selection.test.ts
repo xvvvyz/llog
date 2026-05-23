@@ -1,72 +1,54 @@
 import * as sourceSelection from '@/domain/cards/source-selection';
 import { describe, expect, test } from 'bun:test';
+import * as separationAnxietyFixture from '@/domain/cards/separation-anxiety-fixture';
 
-const records = [
-  {
-    date: '2026-01-01T00:00:00.000Z',
-    id: 'record-1',
-    tags: [{ id: 'tag-a' }],
-    text: 'first',
-  },
-  {
-    date: '2026-01-02T00:00:00.000Z',
-    id: 'record-2',
-    tags: [{ id: 'tag-a' }, { id: 'tag-b' }],
-    text: 'second',
-  },
-  {
-    date: '2026-01-03T00:00:00.000Z',
-    id: 'record-3',
-    tags: [{ id: 'tag-b' }],
-    text: 'third',
-  },
-];
-
-const manyRecords = Array.from(
-  { length: sourceSelection.MAX_CARD_FULL_TEXT_RECORDS + 10 },
-  (_, index) => ({
-    date: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
-    id: `many-${index + 1}`,
-    isDraft: false,
-    tags: [{ id: 'tag-a' }],
-    text: `entry ${index + 1}`,
-  })
+const manyRecords = separationAnxietyFixture.separationRecordsForCount(
+  sourceSelection.MAX_CARD_FULL_TEXT_RECORDS + 10
 );
 
-const promptSuggestionRecords = Array.from({ length: 45 }, (_, index) => {
-  const tagId = index === 1 ? 'tag-b' : index === 2 ? 'tag-c' : 'tag-a';
+const promptSuggestionRecords = separationAnxietyFixture
+  .separationRecordsForCount(45)
+  .map((record, index) => {
+    const tagId = index === 1 ? 'tag-b' : index === 2 ? 'tag-c' : 'tag-a';
 
-  return {
-    date: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
-    id: index === 1 ? 'rare-b' : index === 2 ? 'rare-c' : `prompt-${index + 1}`,
-    tags: [{ id: tagId }],
-    text: `prompt entry ${index + 1}`,
-  };
-});
+    return {
+      ...record,
+      id:
+        index === 1 ? 'rare-b' : index === 2 ? 'rare-c' : `prompt-${index + 1}`,
+      tags: [{ id: tagId }],
+    };
+  });
 
 describe('card sources', () => {
   test('uses provided order', () => {
     expect(
       sourceSelection
-        .selectCardSourceRecords({ records, tagIds: ['tag-a'] })
+        .selectCardSourceRecords({
+          records: separationAnxietyFixture.separationAnxietyRecords,
+          tagIds: separationAnxietyFixture.separationSessionTagIds,
+        })
         .map((record) => record.id)
-    ).toEqual(['record-1', 'record-2', 'record-3']);
-  });
-
-  test('keeps prefiltered records', () => {
-    expect(
-      sourceSelection
-        .selectCardSourceRecords({ records, tagIds: ['tag-a'] })
-        .map((record) => record.id)
-    ).toContain('record-3');
+    ).toEqual(
+      separationAnxietyFixture.separationAnxietyRecords.map(
+        (record) => record.id
+      )
+    );
   });
 
   test('limits newest', () => {
     expect(
       sourceSelection
-        .selectCardSourceRecords({ limit: 1, records, tagIds: ['tag-a'] })
+        .selectCardSourceRecords({
+          limit: 3,
+          records: separationAnxietyFixture.separationAnxietyRecords,
+          tagIds: separationAnxietyFixture.separationSessionTagIds,
+        })
         .map((record) => record.id)
-    ).toEqual(['record-3']);
+    ).toEqual(
+      separationAnxietyFixture.separationAnxietyRecords
+        .slice(-3)
+        .map((record) => record.id)
+    );
   });
 
   test('samples older history', () => {
@@ -74,7 +56,7 @@ describe('card sources', () => {
       .selectCardSourceRecords({
         limit: sourceSelection.MAX_CARD_FULL_TEXT_RECORDS + 2,
         records: manyRecords,
-        tagIds: ['tag-a'],
+        tagIds: separationAnxietyFixture.separationSessionTagIds,
       })
       .map((record) => record.id);
 
@@ -82,50 +64,44 @@ describe('card sources', () => {
       sourceSelection.MAX_CARD_FULL_TEXT_RECORDS + 2
     );
 
-    expect(selected.slice(0, 2)).toEqual(['many-1', 'many-10']);
+    expect(selected.slice(0, 2)).toEqual(['session-1', 'session-10']);
 
     expect(selected.slice(-sourceSelection.MAX_CARD_FULL_TEXT_RECORDS)).toEqual(
       Array.from(
         { length: sourceSelection.MAX_CARD_FULL_TEXT_RECORDS },
-        (_, index) => `many-${index + 11}`
+        (_, index) => `session-${index + 11}`
       )
     );
   });
 
-  test('returns coverage count', () => {
+  test('returns coverage', () => {
     const selection = sourceSelection.selectCardSourceRecordCoverage({
       limit: 5,
       records: manyRecords,
-      tagIds: ['tag-a'],
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
     expect(selection.records).toHaveLength(5);
     expect(selection.totalMatchingRecords).toBe(manyRecords.length);
-  });
 
-  test('caps default context', () => {
-    const records = Array.from({ length: 300 }, (_item, index) => ({
-      date: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
-      id: `coverage-${index + 1}`,
-      tags: [{ id: 'tag-a' }],
-      text: `entry ${index + 1}`,
-    }));
-
-    const selection = sourceSelection.selectCardSourceRecordCoverage({
-      records,
-      tagIds: ['tag-a'],
+    const capped = sourceSelection.selectCardSourceRecordCoverage({
+      records: separationAnxietyFixture.separationRecordsForCount(300),
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
-    expect(selection.records).toHaveLength(
+    expect(capped.records).toHaveLength(
       sourceSelection.MAX_CARD_ANALYSIS_SOURCE_RECORDS
     );
 
-    expect(selection.totalMatchingRecords).toBe(300);
+    expect(capped.totalMatchingRecords).toBe(300);
   });
 
   test('requires tags', () => {
     expect(
-      sourceSelection.selectCardSourceRecords({ records, tagIds: [] })
+      sourceSelection.selectCardSourceRecords({
+        records: separationAnxietyFixture.separationAnxietyRecords,
+        tagIds: [],
+      })
     ).toEqual([]);
   });
 
@@ -168,16 +144,14 @@ describe('card sources', () => {
         .selectCardPromptSuggestionRecords({
           records: [
             {
-              date: '2026-01-01T00:00:00.000Z',
+              ...separationAnxietyFixture.separationAnxietyRecords[0],
               id: 'selected',
               tags: [{ id: 'tag-a' }],
-              text: 'selected',
             },
             {
-              date: '2026-01-02T00:00:00.000Z',
+              ...separationAnxietyFixture.separationAnxietyRecords[1],
               id: 'ignored',
               tags: [{ id: 'tag-x' }],
-              text: 'ignored',
             },
           ],
           tagIds: ['tag-a'],

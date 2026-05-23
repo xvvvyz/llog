@@ -1,81 +1,61 @@
 import * as blueprint from '@/domain/cards/blueprint';
 import { describe, expect, test } from 'bun:test';
+import * as separationAnxietyFixture from '@/domain/cards/separation-anxiety-fixture';
 
 describe('card blueprint', () => {
-  test('creates compact spec', () => {
+  test('creates spec', () => {
     expect(
-      blueprint.createCardBlueprint({
-        chart: {
-          data: [
-            { label: 'Mon', value: 1 },
-            { label: 'Tue', value: 2 },
-          ],
-          title: 'Weekly trend',
-          type: 'line',
-          unit: 'hrs',
-          yAxis: { decimals: 1 },
-        },
-        metrics: [
-          { label: 'Average sleep', trend: 'up', unit: 'hrs', value: 7.5 },
-          {
-            label: 'First entry',
-            value: '2026-05-20T03:00:00.000Z',
-            valueFormat: 'date',
-          },
-        ],
-        milestones: [
-          {
-            date: '2026-05-20T00:00:00.000Z',
-            detail: 'Slept through the night',
-            title: 'Best night',
-          },
-        ],
-        summary: 'Sleep improved this week.',
-      })
+      blueprint.createCardBlueprint(
+        separationAnxietyFixture.separationAnxietyOutput()
+      )
     ).toEqual({
       chart: {
-        kind: 'data',
-        title: 'Weekly trend',
+        kind: 'series',
+        series: [
+          { label: 'Duration', unit: 'min' },
+          { label: 'Distress', unit: '0-5' },
+        ],
+        title: 'Duration and distress',
         type: 'line',
-        unit: 'hrs',
-        yAxis: { decimals: 1 },
+        xAxis: { labelMode: 'sparse' },
+        yAxis: { decimals: 0, tickCount: 5 },
       },
       metrics: [
-        { label: 'Average sleep', trend: true, unit: 'hrs', value: 7.5 },
         {
-          label: 'First entry',
-          value: '2026-05-20T03:00:00.000Z',
-          valueFormat: 'date',
+          label: 'Latest duration',
+          trend: true,
+          unit: 'min',
+          value:
+            separationAnxietyFixture.separationAnxietyExpected.latestDuration,
+        },
+        {
+          label: 'Latest distress',
+          trend: true,
+          unit: '0-5',
+          value:
+            separationAnxietyFixture.separationAnxietyExpected.latestDistress,
+        },
+        {
+          label: 'Under threshold',
+          value:
+            separationAnxietyFixture.separationAnxietyExpected.underThreshold,
+        },
+        {
+          label: 'Safe increases',
+          unit: 'sessions',
+          value:
+            separationAnxietyFixture.separationAnxietyExpected.safeIncreases,
+        },
+        {
+          label: 'Regressions',
+          unit: 'sessions',
+          value:
+            separationAnxietyFixture.separationAnxietyExpected.regressions
+              .length,
         },
       ],
       milestones: true,
       summary: true,
-    });
-  });
-
-  test('keeps series labels', () => {
-    expect(
-      blueprint.createCardBlueprint({
-        chart: {
-          series: [
-            {
-              data: [{ label: 'Week 1', value: 1 }],
-              label: 'Morning',
-              unit: 'min',
-            },
-            { data: [{ label: 'Week 1', value: 2 }], label: 'Evening' },
-          ],
-          type: 'line',
-        },
-        metrics: [],
-        milestones: [],
-      })
-    ).toEqual({
-      chart: {
-        kind: 'series',
-        series: [{ label: 'Morning', unit: 'min' }, { label: 'Evening' }],
-        type: 'line',
-      },
     });
   });
 

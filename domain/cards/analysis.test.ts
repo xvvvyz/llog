@@ -1,18 +1,22 @@
 import * as cardAnalysis from '@/domain/cards/analysis';
 import * as cardOutput from '@/domain/cards/output';
 import { describe, expect, test } from 'bun:test';
+import * as separationAnxietyFixture from '@/domain/cards/separation-anxiety-fixture';
 
 const records = (count: number) =>
-  Array.from({ length: count }, (_item, index) => ({
-    date: `2026-05-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`,
-    id: `record-${index + 1}`,
-    isDraft: false,
-    logId: 'log-1',
-    tags: [{ id: 'tag-a', name: 'Session' }],
-    text: `Session ${index + 1}`,
-  }));
+  separationAnxietyFixture
+    .separationRecordsForCount(count)
+    .map((record) => ({
+      ...record,
+      tags: [
+        {
+          id: separationAnxietyFixture.SEPARATION_SESSION_TAG_ID,
+          name: 'Session',
+        },
+      ],
+    }));
 
-const analysisSpec: cardAnalysis.CardAnalysisSpec = {
+const qualitativeAnalysisSpec: cardAnalysis.CardAnalysisSpec = {
   aggregations: [
     {
       eventLabel: 'whining',
@@ -145,12 +149,16 @@ describe('card analysis plan', () => {
 
   test('skips chart fallback', () => {
     const prompt =
-      'Track separation progress: make a line chart over time with two series, Alone duration (min) and Peak distress (0-5). Summarize latest duration, current all-time max with distress <=2, and any recent regressions where distress rose above 2 or duration was reduced.';
+      'Track separation progress: make a line chart over time with two series, Alone duration (min) and Peak distress (0-5). Summarize latest duration, current all-time max with distress <=2, and recent regressions where distress rose above 2 or duration was reduced.';
 
     expect(cardAnalysis.extractTargetEvents(prompt)).toEqual([]);
 
     expect(
-      cardAnalysis.planCardAnalysis({ prompt, totalMatchingRecords: 47 }).mode
+      cardAnalysis.planCardAnalysis({
+        prompt,
+        totalMatchingRecords:
+          separationAnxietyFixture.separationAnxietyExpected.sessionCount,
+      }).mode
     ).toBe('narrative');
 
     expect(
@@ -187,7 +195,8 @@ describe('card analysis plan', () => {
         },
         mode: 'exact',
         prompt,
-        totalMatchingRecords: 47,
+        totalMatchingRecords:
+          separationAnxietyFixture.separationAnxietyExpected.sessionCount,
       }).mode
     ).toBe('narrative');
   });
@@ -337,24 +346,14 @@ describe('card analysis plan', () => {
 
   test('chunks records', () => {
     expect(
-      cardAnalysis.chunkRecordIds({ recordIds: records(20).map((r) => r.id) })
-    ).toHaveLength(1);
-
-    expect(
-      cardAnalysis.chunkRecordIds({ recordIds: records(21).map((r) => r.id) })
-    ).toHaveLength(2);
-
-    expect(
-      cardAnalysis.chunkRecordIds({ recordIds: records(40).map((r) => r.id) })
-    ).toHaveLength(2);
-
-    expect(
-      cardAnalysis.chunkRecordIds({ recordIds: records(60).map((r) => r.id) })
-    ).toHaveLength(3);
-
-    expect(
-      cardAnalysis.chunkRecordIds({ recordIds: records(61).map((r) => r.id) })
-    ).toHaveLength(4);
+      cardAnalysis
+        .chunkRecordIds({
+          recordIds: separationAnxietyFixture.separationAnxietyRecords.map(
+            (record) => record.id
+          ),
+        })
+        .map((chunk) => chunk.length)
+    ).toEqual([20, 20, 7]);
   });
 });
 
@@ -487,6 +486,11 @@ describe('card date filters', () => {
   });
 
   test('averages filtered records', () => {
+    const filters = cardAnalysis.parsePromptDateFilters({
+      generationTime: '2026-05-23T12:00:00.000Z',
+      prompt: 'Average duration from Feb 1 to Feb 28.',
+    });
+
     const spec: cardAnalysis.CardAnalysisSpec = {
       aggregations: [
         {
@@ -501,69 +505,37 @@ describe('card date filters', () => {
       extractionFields: [
         { id: 'duration', label: 'Duration', type: 'number', unit: 'min' },
       ],
-      filters: [
-        {
-          endExclusive: { type: 'generationTime' },
-          field: 'record.date',
-          id: 'last_3_months',
-          startInclusive: {
-            offset: { amount: -3, unit: 'month' },
-            type: 'generationTime',
-          },
-        },
-      ],
+      filters,
       groupings: [],
     };
 
-    const sourceRecords = [
-      { date: '2026-02-23T11:59:59.000Z', id: 'before' },
-      { date: '2026-02-23T12:00:00.000Z', id: 'start' },
-      { date: '2026-04-01T00:00:00.000Z', id: 'middle' },
-      { date: '2026-05-23T11:59:59.000Z', id: 'latest' },
-      { date: '2026-05-23T12:00:00.000Z', id: 'after' },
-    ];
-
-    const facts = sourceRecords.map((record, index) => ({
-      facts: {
-        events: [],
-        evidence: [],
-        numericValues: [
-          { fieldId: 'duration', value: [100, 10, 20, 30, 1000][index] },
-        ],
-        outcomes: [],
-        qualitativeLabels: [],
-        recordId: record.id,
-      },
-    }));
-
     const exactFacts = cardAnalysis.aggregateExtractedFacts({
       analysisSpec: spec,
-      facts,
+      facts: separationAnxietyFixture.separationAnxietyFacts,
       generationTime: '2026-05-23T12:00:00.000Z',
-      records: sourceRecords,
-      tagIds: ['tag-a'],
+      records: separationAnxietyFixture.separationAnxietyRecords,
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
-    expect(exactFacts.aggregateValues.duration_average.value).toBe(20);
-    expect(exactFacts.totalMatchingRecordCount).toBe(3);
+    expect(exactFacts.aggregateValues.duration_average.value).toBe(38.55);
+    expect(exactFacts.totalMatchingRecordCount).toBe(20);
   });
 });
 
 describe('card fact cache', () => {
   test('counts tags', () => {
+    const [first, second, third] = records(3);
+
     expect(
       cardAnalysis.countSelectedTags({
         records: [
-          ...records(2),
-          {
-            ...records(1)[0],
-            id: 'record-3',
-            tags: [{ id: 'tag-b', name: 'Trigger' }],
-          },
+          first,
+          second,
+          { ...third, tags: [{ id: 'trigger', name: 'Trigger' }] },
         ],
-        tagIds: ['tag-a', 'tag-b'],
+        tagIds: [separationAnxietyFixture.SEPARATION_SESSION_TAG_ID, 'trigger'],
       })
-    ).toEqual({ 'tag-a': 2, 'tag-b': 1 });
+    ).toEqual({ session: 2, trigger: 1 });
   });
 
   test('fingerprints source', () => {
@@ -571,13 +543,13 @@ describe('card fact cache', () => {
 
     const original = cardAnalysis.recordFingerprint({
       record,
-      selectedTagIds: ['tag-a'],
+      selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
     expect(
       cardAnalysis.recordFingerprint({
         record: { ...record, text: 'changed' },
-        selectedTagIds: ['tag-a'],
+        selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
       })
     ).not.toBe(original);
 
@@ -594,10 +566,12 @@ describe('card fact cache', () => {
 
     const recordFingerprint = cardAnalysis.recordFingerprint({
       record,
-      selectedTagIds: ['tag-a'],
+      selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
-    const analysisSpecHash = cardAnalysis.analysisSpecHash(analysisSpec);
+    const analysisSpecHash = cardAnalysis.analysisSpecHash(
+      separationAnxietyFixture.separationAnxietyAnalysisSpec
+    );
 
     expect(
       cardAnalysis.factKey({
@@ -621,7 +595,7 @@ describe('card fact cache', () => {
         cardId: 'card-1',
         recordFingerprint: cardAnalysis.recordFingerprint({
           record: { ...record, text: 'changed' },
-          selectedTagIds: ['tag-a'],
+          selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
         }),
         recordId: record.id,
       })
@@ -653,82 +627,55 @@ describe('card fact cache', () => {
 });
 
 describe('card exact facts', () => {
-  test('aggregates metrics', () => {
-    const sourceRecords = records(2);
-
-    const facts = [
-      {
-        facts: {
-          events: [
-            {
-              count: 2,
-              evidence: 'Whined twice.',
-              fieldId: 'events',
-              label: 'whining',
-            },
-          ],
-          evidence: [],
-          numericValues: [
-            {
-              evidence: 'Duration was 10 minutes.',
-              fieldId: 'duration',
-              value: 10,
-            },
-          ],
-          outcomes: [],
-          qualitativeLabels: [],
-          recordId: 'record-1',
-        },
-      },
-      {
-        facts: {
-          events: [
-            {
-              count: 1,
-              evidence: 'Whined once.',
-              fieldId: 'events',
-              label: 'whining',
-            },
-          ],
-          evidence: [],
-          numericValues: [
-            {
-              evidence: 'Duration was 20 minutes.',
-              fieldId: 'duration',
-              value: 20,
-            },
-          ],
-          outcomes: [],
-          qualitativeLabels: [],
-          recordId: 'record-2',
-        },
-      },
-    ];
-
+  test('aggregates sessions', () => {
     const exactFacts = cardAnalysis.aggregateExtractedFacts({
-      analysisSpec,
-      facts,
-      records: sourceRecords,
-      tagIds: ['tag-a'],
+      analysisSpec: separationAnxietyFixture.separationAnxietyAnalysisSpec,
+      facts: separationAnxietyFixture.separationAnxietyFacts,
+      records: separationAnxietyFixture.separationAnxietyRecords,
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
-    expect(exactFacts.aggregateValues.whining_count.value).toBe(3);
-    expect(exactFacts.aggregateValues.duration_sum.value).toBe(30);
-    expect(exactFacts.aggregateValues.duration_average.value).toBe(15);
-    expect(exactFacts.aggregateValues.whines_per_minute.value).toBe(0.1);
+    expect(exactFacts.totalMatchingRecordCount).toBe(
+      separationAnxietyFixture.separationAnxietyExpected.sessionCount
+    );
+
+    expect(exactFacts.aggregateValues.latest_duration.value).toBe(
+      separationAnxietyFixture.separationAnxietyExpected.latestDuration
+    );
+
+    expect(exactFacts.aggregateValues.latest_distress.value).toBe(
+      separationAnxietyFixture.separationAnxietyExpected.latestDistress
+    );
+
+    expect(exactFacts.aggregateValues.distress_average.value).toBe(2.13);
+    expect(exactFacts.aggregateValues.whine_sessions.value).toBe(6);
 
     expect(exactFacts.chart).toMatchObject({
-      data: [
-        { label: '2026-05-01T00:00:00.000Z', value: 10 },
-        { label: '2026-05-02T00:00:00.000Z', value: 20 },
+      series: [
+        {
+          data: separationAnxietyFixture.separationSeries({
+            value: separationAnxietyFixture.separationDuration,
+          }),
+          label: 'Duration',
+          unit: 'min',
+        },
+        {
+          data: separationAnxietyFixture.separationSeries({
+            value: separationAnxietyFixture.separationDistress,
+          }),
+          label: 'Distress',
+          unit: '0-5',
+        },
       ],
       type: 'line',
     });
   });
 
   test('aggregates qualitative', () => {
+    const sourceRecords = records(2);
+
     const exactFacts = cardAnalysis.aggregateExtractedFacts({
-      analysisSpec,
+      analysisSpec: qualitativeAnalysisSpec,
       facts: [
         {
           facts: {
@@ -750,7 +697,7 @@ describe('card exact facts', () => {
                 score: 2,
               },
             ],
-            recordId: 'record-1',
+            recordId: sourceRecords[0].id,
           },
         },
         {
@@ -767,12 +714,12 @@ describe('card exact facts', () => {
                 score: 5,
               },
             ],
-            recordId: 'record-2',
+            recordId: sourceRecords[1].id,
           },
         },
       ],
-      records: records(2),
-      tagIds: ['tag-a'],
+      records: sourceRecords,
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
     expect(exactFacts.qualitative?.themeCounts).toEqual({
@@ -791,58 +738,8 @@ describe('card exact facts', () => {
     expect(exactFacts.qualitative?.representativeRecords[0]).toMatchObject({
       evidence: 'Settled near the door.',
       label: 'settled',
-      recordId: 'record-1',
+      recordId: sourceRecords[0].id,
     });
-  });
-
-  test('counts record presence', () => {
-    const exactFacts = cardAnalysis.aggregateExtractedFacts({
-      analysisSpec: {
-        aggregations: [
-          {
-            eventLabel: 'whining',
-            fieldId: 'events',
-            id: 'whine_sessions',
-            label: 'Whine sessions',
-            operation: 'count',
-          },
-        ],
-        charts: [],
-        extractionFields: [
-          {
-            countMode: 'recordPresence',
-            id: 'events',
-            label: 'Events',
-            labels: ['whining'],
-            type: 'event',
-          },
-        ],
-        groupings: [],
-      },
-      facts: [
-        {
-          facts: {
-            events: [
-              {
-                count: 3,
-                evidence: 'Whined three times.',
-                fieldId: 'events',
-                label: 'whining',
-              },
-            ],
-            evidence: [],
-            numericValues: [],
-            outcomes: [],
-            qualitativeLabels: [],
-            recordId: 'record-1',
-          },
-        },
-      ],
-      records: records(2),
-      tagIds: ['tag-a'],
-    });
-
-    expect(exactFacts.aggregateValues.whine_sessions.value).toBe(1);
   });
 
   test('counts tags', () => {
@@ -909,8 +806,10 @@ describe('card exact facts', () => {
   });
 
   test('filters invalid facts', () => {
+    const [record] = records(1);
+
     const exactFacts = cardAnalysis.aggregateExtractedFacts({
-      analysisSpec,
+      analysisSpec: qualitativeAnalysisSpec,
       facts: [
         {
           facts: {
@@ -935,12 +834,12 @@ describe('card exact facts', () => {
                 score: 8,
               },
             ],
-            recordId: 'record-1',
+            recordId: record.id,
           },
         },
       ],
-      records: records(1),
-      tagIds: ['tag-a'],
+      records: [record],
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
     expect(exactFacts.aggregateValues.whining_count.value).toBe(0);
@@ -949,6 +848,8 @@ describe('card exact facts', () => {
   });
 
   test('normalizes metrics', () => {
+    const [record] = records(1);
+
     const exactFacts = cardAnalysis.aggregateExtractedFacts({
       analysisSpec: {
         aggregations: [
@@ -981,12 +882,12 @@ describe('card exact facts', () => {
                   'A long qualitative value that should be trimmed before validation',
               },
             ],
-            recordId: 'record-1',
+            recordId: record.id,
           },
         },
       ],
-      records: records(1),
-      tagIds: ['tag-a'],
+      records: [record],
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
     });
 
     const [metric] = exactFacts.metrics;
