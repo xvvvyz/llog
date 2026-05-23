@@ -3,6 +3,7 @@ import { MarkdownShortcutToolbar } from '@/features/records/components/markdown-
 import { useMarkdownTextareaShortcuts } from '@/features/records/hooks/use-markdown-textarea-shortcuts';
 import { readTextareaBlurText } from '@/features/records/lib/read-textarea-blur-text';
 import { useVirtualKeyboardVisible } from '@/hooks/use-virtual-keyboard-visible';
+import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
@@ -14,10 +15,20 @@ import { Textarea } from '@/ui/textarea';
 import { CornersOut } from 'phosphor-react-native';
 import * as React from 'react';
 import { Keyboard, Platform, Pressable, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 const COMPOSER_TEXT_MAX_LENGTH = 10240;
+const INLINE_TEXTAREA_MAX_ROWS = 7;
+const INLINE_TEXTAREA_MAX_HEIGHT = INLINE_TEXTAREA_MAX_ROWS * 20 + 20;
+const TEXTAREA_SCROLL_BOTTOM_TOLERANCE = 8;
 type ComposerEditor = 'fullscreen' | 'inline';
 type TextareaBlurHandle = { blur?: () => void };
+
+type TextareaScrollMetrics = {
+  contentHeight?: number;
+  offsetY?: number;
+  viewportHeight?: number;
+};
 
 export const ComposerForm = ({
   attachmentCount,
@@ -38,6 +49,7 @@ export const ComposerForm = ({
   onTextareaFocusChange,
   placeholder,
   showFormattingControls = true,
+  showFullscreenControl = true,
   submitLabel,
   submitTextClassName,
   submitVariant,
@@ -62,6 +74,7 @@ export const ComposerForm = ({
   onTextareaFocusChange: (isFocused: boolean) => void;
   placeholder: string;
   showFormattingControls?: boolean;
+  showFullscreenControl?: boolean;
   submitLabel: string;
   submitTextClassName?: string;
   submitVariant?: React.ComponentPropsWithoutRef<typeof Button>['variant'];
@@ -76,16 +89,11 @@ export const ComposerForm = ({
   const showMarkdownShortcuts = showFormattingControls && isComposerCompact;
   const showInputAccessory = !isComposerCompact && !!inputAccessory;
   const showInputAction = !isComposerCompact && !!inputAction;
-  const showInputControls = showInputAction || showFormattingControls;
+  const showInputControls = showInputAction || showFullscreenControl;
   const [isFullscreenOpen, setIsFullscreenOpen] = React.useState(false);
 
   const [focusedEditor, setFocusedEditor] =
     React.useState<ComposerEditor | null>(null);
-
-  const showFocusedAttachmentSummary =
-    isVirtualKeyboardVisible &&
-    focusedEditor === 'inline' &&
-    (showFormattingControls || attachmentCount > 0);
 
   const inlineTextareaRef =
     React.useRef<React.ComponentRef<typeof Textarea>>(null);
@@ -96,6 +104,21 @@ export const ComposerForm = ({
   const cancelPendingFullscreenOpenRef = React.useRef<(() => void) | null>(
     null
   );
+
+  const {
+    handleTextChange,
+    hasSpace: hasInlineAttachmentSummarySpace,
+    onContentSizeChange: handleInlineTextareaContentSizeChange,
+    onScroll: handleInlineTextareaScroll,
+    reset: resetInlineAttachmentSummary,
+    show: showInlineAttachmentSummary,
+  } = useInlineAttachmentSummary({
+    attachmentCount,
+    focusedEditor,
+    isVirtualKeyboardVisible,
+    showFullscreenControl,
+    textLength: text.length,
+  });
 
   const cancelPendingFullscreenOpen = React.useCallback(() => {
     cancelPendingFullscreenOpenRef.current?.();
@@ -108,17 +131,23 @@ export const ComposerForm = ({
   );
 
   React.useEffect(() => {
-    if (showFormattingControls) return;
+    if (showFullscreenControl) return;
     setIsFullscreenOpen(false);
-  }, [showFormattingControls]);
+  }, [showFullscreenControl]);
 
   React.useEffect(() => {
     if (isOpen) return;
     cancelPendingFullscreenOpen();
+    resetInlineAttachmentSummary();
     setFocusedEditor(null);
     onTextareaFocusChange(false);
     setIsFullscreenOpen(false);
-  }, [cancelPendingFullscreenOpen, isOpen, onTextareaFocusChange]);
+  }, [
+    cancelPendingFullscreenOpen,
+    isOpen,
+    onTextareaFocusChange,
+    resetInlineAttachmentSummary,
+  ]);
 
   const handleTextareaFocus = React.useCallback(
     (editor: ComposerEditor) => {
@@ -131,9 +160,10 @@ export const ComposerForm = ({
 
   const setComposerText = React.useCallback(
     (nextText: string) => {
+      handleTextChange(nextText);
       onChangeText(nextText);
     },
-    [onChangeText]
+    [handleTextChange, onChangeText]
   );
 
   const {
@@ -270,12 +300,14 @@ export const ComposerForm = ({
                 ref={inlineTextareaRef}
                 autoFocus={shouldAutoFocus}
                 maxLength={COMPOSER_TEXT_MAX_LENGTH}
-                maxRows={7}
+                maxRows={INLINE_TEXTAREA_MAX_ROWS}
                 minRows={1}
                 onBlur={handleInlineTextareaBlur}
                 onChangeText={setComposerText}
+                onContentSizeChange={handleInlineTextareaContentSizeChange}
                 onFocus={handleInlineTextareaFocus}
                 onKeyDown={handleInlineKeyDown}
+                onScroll={handleInlineTextareaScroll}
                 onSelectionChange={handleInlineSelectionChange}
                 onTouchStart={handleInlineTextareaTouchStart}
                 pasteRichTextAsMarkdown
@@ -286,16 +318,16 @@ export const ComposerForm = ({
                 className={cn(
                   'border-0 bg-transparent',
                   isTextInputDisabled && 'opacity-50',
-                  showFocusedAttachmentSummary && 'min-h-16 pb-8',
-                  showInputAction && showFormattingControls && 'pr-44',
-                  showInputAction && !showFormattingControls && 'pr-32',
-                  !showInputAction && showFormattingControls && 'pr-14'
+                  hasInlineAttachmentSummarySpace && 'min-h-16 pb-8',
+                  showInputAction && showFullscreenControl && 'pr-44',
+                  showInputAction && !showFullscreenControl && 'pr-32',
+                  !showInputAction && showFullscreenControl && 'pr-14'
                 )}
               />
               {showInputControls && (
                 <View className="absolute right-1 top-1 flex-row gap-1">
                   {showInputAction && inputAction}
-                  {showFormattingControls && (
+                  {showFullscreenControl && (
                     <Button
                       accessibilityLabel="Open fullscreen composer"
                       className="h-8 w-8 rounded-lg"
@@ -314,19 +346,24 @@ export const ComposerForm = ({
                   )}
                 </View>
               )}
-              {showFocusedAttachmentSummary && (
-                <Pressable
-                  accessibilityLabel="Dismiss keyboard"
-                  accessibilityRole="button"
+              {showInlineAttachmentSummary && (
+                <Animated.View
                   className="absolute bottom-1 right-3 max-w-[75%]"
-                  hitSlop={8}
-                  onPress={handleCompactAttachmentSummaryPress}
+                  entering={animation(FadeIn)}
+                  exiting={animation(FadeOut)}
                 >
-                  <AttachmentSummary
-                    count={attachmentCount}
-                    variant="compact"
-                  />
-                </Pressable>
+                  <Pressable
+                    accessibilityLabel="Dismiss keyboard"
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={handleCompactAttachmentSummaryPress}
+                  >
+                    <AttachmentSummary
+                      count={attachmentCount}
+                      variant="compact"
+                    />
+                  </Pressable>
+                </Animated.View>
               )}
             </View>
             {isComposerCompact ? null : filePreview}
@@ -363,7 +400,7 @@ export const ComposerForm = ({
       <Sheet
         className="h-full"
         onDismiss={() => setIsFullscreenOpen(false)}
-        open={isOpen && isFullscreenOpen && showFormattingControls}
+        open={isOpen && isFullscreenOpen && showFullscreenControl}
         portalName={fullscreenPortalName}
         width="editor"
       >
@@ -394,13 +431,15 @@ export const ComposerForm = ({
               </View>
               <View className="flex-row px-4 gap-3 items-center shrink-0">
                 <View className="flex-1 flex-row gap-2 items-center">
-                  <MarkdownShortcutToolbar
-                    disabled={isTextInputDisabled}
-                    onShortcut={handleFullscreenMarkdownShortcut}
-                    onShortcutPressStart={
-                      handleFullscreenMarkdownShortcutPressStart
-                    }
-                  />
+                  {showFormattingControls && (
+                    <MarkdownShortcutToolbar
+                      disabled={isTextInputDisabled}
+                      onShortcut={handleFullscreenMarkdownShortcut}
+                      onShortcutPressStart={
+                        handleFullscreenMarkdownShortcutPressStart
+                      }
+                    />
+                  )}
                 </View>
                 <Button
                   onPress={() => setIsFullscreenOpen(false)}
@@ -417,3 +456,182 @@ export const ComposerForm = ({
     </React.Fragment>
   );
 };
+
+function useInlineAttachmentSummary({
+  attachmentCount,
+  focusedEditor,
+  isVirtualKeyboardVisible,
+  showFullscreenControl,
+  textLength,
+}: {
+  attachmentCount: number;
+  focusedEditor: ComposerEditor | null;
+  isVirtualKeyboardVisible: boolean;
+  showFullscreenControl: boolean;
+  textLength: number;
+}) {
+  const [isScrolledToBottom, setIsScrolledToBottom] = React.useState(true);
+  const isScrolledToBottomRef = React.useRef(true);
+  const metricsRef = React.useRef<TextareaScrollMetrics>({});
+  const suppressNotBottomRef = React.useRef(false);
+  const clearSuppressNotBottomRef = React.useRef<(() => void) | null>(null);
+
+  const clearSuppressNotBottom = React.useCallback(() => {
+    clearSuppressNotBottomRef.current?.();
+  }, []);
+
+  const suppressNotBottomForAutoScroll = React.useCallback(() => {
+    suppressNotBottomRef.current = true;
+    clearSuppressNotBottom();
+
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        suppressNotBottomRef.current = false;
+        clearSuppressNotBottomRef.current = null;
+      });
+    });
+
+    clearSuppressNotBottomRef.current = () => {
+      cancelAnimationFrame(frame);
+      suppressNotBottomRef.current = false;
+      clearSuppressNotBottomRef.current = null;
+    };
+  }, [clearSuppressNotBottom]);
+
+  const updateScrollMetrics = React.useCallback(
+    (metrics: TextareaScrollMetrics) => {
+      const nextMetrics = { ...metricsRef.current, ...metrics };
+      metricsRef.current = nextMetrics;
+
+      setIsScrolledToBottom((current) => {
+        const next = isTextareaScrolledToBottom(nextMetrics);
+        if (!next && current && suppressNotBottomRef.current) return current;
+        isScrolledToBottomRef.current = next;
+        return current === next ? current : next;
+      });
+    },
+    []
+  );
+
+  const handleContentSizeChange = React.useCallback(
+    (event: unknown) => {
+      const contentHeight = getTextareaContentHeightFromEvent(event);
+      if (contentHeight === undefined) return;
+      updateScrollMetrics({ contentHeight });
+    },
+    [updateScrollMetrics]
+  );
+
+  const handleScroll = React.useCallback(
+    (event: unknown) => {
+      updateScrollMetrics(getTextareaScrollMetricsFromEvent(event));
+    },
+    [updateScrollMetrics]
+  );
+
+  const handleTextChange = React.useCallback(
+    (nextText: string) => {
+      if (isScrolledToBottomRef.current && nextText.length >= textLength) {
+        suppressNotBottomForAutoScroll();
+      }
+    },
+    [suppressNotBottomForAutoScroll, textLength]
+  );
+
+  const reset = React.useCallback(() => {
+    clearSuppressNotBottom();
+    metricsRef.current = {};
+    isScrolledToBottomRef.current = true;
+    setIsScrolledToBottom(true);
+  }, [clearSuppressNotBottom]);
+
+  React.useEffect(() => clearSuppressNotBottom, [clearSuppressNotBottom]);
+
+  const hasSpace =
+    isVirtualKeyboardVisible &&
+    focusedEditor === 'inline' &&
+    (showFullscreenControl || attachmentCount > 0);
+
+  return React.useMemo(
+    () => ({
+      handleTextChange,
+      hasSpace,
+      onContentSizeChange: handleContentSizeChange,
+      onScroll: handleScroll,
+      reset,
+      show: hasSpace && isScrolledToBottom,
+    }),
+    [
+      handleContentSizeChange,
+      handleScroll,
+      handleTextChange,
+      hasSpace,
+      isScrolledToBottom,
+      reset,
+    ]
+  );
+}
+
+function isTextareaScrolledToBottom(metrics: TextareaScrollMetrics) {
+  const contentHeight = metrics.contentHeight ?? 0;
+  if (contentHeight <= 0) return true;
+
+  const viewportHeight =
+    metrics.viewportHeight ??
+    Math.min(INLINE_TEXTAREA_MAX_HEIGHT, contentHeight);
+
+  if (contentHeight <= viewportHeight + TEXTAREA_SCROLL_BOTTOM_TOLERANCE) {
+    return true;
+  }
+
+  return (
+    (metrics.offsetY ?? 0) + viewportHeight >=
+    contentHeight - TEXTAREA_SCROLL_BOTTOM_TOLERANCE
+  );
+}
+
+function getTextareaContentHeightFromEvent(event: unknown) {
+  const nativeEvent = getObjectProperty(event, 'nativeEvent');
+  const contentSize = getObjectProperty(nativeEvent, 'contentSize');
+  return getNumberProperty(contentSize, 'height');
+}
+
+function getTextareaScrollMetricsFromEvent(
+  event: unknown
+): TextareaScrollMetrics {
+  const currentTarget = getObjectProperty(event, 'currentTarget');
+  const scrollHeight = getNumberProperty(currentTarget, 'scrollHeight');
+  const scrollTop = getNumberProperty(currentTarget, 'scrollTop');
+  const clientHeight = getNumberProperty(currentTarget, 'clientHeight');
+
+  if (
+    scrollHeight !== undefined ||
+    scrollTop !== undefined ||
+    clientHeight !== undefined
+  ) {
+    return {
+      contentHeight: scrollHeight,
+      offsetY: scrollTop,
+      viewportHeight: clientHeight,
+    };
+  }
+
+  const nativeEvent = getObjectProperty(event, 'nativeEvent');
+  const contentOffset = getObjectProperty(nativeEvent, 'contentOffset');
+  return { offsetY: getNumberProperty(contentOffset, 'y') };
+}
+
+function getObjectProperty(value: unknown, key: string) {
+  if (!value || typeof value !== 'object') return undefined;
+  const property = (value as Record<string, unknown>)[key];
+  return property && typeof property === 'object' ? property : undefined;
+}
+
+function getNumberProperty(value: unknown, key: string) {
+  if (!value || typeof value !== 'object') return undefined;
+  const property = (value as Record<string, unknown>)[key];
+
+  return typeof property === 'number' && Number.isFinite(property)
+    ? property
+    : undefined;
+}

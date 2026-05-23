@@ -13,6 +13,7 @@ type TextareaProps = React.ComponentPropsWithoutRef<typeof TextInput> & {
 
 const NATIVE_TEXTAREA_LINE_HEIGHT = 20;
 const NATIVE_TEXTAREA_VERTICAL_PADDING = 20;
+type TextSelection = { end: number; start: number };
 
 const Textarea = React.forwardRef<
   React.ComponentRef<typeof TextInput>,
@@ -28,6 +29,7 @@ const Textarea = React.forwardRef<
       numberOfLines,
       onChangeText,
       onContentSizeChange,
+      onSelectionChange,
       onKeyDown: _onKeyDown,
       pasteRichTextAsMarkdown: _pasteRichTextAsMarkdown,
       readOnly,
@@ -46,6 +48,15 @@ const Textarea = React.forwardRef<
     void _onKeyDown;
     void _pasteRichTextAsMarkdown;
     const [contentHeight, setContentHeight] = React.useState<number>();
+    const inputRef = React.useRef<React.ComponentRef<typeof TextInput>>(null);
+    const localValueRef = React.useRef(localValue);
+
+    const selectionRef = React.useRef<TextSelection>({
+      end: localValue.length,
+      start: localValue.length,
+    });
+
+    const keepScrolledToBottomRef = React.useRef(false);
 
     const minHeight = minRows
       ? minRows * NATIVE_TEXTAREA_LINE_HEIGHT + NATIVE_TEXTAREA_VERTICAL_PADDING
@@ -69,16 +80,62 @@ const Textarea = React.forwardRef<
         : undefined;
 
     React.useEffect(() => {
-      if (value !== undefined) setLocalValue(value);
+      if (value === undefined) return;
+      localValueRef.current = value;
+      setLocalValue(value);
     }, [value]);
+
+    const handleRef = React.useCallback(
+      (node: React.ComponentRef<typeof TextInput> | null) => {
+        inputRef.current = node;
+
+        if (typeof ref === 'function') {
+          ref(node);
+          return;
+        }
+
+        if (ref) ref.current = node;
+      },
+      [ref]
+    );
+
+    const keepScrolledToBottom = React.useCallback(() => {
+      requestAnimationFrame(() => {
+        const input = inputRef.current;
+        const end = localValueRef.current.length;
+        input?.setSelection(end, end);
+        requestAnimationFrame(() => input?.setSelection(end, end));
+      });
+    }, []);
 
     const handleChangeText = React.useCallback(
       (text: string) => {
         if (readOnly) return;
+        const selection = selectionRef.current;
+        const previousLength = localValueRef.current.length;
+
+        const shouldKeepScrolledToBottom =
+          selection.start === selection.end &&
+          selection.end >= previousLength &&
+          text.length >= previousLength;
+
+        keepScrolledToBottomRef.current = shouldKeepScrolledToBottom;
+        localValueRef.current = text;
         setLocalValue(text);
         if (onChangeText) React.startTransition(() => onChangeText(text));
+        if (shouldKeepScrolledToBottom) keepScrolledToBottom();
       },
-      [onChangeText, readOnly]
+      [keepScrolledToBottom, onChangeText, readOnly]
+    );
+
+    const handleSelectionChange = React.useCallback<
+      NonNullable<TextareaProps['onSelectionChange']>
+    >(
+      (event) => {
+        selectionRef.current = event.nativeEvent.selection;
+        onSelectionChange?.(event);
+      },
+      [onSelectionChange]
     );
 
     const handleContentSizeChange = React.useCallback<
@@ -90,13 +147,14 @@ const Textarea = React.forwardRef<
         }
 
         onContentSizeChange?.(event);
+        if (keepScrolledToBottomRef.current) keepScrolledToBottom();
       },
-      [maxRows, minRows, onContentSizeChange]
+      [keepScrolledToBottom, maxRows, minRows, onContentSizeChange]
     );
 
     return (
       <TextInput
-        ref={ref}
+        ref={handleRef}
         autoCapitalize="sentences"
         autoComplete="off"
         autoCorrect
@@ -107,6 +165,7 @@ const Textarea = React.forwardRef<
         numberOfLines={minRows ?? numberOfLines}
         onChangeText={handleChangeText}
         onContentSizeChange={handleContentSizeChange}
+        onSelectionChange={handleSelectionChange}
         placeholderTextColorClassName="accent-placeholder"
         returnKeyType="default"
         scrollEnabled={scrollEnabled ?? true}

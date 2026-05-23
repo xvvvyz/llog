@@ -5,6 +5,10 @@ import { getRichTextPasteEdit } from '@/ui/textarea-rich-text-paste';
 import * as React from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 
+type TextareaContentSizeChangeEvent = {
+  nativeEvent: { contentSize: { height: number; width: number } };
+};
+
 export const Textarea = React.forwardRef<
   React.ComponentRef<typeof TextareaAutosize>,
   Omit<
@@ -15,6 +19,7 @@ export const Textarea = React.forwardRef<
     minRows?: number;
     numberOfLines?: number;
     onChangeText?: (text: string) => void;
+    onContentSizeChange?: (event: TextareaContentSizeChangeEvent) => void;
     onSelectionChange?: (event: {
       nativeEvent: { selection: { end: number; start: number } };
     }) => void;
@@ -33,6 +38,7 @@ export const Textarea = React.forwardRef<
       minRows,
       numberOfLines,
       onChangeText,
+      onContentSizeChange,
       onKeyDown,
       onPaste,
       onSelect,
@@ -60,6 +66,26 @@ export const Textarea = React.forwardRef<
     const pastePlainResetTimeoutRef = React.useRef<
       ReturnType<typeof setTimeout> | undefined
     >(undefined);
+
+    React.useEffect(() => {
+      if (!onContentSizeChange) return;
+
+      const frame = requestAnimationFrame(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        onContentSizeChange({
+          nativeEvent: {
+            contentSize: {
+              height: textarea.scrollHeight,
+              width: textarea.scrollWidth,
+            },
+          },
+        });
+      });
+
+      return () => cancelAnimationFrame(frame);
+    }, [localValue, onContentSizeChange]);
 
     React.useEffect(
       () => () => {
@@ -105,10 +131,13 @@ export const Textarea = React.forwardRef<
     const handleChange = React.useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (readOnly || props.disabled) return;
+        const textarea = e.target;
+        const scrollToBottom = shouldKeepTextareaScrolledToBottom(textarea);
         const text = e.target.value;
         setLocalValue(text);
         if (onChangeText) React.startTransition(() => onChangeText(text));
-        notifySelectionChange(e.target);
+        notifySelectionChange(textarea);
+        keepTextareaScrolledToBottom(textarea, scrollToBottom);
       },
       [notifySelectionChange, onChangeText, props.disabled, readOnly]
     );
