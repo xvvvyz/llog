@@ -7,10 +7,11 @@ import { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
 import { Avatar } from '@/ui/avatar';
 import { Icon } from '@/ui/icon';
+import { nativePointerEvents } from '@/ui/pointer-events';
 import { Text } from '@/ui/text';
 import { Link } from 'expo-router';
 import { DotsThree } from 'phosphor-react-native';
-import { Platform, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 type SearchableLogTag = Pick<Tag, 'id'> & { name?: string | null };
 
@@ -20,12 +21,6 @@ type ListItemProfile = Pick<Profile, 'avatarSeedId' | 'id' | 'name'> & {
 
 const getTagSearchHref = (tag: SearchableLogTag) =>
   lookup.getLookupHref(lookup.getTagSearchQuery(tag));
-
-const nativeBoxNoneStyle =
-  Platform.OS === 'web' ? undefined : ({ pointerEvents: 'box-none' } as const);
-
-const nativePointerNoneStyle =
-  Platform.OS === 'web' ? undefined : ({ pointerEvents: 'none' } as const);
 
 export const ListItem = ({
   className,
@@ -67,7 +62,7 @@ export const ListItem = ({
         </Link>
         <View
           className="relative z-10 flex flex-col h-full w-full p-4 gap-0 items-start justify-between web:pointer-events-none"
-          style={nativeBoxNoneStyle}
+          style={nativePointerEvents.boxNone}
         >
           <View className="relative z-20 -ml-1.5 -mt-1.5 w-full pr-6 web:pointer-events-auto">
             <TagChipList
@@ -83,7 +78,7 @@ export const ListItem = ({
           </View>
           <View
             className="flex-row w-full gap-3 items-end justify-between web:pointer-events-none"
-            style={nativePointerNoneStyle}
+            style={nativePointerEvents.none}
           >
             <Text
               className="flex-1 -mb-1 min-w-0 leading-tight text-balance text-white web:whitespace-normal"
@@ -116,7 +111,7 @@ export const ListItem = ({
         </View>
         <View
           className="absolute right-0 top-0 z-20 web:pointer-events-none"
-          style={nativeBoxNoneStyle}
+          style={nativePointerEvents.boxNone}
         >
           <DropdownMenu
             contentClassName="my-0 mr-2.5"

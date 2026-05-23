@@ -7,6 +7,7 @@ import { TemplateTagSummary } from '@/features/logs/components/template-tag-summ
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
+import { nativePointerEvents } from '@/ui/pointer-events';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import * as Sortable from '@/ui/sortable';
@@ -42,14 +43,17 @@ const CardRow = ({
       wrapperClassName="absolute inset-0 w-full"
     />
     <View
-      className="flex-row h-10 items-center"
-      style={{ pointerEvents: 'box-none' }}
+      className="flex-row h-10 items-center web:pointer-events-none"
+      style={nativePointerEvents.boxNone}
     >
       <SortableSheetDragHandle
-        className="h-10 w-10"
+        className="h-10 w-10 web:pointer-events-auto"
         contentClassName="h-10 w-10"
       />
-      <View className="flex-1 flex-row min-w-0 pointer-events-none gap-3 items-center">
+      <View
+        className="flex-1 flex-row min-w-0 gap-3 items-center web:pointer-events-none"
+        style={nativePointerEvents.none}
+      >
         <TemplateTagSummary tags={card.tags} />
         <Text
           className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
@@ -61,7 +65,7 @@ const CardRow = ({
       <CardActionsMenu
         buttonSize="icon-xs"
         className="border-continuous rounded-lg"
-        containerClassName="ml-2 mr-1"
+        containerClassName="ml-2 mr-1 web:pointer-events-auto"
         generatingIndicator="inline"
         iconSize={18}
         isGenerating={isGenerating}

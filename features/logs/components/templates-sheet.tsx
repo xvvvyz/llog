@@ -7,15 +7,22 @@ import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
+import { nativePointerEvents } from '@/ui/pointer-events';
 import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import * as Sortable from '@/ui/sortable';
 import { SortableSheetDragHandle } from '@/ui/sortable';
 import { Text } from '@/ui/text';
-import { DotsThreeVertical, StackSimple, Trash } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
+
+import {
+  DotsThreeVertical,
+  NotePencil,
+  StackSimple,
+  Trash,
+} from 'phosphor-react-native';
 
 const TemplateRow = ({
   onCopy,
@@ -37,14 +44,17 @@ const TemplateRow = ({
       wrapperClassName="absolute inset-0 w-full"
     />
     <View
-      className="flex-row h-10 items-center"
-      style={{ pointerEvents: 'box-none' }}
+      className="flex-row h-10 items-center web:pointer-events-none"
+      style={nativePointerEvents.boxNone}
     >
       <SortableSheetDragHandle
-        className="h-10 w-10"
+        className="h-10 w-10 web:pointer-events-auto"
         contentClassName="h-10 w-10"
       />
-      <View className="flex-1 flex-row min-w-0 pointer-events-none gap-3 items-center">
+      <View
+        className="flex-1 flex-row min-w-0 gap-3 items-center web:pointer-events-none"
+        style={nativePointerEvents.none}
+      >
         <TemplateTagSummary tags={template.tags} />
         <Text
           className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
@@ -59,7 +69,7 @@ const TemplateRow = ({
             accessibilityLabel="Template actions"
             size="icon-xs"
             variant="ghost"
-            wrapperClassName="ml-2 mr-1 rounded-lg border-continuous"
+            wrapperClassName="ml-2 mr-1 rounded-lg border-continuous web:pointer-events-auto"
           >
             <Icon
               className="text-muted-foreground"
@@ -69,6 +79,10 @@ const TemplateRow = ({
           </Button>
         </Menu.Trigger>
         <Menu.Content align="end">
+          <Menu.Item onPress={onOpen}>
+            <Icon className="text-placeholder" icon={NotePencil} />
+            <Text>Edit</Text>
+          </Menu.Item>
           <Menu.Item onPress={onCopy}>
             <Icon className="text-placeholder" icon={StackSimple} />
             <Text>Copy to</Text>
