@@ -1,0 +1,94 @@
+{
+  "name": "Date window Feb Apr duration",
+  "records": [
+    {
+      "id": "record-jan",
+      "date": "2026-01-15T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 300 min"
+    },
+    {
+      "id": "record-feb-1",
+      "date": "2026-02-01T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 90 min"
+    },
+    {
+      "id": "record-feb-22",
+      "date": "2026-02-22T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 100 min"
+    },
+    {
+      "id": "record-feb-23",
+      "date": "2026-02-23T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 10 min"
+    },
+    {
+      "id": "record-mar",
+      "date": "2026-03-15T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 20 min"
+    },
+    {
+      "id": "record-apr-30",
+      "date": "2026-04-30T23:59:59.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 30 min"
+    },
+    {
+      "id": "record-may-22",
+      "date": "2026-05-22T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 40 min"
+    },
+    {
+      "id": "record-may-23",
+      "date": "2026-05-23T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 500 min"
+    },
+    {
+      "id": "record-invalid",
+      "date": "not-a-date",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 800 min"
+    }
+  ],
+  "exact": {
+    "generationTime": "2026-05-23T12:00:00.000Z",
+    "tagIds": ["tag-a"],
+    "analysisSpec": {
+      "extractionFields": [
+        {
+          "id": "duration",
+          "label": "Duration",
+          "type": "number",
+          "unit": "min"
+        }
+      ],
+      "aggregations": [
+        {
+          "id": "duration_average",
+          "label": "Average duration",
+          "operation": "average",
+          "fieldId": "duration",
+          "unit": "min"
+        }
+      ],
+      "filters": [
+        {
+          "id": "feb_apr",
+          "field": "record.date",
+          "startInclusive": { "type": "iso", "value": "2026-02-01" },
+          "endExclusive": { "type": "iso", "value": "2026-04-30" }
+        }
+      ],
+      "groupings": [],
+      "charts": []
+    },
+    "facts": [],
+    "expected": { "metrics": { "Average duration": 50 } }
+  }
+}

@@ -1,12 +1,14 @@
 import {
   format,
   formatDistanceToNow,
-  isValid,
   isThisYear,
   isToday,
   isYesterday,
-  parseISO,
 } from 'date-fns';
+import {
+  ISO_DATE_TIME_TOKEN_PATTERN,
+  parseIsoDateTime,
+} from '@/lib/iso-date-time';
 
 const parseLocalDateOnly = (value: string) => {
   const trimmed = value.trim();
@@ -24,22 +26,9 @@ const parseLocalDateOnly = (value: string) => {
     : undefined;
 };
 
-const ISO_DATE_TIME_SOURCE = String.raw`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})`;
-const ISO_DATE_TIME_PATTERN = new RegExp(`^${ISO_DATE_TIME_SOURCE}$`);
-
-const ISO_DATE_TIME_TOKEN_PATTERN = new RegExp(
-  String.raw`\b${ISO_DATE_TIME_SOURCE}\b`,
-  'g'
-);
-
 export type DateTimeDisplay = 'date' | 'datetime';
 
-export const parseIsoDateTime = (value: string) => {
-  const trimmed = value.trim();
-  if (!ISO_DATE_TIME_PATTERN.test(trimmed)) return undefined;
-  const date = parseISO(trimmed);
-  return isValid(date) ? date : undefined;
-};
+export { parseIsoDateTime };
 
 export const getDateLabel = (date?: Date | string | number): string => {
   if (!date) return '';

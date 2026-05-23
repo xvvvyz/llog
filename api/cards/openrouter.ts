@@ -1,643 +1,115 @@
 import type { CardBlueprint } from '@/domain/cards/blueprint';
+import * as cardAnalysis from '@/domain/cards/analysis';
 import * as cardOutput from '@/domain/cards/output';
-import * as cardSourceSelection from '@/domain/cards/source-selection';
-import type { ChatMessages, ChatResult } from '@openrouter/sdk/models';
-import * as openrouter from '@/api/lib/openrouter';
-
-const OPENROUTER_CARD_MODEL = 'openai/gpt-5.5';
-
-export type CardLlmRecord = {
-  author?: { name?: string | null } | null;
-  date?: Date | number | string | null;
-  id: string;
-  tags?: { name?: string | null }[];
-  text?: string | null;
-};
-
-export type CardContextCard = {
-  id: string;
-  output?: unknown;
-  prompt?: string | null;
-  tags?: { name?: string | null }[];
-  title?: string | null;
-};
-
-const CARD_TIMELINE_TEXT_MAX_LENGTH = 280;
-const CARD_FULL_TEXT_MAX_LENGTH = 2000;
-const CARD_EXISTING_CARD_CONTEXT_LIMIT = 8;
-const CARD_EXISTING_CARD_MILESTONE_LIMIT = 5;
-const CARD_EXISTING_CARD_PROMPT_MAX_LENGTH = 240;
-const CARD_EXISTING_CARD_SUMMARY_MAX_LENGTH = 180;
-const CARD_PROMPT_SUGGESTION_TEXT_MAX_LENGTH = 500;
-
-const getString = (value: unknown) =>
-  typeof value === 'string' ? value : undefined;
-
-const asRecord = (value: unknown): Record<string, unknown> =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-
-const cleanTitle = (value: unknown, defaultValue: string) =>
-  cardOutput.normalizeCardDisplayLabel({
-    defaultValue,
-    maxLength: 36,
-    maxWords: 5,
-    value,
-  }) ?? 'Progress card';
-
-const defaultTitleFromPrompt = (prompt: string) => {
-  const firstLine = prompt
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find(Boolean);
-
-  return cleanTitle(firstLine ?? prompt, 'Progress card');
-};
-
-const compactText = (value?: string | null, maxLength = Infinity) => {
-  const text = value?.replace(/\s+/g, ' ').trim() ?? '';
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
-};
-
-const readCardOutput = (value: unknown) => {
-  const parsed = cardOutput.validateCardOutput(value);
-  return parsed.success ? parsed.data : undefined;
-};
-
-const serializeGenerationContextCard = (card: CardContextCard) => {
-  const output = readCardOutput(card.output);
-
-  const metrics =
-    output?.metrics.map((metric) => ({
-      label: metric.label,
-      unit: metric.unit ?? null,
-    })) ?? [];
-
-  const milestoneTitles =
-    output?.milestones
-      .map((milestone) => milestone.title)
-      .slice(0, CARD_EXISTING_CARD_MILESTONE_LIMIT) ?? [];
-
-  const summary = compactText(
-    output?.summary,
-    CARD_EXISTING_CARD_SUMMARY_MAX_LENGTH
-  );
-
-  const chart = output?.chart
-    ? {
-        title: output.chart.title ?? null,
-        type: output.chart.type,
-        unit: output.chart.unit ?? null,
-        seriesLabels: output.chart.series?.map((series) => series.label) ?? [],
-      }
-    : undefined;
-
-  return {
-    id: card.id,
-    prompt: compactText(card.prompt, CARD_EXISTING_CARD_PROMPT_MAX_LENGTH),
-    title: card.title ?? '',
-    ...(output && {
-      sections: {
-        ...(chart && { chart }),
-        ...(metrics.length && { metrics }),
-        ...(milestoneTitles.length && { milestoneTitles }),
-        ...(summary && { summary }),
-      },
-    }),
-  };
-};
-
-const buildGenerationCardContext = (cards: CardContextCard[] = []) =>
-  cards
-    .slice(0, CARD_EXISTING_CARD_CONTEXT_LIMIT)
-    .map(serializeGenerationContextCard);
-
-const recordTags = (record: CardLlmRecord) =>
-  record.tags?.map((tag) => tag.name).filter(Boolean) ?? [];
-
-const recordAuthor = (record: CardLlmRecord) =>
-  record.author?.name?.trim() || null;
-
-const serializeCompactRecord = (record: CardLlmRecord) => ({
-  author: recordAuthor(record),
-  date: record.date ?? null,
-  id: record.id,
-  tags: recordTags(record),
-  text: compactText(record.text, CARD_TIMELINE_TEXT_MAX_LENGTH),
-});
-
-const serializeFullRecord = (record: CardLlmRecord) => ({
-  author: recordAuthor(record),
-  date: record.date ?? null,
-  id: record.id,
-  tags: recordTags(record),
-  text: compactText(record.text, CARD_FULL_TEXT_MAX_LENGTH),
-});
-
-const chunkRecords = <T>(records: T[], chunkSize: number) => {
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < records.length; index += chunkSize) {
-    chunks.push(records.slice(index, index + chunkSize));
-  }
-
-  return chunks;
-};
-
-const buildRecordContext = ({
-  records,
-  totalRecordCount,
-}: {
-  records: CardLlmRecord[];
-  totalRecordCount: number;
-}) => {
-  const fullTextRecords = records.slice(
-    -cardSourceSelection.MAX_CARD_FULL_TEXT_RECORDS
-  );
-
-  return {
-    fullTextRecords: fullTextRecords.map(serializeFullRecord),
-    selectedRecordCount: records.length,
-    timelineChunks: chunkRecords(
-      records,
-      cardSourceSelection.CARD_ANALYSIS_CHUNK_SIZE
-    ).map((chunk, index) => ({
-      endDate: chunk.at(-1)?.date ?? null,
-      index: index + 1,
-      recordCount: chunk.length,
-      records: chunk.map(serializeCompactRecord),
-      startDate: chunk[0]?.date ?? null,
-    })),
-    totalMatchingRecordCount: totalRecordCount,
-  };
-};
-
-const metricTrendRules =
-  'Set trend only for numeric point-in-time metrics compared with earlier records or a baseline. Leave trend null for cumulative/extreme/count/date/string metrics like longest, best, first, total, sessions, or ratios.';
-
-const dateOutputRules =
-  'For exact dates/times, use full source record.date ISO timestamps with timezone. Never use date-only YYYY-MM-DD or invented midnight values because timezone conversion can change the local date. Do not write human-formatted calendar dates/times like "May 20" in summary; if summary needs an exact date/time, include the full ISO timestamp token and the UI will format it.';
-
-const outputSchemaDescription = {
-  chart: `optional { type: "bar" | "line", title?: string, unit?: string, xAxis?: { labelMode?: "auto" | "all" | "sparse" }, yAxis?: { decimals?: 0 | 1 | 2, tickCount?: 3 | 4 | 5 | 6 }, data?: [{ label: string, value: number }], series?: [{ label: string, unit?: string, data: [{ label: string, value: number }] }] }. Limits: ${cardOutput.MAX_CARD_CHART_POINTS} points per series, ${cardOutput.MAX_CARD_CHART_SERIES} series. Bar charts use data. Use series only for multi-measure line charts; when using series, leave data empty. Keep natural record-level points needed by the prompt. Use concise labels and units. Date labels must be the source record.date full ISO timestamp, not YYYY-MM-DD; the UI formats them. Set xAxis/yAxis options only as needed for readability.`,
-  metrics: `optional array of at most 6 { label, value, unit?, trend: "up" | "down" | "flat" | null, valueFormat?: "date" | "datetime" | null }. Date metric values must put the full source record.date ISO timestamp in value and set valueFormat to "date" when only the local calendar date should show, or "datetime" when the time matters. Order metrics by importance; the first metrics appear on the preview card. Prefer the highest-signal stats. ${metricTrendRules}`,
-  milestones: `optional array of at most 8 { title, date?, detail?, recordIds? }. Dates must be source record.date full ISO timestamps, not YYYY-MM-DD or invented midnight values. Order newest-first.`,
-  sourceRecordIds: `optional evidence record ids, at most ${cardOutput.MAX_CARD_SOURCE_RECORD_IDS}. Include ids supporting chart points, metrics, milestones, or summary when practical.`,
-  summary: `optional short summary, at most ${cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH} characters. Use only when it adds context not clear from chart, metrics, or milestones; otherwise return null. Do not write human-formatted dates; use full ISO timestamp tokens when an exact date/time is needed.`,
-};
-
-const labelStyle =
-  'Use short sentence case labels, usually 1-4 words, with no ending or decorative punctuation.';
-
-const llogContext =
-  'llog records are dated user log entries. Progress cards summarize selected tagged records and refresh as future matching records are added.';
-
-const sourceRules =
-  'Use timelineChunks for whole-history evidence: long-range stats, baselines, older milestones, firsts, and changes. Use fullTextRecords for recent detail. Do not base stats or milestones only on recent fullTextRecords when older timeline evidence matters. Use numeric values only when records provide explicit numbers, dates, or countable events. totalMatchingRecordCount is exact. If selectedRecordCount is lower, selected records are a sample plus recent records: do not treat omitted records as inspected, and avoid exact aggregates or best/worst-ever claims that need omitted text.';
-
-type OutputRulesOptions =
-  | { blueprint?: boolean; existingCards?: boolean; mode: 'generate' }
-  | { mode: 'refresh' }
-  | { mode: 'tweak' };
-
-const buildOutputRules = (options: OutputRulesOptions) => {
-  const rules =
-    options.mode === 'generate'
-      ? options.blueprint
-        ? `Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true and summary only when card.blueprint.summary is true. Do not add sections absent from blueprint. ${metricTrendRules} Put milestones newest-first.`
-        : `Include only useful sections; do not pad. Put the most important preview metrics first. ${metricTrendRules} Put milestones newest-first.`
-      : options.mode === 'refresh'
-        ? `Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. Return summary null when it only repeats other sections. When previousOutput has milestones, curate the current best milestone set at up to ${cardOutput.MAX_CARD_MILESTONES}: prefer recent or new milestones when they are more relevant than older ones, and keep durable anchors only when they remain high-signal. If an existing milestone remains among the most relevant, keep its title and detail wording, date, and recordIds exactly unless source records show it is wrong. Update only metric values/trends, chart data, sourceRecordIds, and summary text for existing sections. ${metricTrendRules} Put milestones newest-first.`
-        : `Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins for this output. You may adjust the format, labels, chart type, sections, or emphasis when asked. Keep all output grounded in the provided records and previousOutput. ${metricTrendRules}`;
-
-  const existingCardRules =
-    options.mode === 'generate' && options.existingCards
-      ? 'existingCards are sibling progress cards in this log with exactly the same source tags; use them only to avoid duplicate presentation, not as source evidence. Prefer a distinct angle from them when compatible with card.prompt and card.blueprint. Avoid repeating the same metric labels, chart focus, milestone titles, or summary prose unless the requested card explicitly needs that overlap.'
-      : '';
-
-  return [rules, existingCardRules, dateOutputRules].filter(Boolean).join(' ');
-};
-
-type JsonSchema = Record<string, unknown>;
-type CardChatMessage = Extract<ChatMessages, { role: 'system' | 'user' }>;
-const nullableStringSchema = { type: ['string', 'null'] };
-
-const datumSchema = {
-  additionalProperties: false,
-  properties: { label: { type: 'string' }, value: { type: 'number' } },
-  required: ['label', 'value'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const xAxisSchema = {
-  additionalProperties: false,
-  properties: {
-    labelMode: {
-      enum: ['auto', 'all', 'sparse', null],
-      type: ['string', 'null'],
-    },
-  },
-  required: ['labelMode'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const yAxisSchema = {
-  additionalProperties: false,
-  properties: {
-    decimals: { enum: [0, 1, 2, null], type: ['integer', 'null'] },
-    tickCount: { enum: [3, 4, 5, 6, null], type: ['integer', 'null'] },
-  },
-  required: ['decimals', 'tickCount'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const chartSeriesSchema = {
-  additionalProperties: false,
-  properties: {
-    data: {
-      items: datumSchema,
-      maxItems: cardOutput.MAX_CARD_CHART_POINTS,
-      type: 'array',
-    },
-    label: { type: 'string' },
-    unit: nullableStringSchema,
-  },
-  required: ['label', 'unit', 'data'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const chartSchema = {
-  additionalProperties: false,
-  properties: {
-    data: {
-      items: datumSchema,
-      maxItems: cardOutput.MAX_CARD_CHART_POINTS,
-      type: 'array',
-    },
-    series: {
-      items: chartSeriesSchema,
-      maxItems: cardOutput.MAX_CARD_CHART_SERIES,
-      type: 'array',
-    },
-    title: nullableStringSchema,
-    type: { enum: ['bar', 'line'], type: 'string' },
-    unit: nullableStringSchema,
-    xAxis: { anyOf: [xAxisSchema, { type: 'null' }] },
-    yAxis: { anyOf: [yAxisSchema, { type: 'null' }] },
-  },
-  required: ['type', 'title', 'unit', 'xAxis', 'yAxis', 'data', 'series'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const metricSchema = {
-  additionalProperties: false,
-  properties: {
-    label: { type: 'string' },
-    trend: { enum: ['up', 'down', 'flat', null], type: ['string', 'null'] },
-    unit: nullableStringSchema,
-    value: { anyOf: [{ type: 'number' }, { type: 'string' }] },
-    valueFormat: { enum: ['date', 'datetime', null], type: ['string', 'null'] },
-  },
-  required: ['label', 'value', 'unit', 'trend', 'valueFormat'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const milestoneSchema = {
-  additionalProperties: false,
-  properties: {
-    date: nullableStringSchema,
-    detail: nullableStringSchema,
-    recordIds: { items: { type: 'string' }, maxItems: 20, type: 'array' },
-    title: { type: 'string' },
-  },
-  required: ['title', 'date', 'detail', 'recordIds'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const cardOutputSchema = {
-  additionalProperties: false,
-  properties: {
-    chart: { anyOf: [chartSchema, { type: 'null' }] },
-    metrics: {
-      items: metricSchema,
-      maxItems: cardOutput.MAX_CARD_METRICS,
-      type: 'array',
-    },
-    milestones: {
-      items: milestoneSchema,
-      maxItems: cardOutput.MAX_CARD_MILESTONES,
-      type: 'array',
-    },
-    sourceRecordIds: {
-      items: { type: 'string' },
-      maxItems: cardOutput.MAX_CARD_SOURCE_RECORD_IDS,
-      type: 'array',
-    },
-    summary: nullableStringSchema,
-  },
-  required: ['chart', 'metrics', 'milestones', 'sourceRecordIds', 'summary'],
-  type: 'object',
-} satisfies JsonSchema;
-
-const jsonResponseSchema = ({
-  description,
-  name,
-  properties,
-}: {
-  description: string;
-  name: string;
-  properties: Record<string, unknown>;
-}) => ({
-  description,
-  name,
-  schema: {
-    additionalProperties: false,
-    properties,
-    required: Object.keys(properties),
-    type: 'object',
-  },
-  strict: true,
-});
-
-const generatedCardResponseSchema = jsonResponseSchema({
-  description: 'Generated llog progress card output.',
-  name: 'llog_card_generation',
-  properties: { title: { type: 'string' }, output: cardOutputSchema },
-});
-
-const refreshedCardResponseSchema = jsonResponseSchema({
-  description: 'Refreshed llog progress card output.',
-  name: 'llog_card_refresh',
-  properties: { output: cardOutputSchema },
-});
-
-const tweakedCardResponseSchema = jsonResponseSchema({
-  description: 'Tweaked llog progress card output.',
-  name: 'llog_card_tweak',
-  properties: { title: nullableStringSchema, output: cardOutputSchema },
-});
-
-const promptSuggestionResponseSchema = jsonResponseSchema({
-  description: 'Suggested editable llog progress card prompt.',
-  name: 'llog_card_prompt_suggestion',
-  properties: { prompt: { type: 'string' } },
-});
-
-const buildMessages = ({
-  blueprint,
-  existingCards = [],
-  repairMessage,
-  prompt,
-  records,
-  totalRecordCount,
-}: {
-  blueprint?: CardBlueprint;
-  existingCards?: CardContextCard[];
-  repairMessage?: string;
-  prompt: string;
-  records: CardLlmRecord[];
-  totalRecordCount: number;
-}): CardChatMessage[] => {
-  const generationCardContext = buildGenerationCardContext(existingCards);
-
-  return [
-    {
-      content: `Extract progress from llog records. ${llogContext} Return only valid JSON. Use only the provided records. Keep language concise and specific. ${labelStyle}`,
-      role: 'system',
-    },
-    {
-      content: JSON.stringify({
-        card: { ...(blueprint && { blueprint }), prompt },
-        ...(generationCardContext.length > 0 && {
-          existingCards: generationCardContext,
-        }),
-        outputSchema: {
-          output: outputSchemaDescription,
-          title:
-            'short generated card title, at most 36 characters, specific to the requested progress view',
-        },
-        requiredJsonShape:
-          'Return { "title": string, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
-        outputRules: buildOutputRules({
-          mode: 'generate',
-          ...(blueprint && { blueprint: true }),
-          ...(generationCardContext.length > 0 && { existingCards: true }),
-        }),
-        sourceRules,
-        ...(repairMessage && { repairMessage }),
-        records: buildRecordContext({ records, totalRecordCount }),
-      }),
-      role: 'user',
-    },
-  ];
-};
-
-const buildRefreshMessages = ({
-  previousOutput,
-  previousTitle,
-  prompt,
-  records,
-  repairMessage,
-  totalRecordCount,
-}: {
-  previousOutput: cardOutput.CardOutput;
-  previousTitle?: string | null;
-  prompt: string;
-  records: CardLlmRecord[];
-  repairMessage?: string;
-  totalRecordCount: number;
-}): CardChatMessage[] => [
-  {
-    content: `Refresh an existing llog progress card from new source records. ${llogContext} Return only valid JSON. Use only the provided records. Preserve the existing format. ${labelStyle}`,
-    role: 'system',
-  },
-  {
-    content: JSON.stringify({
-      card: { previousOutput, previousTitle: previousTitle ?? null, prompt },
-      outputSchema: { output: outputSchemaDescription },
-      requiredJsonShape:
-        'Return { "output": object }. output must contain the same visible sections as previousOutput.',
-      outputRules: buildOutputRules({ mode: 'refresh' }),
-      sourceRules,
-      ...(repairMessage && { repairMessage }),
-      records: buildRecordContext({ records, totalRecordCount }),
-    }),
-    role: 'user',
-  },
-];
-
-const buildTweakMessages = ({
-  previousOutput,
-  previousTitle,
-  prompt,
-  records,
-  repairMessage,
-  totalRecordCount,
-  tweakPrompt,
-}: {
-  previousOutput: cardOutput.CardOutput;
-  previousTitle?: string | null;
-  prompt: string;
-  records: CardLlmRecord[];
-  repairMessage?: string;
-  totalRecordCount: number;
-  tweakPrompt: string;
-}): CardChatMessage[] => [
-  {
-    content: `Tweak an existing llog progress card. ${llogContext} Return only valid JSON. Use only the provided records. Apply only the requested tweak. Keep unrelated facts and structure stable. ${labelStyle}`,
-    role: 'system',
-  },
-  {
-    content: JSON.stringify({
-      card: {
-        previousOutput,
-        previousTitle: previousTitle ?? null,
-        prompt,
-        tweakPrompt,
-      },
-      outputSchema: {
-        output: outputSchemaDescription,
-        title:
-          'short generated card title, at most 36 characters, or null to keep the current title',
-      },
-      requiredJsonShape:
-        'Return { "title": string | null, "output": object }. output must contain at least one useful section: chart, metrics, milestones, or summary.',
-      outputRules: buildOutputRules({ mode: 'tweak' }),
-      sourceRules,
-      ...(repairMessage && { repairMessage }),
-      records: buildRecordContext({ records, totalRecordCount }),
-    }),
-    role: 'user',
-  },
-];
-
-const parseCardOutputResult = ({
-  parsedJson,
-  records,
-}: {
-  parsedJson: unknown;
-  records: CardLlmRecord[];
-}) => {
-  const root = asRecord(parsedJson);
-  const normalizedJson = cardOutput.normalizeRawCardOutput(root.output);
-  const parsedOutput = cardOutput.validateCardOutput(normalizedJson);
-
-  if (!parsedOutput.success) {
-    const issues = parsedOutput.error.issues
-      .slice(0, 3)
-      .map((issue) => `${issue.path.join('.') || 'output'}: ${issue.message}`)
-      .join('; ');
-
-    return {
-      errorMessage: `OpenRouter card generation returned invalid output${issues ? ` (${issues})` : ''}`,
-      success: false as const,
-    };
-  }
-
-  const output = cardOutput.normalizeCardOutputMilestoneDates(
-    cardOutput.normalizeCardOutputSourceIds(
-      parsedOutput.data,
-      records.map((record) => record.id)
-    ),
-    records
-  );
-
-  return { output, root, success: true as const };
-};
-
-const parseGeneratedCardResult = ({
-  defaultTitle,
-  parsedJson,
-  records,
-}: {
-  defaultTitle: string;
-  parsedJson: unknown;
-  records: CardLlmRecord[];
-}) => {
-  const parsedOutput = parseCardOutputResult({ parsedJson, records });
-  if (!parsedOutput.success) return parsedOutput;
-
-  return {
-    output: parsedOutput.output,
-    success: true as const,
-    title: cleanTitle(parsedOutput.root.title, defaultTitle),
-  };
-};
-
-const parseTweakedCardResult = ({
-  defaultTitle,
-  parsedJson,
-  records,
-}: {
-  defaultTitle: string;
-  parsedJson: unknown;
-  records: CardLlmRecord[];
-}) => {
-  const parsedOutput = parseCardOutputResult({ parsedJson, records });
-  if (!parsedOutput.success) return parsedOutput;
-
-  return {
-    output: parsedOutput.output,
-    success: true as const,
-    title: cleanTitle(parsedOutput.root.title, defaultTitle),
-  };
-};
-
-const requestOpenRouterJson = async ({
+import { readExtractedFacts } from './openrouter/facts';
+import { requestOpenRouterJson } from './openrouter/request';
+import type { CardContextCard, CardLlmRecord } from './openrouter/types';
+import * as prompts from './openrouter/prompts';
+import * as results from './openrouter/results';
+import * as schemas from './openrouter/schemas';
+import * as utils from './openrouter/utils';
+
+export type { CardContextCard, CardLlmRecord };
+
+export const planCardAnalysis = async ({
   env,
-  messages,
-  responseSchema,
-}: {
-  env: CloudflareEnv;
-  messages: CardChatMessage[];
-  responseSchema: ReturnType<typeof jsonResponseSchema>;
-}) => {
-  const client = openrouter.createOpenRouter(env);
-  let result: ChatResult;
-
-  try {
-    result = await client.chat.send({
-      chatRequest: {
-        messages,
-        model: OPENROUTER_CARD_MODEL,
-        responseFormat: { jsonSchema: responseSchema, type: 'json_schema' },
-      },
-    });
-  } catch (error) {
-    throw new Error(
-      `OpenRouter card generation failed: ${openrouter.describeOpenRouterError(error)}`
-    );
-  }
-
-  const message = result.choices[0]?.message;
-  const refusal = getString(message?.refusal);
-
-  if (refusal) {
-    throw new Error(`OpenRouter card generation refused: ${refusal}`);
-  }
-
-  const content = getString(message?.content);
-
-  if (!content) {
-    throw new Error('OpenRouter card generation returned no content');
-  }
-
-  return JSON.parse(content) as unknown;
-};
-
-export const generateCardResult = async ({
-  blueprint,
-  env,
-  existingCards,
+  generationTime,
   prompt,
   records,
   totalRecordCount = records.length,
 }: {
+  env: CloudflareEnv;
+  generationTime?: string;
+  prompt: string;
+  records: CardLlmRecord[];
+  totalRecordCount?: number;
+}) => {
+  const parsedJson = await requestOpenRouterJson({
+    env,
+    messages: prompts.buildAnalysisPlanMessages({
+      generationTime,
+      prompt,
+      records,
+      totalRecordCount,
+    }),
+    operation: 'analysis planning',
+    responseSchema: schemas.analysisPlanResponseSchema,
+  });
+
+  const root = utils.asRecord(parsedJson);
+  const parsedMode = utils.getString(root.mode);
+
+  const analysisSpec = cardAnalysis.normalizeAnalysisSpec(
+    utils.cleanNullableObject(root.analysisSpec)
+  );
+
+  return cardAnalysis.planCardAnalysis({
+    analysisSpec,
+    generationTime,
+    mode:
+      parsedMode === 'exact' || parsedMode === 'narrative'
+        ? parsedMode
+        : undefined,
+    prompt,
+    totalMatchingRecords: totalRecordCount,
+  });
+};
+
+export const extractRecordFacts = async ({
+  analysisSpec,
+  env,
+  records,
+}: {
+  analysisSpec: cardAnalysis.CardAnalysisSpec;
+  env: CloudflareEnv;
+  records: CardLlmRecord[];
+}) => {
+  if (!records.length) return [];
+
+  const parsedJson = await requestOpenRouterJson({
+    env,
+    messages: prompts.buildExtractionMessages({ analysisSpec, records }),
+    operation: 'fact extraction',
+    responseSchema: schemas.extractedFactsResponseSchema,
+  });
+
+  try {
+    return readExtractedFacts({ analysisSpec, parsedJson, records });
+  } catch (error) {
+    const repairedJson = await requestOpenRouterJson({
+      env,
+      messages: prompts.buildExtractionMessages({
+        analysisSpec,
+        records,
+        repairMessage: `${error instanceof Error ? error.message : 'Fact extraction shape was invalid'}. Return exactly one records item for every input recordIndex from 1 to ${records.length}, with no missing or duplicate indexes. Use empty arrays for records with no matching facts.`,
+      }),
+      operation: 'fact extraction',
+      responseSchema: schemas.extractedFactsResponseSchema,
+    });
+
+    return readExtractedFacts({
+      analysisSpec,
+      parsedJson: repairedJson,
+      records,
+    });
+  }
+};
+
+export const generateCardResult = async ({
+  analysisMode,
+  blueprint,
+  env,
+  existingCards,
+  exactFacts,
+  prompt,
+  records,
+  totalRecordCount = records.length,
+}: {
+  analysisMode?: cardAnalysis.CardAnalysisMode;
   blueprint?: CardBlueprint;
   env: CloudflareEnv;
   existingCards?: CardContextCard[];
+  exactFacts?: cardAnalysis.ExactCardFacts;
   prompt: string;
   records: CardLlmRecord[];
   totalRecordCount?: number;
@@ -646,11 +118,14 @@ export const generateCardResult = async ({
     throw new Error('Card generation requires source records');
   }
 
-  const defaultTitle = defaultTitleFromPrompt(prompt);
+  const lockedExactFacts = analysisMode === 'exact' ? exactFacts : undefined;
+  const defaultTitle = utils.defaultTitleFromPrompt(prompt);
 
-  const messages = buildMessages({
+  const messages = prompts.buildMessages({
+    analysisMode,
     blueprint,
     existingCards,
+    exactFacts: lockedExactFacts,
     prompt,
     records,
     totalRecordCount,
@@ -659,34 +134,38 @@ export const generateCardResult = async ({
   const parsedJson = await requestOpenRouterJson({
     env,
     messages,
-    responseSchema: generatedCardResponseSchema,
+    operation: 'card generation',
+    responseSchema: schemas.generatedCardResponseSchema,
   });
 
-  const parsedResult = parseGeneratedCardResult({
+  const parsedResult = results.parseGeneratedCardResult({
     defaultTitle,
+    exactFacts: lockedExactFacts,
     parsedJson,
-    records,
   });
 
   if (parsedResult.success) return parsedResult;
 
   const repairedJson = await requestOpenRouterJson({
     env,
-    messages: buildMessages({
+    messages: prompts.buildMessages({
+      analysisMode,
       blueprint,
       existingCards,
+      exactFacts: lockedExactFacts,
       prompt,
       records,
       totalRecordCount,
-      repairMessage: `${parsedResult.errorMessage}. Return { "title": string, "output": object } again. The output object must include at least one non-empty chart, metrics, milestones, or summary section based only on the provided records.`,
+      repairMessage: `${parsedResult.errorMessage}. Return { "title": string, "output": object } again. The output object must include at least one non-empty chart, metrics, milestones, or summary section based only on ${lockedExactFacts ? 'exactFacts and the provided sampled records' : 'the provided records'}. ${lockedExactFacts ? 'Keep exactFacts locked.' : ''}`,
     }),
-    responseSchema: generatedCardResponseSchema,
+    operation: 'card generation',
+    responseSchema: schemas.generatedCardResponseSchema,
   });
 
-  const repairedResult = parseGeneratedCardResult({
+  const repairedResult = results.parseGeneratedCardResult({
     defaultTitle,
+    exactFacts: lockedExactFacts,
     parsedJson: repairedJson,
-    records,
   });
 
   if (!repairedResult.success) throw new Error(repairedResult.errorMessage);
@@ -694,14 +173,18 @@ export const generateCardResult = async ({
 };
 
 export const refreshCardResult = async ({
+  analysisMode,
   env,
+  exactFacts,
   previousOutput,
   previousTitle,
   prompt,
   records,
   totalRecordCount = records.length,
 }: {
+  analysisMode?: cardAnalysis.CardAnalysisMode;
   env: CloudflareEnv;
+  exactFacts?: cardAnalysis.ExactCardFacts;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
   prompt: string;
@@ -709,8 +192,11 @@ export const refreshCardResult = async ({
   totalRecordCount?: number;
 }) => {
   if (!records.length) throw new Error('Card refresh requires source records');
+  const lockedExactFacts = analysisMode === 'exact' ? exactFacts : undefined;
 
-  const messages = buildRefreshMessages({
+  const messages = prompts.buildRefreshMessages({
+    analysisMode,
+    exactFacts: lockedExactFacts,
     previousOutput,
     previousTitle,
     prompt,
@@ -721,10 +207,14 @@ export const refreshCardResult = async ({
   const parsedJson = await requestOpenRouterJson({
     env,
     messages,
-    responseSchema: refreshedCardResponseSchema,
+    operation: 'card refresh',
+    responseSchema: schemas.refreshedCardResponseSchema,
   });
 
-  const parsedResult = parseCardOutputResult({ parsedJson, records });
+  const parsedResult = results.parseCardOutputResult({
+    exactFacts: lockedExactFacts,
+    parsedJson,
+  });
 
   if (parsedResult.success) {
     return {
@@ -737,20 +227,23 @@ export const refreshCardResult = async ({
 
   const repairedJson = await requestOpenRouterJson({
     env,
-    messages: buildRefreshMessages({
+    messages: prompts.buildRefreshMessages({
+      analysisMode,
+      exactFacts: lockedExactFacts,
       previousOutput,
       previousTitle,
       prompt,
       records,
-      repairMessage: `${parsedResult.errorMessage}. Return { "output": object } again. Preserve the existing output shape and curate milestones only within an existing milestone section based on the provided records.`,
+      repairMessage: `${parsedResult.errorMessage}. Return { "output": object } again. Preserve the existing output shape unless locked exactFacts require an update, and curate milestones only within an existing milestone section based on ${lockedExactFacts ? 'exactFacts and the provided sampled records' : 'the provided records'}. ${lockedExactFacts ? 'Keep exactFacts locked.' : ''}`,
       totalRecordCount,
     }),
-    responseSchema: refreshedCardResponseSchema,
+    operation: 'card refresh',
+    responseSchema: schemas.refreshedCardResponseSchema,
   });
 
-  const repairedResult = parseCardOutputResult({
+  const repairedResult = results.parseCardOutputResult({
+    exactFacts: lockedExactFacts,
     parsedJson: repairedJson,
-    records,
   });
 
   if (!repairedResult.success) throw new Error(repairedResult.errorMessage);
@@ -764,7 +257,9 @@ export const refreshCardResult = async ({
 };
 
 export const tweakCardResult = async ({
+  analysisMode,
   env,
+  exactFacts,
   previousOutput,
   previousTitle,
   prompt,
@@ -772,7 +267,9 @@ export const tweakCardResult = async ({
   totalRecordCount = records.length,
   tweakPrompt,
 }: {
+  analysisMode?: cardAnalysis.CardAnalysisMode;
   env: CloudflareEnv;
+  exactFacts?: cardAnalysis.ExactCardFacts;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
   prompt: string;
@@ -781,9 +278,12 @@ export const tweakCardResult = async ({
   tweakPrompt: string;
 }) => {
   if (!records.length) throw new Error('Card tweak requires source records');
-  const defaultTitle = previousTitle ?? defaultTitleFromPrompt(prompt);
+  const lockedExactFacts = analysisMode === 'exact' ? exactFacts : undefined;
+  const defaultTitle = previousTitle ?? utils.defaultTitleFromPrompt(prompt);
 
-  const messages = buildTweakMessages({
+  const messages = prompts.buildTweakMessages({
+    analysisMode,
+    exactFacts: lockedExactFacts,
     previousOutput,
     previousTitle,
     prompt,
@@ -795,77 +295,44 @@ export const tweakCardResult = async ({
   const parsedJson = await requestOpenRouterJson({
     env,
     messages,
-    responseSchema: tweakedCardResponseSchema,
+    operation: 'card tweak',
+    responseSchema: schemas.tweakedCardResponseSchema,
   });
 
-  const parsedResult = parseTweakedCardResult({
+  const parsedResult = results.parseTweakedCardResult({
     defaultTitle,
+    exactFacts: lockedExactFacts,
     parsedJson,
-    records,
   });
 
   if (parsedResult.success) return parsedResult;
 
   const repairedJson = await requestOpenRouterJson({
     env,
-    messages: buildTweakMessages({
+    messages: prompts.buildTweakMessages({
+      analysisMode,
+      exactFacts: lockedExactFacts,
       previousOutput,
       previousTitle,
       prompt,
       records,
-      repairMessage: `${parsedResult.errorMessage}. Return { "title": string | null, "output": object } again. Apply only the requested tweak and keep the result grounded in the provided records.`,
+      repairMessage: `${parsedResult.errorMessage}. Return { "title": string | null, "output": object } again. Apply only the requested tweak and keep the result grounded in ${lockedExactFacts ? 'exactFacts and the provided sampled records' : 'the provided records'}. ${lockedExactFacts ? 'Keep exactFacts locked.' : ''}`,
       totalRecordCount,
       tweakPrompt,
     }),
-    responseSchema: tweakedCardResponseSchema,
+    operation: 'card tweak',
+    responseSchema: schemas.tweakedCardResponseSchema,
   });
 
-  const repairedResult = parseTweakedCardResult({
+  const repairedResult = results.parseTweakedCardResult({
     defaultTitle,
+    exactFacts: lockedExactFacts,
     parsedJson: repairedJson,
-    records,
   });
 
   if (!repairedResult.success) throw new Error(repairedResult.errorMessage);
   return repairedResult;
 };
-
-const buildPromptSuggestionMessages = ({
-  existingCards,
-  records,
-}: {
-  existingCards: CardContextCard[];
-  records: CardLlmRecord[];
-}): CardChatMessage[] => [
-  {
-    content: `Suggest concise reusable llog progress card prompts. ${llogContext} Return only valid JSON. Use the provided records to infer what the card should track. Do not duplicate existing cards. Favor concrete charts, metrics, milestones, or focused summaries over vague analysis.`,
-    role: 'system',
-  },
-  {
-    content: JSON.stringify({
-      existingCards: existingCards.map((card) => ({
-        id: card.id,
-        prompt: card.prompt ?? '',
-        tags: card.tags?.map((tag) => tag.name).filter(Boolean) ?? [],
-        title: card.title ?? '',
-      })),
-      outputSchema: {
-        prompt:
-          'concise editable prompt, 1-2 sentences, at most 500 characters, asking for a distinct progress view',
-      },
-      outputRules:
-        'Return one editable prompt for a card that will refresh from future records. Focus on a durable progress signal, comparison, or milestone pattern. Keep it distinct from existing cards.',
-      records: records.map((record) => ({
-        author: recordAuthor(record),
-        date: record.date ?? null,
-        id: record.id,
-        tags: recordTags(record),
-        text: compactText(record.text, CARD_PROMPT_SUGGESTION_TEXT_MAX_LENGTH),
-      })),
-    }),
-    role: 'user',
-  },
-];
 
 export const generateCardPromptSuggestion = async ({
   env,
@@ -878,11 +345,12 @@ export const generateCardPromptSuggestion = async ({
 }) => {
   const parsedJson = await requestOpenRouterJson({
     env,
-    messages: buildPromptSuggestionMessages({ existingCards, records }),
-    responseSchema: promptSuggestionResponseSchema,
+    messages: prompts.buildPromptSuggestionMessages({ existingCards, records }),
+    operation: 'card prompt suggestion',
+    responseSchema: schemas.promptSuggestionResponseSchema,
   });
 
-  const prompt = getString(asRecord(parsedJson).prompt)?.trim();
+  const prompt = utils.getString(utils.asRecord(parsedJson).prompt)?.trim();
 
   if (!prompt) {
     throw new Error('OpenRouter card prompt suggestion returned no prompt');

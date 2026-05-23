@@ -1,0 +1,3 @@
+Average duration over the last 3 months.
+
+Return exactly one metric labeled Average duration with unit min. Use only records in the requested date range.

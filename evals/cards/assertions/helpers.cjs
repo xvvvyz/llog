@@ -104,9 +104,6 @@ const milestoneDates = (milestones) =>
 const milestoneForDate = (milestones, date) =>
   milestones.find((milestone) => milestone.date === date);
 
-const recordIdByDate = (records, date) =>
-  records.find((record) => record.date === date)?.id;
-
 const recordsByDate = (records, dates) =>
   dates.map((date) => {
     const record = records.find((item) => item.date === date);
@@ -114,17 +111,10 @@ const recordsByDate = (records, dates) =>
     return record;
   });
 
-const allRecordIds = (records) => records.map((record) => record.id);
-
-const includesAll = (actual, expected) =>
-  expected.every((item) => actual.includes(item));
-
 module.exports = {
-  allRecordIds,
   chartDataPoints,
   fixtureSeries,
   gradingResult,
-  includesAll,
   metricByTerms,
   metricText,
   milestoneDates,
@@ -134,7 +124,6 @@ module.exports = {
   parsePayload,
   parseSessionValue,
   readFixture,
-  recordIdByDate,
   recordsByDate,
   sameSeriesData,
   seriesByTerms,

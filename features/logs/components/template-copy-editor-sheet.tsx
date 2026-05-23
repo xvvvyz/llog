@@ -2,6 +2,7 @@ import * as limits from '@/features/logs/lib/limits';
 import { copyTemplate } from '@/features/logs/mutations/copy-template';
 import { useLogTemplate } from '@/features/logs/queries/use-templates';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -16,7 +17,7 @@ export const LogTemplateCopyEditorSheet = () => {
   const templateId = sheetManager.getId('log-template-copy-editor');
   const payload = sheetManager.getPayload('log-template-copy-editor') ?? {};
   const template = useLogTemplate({ enabled: open, id: templateId });
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen: open });
   const [text, setText] = React.useState('');
   const targetCount = payload.logIds?.length ?? 0;
   const trimmedText = text.trim();
@@ -32,8 +33,6 @@ export const LogTemplateCopyEditorSheet = () => {
   }, [sheetManager]);
 
   React.useEffect(() => {
-    setIsSubmitting(false);
-
     if (!open) {
       setText('');
       return;
@@ -45,25 +44,27 @@ export const LogTemplateCopyEditorSheet = () => {
 
   const handleSubmit = React.useCallback(async () => {
     if (!canSubmit || !templateId || !payload.logIds?.length) return;
-    setIsSubmitting(true);
+    const logIds = payload.logIds;
 
-    try {
-      await copyTemplate({
-        createMissingTags: !!payload.createMissingTags,
-        logIds: payload.logIds,
-        templateId,
-        text,
-      });
+    await runSubmit(
+      async ({ keepPendingUntilClose }) => {
+        await copyTemplate({
+          createMissingTags: !!payload.createMissingTags,
+          logIds,
+          templateId,
+          text,
+        });
 
-      sheetManager.close('log-template-copy-to');
-    } catch {
-      setIsSubmitting(false);
-      // noop
-    }
+        sheetManager.close('log-template-copy-to');
+        keepPendingUntilClose();
+      },
+      { suppressError: true }
+    );
   }, [
     canSubmit,
     payload.createMissingTags,
     payload.logIds,
+    runSubmit,
     sheetManager,
     templateId,
     text,

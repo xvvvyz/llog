@@ -46,8 +46,10 @@ const CardActionsMenuContent = ({
   onManage,
   onRefresh,
   onTweak,
+  isTweakDisabled,
 }: {
   isGenerating?: boolean;
+  isTweakDisabled?: boolean;
   onCopy?: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -80,7 +82,7 @@ const CardActionsMenuContent = ({
       </Menu.Item>
       {!!onTweak && (
         <Menu.Item
-          disabled={isGenerating || isRefreshPending}
+          disabled={isTweakDisabled || isGenerating || isRefreshPending}
           onPress={onTweak}
         >
           <Icon className="text-placeholder" icon={MagicWand} />
@@ -136,6 +138,7 @@ export const CardActionsMenu = ({
   onManage,
   onRefresh,
   onTweak,
+  isTweakDisabled,
   generatingIndicator = 'icon-slot',
   showGeneratingIndicator = true,
 }: {
@@ -145,6 +148,7 @@ export const CardActionsMenu = ({
   generatingIndicator?: 'icon-slot' | 'inline';
   iconSize?: number;
   isGenerating?: boolean;
+  isTweakDisabled?: boolean;
   onCopy?: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -178,6 +182,7 @@ export const CardActionsMenu = ({
         </Menu.Trigger>
         <CardActionsMenuContent
           isGenerating={isGenerating}
+          isTweakDisabled={isTweakDisabled}
           onCopy={onCopy}
           onDelete={onDelete}
           onEdit={onEdit}

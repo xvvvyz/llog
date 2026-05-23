@@ -103,7 +103,7 @@ describe('renderRecordMarkdownText', () => {
     expect(secondChildren[2]).toBe('...second');
   });
 
-  test('flattens numbered lists without punctuation', () => {
+  test('omits flattened punctuation', () => {
     platform.OS = 'web';
 
     const nodes = renderRecordMarkdownText({
@@ -168,7 +168,7 @@ describe('renderRecordMarkdownText', () => {
     expect(nodes[1]).toBeNull();
   });
 
-  test('separates web blockquotes tightly', () => {
+  test('separates blockquotes', () => {
     platform.OS = 'web';
     const nodes = renderRecordMarkdownText({ text: '> one\nnext' });
     expect(nodes[1]).toBeNull();

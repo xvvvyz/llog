@@ -19,6 +19,7 @@ import { useRecord } from '@/features/records/queries/use-record';
 import { useReplyDraft } from '@/features/records/queries/use-reply-draft';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { db } from '@/lib/db';
 import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
@@ -27,15 +28,14 @@ import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerTextSession from '@/features/records/hooks/use-composer-text-session';
 
 export const useReplyComposerModel = () => {
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
   const { ignoreDraftId, ignoredDraftIds } = useIgnoredDraftIds();
-  const isSubmittingRef = React.useRef(false);
   const sheetManager = useSheetManager();
   const profile = useProfile();
   const outbox = outboxHooks.useOutbox();
   const networkReachability = useOutboxNetworkReachability();
   const isOpen = sheetManager.isOpen('reply-create');
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen });
 
   const editRecordId = isOpen
     ? sheetManager.getContext('reply-create')
@@ -352,11 +352,7 @@ export const useReplyComposerModel = () => {
       return;
     }
 
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
-
-    try {
+    await runSubmit(async ({ keepPendingUntilClose }) => {
       outboxHooks.queueSubmission({
         authorId: profile.id,
         contentId: replyId,
@@ -381,10 +377,8 @@ export const useReplyComposerModel = () => {
       });
 
       close();
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
+      keepPendingUntilClose();
+    });
   }, [
     close,
     ignoreDraftId,
@@ -399,6 +393,7 @@ export const useReplyComposerModel = () => {
     reply?.files,
     replyTeamId,
     replyId,
+    runSubmit,
     setLatestText,
     links,
   ]);

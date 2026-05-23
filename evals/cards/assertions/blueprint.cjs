@@ -1,6 +1,5 @@
 const {
   gradingResult,
-  includesAll,
   metricText,
   numericMetric,
   parsePayload,
@@ -16,10 +15,6 @@ exports.blueprint = (output, context) => {
   const metrics = Array.isArray(card.metrics) ? card.metrics : [];
   const metricLabels = metrics.map((metric) => metric.label);
   const milestones = Array.isArray(card.milestones) ? card.milestones : [];
-
-  const sourceRecordIds = Array.isArray(card.sourceRecordIds)
-    ? card.sourceRecordIds
-    : [];
 
   return gradingResult({
     checks: [
@@ -54,10 +49,6 @@ exports.blueprint = (output, context) => {
         pass: !metricText(metrics, ['sleep', 'debt']).includes('0.5'),
       },
       { name: 'keeps milestone section', pass: milestones.length > 0 },
-      {
-        name: 'uses target source records',
-        pass: includesAll(sourceRecordIds, expected.sourceRecordIds),
-      },
     ],
     reason: 'Blueprint eval passed',
   });

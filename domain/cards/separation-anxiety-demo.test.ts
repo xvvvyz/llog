@@ -59,11 +59,9 @@ describe('separation demo card', () => {
         milestones: [
           {
             detail: 'Reached 5 minutes with calm door behavior.',
-            recordIds: ['session-2'],
             title: 'Calm short absence',
           },
         ],
-        sourceRecordIds: ['session-1', 'session-2'],
         summary: 'Short absences increased from 3 to 5 minutes.',
       }).success
     ).toBe(true);

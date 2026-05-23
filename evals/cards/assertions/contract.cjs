@@ -129,12 +129,6 @@ exports.cardOutput = (output) => {
           !milestones.some((milestone) => isDateOnlyString(milestone.date)) &&
           !metrics.some((metric) => isDateOnlyString(metric.value)),
       },
-      {
-        name: 'source ids present',
-        pass:
-          Array.isArray(card.sourceRecordIds) &&
-          card.sourceRecordIds.length > 0,
-      },
     ],
     reason: 'Card output contract passed',
   });

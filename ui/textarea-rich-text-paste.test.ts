@@ -38,7 +38,7 @@ describe('richTextHtmlToMarkdown', () => {
     );
   });
 
-  test('converts wrapped document html', () => {
+  test('unwraps document html', () => {
     expect(
       textareaRichTextPaste.richTextHtmlToMarkdown(
         '<b style="font-weight: normal"><h2><span>Plan</span></h2><p><a href="https://example.com"><span style="text-decoration: underline">Docs</span></a></p></b>'

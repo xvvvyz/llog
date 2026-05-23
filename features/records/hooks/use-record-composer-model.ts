@@ -27,6 +27,7 @@ import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { db } from '@/lib/db';
 import type { RecordSheetParent } from '@/lib/sheet-names';
@@ -40,11 +41,9 @@ import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerTextSession from '@/features/records/hooks/use-composer-text-session';
 
 export const useRecordComposerModel = () => {
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
   const { ignoreDraftId, ignoredDraftIds } = useIgnoredDraftIds();
   const cleanupDraftIdsRef = React.useRef(new Set<string>());
-  const isSubmittingRef = React.useRef(false);
   const sheetManager = useSheetManager();
   const profile = useProfile();
   const outbox = outboxHooks.useOutbox();
@@ -54,6 +53,11 @@ export const useRecordComposerModel = () => {
   const isCopy = context === 'copy';
   const isCreate = !isEdit && !isCopy;
   const isOpen = sheetManager.isOpen('record-create');
+
+  const { isSubmitting, isSubmittingRef, runSubmit } = useSheetSubmitState({
+    isOpen,
+  });
+
   const sheetId = sheetManager.getId('record-create');
   const colorScheme = useColorScheme();
 
@@ -581,7 +585,14 @@ export const useRecordComposerModel = () => {
     };
 
     void cleanupCopyDraft();
-  }, [closeSheet, copyDraftRecordId, ignoreDraftId, isCopy, recordId]);
+  }, [
+    closeSheet,
+    copyDraftRecordId,
+    ignoreDraftId,
+    isCopy,
+    isSubmittingRef,
+    recordId,
+  ]);
 
   const handleSubmit = React.useCallback(async () => {
     const text = latestTextRef.current.trim();
@@ -645,11 +656,7 @@ export const useRecordComposerModel = () => {
       return;
     }
 
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
-
-    try {
+    await runSubmit(async ({ keepPendingUntilClose }) => {
       if (isCopy) {
         if (canUpdateServerDraft) {
           await updateRecordDraft({
@@ -671,6 +678,7 @@ export const useRecordComposerModel = () => {
         }
 
         closeCopyFlow();
+        keepPendingUntilClose();
         return;
       }
 
@@ -702,10 +710,8 @@ export const useRecordComposerModel = () => {
       ignoreDraftId(recordId);
       requestPostSubmitScroll({ id: recordLogId, scope: 'log', target: 'top' });
       closeSheet();
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
+      keepPendingUntilClose();
+    });
   }, [
     closeCopyFlow,
     closeSheet,
@@ -725,6 +731,7 @@ export const useRecordComposerModel = () => {
     recordLogId,
     recordTeamId,
     record?.files,
+    runSubmit,
     setLatestText,
     selectedTags,
     isPinned,

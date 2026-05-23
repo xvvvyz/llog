@@ -35,6 +35,27 @@ describe('queue jobs', () => {
 
     expect(
       parseJob({
+        analysisId: 'analysis-1',
+        cardId: 'card-1',
+        chunkIndex: 0,
+        requestedAt,
+        schemaVersion: 1,
+        type: 'analysis.extract',
+      }).type
+    ).toBe('analysis.extract');
+
+    expect(
+      parseJob({
+        analysisId: 'analysis-1',
+        cardId: 'card-1',
+        requestedAt,
+        schemaVersion: 1,
+        type: 'analysis.finalize',
+      }).type
+    ).toBe('analysis.finalize');
+
+    expect(
+      parseJob({
         fileId: 'file-1',
         requestedAt,
         schemaVersion: 1,

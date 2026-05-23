@@ -92,7 +92,6 @@ const createDb = ({
                 },
                 metrics: [{ label: 'Average', unit: 'hrs', value: 1 }],
                 milestones: [],
-                sourceRecordIds: ['source-record'],
               },
               prompt: 'Track progress',
               tags: sourceTags,

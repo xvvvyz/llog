@@ -4,4 +4,4 @@ Return a two-series line chart over every Session record using chart.series only
 
 Return metrics with exactly these labels: Latest duration, Latest distress, Under threshold, Safe increases, and Regressions. Under threshold means peak distress 0-2, and its value must be a count/total string such as "38/47", not only the count. Safe increases means duration increased from the previous Session while peak distress stayed 0-2. Regressions means contextual setbacks above threshold after the initial setup period, not the early baseline ramp.
 
-Return milestones for: latest high-water mark, first hour, first subthreshold duration increase, and each contextual regression. Use source record ids for milestone evidence. Return sourceRecordIds containing every Session record id used for the chart and milestones. Keep milestones newest-first.
+Return milestones for: latest high-water mark, first hour, first subthreshold duration increase, and each contextual regression. Keep milestones newest-first.

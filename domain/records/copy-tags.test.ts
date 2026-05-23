@@ -1,7 +1,7 @@
 import { resolveCopyDraftTagIdsForTargetLog } from '@/domain/records/copy-tags';
 import { describe, expect, test } from 'bun:test';
 
-describe('resolveCopyDraftTagIdsForTargetLog', () => {
+describe('copy draft tags', () => {
   test('maps copied tags', () => {
     expect(
       resolveCopyDraftTagIdsForTargetLog({

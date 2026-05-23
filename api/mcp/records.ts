@@ -1,4 +1,5 @@
 import { runBulkItems } from '@/api/mcp/bulk';
+import * as cardActions from '@/api/cards/card-actions';
 import * as content from '@/api/mcp/content';
 import * as contentQueries from '@/api/mcp/content-queries';
 import * as mcpFields from '@/api/mcp/fields';
@@ -36,6 +37,21 @@ const draftRecordError = () =>
 
 export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   const fieldOptions = { appUrl: ctx.env.APP_URL };
+
+  const queuePublishedRecordCardRefreshes = (record: McpRecord) => {
+    const logId = record.log?.id;
+    const recordTagIds = record.tags?.map((tag) => tag.id) ?? [];
+    if (!logId || !recordTagIds.length) return;
+
+    ctx.executionCtx.waitUntil(
+      cardActions.queuePublishedRecordCardRefreshes({
+        dbClient: ctx.notificationDb,
+        env: ctx.env,
+        logId,
+        recordTagIds,
+      })
+    );
+  };
 
   const listRecords = async ({
     limit = 25,
@@ -346,6 +362,8 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
           : []),
       ]);
 
+      queuePublishedRecordCardRefreshes(record);
+
       await push.sendPushNotifications(
         ctx.env,
         push.collectRecipientSubscriptions({
@@ -485,6 +503,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     ];
 
     await ctx.db.transact(transactions);
+    queuePublishedRecordCardRefreshes(record);
 
     return mcpFields.textResult(
       { recordId: record.id, status: 'published' },

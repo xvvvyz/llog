@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 
 const originalFetch = globalThis.fetch;
+const originalOpenAiSttModel = process.env.OPENAI_STT_MODEL;
+const TEST_OPENAI_STT_MODEL = 'test-transcription-model';
 
 const audioObject = (bytes: Uint8Array, contentType = 'audio/wav') =>
   ({
@@ -15,8 +17,18 @@ const jsonResponse = (body: unknown, status = 200) =>
     status,
   });
 
+beforeEach(() => {
+  process.env.OPENAI_STT_MODEL = TEST_OPENAI_STT_MODEL;
+});
+
 afterEach(() => {
   globalThis.fetch = originalFetch;
+
+  if (originalOpenAiSttModel === undefined) {
+    delete process.env.OPENAI_STT_MODEL;
+  } else {
+    process.env.OPENAI_STT_MODEL = originalOpenAiSttModel;
+  }
 });
 
 describe('audio openai', () => {
@@ -61,7 +73,9 @@ describe('audio openai', () => {
       key.startsWith('timestamp_granularities')
     );
 
-    expect(entries.find(([key]) => key === 'model')?.[1]).toBe('whisper-1');
+    expect(entries.find(([key]) => key === 'model')?.[1]).toBe(
+      TEST_OPENAI_STT_MODEL
+    );
 
     expect(entries.find(([key]) => key === 'response_format')?.[1]).toBe(
       'verbose_json'

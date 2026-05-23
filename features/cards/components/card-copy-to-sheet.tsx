@@ -3,6 +3,7 @@ import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
@@ -21,7 +22,7 @@ export const LogCardCopyToSheet = () => {
   const cardId = sheetManager.getId('log-card-copy-to');
   const sourceLogId = sheetManager.getContext('log-card-copy-to');
   const open = sheetManager.isOpen('log-card-copy-to');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen: open });
   const [query, setQuery] = React.useState('');
 
   const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
@@ -42,7 +43,6 @@ export const LogCardCopyToSheet = () => {
 
   React.useEffect(() => {
     if (!open) return;
-    setIsSubmitting(false);
     setSelectedLogIds(new Set());
     setQuery('');
   }, [open, cardId]);
@@ -64,16 +64,20 @@ export const LogCardCopyToSheet = () => {
 
   const handleSubmit = React.useCallback(async () => {
     if (!cardId || selectedLogIds.size === 0) return;
-    setIsSubmitting(true);
 
-    try {
-      await cardMutations.copyCard({ id: cardId, logIds: [...selectedLogIds] });
-      close();
-    } catch {
-      setIsSubmitting(false);
-      // noop
-    }
-  }, [cardId, close, selectedLogIds]);
+    await runSubmit(
+      async ({ keepPendingUntilClose }) => {
+        await cardMutations.copyCard({
+          id: cardId,
+          logIds: [...selectedLogIds],
+        });
+
+        close();
+        keepPendingUntilClose();
+      },
+      { suppressError: true }
+    );
+  }, [cardId, close, runSubmit, selectedLogIds]);
 
   return (
     <Sheet

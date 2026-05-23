@@ -2,6 +2,7 @@ import * as cardMutations from '@/features/cards/mutations/cards';
 import { useLogCard } from '@/features/cards/queries/use-cards';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -19,7 +20,7 @@ export const LogCardTweakSheet = () => {
   const card = useLogCard({ enabled: isOpen, id: cardId });
   const logColor = useLogColor({ id: card.logId ?? undefined });
   const [prompt, setPrompt] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen });
   const trimmedPrompt = prompt.trim();
 
   const canSubmit =
@@ -39,27 +40,28 @@ export const LogCardTweakSheet = () => {
   }, [close, isSubmitting]);
 
   React.useEffect(() => {
-    setIsSubmitting(false);
     if (!isOpen) setPrompt('');
   }, [isOpen]);
 
   const handleSubmit = React.useCallback(async () => {
     if (!canSubmit || !card.id) return;
-    setIsSubmitting(true);
+    const cardId = card.id;
 
-    try {
-      const result = await cardMutations.tweakCard({
-        id: card.id,
-        prompt: trimmedPrompt,
-      });
+    await runSubmit(
+      async ({ keepPendingUntilClose }) => {
+        const result = await cardMutations.tweakCard({
+          id: cardId,
+          prompt: trimmedPrompt,
+        });
 
-      if (result.success && result.queued) close();
-    } catch {
-      // noop
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [canSubmit, card.id, close, trimmedPrompt]);
+        if (result.success && result.queued) {
+          close();
+          keepPendingUntilClose();
+        }
+      },
+      { suppressError: true }
+    );
+  }, [canSubmit, card.id, close, runSubmit, trimmedPrompt]);
 
   return (
     <Sheet

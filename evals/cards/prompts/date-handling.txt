@@ -4,4 +4,4 @@ Return exactly two metrics: First check-in date and Latest check-in time. First 
 
 Return a summary sentence that mentions the latest check-in exact date/time by including the full source record.date ISO timestamp token. Do not write a human-formatted date such as May 21, and do not use YYYY-MM-DD date-only text.
 
-Return sourceRecordIds for both check-in records.
+Return a concise summary if it adds context beyond the metrics.

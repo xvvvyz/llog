@@ -243,6 +243,8 @@ const rules = {
       },
     },
   },
+  analyses: { allow: { $default: 'false' } },
+  facts: { allow: { $default: 'false' } },
   $users: {
     bind: [
       'isTeammate',

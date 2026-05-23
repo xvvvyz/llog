@@ -1,16 +1,15 @@
 import { deleteTemplate } from '@/features/logs/mutations/delete-template';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
-import * as React from 'react';
 
 export const LogTemplateDeleteSheet = () => {
-  const [isPending, setIsPending] = React.useState(false);
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('log-template-delete');
 
-  React.useEffect(() => {
-    if (open) setIsPending(false);
-  }, [open]);
+  const { isSubmitting: isPending, runSubmit } = useSheetSubmitState({
+    isOpen: open,
+  });
 
   return (
     <DestructiveConfirmSheet
@@ -22,15 +21,12 @@ export const LogTemplateDeleteSheet = () => {
       onConfirm={async () => {
         const templateId = sheetManager.getId('log-template-delete');
         if (!templateId) return;
-        setIsPending(true);
 
-        try {
+        await runSubmit(async ({ keepPendingUntilClose }) => {
           await deleteTemplate({ id: templateId });
           sheetManager.close('log-template-delete');
-        } catch (error) {
-          setIsPending(false);
-          throw error;
-        }
+          keepPendingUntilClose();
+        });
       }}
     />
   );

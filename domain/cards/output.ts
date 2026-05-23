@@ -1,3 +1,4 @@
+import { parseIsoDateTime } from '@/lib/iso-date-time';
 import { z } from 'zod/v4';
 
 export const MAX_CARD_CHART_POINTS = 60;
@@ -7,8 +8,6 @@ export const MAX_CARD_CHART_SERIES = 4;
 export const MAX_CARD_METRICS = 6;
 
 export const MAX_CARD_MILESTONES = 8;
-
-export const MAX_CARD_SOURCE_RECORD_IDS = 80;
 
 export const MAX_CARD_GENERATED_SUMMARY_LENGTH = 320;
 
@@ -26,7 +25,6 @@ export const cardMilestoneSchema = z
   .object({
     date: z.string().max(32).optional(),
     detail: z.string().max(240).optional(),
-    recordIds: z.array(z.string().min(1)).max(20).optional(),
     title: z.string().min(1).max(80),
   })
   .strict();
@@ -89,10 +87,6 @@ export const cardOutputSchema = z
     milestones: z
       .array(cardMilestoneSchema)
       .max(MAX_CARD_MILESTONES)
-      .default([]),
-    sourceRecordIds: z
-      .array(z.string().min(1))
-      .max(MAX_CARD_SOURCE_RECORD_IDS)
       .default([]),
     summary: z.string().min(1).max(1200).optional(),
   })
@@ -189,31 +183,11 @@ export const normalizeCardDisplayLabel = ({
   return label.replace(/^[a-z]/, (character) => character.toUpperCase());
 };
 
-const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-const parseDateOnly = (value: string) => {
-  const match = DATE_ONLY_PATTERN.exec(value.trim());
-  if (!match) return undefined;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-
-  return date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day
-    ? match[0]
-    : undefined;
-};
-
-const isDateOnlyString = (value: unknown) =>
-  typeof value === 'string' && DATE_ONLY_PATTERN.test(value.trim());
-
 export const normalizeCardDate = (
   value?: Date | number | string | null
 ): string | undefined => {
   if (value == null || value === '') return undefined;
-  if (isDateOnlyString(value)) return undefined;
+  if (typeof value === 'string') return parseIsoDateTime(value)?.toISOString();
   const date = value instanceof Date ? value : new Date(value);
   const time = date.getTime();
   if (!Number.isFinite(time)) return undefined;
@@ -222,15 +196,7 @@ export const normalizeCardDate = (
 
 const dateTime = (value?: string) => {
   if (!value) return Number.POSITIVE_INFINITY;
-  const dateOnly = parseDateOnly(value);
-
-  if (dateOnly) {
-    const [year, month, day] = dateOnly.split('-').map(Number);
-    return new Date(year, month - 1, day).getTime();
-  }
-
-  const time = new Date(value).getTime();
-  return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
+  return parseIsoDateTime(value)?.getTime() ?? Number.POSITIVE_INFINITY;
 };
 
 const readNumber = (value: unknown) => {
@@ -347,12 +313,6 @@ const readAxisInteger = <T extends number>(
   return allowedValues.find((allowedValue) => allowedValue === number);
 };
 
-const readRecordIds = (value: unknown, maxLength: number) =>
-  asArray(value)
-    .map((item) => readString(item, 120))
-    .filter((id): id is string => !!id)
-    .slice(0, maxLength);
-
 const normalizeMetric = (value: unknown) => {
   const metric = asRecord(value);
 
@@ -362,12 +322,19 @@ const normalizeMetric = (value: unknown) => {
     value: metric.label,
   });
 
-  const metricValue =
+  let metricValue =
     readNumber(metric.value) ?? readString(metric.value, 40) ?? undefined;
 
   if (!label || metricValue == null) return undefined;
   const unit = readUnit(metric.unit);
   const valueFormat = readMetricValueFormat(metric.valueFormat);
+
+  if (valueFormat) {
+    if (typeof metricValue !== 'string') return undefined;
+    const dateValue = normalizeCardDate(metricValue);
+    if (!dateValue) return undefined;
+    metricValue = dateValue;
+  }
 
   const trend = readMetricTrend({
     label,
@@ -404,14 +371,7 @@ const normalizeMilestone = (value: unknown) => {
       ? normalizeCardDate(milestone.date)
       : undefined;
 
-  const recordIds = readRecordIds(milestone.recordIds, 20);
-
-  return {
-    ...(date && { date }),
-    ...(detail && { detail }),
-    ...(recordIds.length > 0 && { recordIds }),
-    title,
-  };
+  return { ...(date && { date }), ...(detail && { detail }), title };
 };
 
 const normalizeChartDatum = (value: unknown) => {
@@ -514,58 +474,18 @@ export const normalizeRawCardOutput = (value: unknown): unknown => {
         (milestone): milestone is NonNullable<typeof milestone> => !!milestone
       )
       .slice(0, MAX_CARD_MILESTONES),
-    sourceRecordIds: readRecordIds(
-      output.sourceRecordIds,
-      MAX_CARD_SOURCE_RECORD_IDS
-    ),
     ...(summary && { summary }),
   };
 };
 
-export const normalizeCardOutputSourceIds = (
-  output: CardOutput,
-  allowedSourceIds: Iterable<string>
-): CardOutput => {
-  const allowed = new Set(allowedSourceIds);
-
-  const keepAllowedIds = (ids?: string[]) =>
-    (ids ?? []).filter((id) => allowed.has(id));
-
-  return {
-    ...output,
-    milestones: output.milestones.map((milestone) => ({
-      ...milestone,
-      recordIds: keepAllowedIds(milestone.recordIds),
-    })),
-    sourceRecordIds: keepAllowedIds(output.sourceRecordIds),
-  };
-};
-
 export const normalizeCardOutputMilestoneDates = (
-  output: CardOutput,
-  records: { date?: Date | number | string | null; id: string }[]
+  output: CardOutput
 ): CardOutput => {
-  const dateByRecordId = new Map(
-    records
-      .map((record) => [record.id, normalizeCardDate(record.date)] as const)
-      .filter((entry): entry is readonly [string, string] => !!entry[1])
-  );
-
   const milestones = output.milestones
     .map((milestone, index) => {
-      const recordDates = (milestone.recordIds ?? [])
-        .map((recordId) => dateByRecordId.get(recordId))
-        .filter((date): date is string => !!date)
-        .sort((a, b) => dateTime(a) - dateTime(b));
-
-      const date =
-        (isDateOnlyString(milestone.date)
-          ? undefined
-          : normalizeCardDate(milestone.date)) ??
-        recordDates.at(-1) ??
-        undefined;
-
-      return { index, milestone: { ...milestone, ...(date && { date }) } };
+      const { date: rawDate, ...rest } = milestone;
+      const date = normalizeCardDate(rawDate);
+      return { index, milestone: { ...rest, ...(date && { date }) } };
     })
     .sort((a, b) => {
       const aTime = dateTime(a.milestone.date);
@@ -604,32 +524,55 @@ const mergeCardMetricRefresh = (
   };
 };
 
+const outputItemByLabel = <T extends { label: string }>(items?: T[]) =>
+  new Map((items ?? []).map((item) => [normalizeToken(item.label), item]));
+
 const mergeCardChartRefresh = (
   previous: CardChart,
   next?: CardChart
-): CardChart => ({
-  ...previous,
-  ...(previous.data?.length && {
-    data: next?.data?.length ? next.data : previous.data,
-  }),
-  ...(previous.series?.length && {
-    series: previous.series.map((series, index) => ({
-      ...series,
-      data: next?.series?.[index]?.data?.length
-        ? next.series[index].data
-        : series.data,
-    })),
-  }),
-});
+): CardChart => {
+  const nextSeriesByLabel = outputItemByLabel(next?.series);
+
+  return {
+    ...previous,
+    ...(previous.data?.length && {
+      data: next?.data?.length ? next.data : previous.data,
+    }),
+    ...(previous.series?.length && {
+      series: previous.series.map((series, index) => {
+        const nextSeries =
+          nextSeriesByLabel.get(normalizeToken(series.label)) ??
+          next?.series?.[index];
+
+        return {
+          ...series,
+          data: nextSeries?.data?.length ? nextSeries.data : series.data,
+        };
+      }),
+    }),
+  };
+};
 
 const mergeCardMilestonesRefresh = (next: CardOutput['milestones']) =>
   next.slice(0, MAX_CARD_MILESTONES);
 
-const mergeSourceRecordIdsRefresh = (previous: string[], next: string[]) =>
-  [...new Set([...next, ...previous].filter(Boolean))].slice(
-    0,
-    MAX_CARD_SOURCE_RECORD_IDS
-  );
+const mergeCardSummaryRefresh = ({
+  next,
+  previous,
+}: {
+  next: CardOutput;
+  previous: CardOutput;
+}) => {
+  if (!previous.summary) return;
+  const summary = next.summary?.trim();
+  if (summary) return summary;
+
+  return previous.chart ||
+    previous.metrics.length > 0 ||
+    previous.milestones.length > 0
+    ? undefined
+    : previous.summary;
+};
 
 export const mergeCardOutputRefresh = ({
   next,
@@ -638,23 +581,24 @@ export const mergeCardOutputRefresh = ({
   next: CardOutput;
   previous: CardOutput;
 }): CardOutput => {
-  const summary = previous.summary ? next.summary?.trim() : undefined;
+  const summary = mergeCardSummaryRefresh({ next, previous });
+  const nextMetricByLabel = outputItemByLabel(next.metrics);
 
   return {
     ...(previous.chart && {
       chart: mergeCardChartRefresh(previous.chart, next.chart),
     }),
-    metrics: previous.metrics.map((metric, index) =>
-      mergeCardMetricRefresh(metric, next.metrics[index])
-    ),
+    metrics: previous.metrics.map((metric, index) => {
+      const nextMetric =
+        nextMetricByLabel.get(normalizeToken(metric.label)) ??
+        next.metrics[index];
+
+      return mergeCardMetricRefresh(metric, nextMetric);
+    }),
     milestones:
       previous.milestones.length > 0
         ? mergeCardMilestonesRefresh(next.milestones)
         : [],
-    sourceRecordIds: mergeSourceRecordIdsRefresh(
-      previous.sourceRecordIds,
-      next.sourceRecordIds
-    ),
     ...(summary && { summary }),
   };
 };

@@ -17,8 +17,7 @@
   "expected": {
     "dateHandling": {
       "firstDate": "2026-05-20T02:30:00.000Z",
-      "latestDateTime": "2026-05-21T23:45:00.000Z",
-      "sourceRecordIds": ["checkin-a", "checkin-b"]
+      "latestDateTime": "2026-05-21T23:45:00.000Z"
     }
   }
 }

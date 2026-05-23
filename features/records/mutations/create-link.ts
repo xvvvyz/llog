@@ -1,4 +1,5 @@
 import type { Link } from '@/features/records/types/link';
+import { queueRecordCardRefresh } from '@/features/records/mutations/record-card-refresh';
 import { db } from '@/lib/db';
 import { id } from '@instantdb/react-native';
 
@@ -28,5 +29,6 @@ export const createLink = async ({
       : link.link({ reply: parentId })
   );
 
+  if (parentType === 'record') queueRecordCardRefresh(parentId);
   return nextLinkId;
 };

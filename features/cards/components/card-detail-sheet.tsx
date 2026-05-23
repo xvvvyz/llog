@@ -5,6 +5,7 @@ import { useLog } from '@/features/logs/queries/use-log';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { resolveSpectrumColor } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
@@ -39,31 +40,30 @@ export const LogCardDetailSheet = () => {
   const title = card.title;
   const logColorIndex = resolveSpectrumColor(log.color);
   const [deletingCardId, setDeletingCardId] = React.useState<string>();
-  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const { isSubmitting: isDeleting, runSubmit: runDelete } =
+    useSheetSubmitState({ isOpen: !!deletingCardId });
+
   const isGenerating = !!card.isGenerating;
   const hasMultipleCards = cards.data.length > 1;
 
   React.useEffect(() => {
-    if (!isOpen) {
-      setDeletingCardId(undefined);
-      setIsDeleting(false);
-    }
+    if (!isOpen) setDeletingCardId(undefined);
   }, [isOpen]);
 
   const handleDelete = React.useCallback(async () => {
     if (!deletingCardId) return;
-    setIsDeleting(true);
 
-    try {
-      await cardMutations.deleteCard(deletingCardId);
-      setDeletingCardId(undefined);
-      sheetManager.close('log-card-detail');
-    } catch {
-      // noop
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [deletingCardId, sheetManager]);
+    await runDelete(
+      async ({ keepPendingUntilClose }) => {
+        await cardMutations.deleteCard(deletingCardId);
+        setDeletingCardId(undefined);
+        sheetManager.close('log-card-detail');
+        keepPendingUntilClose();
+      },
+      { suppressError: true }
+    );
+  }, [deletingCardId, runDelete, sheetManager]);
 
   const handleRefresh = React.useCallback(async () => {
     if (!card.id) return;
@@ -93,10 +93,11 @@ export const LogCardDetailSheet = () => {
               actionMenu={
                 myRole.canManage ? (
                   <cardActionsMenu.CardActionsMenu
-                    containerClassName="-mr-1.5"
                     isGenerating={isGenerating}
+                    isTweakDisabled={!card.output}
                     onDelete={() => setDeletingCardId(card.id)}
                     onRefresh={handleRefresh}
+                    onTweak={() => sheetManager.open('log-card-tweak', card.id)}
                     showGeneratingIndicator={!!card.output}
                     onCopy={() =>
                       sheetManager.open(
@@ -119,11 +120,6 @@ export const LogCardDetailSheet = () => {
                               'log-cards',
                               card.logId ?? undefined
                             )
-                        : undefined
-                    }
-                    onTweak={
-                      card.output
-                        ? () => sheetManager.open('log-card-tweak', card.id)
                         : undefined
                     }
                   />

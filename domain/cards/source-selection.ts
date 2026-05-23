@@ -1,8 +1,10 @@
+import type { Record as LlogRecord, Tag } from '@/instant.entities';
+
 export const MAX_CARD_FULL_TEXT_RECORDS = 60;
 
 export const MAX_CARD_ANALYSIS_SOURCE_RECORDS = 240;
 
-export const CARD_ANALYSIS_CHUNK_SIZE = 30;
+export const CARD_ANALYSIS_CHUNK_SIZE = 20;
 
 export const MAX_CARD_SOURCE_RECORDS = MAX_CARD_ANALYSIS_SOURCE_RECORDS;
 
@@ -10,12 +12,10 @@ export const MAX_CARD_PROMPT_SUGGESTION_RECORDS = 40;
 
 export const CARD_PROMPT_SUGGESTION_RECENT_RECORDS = 20;
 
-export type CardSourceRecord = {
-  date?: Date | number | string | null;
-  id: string;
-  tags?: { id: string; name?: string | null }[];
-  text?: string | null;
-};
+export type CardSourceRecord = Pick<LlogRecord, 'id'> &
+  Partial<Pick<LlogRecord, 'date' | 'text'>> & {
+    tags?: (Pick<Tag, 'id'> & Partial<Pick<Tag, 'name'>>)[];
+  };
 
 export const uniqueCardTagIds = (
   tagIds?: Iterable<string | null | undefined>
@@ -101,6 +101,7 @@ const selectCardTimelineRecords = <T extends CardSourceRecord>({
   records: T[];
 }) => {
   const resolvedLimit = Math.max(0, Math.floor(limit));
+  if (!Number.isFinite(resolvedLimit)) return records;
   if (!resolvedLimit) return [];
   if (records.length <= resolvedLimit) return records;
 

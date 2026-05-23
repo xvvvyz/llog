@@ -9,6 +9,7 @@ import { CARD_PROMPT_MAX_LENGTH } from '@/domain/cards/constants';
 import { AddTagsInput } from '@/features/tags/components/add-tags-input';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { cn } from '@/lib/cn';
 import { resolveSpectrumColor } from '@/theme/spectrum';
@@ -43,7 +44,7 @@ export const LogCardEditorSheet = () => {
 
   const [tagsOpen, setTagsOpen] = React.useState(false);
   const [isSuggestingPrompt, setIsSuggestingPrompt] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen });
   const resolvedLogId = logId ?? card.logId ?? undefined;
   const teamId = isEditing ? card.teamId : log.teamId;
   const logColorIndex = resolveSpectrumColor(log.color);
@@ -112,16 +113,17 @@ export const LogCardEditorSheet = () => {
   }, [isSuggestingPrompt]);
 
   React.useEffect(() => {
-    setIsSubmitting(false);
-    setIsSuggestingPrompt(false);
-
     if (!isOpen) {
+      setIsSuggestingPrompt(false);
       setPrompt('');
       setInlineSelection({ end: 0, start: 0 });
       setSelectedTagIds(new Set());
       setTagsOpen(false);
-      return;
     }
+  }, [isOpen, setInlineSelection]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
 
     if (!isEditing) {
       setPrompt('');
@@ -194,24 +196,25 @@ export const LogCardEditorSheet = () => {
     const payload = buildPayload();
     if (!payload) return;
     if (isEditing && !cardId) return;
-    setIsSubmitting(true);
 
-    try {
-      const result = isEditing
-        ? await cardMutations.updateCard({
-            id: cardId,
-            prompt: payload.prompt,
-            tagIds: payload.tagIds,
-          })
-        : await cardMutations.createCard(payload);
+    await runSubmit(
+      async ({ keepPendingUntilClose }) => {
+        const result = isEditing
+          ? await cardMutations.updateCard({
+              id: cardId,
+              prompt: payload.prompt,
+              tagIds: payload.tagIds,
+            })
+          : await cardMutations.createCard(payload);
 
-      if (result.success && result.queued) close();
-    } catch {
-      // noop
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [buildPayload, canSubmit, cardId, close, isEditing]);
+        if (result.success && result.queued) {
+          close();
+          keepPendingUntilClose();
+        }
+      },
+      { suppressError: true }
+    );
+  }, [buildPayload, canSubmit, cardId, close, isEditing, runSubmit]);
 
   return (
     <>

@@ -69,13 +69,13 @@ export const refreshRecordCards = ({
   tagIds,
 }: {
   recordId?: string;
-  tagIds: string[];
+  tagIds?: string[];
 }) => {
-  if (!recordId || !tagIds.length) return;
+  if (!recordId) return;
 
   return postJson<{ success: boolean }>('/cards/refresh-record', {
     recordId,
-    tagIds,
+    ...(tagIds?.length && { tagIds }),
   });
 };
 
@@ -96,4 +96,5 @@ export const updateCard = async ({
   }>;
 };
 
-export const deleteCard = (id: string) => db.transact(db.tx.cards[id].delete());
+export const deleteCard = (id: string) =>
+  apiOrThrow(`/cards/${id}`, { method: 'DELETE' });

@@ -4,6 +4,7 @@ import type { LogCard } from '@/features/cards/types/card';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { clampIndex } from '@/lib/clamp';
 import { cn } from '@/lib/cn';
 import { resolveSpectrumColor } from '@/theme/spectrum';
@@ -31,11 +32,12 @@ const CARD_CONTROL_EDGE_INSET = 6;
 const useCardPreviewActions = ({ logId }: { logId?: string }) => {
   const sheetManager = useSheetManager();
   const [deletingCardId, setDeletingCardId] = React.useState<string>();
-  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const { isSubmitting: isDeleting, runSubmit: runDelete } =
+    useSheetSubmitState({ isOpen: !!deletingCardId });
 
   React.useEffect(() => {
     setDeletingCardId(undefined);
-    setIsDeleting(false);
   }, [logId]);
 
   const openEditor = React.useCallback(
@@ -66,17 +68,16 @@ const useCardPreviewActions = ({ logId }: { logId?: string }) => {
 
   const handleDelete = React.useCallback(async () => {
     if (!deletingCardId) return;
-    setIsDeleting(true);
 
-    try {
-      await cardMutations.deleteCard(deletingCardId);
-      setDeletingCardId(undefined);
-    } catch {
-      // noop
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [deletingCardId]);
+    await runDelete(
+      async ({ keepPendingUntilClose }) => {
+        await cardMutations.deleteCard(deletingCardId);
+        setDeletingCardId(undefined);
+        keepPendingUntilClose();
+      },
+      { suppressError: true }
+    );
+  }, [deletingCardId, runDelete]);
 
   return {
     deletingCardId,
@@ -318,26 +319,22 @@ export const CardsHeader = ({
               myRole.canManage ? (
                 <cardActionsMenu.CardActionsMenu
                   className="rounded-lg"
-                  containerClassName="-mr-1.5 -mt-1.5"
                   isGenerating={isGenerating}
+                  isTweakDisabled={!card.output}
                   onCopy={() => cardActions.openCopy(card.id)}
                   onDelete={() => cardActions.setDeletingCardId(card.id)}
                   onEdit={() => cardActions.openEditor(card.id)}
                   onRefresh={() => cardActions.handleRefresh(card.id)}
+                  onTweak={() => cardActions.openTweak(card.id)}
                   showGeneratingIndicator={!!card.output}
                   onManage={
                     visibleCards.length > 1
                       ? () => cardActions.sheetManager.open('log-cards', logId)
                       : undefined
                   }
-                  onTweak={
-                    card.output
-                      ? () => cardActions.openTweak(card.id)
-                      : undefined
-                  }
                 />
               ) : isGenerating && !!card.output ? (
-                <cardActionsMenu.CardGeneratingIndicator className="-mr-1.5 -mt-1.5" />
+                <cardActionsMenu.CardGeneratingIndicator />
               ) : undefined
             }
           />

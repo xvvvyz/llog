@@ -1,3 +1,3 @@
 Create a sleep progress card from these sleep records.
 
-Calculate Average sleep as the mean Sleep hours. Calculate Sleep debt from the latest record. Chart Sleep hours over time. Include one milestone for the highest sleep night. Use source record ids for evidence.
+Calculate Average sleep as the mean Sleep hours. Calculate Sleep debt from the latest record. Chart Sleep hours over time. Include one milestone for the highest sleep night.

@@ -95,7 +95,7 @@ describe('parseRecordMarkdown', () => {
     ]);
   });
 
-  test('keeps task syntax as list text', () => {
+  test('keeps task markers', () => {
     expect(
       recordMarkdown.parseRecordMarkdown('- [ ] one\n  2. [x] **two**')
     ).toEqual([

@@ -68,6 +68,7 @@ const BAR_DIMMED_OPACITY = 0.62;
 
 export const PROGRESS_CARD_PREVIEW_HEIGHT = 208;
 
+const ACTION_MENU_SLOT_CLASS = '-mr-1.5 -mt-1.5';
 const HORIZONTAL_BAR_COMPACT_MIN_HEIGHT = 64;
 const HORIZONTAL_BAR_ROW_HEIGHT = 20;
 const HORIZONTAL_BAR_HEIGHT = 8;
@@ -86,10 +87,19 @@ const CHART_TOOLTIP_GAP = 12;
 const BAR_CHART_TOOLTIP_GAP = 6;
 const CHART_TOOLTIP_HORIZONTAL_OVERFLOW = 16;
 
+const CHART_WEB_NO_SELECT_STYLE =
+  Platform.OS === 'web'
+    ? ({
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+      } as const)
+    : undefined;
+
 const CHART_SVG_STYLE = {
   overflow: 'visible',
   pointerEvents: 'none',
-  userSelect: 'none',
+  ...CHART_WEB_NO_SELECT_STYLE,
 } as const;
 
 const chartChromeColors = {
@@ -1584,6 +1594,7 @@ const SingleSeriesChart = ({
         ? { flex: 1, minHeight: compact ? 0 : fallbackChartHeight }
         : { height: fallbackChartHeight }),
       overflow: 'visible' as const,
+      ...CHART_WEB_NO_SELECT_STYLE,
       ...(Platform.OS === 'web' && !isHorizontalBar
         ? { touchAction: 'pan-y' as const }
         : undefined),
@@ -2659,10 +2670,7 @@ export const ProgressCard = ({
     <React.Fragment>
       <View className="flex-row gap-3 items-start">
         <View
-          className={cn(
-            'flex-1 min-w-0',
-            isSummary && !!actionMenu && '-mt-0.5 md:mt-0'
-          )}
+          className={cn('flex-1 min-w-0', !!actionMenu && '-mt-0.5 md:mt-0')}
         >
           <Text
             numberOfLines={isSummary ? 1 : undefined}
@@ -2676,7 +2684,7 @@ export const ProgressCard = ({
           </Text>
         </View>
         {actionMenu ? (
-          <View className={cn(!isSummary && '-mt-1.5')}>{actionMenu}</View>
+          <View className={ACTION_MENU_SLOT_CLASS}>{actionMenu}</View>
         ) : null}
       </View>
       {isGenerating && !resolvedOutput ? (

@@ -2,7 +2,7 @@ import * as blueprint from '@/domain/cards/blueprint';
 import { describe, expect, test } from 'bun:test';
 
 describe('card blueprint', () => {
-  test('strips source data', () => {
+  test('creates compact spec', () => {
     expect(
       blueprint.createCardBlueprint({
         chart: {
@@ -27,11 +27,9 @@ describe('card blueprint', () => {
           {
             date: '2026-05-20T00:00:00.000Z',
             detail: 'Slept through the night',
-            recordIds: ['record-1'],
             title: 'Best night',
           },
         ],
-        sourceRecordIds: ['record-1'],
         summary: 'Sleep improved this week.',
       })
     ).toEqual({
@@ -71,7 +69,6 @@ describe('card blueprint', () => {
         },
         metrics: [],
         milestones: [],
-        sourceRecordIds: [],
       })
     ).toEqual({
       chart: {

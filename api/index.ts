@@ -1,8 +1,7 @@
 import cards from '@/api/cards';
 import files from '@/api/files';
 import internal from '@/api/internal';
-import { parseJob } from '@/api/jobs/payload';
-import { getJobRetryDelay, processJob } from '@/api/jobs/processor';
+import { processQueueBatch } from '@/api/jobs/processor';
 import { installConsoleErrorSerializer } from '@/api/lib/logging';
 import logs from '@/api/logs';
 import { createAdminDb } from '@/api/middleware/db';
@@ -72,16 +71,6 @@ export default {
   async queue(batch: MessageBatch<unknown>, env: CloudflareEnv) {
     const db = createAdminDb(env);
     const maxDeliveryAttempts = getMaxQueueJobDeliveryAttempts(env);
-
-    for (const message of batch.messages) {
-      const job = parseJob(message.body);
-      const isFinalAttempt = message.attempts >= maxDeliveryAttempts;
-      const result = await processJob({ db, env, isFinalAttempt, job });
-      const retryDelay = getJobRetryDelay(result);
-
-      if (retryDelay != null && !isFinalAttempt) {
-        message.retry({ delaySeconds: retryDelay });
-      }
-    }
+    await processQueueBatch({ batch, db, env, maxDeliveryAttempts });
   },
 };

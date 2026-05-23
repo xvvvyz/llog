@@ -1,0 +1,170 @@
+{
+  "name": "Date window last 3 months duration",
+  "records": [
+    {
+      "id": "record-jan",
+      "date": "2026-01-15T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 300 min"
+    },
+    {
+      "id": "record-feb-1",
+      "date": "2026-02-01T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 90 min"
+    },
+    {
+      "id": "record-feb-22",
+      "date": "2026-02-22T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 100 min"
+    },
+    {
+      "id": "record-feb-23",
+      "date": "2026-02-23T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 10 min"
+    },
+    {
+      "id": "record-mar",
+      "date": "2026-03-15T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 20 min"
+    },
+    {
+      "id": "record-apr-30",
+      "date": "2026-04-30T23:59:59.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 30 min"
+    },
+    {
+      "id": "record-may-22",
+      "date": "2026-05-22T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 40 min"
+    },
+    {
+      "id": "record-may-23",
+      "date": "2026-05-23T12:00:00.000Z",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 500 min"
+    },
+    {
+      "id": "record-invalid",
+      "date": "not-a-date",
+      "tags": [{ "id": "tag-a", "name": "Session" }],
+      "text": "Duration: 800 min"
+    }
+  ],
+  "exact": {
+    "generationTime": "2026-05-23T12:00:00.000Z",
+    "tagIds": ["tag-a"],
+    "analysisSpec": {
+      "extractionFields": [
+        {
+          "id": "duration",
+          "label": "Duration",
+          "type": "number",
+          "unit": "min"
+        }
+      ],
+      "aggregations": [
+        {
+          "id": "duration_average",
+          "label": "Average duration",
+          "operation": "average",
+          "fieldId": "duration",
+          "unit": "min"
+        }
+      ],
+      "filters": [
+        {
+          "id": "last_3_months",
+          "field": "record.date",
+          "startInclusive": {
+            "type": "generationTime",
+            "offset": { "amount": -3, "unit": "month" }
+          },
+          "endExclusive": { "type": "generationTime" }
+        }
+      ],
+      "groupings": [],
+      "charts": []
+    },
+    "facts": [
+      {
+        "recordId": "record-jan",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 300 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-feb-1",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 90 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-feb-22",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 100 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-feb-23",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 10 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-mar",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 20 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-apr-30",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 30 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-may-22",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 40 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-may-23",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 500 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      },
+      {
+        "recordId": "record-invalid",
+        "events": [],
+        "evidence": [],
+        "numericValues": [{ "fieldId": "duration", "value": 800 }],
+        "outcomes": [],
+        "qualitativeLabels": []
+      }
+    ],
+    "expected": { "metrics": { "Average duration": 25 } }
+  }
+}

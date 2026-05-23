@@ -5,6 +5,7 @@ import type { LogCard } from '@/features/cards/types/card';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { Button } from '@/ui/button';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
 import { nativePointerEvents } from '@/ui/pointer-events';
@@ -20,6 +21,7 @@ import Animated, { useAnimatedRef } from 'react-native-reanimated';
 const CardRow = ({
   card,
   isGenerating,
+  isTweakDisabled,
   onCopy,
   onDelete,
   onEdit,
@@ -28,6 +30,7 @@ const CardRow = ({
 }: {
   card: LogCard;
   isGenerating: boolean;
+  isTweakDisabled?: boolean;
   onCopy: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -69,6 +72,7 @@ const CardRow = ({
         generatingIndicator="inline"
         iconSize={18}
         isGenerating={isGenerating}
+        isTweakDisabled={isTweakDisabled}
         onCopy={onCopy}
         onDelete={onDelete}
         onEdit={onEdit}
@@ -87,13 +91,12 @@ export const LogCardsSheet = () => {
   const logColor = useLogColor({ id: logId });
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [deletingCardId, setDeletingCardId] = React.useState<string>();
-  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const { isSubmitting: isDeleting, runSubmit: runDelete } =
+    useSheetSubmitState({ isOpen: !!deletingCardId });
 
   React.useEffect(() => {
-    if (!isOpen) {
-      setDeletingCardId(undefined);
-      setIsDeleting(false);
-    }
+    if (!isOpen) setDeletingCardId(undefined);
   }, [isOpen]);
 
   const openEditor = React.useCallback(
@@ -133,15 +136,13 @@ export const LogCardsSheet = () => {
 
   const handleDelete = React.useCallback(async () => {
     if (!deletingCardId) return;
-    setIsDeleting(true);
 
-    try {
+    await runDelete(async ({ keepPendingUntilClose }) => {
       await cardMutations.deleteCard(deletingCardId);
       setDeletingCardId(undefined);
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [deletingCardId]);
+      keepPendingUntilClose();
+    });
+  }, [deletingCardId, runDelete]);
 
   const handleRefresh = React.useCallback(
     (cardId: string) => cardMutations.refreshCard(cardId),
@@ -173,11 +174,12 @@ export const LogCardsSheet = () => {
                 <CardRow
                   card={card}
                   isGenerating={!!card.isGenerating}
+                  isTweakDisabled={!card.output}
                   onCopy={() => openCopy(card.id)}
                   onDelete={() => setDeletingCardId(card.id)}
                   onEdit={() => openEditor(card.id)}
                   onRefresh={() => handleRefresh(card.id)}
-                  onTweak={card.output ? () => openTweak(card.id) : undefined}
+                  onTweak={() => openTweak(card.id)}
                 />
               )}
             />

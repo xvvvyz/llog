@@ -1,6 +1,7 @@
 const { execFile } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const ts = require('typescript');
 const { promisify } = require('node:util');
 const execFileAsync = promisify(execFile);
 const ENV_FILE_NAMES = ['.dev.vars', '.dev.vars.production'];
@@ -25,6 +26,31 @@ const parseEnvFile = (filePath) =>
       })
   );
 
+const isObject = (value) =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const parseWranglerVars = (environmentName) => {
+  const filePath = path.join(process.cwd(), 'wrangler.jsonc');
+  if (!fs.existsSync(filePath)) return {};
+
+  const parsed = ts.parseConfigFileTextToJson(
+    filePath,
+    fs.readFileSync(filePath, 'utf8')
+  );
+
+  if (parsed.error || !isObject(parsed.config)) return {};
+  const rootVars = isObject(parsed.config.vars) ? parsed.config.vars : {};
+
+  const envConfig = isObject(parsed.config.env)
+    ? parsed.config.env[environmentName ?? rootVars.ENV]
+    : undefined;
+
+  const envVars =
+    isObject(envConfig) && isObject(envConfig.vars) ? envConfig.vars : {};
+
+  return { ...rootVars, ...envVars };
+};
+
 const evalEnv = () => {
   const env = {};
 
@@ -33,7 +59,11 @@ const evalEnv = () => {
     if (fs.existsSync(filePath)) Object.assign(env, parseEnvFile(filePath));
   }
 
-  return { ...env, ...process.env };
+  return {
+    ...parseWranglerVars(process.env.ENV ?? env.ENV),
+    ...env,
+    ...process.env,
+  };
 };
 
 class LlogCardProvider {

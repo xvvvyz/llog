@@ -3,6 +3,7 @@ import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { SPECTRUM } from '@/theme/spectrum';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
@@ -20,7 +21,7 @@ export const RecordCopyToSheet = () => {
   const sheetManager = useSheetManager();
   const recordId = sheetManager.getId('record-copy-to');
   const open = sheetManager.isOpen('record-copy-to');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen: open });
   const [query, setQuery] = React.useState('');
 
   const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(
@@ -32,7 +33,6 @@ export const RecordCopyToSheet = () => {
 
   React.useEffect(() => {
     if (!open) return;
-    setIsSubmitting(false);
     setSelectedLogIds(new Set());
     setQuery('');
   }, [open, recordId]);
@@ -54,29 +54,23 @@ export const RecordCopyToSheet = () => {
 
   const handleSubmit = React.useCallback(async () => {
     if (!recordId || selectedLogIds.size === 0) return;
-    setIsSubmitting(true);
 
-    try {
-      const draft = await createRecordCopyDraft({
-        id: recordId,
-        logIds: [...selectedLogIds],
-      });
+    await runSubmit(
+      async () => {
+        const draft = await createRecordCopyDraft({
+          id: recordId,
+          logIds: [...selectedLogIds],
+        });
 
-      if (!draft) {
-        setIsSubmitting(false);
-        return;
-      }
+        if (!draft) return;
 
-      setIsSubmitting(false);
-
-      sheetManager.open('record-create', draft.draftRecordId, 'copy', {
-        logIds: draft.targetLogIds,
-      });
-    } catch {
-      setIsSubmitting(false);
-      // noop
-    }
-  }, [recordId, selectedLogIds, sheetManager]);
+        sheetManager.open('record-create', draft.draftRecordId, 'copy', {
+          logIds: draft.targetLogIds,
+        });
+      },
+      { suppressError: true }
+    );
+  }, [recordId, runSubmit, selectedLogIds, sheetManager]);
 
   return (
     <Sheet

@@ -25,6 +25,23 @@ const cardTweakJobSchema = z.object({
   type: z.literal('card.tweak'),
 });
 
+const analysisExtractJobSchema = z.object({
+  analysisId: z.string().min(1),
+  cardId: z.string().min(1),
+  chunkIndex: z.number().int().min(0),
+  requestedAt,
+  schemaVersion,
+  type: z.literal('analysis.extract'),
+});
+
+const analysisFinalizeJobSchema = z.object({
+  analysisId: z.string().min(1),
+  cardId: z.string().min(1),
+  requestedAt,
+  schemaVersion,
+  type: z.literal('analysis.finalize'),
+});
+
 const audioTranscribeJobSchema = z.object({
   fileId: z.string().min(1),
   requestedAt,
@@ -40,6 +57,8 @@ const audioIdentifyJobSchema = z.object({
 });
 
 export const jobSchema = z.discriminatedUnion('type', [
+  analysisExtractJobSchema,
+  analysisFinalizeJobSchema,
   cardGenerateJobSchema,
   cardRefreshJobSchema,
   cardTweakJobSchema,

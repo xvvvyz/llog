@@ -1,0 +1,65 @@
+{
+  "name": "Exact large cached count facts",
+  "exact": {
+    "tagIds": ["tag-a"],
+    "generated": {
+      "count": 65,
+      "startDate": "2026-05-01T12:00:00.000Z",
+      "tagId": "tag-a",
+      "tagName": "Session",
+      "events": [
+        {
+          "fieldId": "events",
+          "label": "whining",
+          "countPattern": [1, 0, 2, 0, 1]
+        },
+        {
+          "fieldId": "events",
+          "label": "barking",
+          "countPattern": [0, 1, 0, 1, 0]
+        }
+      ]
+    },
+    "analysisSpec": {
+      "extractionFields": [
+        {
+          "countMode": "explicitOccurrences",
+          "id": "events",
+          "label": "Events",
+          "labels": ["whining", "barking"],
+          "type": "event"
+        }
+      ],
+      "aggregations": [
+        {
+          "id": "whining_count",
+          "label": "Whining",
+          "operation": "count",
+          "fieldId": "events",
+          "eventLabel": "whining"
+        },
+        {
+          "id": "barking_count",
+          "label": "Barking",
+          "operation": "count",
+          "fieldId": "events",
+          "eventLabel": "barking"
+        }
+      ],
+      "groupings": [{ "id": "event", "label": "Event", "dimension": "event" }],
+      "charts": [
+        {
+          "id": "event_counts",
+          "title": "Event counts",
+          "type": "bar",
+          "x": { "id": "event", "dimension": "event" },
+          "y": [{ "aggregationId": "whining_count" }]
+        }
+      ]
+    },
+    "expected": {
+      "metrics": { "Whining": 52, "Barking": 26 },
+      "chart": { "whining": 52, "barking": 26 }
+    }
+  }
+}

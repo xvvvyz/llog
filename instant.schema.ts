@@ -15,6 +15,11 @@ const schema = i.schema({
       teamId: i.string().indexed(),
       emoji: i.string().optional(),
     }),
+    analyses: i.entity({
+      analysisSpec: i.any(),
+      jobType: i.string(),
+      tweakPrompt: i.string().optional(),
+    }),
     cards: i.entity({
       blueprint: i.any().optional(),
       error: i.string().optional(),
@@ -29,6 +34,7 @@ const schema = i.schema({
       title: i.string().indexed(),
       type: i.string().indexed(),
     }),
+    facts: i.entity({ data: i.any(), key: i.string().unique().indexed() }),
     replies: i.entity({
       date: i.date().indexed(),
       isDraft: i.boolean().optional().indexed(),
@@ -214,6 +220,26 @@ const schema = i.schema({
       forward: { on: 'cards', has: 'many', label: 'tags' },
       reverse: { on: 'tags', has: 'many', label: 'cards' },
     },
+    cardsAnalyses: {
+      forward: { on: 'cards', has: 'many', label: 'analyses' },
+      reverse: {
+        on: 'analyses',
+        has: 'one',
+        label: 'card',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
+    cardsFacts: {
+      forward: { on: 'cards', has: 'many', label: 'facts' },
+      reverse: {
+        on: 'facts',
+        has: 'one',
+        label: 'card',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
     logsTags: {
       forward: { on: 'logs', has: 'many', label: 'tags' },
       reverse: { on: 'tags', has: 'many', label: 'logs' },
@@ -306,6 +332,16 @@ const schema = i.schema({
         on: 'links',
         has: 'one',
         label: 'record',
+        onDelete: 'cascade',
+      },
+    },
+    recordsFacts: {
+      forward: { on: 'records', has: 'many', label: 'facts' },
+      reverse: {
+        on: 'facts',
+        has: 'one',
+        label: 'record',
+        required: true,
         onDelete: 'cascade',
       },
     },

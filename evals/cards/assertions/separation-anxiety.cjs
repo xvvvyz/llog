@@ -1,8 +1,6 @@
 const {
-  allRecordIds,
   fixtureSeries,
   gradingResult,
-  includesAll,
   metricByTerms,
   metricText,
   milestoneDates,
@@ -12,7 +10,6 @@ const {
   parsePayload,
   parseSessionValue,
   readFixture,
-  recordIdByDate,
   recordsByDate,
   sameSeriesData,
   seriesByTerms,
@@ -34,9 +31,6 @@ const cardParts = (payload) => {
     chart: card.chart ?? {},
     metrics: Array.isArray(card.metrics) ? card.metrics : [],
     milestones: Array.isArray(card.milestones) ? card.milestones : [],
-    sourceRecordIds: Array.isArray(card.sourceRecordIds)
-      ? card.sourceRecordIds
-      : [],
   };
 };
 
@@ -81,7 +75,7 @@ exports.separationAnxiety = (output, context) => {
   const payload = parsePayload(output);
   const fixture = readFixture(context);
   const expected = fixture.expected;
-  const { chart, metrics, milestones, sourceRecordIds } = cardParts(payload);
+  const { chart, metrics, milestones } = cardParts(payload);
   const series = Array.isArray(chart.series) ? chart.series : [];
   const duration = seriesByTerms(series, ['duration']);
   const distress = seriesByTerms(series, ['distress']);
@@ -96,23 +90,6 @@ exports.separationAnxiety = (output, context) => {
   const newestFirst = dates.every((date, index) => {
     const next = dates[index + 1];
     return !next || new Date(date).getTime() >= new Date(next).getTime();
-  });
-
-  const milestoneEvidence = milestoneDateList.every((date) => {
-    const milestone = milestoneForDate(milestones, date);
-    const recordId = recordIdByDate(fixture.records, date);
-
-    return (
-      !!milestone &&
-      !!recordId &&
-      Array.isArray(milestone.recordIds) &&
-      milestone.recordIds.includes(recordId)
-    );
-  });
-
-  const sourceEvidence = milestoneDateList.every((date) => {
-    const recordId = recordIdByDate(fixture.records, date);
-    return !!recordId && sourceRecordIds.includes(recordId);
   });
 
   return gradingResult({
@@ -176,8 +153,6 @@ exports.separationAnxiety = (output, context) => {
         pass: milestoneDateList.every((date) => dates.includes(date)),
       },
       { name: 'milestones newest-first', pass: newestFirst },
-      { name: 'milestone evidence present', pass: milestoneEvidence },
-      { name: 'source evidence present', pass: sourceEvidence },
     ],
     reason: 'Separation anxiety eval passed',
   });
@@ -187,7 +162,7 @@ exports.refreshSeparationAnxiety = (output, context) => {
   const payload = parsePayload(output);
   const fixture = readFixture(context);
   const expected = fixture.expected;
-  const { chart, metrics, milestones, sourceRecordIds } = cardParts(payload);
+  const { chart, metrics, milestones } = cardParts(payload);
   const series = Array.isArray(chart.series) ? chart.series : [];
   const duration = seriesByTerms(series, ['duration']);
   const distress = seriesByTerms(series, ['distress']);
@@ -262,10 +237,6 @@ exports.refreshSeparationAnxiety = (output, context) => {
         name: 'refresh trends omitted',
         pass: metricsHaveNoTrend(metrics, durationAggregateMetricTerms),
       },
-      {
-        name: 'refresh source coverage',
-        pass: includesAll(sourceRecordIds, allRecordIds(fixture.records)),
-      },
     ],
     reason: 'Refresh eval passed',
   });
@@ -275,7 +246,7 @@ exports.triggerTweak = (output, context) => {
   const payload = parsePayload(output);
   const fixture = readFixture(context);
   const expected = fixture.expected.trigger;
-  const { chart, metrics, milestones, sourceRecordIds } = cardParts(payload);
+  const { chart, metrics, milestones } = cardParts(payload);
   const triggerRecords = recordsByDate(fixture.records, expected.dates);
 
   const triggerData = triggerRecords.map((record) => ({
@@ -287,18 +258,6 @@ exports.triggerTweak = (output, context) => {
     ...expected.weatherRegressionDates,
     expected.latestRecovery,
   ];
-
-  const milestoneEvidence = milestoneDateList.every((date) => {
-    const milestone = milestoneForDate(milestones, date);
-    const recordId = recordIdByDate(fixture.records, date);
-
-    return (
-      !!milestone &&
-      !!recordId &&
-      Array.isArray(milestone.recordIds) &&
-      milestone.recordIds.includes(recordId)
-    );
-  });
 
   return gradingResult({
     checks: [
@@ -343,11 +302,6 @@ exports.triggerTweak = (output, context) => {
         pass: milestoneDateList.every((date) =>
           milestones.some((milestone) => milestone.date === date)
         ),
-      },
-      { name: 'trigger evidence present', pass: milestoneEvidence },
-      {
-        name: 'trigger source coverage',
-        pass: includesAll(sourceRecordIds, allRecordIds(triggerRecords)),
       },
     ],
     reason: 'Trigger tweak eval passed',

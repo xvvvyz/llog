@@ -103,6 +103,26 @@ describe('card sources', () => {
     expect(selection.totalMatchingRecords).toBe(manyRecords.length);
   });
 
+  test('caps default context', () => {
+    const records = Array.from({ length: 300 }, (_item, index) => ({
+      date: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
+      id: `coverage-${index + 1}`,
+      tags: [{ id: 'tag-a' }],
+      text: `entry ${index + 1}`,
+    }));
+
+    const selection = sourceSelection.selectCardSourceRecordCoverage({
+      records,
+      tagIds: ['tag-a'],
+    });
+
+    expect(selection.records).toHaveLength(
+      sourceSelection.MAX_CARD_ANALYSIS_SOURCE_RECORDS
+    );
+
+    expect(selection.totalMatchingRecords).toBe(300);
+  });
+
   test('requires tags', () => {
     expect(
       sourceSelection.selectCardSourceRecords({ records, tagIds: [] })

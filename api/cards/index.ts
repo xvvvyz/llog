@@ -31,7 +31,7 @@ const cardTweakSchema = z.object({
 
 const cardRecordRefreshSchema = z.object({
   recordId: z.string().min(1),
-  tagIds: z.array(z.string().min(1)).min(1).max(cardActions.MAX_CARD_TAGS),
+  tagIds: z.array(z.string().min(1)).max(cardActions.MAX_CARD_TAGS).optional(),
 });
 
 app.post('/', db(), auth(), zValidator('json', cardCreateSchema), async (c) => {
@@ -138,6 +138,16 @@ app.post('/:cardId/refresh', db(), auth(), async (c) => {
     cardId: c.req.param('cardId'),
     dbClient: c.var.db,
     env: c.env,
+    userId: c.var.user.id,
+  });
+
+  return c.json(result);
+});
+
+app.delete('/:cardId', db(), auth(), async (c) => {
+  const result = await cardActions.deleteCardForUser({
+    cardId: c.req.param('cardId'),
+    dbClient: c.var.db,
     userId: c.var.user.id,
   });
 

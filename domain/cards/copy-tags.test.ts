@@ -1,7 +1,7 @@
 import * as copyTags from '@/domain/cards/copy-tags';
 import { describe, expect, test } from 'bun:test';
 
-describe('resolveCopyCardTagsForTargetLog', () => {
+describe('copy card tags', () => {
   const sourceTags = [
     { color: 2, name: 'Ideas' },
     { color: 4, name: 'Reading' },

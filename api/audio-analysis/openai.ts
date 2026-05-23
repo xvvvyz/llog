@@ -1,10 +1,9 @@
 import type { AudioFile, TranscriptSegment } from '@/api/audio-analysis/types';
+import { requireEnvString } from '@/api/lib/env';
 import * as audioAnalysis from '@/domain/files/audio-analysis';
 import { asNumber, asString, isRecord } from '@/lib/coerce';
 import { HTTPException } from 'hono/http-exception';
 import OpenAI, { APIError } from 'openai';
-
-const OPENAI_STT_MODEL = 'whisper-1';
 
 const getAudioFileName = (file: AudioFile, contentType?: string | null) => {
   const value =
@@ -81,6 +80,7 @@ const transcribeAudioUpload = async ({
 }) => {
   const apiKey = env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is required');
+  const model = requireEnvString(env, 'OPENAI_STT_MODEL');
   const client = new OpenAI({ apiKey });
 
   try {
@@ -88,7 +88,7 @@ const transcribeAudioUpload = async ({
       file: new File([upload.bytes], upload.fileName, {
         type: upload.contentType,
       }),
-      model: OPENAI_STT_MODEL,
+      model,
       response_format: 'verbose_json',
       temperature: 0,
       timestamp_granularities: ['segment'],

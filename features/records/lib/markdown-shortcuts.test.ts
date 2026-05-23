@@ -73,7 +73,7 @@ describe('getMarkdownShortcutEdit', () => {
     });
   });
 
-  test('wraps selected list item content', () => {
+  test('wraps list content', () => {
     expect(
       markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 5,
@@ -84,7 +84,7 @@ describe('getMarkdownShortcutEdit', () => {
     ).toEqual({ selectionEnd: 7, selectionStart: 4, text: '- **one**' });
   });
 
-  test('unwraps selected list item content', () => {
+  test('unwraps list content', () => {
     expect(
       markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 9,
@@ -95,7 +95,7 @@ describe('getMarkdownShortcutEdit', () => {
     ).toEqual({ selectionEnd: 5, selectionStart: 2, text: '- one' });
   });
 
-  test('wraps selected list item lines', () => {
+  test('wraps list lines', () => {
     expect(
       markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: 11,
@@ -388,7 +388,7 @@ describe('getMarkdownEnterEdit', () => {
   });
 });
 
-describe('getMarkdownShortcutFromKeyEvent', () => {
+describe('markdown shortcut keys', () => {
   test('maps text styles', () => {
     expect(getShortcut({ key: 'b', metaKey: true }, true)).toBe('bold');
     expect(getShortcut({ ctrlKey: true, key: 'I' })).toBe('italic');

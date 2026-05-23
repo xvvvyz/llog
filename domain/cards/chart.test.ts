@@ -272,14 +272,17 @@ describe('card charts', () => {
   test('formats date ticks', () => {
     const currentYear = new Date().getFullYear();
     const previousYear = currentYear - 1;
-    expect(chart.formatChartTickLabel(`${currentYear}-05-19`)).toBe('5/19');
 
     expect(
       chart.formatChartTickLabel(`${currentYear}-05-19T15:30:00.000Z`)
     ).toBe('5/19');
 
-    expect(chart.formatChartTickLabel(`${previousYear}-12-31`)).toBe(
-      `12/31/${String(previousYear).slice(-2)}`
+    expect(
+      chart.formatChartTickLabel(`${previousYear}-12-31T15:30:00.000Z`)
+    ).toBe(`12/31/${String(previousYear).slice(-2)}`);
+
+    expect(chart.formatChartTickLabel(`${currentYear}-05-19`)).toBe(
+      `${currentYear}-05-19`
     );
   });
 

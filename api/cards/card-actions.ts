@@ -1,6 +1,7 @@
 import type { Db } from '@/api/middleware/db';
 import * as openrouter from '@/api/cards/openrouter';
 import { enqueueJob } from '@/api/jobs/payload';
+import * as cardAnalysis from '@/domain/cards/analysis';
 import * as cardBlueprint from '@/domain/cards/blueprint';
 import * as constants from '@/domain/cards/constants';
 import * as cardOutput from '@/domain/cards/output';
@@ -8,8 +9,9 @@ import * as cardSourceSelection from '@/domain/cards/source-selection';
 import * as cardTitle from '@/domain/cards/title';
 import { publishedContentWhere } from '@/domain/records/query';
 import * as permissions from '@/domain/teams/permissions';
-import { id as generateId } from '@instantdb/admin';
+import { id as generateId, lookup } from '@instantdb/admin';
 import { HTTPException } from 'hono/http-exception';
+import type * as instantEntities from '@/instant.entities';
 
 export const CARD_TITLE_MAX_LENGTH = cardTitle.CARD_TITLE_MAX_LENGTH;
 
@@ -33,7 +35,7 @@ export type CardPromptSuggestionInput = {
 
 export type CardTweakInput = { prompt: string };
 
-export type CardRecordRefreshInput = { recordId: string; tagIds: string[] };
+export type CardRecordRefreshInput = { recordId: string; tagIds?: string[] };
 
 type LogAccess = {
   actorRole?: string | null;
@@ -42,18 +44,59 @@ type LogAccess = {
   teamId: string;
 };
 
-type CardEntity = {
+type EntityProjection<T extends { id: string }, K extends keyof T> = Pick<
+  T,
+  'id'
+> &
+  Partial<Pick<T, K>>;
+
+type CardTag = Pick<instantEntities.Tag, 'id'> &
+  Partial<Pick<instantEntities.Tag, 'name'>>;
+
+type CardEntity = Omit<
+  EntityProjection<
+    instantEntities.Card,
+    | 'blueprint'
+    | 'generationRequestedAt'
+    | 'isGenerating'
+    | 'logId'
+    | 'order'
+    | 'output'
+    | 'prompt'
+    | 'teamId'
+    | 'title'
+  >,
+  'blueprint' | 'generationRequestedAt' | 'output'
+> & {
   blueprint?: unknown;
   generationRequestedAt?: Date | number | string | null;
-  id: string;
-  isGenerating?: boolean | null;
-  logId?: string | null;
-  order?: number | null;
   output?: unknown;
-  prompt?: string | null;
-  tags?: { id: string; name?: string | null }[];
-  teamId?: string | null;
-  title?: string | null;
+  tags?: CardTag[];
+};
+
+type AnalysisJobType = 'generate' | 'refresh' | 'tweak';
+
+type AnalysisEntity = Omit<
+  EntityProjection<
+    instantEntities.Analysis,
+    'analysisSpec' | 'jobType' | 'tweakPrompt'
+  >,
+  'analysisSpec' | 'jobType'
+> & { analysisSpec?: unknown; jobType?: AnalysisJobType | null };
+
+type FactEntity = Pick<instantEntities.Fact, 'data' | 'id' | 'key'>;
+
+type AnalysisCleanupCard = Pick<CardEntity, 'id'> & {
+  analyses?: Pick<instantEntities.Analysis, 'id'>[];
+  facts?: Pick<instantEntities.Fact, 'id' | 'key'>[];
+};
+
+type PublishedCardSourceRecord = EntityProjection<
+  instantEntities.Record,
+  'date' | 'isDraft' | 'logId' | 'text'
+> & {
+  author?: Pick<instantEntities.Profile, 'id' | 'name'> | null;
+  tags?: CardTag[];
 };
 
 const trimRequired = (value: string, maxLength: number, message: string) => {
@@ -260,30 +303,6 @@ const readCardOutput = (value: unknown) => {
   return parsed.success ? parsed.data : undefined;
 };
 
-const getTaggedSourceRecordSelection = async ({
-  dbClient,
-  limit,
-  logId,
-  tagIds,
-}: {
-  dbClient: Db;
-  limit?: number;
-  logId: string;
-  tagIds: string[];
-}) => {
-  const records = await getPublishedTaggedSourceRecordRows({
-    dbClient,
-    logId,
-    tagIds,
-  });
-
-  return cardSourceSelection.selectCardSourceRecordCoverage({
-    limit,
-    records,
-    tagIds,
-  });
-};
-
 const getPublishedTaggedSourceRecordRows = async ({
   dbClient,
   logId,
@@ -298,7 +317,7 @@ const getPublishedTaggedSourceRecordRows = async ({
   const { records } = await dbClient.query({
     records: {
       $: {
-        fields: ['date', 'id', 'text'],
+        fields: ['date', 'id', 'isDraft', 'logId', 'text'],
         order: { date: 'asc' },
         where: {
           ...publishedContentWhere,
@@ -307,12 +326,12 @@ const getPublishedTaggedSourceRecordRows = async ({
           text: { $not: '' },
         },
       },
-      author: { $: { fields: ['name' as const] } },
+      author: { $: { fields: ['id' as const, 'name' as const] } },
       tags: { $: { fields: ['id', 'name'] } },
     },
   });
 
-  return records;
+  return records as PublishedCardSourceRecord[];
 };
 
 const noSourceRecordGenerationFields = ({
@@ -376,29 +395,138 @@ const getGenerationContextCards = async ({
     .slice(0, CARD_GENERATION_CONTEXT_CARD_LIMIT);
 };
 
-const generateCardResult = async ({
-  blueprint,
-  cardId,
+type CardAnalysisContext = {
+  exactFacts?: cardAnalysis.ExactCardFacts;
+  plan: cardAnalysis.CardAnalysisPlan;
+  sourceRecords: PublishedCardSourceRecord[];
+  sourceSelection: {
+    records: PublishedCardSourceRecord[];
+    totalMatchingRecords: number;
+  };
+};
+
+const planCardAnalysisForContext = async ({
+  env,
+  generationTime,
+  prompt,
+  sourceRecords,
+}: {
+  env?: CloudflareEnv;
+  generationTime: string;
+  prompt: string;
+  sourceRecords: PublishedCardSourceRecord[];
+}) => {
+  const localPlan = cardAnalysis.planCardAnalysis({
+    generationTime,
+    prompt,
+    totalMatchingRecords: sourceRecords.length,
+  });
+
+  const shouldRequestPlan =
+    cardAnalysis.promptRequestsExactCandidate(prompt) &&
+    sourceRecords.length > 0;
+
+  if (!shouldRequestPlan) return localPlan;
+  if (!env) throw new Error('Exact analysis planning requires env');
+
+  return openrouter.planCardAnalysis({
+    env,
+    generationTime,
+    prompt,
+    records: sourceRecords,
+    totalRecordCount: sourceRecords.length,
+  });
+};
+
+const getCardAnalysisContext = async ({
+  analysisPlan,
   dbClient,
   env,
+  generationTime,
   logId,
   prompt,
   tagIds,
 }: {
-  blueprint?: cardBlueprint.CardBlueprint;
-  cardId: string;
+  analysisPlan?: cardAnalysis.CardAnalysisPlan;
   dbClient: Db;
-  env: CloudflareEnv;
+  env?: CloudflareEnv;
+  generationTime: string;
   logId: string;
   prompt: string;
   tagIds: string[];
-}) => {
-  const sourceSelection = await getTaggedSourceRecordSelection({
+}): Promise<CardAnalysisContext> => {
+  const allSourceRecords = await getPublishedTaggedSourceRecordRows({
     dbClient,
     logId,
     tagIds,
   });
 
+  const plan =
+    analysisPlan ??
+    (await planCardAnalysisForContext({
+      env,
+      generationTime,
+      prompt,
+      sourceRecords: allSourceRecords,
+    }));
+
+  const sourceRecords =
+    plan.mode === 'exact'
+      ? cardAnalysis.selectExactRecords(allSourceRecords, {
+          analysisSpec: plan.analysisSpec,
+          generationTime,
+        })
+      : allSourceRecords;
+
+  const sourceSelection = cardSourceSelection.selectCardSourceRecordCoverage({
+    records: sourceRecords,
+    tagIds,
+  });
+
+  return { plan, sourceRecords, sourceSelection };
+};
+
+const withAnalysisSpec = (plan: cardAnalysis.CardAnalysisPlan) => {
+  if (plan.mode !== 'exact' || !plan.analysisSpec) {
+    throw new Error('Exact analysis requires an analysis spec');
+  }
+
+  return plan.analysisSpec;
+};
+
+const generateCardResult = async ({
+  analysisContext,
+  blueprint,
+  cardId,
+  dbClient,
+  env,
+  generationTime,
+  logId,
+  prompt,
+  tagIds,
+}: {
+  analysisContext?: CardAnalysisContext;
+  blueprint?: cardBlueprint.CardBlueprint;
+  cardId: string;
+  dbClient: Db;
+  env: CloudflareEnv;
+  generationTime?: string;
+  logId: string;
+  prompt: string;
+  tagIds: string[];
+}) => {
+  const context =
+    analysisContext ??
+    (await getCardAnalysisContext({
+      dbClient,
+      env,
+      generationTime: generationTime ?? new Date().toISOString(),
+      logId,
+      prompt,
+      tagIds,
+    }));
+
+  const sourceSelection = context.sourceSelection;
   if (!sourceSelection.records.length) return null;
 
   const existingCards = await getGenerationContextCards({
@@ -409,8 +537,10 @@ const generateCardResult = async ({
   });
 
   return openrouter.generateCardResult({
+    analysisMode: context.plan.mode,
     blueprint,
     env,
+    exactFacts: context.exactFacts,
     existingCards,
     prompt,
     records: sourceSelection.records,
@@ -419,32 +549,44 @@ const generateCardResult = async ({
 };
 
 const refreshCardResult = async ({
+  analysisContext,
   dbClient,
   env,
+  generationTime,
   logId,
   previousOutput,
   previousTitle,
   prompt,
   tagIds,
 }: {
+  analysisContext?: CardAnalysisContext;
   dbClient: Db;
   env: CloudflareEnv;
+  generationTime?: string;
   logId: string;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
   prompt: string;
   tagIds: string[];
 }) => {
-  const sourceSelection = await getTaggedSourceRecordSelection({
-    dbClient,
-    logId,
-    tagIds,
-  });
+  const context =
+    analysisContext ??
+    (await getCardAnalysisContext({
+      dbClient,
+      env,
+      generationTime: generationTime ?? new Date().toISOString(),
+      logId,
+      prompt,
+      tagIds,
+    }));
 
+  const sourceSelection = context.sourceSelection;
   if (!sourceSelection.records.length) return null;
 
   return openrouter.refreshCardResult({
+    analysisMode: context.plan.mode,
     env,
+    exactFacts: context.exactFacts,
     previousOutput,
     previousTitle,
     prompt,
@@ -454,8 +596,10 @@ const refreshCardResult = async ({
 };
 
 const tweakCardResult = async ({
+  analysisContext,
   dbClient,
   env,
+  generationTime,
   logId,
   previousOutput,
   previousTitle,
@@ -463,8 +607,10 @@ const tweakCardResult = async ({
   tagIds,
   tweakPrompt,
 }: {
+  analysisContext?: CardAnalysisContext;
   dbClient: Db;
   env: CloudflareEnv;
+  generationTime?: string;
   logId: string;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
@@ -472,16 +618,24 @@ const tweakCardResult = async ({
   tagIds: string[];
   tweakPrompt: string;
 }) => {
-  const sourceSelection = await getTaggedSourceRecordSelection({
-    dbClient,
-    logId,
-    tagIds,
-  });
+  const context =
+    analysisContext ??
+    (await getCardAnalysisContext({
+      dbClient,
+      env,
+      generationTime: generationTime ?? new Date().toISOString(),
+      logId,
+      prompt,
+      tagIds,
+    }));
 
+  const sourceSelection = context.sourceSelection;
   if (!sourceSelection.records.length) return null;
 
   return openrouter.tweakCardResult({
+    analysisMode: context.plan.mode,
     env,
+    exactFacts: context.exactFacts,
     previousOutput,
     previousTitle,
     prompt,
@@ -580,6 +734,35 @@ const updateCardIfGenerationCurrent = async ({
   return true;
 };
 
+const writeNoSourceRecordGenerationResult = async ({
+  cardId,
+  dbClient,
+  previousOutput,
+  prompt,
+  requestedAt,
+  title,
+}: {
+  cardId: string;
+  dbClient: Db;
+  previousOutput?: unknown;
+  prompt: string;
+  requestedAt: string;
+  title?: string;
+}) => {
+  const didWrite = await updateCardIfGenerationCurrent({
+    cardId,
+    dbClient,
+    fields: noSourceRecordGenerationFields({
+      previousOutput,
+      prompt,
+      ...(title && { title }),
+    }),
+    requestedAt,
+  });
+
+  return { empty: true, stale: !didWrite, success: didWrite };
+};
+
 const markCardGenerationFailed = ({
   cardId,
   dbClient,
@@ -633,29 +816,60 @@ export const generateCard = async ({
   const currentTitle = card.title?.trim() || undefined;
 
   try {
+    const tagIds = card.tags?.map((tag) => tag.id) ?? [];
+
+    const analysisContext = await getCardAnalysisContext({
+      dbClient,
+      env,
+      generationTime: requestedAt,
+      logId: card.logId,
+      prompt: card.prompt,
+      tagIds,
+    });
+
+    if (!analysisContext.sourceSelection.records.length) {
+      return writeNoSourceRecordGenerationResult({
+        cardId,
+        dbClient,
+        previousOutput: card.output,
+        prompt: card.prompt,
+        requestedAt,
+        ...(blueprint && currentTitle && { title: currentTitle }),
+      });
+    }
+
+    if (analysisContext.plan.mode === 'exact') {
+      return startExactAnalysis({
+        analysisContext,
+        cardId,
+        dbClient,
+        env,
+        jobType: 'generate',
+        requestedAt,
+      });
+    }
+
     const result = await generateCardResult({
+      analysisContext,
       blueprint,
       dbClient,
       env,
       cardId: card.id,
+      generationTime: requestedAt,
       logId: card.logId,
       prompt: card.prompt,
-      tagIds: card.tags?.map((tag) => tag.id) ?? [],
+      tagIds,
     });
 
     if (!result) {
-      const didWrite = await updateCardIfGenerationCurrent({
+      return writeNoSourceRecordGenerationResult({
         cardId,
         dbClient,
-        fields: noSourceRecordGenerationFields({
-          previousOutput: card.output,
-          prompt: card.prompt,
-          ...(blueprint && currentTitle && { title: currentTitle }),
-        }),
+        previousOutput: card.output,
+        prompt: card.prompt,
         requestedAt,
+        ...(blueprint && currentTitle && { title: currentTitle }),
       });
-
-      return { empty: true, stale: !didWrite, success: didWrite };
     }
 
     const title = blueprint && currentTitle ? currentTitle : result.title;
@@ -732,28 +946,58 @@ export const refreshCard = async ({
   }
 
   try {
-    const result = await refreshCardResult({
+    const tagIds = card.tags?.map((tag) => tag.id) ?? [];
+
+    const analysisContext = await getCardAnalysisContext({
       dbClient,
       env,
+      generationTime: requestedAt,
+      logId: card.logId,
+      prompt: card.prompt,
+      tagIds,
+    });
+
+    if (!analysisContext.sourceSelection.records.length) {
+      return writeNoSourceRecordGenerationResult({
+        cardId,
+        dbClient,
+        previousOutput: card.output,
+        prompt: card.prompt,
+        requestedAt,
+      });
+    }
+
+    if (analysisContext.plan.mode === 'exact') {
+      return startExactAnalysis({
+        analysisContext,
+        cardId,
+        dbClient,
+        env,
+        jobType: 'refresh',
+        requestedAt,
+      });
+    }
+
+    const result = await refreshCardResult({
+      analysisContext,
+      dbClient,
+      env,
+      generationTime: requestedAt,
       logId: card.logId,
       previousOutput,
       previousTitle: card.title,
       prompt: card.prompt,
-      tagIds: card.tags?.map((tag) => tag.id) ?? [],
+      tagIds,
     });
 
     if (!result) {
-      const didWrite = await updateCardIfGenerationCurrent({
+      return writeNoSourceRecordGenerationResult({
         cardId,
         dbClient,
-        fields: noSourceRecordGenerationFields({
-          previousOutput: card.output,
-          prompt: card.prompt,
-        }),
+        previousOutput: card.output,
+        prompt: card.prompt,
         requestedAt,
       });
-
-      return { empty: true, stale: !didWrite, success: didWrite };
     }
 
     const didWrite = await updateCardIfGenerationCurrent({
@@ -831,29 +1075,60 @@ export const tweakCard = async ({
   }
 
   try {
-    const result = await tweakCardResult({
+    const tagIds = card.tags?.map((tag) => tag.id) ?? [];
+
+    const analysisContext = await getCardAnalysisContext({
       dbClient,
       env,
+      generationTime: requestedAt,
+      logId: card.logId,
+      prompt: card.prompt,
+      tagIds,
+    });
+
+    if (!analysisContext.sourceSelection.records.length) {
+      return writeNoSourceRecordGenerationResult({
+        cardId,
+        dbClient,
+        previousOutput: card.output,
+        prompt: card.prompt,
+        requestedAt,
+      });
+    }
+
+    if (analysisContext.plan.mode === 'exact') {
+      return startExactAnalysis({
+        analysisContext,
+        cardId,
+        dbClient,
+        env,
+        jobType: 'tweak',
+        requestedAt,
+        tweakPrompt,
+      });
+    }
+
+    const result = await tweakCardResult({
+      analysisContext,
+      dbClient,
+      env,
+      generationTime: requestedAt,
       logId: card.logId,
       previousOutput,
       previousTitle: card.title,
       prompt: card.prompt,
-      tagIds: card.tags?.map((tag) => tag.id) ?? [],
+      tagIds,
       tweakPrompt,
     });
 
     if (!result) {
-      const didWrite = await updateCardIfGenerationCurrent({
+      return writeNoSourceRecordGenerationResult({
         cardId,
         dbClient,
-        fields: noSourceRecordGenerationFields({
-          previousOutput: card.output,
-          prompt: card.prompt,
-        }),
+        previousOutput: card.output,
+        prompt: card.prompt,
         requestedAt,
       });
-
-      return { empty: true, stale: !didWrite, success: didWrite };
     }
 
     const didWrite = await updateCardIfGenerationCurrent({
@@ -945,6 +1220,699 @@ const enqueueCardTweakJob = async ({
     tweakPrompt,
     type: 'card.tweak',
   });
+};
+
+const enqueueAnalysisExtractJob = async ({
+  analysisId,
+  cardId,
+  chunkIndex,
+  env,
+  requestedAt,
+}: {
+  analysisId: string;
+  cardId: string;
+  chunkIndex: number;
+  env: CloudflareEnv;
+  requestedAt: string;
+}) => {
+  await enqueueJob(env, {
+    analysisId,
+    cardId,
+    chunkIndex,
+    requestedAt,
+    schemaVersion: 1,
+    type: 'analysis.extract',
+  });
+};
+
+const enqueueAnalysisFinalizeJob = async ({
+  analysisId,
+  cardId,
+  env,
+  requestedAt,
+}: {
+  analysisId: string;
+  cardId: string;
+  env: CloudflareEnv;
+  requestedAt: string;
+}) => {
+  await enqueueJob(env, {
+    analysisId,
+    cardId,
+    requestedAt,
+    schemaVersion: 1,
+    type: 'analysis.finalize',
+  });
+};
+
+const readAnalysisJobType = (value: unknown): AnalysisJobType | undefined =>
+  value === 'generate' || value === 'refresh' || value === 'tweak'
+    ? value
+    : undefined;
+
+const getFactIdentity = ({
+  analysisSpecHash,
+  cardId,
+  record,
+  tagIds,
+}: {
+  analysisSpecHash: string;
+  cardId: string;
+  record: PublishedCardSourceRecord;
+  tagIds: string[];
+}) => {
+  const recordFingerprint = cardAnalysis.recordFingerprint({
+    record,
+    selectedTagIds: tagIds,
+  });
+
+  return {
+    key: cardAnalysis.factKey({
+      analysisSpecHash,
+      cardId,
+      recordFingerprint,
+      recordId: record.id,
+    }),
+    record,
+  };
+};
+
+const getCachedFactsForRecords = async ({
+  dbClient,
+  analysisSpecHash,
+  cardId,
+  records,
+  tagIds,
+}: {
+  dbClient: Db;
+  analysisSpecHash: string;
+  cardId: string;
+  records: PublishedCardSourceRecord[];
+  tagIds: string[];
+}) => {
+  const expectedByKey = new Map(
+    records.map((record) => {
+      const identity = getFactIdentity({
+        analysisSpecHash,
+        cardId,
+        record,
+        tagIds,
+      });
+
+      return [identity.key, identity.record] as const;
+    })
+  );
+
+  const keys = [...expectedByKey.keys()];
+
+  const result = keys.length
+    ? await dbClient.query({
+        facts: {
+          $: { fields: ['data', 'key'], where: { key: { $in: keys } } },
+        },
+      })
+    : { facts: [] };
+
+  const validFacts: cardAnalysis.CardFactRecord[] = [];
+  const validRecordIds = new Set<string>();
+
+  for (const fact of (result.facts ?? []) as FactEntity[]) {
+    const record = expectedByKey.get(fact.key);
+    if (!record) continue;
+    validFacts.push({ facts: fact.data });
+    validRecordIds.add(record.id);
+  }
+
+  return {
+    missingRecords: records.filter((record) => !validRecordIds.has(record.id)),
+    validFacts,
+    validRecordIds,
+  };
+};
+
+const upsertRecordFacts = async ({
+  cardId,
+  dbClient,
+  analysisSpecHash,
+  extractedFacts,
+  records,
+  tagIds,
+}: {
+  cardId: string;
+  dbClient: Db;
+  analysisSpecHash: string;
+  extractedFacts: cardAnalysis.ExtractedRecordFacts[];
+  records: PublishedCardSourceRecord[];
+  tagIds: string[];
+}) => {
+  const recordsById = new Map(records.map((record) => [record.id, record]));
+
+  const transactions = extractedFacts.flatMap((facts) => {
+    const record = recordsById.get(facts.recordId);
+    if (!record) return [];
+
+    const { key } = getFactIdentity({
+      analysisSpecHash,
+      cardId,
+      record,
+      tagIds,
+    });
+
+    return dbClient.tx.facts[lookup('key', key)]
+      .update({ data: facts })
+      .link({ card: cardId, record: record.id });
+  });
+
+  if (transactions.length) await dbClient.transact(transactions);
+};
+
+const recomputeAnalysisProgress = async ({
+  chunks,
+  dbClient,
+  analysisSpecHash,
+  cardId,
+  records,
+  tagIds,
+}: {
+  chunks: string[][];
+  dbClient: Db;
+  analysisSpecHash: string;
+  cardId: string;
+  records: PublishedCardSourceRecord[];
+  tagIds: string[];
+}) => {
+  const { validFacts, validRecordIds } = await getCachedFactsForRecords({
+    dbClient,
+    analysisSpecHash,
+    cardId,
+    records,
+    tagIds,
+  });
+
+  const completedChunkIndexes = chunks
+    .map((recordIds, index) =>
+      recordIds.every((recordId) => validRecordIds.has(recordId))
+        ? index
+        : undefined
+    )
+    .filter((index): index is number => index != null);
+
+  const complete = completedChunkIndexes.length === chunks.length;
+  return { complete, completedChunkIndexes, validFacts };
+};
+
+const cleanupCompletedExactAnalysis = async ({
+  analysisId,
+  analysisSpecHash,
+  cardId,
+  dbClient,
+  records,
+  tagIds,
+}: {
+  analysisId: string;
+  analysisSpecHash: string;
+  cardId: string;
+  dbClient: Db;
+  records: PublishedCardSourceRecord[];
+  tagIds: string[];
+}) => {
+  try {
+    const expectedFactKeys = new Set(
+      records.map(
+        (record) =>
+          getFactIdentity({ analysisSpecHash, cardId, record, tagIds }).key
+      )
+    );
+
+    const { cards } = await dbClient.query({
+      cards: {
+        $: { fields: ['id'], where: { id: cardId } },
+        analyses: { $: { fields: ['id'] } },
+        facts: { $: { fields: ['id', 'key'] } },
+      },
+    });
+
+    const card = cards[0] as AnalysisCleanupCard | undefined;
+    if (!card?.id) return;
+
+    const transactions = [
+      ...(card.analyses ?? [])
+        .filter((analysis) => analysis.id !== analysisId)
+        .map((analysis) => dbClient.tx.analyses[analysis.id].delete()),
+      ...(card.facts ?? [])
+        .filter((fact) => !expectedFactKeys.has(fact.key))
+        .map((fact) => dbClient.tx.facts[fact.id].delete()),
+    ];
+
+    if (transactions.length) await dbClient.transact(transactions);
+  } catch (error) {
+    console.error('Card analysis cleanup failed', {
+      analysisId,
+      cardId,
+      error,
+    });
+  }
+};
+
+const startExactAnalysis = async ({
+  analysisContext,
+  cardId,
+  dbClient,
+  env,
+  jobType,
+  requestedAt,
+  tweakPrompt,
+}: {
+  analysisContext: CardAnalysisContext;
+  cardId: string;
+  dbClient: Db;
+  env: CloudflareEnv;
+  jobType: AnalysisJobType;
+  requestedAt: string;
+  tweakPrompt?: string;
+}) => {
+  const analysisSpec = withAnalysisSpec(analysisContext.plan);
+  const analysisId = generateId();
+
+  const chunks = cardAnalysis.chunkRecordIds({
+    recordIds: analysisContext.sourceRecords.map((record) => record.id),
+  });
+
+  await dbClient.transact(
+    dbClient.tx.analyses[analysisId]
+      .update({ analysisSpec, jobType, ...(tweakPrompt && { tweakPrompt }) })
+      .link({ card: cardId })
+  );
+
+  try {
+    await Promise.all(
+      chunks.map((_chunk, chunkIndex) =>
+        enqueueAnalysisExtractJob({
+          analysisId,
+          cardId,
+          chunkIndex,
+          env,
+          requestedAt,
+        })
+      )
+    );
+  } catch (error) {
+    await markCardGenerationFailed({ cardId, dbClient, requestedAt });
+    throw error;
+  }
+
+  return {
+    analysisId,
+    analysisMode: 'exact' as const,
+    queued: true,
+    success: true,
+  };
+};
+
+const getAnalysisJobContext = async ({
+  analysisId,
+  cardId,
+  dbClient,
+  requestedAt,
+}: {
+  analysisId: string;
+  cardId: string;
+  dbClient: Db;
+  requestedAt: string;
+}) => {
+  const [{ analyses }, { cards }] = await Promise.all([
+    dbClient.query({ analyses: { $: { where: { id: analysisId } } } }),
+    dbClient.query({
+      cards: {
+        $: { where: { id: cardId } },
+        tags: { $: { fields: ['id', 'name'] } },
+      },
+    }),
+  ]);
+
+  const analysis = analyses[0] as AnalysisEntity | undefined;
+  const card = cards[0] as CardEntity | undefined;
+  if (!analysis?.id || !card?.id) return { stale: true as const };
+
+  if (
+    !isSameGenerationRequest({
+      generationRequestedAt: card.generationRequestedAt,
+      requestedAt,
+    })
+  ) {
+    return { analysis, card, stale: true as const };
+  }
+
+  if (!card.logId || !card.prompt) {
+    await markCardGenerationFailed({ cardId, dbClient, requestedAt });
+    return { analysis, card, failed: true as const };
+  }
+
+  const analysisSpec = cardAnalysis.normalizeAnalysisSpec(
+    analysis.analysisSpec
+  );
+
+  const jobType = readAnalysisJobType(analysis.jobType);
+
+  if (!analysisSpec || !jobType) {
+    await markCardGenerationFailed({ cardId, dbClient, requestedAt });
+    return { analysis, card, failed: true as const };
+  }
+
+  const tagIds = card.tags?.map((tag) => tag.id) ?? [];
+  const analysisSpecHash = cardAnalysis.analysisSpecHash(analysisSpec);
+
+  const analysisContext = await getCardAnalysisContext({
+    analysisPlan: { analysisSpec, analysisSpecHash, mode: 'exact' },
+    dbClient,
+    generationTime: requestedAt,
+    logId: card.logId,
+    prompt: card.prompt,
+    tagIds,
+  });
+
+  const chunks = cardAnalysis.chunkRecordIds({
+    recordIds: analysisContext.sourceRecords.map((record) => record.id),
+  });
+
+  return {
+    analysis,
+    analysisContext,
+    card,
+    chunks,
+    analysisSpec,
+    analysisSpecHash,
+    jobType,
+    stale: false as const,
+    tagIds,
+  };
+};
+
+export const extractCardAnalysisChunk = async ({
+  analysisId,
+  cardId,
+  chunkIndex,
+  dbClient,
+  env,
+  isFinalAttempt,
+  requestedAt,
+}: {
+  analysisId: string;
+  cardId: string;
+  chunkIndex: number;
+  dbClient: Db;
+  env: CloudflareEnv;
+  isFinalAttempt?: boolean;
+  requestedAt: string;
+}) => {
+  try {
+    const context = await getAnalysisJobContext({
+      analysisId,
+      cardId,
+      dbClient,
+      requestedAt,
+    });
+
+    if ('stale' in context && context.stale) {
+      return { stale: true, success: false };
+    }
+
+    if ('failed' in context) return { success: false };
+    const chunkRecordIds = context.chunks[chunkIndex] ?? [];
+    if (!chunkRecordIds.length) return { stale: false, success: true };
+    const chunkRecordIdSet = new Set(chunkRecordIds);
+
+    const chunkRecords = context.analysisContext.sourceRecords.filter(
+      (record) => chunkRecordIdSet.has(record.id)
+    );
+
+    const { missingRecords } = await getCachedFactsForRecords({
+      dbClient,
+      analysisSpecHash: context.analysisSpecHash,
+      cardId,
+      records: chunkRecords,
+      tagIds: context.tagIds,
+    });
+
+    if (missingRecords.length) {
+      const extractedFacts = await openrouter.extractRecordFacts({
+        env,
+        analysisSpec: context.analysisSpec,
+        records: missingRecords,
+      });
+
+      await upsertRecordFacts({
+        cardId,
+        dbClient,
+        extractedFacts,
+        analysisSpecHash: context.analysisSpecHash,
+        records: missingRecords,
+        tagIds: context.tagIds,
+      });
+    }
+
+    const progress = await recomputeAnalysisProgress({
+      chunks: context.chunks,
+      dbClient,
+      analysisSpecHash: context.analysisSpecHash,
+      cardId,
+      records: context.analysisContext.sourceRecords,
+      tagIds: context.tagIds,
+    });
+
+    if (progress.complete) {
+      await enqueueAnalysisFinalizeJob({
+        analysisId,
+        cardId,
+        env,
+        requestedAt,
+      });
+    }
+
+    return {
+      completedChunkCount: progress.completedChunkIndexes.length,
+      success: true,
+    };
+  } catch (error) {
+    console.error('Card analysis extraction failed', {
+      analysisId,
+      cardId,
+      chunkIndex,
+      error,
+    });
+
+    if (isFinalAttempt) {
+      await markCardGenerationFailed({ cardId, dbClient, requestedAt });
+      return { error: CARD_GENERATION_ERROR_MESSAGE, success: false };
+    }
+
+    return {
+      error: CARD_GENERATION_ERROR_MESSAGE,
+      retryAfterSeconds: CARD_GENERATION_FAILURE_RETRY_DELAY_SECONDS,
+      success: false,
+    };
+  }
+};
+
+export const finalizeCardAnalysis = async ({
+  analysisId,
+  cardId,
+  dbClient,
+  env,
+  isFinalAttempt,
+  requestedAt,
+}: {
+  analysisId: string;
+  cardId: string;
+  dbClient: Db;
+  env: CloudflareEnv;
+  isFinalAttempt?: boolean;
+  requestedAt: string;
+}) => {
+  try {
+    const context = await getAnalysisJobContext({
+      analysisId,
+      cardId,
+      dbClient,
+      requestedAt,
+    });
+
+    if ('stale' in context && context.stale) {
+      return { stale: true, success: false };
+    }
+
+    if ('failed' in context) return { success: false };
+
+    const progress = await recomputeAnalysisProgress({
+      chunks: context.chunks,
+      dbClient,
+      analysisSpecHash: context.analysisSpecHash,
+      cardId,
+      records: context.analysisContext.sourceRecords,
+      tagIds: context.tagIds,
+    });
+
+    if (!progress.complete) {
+      const completed = new Set(progress.completedChunkIndexes);
+
+      const missingChunkIndexes = context.chunks
+        .map((_chunk, index) => index)
+        .filter((index) => !completed.has(index));
+
+      await Promise.all(
+        missingChunkIndexes.map((chunkIndex) =>
+          enqueueAnalysisExtractJob({
+            analysisId,
+            cardId,
+            chunkIndex,
+            env,
+            requestedAt,
+          })
+        )
+      );
+
+      return { waiting: true, success: true };
+    }
+
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: context.analysisSpec,
+      facts: progress.validFacts,
+      generationTime: requestedAt,
+      records: context.analysisContext.sourceRecords,
+      tagIds: context.tagIds,
+    });
+
+    const analysisContext: CardAnalysisContext = {
+      ...context.analysisContext,
+      exactFacts,
+      plan: {
+        analysisSpec: context.analysisSpec,
+        analysisSpecHash: context.analysisSpecHash,
+        mode: 'exact',
+      },
+    };
+
+    const previousOutput = readCardOutput(context.card.output);
+    const blueprint = cardBlueprint.readCardBlueprint(context.card.blueprint);
+    const currentTitle = context.card.title?.trim() || undefined;
+
+    let result:
+      | Awaited<ReturnType<typeof generateCardResult>>
+      | Awaited<ReturnType<typeof refreshCardResult>>
+      | Awaited<ReturnType<typeof tweakCardResult>>
+      | null;
+
+    if (context.jobType === 'refresh' && previousOutput) {
+      result = await refreshCardResult({
+        analysisContext,
+        dbClient,
+        env,
+        logId: context.card.logId!,
+        previousOutput,
+        previousTitle: context.card.title,
+        prompt: context.card.prompt!,
+        tagIds: context.tagIds,
+      });
+    } else if (
+      context.jobType === 'tweak' &&
+      previousOutput &&
+      context.analysis.tweakPrompt
+    ) {
+      result = await tweakCardResult({
+        analysisContext,
+        dbClient,
+        env,
+        logId: context.card.logId!,
+        previousOutput,
+        previousTitle: context.card.title,
+        prompt: context.card.prompt!,
+        tagIds: context.tagIds,
+        tweakPrompt: context.analysis.tweakPrompt,
+      });
+    } else {
+      result = await generateCardResult({
+        analysisContext,
+        blueprint,
+        cardId: context.card.id,
+        dbClient,
+        env,
+        logId: context.card.logId!,
+        prompt: context.card.prompt!,
+        tagIds: context.tagIds,
+      });
+    }
+
+    if (!result) {
+      return writeNoSourceRecordGenerationResult({
+        cardId,
+        dbClient,
+        previousOutput: context.card.output,
+        prompt: context.card.prompt!,
+        requestedAt,
+        ...(blueprint && currentTitle && { title: currentTitle }),
+      });
+    }
+
+    const isRefresh = context.jobType === 'refresh' && previousOutput;
+
+    const keepBlueprintTitle =
+      context.jobType !== 'tweak' && blueprint && currentTitle;
+
+    const title = keepBlueprintTitle
+      ? currentTitle
+      : 'title' in result && result.title
+        ? result.title
+        : (context.card.title ??
+          cardTitle.fallbackCardTitle(context.card.prompt!));
+
+    const didWrite = await updateCardIfGenerationCurrent({
+      cardId,
+      dbClient,
+      fields: {
+        generationRequestedAt: null,
+        isGenerating: false,
+        lastGeneratedAt: new Date().toISOString(),
+        ...(!isRefresh && { blueprint: null, title }),
+        output: result.output,
+      },
+      requestedAt,
+    });
+
+    if (didWrite) {
+      await cleanupCompletedExactAnalysis({
+        analysisId,
+        analysisSpecHash: context.analysisSpecHash,
+        cardId,
+        dbClient,
+        records: context.analysisContext.sourceRecords,
+        tagIds: context.tagIds,
+      });
+    }
+
+    return {
+      output: result.output,
+      stale: !didWrite,
+      success: didWrite,
+      title,
+    };
+  } catch (error) {
+    console.error('Card analysis finalization failed', {
+      analysisId,
+      cardId,
+      error,
+    });
+
+    if (isFinalAttempt) {
+      await markCardGenerationFailed({ cardId, dbClient, requestedAt });
+      return { error: CARD_GENERATION_ERROR_MESSAGE, success: false };
+    }
+
+    return {
+      error: CARD_GENERATION_ERROR_MESSAGE,
+      retryAfterSeconds: CARD_GENERATION_FAILURE_RETRY_DELAY_SECONDS,
+      success: false,
+    };
+  }
 };
 
 export const createCard = async ({
@@ -1058,6 +2026,20 @@ export const updateCard = async ({
   }
 
   return { id: cardId, queued: true, success: true };
+};
+
+export const deleteCardForUser = async ({
+  cardId,
+  dbClient,
+  userId,
+}: {
+  cardId: string;
+  dbClient: Db;
+  userId: string;
+}) => {
+  await getManageableCard({ cardId, dbClient, userId });
+  await dbClient.transact(dbClient.tx.cards[cardId].delete());
+  return { success: true };
 };
 
 export const refreshCardForUser = async ({
@@ -1280,9 +2262,6 @@ export const refreshRecordCardsForUser = async ({
   input: CardRecordRefreshInput;
   userId: string;
 }) => {
-  const recordTagIds = cardSourceSelection.uniqueCardTagIds(input.tagIds);
-  if (!recordTagIds.length) return { success: true };
-
   const { records } = await dbClient.query({
     records: {
       $: {
@@ -1295,6 +2274,7 @@ export const refreshRecordCardsForUser = async ({
           roles: { $: { fields: ['role', 'userId'], where: { userId } } },
         },
       },
+      tags: { $: { fields: ['id'] } },
     },
   });
 
@@ -1320,6 +2300,14 @@ export const refreshRecordCardsForUser = async ({
   if (!canRefreshRecordCards({ actorRole, isAuthor })) {
     throw new HTTPException(403, { message: 'Forbidden' });
   }
+
+  const recordTagIds = cardSourceSelection.uniqueCardTagIds(
+    input.tagIds?.length
+      ? input.tagIds
+      : (record.tags?.map((tag) => tag.id) ?? [])
+  );
+
+  if (!recordTagIds.length) return { success: true };
 
   const tagIds = await validateRecordRefreshTags({
     dbClient,

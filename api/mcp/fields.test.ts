@@ -70,7 +70,7 @@ describe('textResult', () => {
 });
 
 describe('table', () => {
-  test('keeps line breaks in cells', () => {
+  test('keeps cell breaks', () => {
     expect(mcpFields.table(['Text'], [['Line 1\nLine 2']])).toBe(
       'Text:\n```text\nLine 1\nLine 2\n```'
     );

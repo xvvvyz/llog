@@ -1,0 +1,1 @@
+Count whining and barking exactly across all sessions. Show the event totals and keep the chart values exact.

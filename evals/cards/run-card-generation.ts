@@ -1,9 +1,16 @@
 import * as openrouter from '@/api/cards/openrouter';
+import * as cardAnalysis from '@/domain/cards/analysis';
 import type { CardBlueprint } from '@/domain/cards/blueprint';
 import * as cardOutput from '@/domain/cards/output';
 import { readFile } from 'node:fs/promises';
 
-type EvalMode = 'blueprint' | 'generate' | 'refresh' | 'tweak';
+type EvalMode =
+  | 'blueprint'
+  | 'exact'
+  | 'generate'
+  | 'planned'
+  | 'refresh'
+  | 'tweak';
 
 type EvalScenario = {
   blueprint?: CardBlueprint;
@@ -14,9 +21,25 @@ type EvalScenario = {
 };
 
 type EvalFixture = {
+  exact?: {
+    analysisSpec: cardAnalysis.CardAnalysisSpec;
+    expected?: unknown;
+    facts?: cardAnalysis.ExtractedRecordFacts[];
+    generated?: {
+      count: number;
+      events: { countPattern: number[]; fieldId: string; label: string }[];
+      startDate: string;
+      tagId: string;
+      tagName: string;
+    };
+    generationTime?: string;
+    tagIds?: string[];
+  };
   name?: string;
   records: openrouter.CardLlmRecord[];
-  scenarios?: Partial<Record<Exclude<EvalMode, 'generate'>, EvalScenario>>;
+  scenarios?: Partial<
+    Record<Exclude<EvalMode, 'generate' | 'planned'>, EvalScenario>
+  >;
 };
 
 type EvalInput = {
@@ -59,11 +82,15 @@ const readInput = (): EvalInput => {
 
   if (
     mode !== 'blueprint' &&
+    mode !== 'exact' &&
     mode !== 'generate' &&
+    mode !== 'planned' &&
     mode !== 'refresh' &&
     mode !== 'tweak'
   ) {
-    throw new Error('mode must be blueprint, generate, refresh, or tweak');
+    throw new Error(
+      'mode must be blueprint, exact, generate, planned, refresh, or tweak'
+    );
   }
 
   return {
@@ -76,10 +103,68 @@ const readInput = (): EvalInput => {
   };
 };
 
+const addDays = (value: string, days: number) => {
+  const date = new Date(value);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString();
+};
+
+const generatedExactFixture = ({
+  exact,
+  name,
+}: {
+  exact: NonNullable<EvalFixture['exact']>;
+  name?: string;
+}) => {
+  const generated = exact.generated;
+  if (!generated) return;
+  const records: openrouter.CardLlmRecord[] = [];
+  const facts: cardAnalysis.ExtractedRecordFacts[] = [];
+
+  for (let index = 0; index < generated.count; index += 1) {
+    const id = `record-${index + 1}`;
+    const date = addDays(generated.startDate, index);
+
+    const events = generated.events
+      .map((event) => ({
+        count: event.countPattern[index % event.countPattern.length] ?? 0,
+        fieldId: event.fieldId,
+        label: event.label,
+      }))
+      .filter((event) => event.count > 0);
+
+    records.push({
+      date,
+      id,
+      tags: [{ id: generated.tagId, name: generated.tagName }],
+      text: events.length
+        ? events.map((event) => `${event.label}: ${event.count}`).join(', ')
+        : 'No target events.',
+    });
+
+    facts.push({
+      events,
+      evidence: [],
+      numericValues: [],
+      outcomes: [],
+      qualitativeLabels: [],
+      recordId: id,
+    });
+  }
+
+  return { exact: { ...exact, facts }, name, records } satisfies EvalFixture;
+};
+
 const readFixture = async (fixturePath: string): Promise<EvalFixture> => {
   const fixture = JSON.parse(
     await readFile(fixturePath, 'utf8')
   ) as EvalFixture;
+
+  const generated =
+    fixture.exact &&
+    generatedExactFixture({ exact: fixture.exact, name: fixture.name });
+
+  if (generated) return generated;
 
   if (!Array.isArray(fixture.records) || fixture.records.length === 0) {
     throw new Error('Fixture records are required');
@@ -188,7 +273,6 @@ const durationProgressOutput = (
       { label: 'Regressions', unit: 'sessions', value: 0 },
     ],
     milestones: [],
-    sourceRecordIds: records.map((record) => record.id),
     summary: `Early sessions reached ${durationValue(latest)} minutes with distress down to ${distressValue(latest)}.`,
   };
 };
@@ -248,11 +332,128 @@ const scenarioPreviousOutput = ({
   return undefined;
 };
 
+const recordsWithTagIds = (records: openrouter.CardLlmRecord[]) =>
+  records.map((record) => ({
+    ...record,
+    tags: (record.tags ?? []).map((tag, index) => ({
+      id: tag.id ?? tag.name ?? `tag-${index + 1}`,
+      name: tag.name,
+    })),
+  }));
+
+const selectedTagIds = (records: openrouter.CardLlmRecord[]) => [
+  ...new Set(
+    records.flatMap((record) =>
+      (record.tags ?? [])
+        .map((tag) => tag.id)
+        .filter((id): id is string => !!id)
+    )
+  ),
+];
+
+const exactFactsForFixture = (fixture: EvalFixture) => {
+  if (!fixture.exact) return;
+
+  if (!fixture.exact.analysisSpec || !Array.isArray(fixture.exact.facts)) {
+    throw new Error('Exact fixture requires analysisSpec and facts');
+  }
+
+  const records = recordsWithTagIds(fixture.records);
+
+  return cardAnalysis.aggregateExtractedFacts({
+    analysisSpec: fixture.exact.analysisSpec,
+    facts: fixture.exact.facts.map((facts) => ({ facts })),
+    generationTime: fixture.exact.generationTime,
+    records,
+    tagIds: fixture.exact.tagIds ?? selectedTagIds(records),
+  });
+};
+
+const plannedCardResult = async ({
+  enableExactDatePlan,
+  env,
+  generationTime,
+  prompt,
+  records,
+}: {
+  enableExactDatePlan: boolean;
+  env: CloudflareEnv;
+  generationTime?: string;
+  prompt: string;
+  records: openrouter.CardLlmRecord[];
+}) => {
+  const plannedRecords = recordsWithTagIds(records);
+
+  if (!enableExactDatePlan) {
+    // Keep broad planned evals on sampled generation; filtered plans exercise
+    // exact extraction because the date window is the behavior under test.
+    return openrouter.generateCardResult({
+      env,
+      prompt,
+      records: plannedRecords,
+      totalRecordCount: plannedRecords.length,
+    });
+  }
+
+  const plan = await openrouter.planCardAnalysis({
+    env,
+    generationTime,
+    prompt,
+    records: plannedRecords,
+    totalRecordCount: plannedRecords.length,
+  });
+
+  if (
+    plan.mode !== 'exact' ||
+    !plan.analysisSpec ||
+    !plan.analysisSpec.filters?.length
+  ) {
+    return openrouter.generateCardResult({
+      env,
+      prompt,
+      records: plannedRecords,
+      totalRecordCount: plannedRecords.length,
+    });
+  }
+
+  const exactRecords = cardAnalysis.selectExactRecords(plannedRecords, {
+    analysisSpec: plan.analysisSpec,
+    generationTime,
+  });
+
+  const extractedFacts = await openrouter.extractRecordFacts({
+    analysisSpec: plan.analysisSpec,
+    env,
+    records: exactRecords,
+  });
+
+  const exactFacts = cardAnalysis.aggregateExtractedFacts({
+    analysisSpec: plan.analysisSpec,
+    facts: extractedFacts.map((facts) => ({ facts })),
+    generationTime,
+    records: exactRecords,
+    tagIds: selectedTagIds(exactRecords),
+  });
+
+  return openrouter.generateCardResult({
+    analysisMode: 'exact',
+    env,
+    exactFacts,
+    prompt,
+    records: exactRecords,
+    totalRecordCount: exactRecords.length,
+  });
+};
+
 const main = async () => {
   const { fixturePath, mode, prompt, tweakPrompt } = readInput();
   const fixture = await readFixture(fixturePath);
   const env = process.env as unknown as CloudflareEnv;
-  const scenario = fixture.scenarios?.[mode as Exclude<EvalMode, 'generate'>];
+
+  const scenario =
+    mode === 'planned'
+      ? undefined
+      : fixture.scenarios?.[mode as Exclude<EvalMode, 'generate' | 'planned'>];
 
   const previousOutput = scenarioPreviousOutput({
     records: fixture.records,
@@ -266,26 +467,55 @@ const main = async () => {
     totalRecordCount: fixture.records.length,
   };
 
+  const exactContext = fixture.exact
+    ? {
+        facts: requiredExactFacts(exactFactsForFixture(fixture)),
+        records: cardAnalysis.selectExactRecords(
+          recordsWithTagIds(fixture.records),
+          {
+            analysisSpec: fixture.exact.analysisSpec,
+            generationTime: fixture.exact.generationTime,
+          }
+        ),
+      }
+    : undefined;
+
   const result =
     mode === 'generate'
       ? await openrouter.generateCardResult(commonInput)
-      : mode === 'blueprint'
+      : mode === 'exact'
         ? await openrouter.generateCardResult({
-            ...commonInput,
-            blueprint: requiredBlueprint(scenario?.blueprint),
+            analysisMode: 'exact',
+            env,
+            exactFacts: requiredExactFacts(exactContext?.facts),
+            prompt,
+            records: exactContext?.records ?? fixture.records,
+            totalRecordCount:
+              exactContext?.records.length ?? fixture.records.length,
           })
-        : mode === 'refresh'
-          ? await openrouter.refreshCardResult({
+        : mode === 'planned'
+          ? await plannedCardResult({
+              enableExactDatePlan: !!fixture.exact,
               ...commonInput,
-              previousOutput: requiredPreviousOutput(previousOutput, mode),
-              previousTitle: scenario?.previousTitle,
+              generationTime: fixture.exact?.generationTime,
             })
-          : await openrouter.tweakCardResult({
-              ...commonInput,
-              previousOutput: requiredPreviousOutput(previousOutput, mode),
-              previousTitle: scenario?.previousTitle,
-              tweakPrompt: requiredTweakPrompt(tweakPrompt),
-            });
+          : mode === 'blueprint'
+            ? await openrouter.generateCardResult({
+                ...commonInput,
+                blueprint: requiredBlueprint(scenario?.blueprint),
+              })
+            : mode === 'refresh'
+              ? await openrouter.refreshCardResult({
+                  ...commonInput,
+                  previousOutput: requiredPreviousOutput(previousOutput, mode),
+                  previousTitle: scenario?.previousTitle,
+                })
+              : await openrouter.tweakCardResult({
+                  ...commonInput,
+                  previousOutput: requiredPreviousOutput(previousOutput, mode),
+                  previousTitle: scenario?.previousTitle,
+                  tweakPrompt: requiredTweakPrompt(tweakPrompt),
+                });
 
   const validation = cardOutput.validateCardOutput(result.output);
 
@@ -334,6 +564,11 @@ const requiredPreviousOutput = (
 
 const requiredBlueprint = (value?: CardBlueprint) => {
   if (!value) throw new Error('blueprint scenario blueprint is required');
+  return value;
+};
+
+const requiredExactFacts = (value?: cardAnalysis.ExactCardFacts) => {
+  if (!value) throw new Error('exact mode requires fixture exact facts');
   return value;
 };
 

@@ -1,6 +1,7 @@
 import { removeMember } from '@/features/teams/mutations/remove-member';
 import { useTeam } from '@/features/teams/queries/use-team';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -11,27 +12,30 @@ import { View } from 'react-native';
 export const MemberRemoveSheet = () => {
   const sheetManager = useSheetManager();
   const memberId = sheetManager.getId('member-remove');
+  const open = sheetManager.isOpen('member-remove');
   const team = useTeam();
-  const [isLoading, setIsLoading] = React.useState(false);
+
+  const { isSubmitting: isLoading, runSubmit } = useSheetSubmitState({
+    isOpen: open,
+  });
 
   const handleRemove = React.useCallback(async () => {
     if (!memberId || !team.id) return;
-    setIsLoading(true);
+    const teamId = team.id;
 
-    try {
-      await removeMember({ teamId: team.id, roleId: memberId });
+    await runSubmit(async ({ keepPendingUntilClose }) => {
+      await removeMember({ teamId, roleId: memberId });
       sheetManager.close('member-remove');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [memberId, team.id, sheetManager]);
+      keepPendingUntilClose();
+    });
+  }, [memberId, runSubmit, team.id, sheetManager]);
 
   return (
     <Sheet
       className="md:max-w-sm"
       loading={team.isLoading}
       onDismiss={() => sheetManager.close('member-remove')}
-      open={sheetManager.isOpen('member-remove')}
+      open={open}
       portalName="member-remove"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">

@@ -1,5 +1,6 @@
-import { format, isThisYear, isValid } from 'date-fns';
+import { format, isThisYear } from 'date-fns';
 import type * as output from '@/domain/cards/output';
+import { parseIsoDateTime } from '@/lib/iso-date-time';
 
 export type ChartPoint = { x: number; y: number };
 
@@ -317,30 +318,10 @@ export const getBarChartItems = ({
   });
 };
 
-export const parseChartLabelDate = (label: string) => {
-  const trimmed = label.trim();
-  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
-
-  if (dateOnly) {
-    const year = Number(dateOnly[1]);
-    const month = Number(dateOnly[2]);
-    const day = Number(dateOnly[3]);
-    const date = new Date(year, month - 1, day);
-
-    return date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day
-      ? date
-      : undefined;
-  }
-
-  if (!/^\d{4}-\d{2}-\d{2}[T\s]/.test(trimmed)) return undefined;
-  const date = new Date(trimmed);
-  return isValid(date) ? date : undefined;
-};
+export const parseChartLabelDate = parseIsoDateTime;
 
 export const hasChartLabelTime = (label: string) =>
-  /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(label.trim());
+  !!parseChartLabelDate(label);
 
 export const formatChartTickLabel = (
   label: string,

@@ -74,4 +74,9 @@ describe('permissions', () => {
     expect(rules.cards.allow.update).toContain('onlyModifiesCardOrder');
     expect(rules.cards.allow.delete).toBe('canManage');
   });
+
+  test('denies analyses', () => {
+    expect(rules.analyses.allow.$default).toBe('false');
+    expect(rules.facts.allow.$default).toBe('false');
+  });
 });

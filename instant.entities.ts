@@ -3,7 +3,11 @@ import type { InstaQLEntity } from '@instantdb/react-native';
 
 export type Activity = InstaQLEntity<typeof schema, 'activities'>;
 
+export type Analysis = InstaQLEntity<typeof schema, 'analyses'>;
+
 export type Card = InstaQLEntity<typeof schema, 'cards'>;
+
+export type Fact = InstaQLEntity<typeof schema, 'facts'>;
 
 export type FileItem = InstaQLEntity<typeof schema, 'files'>;
 

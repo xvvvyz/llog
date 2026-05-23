@@ -10,6 +10,7 @@ import { useMarkdownTextareaShortcuts } from '@/features/records/hooks/use-markd
 import { AddTagsInput } from '@/features/tags/components/add-tags-input';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { resolveSpectrumColor } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
@@ -51,7 +52,7 @@ export const LogTemplateEditorSheet = () => {
   const [fullscreenInitialSelection, setFullscreenInitialSelection] =
     React.useState<textareaSelection.TextSelection | null>(null);
 
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen });
   const resolvedLogId = logId ?? template.log?.id ?? undefined;
   const teamId = isEditingTemplate ? template.teamId : log.teamId;
   const logColorIndex = resolveSpectrumColor(log.color);
@@ -104,8 +105,6 @@ export const LogTemplateEditorSheet = () => {
   }, []);
 
   React.useEffect(() => {
-    setIsSubmitting(false);
-
     if (!isOpen) {
       setText('');
       setInlineSelection({ end: 0, start: 0 });
@@ -148,9 +147,8 @@ export const LogTemplateEditorSheet = () => {
 
   const handleSubmit = React.useCallback(async () => {
     if (!canSubmit) return;
-    setIsSubmitting(true);
 
-    try {
+    await runSubmit(async ({ keepPendingUntilClose }) => {
       if (isEditingTemplate) {
         if (!templateId) return;
 
@@ -161,6 +159,7 @@ export const LogTemplateEditorSheet = () => {
         });
 
         close();
+        keepPendingUntilClose();
         return;
       }
 
@@ -172,15 +171,15 @@ export const LogTemplateEditorSheet = () => {
       });
 
       close();
-    } finally {
-      setIsSubmitting(false);
-    }
+      keepPendingUntilClose();
+    });
   }, [
     canSubmit,
     close,
     isEditingTemplate,
     log.teamId,
     logId,
+    runSubmit,
     selectedTagIds,
     templateId,
     text,

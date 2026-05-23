@@ -11,8 +11,7 @@ const validOutput: CardOutput = {
     type: 'line',
   },
   metrics: [{ label: 'Sessions', value: 4 }],
-  milestones: [{ recordIds: ['record-1'], title: 'Started baseline' }],
-  sourceRecordIds: ['record-1'],
+  milestones: [{ title: 'Started baseline' }],
   summary: 'Progress is steady.',
 };
 
@@ -65,24 +64,6 @@ describe('card output', () => {
     ).toBe(false);
   });
 
-  test('filters source ids', () => {
-    expect(
-      cardOutput.normalizeCardOutputSourceIds(
-        {
-          ...validOutput,
-          milestones: [
-            { recordIds: ['record-1', 'record-2'], title: 'Started baseline' },
-          ],
-          sourceRecordIds: ['record-1', 'record-2'],
-        },
-        ['record-1']
-      )
-    ).toMatchObject({
-      milestones: [{ recordIds: ['record-1'] }],
-      sourceRecordIds: ['record-1'],
-    });
-  });
-
   test('normalizes raw llm output', () => {
     const normalized = cardOutput.normalizeRawCardOutput({
       chart: {
@@ -109,11 +90,9 @@ describe('card output', () => {
         {
           date: '2026-05-20',
           detail: 'Calm at the door.',
-          recordIds: ['record-1'],
           title: 'Door calm!',
         },
       ],
-      sourceRecordIds: ['record-1'],
       summary: 'Progress is steady.',
     });
 
@@ -130,7 +109,6 @@ describe('card output', () => {
       },
       metrics: [{ label: 'Longest duration', unit: 'min' }],
       milestones: [{ title: 'Door calm' }],
-      sourceRecordIds: ['record-1'],
     });
   });
 
@@ -155,7 +133,7 @@ describe('card output', () => {
     });
   });
 
-  test('normalizes metric date formats', () => {
+  test('normalizes metric dates', () => {
     const normalized = cardOutput.normalizeRawCardOutput({
       metrics: [
         {
@@ -168,6 +146,7 @@ describe('card output', () => {
           value: '2026-05-21T17:30:00.000Z',
           valueFormat: 'date_time',
         },
+        { label: 'Invalid date', value: '2026-05-20', valueFormat: 'date' },
       ],
     });
 
@@ -176,6 +155,8 @@ describe('card output', () => {
     expect(normalized).toMatchObject({
       metrics: [{ valueFormat: 'date' }, { valueFormat: 'datetime' }],
     });
+
+    expect((normalized as CardOutput).metrics).toHaveLength(2);
   });
 
   test('strips noisy metric trends', () => {
@@ -249,7 +230,6 @@ describe('card output', () => {
       },
       metrics: [],
       milestones: [],
-      sourceRecordIds: ['record-1'],
       summary: 'Duration increased while distress dropped.',
     });
 
@@ -267,24 +247,14 @@ describe('card output', () => {
     expect((normalized as CardOutput).chart).not.toHaveProperty('data');
   });
 
-  test('fills milestone dates', () => {
-    const normalized = cardOutput.normalizeCardOutputMilestoneDates(
-      {
-        ...validOutput,
-        milestones: [
-          { recordIds: ['record-2'], title: 'Calm short absence' },
-          {
-            date: '2026-05-19T00:00:00.000Z',
-            recordIds: ['record-1'],
-            title: 'Started baseline',
-          },
-        ],
-      },
-      [
-        { date: '2026-05-19T00:00:00.000Z', id: 'record-1' },
-        { date: '2026-05-21T00:00:00.000Z', id: 'record-2' },
-      ]
-    );
+  test('sorts milestone dates', () => {
+    const normalized = cardOutput.normalizeCardOutputMilestoneDates({
+      ...validOutput,
+      milestones: [
+        { date: '2026-05-19T00:00:00.000Z', title: 'Started baseline' },
+        { date: '2026-05-21T00:00:00.000Z', title: 'Calm short absence' },
+      ],
+    });
 
     expect(normalized.milestones.map((milestone) => milestone.date)).toEqual([
       '2026-05-21T00:00:00.000Z',
@@ -299,19 +269,25 @@ describe('card output', () => {
       '2026-05-20T00:00:00.000Z'
     );
 
-    expect(cardOutput.normalizeCardDate('2026-02-31')).toBeUndefined();
-
-    const normalized = cardOutput.normalizeCardOutputMilestoneDates(
-      {
-        ...validOutput,
-        milestones: [
-          { date: '2026-05-20', recordIds: ['record-1'], title: 'Door calm' },
-        ],
-      },
-      [{ date: '2026-05-20T03:00:00.000Z', id: 'record-1' }]
+    expect(cardOutput.normalizeCardDate('2026-05-20T00:00:00-07:00')).toBe(
+      '2026-05-20T07:00:00.000Z'
     );
 
-    expect(normalized.milestones[0]?.date).toBe('2026-05-20T03:00:00.000Z');
+    expect(cardOutput.normalizeCardDate('2026-05-20T00:00:00')).toBeUndefined();
+
+    expect(
+      cardOutput.normalizeCardDate('2026-02-31T00:00:00.000Z')
+    ).toBeUndefined();
+
+    expect(cardOutput.normalizeCardDate('May 20, 2026')).toBeUndefined();
+    expect(cardOutput.normalizeCardDate('2026-02-31')).toBeUndefined();
+
+    const normalized = cardOutput.normalizeCardOutputMilestoneDates({
+      ...validOutput,
+      milestones: [{ date: '2026-05-20', title: 'Door calm' }],
+    });
+
+    expect(normalized.milestones[0]?.date).toBeUndefined();
   });
 
   test('merges refresh output', () => {
@@ -335,7 +311,6 @@ describe('card output', () => {
           { label: 'Changed label', trend: 'up', unit: 'sec', value: 8 },
         ],
         milestones: [{ date: '2026-05-20', title: 'New best' }],
-        sourceRecordIds: ['record-2'],
         summary: 'Updated summary.',
       },
       previous: {
@@ -355,7 +330,6 @@ describe('card output', () => {
           { label: 'Best duration', trend: 'up', unit: 'min', value: 5 },
         ],
         milestones: [{ date: '2026-05-01', title: 'Started baseline' }],
-        sourceRecordIds: ['record-1'],
         summary: 'Original summary.',
       },
     });
@@ -378,7 +352,6 @@ describe('card output', () => {
       },
       metrics: [{ label: 'Best duration', unit: 'min', value: 8 }],
       milestones: [{ title: 'New best' }],
-      sourceRecordIds: ['record-2', 'record-1'],
       summary: 'Updated summary.',
     });
   });
@@ -391,11 +364,9 @@ describe('card output', () => {
           {
             date: '2026-05-01T00:00:00.000Z',
             detail: 'Changed detail.',
-            recordIds: ['record-1'],
             title: 'Baseline began',
           },
         ],
-        sourceRecordIds: [],
       },
       previous: {
         metrics: [],
@@ -403,11 +374,9 @@ describe('card output', () => {
           {
             date: '2026-05-01T00:00:00.000Z',
             detail: 'Original detail.',
-            recordIds: ['record-1'],
             title: 'Started baseline',
           },
         ],
-        sourceRecordIds: [],
       },
     });
 
@@ -415,7 +384,6 @@ describe('card output', () => {
       {
         date: '2026-05-01T00:00:00.000Z',
         detail: 'Changed detail.',
-        recordIds: ['record-1'],
         title: 'Baseline began',
       },
     ]);
@@ -423,15 +391,10 @@ describe('card output', () => {
 
   test('drops refreshed summary', () => {
     const merged = cardOutput.mergeCardOutputRefresh({
-      next: {
-        metrics: [{ label: 'Sessions', value: 3 }],
-        milestones: [],
-        sourceRecordIds: [],
-      },
+      next: { metrics: [{ label: 'Sessions', value: 3 }], milestones: [] },
       previous: {
         metrics: [{ label: 'Sessions', value: 2 }],
         milestones: [],
-        sourceRecordIds: [],
         summary: 'Sessions increased from 2 to 3.',
       },
     });
@@ -445,17 +408,75 @@ describe('card output', () => {
         chart: { data: [{ label: 'Jan', value: 1 }], type: 'bar' },
         metrics: [{ label: 'Other', value: 5 }],
         milestones: [{ title: 'Should not add section' }],
-        sourceRecordIds: [],
       },
-      previous: {
-        metrics: [{ label: 'Sessions', value: 1 }],
-        milestones: [],
-        sourceRecordIds: [],
-      },
+      previous: { metrics: [{ label: 'Sessions', value: 1 }], milestones: [] },
     });
 
     expect(merged.chart).toBeUndefined();
     expect(merged.metrics).toEqual([{ label: 'Sessions', value: 5 }]);
     expect(merged.milestones).toEqual([]);
+  });
+
+  test('matches refresh labels', () => {
+    const merged = cardOutput.mergeCardOutputRefresh({
+      next: {
+        chart: {
+          series: [
+            { data: [{ label: 'Jan', value: 2 }], label: 'Distress' },
+            { data: [{ label: 'Jan', value: 30 }], label: 'Duration' },
+          ],
+          type: 'line',
+        },
+        metrics: [
+          { label: 'Latest distress', value: 2 },
+          { label: 'Latest duration', value: 30 },
+        ],
+        milestones: [],
+      },
+      previous: {
+        chart: {
+          series: [
+            {
+              data: [{ label: 'Jan', value: 20 }],
+              label: 'Duration',
+              unit: 'min',
+            },
+            {
+              data: [{ label: 'Jan', value: 4 }],
+              label: 'Distress',
+              unit: '0-5',
+            },
+          ],
+          type: 'line',
+        },
+        metrics: [
+          { label: 'Latest duration', unit: 'min', value: 20 },
+          { label: 'Latest distress', unit: '0-5', value: 4 },
+        ],
+        milestones: [],
+      },
+    });
+
+    expect(
+      merged.chart?.series?.map((series) => series.data[0]?.value)
+    ).toEqual([30, 2]);
+
+    expect(merged.metrics).toEqual([
+      { label: 'Latest duration', unit: 'min', value: 30 },
+      { label: 'Latest distress', unit: '0-5', value: 2 },
+    ]);
+  });
+
+  test('keeps summary fallback', () => {
+    const merged = cardOutput.mergeCardOutputRefresh({
+      next: { metrics: [{ label: 'Sessions', value: 3 }], milestones: [] },
+      previous: { metrics: [], milestones: [], summary: 'Only summary.' },
+    });
+
+    expect(merged).toEqual({
+      metrics: [],
+      milestones: [],
+      summary: 'Only summary.',
+    });
   });
 });

@@ -1,7 +1,9 @@
 import * as openrouter from '@/api/cards/openrouter';
-import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 
 const originalFetch = globalThis.fetch;
+const originalOpenRouterCardModel = process.env.OPENROUTER_CARD_MODEL;
+const TEST_OPENROUTER_CARD_MODEL = 'google/gemini-test-card-model';
 
 const jsonResponse = (content: unknown) =>
   new Response(
@@ -15,7 +17,26 @@ const jsonResponse = (content: unknown) =>
       ],
       created: 1,
       id: 'chatcmpl-test',
-      model: 'openai/gpt-5.5',
+      model: TEST_OPENROUTER_CARD_MODEL,
+      object: 'chat.completion',
+      system_fingerprint: null,
+    }),
+    { headers: { 'Content-Type': 'application/json' }, status: 200 }
+  );
+
+const malformedJsonResponse = (content = '{') =>
+  new Response(
+    JSON.stringify({
+      choices: [
+        {
+          finish_reason: 'stop',
+          index: 0,
+          message: { content, role: 'assistant' },
+        },
+      ],
+      created: 1,
+      id: 'chatcmpl-test',
+      model: TEST_OPENROUTER_CARD_MODEL,
       object: 'chat.completion',
       system_fingerprint: null,
     }),
@@ -34,7 +55,7 @@ const refusalResponse = (refusal: string) =>
       ],
       created: 1,
       id: 'chatcmpl-test',
-      model: 'openai/gpt-5.5',
+      model: TEST_OPENROUTER_CARD_MODEL,
       object: 'chat.completion',
       system_fingerprint: null,
     }),
@@ -66,8 +87,18 @@ type ChatCompletionRequest = {
   };
 };
 
+beforeEach(() => {
+  process.env.OPENROUTER_CARD_MODEL = TEST_OPENROUTER_CARD_MODEL;
+});
+
 afterEach(() => {
   globalThis.fetch = originalFetch;
+
+  if (originalOpenRouterCardModel === undefined) {
+    delete process.env.OPENROUTER_CARD_MODEL;
+  } else {
+    process.env.OPENROUTER_CARD_MODEL = originalOpenRouterCardModel;
+  }
 });
 
 describe('card openrouter', () => {
@@ -98,14 +129,44 @@ describe('card openrouter', () => {
         ],
       })
     ).resolves.toEqual({
-      output: {
-        metrics: [],
-        milestones: [],
-        sourceRecordIds: [],
-        summary: 'Better',
-      },
+      output: { metrics: [], milestones: [], summary: 'Better' },
       success: true,
       title: 'Good',
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  test('retries invalid json', async () => {
+    let callCount = 0;
+
+    const fetch = mock(async () => {
+      callCount += 1;
+
+      return callCount === 1
+        ? malformedJsonResponse()
+        : jsonResponse({ output: { summary: 'Recovered.' }, title: 'Sleep' });
+    });
+
+    globalThis.fetch = fetch as never;
+
+    await expect(
+      openrouter.generateCardResult({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        prompt: 'Track sleep',
+        records: [
+          {
+            date: '2026-05-20T00:00:00.000Z',
+            id: 'record-1',
+            tags: [{ name: 'sleep' }],
+            text: 'Slept well',
+          },
+        ],
+      })
+    ).resolves.toMatchObject({
+      output: { summary: 'Recovered.' },
+      success: true,
+      title: 'Sleep',
     });
 
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -125,7 +186,6 @@ describe('card openrouter', () => {
         previousOutput: {
           metrics: [],
           milestones: [],
-          sourceRecordIds: [],
           summary: 'Sleep is steady.',
         },
         prompt: 'Track sleep',
@@ -143,7 +203,6 @@ describe('card openrouter', () => {
       output: {
         metrics: [],
         milestones: [],
-        sourceRecordIds: [],
         summary: 'Weekly trend is steady.',
       },
       success: true,
@@ -168,7 +227,6 @@ describe('card openrouter', () => {
       previousOutput: {
         metrics: [],
         milestones: [],
-        sourceRecordIds: [],
         summary: 'Sleep is steady.',
       },
       prompt: 'Track sleep. Do not include naps.',
@@ -192,13 +250,7 @@ describe('card openrouter', () => {
       outputSchema?: Record<string, unknown>;
     };
 
-    expect(requestBody?.response_format?.type).toBe('json_schema');
-
-    expect(requestBody?.response_format?.json_schema).toMatchObject({
-      name: 'llog_card_tweak',
-      strict: true,
-    });
-
+    expect(requestBody?.response_format?.type).toBe('json_object');
     expect(systemMessage?.content).toContain('Apply only the requested tweak');
     expect(userPayload.outputRules).toContain('tweakPrompt wins');
     expect(userPayload.outputRules).toContain('this output');
@@ -243,51 +295,20 @@ describe('card openrouter', () => {
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
       outputSchema?: {
-        output?: {
-          metrics?: string;
-          sourceRecordIds?: string;
-          summary?: string;
-        };
+        output?: { metrics?: string; summary?: string };
         title?: string;
       };
       records?: {
-        fullTextRecords?: { author?: unknown; text?: string }[];
-        timelineChunks?: { records?: { author?: unknown; text?: string }[] }[];
+        fullTextRecords?: { author?: unknown; id?: unknown; text?: string }[];
+        timelineChunks?: {
+          records?: { author?: unknown; id?: unknown; text?: string }[];
+        }[];
       };
       sourceRules?: string;
     };
 
-    const responseSchema = requestBody?.response_format?.json_schema?.schema;
-
-    const properties = responseSchema?.properties as
-      | { output?: { properties?: Record<string, unknown> }; title?: unknown }
-      | undefined;
-
-    const outputProperties = properties?.output?.properties;
-
-    const metricSchema = outputProperties?.metrics as
-      | { items?: { properties?: Record<string, unknown>; required?: unknown } }
-      | undefined;
-
-    expect(requestBody?.model).toBe('openai/gpt-5.5');
-    expect(requestBody?.response_format?.type).toBe('json_schema');
-
-    expect(requestBody?.response_format?.json_schema).toMatchObject({
-      name: 'llog_card_generation',
-      strict: true,
-    });
-
-    expect(responseSchema?.additionalProperties).toBe(false);
-    expect(responseSchema?.required).toEqual(['title', 'output']);
-
-    expect(outputProperties).toMatchObject({
-      chart: { anyOf: [{ type: 'object' }, { type: 'null' }] },
-      metrics: { maxItems: 6, type: 'array' },
-      milestones: { maxItems: 8, type: 'array' },
-      sourceRecordIds: { maxItems: 80, type: 'array' },
-      summary: { type: ['string', 'null'] },
-    });
-
+    expect(requestBody?.model).toBe(TEST_OPENROUTER_CARD_MODEL);
+    expect(requestBody?.response_format?.type).toBe('json_object');
     expect(userPayload.records?.fullTextRecords?.[0]?.text).toHaveLength(2000);
     expect(userPayload.records?.fullTextRecords?.[0]?.author).toBe('Cade');
 
@@ -299,17 +320,11 @@ describe('card openrouter', () => {
       'Cade'
     );
 
-    expect(userPayload.outputSchema?.output?.sourceRecordIds).toContain(
-      'at most 80'
-    );
+    expect(userPayload.records?.fullTextRecords?.[0]?.id).toBeUndefined();
 
-    expect(userPayload.outputSchema?.output?.metrics).toContain(
-      'Set trend only'
-    );
-
-    expect(userPayload.outputSchema?.output?.metrics).toContain(
-      'cumulative/extreme/count'
-    );
+    expect(
+      userPayload.records?.timelineChunks?.[0]?.records?.[0]?.id
+    ).toBeUndefined();
 
     expect(userPayload.outputSchema?.output?.metrics).toContain('valueFormat');
 
@@ -324,22 +339,831 @@ describe('card openrouter', () => {
     expect(userPayload.outputSchema?.output?.summary).toContain('320');
 
     expect(userPayload.outputSchema?.output?.summary).toContain(
-      'not clear from chart'
+      'adds context not clear from chart'
     );
 
     expect(userPayload.outputSchema?.title).toContain('short generated');
     expect(userPayload.outputRules).toContain('numeric point-in-time metrics');
+    expect(userPayload.outputRules).toContain('cumulative/extreme/count');
+    expect(userPayload.outputRules).toContain('distinct job');
+    expect(userPayload.outputRules).toContain('obvious chart value');
+    expect(userPayload.outputRules).toContain('Current <=2 streak');
+    expect(userPayload.outputRules).toContain('wk');
     expect(userPayload.outputRules).toContain('Never use date-only');
-
-    expect(metricSchema?.items?.properties).toMatchObject({
-      valueFormat: { enum: ['date', 'datetime', null] },
-    });
-
-    expect(metricSchema?.items?.required).toContain('valueFormat');
 
     expect(userPayload.sourceRules).toContain(
       'do not treat omitted records as inspected'
     );
+  });
+
+  test('plans exact spec', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        mode: 'exact',
+        rationale: 'The prompt asks for an exact count.',
+        analysisSpec: {
+          aggregations: [
+            {
+              denominatorId: null,
+              eventLabel: 'whining',
+              fieldId: 'events',
+              id: 'whining_count',
+              label: 'Whining',
+              numeratorId: null,
+              operation: 'count',
+              outcomeLabel: null,
+              qualitativeLabel: null,
+              unit: null,
+            },
+          ],
+          charts: [],
+          extractionFields: [
+            {
+              countMode: 'explicitOccurrences',
+              id: 'events',
+              label: 'Events',
+              labels: ['whining'],
+              scoreScale: null,
+              type: 'event',
+              unit: null,
+            },
+          ],
+          groupings: [],
+        },
+      });
+    }) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        prompt: 'Count whining.',
+        records: [{ id: 'record-1', text: 'Whined once. '.repeat(200) }],
+      })
+    ).resolves.toMatchObject({
+      analysisSpec: {
+        aggregations: [{ id: 'whining_count', operation: 'count' }],
+      },
+      mode: 'exact',
+    });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      records?: { fullRecords?: unknown[]; summary?: unknown };
+      rules?: string;
+    };
+
+    expect(userPayload.records?.fullRecords).toHaveLength(1);
+
+    expect(
+      (userPayload.records?.fullRecords?.[0] as { text?: string } | undefined)
+        ?.text
+    ).toHaveLength(899);
+
+    expect(userPayload.rules).toContain('countMode');
+    expect(userPayload.rules).toContain('scoreScale');
+    expect(userPayload.rules).toContain('thresholds');
+    expect(userPayload.rules).toContain('wk');
+    expect(requestBody?.response_format?.type).toBe('json_object');
+  });
+
+  test('plans date filter', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        mode: 'exact',
+        rationale: 'The prompt asks for a filtered average.',
+        analysisSpec: {
+          aggregations: [
+            {
+              denominatorId: null,
+              eventLabel: null,
+              fieldId: 'duration',
+              id: 'duration_average',
+              label: 'Average duration',
+              numeratorId: null,
+              operation: 'average',
+              outcomeLabel: null,
+              qualitativeLabel: null,
+              unit: 'min',
+            },
+          ],
+          charts: [],
+          extractionFields: [
+            {
+              countMode: null,
+              id: 'duration',
+              label: 'Duration',
+              labels: [],
+              scoreScale: null,
+              type: 'number',
+              unit: 'min',
+            },
+          ],
+          filters: [
+            {
+              endExclusive: { type: 'generationTime', value: null },
+              field: 'record.date',
+              id: 'last_3_months',
+              label: 'Last 3 months',
+              startInclusive: {
+                offset: { amount: -3, unit: 'month' },
+                type: 'generationTime',
+                value: null,
+              },
+            },
+          ],
+          groupings: [],
+        },
+      });
+    }) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        generationTime: '2026-05-23T12:00:00.000Z',
+        prompt: 'Average duration over the last 3 months.',
+        records: [{ id: 'record-1', text: 'Duration: 10 min.' }],
+      })
+    ).resolves.toMatchObject({
+      analysisSpec: {
+        filters: [
+          {
+            endExclusive: { type: 'generationTime' },
+            field: 'record.date',
+            id: 'last_3_months',
+            startInclusive: {
+              offset: { amount: -3, unit: 'month' },
+              type: 'generationTime',
+            },
+          },
+        ],
+      },
+      mode: 'exact',
+    });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      card?: { generationTime?: string };
+      rules?: string;
+    };
+
+    expect(userPayload.card?.generationTime).toBe('2026-05-23T12:00:00.000Z');
+    expect(userPayload.rules).toContain('record.date');
+    expect(userPayload.rules).toContain('rolling calendar offsets');
+  });
+
+  test('adds local filter', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        mode: 'exact',
+        rationale: 'The prompt asks for an average.',
+        analysisSpec: {
+          aggregations: [
+            {
+              denominatorId: null,
+              eventLabel: null,
+              fieldId: 'duration',
+              id: 'duration_average',
+              label: 'Average duration',
+              numeratorId: null,
+              operation: 'average',
+              outcomeLabel: null,
+              qualitativeLabel: null,
+              unit: 'min',
+            },
+          ],
+          charts: [],
+          extractionFields: [
+            {
+              countMode: null,
+              id: 'duration',
+              label: 'Duration',
+              labels: [],
+              scoreScale: null,
+              type: 'number',
+              unit: 'min',
+            },
+          ],
+          groupings: [],
+        },
+      })
+    ) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        generationTime: '2026-05-23T12:00:00.000Z',
+        prompt: 'Average duration over the last 3 months.',
+        records: [{ id: 'record-1', text: 'Duration: 10 min.' }],
+      })
+    ).resolves.toMatchObject({
+      analysisSpec: {
+        filters: [{ id: 'last_3_months', field: 'record.date' }],
+      },
+      mode: 'exact',
+    });
+  });
+
+  test('keeps temporal count exact', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        analysisSpec: null,
+        mode: 'narrative',
+        rationale: 'The prompt is simple.',
+      })
+    ) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        generationTime: '2026-05-23T12:00:00.000Z',
+        prompt: 'Count whining over the last 3 months.',
+        records: [{ id: 'record-1', text: 'Whined once.' }],
+      })
+    ).resolves.toMatchObject({
+      analysisSpec: {
+        aggregations: [{ eventLabel: 'whining', operation: 'count' }],
+        filters: [{ id: 'last_3_months', field: 'record.date' }],
+      },
+      mode: 'exact',
+    });
+  });
+
+  test('downgrades invalid exact plan', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        analysisSpec: null,
+        mode: 'exact',
+        rationale: 'Exact analysis would need numeric extraction.',
+      })
+    ) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        prompt:
+          'Make a line chart over time with Alone duration (min) and Peak distress (0-5). Summarize latest duration and max with distress <=2.',
+        records: [
+          {
+            date: '2026-05-20T00:00:00.000Z',
+            id: 'record-1',
+            text: 'Alone duration (min): 85\nPeak distress (0-5): 2',
+          },
+        ],
+      })
+    ).resolves.toEqual({ mode: 'narrative' });
+  });
+
+  test('samples planner records', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        analysisSpec: null,
+        mode: 'narrative',
+        rationale: null,
+      });
+    }) as never;
+
+    await openrouter.planCardAnalysis({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      prompt: 'Count whining by month.',
+      records: Array.from({ length: 80 }, (_item, index) => ({
+        date: `2026-05-${String((index % 28) + 1).padStart(2, '0')}T00:00:00.000Z`,
+        id: `record-${index}`,
+        tags: [{ name: index < 40 ? 'Session' : 'Trigger' }],
+        text: `Session ${index}`,
+      })),
+      totalRecordCount: 80,
+    });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      records?: {
+        samples?: {
+          firstRecords?: unknown[];
+          middleRecords?: unknown[];
+          recentRecords?: unknown[];
+        };
+        summary?: {
+          providedRecordCount?: number;
+          tagCounts?: Record<string, number>;
+          totalMatchingRecordCount?: number;
+        };
+      };
+    };
+
+    expect(userPayload.records?.summary).toMatchObject({
+      providedRecordCount: 80,
+      tagCounts: { Session: 40, Trigger: 40 },
+      totalMatchingRecordCount: 80,
+    });
+
+    expect(userPayload.records?.samples?.firstRecords).toHaveLength(12);
+    expect(userPayload.records?.samples?.middleRecords).toHaveLength(12);
+    expect(userPayload.records?.samples?.recentRecords).toHaveLength(24);
+  });
+
+  test('downgrades exact', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        analysisSpec: null,
+        mode: 'narrative',
+        rationale: 'The prompt asks for a comparison summary.',
+      })
+    ) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        prompt: 'Compare the mood of recent sessions.',
+        records: [{ id: 'record-1', text: 'Settled well.' }],
+      })
+    ).resolves.toEqual({ mode: 'narrative' });
+  });
+
+  test('keeps tag counts exact', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        mode: 'narrative',
+        rationale: 'The prompt is simple.',
+      })
+    ) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        prompt: 'Can you chart tag counts.',
+        records: [{ id: 'record-1', text: 'Tagged record.' }],
+      })
+    ).resolves.toMatchObject({
+      analysisSpec: {
+        aggregations: [{ id: 'record_count', operation: 'count' }],
+        charts: [{ id: 'tag_counts', x: { dimension: 'tag' } }],
+      },
+      mode: 'exact',
+    });
+  });
+
+  test('sends exact records', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        output: { summary: 'Exact direct counts.' },
+        title: 'Exact counts',
+      });
+    }) as never;
+
+    await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        metrics: [{ label: 'Records', value: 47 }],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 47,
+      },
+      prompt: 'Count whining and barking.',
+      records: Array.from({ length: 47 }, (_item, index) => ({
+        date: `2026-05-${String((index % 28) + 1).padStart(2, '0')}T00:00:00.000Z`,
+        id: `record-${index}`,
+        text: `Session ${index}`,
+      })),
+      totalRecordCount: 47,
+    });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      records?: { fullTextRecords?: unknown[]; mode?: string };
+      sourceRules?: string;
+    };
+
+    expect(userPayload.records?.mode).toBe('exact');
+    expect(userPayload.records?.fullTextRecords).toHaveLength(47);
+    expect(userPayload.sourceRules).toContain('computed deterministically');
+  });
+
+  test('sends exact facts', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        output: { summary: 'Exact extracted counts.' },
+        title: 'Exact counts',
+      });
+    }) as never;
+
+    await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {
+          barking_count: {
+            id: 'barking_count',
+            label: 'Barking',
+            operation: 'count',
+            recordIds: ['record-1'],
+            value: 8,
+          },
+        },
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        eventCounts: { barking: 8, whining: 14 },
+        metrics: [{ label: 'Barking', value: 8 }],
+        selectedTagCounts: { 'tag-a': 80 },
+        totalMatchingRecordCount: 80,
+      },
+      prompt: 'Count whining and barking.',
+      records: [
+        {
+          date: '2026-05-20T00:00:00.000Z',
+          id: 'record-1',
+          tags: [{ name: 'Session' }],
+          text: 'Whining once.',
+        },
+      ],
+      totalRecordCount: 80,
+    });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      exactFacts?: {
+        aggregateValues?: Record<string, { recordIds?: unknown }>;
+        analysisSpec?: unknown;
+        eventCounts?: Record<string, number>;
+      };
+      records?: { mode?: string };
+      sourceRules?: string;
+    };
+
+    expect(userPayload.records?.mode).toBe('exact');
+
+    expect(userPayload.exactFacts?.eventCounts).toEqual({
+      barking: 8,
+      whining: 14,
+    });
+
+    expect(userPayload.exactFacts?.analysisSpec).toBeUndefined();
+
+    expect(
+      userPayload.exactFacts?.aggregateValues?.barking_count?.recordIds
+    ).toBeUndefined();
+
+    expect(userPayload.sourceRules).toContain('locked');
+  });
+
+  test('dedupes exact metrics', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          chart: {
+            data: [{ label: 'links', value: 99 }],
+            title: 'Tag counts',
+            type: 'bar',
+          },
+          metrics: [{ label: 'Total records', value: 486 }],
+        },
+        title: 'Tag counts',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        chart: {
+          data: [{ label: 'links', value: 100 }],
+          title: 'Tag counts',
+          type: 'bar',
+        },
+        metrics: [
+          { label: 'Records', value: 485 },
+          { label: 'Sessions', value: 485 },
+        ],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 485,
+      },
+      prompt: 'Can you chart tag counts.',
+      records: [{ id: 'record-1', text: 'Tagged record.' }],
+      totalRecordCount: 485,
+    });
+
+    expect(result.output.chart?.data).toEqual([{ label: 'links', value: 100 }]);
+
+    expect(result.output.metrics).toEqual([
+      { label: 'Total records', value: 485 },
+      { label: 'Sessions', value: 485 },
+    ]);
+  });
+
+  test('keeps incompatible exact shape', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          chart: {
+            series: [
+              {
+                data: [{ label: '2026-05-20T00:00:00.000Z', value: 85 }],
+                label: 'Duration',
+                unit: 'min',
+              },
+            ],
+            title: 'Duration',
+            type: 'line',
+          },
+          metrics: [{ label: 'Latest duration', unit: 'min', value: 85 }],
+        },
+        title: 'Duration',
+      })
+    ) as never;
+
+    await expect(
+      openrouter.generateCardResult({
+        analysisMode: 'exact',
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        exactFacts: {
+          aggregateValues: {},
+          analysisSpec: {
+            aggregations: [],
+            charts: [],
+            extractionFields: [],
+            groupings: [],
+          },
+          chart: {
+            data: [{ label: 'alone duration (min)', value: 47 }],
+            title: 'Event counts',
+            type: 'bar',
+          },
+          metrics: [{ label: 'Alone duration min', value: 47 }],
+          selectedTagCounts: {},
+          totalMatchingRecordCount: 47,
+        },
+        prompt:
+          'Make a line chart over time with Alone duration (min) and Peak distress (0-5).',
+        records: [
+          {
+            date: '2026-05-20T00:00:00.000Z',
+            id: 'record-1',
+            text: 'Alone duration (min): 85\nPeak distress (0-5): 2',
+          },
+        ],
+      })
+    ).resolves.toMatchObject({
+      output: {
+        chart: { series: [{ label: 'Duration' }], type: 'line' },
+        metrics: [{ label: 'Latest duration', unit: 'min', value: 85 }],
+      },
+      success: true,
+    });
+  });
+
+  test('extracts record facts', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        records: [
+          {
+            events: [
+              {
+                count: 2,
+                evidence: 'Whined twice.',
+                fieldId: 'events',
+                label: 'Whining',
+              },
+            ],
+            evidence: [],
+            numericValues: [],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordIndex: 1,
+          },
+          {
+            events: [],
+            evidence: [],
+            numericValues: [],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordIndex: 2,
+          },
+        ],
+      });
+    }) as never;
+
+    await expect(
+      openrouter.extractRecordFacts({
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [
+            {
+              countMode: 'explicitOccurrences',
+              id: 'events',
+              label: 'Events',
+              labels: ['whining'],
+              type: 'event',
+            },
+          ],
+          groupings: [],
+        },
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        records: [
+          { id: 'record-1', text: 'Whined twice.' },
+          { id: 'record-2', text: 'Settled.' },
+        ],
+      })
+    ).resolves.toEqual([
+      {
+        events: [
+          {
+            count: 2,
+            evidence: 'Whined twice.',
+            fieldId: 'events',
+            label: 'whining',
+          },
+        ],
+        evidence: [],
+        numericValues: [],
+        outcomes: [],
+        qualitativeLabels: [],
+        recordId: 'record-1',
+      },
+      {
+        events: [],
+        evidence: [],
+        numericValues: [],
+        outcomes: [],
+        qualitativeLabels: [],
+        recordId: 'record-2',
+      },
+    ]);
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      records?: { id?: unknown; recordIndex?: number }[];
+    };
+
+    expect(userPayload.records?.[0]).toMatchObject({ recordIndex: 1 });
+    expect(userPayload.records?.[0]?.id).toBeUndefined();
+  });
+
+  test('rejects omitted facts', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        records: [
+          {
+            events: [],
+            evidence: [],
+            numericValues: [],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordIndex: 1,
+          },
+        ],
+      })
+    ) as never;
+
+    await expect(
+      openrouter.extractRecordFacts({
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        records: [
+          { id: 'record-1', text: 'Whined twice.' },
+          { id: 'record-2', text: 'Settled.' },
+        ],
+      })
+    ).rejects.toThrow('omitted records');
+  });
+
+  test('repairs omitted facts', async () => {
+    let callCount = 0;
+    let repairPayload: { repairMessage?: string } | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      callCount += 1;
+      const request = await readChatRequest(input, init);
+
+      const userMessage = request.messages?.find(
+        (message) => message.role === 'user'
+      );
+
+      repairPayload = JSON.parse(String(userMessage?.content));
+
+      return callCount === 1
+        ? jsonResponse({
+            records: [
+              {
+                events: [],
+                evidence: [],
+                numericValues: [],
+                outcomes: [],
+                qualitativeLabels: [],
+                recordIndex: 1,
+              },
+            ],
+          })
+        : jsonResponse({
+            records: [
+              {
+                events: [],
+                evidence: [],
+                numericValues: [],
+                outcomes: [],
+                qualitativeLabels: [],
+                recordIndex: 1,
+              },
+              {
+                events: [],
+                evidence: [],
+                numericValues: [],
+                outcomes: [],
+                qualitativeLabels: [],
+                recordIndex: 2,
+              },
+            ],
+          });
+    }) as never;
+
+    await expect(
+      openrouter.extractRecordFacts({
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        records: [
+          { id: 'record-1', text: 'Whined twice.' },
+          { id: 'record-2', text: 'Settled.' },
+        ],
+      })
+    ).resolves.toHaveLength(2);
+
+    expect(callCount).toBe(2);
+    expect(repairPayload?.repairMessage).toContain('every input recordIndex');
   });
 
   test('sends blueprint', async () => {
@@ -352,7 +1176,6 @@ describe('card openrouter', () => {
         output: {
           metrics: [{ label: 'Average', unit: 'hrs', value: 7 }],
           milestones: [],
-          sourceRecordIds: [],
         },
         title: 'Sleep',
       });
@@ -394,7 +1217,7 @@ describe('card openrouter', () => {
     expect(userPayload.outputRules).toContain('Do not add sections absent');
   });
 
-  test('sends existing card context', async () => {
+  test('sends card context', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
     globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
@@ -420,7 +1243,6 @@ describe('card openrouter', () => {
             },
             metrics: [{ label: 'Average sleep', unit: 'hrs', value: 7 }],
             milestones: [{ title: 'Baseline beat' }],
-            sourceRecordIds: ['record-1'],
             summary: 'Sleep trend already covers weekly averages.',
           },
           prompt: 'Track average sleep across the week.',
@@ -458,7 +1280,6 @@ describe('card openrouter', () => {
     };
 
     expect(userPayload.existingCards?.[0]).toMatchObject({
-      id: 'card-existing',
       sections: {
         chart: {
           seriesLabels: [],
@@ -472,6 +1293,7 @@ describe('card openrouter', () => {
       },
     });
 
+    expect(userPayload.existingCards?.[0]?.id).toBeUndefined();
     expect('tags' in (userPayload.existingCards?.[0] ?? {})).toBe(false);
     expect(userPayload.outputRules).toContain('existingCards');
     expect(userPayload.outputRules).toContain('exactly the same source tags');
@@ -479,7 +1301,7 @@ describe('card openrouter', () => {
     expect(userPayload.outputRules).toContain('unless the requested card');
   });
 
-  test('compacts suggestion context', async () => {
+  test('compacts suggestions', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
     globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
@@ -511,23 +1333,29 @@ describe('card openrouter', () => {
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
-      records?: { author?: unknown; tags?: unknown; text?: string }[];
+      records?: {
+        author?: unknown;
+        id?: unknown;
+        tags?: unknown;
+        text?: string;
+      }[];
+      supportedCharts?: string;
     };
 
     expect(systemMessage?.content).toContain('reusable');
-    expect(systemMessage?.content).toContain('dated user log entries');
-    expect(systemMessage?.content).toContain('future matching records');
+    expect(systemMessage?.content).toContain('dated tagged user log entries');
+    expect(systemMessage?.content).toContain('new matching records');
     expect(userPayload.outputRules).toContain('one editable prompt');
     expect(userPayload.outputRules).toContain('future records');
+    expect(userPayload.outputRules).toContain('supportedCharts');
+    expect(userPayload.supportedCharts).toContain('line charts and bar charts');
+    expect(userPayload.supportedCharts).toContain('not stacked or grouped');
+    expect(userPayload.supportedCharts).toContain('pie');
     expect(userPayload.records?.[0]?.text).toHaveLength(500);
     expect(userPayload.records?.[0]?.author).toBe('Cade');
     expect(userPayload.records?.[0]?.tags).toEqual(['progress']);
-    expect(requestBody?.response_format?.type).toBe('json_schema');
-
-    expect(requestBody?.response_format?.json_schema).toMatchObject({
-      name: 'llog_card_prompt_suggestion',
-      strict: true,
-    });
+    expect(userPayload.records?.[0]?.id).toBeUndefined();
+    expect(requestBody?.response_format?.type).toBe('json_object');
   });
 
   test('uses refresh schema', async () => {
@@ -541,18 +1369,16 @@ describe('card openrouter', () => {
           chart: null,
           metrics: [],
           milestones: [],
-          sourceRecordIds: [],
           summary: 'Updated summary.',
         },
       });
     }) as never;
 
-    await openrouter.refreshCardResult({
+    const result = await openrouter.refreshCardResult({
       env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
       previousOutput: {
         metrics: [],
-        milestones: [],
-        sourceRecordIds: [],
+        milestones: [{ title: 'Old source' }],
         summary: 'Old summary.',
       },
       prompt: 'Track sleep',
@@ -571,27 +1397,25 @@ describe('card openrouter', () => {
     );
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
+      card?: { previousOutput?: { milestones?: { title?: string }[] } };
       outputRules?: string;
     };
 
-    expect(requestBody?.response_format?.type).toBe('json_schema');
+    expect(result.output).not.toHaveProperty('sourceRecordIds');
 
-    expect(requestBody?.response_format?.json_schema).toMatchObject({
-      name: 'llog_card_refresh',
-      strict: true,
-    });
-
-    expect(requestBody?.response_format?.json_schema?.schema?.required).toEqual(
-      ['output']
+    expect(userPayload.card?.previousOutput?.milestones?.[0]?.title).toBe(
+      'Old source'
     );
+
+    expect(requestBody?.response_format?.type).toBe('json_object');
 
     expect(userPayload.outputRules).toContain(
       'curate the current best milestone set'
     );
 
-    expect(userPayload.outputRules).toContain('summary null');
+    expect(userPayload.outputRules).toContain('Prefer summary null');
     expect(userPayload.outputRules).toContain('keep its title and detail');
-    expect(userPayload.outputRules).toContain('recordIds exactly');
+    expect(userPayload.outputRules).toContain('date exactly');
   });
 
   test('handles refusal', async () => {

@@ -7,6 +7,7 @@ import { createLink } from '@/features/records/mutations/create-link';
 import { updateLink } from '@/features/records/mutations/update-link';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
 import { Field } from '@/ui/field';
@@ -27,7 +28,7 @@ export const LinkEditorSheet = () => {
   const payload = sheetPayloads.getRecordLinkEditorSheetPayload(sheetManager);
   const [label, setLabel] = React.useState('');
   const [url, setUrl] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runSubmit } = useSheetSubmitState({ isOpen });
   const isEditingLink = payload?.mode === 'edit';
   const createParent = payload?.mode === 'create' ? payload.parent : undefined;
   const linkId = payload?.mode === 'edit' ? payload.linkId : undefined;
@@ -210,8 +211,6 @@ export const LinkEditorSheet = () => {
   }, [sheetManager]);
 
   React.useEffect(() => {
-    setIsSubmitting(false);
-
     if (!isOpen || !payload) {
       setLabel('');
       setUrl('');
@@ -231,9 +230,8 @@ export const LinkEditorSheet = () => {
 
   const handleSubmit = React.useCallback(async () => {
     if (!canSubmit || !normalizedUrl) return;
-    setIsSubmitting(true);
 
-    try {
+    await runSubmit(async ({ keepPendingUntilClose }) => {
       if (isEditingLink) {
         if (!linkId) return;
 
@@ -254,6 +252,7 @@ export const LinkEditorSheet = () => {
           (localEditingLink && !queriedEditingLink)
         ) {
           close();
+          keepPendingUntilClose();
           return;
         }
 
@@ -264,6 +263,7 @@ export const LinkEditorSheet = () => {
         });
 
         close();
+        keepPendingUntilClose();
         return;
       }
 
@@ -281,6 +281,7 @@ export const LinkEditorSheet = () => {
         });
 
         close();
+        keepPendingUntilClose();
         return;
       } catch {
         const createdLinkId = id();
@@ -308,10 +309,9 @@ export const LinkEditorSheet = () => {
         });
 
         close();
+        keepPendingUntilClose();
       }
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   }, [
     canSubmit,
     close,
@@ -323,6 +323,7 @@ export const LinkEditorSheet = () => {
     normalizedUrl,
     parent,
     queriedEditingLink,
+    runSubmit,
     trimmedLabel,
   ]);
 

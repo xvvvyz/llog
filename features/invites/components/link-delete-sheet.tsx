@@ -1,6 +1,7 @@
 import { getInviteSheetPayload } from '@/features/invites/lib/sheet';
 import { deleteInviteLink } from '@/features/invites/mutations/delete-link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -15,26 +16,25 @@ export const InviteLinkDeleteSheet = () => {
     sheetManager.getPayload('invite-link-delete')
   );
 
-  const [isLoading, setIsLoading] = React.useState(false);
   const open = sheetManager.isOpen('invite-link-delete');
 
-  React.useEffect(() => {
-    if (open) setIsLoading(false);
-  }, [open]);
+  const { isSubmitting: isLoading, runSubmit } = useSheetSubmitState({
+    isOpen: open,
+  });
 
   const handleInvalidate = React.useCallback(async () => {
     if (!payload) return;
-    setIsLoading(true);
 
-    try {
-      await deleteInviteLink({ id: payload.inviteId });
-      sheetManager.close('invite-link-delete');
-      sheetManager.close('invite');
-    } catch {
-      setIsLoading(false);
-      // noop
-    }
-  }, [payload, sheetManager]);
+    await runSubmit(
+      async ({ keepPendingUntilClose }) => {
+        await deleteInviteLink({ id: payload.inviteId });
+        sheetManager.close('invite-link-delete');
+        sheetManager.close('invite');
+        keepPendingUntilClose();
+      },
+      { suppressError: true }
+    );
+  }, [payload, runSubmit, sheetManager]);
 
   return (
     <Sheet

@@ -32,7 +32,7 @@ describe('getTemplateTagChanges', () => {
   });
 });
 
-describe('resolveCopyTemplateTagsForTargetLog', () => {
+describe('copy template tags', () => {
   const sourceTags = [
     { color: 2, name: 'Ideas' },
     { color: 4, name: 'Reading' },

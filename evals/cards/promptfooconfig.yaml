@@ -20,6 +20,17 @@ tests:
       - type: javascript
         value: file://assertions/index.cjs:separationAnxiety
 
+  - description: planned separation anxiety stats
+    vars:
+      mode: planned
+      fixturePath: evals/cards/fixtures/separation-anxiety-sessions.json
+      promptPath: evals/cards/prompts/duration-progress.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:separationAnxiety
+
   - description: refresh separation anxiety stats
     vars:
       mode: refresh
@@ -53,6 +64,50 @@ tests:
       - type: javascript
         value: file://assertions/index.cjs:dateHandling
 
+  - description: generate exact small cached counts
+    vars:
+      mode: exact
+      fixturePath: evals/cards/fixtures/exact-small-counts.json
+      promptPath: evals/cards/prompts/exact-small-counts.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:exactCounts
+
+  - description: generate exact large cached counts
+    vars:
+      mode: exact
+      fixturePath: evals/cards/fixtures/exact-large-counts.json
+      promptPath: evals/cards/prompts/exact-large-counts.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:exactCounts
+
+  - description: generate exact last 3 months duration
+    vars:
+      mode: exact
+      fixturePath: evals/cards/fixtures/date-window-last-3-months.json
+      promptPath: evals/cards/prompts/exact-last-3-months-duration.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:exactCounts
+
+  - description: planned exact Feb Apr duration
+    vars:
+      mode: planned
+      fixturePath: evals/cards/fixtures/date-window-feb-apr.json
+      promptPath: evals/cards/prompts/exact-feb-apr-duration.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:exactCounts
+
   - description: tweak trigger resilience
     vars:
       mode: tweak
@@ -66,4 +121,4 @@ tests:
         value: file://assertions/index.cjs:triggerTweak
 
 commandLineOptions:
-  maxConcurrency: 2
+  maxConcurrency: 4

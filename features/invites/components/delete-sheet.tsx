@@ -1,6 +1,7 @@
 import { Role } from '@/domain/teams/role';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { db } from '@/lib/db';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
@@ -13,12 +14,11 @@ export const InviteDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const role = sheetManager.getId('invite-delete');
   const { invites } = useTeamInvites();
-  const [isLoading, setIsLoading] = React.useState(false);
   const open = sheetManager.isOpen('invite-delete');
 
-  React.useEffect(() => {
-    if (open) setIsLoading(false);
-  }, [open]);
+  const { isSubmitting: isLoading, runSubmit } = useSheetSubmitState({
+    isOpen: open,
+  });
 
   const label =
     role === Role.Admin
@@ -26,20 +26,20 @@ export const InviteDeleteSheet = () => {
       : 'Invalidate invite links?';
 
   const handleInvalidate = React.useCallback(async () => {
-    setIsLoading(true);
+    await runSubmit(
+      async ({ keepPendingUntilClose }) => {
+        const toDelete = invites.filter((l) => l.role === role);
 
-    try {
-      const toDelete = invites.filter((l) => l.role === role);
+        if (toDelete.length) {
+          await db.transact(toDelete.map((l) => db.tx.invites[l.id].delete()));
+        }
 
-      if (toDelete.length) {
-        await db.transact(toDelete.map((l) => db.tx.invites[l.id].delete()));
-      }
-
-      sheetManager.close('invite-delete');
-    } catch {
-      setIsLoading(false);
-    }
-  }, [invites, role, sheetManager]);
+        sheetManager.close('invite-delete');
+        keepPendingUntilClose();
+      },
+      { suppressError: true }
+    );
+  }, [invites, role, runSubmit, sheetManager]);
 
   return (
     <Sheet

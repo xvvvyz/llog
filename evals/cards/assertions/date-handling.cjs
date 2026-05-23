@@ -1,10 +1,4 @@
-const {
-  gradingResult,
-  includesAll,
-  parsePayload,
-  readFixture,
-} = require('./helpers.cjs');
-
+const { gradingResult, parsePayload, readFixture } = require('./helpers.cjs');
 const { isIsoDateTimeWithZone } = require('./date.cjs');
 
 const HUMAN_DATE_PATTERN =
@@ -18,11 +12,6 @@ exports.dateHandling = (output, context) => {
   const expected = fixture.expected?.dateHandling ?? {};
   const card = payload.output ?? {};
   const metrics = Array.isArray(card.metrics) ? card.metrics : [];
-
-  const sourceRecordIds = Array.isArray(card.sourceRecordIds)
-    ? card.sourceRecordIds
-    : [];
-
   const summary = String(card.summary ?? '');
 
   const firstDateMetric = metrics.find(
@@ -64,10 +53,6 @@ exports.dateHandling = (output, context) => {
         pass:
           !HUMAN_DATE_PATTERN.test(summary) &&
           !DATE_ONLY_TOKEN_PATTERN.test(summary),
-      },
-      {
-        name: 'date sources present',
-        pass: includesAll(sourceRecordIds, expected.sourceRecordIds ?? []),
       },
     ],
     reason: 'Date handling passed',

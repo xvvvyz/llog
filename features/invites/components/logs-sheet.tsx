@@ -7,14 +7,19 @@ import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { db } from '@/lib/db';
 import { Sheet } from '@/ui/sheet';
 import * as React from 'react';
 
 export const InviteLogsSheet = () => {
-  const [isLoading, setIsLoading] = React.useState(false);
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('invite-logs');
+
+  const { isSubmitting: isLoading, runSubmit } = useSheetSubmitState({
+    isOpen: open,
+  });
+
   const { activeTeamId } = useUi();
   const payload = sheetManager.getPayload('invite-logs');
   const teamId = payload?.teamId ?? activeTeamId;
@@ -30,7 +35,6 @@ export const InviteLogsSheet = () => {
     if (open) {
       setQuery('');
       setSelectedLogIds(new Set());
-      setIsLoading(false);
     }
   }, [open]);
 
@@ -72,20 +76,28 @@ export const InviteLogsSheet = () => {
 
   const handleConfirm = React.useCallback(async () => {
     if (!teamId || selectedLogIds.size === 0) return;
-    setIsLoading(true);
 
-    try {
-      const invite = await getInviteUrlForSelection();
-      sheetManager.close('invite-logs');
+    await runSubmit(
+      async ({ keepPendingUntilClose }) => {
+        const invite = await getInviteUrlForSelection();
+        sheetManager.close('invite-logs');
 
-      sheetManager.open('invite', invite.url, undefined, {
-        inviteId: invite.id,
-        teamId: invite.teamId,
-      });
-    } catch {
-      setIsLoading(false);
-    }
-  }, [teamId, selectedLogIds, sheetManager, getInviteUrlForSelection]);
+        sheetManager.open('invite', invite.url, undefined, {
+          inviteId: invite.id,
+          teamId: invite.teamId,
+        });
+
+        keepPendingUntilClose();
+      },
+      { suppressError: true }
+    );
+  }, [
+    teamId,
+    selectedLogIds,
+    runSubmit,
+    sheetManager,
+    getInviteUrlForSelection,
+  ]);
 
   const handleDismiss = React.useCallback(() => {
     sheetManager.close('invite-logs');

@@ -1,0 +1,1 @@
+Count whining and barking exactly. Show a bar chart with the event totals.
