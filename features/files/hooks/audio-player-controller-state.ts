@@ -66,13 +66,3 @@ export const getTimeLabelTime = ({
     ? displayTime
     : playerDuration;
 };
-
-export const getPlaybackStartTime = ({
-  displayTime,
-  didFinish,
-  playerDuration,
-}: {
-  displayTime: number;
-  didFinish: boolean;
-  playerDuration: number;
-}) => (didFinish || displayTime >= playerDuration ? 0 : displayTime);

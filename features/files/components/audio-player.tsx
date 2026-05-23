@@ -131,7 +131,7 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
     currentTime: controls.displayTime,
     disabled: controls.isDisabled,
     duration: controls.playerDuration,
-    isPlaying: controls.isPlaying,
+    isPlaying: controls.isMediaSessionPlaying,
     metadata: mediaSessionMetadata,
     onNextTrack: hasMediaSessionNext ? handleMediaSessionNext : undefined,
     onPause: controls.pause,

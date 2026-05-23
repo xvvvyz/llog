@@ -38,6 +38,7 @@ const PressPropagationBoundary = React.forwardRef<
       onPressOut,
       onTouchCancel,
       onTouchEnd,
+      onTouchMove,
       onTouchStart,
       ...props
     },
@@ -52,6 +53,7 @@ const PressPropagationBoundary = React.forwardRef<
       onPressOut={composeHandler(onPressOut)}
       onTouchCancel={composeHandler(onTouchCancel)}
       onTouchEnd={composeHandler(onTouchEnd)}
+      onTouchMove={composeHandler(onTouchMove)}
       onTouchStart={composeHandler(onTouchStart)}
       {...props}
     />

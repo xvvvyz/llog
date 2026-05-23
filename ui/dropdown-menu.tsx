@@ -132,6 +132,7 @@ const Content = React.forwardRef<
           onPress={handleOverlayPress}
           onStartShouldSetResponder={() => true}
           onTouchEnd={stopOverlayEvent}
+          onTouchMove={stopOverlayEvent}
           onTouchStart={handleOverlayTouchStart}
         >
           <Animated.View

@@ -467,6 +467,16 @@ export const useAudioPlayerController = ({
     [seekToResolvedTime]
   );
 
+  const restartFinishedPlayback = React.useCallback(async () => {
+    finishNotifiedRef.current = false;
+    hasObservedPlaybackRef.current = false;
+    await seekToResolvedTime(0, false, { skipIfAlreadyThere: true });
+    cancelPendingSeek();
+    setDisplayTime(0);
+    setPendingPlaybackTime(null);
+    startPlayback();
+  }, [cancelPendingSeek, seekToResolvedTime, startPlayback]);
+
   React.useEffect(() => {
     if (
       !active ||
@@ -482,23 +492,23 @@ export const useAudioPlayerController = ({
 
   const handlePlay = React.useCallback(async () => {
     if (!src) return;
+    const hasReachedEnd = playerDuration > 0 && displayTime >= playerDuration;
 
-    const startTime = audioPlayerControllerState.getPlaybackStartTime({
-      didFinish: effectiveDidFinish,
-      displayTime,
-      playerDuration,
-    });
+    if (effectiveDidFinish || hasReachedEnd) {
+      await restartFinishedPlayback();
+      return;
+    }
 
-    if (!effectiveDidFinish && isAtPlaybackTime(startTime)) {
+    if (isAtPlaybackTime(displayTime)) {
       cancelPendingSeek();
       clearScrubState();
-      setDisplayTime(startTime);
+      setDisplayTime(displayTime);
       setPendingPlaybackTime(null);
       startPlayback();
       return;
     }
 
-    await playFrom(startTime);
+    await playFrom(displayTime);
   }, [
     displayTime,
     effectiveDidFinish,
@@ -507,6 +517,7 @@ export const useAudioPlayerController = ({
     isAtPlaybackTime,
     playerDuration,
     playFrom,
+    restartFinishedPlayback,
     src,
     startPlayback,
   ]);
@@ -599,6 +610,7 @@ export const useAudioPlayerController = ({
     handleScrubMove,
     handleScrubStart: startScrub,
     isDisabled: disabled || !src,
+    isMediaSessionPlaying: effectiveIsPlaying,
     isPlaying,
     pause: handlePause,
     pendingPlaybackTime,
