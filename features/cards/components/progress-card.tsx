@@ -11,7 +11,14 @@ import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import * as cardDisplay from '@/features/cards/lib/card-display';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+
+import Svg, {
+  Circle,
+  Line,
+  Path,
+  Rect,
+  Text as SvgText,
+} from 'react-native-svg';
 
 import {
   MagnifyingGlass,
@@ -35,22 +42,41 @@ const COMPACT_BAR_CHART_PADDING = { bottom: 24, left: 0, right: 0, top: 8 };
 const HIDDEN_X_AXIS_BOTTOM_PADDING = 8;
 const MAX_Y_AXIS_TICKS = 6;
 const CHART_SCROLL_LOCK_DISTANCE = 8;
-const AXIS_LABEL_FONT_SIZE = 10;
-const COMPACT_AXIS_LABEL_FONT_SIZE = 9;
+const AXIS_LABEL_FONT_SIZE = 11;
 const AXIS_TICK_SIZE = 4;
 const X_AXIS_TICK_LABEL_GAP = 5;
+const X_AXIS_LABEL_MIN_GAP = 8;
 const Y_AXIS_TICK_LABEL_GAP = 8;
 const LINE_DOMAIN_PADDING = 0.08;
 const CHART_GRID_OPACITY = 0.35;
 const COMPACT_CHART_GRID_OPACITY = 0.24;
+const DETAIL_LINE_CHART_HEIGHT = 144;
+const DETAIL_STACKED_LINE_CHART_HEIGHT = 116;
 const AXIS_LABEL_HORIZONTAL_PADDING = 8;
 const MIN_AXIS_LABEL_MAX_LENGTH = 10;
 const BAR_CORNER_RADIUS = 5;
 const BAR_MAX_WIDTH = 44;
 const BAR_IDLE_OPACITY = 0.9;
 const BAR_DIMMED_OPACITY = 0.62;
+
+export const PROGRESS_CARD_PREVIEW_HEIGHT = 208;
+
+const HORIZONTAL_BAR_COMPACT_MIN_HEIGHT = 64;
+const HORIZONTAL_BAR_ROW_HEIGHT = 20;
+const HORIZONTAL_BAR_HEIGHT = 8;
+const HORIZONTAL_BAR_COMPACT_SLOTS_PER_PREVIEW_ROW = 2;
+const VERTICAL_BAR_MAX_CATEGORICAL_ITEMS = 4;
+const HORIZONTAL_BAR_LABEL_GAP = 8;
+const HORIZONTAL_BAR_VALUE_GAP = HORIZONTAL_BAR_LABEL_GAP;
+const HORIZONTAL_BAR_LABEL_MAX_WIDTH = 220;
+const HORIZONTAL_BAR_MIN_TRACK_WIDTH = 56;
+const HORIZONTAL_BAR_VALUE_MIN_WIDTH = 0;
 const CHART_TOOLTIP_WIDTH = 128;
 const CHART_TOOLTIP_HEIGHT = 46;
+const COMPACT_CHART_TOOLTIP_WIDTH = 112;
+const COMPACT_CHART_TOOLTIP_HEIGHT = 40;
+const CHART_TOOLTIP_GAP = 12;
+const BAR_CHART_TOOLTIP_GAP = 6;
 const CHART_TOOLTIP_HORIZONTAL_OVERFLOW = 16;
 
 const CHART_SVG_STYLE = {
@@ -196,6 +222,8 @@ const getChartPalette = ({
 
 type ChartPalette = ReturnType<typeof getChartPalette>;
 type ChartHoverTarget = { index: number; label: string };
+type BarChartOrientation = 'horizontal' | 'vertical';
+type XAxisLabelAnchor = 'end' | 'middle' | 'start';
 
 const trendIcons = {
   down: TrendDown,
@@ -234,6 +262,16 @@ const getPreviewSectionAlignment = (
   return 'center';
 };
 
+const getPreviewChartRows = ({
+  hasMetrics,
+  hasMilestones,
+  hasSummary,
+}: {
+  hasMetrics: boolean;
+  hasMilestones: boolean;
+  hasSummary: boolean;
+}) => (hasMetrics || hasMilestones || hasSummary ? 2 : SUMMARY_ROW_COUNT);
+
 const getPreviewSections = (output: CardOutput): PreviewSection[] => {
   const hasChart = cardChart.isRenderableChart(output.chart);
   const hasMetrics = output.metrics.length > 0;
@@ -245,15 +283,23 @@ const getPreviewSections = (output: CardOutput): PreviewSection[] => {
   const hasSummary = !!output.summary?.trim() && structuredSectionCount <= 1;
 
   if (hasChart) {
-    const chartRows =
-      hasMetrics || hasMilestones || hasSummary ? 2 : SUMMARY_ROW_COUNT;
+    const chartRows = getPreviewChartRows({
+      hasMetrics,
+      hasMilestones,
+      hasSummary,
+    });
+
+    const companionRows = SUMMARY_ROW_COUNT - chartRows;
 
     if (hasMetrics && chartRows < SUMMARY_ROW_COUNT) {
       return addPreviewSpacer([
         {
           key: 'metrics',
-          limit: SUMMARY_METRIC_LIMIT,
-          rows: 1,
+          limit:
+            companionRows > 1
+              ? SUMMARY_METRICS_ONLY_LIMIT
+              : SUMMARY_METRIC_LIMIT,
+          rows: companionRows,
           type: 'metrics',
         },
         { key: 'chart', rows: chartRows, type: 'chart' },
@@ -266,12 +312,17 @@ const getPreviewSections = (output: CardOutput): PreviewSection[] => {
 
     if (chartRows < SUMMARY_ROW_COUNT) {
       if (hasSummary) {
-        sections.push({ key: 'summary', lines: 2, rows: 1, type: 'summary' });
+        sections.push({
+          key: 'summary',
+          lines: companionRows * 2,
+          rows: companionRows,
+          type: 'summary',
+        });
       } else if (hasMilestones) {
         sections.push({
           key: 'milestones',
-          limit: 1,
-          rows: 1,
+          limit: companionRows,
+          rows: companionRows,
           type: 'milestones',
         });
       }
@@ -355,7 +406,49 @@ const getVisibleLabelIndexes = (count: number, maxLabels: number) => {
 const estimateAxisLabelWidth = (
   label: string,
   fontSize = AXIS_LABEL_FONT_SIZE
-) => label.length * fontSize * 0.58;
+) => {
+  const units = [...label].reduce((total, character) => {
+    if (/\s/.test(character)) return total + 0.28;
+    if (/[ilI1.,:;|!]/.test(character)) return total + 0.32;
+    if (/[mwMW@#%&]/.test(character)) return total + 0.86;
+    if (/[A-Z0-9]/.test(character)) return total + 0.62;
+    return total + 0.52;
+  }, 0);
+
+  return units * fontSize;
+};
+
+const truncateAxisLabelToWidth = ({
+  fontSize = AXIS_LABEL_FONT_SIZE,
+  label,
+  width,
+}: {
+  fontSize?: number;
+  label: string;
+  width: number;
+}) => {
+  if (width <= 0) return '';
+  const trimmed = label.trim();
+
+  if (!trimmed || estimateAxisLabelWidth(trimmed, fontSize) <= width) {
+    return trimmed;
+  }
+
+  const suffix = '...';
+  const suffixWidth = estimateAxisLabelWidth(suffix, fontSize);
+  if (suffixWidth > width) return '';
+  const maxTextWidth = Math.max(0, width - suffixWidth);
+  let result = '';
+
+  for (const character of trimmed) {
+    const next = `${result}${character}`;
+    if (estimateAxisLabelWidth(next, fontSize) > maxTextWidth) break;
+    result = next;
+  }
+
+  const truncated = result.trimEnd();
+  return truncated ? `${truncated}${suffix}` : suffix;
+};
 
 const getXAxisLabelSlotWidth = ({
   count,
@@ -384,6 +477,11 @@ const getXAxisLabelIndexes = ({
   const count = labels.length;
   if (!count) return new Set<number>();
   if (count === 1) return new Set([0]);
+
+  if (type === 'bar' && count <= VERTICAL_BAR_MAX_CATEGORICAL_ITEMS) {
+    return getVisibleLabelIndexes(count, count);
+  }
+
   const slotWidth = getXAxisLabelSlotWidth({ count, innerWidth, type });
   const widestLabel = Math.max(...labels.map(estimateAxisLabelWidth));
   const canShowAll = widestLabel + 8 <= slotWidth;
@@ -440,10 +538,98 @@ const getXAxisLabelMaxLength = ({
   );
 };
 
-const getLabelAnchor = (index: number, count: number) => {
+const getLabelAnchor = (index: number, count: number): XAxisLabelAnchor => {
   if (index === 0) return 'start';
   if (index === count - 1) return 'end';
   return 'middle';
+};
+
+const getCenteredXAxisLabels = ({
+  fontSize,
+  innerWidth,
+  labels,
+  positions,
+  visibleLabelIndexes,
+}: {
+  fontSize: number;
+  innerWidth: number;
+  labels: string[];
+  positions: number[];
+  visibleLabelIndexes: Set<number>;
+}) => {
+  const visibleIndexes = [...visibleLabelIndexes]
+    .filter((index) => positions[index] != null)
+    .sort((a, b) => a - b);
+
+  const visibleOrders = new Map(
+    visibleIndexes.map((index, order) => [index, order])
+  );
+
+  return labels.map((label, index) => {
+    const position = positions[index] ?? 0;
+    const visibleOrder = visibleOrders.get(index);
+    if (visibleOrder == null) return '';
+    const previousPosition = positions[visibleIndexes[visibleOrder - 1] ?? -1];
+    const nextPosition = positions[visibleIndexes[visibleOrder + 1] ?? -1];
+    const edgeWidth = Math.min(position, innerWidth - position) * 2;
+
+    const previousWidth =
+      previousPosition == null
+        ? Number.POSITIVE_INFINITY
+        : position - previousPosition - X_AXIS_LABEL_MIN_GAP;
+
+    const nextWidth =
+      nextPosition == null
+        ? Number.POSITIVE_INFINITY
+        : nextPosition - position - X_AXIS_LABEL_MIN_GAP;
+
+    return truncateAxisLabelToWidth({
+      fontSize,
+      label,
+      width: Math.max(0, Math.min(edgeWidth, previousWidth, nextWidth)),
+    });
+  });
+};
+
+const getVerticalBarMaxGap = ({
+  barWidth,
+  fontSize,
+  labels,
+  visibleLabelIndexes,
+}: {
+  barWidth: number;
+  fontSize: number;
+  labels: string[];
+  visibleLabelIndexes: Set<number>;
+}) => {
+  const visibleIndexes = [...visibleLabelIndexes]
+    .filter((index) => labels[index] != null)
+    .sort((a, b) => a - b);
+
+  const labelWidths = new Map(
+    visibleIndexes.map((index) => [
+      index,
+      estimateAxisLabelWidth(labels[index] ?? '', fontSize),
+    ])
+  );
+
+  let requiredStep = barWidth + X_AXIS_LABEL_MIN_GAP;
+
+  visibleIndexes.slice(1).forEach((index, order) => {
+    const previousIndex = visibleIndexes[order];
+    const labelWidth = labelWidths.get(index) ?? 0;
+    const previousLabelWidth = labelWidths.get(previousIndex) ?? 0;
+    const indexGap = index - previousIndex;
+    if (indexGap <= 0) return;
+
+    requiredStep = Math.max(
+      requiredStep,
+      (previousLabelWidth / 2 + labelWidth / 2 + X_AXIS_LABEL_MIN_GAP) /
+        indexGap
+    );
+  });
+
+  return Math.max(X_AXIS_LABEL_MIN_GAP, Math.ceil(requiredStep - barWidth));
 };
 
 const getSeriesColor = (colors: ChartPalette, index: number) =>
@@ -451,6 +637,161 @@ const getSeriesColor = (colors: ChartPalette, index: number) =>
 
 const getSeriesFill = (colors: ChartPalette, index: number) =>
   colors.fills[index % colors.fills.length];
+
+const getBarChartOrientation = (
+  data: cardChart.ResolvedChartSeries['data']
+): BarChartOrientation => {
+  if (!data.length) return 'vertical';
+
+  if (data.some((item) => cardChart.parseChartLabelDate(item.label))) {
+    return 'vertical';
+  }
+
+  if (data.length <= VERTICAL_BAR_MAX_CATEGORICAL_ITEMS) return 'vertical';
+
+  return cardChart.hasNonNegativeValues(data.map((item) => item.value))
+    ? 'horizontal'
+    : 'vertical';
+};
+
+const getHorizontalBarChartHeight = ({
+  compact,
+  count,
+}: {
+  compact?: boolean;
+  count: number;
+}) =>
+  compact
+    ? Math.max(
+        HORIZONTAL_BAR_COMPACT_MIN_HEIGHT,
+        count * HORIZONTAL_BAR_ROW_HEIGHT
+      )
+    : Math.max(
+        0,
+        (count - 1) * HORIZONTAL_BAR_ROW_HEIGHT + HORIZONTAL_BAR_HEIGHT
+      );
+
+type HorizontalBarLayoutItem = cardChart.BarChartItem & { labelY: number };
+
+const getHorizontalBarLayout = ({
+  chartHeight,
+  chartWidth,
+  compact,
+  compactSlotCount,
+  data,
+  decimals,
+}: {
+  chartHeight: number;
+  chartWidth: number;
+  compact?: boolean;
+  compactSlotCount?: number;
+  data: cardChart.ResolvedChartSeries['data'];
+  decimals?: NonNullable<CardChart['yAxis']>['decimals'];
+}) => {
+  const labelFontSize = AXIS_LABEL_FONT_SIZE;
+  const values = data.map((item) => item.value);
+
+  const valueLabels = data.map((item) =>
+    cardChart.formatChartAxisValue({ decimals, value: item.value })
+  );
+
+  const displayLabels = data.map((item) =>
+    cardChart.formatChartTickLabel(item.label, {
+      maxLength: Number.POSITIVE_INFINITY,
+    })
+  );
+
+  const valueLabelWidth = Math.ceil(
+    Math.max(
+      HORIZONTAL_BAR_VALUE_MIN_WIDTH,
+      ...valueLabels.map((label) =>
+        estimateAxisLabelWidth(label, labelFontSize)
+      )
+    )
+  );
+
+  const availableLabelWidth = Math.max(
+    0,
+    chartWidth -
+      HORIZONTAL_BAR_MIN_TRACK_WIDTH -
+      HORIZONTAL_BAR_LABEL_GAP -
+      HORIZONTAL_BAR_VALUE_GAP -
+      valueLabelWidth
+  );
+
+  const maxLabelWidth = Math.min(
+    HORIZONTAL_BAR_LABEL_MAX_WIDTH,
+    availableLabelWidth
+  );
+
+  const labelWidth = Math.ceil(
+    Math.min(
+      maxLabelWidth,
+      Math.max(
+        0,
+        ...displayLabels.map((label) =>
+          estimateAxisLabelWidth(label, labelFontSize)
+        )
+      )
+    )
+  );
+
+  const labels = displayLabels.map((label) =>
+    truncateAxisLabelToWidth({
+      fontSize: labelFontSize,
+      label,
+      width: labelWidth,
+    })
+  );
+
+  const barX = labelWidth + HORIZONTAL_BAR_LABEL_GAP;
+
+  const barWidth = Math.max(
+    1,
+    chartWidth -
+      labelWidth -
+      HORIZONTAL_BAR_LABEL_GAP -
+      HORIZONTAL_BAR_VALUE_GAP -
+      valueLabelWidth
+  );
+
+  const maxValue = Math.max(1, ...values);
+  const verticalPadding = compact ? 2 : 6;
+  const availableHeight = Math.max(1, chartHeight - verticalPadding * 2);
+  const slotCount = compactSlotCount ?? data.length;
+
+  const rowStep = compact
+    ? availableHeight / Math.max(1, slotCount)
+    : HORIZONTAL_BAR_ROW_HEIGHT;
+
+  const barHeight = compact
+    ? Math.min(HORIZONTAL_BAR_HEIGHT, Math.max(4, rowStep * 0.46))
+    : HORIZONTAL_BAR_HEIGHT;
+
+  const barGroupHeight = (data.length - 1) * rowStep + barHeight;
+
+  const barStackTop = compact
+    ? verticalPadding + Math.max(0, (availableHeight - barGroupHeight) / 2)
+    : Math.max(0, chartHeight - barGroupHeight);
+
+  const bars: HorizontalBarLayoutItem[] = data.map((item, index) => {
+    const rawWidth = (item.value / maxValue) * barWidth;
+    const width = item.value <= 0 ? 1 : Math.max(1, rawWidth);
+    const y = barStackTop + index * rowStep;
+
+    return {
+      height: barHeight,
+      label: item.label,
+      labelY: y + barHeight / 2,
+      value: item.value,
+      width,
+      x: barX,
+      y,
+    };
+  });
+
+  return { bars, barWidth, labelFontSize, labels, labelWidth, valueLabels };
+};
 
 const normalizeChartLabelName = (value?: string | null) =>
   (value ?? '').trim().replace(/^#/, '').replace(/\s+/g, ' ').toLowerCase();
@@ -581,17 +922,6 @@ const buildBarPath = ({
     'Z',
   ].join(' ');
 };
-
-const getAxisLabelFontSize = ({
-  compact,
-  type,
-}: {
-  compact?: boolean;
-  type: CardChart['type'];
-}) =>
-  compact && type !== 'bar'
-    ? COMPACT_AXIS_LABEL_FONT_SIZE
-    : AXIS_LABEL_FONT_SIZE;
 
 const getYAxisTickCount = ({
   compact,
@@ -823,7 +1153,9 @@ const ChartLegend = ({
             <Text
               numberOfLines={1}
               className={cn(
-                'text-muted-foreground',
+                chart.type === 'bar'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground',
                 compact ? 'text-[11px]' : 'text-xs'
               )}
             >
@@ -838,9 +1170,11 @@ const ChartLegend = ({
 
 const SingleSeriesChart = ({
   barFills,
+  barOrientation = 'vertical',
   color,
   colors,
   compact,
+  compactRows,
   data,
   domain: domainOverride,
   fill,
@@ -856,9 +1190,11 @@ const SingleSeriesChart = ({
   yAxisLabelWidth: sharedYAxisLabelWidth,
 }: {
   barFills?: (string | undefined)[];
+  barOrientation?: BarChartOrientation;
   color: string;
   colors: ChartPalette;
   compact?: boolean;
+  compactRows?: number;
   data: cardChart.ResolvedChartSeries['data'];
   domain?: cardChart.ChartDomain;
   fill: string;
@@ -884,18 +1220,39 @@ const SingleSeriesChart = ({
 
   const touchScrollLockRef = React.useRef<ChartTouchScrollLock | null>(null);
 
+  const isHorizontalBar =
+    type === 'bar' && barOrientation === 'horizontal' && data.length > 0;
+
+  const compactHorizontalBarLimit =
+    compact && isHorizontalBar && compactRows
+      ? Math.max(
+          1,
+          Math.floor(compactRows * HORIZONTAL_BAR_COMPACT_SLOTS_PER_PREVIEW_ROW)
+        )
+      : undefined;
+
+  const horizontalBarData =
+    isHorizontalBar && compactHorizontalBarLimit
+      ? data.slice(0, compactHorizontalBarLimit)
+      : data;
+
   const stackedXAxisReserve =
     !compact && stacked && showXAxisLabels
       ? CHART_PADDING.bottom - HIDDEN_X_AXIS_BOTTOM_PADDING
       : 0;
 
-  const fallbackChartHeight = compact
-    ? stacked
-      ? 30
-      : 64
-    : stacked
-      ? 104 + stackedXAxisReserve
-      : 128;
+  const fallbackChartHeight = isHorizontalBar
+    ? getHorizontalBarChartHeight({ compact, count: horizontalBarData.length })
+    : compact
+      ? stacked
+        ? 30
+        : 64
+      : stacked
+        ? (type === 'line' ? DETAIL_STACKED_LINE_CHART_HEIGHT : 104) +
+          stackedXAxisReserve
+        : type === 'line'
+          ? DETAIL_LINE_CHART_HEIGHT
+          : 128;
 
   const chartHeight =
     fillHeight && containerSize.height
@@ -903,9 +1260,9 @@ const SingleSeriesChart = ({
       : fallbackChartHeight;
 
   const chartWidth = Math.max(0, containerSize.width);
-  const showAxes = !compact || type === 'bar';
+  const showAxes = !isHorizontalBar && (!compact || type === 'bar');
   const showAxisXAxisLabels = showAxes && showXAxisLabels;
-  const axisLabelFontSize = getAxisLabelFontSize({ compact, type });
+  const axisLabelFontSize = AXIS_LABEL_FONT_SIZE;
   const values = data.map((item) => item.value);
   const sharedLineHover = type === 'line' && !!onHoverTargetChange;
 
@@ -1042,15 +1399,15 @@ const SingleSeriesChart = ({
     () => ({
       alignSelf: 'stretch' as const,
       ...(fillHeight
-        ? { flex: 1, minHeight: fallbackChartHeight }
+        ? { flex: 1, minHeight: compact ? 0 : fallbackChartHeight }
         : { height: fallbackChartHeight }),
       overflow: 'visible' as const,
-      ...(Platform.OS === 'web' && !compact
+      ...(Platform.OS === 'web' && !isHorizontalBar
         ? { touchAction: 'pan-y' as const }
         : undefined),
       width: '100%' as const,
     }),
-    [compact, fallbackChartHeight, fillHeight]
+    [compact, fallbackChartHeight, fillHeight, isHorizontalBar]
   );
 
   const handleLayout = React.useCallback((event: LayoutChangeEvent) => {
@@ -1066,7 +1423,7 @@ const SingleSeriesChart = ({
 
   const handleChartTouchStart = React.useCallback(
     (event: GestureResponderEvent) => {
-      if (Platform.OS !== 'web' || compact) return;
+      if (Platform.OS !== 'web' || isHorizontalBar) return;
 
       touchScrollLockRef.current = {
         locked: false,
@@ -1074,12 +1431,12 @@ const SingleSeriesChart = ({
         startY: event.nativeEvent.pageY,
       };
     },
-    [compact]
+    [isHorizontalBar]
   );
 
   const handleChartTouchMove = React.useCallback(
     (event: GestureResponderEvent) => {
-      if (Platform.OS !== 'web' || compact) return;
+      if (Platform.OS !== 'web' || isHorizontalBar) return;
       const touchState = touchScrollLockRef.current;
       if (!touchState) return;
 
@@ -1096,7 +1453,7 @@ const SingleSeriesChart = ({
       touchState.locked = true;
       event.preventDefault();
     },
-    [compact]
+    [isHorizontalBar]
   );
 
   const resetChartTouchScrollLock = React.useCallback(() => {
@@ -1108,24 +1465,40 @@ const SingleSeriesChart = ({
   }, [updateHoveredIndex]);
 
   const renderTooltip = ({
+    gap = CHART_TOOLTIP_GAP,
     index,
     x,
     y,
   }: {
+    gap?: number;
     index: number | null;
     x: number;
     y: number;
   }) => {
-    if (index == null || Platform.OS !== 'web' || compact) return null;
+    if (index == null || Platform.OS !== 'web') return null;
     const item = data[index];
     if (!item) return null;
 
-    const value = cardChart.formatChartAxisValue({
+    const formattedValue = cardChart.formatChartAxisValue({
       decimals: yAxis?.decimals,
       value: item.value,
     });
 
-    const tooltipHalfWidth = CHART_TOOLTIP_WIDTH / 2;
+    const trimmedUnit = unit?.trim();
+
+    const value = trimmedUnit
+      ? `${formattedValue} ${trimmedUnit}`
+      : formattedValue;
+
+    const tooltipWidth = compact
+      ? COMPACT_CHART_TOOLTIP_WIDTH
+      : CHART_TOOLTIP_WIDTH;
+
+    const tooltipHeight = compact
+      ? COMPACT_CHART_TOOLTIP_HEIGHT
+      : CHART_TOOLTIP_HEIGHT;
+
+    const tooltipHalfWidth = tooltipWidth / 2;
     const minLeft = tooltipHalfWidth - CHART_TOOLTIP_HORIZONTAL_OVERFLOW;
 
     const maxLeft =
@@ -1137,19 +1510,28 @@ const SingleSeriesChart = ({
         : Math.max(minLeft, Math.min(maxLeft, x));
 
     const top = Math.max(
-      -CHART_TOOLTIP_HEIGHT - 8,
-      Math.min(chartHeight + 8, y - CHART_TOOLTIP_HEIGHT - 12)
+      -tooltipHeight - 8,
+      Math.min(chartHeight + 8, y - tooltipHeight - gap)
     );
 
     return (
       <View
         className="absolute z-10 px-2 py-1 border-border-secondary rounded-lg bg-popover shadow-sm pointer-events-none border web:-translate-x-1/2"
-        style={{ left, maxWidth: CHART_TOOLTIP_WIDTH, top }}
+        style={{ left, maxWidth: tooltipWidth, top }}
       >
-        <Text className="font-medium text-xs" numberOfLines={1}>
+        <Text
+          className={cn('font-medium', compact ? 'text-[11px]' : 'text-xs')}
+          numberOfLines={1}
+        >
           {value}
         </Text>
-        <Text className="text-[11px] text-muted-foreground" numberOfLines={1}>
+        <Text
+          numberOfLines={1}
+          className={cn(
+            'text-muted-foreground',
+            compact ? 'text-[10px]' : 'text-[11px]'
+          )}
+        >
           {formatChartTooltipLabel(item.label)}
         </Text>
       </View>
@@ -1231,16 +1613,113 @@ const SingleSeriesChart = ({
   }
 
   if (type === 'bar') {
+    if (isHorizontalBar) {
+      const horizontalLayout = getHorizontalBarLayout({
+        chartHeight,
+        chartWidth,
+        compact,
+        compactSlotCount: compactHorizontalBarLimit,
+        data: horizontalBarData,
+        decimals: yAxis?.decimals,
+      });
+
+      return (
+        <View
+          className="overflow-visible w-full"
+          onLayout={handleLayout}
+          onTouchCancel={resetChartTouchScrollLock}
+          onTouchEnd={resetChartTouchScrollLock}
+          onTouchMove={handleChartTouchMove}
+          onTouchStart={handleChartTouchStart}
+          style={chartContainerStyle}
+        >
+          <Svg
+            height={chartHeight}
+            style={CHART_SVG_STYLE}
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            width="100%"
+          >
+            {horizontalLayout.bars.map((bar, index) => {
+              const barFill = barFills?.[index] ?? fill;
+
+              return (
+                <React.Fragment key={`${bar.label}-${index}`}>
+                  <SvgText
+                    alignmentBaseline="middle"
+                    fill={colors.text}
+                    fontSize={horizontalLayout.labelFontSize}
+                    textAnchor="end"
+                    x={horizontalLayout.labelWidth}
+                    y={bar.labelY}
+                  >
+                    {horizontalLayout.labels[index]}
+                  </SvgText>
+                  <Rect
+                    fill={colors.axis}
+                    height={bar.height}
+                    opacity={compact ? 0.16 : 0.18}
+                    rx={bar.height / 2}
+                    width={horizontalLayout.barWidth}
+                    x={bar.x}
+                    y={bar.y}
+                  />
+                  <Rect
+                    fill={barFill}
+                    height={bar.height}
+                    opacity={BAR_IDLE_OPACITY}
+                    rx={bar.height / 2}
+                    width={bar.width}
+                    x={bar.x}
+                    y={bar.y}
+                  />
+                  <SvgText
+                    alignmentBaseline="middle"
+                    fill={colors.text}
+                    fontSize={horizontalLayout.labelFontSize}
+                    textAnchor="start"
+                    y={bar.labelY}
+                    x={
+                      bar.x +
+                      horizontalLayout.barWidth +
+                      HORIZONTAL_BAR_VALUE_GAP
+                    }
+                  >
+                    {horizontalLayout.valueLabels[index]}
+                  </SvgText>
+                </React.Fragment>
+              );
+            })}
+          </Svg>
+        </View>
+      );
+    }
+
     const bars = cardChart.getBarChartItems({
       chart: { data, ...(unit && { unit }) },
       domain: yAxisScale.domain,
       edgeGap: compact ? 0 : undefined,
       height: innerHeight,
+      maxBarGap: getVerticalBarMaxGap({
+        barWidth: BAR_MAX_WIDTH,
+        fontSize: axisLabelFontSize,
+        labels: fullXAxisLabels,
+        visibleLabelIndexes: showAxisXAxisLabels
+          ? visibleLabelIndexes
+          : new Set<number>(),
+      }),
       maxBarWidth: BAR_MAX_WIDTH,
       width: innerWidth,
     });
 
     if (!bars.length) return null;
+
+    const barXAxisLabels = getCenteredXAxisLabels({
+      fontSize: axisLabelFontSize,
+      innerWidth,
+      labels: fullXAxisLabels,
+      positions: bars.map((bar) => bar.x + bar.width / 2),
+      visibleLabelIndexes,
+    });
 
     const handleBarPointerTarget = (event: unknown) => {
       const pointerX = readChartPointerX(event);
@@ -1268,10 +1747,10 @@ const SingleSeriesChart = ({
         onTouchStart={handleChartTouchStart}
         style={chartContainerStyle}
         onPointerDown={
-          Platform.OS === 'web' && !compact ? handleBarPointerTarget : undefined
+          Platform.OS === 'web' ? handleBarPointerTarget : undefined
         }
         onPointerMove={
-          Platform.OS === 'web' && !compact ? handleBarPointerTarget : undefined
+          Platform.OS === 'web' ? handleBarPointerTarget : undefined
         }
       >
         <Svg
@@ -1283,7 +1762,7 @@ const SingleSeriesChart = ({
           {axes}
           {bars.map((bar, index) => {
             const barFill = barFills?.[index] ?? fill;
-            const isHovered = hoveredIndex === index && !compact;
+            const isHovered = hoveredIndex === index;
 
             const opacity =
               hoveredIndex == null || hoveredIndex === index
@@ -1295,9 +1774,6 @@ const SingleSeriesChart = ({
                 <Path
                   fill={barFill}
                   opacity={isHovered ? 1 : opacity}
-                  stroke={isHovered ? barFill : undefined}
-                  strokeOpacity={isHovered ? 0.5 : 0}
-                  strokeWidth={isHovered ? 1.5 : 0}
                   d={buildBarPath({
                     ...bar,
                     radius: BAR_CORNER_RADIUS,
@@ -1323,7 +1799,7 @@ const SingleSeriesChart = ({
                       x={padding.left + bar.x + bar.width / 2}
                       y={xAxisLabelY}
                     >
-                      {xAxisLabels[index]}
+                      {barXAxisLabels[index] ?? xAxisLabels[index]}
                     </SvgText>
                   </React.Fragment>
                 )}
@@ -1333,6 +1809,7 @@ const SingleSeriesChart = ({
         </Svg>
         {hoveredBar &&
           renderTooltip({
+            gap: BAR_CHART_TOOLTIP_GAP,
             index: hoveredIndex,
             x: padding.left + hoveredBar.x + hoveredBar.width / 2,
             y: padding.top + hoveredBar.y,
@@ -1397,10 +1874,10 @@ const SingleSeriesChart = ({
       onTouchStart={handleChartTouchStart}
       style={chartContainerStyle}
       onPointerDown={
-        Platform.OS === 'web' && !compact ? handleLinePointerTarget : undefined
+        Platform.OS === 'web' ? handleLinePointerTarget : undefined
       }
       onPointerMove={
-        Platform.OS === 'web' && !compact ? handleLinePointerTarget : undefined
+        Platform.OS === 'web' ? handleLinePointerTarget : undefined
       }
     >
       <Svg
@@ -1465,8 +1942,10 @@ const SingleSeriesChart = ({
                 cy={padding.top + point.y}
                 fill={color}
                 r={
-                  index === hoveredIndex && !compact
-                    ? 4
+                  index === hoveredIndex
+                    ? compact
+                      ? 3
+                      : 4
                     : index === points.length - 1 && !compact
                       ? 3.5
                       : 2
@@ -1510,11 +1989,13 @@ const SingleSeriesChart = ({
 const Chart = ({
   chart,
   compact,
+  compactRows,
   logColorIndex,
   tags,
 }: {
   chart: CardChart;
   compact?: boolean;
+  compactRows?: number;
   logColorIndex?: Color;
   tags?: ChartLabelTag[];
 }) => {
@@ -1535,13 +2016,20 @@ const Chart = ({
   const stacked = series.length > 1;
   if (!series.length) return null;
 
+  const barOrientation =
+    chart.type === 'bar'
+      ? getBarChartOrientation(series[0]?.data ?? [])
+      : 'vertical';
+
   const barFills =
     chart.type === 'bar'
       ? getBarFills({ colorScheme, colors, data: series[0]?.data ?? [], tags })
       : undefined;
 
-  const showAxes = !compact || chart.type === 'bar';
-  const axisLabelFontSize = getAxisLabelFontSize({ compact, type: chart.type });
+  const showAxes =
+    barOrientation === 'horizontal' ? false : !compact || chart.type === 'bar';
+
+  const axisLabelFontSize = AXIS_LABEL_FONT_SIZE;
   const yAxisTickCount = getYAxisTickCount({ compact, yAxis: chart.yAxis });
 
   const shouldShareLineDomain =
@@ -1611,9 +2099,11 @@ const Chart = ({
         <SingleSeriesChart
           key={`${item.label}-${index}`}
           barFills={index === 0 ? barFills : undefined}
+          barOrientation={barOrientation}
           color={getSeriesColor(colors, index)}
           colors={colors}
           compact={compact}
+          compactRows={compactRows}
           data={item.data}
           domain={domains[index]}
           fill={getSeriesFill(colors, index)}
@@ -1795,6 +2285,12 @@ export const ProgressCard = ({
     !resolvedOutput.milestones.length &&
     !hasRenderableChart;
 
+  const hasHorizontalBarChart =
+    resolvedOutput?.chart?.type === 'bar' &&
+    getBarChartOrientation(
+      cardChart.getRenderableChartSeries(resolvedOutput.chart)[0]?.data ?? []
+    ) === 'horizontal';
+
   const showEmptyState = !isGenerating && !resolvedOutput && !card.error;
 
   const milestoneDotColor =
@@ -1940,6 +2436,7 @@ export const ProgressCard = ({
           <Chart
             chart={resolvedOutput.chart}
             compact
+            compactRows={section.rows}
             logColorIndex={logColorIndex}
             tags={resolvedChartTags}
           />
@@ -2009,7 +2506,12 @@ export const ProgressCard = ({
           <View className="mt-8 w-full gap-8 self-stretch">
             {renderMetrics()}
             {hasRenderableChart && resolvedOutput.chart && (
-              <View className="w-full gap-2 self-stretch">
+              <View
+                className={cn(
+                  'w-full self-stretch',
+                  hasHorizontalBarChart ? 'gap-4' : 'gap-2'
+                )}
+              >
                 {showChartKey && (
                   <ChartLegend
                     chart={resolvedOutput.chart}
@@ -2046,14 +2548,29 @@ export const ProgressCard = ({
     </React.Fragment>
   );
 
+  const previewHeightStyle = isSummary
+    ? { height: PROGRESS_CARD_PREVIEW_HEIGHT }
+    : undefined;
+
   const content = isFramed ? (
-    <Card className={cn('p-4', isSummary && 'h-52', className)}>{body}</Card>
+    <Card className={cn('p-4', className)} style={previewHeightStyle}>
+      {body}
+    </Card>
   ) : (
-    <View className={cn('w-full self-stretch', className)}>{body}</View>
+    <View
+      className={cn('w-full self-stretch', className)}
+      style={previewHeightStyle}
+    >
+      {body}
+    </View>
   );
 
   return onPress ? (
-    <Pressable className="w-full rounded-2xl" onPress={onPress}>
+    <Pressable
+      className="w-full rounded-2xl"
+      onPress={onPress}
+      style={previewHeightStyle}
+    >
       {content}
     </Pressable>
   ) : (

@@ -227,6 +227,7 @@ export const getBarChartItems = ({
   chart,
   gap = 8,
   height,
+  maxBarGap,
   maxBarWidth,
   width,
 }: {
@@ -236,6 +237,7 @@ export const getBarChartItems = ({
   edgeGap?: number;
   gap?: number;
   height: number;
+  maxBarGap?: number;
   maxBarWidth?: number;
   width: number;
 }): BarChartItem[] => {
@@ -263,7 +265,22 @@ export const getBarChartItems = ({
       ? rawBarWidth
       : Math.min(rawBarWidth, resolvedMaxBarWidth);
 
-  const barOffset = Math.max(0, (rawBarWidth - barWidth) / 2);
+  const rawBarGap = rawBarWidth + resolvedGap - barWidth;
+
+  const resolvedMaxBarGap =
+    maxBarGap == null
+      ? undefined
+      : Math.max(resolvedGap, Math.max(0, maxBarGap));
+
+  const barGap =
+    resolvedMaxBarGap == null
+      ? rawBarGap
+      : Math.min(rawBarGap, resolvedMaxBarGap);
+
+  const groupWidth =
+    data.length * barWidth + Math.max(0, data.length - 1) * barGap;
+
+  const groupOffset = Math.max(0, (availableWidth - groupWidth) / 2);
   const baselineY = scaleChartValue({ height, max, min, value: 0 });
   const resolvedAxisGap = Math.min(Math.max(0, axisGap), Math.max(0, height));
 
@@ -286,7 +303,7 @@ export const getBarChartItems = ({
       label: item.label,
       value: item.value,
       width: barWidth,
-      x: resolvedEdgeGap + index * (rawBarWidth + resolvedGap) + barOffset,
+      x: resolvedEdgeGap + groupOffset + index * (barWidth + barGap),
       y: top,
     };
   });

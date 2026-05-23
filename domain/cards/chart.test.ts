@@ -199,6 +199,27 @@ describe('card charts', () => {
     expect(bars[1]).toMatchObject({ width: 20, x: 72 });
   });
 
+  test('caps sparse bar gaps', () => {
+    const bars = chart.getBarChartItems({
+      chart: {
+        data: [
+          { label: 'One', value: 1 },
+          { label: 'Two', value: 3 },
+          { label: 'Three', value: 2 },
+        ],
+      },
+      height: 100,
+      maxBarWidth: 20,
+      maxBarGap: 10,
+      width: 180,
+    });
+
+    expect(bars.map((bar) => bar.width)).toEqual([20, 20, 20]);
+    expect(bars[1].x - (bars[0].x + bars[0].width)).toBe(10);
+    expect(bars[2].x - (bars[1].x + bars[1].width)).toBe(10);
+    expect(bars[0].x).toBe(50);
+  });
+
   test('fits dense bars', () => {
     const bars = chart.getBarChartItems({
       chart: {

@@ -1,5 +1,4 @@
 import { Dots } from '@/features/files/components/carousel/dots';
-import { ProgressCard } from '@/features/cards/components/progress-card';
 import * as cardMutations from '@/features/cards/mutations/cards';
 import type { LogCard } from '@/features/cards/types/card';
 import { useTags } from '@/features/tags/queries/use-tags';
@@ -16,6 +15,7 @@ import * as React from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import * as cardActionsMenu from '@/features/cards/components/card-actions-menu';
+import * as progressCard from '@/features/cards/components/progress-card';
 
 import ReanimatedCarousel, {
   type ICarouselInstance,
@@ -25,7 +25,6 @@ const LIST_MAX_WIDTH = 512;
 const LIST_SIDE_PADDING = 16;
 const CARD_GAP = 16;
 const CARD_SIDE_PADDING = CARD_GAP / 2;
-const CARD_HEIGHT = 208;
 const CARD_ARROW_SIZE = 40;
 const CARD_CONTROL_EDGE_INSET = 6;
 
@@ -145,6 +144,7 @@ export const CardsHeader = ({
   const carouselOuterMargin = -(sideOverflow + LIST_SIDE_PADDING);
   const previousCarouselPageWidthRef = React.useRef(carouselPageWidth);
   const previousVisibleCardCountRef = React.useRef(visibleCards.length);
+  const cardHeight = progressCard.PROGRESS_CARD_PREVIEW_HEIGHT;
 
   const controlsWidth = Math.max(
     CARD_ARROW_SIZE * 2,
@@ -303,15 +303,14 @@ export const CardsHeader = ({
       return (
         <View
           style={{
-            height: CARD_HEIGHT,
+            height: cardHeight,
             paddingHorizontal: CARD_SIDE_PADDING,
             width: carouselPageWidth,
           }}
         >
-          <ProgressCard
+          <progressCard.ProgressCard
             card={card}
             chartTags={recordTags.data.length ? recordTags.data : card.tags}
-            className="h-52"
             logColorIndex={logColorIndex}
             onPress={() => handleCardPress(card.id)}
             output={card.output}
@@ -353,6 +352,7 @@ export const CardsHeader = ({
       myRole.canManage,
       recordTags.data,
       carouselPageWidth,
+      cardHeight,
       visibleCards.length,
     ]
   );
@@ -375,7 +375,7 @@ export const CardsHeader = ({
             style={{
               alignItems: 'center',
               alignSelf: 'center',
-              height: CARD_HEIGHT,
+              height: cardHeight,
               width: pageWidth,
             }}
           >
@@ -385,7 +385,7 @@ export const CardsHeader = ({
               data={visibleCards}
               defaultIndex={activeIndexState}
               enabled={visibleCards.length > 1}
-              height={CARD_HEIGHT}
+              height={cardHeight}
               loop={false}
               onProgressChange={handleCardCarouselProgressChange}
               onScrollEnd={handleCardCarouselScrollEnd}
