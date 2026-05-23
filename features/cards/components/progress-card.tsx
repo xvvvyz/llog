@@ -43,6 +43,13 @@ const HIDDEN_X_AXIS_BOTTOM_PADDING = 8;
 const MAX_Y_AXIS_TICKS = 6;
 const CHART_SCROLL_LOCK_DISTANCE = 8;
 const AXIS_LABEL_FONT_SIZE = 11;
+
+const AXIS_LABEL_FONT_FAMILY =
+  'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+const AXIS_LABEL_SVG_FONT_FAMILY =
+  Platform.OS === 'web' ? AXIS_LABEL_FONT_FAMILY : undefined;
+
 const AXIS_TICK_SIZE = 4;
 const X_AXIS_TICK_LABEL_GAP = 5;
 const X_AXIS_LABEL_MIN_GAP = 8;
@@ -407,6 +414,9 @@ const estimateAxisLabelWidth = (
   label: string,
   fontSize = AXIS_LABEL_FONT_SIZE
 ) => {
+  const measuredWidth = measureAxisLabelWidth(label, fontSize);
+  if (measuredWidth != null) return measuredWidth;
+
   const units = [...label].reduce((total, character) => {
     if (/\s/.test(character)) return total + 0.28;
     if (/[ilI1.,:;|!]/.test(character)) return total + 0.32;
@@ -416,6 +426,20 @@ const estimateAxisLabelWidth = (
   }, 0);
 
   return units * fontSize;
+};
+
+let axisLabelMeasureCanvas: HTMLCanvasElement | undefined;
+
+const measureAxisLabelWidth = (label: string, fontSize: number) => {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    return undefined;
+  }
+
+  axisLabelMeasureCanvas ??= document.createElement('canvas');
+  const context = axisLabelMeasureCanvas.getContext('2d');
+  if (!context) return undefined;
+  context.font = `${fontSize}px ${AXIS_LABEL_FONT_FAMILY}`;
+  return context.measureText(label).width;
 };
 
 const truncateAxisLabelToWidth = ({
@@ -571,40 +595,178 @@ const getCenteredXAxisLabels = ({
     if (visibleOrder == null) return '';
     const previousPosition = positions[visibleIndexes[visibleOrder - 1] ?? -1];
     const nextPosition = positions[visibleIndexes[visibleOrder + 1] ?? -1];
-    const edgeWidth = Math.min(position, innerWidth - position) * 2;
-
-    const previousWidth =
-      previousPosition == null
-        ? Number.POSITIVE_INFINITY
-        : position - previousPosition - X_AXIS_LABEL_MIN_GAP;
-
-    const nextWidth =
-      nextPosition == null
-        ? Number.POSITIVE_INFINITY
-        : nextPosition - position - X_AXIS_LABEL_MIN_GAP;
 
     return truncateAxisLabelToWidth({
       fontSize,
       label,
-      width: Math.max(0, Math.min(edgeWidth, previousWidth, nextWidth)),
+      width: getCenteredXAxisLabelWidth({
+        innerWidth,
+        nextPosition,
+        position,
+        previousPosition,
+      }),
     });
   });
 };
 
-const getVerticalBarMaxGap = ({
+const getCenteredXAxisLabelWidth = ({
+  innerWidth,
+  nextPosition,
+  position,
+  previousPosition,
+}: {
+  innerWidth: number;
+  nextPosition?: number;
+  position: number;
+  previousPosition?: number;
+}) => {
+  const edgeWidth = Math.min(position, innerWidth - position) * 2;
+
+  const previousWidth =
+    previousPosition == null
+      ? Number.POSITIVE_INFINITY
+      : position - previousPosition - X_AXIS_LABEL_MIN_GAP;
+
+  const nextWidth =
+    nextPosition == null
+      ? Number.POSITIVE_INFINITY
+      : nextPosition - position - X_AXIS_LABEL_MIN_GAP;
+
+  return Math.max(0, Math.min(edgeWidth, previousWidth, nextWidth));
+};
+
+const getVerticalBarGapBounds = ({
   barWidth,
+  count,
+  edgeGap,
+  innerWidth,
+}: {
+  barWidth: number;
+  count: number;
+  edgeGap: number;
+  innerWidth: number;
+}) => {
+  const resolvedEdgeGap = Math.min(
+    Math.max(0, edgeGap),
+    Math.max(0, (innerWidth - count) / 2)
+  );
+
+  const availableWidth = Math.max(1, innerWidth - resolvedEdgeGap * 2);
+  const totalRequestedGap = X_AXIS_LABEL_MIN_GAP * (count - 1);
+  const maxTotalGap = Math.max(0, availableWidth - count);
+  const totalGap = Math.min(totalRequestedGap, maxTotalGap);
+  const minimumGap = count > 1 ? totalGap / (count - 1) : 0;
+
+  const maximumGap =
+    count > 1
+      ? Math.max(
+          minimumGap,
+          Math.max(0, (availableWidth - count * barWidth) / (count - 1))
+        )
+      : minimumGap;
+
+  return { availableWidth, maximumGap, minimumGap, resolvedEdgeGap };
+};
+
+const getVerticalBarLabelPositions = ({
+  availableWidth,
+  barWidth,
+  count,
+  gap,
+  resolvedEdgeGap,
+}: {
+  availableWidth: number;
+  barWidth: number;
+  count: number;
+  gap: number;
+  resolvedEdgeGap: number;
+}) => {
+  const groupWidth = count * barWidth + (count - 1) * gap;
+  const groupOffset = Math.max(0, (availableWidth - groupWidth) / 2);
+
+  return Array.from(
+    { length: count },
+    (_, index) =>
+      resolvedEdgeGap + groupOffset + barWidth / 2 + index * (barWidth + gap)
+  );
+};
+
+const getXAxisLabelFitScore = ({
+  innerWidth,
+  labelWidths,
+  positions,
+  visibleIndexes,
+}: {
+  innerWidth: number;
+  labelWidths: Map<number, number>;
+  positions: number[];
+  visibleIndexes: number[];
+}) => {
+  let allFit = true;
+  let minimumRatio = Number.POSITIVE_INFINITY;
+  let totalShortfall = 0;
+
+  visibleIndexes.forEach((index, visibleOrder) => {
+    const width = getCenteredXAxisLabelWidth({
+      innerWidth,
+      nextPosition: positions[visibleIndexes[visibleOrder + 1] ?? -1],
+      position: positions[index] ?? 0,
+      previousPosition: positions[visibleIndexes[visibleOrder - 1] ?? -1],
+    });
+
+    const labelWidth = labelWidths.get(index) ?? 0;
+    const shortfall = Math.max(0, labelWidth - width);
+    if (shortfall > 0.5) allFit = false;
+    totalShortfall += shortfall;
+
+    minimumRatio = Math.min(
+      minimumRatio,
+      labelWidth > 0 ? Math.min(1, width / labelWidth) : 1
+    );
+  });
+
+  return { allFit, minimumRatio, totalShortfall };
+};
+
+const getVerticalBarGapCandidates = ({
+  maximumGap,
+  minimumGap,
+}: {
+  maximumGap: number;
+  minimumGap: number;
+}) => {
+  const candidates = new Set<number>([minimumGap, maximumGap]);
+  const start = Math.ceil(minimumGap);
+  const end = Math.floor(maximumGap);
+
+  for (let gap = start; gap <= end; gap++) {
+    candidates.add(gap);
+  }
+
+  return [...candidates].sort((a, b) => a - b);
+};
+
+const getVerticalBarLabelGap = ({
+  barWidth,
+  edgeGap,
   fontSize,
+  innerWidth,
   labels,
   visibleLabelIndexes,
 }: {
   barWidth: number;
+  edgeGap: number;
   fontSize: number;
+  innerWidth: number;
   labels: string[];
   visibleLabelIndexes: Set<number>;
 }) => {
   const visibleIndexes = [...visibleLabelIndexes]
     .filter((index) => labels[index] != null)
     .sort((a, b) => a - b);
+
+  const count = labels.length;
+  if (count <= 1 || visibleIndexes.length <= 1) return X_AXIS_LABEL_MIN_GAP;
 
   const labelWidths = new Map(
     visibleIndexes.map((index) => [
@@ -613,23 +775,43 @@ const getVerticalBarMaxGap = ({
     ])
   );
 
-  let requiredStep = barWidth + X_AXIS_LABEL_MIN_GAP;
+  const { availableWidth, maximumGap, minimumGap, resolvedEdgeGap } =
+    getVerticalBarGapBounds({ barWidth, count, edgeGap, innerWidth });
 
-  visibleIndexes.slice(1).forEach((index, order) => {
-    const previousIndex = visibleIndexes[order];
-    const labelWidth = labelWidths.get(index) ?? 0;
-    const previousLabelWidth = labelWidths.get(previousIndex) ?? 0;
-    const indexGap = index - previousIndex;
-    if (indexGap <= 0) return;
+  if (maximumGap <= minimumGap) return minimumGap;
 
-    requiredStep = Math.max(
-      requiredStep,
-      (previousLabelWidth / 2 + labelWidth / 2 + X_AXIS_LABEL_MIN_GAP) /
-        indexGap
-    );
-  });
+  const scoreGap = (gap: number) =>
+    getXAxisLabelFitScore({
+      innerWidth,
+      labelWidths,
+      positions: getVerticalBarLabelPositions({
+        availableWidth,
+        barWidth,
+        count,
+        gap,
+        resolvedEdgeGap,
+      }),
+      visibleIndexes,
+    });
 
-  return Math.max(X_AXIS_LABEL_MIN_GAP, Math.ceil(requiredStep - barWidth));
+  let bestGap = minimumGap;
+  let bestScore = scoreGap(bestGap);
+
+  for (const gap of getVerticalBarGapCandidates({ maximumGap, minimumGap })) {
+    const score = scoreGap(gap);
+    if (score.allFit) return gap;
+
+    if (
+      score.minimumRatio > bestScore.minimumRatio ||
+      (score.minimumRatio === bestScore.minimumRatio &&
+        score.totalShortfall < bestScore.totalShortfall)
+    ) {
+      bestGap = gap;
+      bestScore = score;
+    }
+  }
+
+  return bestGap;
 };
 
 const getSeriesColor = (colors: ChartPalette, index: number) =>
@@ -1587,6 +1769,7 @@ const SingleSeriesChart = ({
             />
             <SvgText
               fill={colors.text}
+              fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
               fontSize={axisLabelFontSize}
               textAnchor="end"
               x={padding.left - AXIS_TICK_SIZE - yAxisLabelGap}
@@ -1647,6 +1830,7 @@ const SingleSeriesChart = ({
                   <SvgText
                     alignmentBaseline="middle"
                     fill={colors.text}
+                    fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                     fontSize={horizontalLayout.labelFontSize}
                     textAnchor="end"
                     x={horizontalLayout.labelWidth}
@@ -1675,6 +1859,7 @@ const SingleSeriesChart = ({
                   <SvgText
                     alignmentBaseline="middle"
                     fill={colors.text}
+                    fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                     fontSize={horizontalLayout.labelFontSize}
                     textAnchor="start"
                     y={bar.labelY}
@@ -1694,14 +1879,27 @@ const SingleSeriesChart = ({
       );
     }
 
+    const verticalBarEdgeGap = compact ? 0 : 6;
+
+    const baseBars = cardChart.getBarChartItems({
+      chart: { data, ...(unit && { unit }) },
+      domain: yAxisScale.domain,
+      edgeGap: verticalBarEdgeGap,
+      height: innerHeight,
+      maxBarWidth: BAR_MAX_WIDTH,
+      width: innerWidth,
+    });
+
     const bars = cardChart.getBarChartItems({
       chart: { data, ...(unit && { unit }) },
       domain: yAxisScale.domain,
-      edgeGap: compact ? 0 : undefined,
+      edgeGap: verticalBarEdgeGap,
       height: innerHeight,
-      maxBarGap: getVerticalBarMaxGap({
-        barWidth: BAR_MAX_WIDTH,
+      maxBarGap: getVerticalBarLabelGap({
+        barWidth: baseBars[0]?.width ?? BAR_MAX_WIDTH,
+        edgeGap: verticalBarEdgeGap,
         fontSize: axisLabelFontSize,
+        innerWidth,
         labels: fullXAxisLabels,
         visibleLabelIndexes: showAxisXAxisLabels
           ? visibleLabelIndexes
@@ -1794,6 +1992,7 @@ const SingleSeriesChart = ({
                     <SvgText
                       alignmentBaseline="hanging"
                       fill={colors.text}
+                      fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                       fontSize={axisLabelFontSize}
                       textAnchor="middle"
                       x={padding.left + bar.x + bar.width / 2}
@@ -1928,6 +2127,7 @@ const SingleSeriesChart = ({
                   <SvgText
                     alignmentBaseline="hanging"
                     fill={colors.text}
+                    fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                     fontSize={axisLabelFontSize}
                     textAnchor={getLabelAnchor(index, data.length)}
                     x={padding.left + point.x}

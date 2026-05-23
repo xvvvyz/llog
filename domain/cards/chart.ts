@@ -272,10 +272,18 @@ export const getBarChartItems = ({
       ? undefined
       : Math.max(resolvedGap, Math.max(0, maxBarGap));
 
+  const fillBarGap =
+    data.length > 1
+      ? Math.max(
+          0,
+          (availableWidth - data.length * barWidth) / (data.length - 1)
+        )
+      : rawBarGap;
+
   const barGap =
     resolvedMaxBarGap == null
       ? rawBarGap
-      : Math.min(rawBarGap, resolvedMaxBarGap);
+      : Math.min(fillBarGap, resolvedMaxBarGap);
 
   const groupWidth =
     data.length * barWidth + Math.max(0, data.length - 1) * barGap;

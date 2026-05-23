@@ -220,6 +220,20 @@ describe('card charts', () => {
     expect(bars[0].x).toBe(50);
   });
 
+  test('widens capped bar groups', () => {
+    const bars = chart.getBarChartItems({
+      chart: spec,
+      height: 100,
+      maxBarGap: 100,
+      maxBarWidth: 20,
+      width: 200,
+    });
+
+    expect(bars[0]).toMatchObject({ width: 20, x: 30 });
+    expect(bars[1]).toMatchObject({ width: 20, x: 150 });
+    expect(bars[1].x - (bars[0].x + bars[0].width)).toBe(100);
+  });
+
   test('fits dense bars', () => {
     const bars = chart.getBarChartItems({
       chart: {
