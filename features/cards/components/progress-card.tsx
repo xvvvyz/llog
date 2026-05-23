@@ -11,6 +11,7 @@ import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import * as cardDisplay from '@/features/cards/lib/card-display';
+import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import {
   MagnifyingGlass,
@@ -28,14 +29,6 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
-import Svg, {
-  Circle,
-  Line,
-  Path,
-  Rect,
-  Text as SvgText,
-} from 'react-native-svg';
-
 const CHART_PADDING = { bottom: 24, left: 0, right: 0, top: 12 };
 const COMPACT_CHART_PADDING = { bottom: 4, left: 0, right: 0, top: 4 };
 const COMPACT_BAR_CHART_PADDING = { bottom: 24, left: 0, right: 0, top: 8 };
@@ -45,12 +38,17 @@ const CHART_SCROLL_LOCK_DISTANCE = 8;
 const AXIS_LABEL_FONT_SIZE = 10;
 const COMPACT_AXIS_LABEL_FONT_SIZE = 9;
 const AXIS_TICK_SIZE = 4;
-const X_AXIS_TICK_LABEL_GAP = 7;
+const X_AXIS_TICK_LABEL_GAP = 5;
 const Y_AXIS_TICK_LABEL_GAP = 8;
 const LINE_DOMAIN_PADDING = 0.08;
 const CHART_GRID_OPACITY = 0.35;
 const COMPACT_CHART_GRID_OPACITY = 0.24;
-const BAR_CORNER_RADIUS = 3;
+const AXIS_LABEL_HORIZONTAL_PADDING = 8;
+const MIN_AXIS_LABEL_MAX_LENGTH = 10;
+const BAR_CORNER_RADIUS = 5;
+const BAR_MAX_WIDTH = 44;
+const BAR_IDLE_OPACITY = 0.9;
+const BAR_DIMMED_OPACITY = 0.62;
 const CHART_TOOLTIP_WIDTH = 128;
 const CHART_TOOLTIP_HEIGHT = 46;
 const CHART_TOOLTIP_HORIZONTAL_OVERFLOW = 16;
@@ -89,6 +87,11 @@ type PreviewSection =
 type Milestone = CardOutput['milestones'][number];
 type MilestoneAlignment = 'center' | 'end' | 'start';
 type MetricTrend = NonNullable<CardOutput['metrics'][number]['trend']>;
+
+type ChartLabelTag = Pick<
+  NonNullable<LogCard['tags']>[number],
+  'color' | 'name'
+>;
 
 const CardStatusPill = ({
   className,
@@ -154,12 +157,12 @@ const getJustifyClass = (alignment: MilestoneAlignment) => {
   return 'justify-center';
 };
 
-const getChartColorIndexes = (logColorIndex?: Color) => {
+const getChartColorIndexes = (logColorIndex?: Color, count = 4) => {
   const firstColor = resolveSpectrumColor(logColorIndex, DEFAULT_CHART_COLOR);
   const indexes: Color[] = [firstColor];
   let nextColor = (firstColor + 1) % SPECTRUM.light.length;
 
-  while (indexes.length < 4) {
+  while (indexes.length < count) {
     if (!SKIPPED_CHART_COLOR_INDEXES.has(nextColor as Color)) {
       indexes.push(nextColor as Color);
     }
@@ -172,12 +175,14 @@ const getChartColorIndexes = (logColorIndex?: Color) => {
 
 const getChartPalette = ({
   colorScheme,
+  colorCount,
   logColorIndex,
 }: {
   colorScheme: keyof typeof SPECTRUM;
+  colorCount?: number;
   logColorIndex?: Color;
 }) => {
-  const indexes = getChartColorIndexes(logColorIndex);
+  const indexes = getChartColorIndexes(logColorIndex, colorCount);
   const spectrum = SPECTRUM[colorScheme];
 
   return {
@@ -352,6 +357,19 @@ const estimateAxisLabelWidth = (
   fontSize = AXIS_LABEL_FONT_SIZE
 ) => label.length * fontSize * 0.58;
 
+const getXAxisLabelSlotWidth = ({
+  count,
+  innerWidth,
+  type,
+}: {
+  count: number;
+  innerWidth: number;
+  type: CardChart['type'];
+}) => {
+  if (count <= 1) return innerWidth;
+  return type === 'bar' ? innerWidth / count : innerWidth / (count - 1);
+};
+
 const getXAxisLabelIndexes = ({
   innerWidth,
   labels,
@@ -366,10 +384,7 @@ const getXAxisLabelIndexes = ({
   const count = labels.length;
   if (!count) return new Set<number>();
   if (count === 1) return new Set([0]);
-
-  const slotWidth =
-    type === 'bar' ? innerWidth / count : innerWidth / (count - 1);
-
+  const slotWidth = getXAxisLabelSlotWidth({ count, innerWidth, type });
   const widestLabel = Math.max(...labels.map(estimateAxisLabelWidth));
   const canShowAll = widestLabel + 8 <= slotWidth;
   if (mode === 'all' && canShowAll) return getVisibleLabelIndexes(count, count);
@@ -386,6 +401,45 @@ const getXAxisLabelIndexes = ({
   );
 };
 
+const getXAxisLabelMaxLength = ({
+  fontSize,
+  innerWidth,
+  labels,
+  type,
+  visibleLabelIndexes,
+}: {
+  fontSize: number;
+  innerWidth: number;
+  labels: string[];
+  type: CardChart['type'];
+  visibleLabelIndexes: Set<number>;
+}) => {
+  const count = labels.length;
+  if (!count) return MIN_AXIS_LABEL_MAX_LENGTH;
+  const fullLabelLength = Math.max(0, ...labels.map((label) => label.length));
+
+  if (fullLabelLength <= MIN_AXIS_LABEL_MAX_LENGTH) {
+    return MIN_AXIS_LABEL_MAX_LENGTH;
+  }
+
+  const slotWidth = getXAxisLabelSlotWidth({ count, innerWidth, type });
+  const visibleCount = visibleLabelIndexes.size || count;
+
+  const effectiveSlotWidth =
+    visibleCount < count
+      ? Math.max(slotWidth, innerWidth / Math.max(1, visibleCount))
+      : slotWidth;
+
+  const characterBudget = Math.floor(
+    (effectiveSlotWidth - AXIS_LABEL_HORIZONTAL_PADDING) / (fontSize * 0.58)
+  );
+
+  return Math.max(
+    MIN_AXIS_LABEL_MAX_LENGTH,
+    Math.min(fullLabelLength, characterBudget)
+  );
+};
+
 const getLabelAnchor = (index: number, count: number) => {
   if (index === 0) return 'start';
   if (index === count - 1) return 'end';
@@ -397,6 +451,70 @@ const getSeriesColor = (colors: ChartPalette, index: number) =>
 
 const getSeriesFill = (colors: ChartPalette, index: number) =>
   colors.fills[index % colors.fills.length];
+
+const normalizeChartLabelName = (value?: string | null) =>
+  (value ?? '').trim().replace(/^#/, '').replace(/\s+/g, ' ').toLowerCase();
+
+const getTagColorIndexesByName = (tags?: ChartLabelTag[]) => {
+  const colorsByName = new Map<string, Color>();
+
+  for (const tag of tags ?? []) {
+    const name = normalizeChartLabelName(tag.name);
+    if (!name || colorsByName.has(name)) continue;
+    colorsByName.set(name, resolveSpectrumColor(tag.color));
+  }
+
+  return colorsByName;
+};
+
+const getBarFills = ({
+  colorScheme,
+  colors,
+  data,
+  tags,
+}: {
+  colorScheme: keyof typeof SPECTRUM;
+  colors: ChartPalette;
+  data: cardChart.ResolvedChartSeries['data'];
+  tags?: ChartLabelTag[];
+}) => {
+  if (data.length <= 1) return undefined;
+  const tagColorsByName = getTagColorIndexesByName(tags);
+
+  const hasTagColorMatch = data.some((item) =>
+    tagColorsByName.has(normalizeChartLabelName(item.label))
+  );
+
+  const hasDateLabels = data.some((item) =>
+    cardChart.parseChartLabelDate(item.label)
+  );
+
+  if (hasDateLabels) {
+    if (!hasTagColorMatch) return undefined;
+
+    return data.map((item) => {
+      const tagColorIndex = tagColorsByName.get(
+        normalizeChartLabelName(item.label)
+      );
+
+      return tagColorIndex == null
+        ? undefined
+        : SPECTRUM[colorScheme][tagColorIndex].default;
+    });
+  }
+
+  return data.map((item, index) => {
+    const tagColorIndex = tagColorsByName.get(
+      normalizeChartLabelName(item.label)
+    );
+
+    if (tagColorIndex != null) {
+      return SPECTRUM[colorScheme][tagColorIndex].default;
+    }
+
+    return getSeriesColor(colors, index);
+  });
+};
 
 type ChartPadding = typeof CHART_PADDING;
 
@@ -423,6 +541,43 @@ const buildAreaPath = (
     `M ${padding.left + first.x} ${baselineY}`,
     buildPath(points, padding).replace(/^M/, 'L'),
     `L ${padding.left + last.x} ${baselineY}`,
+    'Z',
+  ].join(' ');
+};
+
+const buildBarPath = ({
+  height,
+  radius,
+  value,
+  width,
+  x,
+  y,
+}: cardChart.BarChartItem & { radius: number }) => {
+  const right = x + width;
+  const bottom = y + height;
+  const r = Math.min(radius, width / 2, height / 2);
+  if (r <= 0) return `M ${x} ${y} H ${right} V ${bottom} H ${x} Z`;
+
+  if (value < 0) {
+    return [
+      `M ${x} ${y}`,
+      `H ${right}`,
+      `V ${bottom - r}`,
+      `Q ${right} ${bottom} ${right - r} ${bottom}`,
+      `H ${x + r}`,
+      `Q ${x} ${bottom} ${x} ${bottom - r}`,
+      `V ${y}`,
+      'Z',
+    ].join(' ');
+  }
+
+  return [
+    `M ${x} ${bottom}`,
+    `V ${y + r}`,
+    `Q ${x} ${y} ${x + r} ${y}`,
+    `H ${right - r}`,
+    `Q ${right} ${y} ${right} ${y + r}`,
+    `V ${bottom}`,
     'Z',
   ].join(' ');
 };
@@ -621,15 +776,28 @@ const ChartLegend = ({
   chart,
   compact,
   logColorIndex,
+  tags,
 }: {
   chart: CardChart;
   compact?: boolean;
   logColorIndex?: Color;
+  tags?: ChartLabelTag[];
 }) => {
   const colorScheme = useColorScheme();
-  const colors = getChartPalette({ colorScheme, logColorIndex });
   const series = cardChart.getRenderableChartSeries(chart);
+
+  const colors = getChartPalette({
+    colorCount:
+      chart.type === 'bar' ? Math.max(4, series[0]?.data.length ?? 0) : 4,
+    colorScheme,
+    logColorIndex,
+  });
+
   if (!series.length) return null;
+
+  const usesPerBarFills =
+    chart.type === 'bar' &&
+    !!getBarFills({ colorScheme, colors, data: series[0]?.data ?? [], tags });
 
   return (
     <View className="flex-row flex-wrap gap-x-3 gap-y-1">
@@ -646,10 +814,12 @@ const ChartLegend = ({
             key={`${label}-${index}`}
             className="flex-row min-w-0 gap-1.5 items-center"
           >
-            <View
-              className="size-1.5 rounded-full"
-              style={{ backgroundColor: getSeriesColor(colors, index) }}
-            />
+            {!usesPerBarFills && (
+              <View
+                className="size-1.5 rounded-full"
+                style={{ backgroundColor: getSeriesColor(colors, index) }}
+              />
+            )}
             <Text
               numberOfLines={1}
               className={cn(
@@ -667,6 +837,7 @@ const ChartLegend = ({
 };
 
 const SingleSeriesChart = ({
+  barFills,
   color,
   colors,
   compact,
@@ -684,6 +855,7 @@ const SingleSeriesChart = ({
   yAxis,
   yAxisLabelWidth: sharedYAxisLabelWidth,
 }: {
+  barFills?: (string | undefined)[];
   color: string;
   colors: ChartPalette;
   compact?: boolean;
@@ -839,16 +1011,32 @@ const SingleSeriesChart = ({
       })
   );
 
-  const xAxisLabels = data.map((item) =>
-    cardChart.formatChartTickLabel(item.label)
+  const fullXAxisLabels = data.map((item) =>
+    cardChart.formatChartTickLabel(item.label, {
+      maxLength: Number.POSITIVE_INFINITY,
+    })
   );
 
   const visibleLabelIndexes = getXAxisLabelIndexes({
     innerWidth,
-    labels: xAxisLabels,
+    labels: fullXAxisLabels,
     mode: xAxis?.labelMode,
     type,
   });
+
+  const xAxisLabelMaxLength = getXAxisLabelMaxLength({
+    fontSize: axisLabelFontSize,
+    innerWidth,
+    labels: fullXAxisLabels,
+    type,
+    visibleLabelIndexes,
+  });
+
+  const xAxisLabels = data.map((item) =>
+    cardChart.formatChartTickLabel(item.label, {
+      maxLength: xAxisLabelMaxLength,
+    })
+  );
 
   const chartContainerStyle = React.useMemo(
     () => ({
@@ -1048,6 +1236,7 @@ const SingleSeriesChart = ({
       domain: yAxisScale.domain,
       edgeGap: compact ? 0 : undefined,
       height: innerHeight,
+      maxBarWidth: BAR_MAX_WIDTH,
       width: innerWidth,
     });
 
@@ -1092,46 +1281,55 @@ const SingleSeriesChart = ({
           width="100%"
         >
           {axes}
-          {bars.map((bar, index) => (
-            <React.Fragment key={`${bar.label}-${index}`}>
-              <Rect
-                fill={fill}
-                height={bar.height}
-                rx={Math.min(BAR_CORNER_RADIUS, bar.width / 2, bar.height / 2)}
-                ry={Math.min(BAR_CORNER_RADIUS, bar.width / 2, bar.height / 2)}
-                stroke={hoveredIndex === index && !compact ? color : undefined}
-                strokeWidth={hoveredIndex === index && !compact ? 1.5 : 0}
-                width={bar.width}
-                x={padding.left + bar.x}
-                y={padding.top + bar.y}
-                opacity={
-                  hoveredIndex == null || hoveredIndex === index ? 1 : 0.58
-                }
-              />
-              {showAxisXAxisLabels && visibleLabelIndexes.has(index) && (
-                <React.Fragment>
-                  <Line
-                    stroke={colors.axis}
-                    strokeWidth={1}
-                    x1={padding.left + bar.x + bar.width / 2}
-                    x2={padding.left + bar.x + bar.width / 2}
-                    y1={padding.top + innerHeight}
-                    y2={padding.top + innerHeight + AXIS_TICK_SIZE}
-                  />
-                  <SvgText
-                    alignmentBaseline="hanging"
-                    fill={colors.text}
-                    fontSize={axisLabelFontSize}
-                    textAnchor="middle"
-                    x={padding.left + bar.x + bar.width / 2}
-                    y={xAxisLabelY}
-                  >
-                    {xAxisLabels[index]}
-                  </SvgText>
-                </React.Fragment>
-              )}
-            </React.Fragment>
-          ))}
+          {bars.map((bar, index) => {
+            const barFill = barFills?.[index] ?? fill;
+            const isHovered = hoveredIndex === index && !compact;
+
+            const opacity =
+              hoveredIndex == null || hoveredIndex === index
+                ? BAR_IDLE_OPACITY
+                : BAR_DIMMED_OPACITY;
+
+            return (
+              <React.Fragment key={`${bar.label}-${index}`}>
+                <Path
+                  fill={barFill}
+                  opacity={isHovered ? 1 : opacity}
+                  stroke={isHovered ? barFill : undefined}
+                  strokeOpacity={isHovered ? 0.5 : 0}
+                  strokeWidth={isHovered ? 1.5 : 0}
+                  d={buildBarPath({
+                    ...bar,
+                    radius: BAR_CORNER_RADIUS,
+                    x: padding.left + bar.x,
+                    y: padding.top + bar.y,
+                  })}
+                />
+                {showAxisXAxisLabels && visibleLabelIndexes.has(index) && (
+                  <React.Fragment>
+                    <Line
+                      stroke={colors.axis}
+                      strokeWidth={1}
+                      x1={padding.left + bar.x + bar.width / 2}
+                      x2={padding.left + bar.x + bar.width / 2}
+                      y1={padding.top + innerHeight}
+                      y2={padding.top + innerHeight + AXIS_TICK_SIZE}
+                    />
+                    <SvgText
+                      alignmentBaseline="hanging"
+                      fill={colors.text}
+                      fontSize={axisLabelFontSize}
+                      textAnchor="middle"
+                      x={padding.left + bar.x + bar.width / 2}
+                      y={xAxisLabelY}
+                    >
+                      {xAxisLabels[index]}
+                    </SvgText>
+                  </React.Fragment>
+                )}
+              </React.Fragment>
+            );
+          })}
         </Svg>
         {hoveredBar &&
           renderTooltip({
@@ -1313,14 +1511,22 @@ const Chart = ({
   chart,
   compact,
   logColorIndex,
+  tags,
 }: {
   chart: CardChart;
   compact?: boolean;
   logColorIndex?: Color;
+  tags?: ChartLabelTag[];
 }) => {
   const colorScheme = useColorScheme();
-  const colors = getChartPalette({ colorScheme, logColorIndex });
   const series = cardChart.getRenderableChartSeries(chart);
+
+  const colors = getChartPalette({
+    colorCount:
+      chart.type === 'bar' ? Math.max(4, series[0]?.data.length ?? 0) : 4,
+    colorScheme,
+    logColorIndex,
+  });
 
   const [hoverTarget, setHoverTarget] = React.useState<ChartHoverTarget | null>(
     null
@@ -1328,6 +1534,12 @@ const Chart = ({
 
   const stacked = series.length > 1;
   if (!series.length) return null;
+
+  const barFills =
+    chart.type === 'bar'
+      ? getBarFills({ colorScheme, colors, data: series[0]?.data ?? [], tags })
+      : undefined;
+
   const showAxes = !compact || chart.type === 'bar';
   const axisLabelFontSize = getAxisLabelFontSize({ compact, type: chart.type });
   const yAxisTickCount = getYAxisTickCount({ compact, yAxis: chart.yAxis });
@@ -1398,6 +1610,7 @@ const Chart = ({
       {series.map((item, index) => (
         <SingleSeriesChart
           key={`${item.label}-${index}`}
+          barFills={index === 0 ? barFills : undefined}
           color={getSeriesColor(colors, index)}
           colors={colors}
           compact={compact}
@@ -1548,6 +1761,7 @@ const MilestoneTimelineItem = ({
 export const ProgressCard = ({
   actionMenu,
   card,
+  chartTags,
   className,
   frame = 'card',
   logColorIndex,
@@ -1557,7 +1771,8 @@ export const ProgressCard = ({
   variant = 'summary',
 }: {
   actionMenu?: React.ReactNode;
-  card: Pick<LogCard, 'error' | 'isGenerating' | 'title'>;
+  card: Pick<LogCard, 'error' | 'isGenerating' | 'tags' | 'title'>;
+  chartTags?: ChartLabelTag[];
   className?: string;
   frame?: 'card' | 'none';
   logColorIndex?: Color;
@@ -1591,6 +1806,7 @@ export const ProgressCard = ({
     isSummary && resolvedOutput ? getPreviewSections(resolvedOutput) : [];
 
   const isFramed = frame === 'card';
+  const resolvedChartTags = chartTags ?? card.tags;
 
   const renderMetrics = ({
     limit,
@@ -1725,6 +1941,7 @@ export const ProgressCard = ({
             chart={resolvedOutput.chart}
             compact
             logColorIndex={logColorIndex}
+            tags={resolvedChartTags}
           />
         ) : section.type === 'metrics' ? (
           <View className={cn('flex-1', getJustifyClass(alignment))}>
@@ -1797,11 +2014,13 @@ export const ProgressCard = ({
                   <ChartLegend
                     chart={resolvedOutput.chart}
                     logColorIndex={logColorIndex}
+                    tags={resolvedChartTags}
                   />
                 )}
                 <Chart
                   chart={resolvedOutput.chart}
                   logColorIndex={logColorIndex}
+                  tags={resolvedChartTags}
                 />
               </View>
             )}

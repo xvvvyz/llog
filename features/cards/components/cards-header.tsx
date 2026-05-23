@@ -2,6 +2,7 @@ import { Dots } from '@/features/files/components/carousel/dots';
 import { ProgressCard } from '@/features/cards/components/progress-card';
 import * as cardMutations from '@/features/cards/mutations/cards';
 import type { LogCard } from '@/features/cards/types/card';
+import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { clampIndex } from '@/lib/clamp';
@@ -128,6 +129,15 @@ export const CardsHeader = ({
 
   const cardActions = useCardPreviewActions({ logId });
   const logColorIndex = resolveSpectrumColor(logColor);
+  const resolvedTeamId = visibleCards[0]?.teamId ?? teamId ?? undefined;
+
+  const recordTags = useTags({
+    enabled: !!logId && !!resolvedTeamId,
+    logId,
+    teamIds: resolvedTeamId ? [resolvedTeamId] : undefined,
+    type: 'record',
+  });
+
   const viewportWidth = Math.max(1, windowDimensions.width);
   const pageWidth = Math.max(1, Math.min(viewportWidth, LIST_MAX_WIDTH));
   const carouselPageWidth = Math.max(1, pageWidth - LIST_SIDE_PADDING);
@@ -300,6 +310,7 @@ export const CardsHeader = ({
         >
           <ProgressCard
             card={card}
+            chartTags={recordTags.data.length ? recordTags.data : card.tags}
             className="h-52"
             logColorIndex={logColorIndex}
             onPress={() => handleCardPress(card.id)}
@@ -340,6 +351,7 @@ export const CardsHeader = ({
       logColorIndex,
       logId,
       myRole.canManage,
+      recordTags.data,
       carouselPageWidth,
       visibleCards.length,
     ]

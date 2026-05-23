@@ -186,6 +186,19 @@ describe('card charts', () => {
     expect(last ? last.x + last.width : 0).toBe(110);
   });
 
+  test('caps bars', () => {
+    const bars = chart.getBarChartItems({
+      chart: spec,
+      gap: 10,
+      height: 100,
+      maxBarWidth: 20,
+      width: 110,
+    });
+
+    expect(bars[0]).toMatchObject({ width: 20, x: 18 });
+    expect(bars[1]).toMatchObject({ width: 20, x: 72 });
+  });
+
   test('fits dense bars', () => {
     const bars = chart.getBarChartItems({
       chart: {

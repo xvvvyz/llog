@@ -2,6 +2,7 @@ import { ProgressCard } from '@/features/cards/components/progress-card';
 import * as cardMutations from '@/features/cards/mutations/cards';
 import { useLogCard, useLogCards } from '@/features/cards/queries/use-cards';
 import { useLog } from '@/features/logs/queries/use-log';
+import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { resolveSpectrumColor } from '@/theme/spectrum';
@@ -26,6 +27,15 @@ export const LogCardDetailSheet = () => {
 
   const log = useLog({ id: card.logId ?? undefined });
   const myRole = useMyRole({ teamId: card.teamId ?? log.teamId ?? null });
+  const resolvedTeamId = card.teamId ?? log.teamId ?? undefined;
+
+  const recordTags = useTags({
+    enabled: isOpen && !!card.logId && !!resolvedTeamId,
+    logId: card.logId ?? undefined,
+    teamIds: resolvedTeamId ? [resolvedTeamId] : undefined,
+    type: 'record',
+  });
+
   const title = card.title;
   const logColorIndex = resolveSpectrumColor(log.color);
   const [deletingCardId, setDeletingCardId] = React.useState<string>();
@@ -75,6 +85,7 @@ export const LogCardDetailSheet = () => {
         >
           {!!card.id && !!title && (
             <ProgressCard
+              chartTags={recordTags.data.length ? recordTags.data : card.tags}
               frame="none"
               logColorIndex={logColorIndex}
               output={card.output}
@@ -123,6 +134,7 @@ export const LogCardDetailSheet = () => {
               card={{
                 error: card.error,
                 isGenerating: card.isGenerating,
+                tags: card.tags,
                 title,
               }}
             />
