@@ -40,9 +40,13 @@ const AGGREGATION_OPERATIONS = [
   'latest',
   'first',
   'ratio',
+  'currentStreak',
+  'longestStreak',
 ] as const;
 
 const EVENT_COUNT_MODES = ['explicitOccurrences', 'recordPresence'] as const;
+const STREAK_PERIODS = ['day', 'week', 'month'] as const;
+type StreakPeriod = (typeof STREAK_PERIODS)[number];
 
 const GROUPING_DIMENSIONS = [
   'record',
@@ -103,6 +107,7 @@ const analysisAggregationSchema = z
     label: z.string().min(1).max(60),
     operation: z.enum(AGGREGATION_OPERATIONS),
     outcomeLabel: z.string().min(1).max(60).optional(),
+    period: z.enum(STREAK_PERIODS).optional(),
     qualitativeLabel: z.string().min(1).max(60).optional(),
     numeratorId: z.string().min(1).max(48).optional(),
     unit: z.string().min(1).max(16).optional(),
@@ -495,6 +500,25 @@ function remapId(value: string | undefined, ids: Map<string, string>) {
   return ids.get(value) ?? ids.get(normalized) ?? normalized;
 }
 
+const normalizeGrouping = (
+  grouping: z.infer<typeof analysisGroupingSchema>,
+  fallbackId: string
+): AnalysisGroupingSpec => ({
+  ...grouping,
+  id: normalizeId(grouping.id, fallbackId),
+  ...(grouping.label && { label: normalizeText(grouping.label, 60) }),
+  ...(grouping.ranges?.length && {
+    ranges: grouping.ranges.map((range) => ({
+      ...(range.end && { end: normalizeText(range.end, 80) }),
+      label: normalizeText(range.label, 40),
+      ...(range.start && { start: normalizeText(range.start, 80) }),
+    })),
+  }),
+});
+
+const streakPeriodUnit = (period: StreakPeriod) =>
+  period === 'day' ? 'days' : period === 'week' ? 'weeks' : 'months';
+
 export const normalizeAnalysisSpec = (
   value: unknown
 ): CardAnalysisSpec | undefined => {
@@ -579,13 +603,19 @@ export const normalizeAnalysisSpec = (
         aggregationIdByInputId
       );
 
+      const groupBy = aggregation.groupBy
+        ? normalizeGrouping(aggregation.groupBy, `${id}_group`)
+        : undefined;
+
       return {
         ...normalizedAggregation,
         ...(denominatorId && { denominatorId }),
         ...(fieldId && { fieldId }),
+        ...(groupBy && { groupBy }),
         id,
         label: normalizeText(aggregation.label, 60),
         ...(numeratorId && { numeratorId }),
+        ...(aggregation.period && { period: aggregation.period }),
         ...(aggregation.unit && {
           unit: normalizeText(aggregation.unit, 16).toLowerCase(),
         }),
@@ -595,11 +625,9 @@ export const normalizeAnalysisSpec = (
 
   const aggregationIds = new Set(aggregations.map((item) => item.id));
 
-  const groupings = parsed.data.groupings.map((grouping, index) => ({
-    ...grouping,
-    id: normalizeId(grouping.id, `grouping_${index + 1}`),
-    ...(grouping.label && { label: normalizeText(grouping.label, 60) }),
-  }));
+  const groupings = parsed.data.groupings.map((grouping, index) =>
+    normalizeGrouping(grouping, `grouping_${index + 1}`)
+  );
 
   const charts = parsed.data.charts.flatMap((chart, index) => {
     const measures = chart.y
@@ -622,6 +650,7 @@ export const normalizeAnalysisSpec = (
       ...chart,
       id: normalizeId(chart.id, `chart_${index + 1}`),
       ...(chart.title && { title: normalizeText(chart.title, 80) }),
+      x: normalizeGrouping(chart.x, `${chart.id || `chart_${index + 1}`}_x`),
       y: measures,
     };
   });
@@ -733,10 +762,172 @@ const buildMetadataCountFallbackAnalysisSpec = (
   };
 };
 
-const buildFallbackAnalysisSpec = (prompt: string) =>
-  buildMetadataCountFallbackAnalysisSpec(prompt) ??
-  buildEventCountFallbackAnalysisSpec(prompt) ??
-  buildQualitativeFallbackAnalysisSpec(prompt);
+const promptRequestsStreaks = (prompt: string) => /\bstreaks?\b/i.test(prompt);
+
+const promptStreakPeriod = (prompt: string): StreakPeriod => {
+  if (/\b(monthly|months?)\b/i.test(prompt)) return 'month';
+  if (/\b(weekly|weeks?)\b/i.test(prompt)) return 'week';
+  return 'day';
+};
+
+const promptStreakGroupBy = (
+  prompt: string
+): AnalysisGroupingSpec | undefined =>
+  /\b(each|per|by)\s+(users?|authors?|people|persons?|members?|posters?)\b/i.test(
+    prompt
+  ) ||
+  /\b(users?|authors?|people|persons?|members?|posters?)\s+that\s+posts?\b/i.test(
+    prompt
+  )
+    ? { dimension: 'author', id: 'author', label: 'Author' }
+    : undefined;
+
+const periodLabel = (period: StreakPeriod) =>
+  period === 'day' ? 'daily' : period === 'week' ? 'weekly' : 'monthly';
+
+const streakIdSuffix = ({
+  groupBy,
+  period,
+}: {
+  groupBy?: AnalysisGroupingSpec;
+  period: StreakPeriod;
+}) => `${period}_${groupBy?.dimension ? `by_${groupBy.dimension}` : 'streak'}`;
+
+const buildStreakFallbackAnalysisSpec = (
+  prompt: string
+): CardAnalysisSpec | undefined => {
+  if (!promptRequestsStreaks(prompt)) return;
+  const period = promptStreakPeriod(prompt);
+  const groupBy = promptStreakGroupBy(prompt);
+  const unit = streakPeriodUnit(period);
+  const suffix = streakIdSuffix({ groupBy, period });
+
+  return {
+    aggregations: [
+      {
+        ...(groupBy && { groupBy }),
+        id: normalizeId(`current_${suffix}`, 'current_streak'),
+        label: `Current ${periodLabel(period)} streak`,
+        operation: 'currentStreak',
+        period,
+        unit,
+      },
+      {
+        ...(groupBy && { groupBy }),
+        id: normalizeId(`longest_${suffix}`, 'longest_streak'),
+        label: `Longest ${periodLabel(period)} streak`,
+        operation: 'longestStreak',
+        period,
+        unit,
+      },
+    ],
+    charts: [],
+    extractionFields: [],
+    groupings: groupBy ? [groupBy] : [],
+  };
+};
+
+const aggregationStreakPeriod = (
+  aggregation: AnalysisAggregationSpec
+): StreakPeriod => {
+  if (aggregation.period) return aggregation.period;
+  const dimension = aggregation.groupBy?.dimension;
+  return dimension === 'week' || dimension === 'month' ? dimension : 'day';
+};
+
+const hasEquivalentStreakAggregation = (
+  spec: CardAnalysisSpec | undefined,
+  fallback: AnalysisAggregationSpec
+) =>
+  spec?.aggregations.some(
+    (aggregation) =>
+      aggregation.operation === fallback.operation &&
+      (aggregation.operation === 'currentStreak' ||
+        aggregation.operation === 'longestStreak') &&
+      aggregationStreakPeriod(aggregation) ===
+        aggregationStreakPeriod(fallback) &&
+      (aggregation.groupBy?.dimension ?? '') ===
+        (fallback.groupBy?.dimension ?? '')
+  ) ?? false;
+
+const pruneStreakFallbackSpec = (
+  fallback: CardAnalysisSpec | undefined,
+  baseSpec: CardAnalysisSpec | undefined
+) => {
+  if (!fallback || !baseSpec) return fallback;
+
+  const aggregations = fallback.aggregations.filter(
+    (aggregation) => !hasEquivalentStreakAggregation(baseSpec, aggregation)
+  );
+
+  if (!aggregations.length) return;
+
+  return {
+    ...fallback,
+    aggregations,
+    groupings: aggregations.some((aggregation) => aggregation.groupBy)
+      ? fallback.groupings
+      : [],
+  };
+};
+
+const hasChartGrouping = (
+  spec: CardAnalysisSpec | undefined,
+  dimension: AnalysisGroupingSpec['dimension']
+) => spec?.charts.some((chart) => chart.x.dimension === dimension) ?? false;
+
+const pruneMetadataCountFallbackSpec = (
+  fallback: CardAnalysisSpec | undefined,
+  baseSpec: CardAnalysisSpec | undefined
+) => {
+  const dimension = fallback?.charts[0]?.x.dimension;
+
+  if (!fallback || !dimension || !hasChartGrouping(baseSpec, dimension)) {
+    return fallback;
+  }
+};
+
+const mergeById = <T extends { id: string }>(items: T[]) => {
+  const byId = new Map<string, T>();
+
+  for (const item of items) {
+    if (!byId.has(item.id)) byId.set(item.id, item);
+  }
+
+  return [...byId.values()];
+};
+
+const mergeAnalysisSpecs = (
+  ...specs: (CardAnalysisSpec | undefined)[]
+): CardAnalysisSpec | undefined => {
+  const present = specs.filter((spec): spec is CardAnalysisSpec => !!spec);
+  if (!present.length) return;
+  const filters = present.flatMap((spec) => spec.filters ?? []);
+
+  return {
+    aggregations: mergeById(present.flatMap((spec) => spec.aggregations)),
+    charts: mergeById(present.flatMap((spec) => spec.charts)),
+    extractionFields: mergeById(
+      present.flatMap((spec) => spec.extractionFields)
+    ),
+    ...(filters.length && { filters: mergeById(filters) }),
+    groupings: mergeById(present.flatMap((spec) => spec.groupings)),
+  };
+};
+
+const buildFallbackAnalysisSpec = (
+  prompt: string,
+  baseSpec?: CardAnalysisSpec
+) =>
+  mergeAnalysisSpecs(
+    pruneStreakFallbackSpec(buildStreakFallbackAnalysisSpec(prompt), baseSpec),
+    pruneMetadataCountFallbackSpec(
+      buildMetadataCountFallbackAnalysisSpec(prompt),
+      baseSpec
+    ),
+    buildEventCountFallbackAnalysisSpec(prompt),
+    buildQualitativeFallbackAnalysisSpec(prompt)
+  );
 
 const isEventCountOnlySpec = (spec: CardAnalysisSpec) => {
   const eventFieldIds = new Set(
@@ -779,8 +970,21 @@ export const planCardAnalysis = ({
   prompt: string;
   totalMatchingRecords: number;
 }): CardAnalysisPlan => {
+  const normalizedSpec = withPromptDateFilters(
+    normalizeAnalysisSpec(analysisSpec),
+    prompt,
+    generationTime
+  );
+
+  const safeNormalizedSpec =
+    normalizedSpec &&
+    (!isEventCountOnlySpec(normalizedSpec) ||
+      promptAllowsEventCountSpec(prompt))
+      ? normalizedSpec
+      : undefined;
+
   const fallbackSpec = withPromptDateFilters(
-    buildFallbackAnalysisSpec(prompt),
+    buildFallbackAnalysisSpec(prompt, safeNormalizedSpec),
     prompt,
     generationTime
   );
@@ -795,26 +999,15 @@ export const planCardAnalysis = ({
     return { mode: 'narrative' };
   }
 
-  const normalizedSpec = withPromptDateFilters(
-    normalizeAnalysisSpec(analysisSpec),
-    prompt,
-    generationTime
-  );
-
-  const safeNormalizedSpec =
-    normalizedSpec &&
-    (!isEventCountOnlySpec(normalizedSpec) ||
-      promptAllowsEventCountSpec(prompt))
-      ? normalizedSpec
-      : undefined;
+  const mergedSpec = mergeAnalysisSpecs(safeNormalizedSpec, fallbackSpec);
 
   const spec =
-    safeNormalizedSpec &&
-    (safeNormalizedSpec.extractionFields.length ||
-      safeNormalizedSpec.aggregations.length ||
-      safeNormalizedSpec.charts.length)
-      ? safeNormalizedSpec
-      : fallbackSpec;
+    mergedSpec &&
+    (mergedSpec.extractionFields.length ||
+      mergedSpec.aggregations.length ||
+      mergedSpec.charts.length)
+      ? mergedSpec
+      : undefined;
 
   if (!spec) return { mode: 'narrative' };
 
@@ -1201,6 +1394,8 @@ const formatChartValue = (value: number) => {
 };
 
 const normalizeExactMetric = (result: DeterministicAggregateValue) => {
+  if (result.groups?.length) return;
+
   const label = cardOutput.normalizeCardDisplayLabel({
     maxLength: 40,
     maxWords: 5,
@@ -1236,30 +1431,60 @@ const bucketDate = (
 ) => {
   const date = normalizeDate(record.date);
   if (!date) return { key: 'undated', label: 'Undated' };
+
+  const period: StreakPeriod =
+    dimension === 'month' || dimension === 'week' ? dimension : 'day';
+
+  return {
+    key: dateBucketKey(date, period) ?? 'undated',
+    label: date.toISOString(),
+  };
+};
+
+const dateBucketKey = (value: Date | number | string, period: StreakPeriod) => {
+  const date = normalizeDate(value);
+  if (!date) return;
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth();
   const day = date.getUTCDate();
 
-  if (dimension === 'month') {
-    return {
-      key: `${year}-${String(month + 1).padStart(2, '0')}`,
-      label: date.toISOString(),
-    };
+  if (period === 'month') {
+    return `${year}-${String(month + 1).padStart(2, '0')}`;
   }
 
-  if (dimension === 'week') {
+  if (period === 'week') {
     const weekDate = new Date(Date.UTC(year, month, day));
     const weekday = weekDate.getUTCDay() || 7;
     weekDate.setUTCDate(weekDate.getUTCDate() - weekday + 1);
-
-    return {
-      key: weekDate.toISOString().slice(0, 10),
-      label: date.toISOString(),
-    };
+    return weekDate.toISOString().slice(0, 10);
   }
 
-  return { key: date.toISOString().slice(0, 10), label: date.toISOString() };
+  return date.toISOString().slice(0, 10);
 };
+
+const shiftBucketKey = (key: string, period: StreakPeriod, amount: number) => {
+  if (period === 'month') {
+    const [year, month] = key.split('-').map((part) => Number(part));
+    if (!Number.isFinite(year) || !Number.isFinite(month)) return '';
+    const date = new Date(Date.UTC(year, month - 1 + amount, 1));
+
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(
+      2,
+      '0'
+    )}`;
+  }
+
+  const date = new Date(`${key}T00:00:00.000Z`);
+  if (!Number.isFinite(date.getTime())) return '';
+  date.setUTCDate(date.getUTCDate() + amount * (period === 'week' ? 7 : 1));
+  return date.toISOString().slice(0, 10);
+};
+
+const previousBucketKey = (key: string, period: StreakPeriod) =>
+  shiftBucketKey(key, period, -1);
+
+const nextBucketKey = (key: string, period: StreakPeriod) =>
+  shiftBucketKey(key, period, 1);
 
 const matchesLabel = (value: string, target?: string) =>
   !target || normalizeToken(value) === normalizeToken(target);
@@ -1435,12 +1660,28 @@ const evaluateBaseAggregation = ({
 const evaluateAggregation = ({
   aggregation,
   entries,
+  generationTime,
   resultsById,
+  selectedTagIds,
 }: {
   aggregation: AnalysisAggregationSpec;
   entries: FactEntry[];
+  generationTime?: Date | number | string | null;
   resultsById: Map<string, DeterministicAggregateValue>;
+  selectedTagIds: string[];
 }) => {
+  if (
+    aggregation.operation === 'currentStreak' ||
+    aggregation.operation === 'longestStreak'
+  ) {
+    return evaluateStreakAggregation({
+      aggregation,
+      entries,
+      generationTime,
+      selectedTagIds,
+    });
+  }
+
   if (aggregation.operation === 'ratio') {
     const numerator = aggregation.numeratorId
       ? resultsById.get(aggregation.numeratorId)
@@ -1544,6 +1785,215 @@ const groupEntries = ({
   }
 
   return [...groups.values()];
+};
+
+const dateGroupingDimensions = new Set<AnalysisGroupingSpec['dimension']>([
+  'day',
+  'week',
+  'month',
+]);
+
+const streakPeriodForAggregation = (
+  aggregation: AnalysisAggregationSpec
+): StreakPeriod => {
+  if (aggregation.period) return aggregation.period;
+  const dimension = aggregation.groupBy?.dimension;
+
+  return dimension && dateGroupingDimensions.has(dimension)
+    ? (dimension as StreakPeriod)
+    : 'day';
+};
+
+const entryMatchesAggregationField = (
+  entry: FactEntry,
+  aggregation: AnalysisAggregationSpec
+) => {
+  if (!aggregation.fieldId) return true;
+
+  return (
+    eventCountForEntries([entry], aggregation).value > 0 ||
+    numberFactsForAggregation([entry], aggregation).length > 0 ||
+    qualitativeFactsForAggregation([entry], aggregation).length > 0
+  );
+};
+
+const recordIdsForBucketKeys = (
+  buckets: Map<string, FactEntry[]>,
+  keys: string[]
+) => [
+  ...new Set(
+    keys.flatMap(
+      (key) => buckets.get(key)?.map((entry) => entry.record.id) ?? []
+    )
+  ),
+];
+
+const streakForEntries = ({
+  entries,
+  generationTime,
+  operation,
+  period,
+}: {
+  entries: FactEntry[];
+  generationTime?: Date | number | string | null;
+  operation: 'currentStreak' | 'longestStreak';
+  period: StreakPeriod;
+}) => {
+  const buckets = new Map<string, FactEntry[]>();
+
+  for (const entry of entries) {
+    if (!entry.record.date) continue;
+    const key = dateBucketKey(entry.record.date, period);
+    if (!key) continue;
+    const bucket = buckets.get(key) ?? [];
+    bucket.push(entry);
+    buckets.set(key, bucket);
+  }
+
+  const keys = [...buckets.keys()].sort((left, right) =>
+    left.localeCompare(right)
+  );
+
+  if (!keys.length) return;
+
+  if (operation === 'currentStreak') {
+    const anchor =
+      (generationTime && dateBucketKey(generationTime, period)) ?? keys.at(-1);
+
+    if (!anchor || !buckets.has(anchor)) return { recordIds: [], value: 0 };
+    const streakKeys: string[] = [];
+    let key = anchor;
+
+    while (buckets.has(key)) {
+      streakKeys.unshift(key);
+      key = previousBucketKey(key, period);
+    }
+
+    return {
+      recordIds: recordIdsForBucketKeys(buckets, streakKeys),
+      value: streakKeys.length,
+    };
+  }
+
+  let bestKeys: string[] = [];
+  let currentKeys: string[] = [];
+  let previousKey: string | undefined;
+
+  for (const key of keys) {
+    currentKeys =
+      previousKey && nextBucketKey(previousKey, period) === key
+        ? [...currentKeys, key]
+        : [key];
+
+    if (currentKeys.length > bestKeys.length) bestKeys = currentKeys;
+    previousKey = key;
+  }
+
+  return {
+    recordIds: recordIdsForBucketKeys(buckets, bestKeys),
+    value: bestKeys.length,
+  };
+};
+
+const evaluateStreakAggregation = ({
+  aggregation,
+  entries,
+  generationTime,
+  selectedTagIds,
+}: {
+  aggregation: AnalysisAggregationSpec;
+  entries: FactEntry[];
+  generationTime?: Date | number | string | null;
+  selectedTagIds: string[];
+}): DeterministicAggregateValue | undefined => {
+  if (
+    aggregation.operation !== 'currentStreak' &&
+    aggregation.operation !== 'longestStreak'
+  ) {
+    return;
+  }
+
+  const period = streakPeriodForAggregation(aggregation);
+  const operation = aggregation.operation;
+
+  const activeEntries = entries.filter((entry) =>
+    entryMatchesAggregationField(entry, aggregation)
+  );
+
+  if (!activeEntries.length) return;
+  const grouping = aggregation.groupBy;
+
+  if (grouping) {
+    const groups = groupEntries({
+      entries: activeEntries,
+      grouping,
+      selectedTagIds,
+    })
+      .map((group) => {
+        const result = streakForEntries({
+          entries: group.entries,
+          generationTime,
+          operation,
+          period,
+        });
+
+        return result
+          ? {
+              label: group.label,
+              recordIds: result.recordIds,
+              value: result.value,
+            }
+          : undefined;
+      })
+      .filter(
+        (
+          group
+        ): group is { label: string; recordIds: string[]; value: number } =>
+          !!group
+      )
+      .sort(
+        (left, right) =>
+          Number(right.value) - Number(left.value) ||
+          left.label.localeCompare(right.label)
+      );
+
+    if (!groups.length) return;
+    const topValue = groups[0].value;
+
+    return {
+      groups,
+      id: aggregation.id,
+      label: aggregation.label,
+      operation: aggregation.operation,
+      recordIds: [
+        ...new Set(
+          groups
+            .filter((group) => group.value === topValue)
+            .flatMap((group) => group.recordIds)
+        ),
+      ],
+      unit: aggregation.unit ?? streakPeriodUnit(period),
+      value: topValue,
+    };
+  }
+
+  const result = streakForEntries({
+    entries: activeEntries,
+    generationTime,
+    operation,
+    period,
+  });
+
+  return result
+    ? {
+        id: aggregation.id,
+        label: aggregation.label,
+        operation: aggregation.operation,
+        recordIds: result.recordIds,
+        unit: aggregation.unit ?? streakPeriodUnit(period),
+        value: result.value,
+      }
+    : undefined;
 };
 
 const eventChartData = ({
@@ -1812,13 +2262,29 @@ export const aggregateExtractedFacts = ({
 
   for (const aggregation of analysisSpec.aggregations) {
     if (aggregation.operation === 'ratio') continue;
-    const result = evaluateAggregation({ aggregation, entries, resultsById });
+
+    const result = evaluateAggregation({
+      aggregation,
+      entries,
+      generationTime,
+      resultsById,
+      selectedTagIds: tagIds,
+    });
+
     if (result) resultsById.set(result.id, result);
   }
 
   for (const aggregation of analysisSpec.aggregations) {
     if (aggregation.operation !== 'ratio') continue;
-    const result = evaluateAggregation({ aggregation, entries, resultsById });
+
+    const result = evaluateAggregation({
+      aggregation,
+      entries,
+      generationTime,
+      resultsById,
+      selectedTagIds: tagIds,
+    });
+
     if (result) resultsById.set(result.id, result);
   }
 

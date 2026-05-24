@@ -54,9 +54,11 @@ const matchExactMetric = ({
   indexes.byIdentity.get(normalizeMetricIdentityLabel(metric.label));
 
 const mergeExactCardOutput = ({
+  appendMissingExactMetrics = true,
   exactFacts,
   output,
 }: {
+  appendMissingExactMetrics?: boolean;
   exactFacts?: cardAnalysis.ExactCardFacts;
   output: cardOutput.CardOutput;
 }): cardOutput.CardOutput => {
@@ -86,7 +88,8 @@ const mergeExactCardOutput = ({
   });
 
   const shouldAppendExactMetrics =
-    output.metrics.length === 0 || shouldMergeChart || !output.chart;
+    appendMissingExactMetrics &&
+    (output.metrics.length === 0 || shouldMergeChart || !output.chart);
 
   return {
     ...output,
@@ -101,15 +104,18 @@ const mergeExactCardOutput = ({
 };
 
 export const parseCardOutputResult = ({
+  appendMissingExactMetrics,
   exactFacts,
   parsedJson,
 }: {
+  appendMissingExactMetrics?: boolean;
   exactFacts?: cardAnalysis.ExactCardFacts;
   parsedJson: unknown;
 }) => {
   const root = asRecord(parsedJson);
 
   const normalizedJson = mergeExactCardOutput({
+    appendMissingExactMetrics,
     exactFacts,
     output: cardOutput.normalizeRawCardOutput(
       root.output
@@ -165,7 +171,12 @@ export const parseTweakedCardResult = ({
   exactFacts?: cardAnalysis.ExactCardFacts;
   parsedJson: unknown;
 }) => {
-  const parsedOutput = parseCardOutputResult({ exactFacts, parsedJson });
+  const parsedOutput = parseCardOutputResult({
+    appendMissingExactMetrics: false,
+    exactFacts,
+    parsedJson,
+  });
+
   if (!parsedOutput.success) return parsedOutput;
 
   return {

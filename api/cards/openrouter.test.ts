@@ -241,6 +241,58 @@ describe('card openrouter', () => {
     });
   });
 
+  test('removes exact metrics on tweak', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: { metrics: [{ label: 'Kept', value: 0 }] },
+        title: 'Weekly sleep',
+      })
+    ) as never;
+
+    await expect(
+      openrouter.tweakCardResult({
+        analysisMode: 'exact',
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        exactFacts: {
+          aggregateValues: {},
+          analysisSpec: {
+            aggregations: [],
+            charts: [],
+            extractionFields: [],
+            groupings: [],
+          },
+          metrics: [
+            { label: 'Kept', value: 5 },
+            { label: 'Removed', value: 3 },
+          ],
+          selectedTagCounts: {},
+          totalMatchingRecordCount: 5,
+        },
+        previousOutput: {
+          metrics: [
+            { label: 'Kept', value: 4 },
+            { label: 'Removed', value: 3 },
+          ],
+          milestones: [],
+        },
+        prompt: 'Track sleep',
+        records: [
+          {
+            date: '2026-05-20T00:00:00.000Z',
+            id: 'record-1',
+            tags: [{ name: 'sleep' }],
+            text: 'Slept well',
+          },
+        ],
+        tweakPrompt: 'Remove the Removed stat card.',
+      })
+    ).resolves.toMatchObject({
+      output: { metrics: [{ label: 'Kept', value: 5 }] },
+      success: true,
+      title: 'Weekly sleep',
+    });
+  });
+
   test('prioritizes tweak', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 

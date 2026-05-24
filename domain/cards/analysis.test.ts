@@ -147,6 +147,103 @@ describe('card analysis plan', () => {
     });
   });
 
+  test('plans streaks', () => {
+    const plan = cardAnalysis.planCardAnalysis({
+      mode: 'narrative',
+      prompt:
+        'Track weekly and longest streaks for each user that posts. Include a bar chart with tag counts.',
+      totalMatchingRecords: 6,
+    });
+
+    expect(plan).toMatchObject({
+      analysisSpec: {
+        aggregations: [
+          {
+            groupBy: { dimension: 'author' },
+            operation: 'currentStreak',
+            period: 'week',
+          },
+          {
+            groupBy: { dimension: 'author' },
+            operation: 'longestStreak',
+            period: 'week',
+          },
+          { id: 'record_count', operation: 'count' },
+        ],
+        charts: [{ id: 'tag_counts', x: { dimension: 'tag' } }],
+      },
+      mode: 'exact',
+    });
+  });
+
+  test('keeps planned streaks', () => {
+    const plan = cardAnalysis.planCardAnalysis({
+      analysisSpec: {
+        aggregations: [
+          {
+            eventLabel: 'post',
+            fieldId: 'post',
+            groupBy: { dimension: 'author', id: 'author', label: 'User' },
+            id: 'cur_wk',
+            label: 'Current weekly posting streak by user',
+            operation: 'currentStreak',
+            period: 'week',
+            unit: 'weeks',
+          },
+          {
+            eventLabel: 'post',
+            fieldId: 'post',
+            groupBy: { dimension: 'author', id: 'author', label: 'User' },
+            id: 'long_wk',
+            label: 'Longest weekly posting streak by user',
+            operation: 'longestStreak',
+            period: 'week',
+            unit: 'weeks',
+          },
+          {
+            eventLabel: 'post',
+            fieldId: 'post',
+            id: 'tag_count',
+            label: 'Tag counts',
+            operation: 'count',
+            unit: 'posts',
+          },
+        ],
+        charts: [
+          {
+            id: 'tag_counts',
+            title: 'Tag counts',
+            type: 'bar',
+            x: { dimension: 'tag', id: 'tag', label: 'Tag' },
+            y: [{ aggregationId: 'tag_count', label: 'Posts' }],
+          },
+        ],
+        extractionFields: [
+          {
+            countMode: 'recordPresence',
+            id: 'post',
+            label: 'Post',
+            type: 'event',
+          },
+        ],
+        groupings: [
+          { dimension: 'author', id: 'author', label: 'User' },
+          { dimension: 'tag', id: 'tag', label: 'Tag' },
+        ],
+      },
+      mode: 'exact',
+      prompt:
+        'Track weekly and longest streaks for each user that posts. Include a bar chart with tag counts.',
+      totalMatchingRecords: 6,
+    });
+
+    expect(plan.analysisSpec?.aggregations.map((item) => item.id)).toEqual([
+      'cur_wk',
+      'long_wk',
+      'tag_count',
+    ]);
+  });
+
   test('skips chart fallback', () => {
     const prompt =
       'Track separation progress: make a line chart over time with two series, Alone duration (min) and Peak distress (0-5). Summarize latest duration, current all-time max with distress <=2, and recent regressions where distress rose above 2 or duration was reduced.';
@@ -803,6 +900,88 @@ describe('card exact facts', () => {
         exactFacts.chart?.data?.map((item) => [item.label, item.value]) ?? []
       )
     ).toEqual({ Ada: 2, Bea: 1, Cal: 1 });
+  });
+
+  test('counts streaks', () => {
+    const plan = cardAnalysis.planCardAnalysis({
+      prompt:
+        'Track weekly and longest streaks for each user that posts. Include a bar chart with tag counts.',
+      totalMatchingRecords: 6,
+    });
+
+    if (!plan.analysisSpec) throw new Error('Expected analysis spec');
+
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: plan.analysisSpec,
+      facts: [],
+      generationTime: '2026-05-24T04:00:00.000Z',
+      records: [
+        {
+          author: { id: 'profile-n', name: 'Normandy' },
+          date: '2026-04-28T20:43:38.227Z',
+          id: 'record-1',
+          tags: [{ id: 'tag-discover', name: 'Discover Weekly' }],
+        },
+        {
+          author: { id: 'profile-c', name: 'cade' },
+          date: '2026-04-28T23:13:41.940Z',
+          id: 'record-2',
+          tags: [{ id: 'tag-practice', name: 'Finger Practice' }],
+        },
+        {
+          author: { id: 'profile-n', name: 'Normandy' },
+          date: '2026-05-05T04:56:18.621Z',
+          id: 'record-3',
+          tags: [{ id: 'tag-discover', name: 'Discover Weekly' }],
+        },
+        {
+          author: { id: 'profile-c', name: 'cade' },
+          date: '2026-05-14T18:21:24.837Z',
+          id: 'record-4',
+          tags: [{ id: 'tag-original', name: 'Original Clip' }],
+        },
+        {
+          author: { id: 'profile-n', name: 'Normandy' },
+          date: '2026-05-15T19:34:16.501Z',
+          id: 'record-5',
+          tags: [{ id: 'tag-discover', name: 'Discover Weekly' }],
+        },
+        {
+          author: { id: 'profile-c', name: 'cade' },
+          date: '2026-05-22T22:53:15.570Z',
+          id: 'record-6',
+          tags: [{ id: 'tag-original', name: 'Original Clip' }],
+        },
+      ],
+      tagIds: ['tag-discover', 'tag-practice', 'tag-original'],
+    });
+
+    expect(
+      Object.fromEntries(
+        exactFacts.aggregateValues.current_week_by_author.groups?.map(
+          (group) => [group.label, group.value]
+        ) ?? []
+      )
+    ).toEqual({ cade: 2, Normandy: 0 });
+
+    expect(
+      Object.fromEntries(
+        exactFacts.aggregateValues.longest_week_by_author.groups?.map(
+          (group) => [group.label, group.value]
+        ) ?? []
+      )
+    ).toEqual({ Normandy: 3, cade: 2 });
+
+    expect(exactFacts.aggregateValues.current_week_by_author.value).toBe(2);
+    expect(exactFacts.aggregateValues.longest_week_by_author.value).toBe(3);
+
+    expect(exactFacts.metrics.map((metric) => metric.label)).not.toContain(
+      'Current weekly streak'
+    );
+
+    expect(exactFacts.metrics.map((metric) => metric.label)).not.toContain(
+      'Longest weekly streak'
+    );
   });
 
   test('filters invalid facts', () => {
