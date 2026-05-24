@@ -7,7 +7,6 @@ import { formatDateTime } from '@/lib/time';
 import { resolveSpectrumColor, SPECTRUM, type Color } from '@/theme/spectrum';
 import { Card } from '@/ui/card';
 import { Icon } from '@/ui/icon';
-import { Spinner } from '@/ui/spinner';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import * as cardDisplay from '@/features/cards/lib/card-display';
@@ -21,7 +20,6 @@ import Svg, {
 } from 'react-native-svg';
 
 import {
-  MagnifyingGlass,
   Minus,
   TrendDown,
   TrendUp,
@@ -118,7 +116,6 @@ const MILESTONE_DOT_TOP = 4;
 const MILESTONE_DOT_CENTER = MILESTONE_DOT_TOP + MILESTONE_DOT_SIZE / 2;
 const MILESTONE_RAIL_LEFT = MILESTONE_DOT_SIZE / 2 - 0.5;
 const MILESTONE_RAIL_OPACITY = 0.35;
-const EMPTY_CARD_SUMMARY = 'No matching records yet';
 
 type PreviewSection =
   | { key: string; rows: number; type: 'chart' }
@@ -135,39 +132,6 @@ type ChartLabelTag = Pick<
   NonNullable<LogCard['tags']>[number],
   'color' | 'name'
 >;
-
-const CardStatusPill = ({
-  className,
-  icon,
-  isLoading,
-  label,
-}: {
-  className?: string;
-  icon?: React.ComponentType<IconProps>;
-  isLoading?: boolean;
-  label: string;
-}) => (
-  <View
-    className={cn(
-      'flex-row max-w-full min-w-0 px-1.5 py-0.5 border-continuous rounded-full bg-secondary gap-1.5 items-center self-start',
-      className
-    )}
-  >
-    <View className="size-3 items-center justify-center">
-      {isLoading ? (
-        <Spinner className="text-muted-foreground" size="xxs" />
-      ) : icon ? (
-        <Icon className="text-muted-foreground" icon={icon} size={12} />
-      ) : null}
-    </View>
-    <Text
-      className="font-normal text-muted-foreground text-xs shrink"
-      numberOfLines={1}
-    >
-      {label}
-    </Text>
-  </View>
-);
 
 const getCompactMilestoneAlignment = (
   index: number,
@@ -2472,7 +2436,7 @@ export const ProgressCard = ({
   variant = 'summary',
 }: {
   actionMenu?: React.ReactNode;
-  card: Pick<LogCard, 'error' | 'isGenerating' | 'tags' | 'title'>;
+  card: Pick<LogCard, 'tags' | 'title'>;
   chartTags?: ChartLabelTag[];
   className?: string;
   frame?: 'card' | 'none';
@@ -2484,25 +2448,15 @@ export const ProgressCard = ({
 }) => {
   const colorScheme = useColorScheme();
   const resolvedOutput = output ?? null;
-  const isGenerating = !!card.isGenerating;
   const isSummary = variant === 'summary';
   const summary = resolvedOutput?.summary?.trim();
   const hasRenderableChart = cardChart.isRenderableChart(resolvedOutput?.chart);
-
-  const isEmptyOutput =
-    !!resolvedOutput &&
-    summary === EMPTY_CARD_SUMMARY &&
-    !resolvedOutput.metrics.length &&
-    !resolvedOutput.milestones.length &&
-    !hasRenderableChart;
 
   const hasHorizontalBarChart =
     resolvedOutput?.chart?.type === 'bar' &&
     getBarChartOrientation(
       cardChart.getRenderableChartSeries(resolvedOutput.chart)[0]?.data ?? []
     ) === 'horizontal';
-
-  const showEmptyState = !isGenerating && !resolvedOutput && !card.error;
 
   const milestoneDotColor =
     SPECTRUM[colorScheme][
@@ -2610,10 +2564,6 @@ export const ProgressCard = ({
     if (!summary) return null;
     const formattedSummary = cardDisplay.formatCardText(summary);
 
-    if (isEmptyOutput) {
-      return <CardStatusPill icon={MagnifyingGlass} label={formattedSummary} />;
-    }
-
     return (
       <Text
         numberOfLines={lines}
@@ -2666,6 +2616,8 @@ export const ProgressCard = ({
     );
   };
 
+  if (!cardDisplay.hasDisplayableCardOutput(resolvedOutput)) return null;
+
   const body = (
     <React.Fragment>
       <View className="flex-row gap-3 items-start">
@@ -2687,25 +2639,7 @@ export const ProgressCard = ({
           <View className={ACTION_MENU_SLOT_CLASS}>{actionMenu}</View>
         ) : null}
       </View>
-      {isGenerating && !resolvedOutput ? (
-        <View
-          className={cn(
-            'items-start justify-end',
-            isSummary ? 'flex-1' : 'h-24'
-          )}
-        >
-          <CardStatusPill isLoading label="Generating..." />
-        </View>
-      ) : showEmptyState ? (
-        <View
-          className={cn(
-            'items-start justify-end',
-            isSummary ? 'flex-1' : 'h-24'
-          )}
-        >
-          <CardStatusPill icon={MagnifyingGlass} label={EMPTY_CARD_SUMMARY} />
-        </View>
-      ) : resolvedOutput ? (
+      {resolvedOutput ? (
         isSummary ? (
           <View className="flex-1 mt-3 w-full gap-2 self-stretch">
             {previewSections.map(renderPreviewSection)}
@@ -2738,21 +2672,7 @@ export const ProgressCard = ({
             {resolvedOutput.milestones.length > 0 && renderMilestones()}
           </View>
         )
-      ) : (
-        <View
-          className={cn(
-            'items-center justify-center',
-            isSummary ? 'flex-1' : 'h-24'
-          )}
-        >
-          <Text
-            className="text-center text-muted-foreground"
-            numberOfLines={isSummary ? 4 : undefined}
-          >
-            Failed to generate card.
-          </Text>
-        </View>
-      )}
+      ) : null}
     </React.Fragment>
   );
 

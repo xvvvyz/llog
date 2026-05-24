@@ -1,6 +1,7 @@
 import { Dots } from '@/features/files/components/carousel/dots';
 import * as cardMutations from '@/features/cards/mutations/cards';
 import type { LogCard } from '@/features/cards/types/card';
+import * as cardDisplay from '@/features/cards/lib/card-display';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
@@ -119,7 +120,12 @@ export const CardsHeader = ({
   const [activeIndexState, setActiveIndexState] = React.useState(0);
 
   const visibleCards = React.useMemo(
-    () => cards.filter((card) => card.type === 'progress'),
+    () =>
+      cards.filter(
+        (card) =>
+          card.type === 'progress' &&
+          cardDisplay.hasDisplayableCardOutput(card.output)
+      ),
     [cards]
   );
 

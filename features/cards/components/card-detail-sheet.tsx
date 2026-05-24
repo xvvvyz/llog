@@ -1,6 +1,7 @@
 import { ProgressCard } from '@/features/cards/components/progress-card';
 import * as cardMutations from '@/features/cards/mutations/cards';
 import { useLogCard, useLogCards } from '@/features/cards/queries/use-cards';
+import * as cardDisplay from '@/features/cards/lib/card-display';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
@@ -83,58 +84,57 @@ export const LogCardDetailSheet = () => {
           contentContainerClassName="mx-auto w-full max-w-lg p-8 md:p-8 items-stretch"
           loading={card.isLoading}
         >
-          {!!card.id && !!title && (
-            <ProgressCard
-              chartTags={recordTags.data.length ? recordTags.data : card.tags}
-              frame="none"
-              logColorIndex={logColorIndex}
-              output={card.output}
-              variant="detail"
-              actionMenu={
-                myRole.canManage ? (
-                  <cardActionsMenu.CardActionsMenu
-                    isGenerating={isGenerating}
-                    isTweakDisabled={!card.output}
-                    onDelete={() => setDeletingCardId(card.id)}
-                    onRefresh={handleRefresh}
-                    onTweak={() => sheetManager.open('log-card-tweak', card.id)}
-                    showGeneratingIndicator={!!card.output}
-                    onCopy={() =>
-                      sheetManager.open(
-                        'log-card-copy-to',
-                        card.id,
-                        card.logId ?? undefined
-                      )
-                    }
-                    onEdit={() =>
-                      sheetManager.open(
-                        'log-card-editor',
-                        card.id,
-                        card.logId ?? undefined
-                      )
-                    }
-                    onManage={
-                      hasMultipleCards
-                        ? () =>
-                            sheetManager.open(
-                              'log-cards',
-                              card.logId ?? undefined
-                            )
-                        : undefined
-                    }
-                  />
-                ) : isGenerating && !!card.output ? (
-                  <cardActionsMenu.CardGeneratingIndicator />
-                ) : undefined
-              }
-              card={{
-                error: card.error,
-                isGenerating: card.isGenerating,
-                tags: card.tags,
-                title,
-              }}
-            />
-          )}
+          {!!card.id &&
+            !!title &&
+            cardDisplay.hasDisplayableCardOutput(card.output) && (
+              <ProgressCard
+                card={{ tags: card.tags, title }}
+                chartTags={recordTags.data.length ? recordTags.data : card.tags}
+                frame="none"
+                logColorIndex={logColorIndex}
+                output={card.output}
+                variant="detail"
+                actionMenu={
+                  myRole.canManage ? (
+                    <cardActionsMenu.CardActionsMenu
+                      isGenerating={isGenerating}
+                      isTweakDisabled={!card.output}
+                      onDelete={() => setDeletingCardId(card.id)}
+                      onRefresh={handleRefresh}
+                      showGeneratingIndicator={!!card.output}
+                      onCopy={() =>
+                        sheetManager.open(
+                          'log-card-copy-to',
+                          card.id,
+                          card.logId ?? undefined
+                        )
+                      }
+                      onEdit={() =>
+                        sheetManager.open(
+                          'log-card-editor',
+                          card.id,
+                          card.logId ?? undefined
+                        )
+                      }
+                      onManage={
+                        hasMultipleCards
+                          ? () =>
+                              sheetManager.open(
+                                'log-cards',
+                                card.logId ?? undefined
+                              )
+                          : undefined
+                      }
+                      onTweak={() =>
+                        sheetManager.open('log-card-tweak', card.id)
+                      }
+                    />
+                  ) : isGenerating && !!card.output ? (
+                    <cardActionsMenu.CardGeneratingIndicator />
+                  ) : undefined
+                }
+              />
+            )}
         </SheetListScrollView>
         <SheetFooter contentClassName="md:px-8 md:py-4">
           <Button

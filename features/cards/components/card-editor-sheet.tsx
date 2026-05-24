@@ -97,6 +97,9 @@ export const LogCardEditorSheet = () => {
     !isSuggestingPrompt &&
     !isSubmitting;
 
+  const showSuggestPromptButton =
+    canSuggestPrompt || (showSuggestPrompt && isSuggestingPrompt);
+
   const close = React.useCallback(() => {
     sheetManager.close('log-card-editor');
   }, [sheetManager]);
@@ -251,15 +254,15 @@ export const LogCardEditorSheet = () => {
                       value={prompt}
                       className={cn(
                         'border-0 rounded-none bg-transparent',
-                        showSuggestPrompt && 'pr-32'
+                        showSuggestPromptButton && 'pr-32'
                       )}
                     />
-                    {showSuggestPrompt && (
+                    {showSuggestPromptButton && (
                       <View className="absolute right-1 top-1">
                         <Button
                           accessibilityLabel="Suggest card prompt"
                           className="rounded-lg"
-                          disabled={!canSuggestPrompt}
+                          disabled={isSuggestingPrompt}
                           onPress={handleSuggestPrompt}
                           size="xs"
                           variant="ghost"

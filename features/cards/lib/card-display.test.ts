@@ -36,4 +36,31 @@ describe('card display', () => {
     expect(formatted).toContain('Latest check-in was');
     expect(formatted).not.toContain('2024-06-15T12:30:00.000Z');
   });
+
+  test('detects displayable output', () => {
+    expect(cardDisplay.hasDisplayableCardOutput(null)).toBe(false);
+
+    expect(
+      cardDisplay.hasDisplayableCardOutput({
+        metrics: [],
+        milestones: [],
+        summary: 'No matching records yet',
+      })
+    ).toBe(false);
+
+    expect(
+      cardDisplay.hasDisplayableCardOutput({
+        metrics: [],
+        milestones: [],
+        summary: 'Sleep improved this week.',
+      })
+    ).toBe(true);
+
+    expect(
+      cardDisplay.hasDisplayableCardOutput({
+        metrics: [{ label: 'Sessions', value: 3 }],
+        milestones: [],
+      })
+    ).toBe(true);
+  });
 });
