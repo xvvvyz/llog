@@ -28,7 +28,7 @@ export const cleanNullableObject = (value: unknown): unknown => {
 export const cleanTitle = (value: unknown, defaultValue: string) =>
   cardOutput.normalizeCardDisplayLabel({
     defaultValue,
-    maxLength: 36,
+    maxLength: cardOutput.MAX_CARD_GENERATED_TITLE_LENGTH,
     maxWords: 5,
     value,
   }) ?? 'Progress card';

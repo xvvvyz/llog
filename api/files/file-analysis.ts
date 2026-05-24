@@ -1,4 +1,5 @@
 import * as audioAnalysisRepository from '@/api/audio-analysis/repository';
+import * as cardActions from '@/api/cards/card-actions';
 import { assertCanAnalyzeFile } from '@/api/files/file-analysis-permissions';
 import { enqueueJob } from '@/api/jobs/payload';
 import { auth, db } from '@/api/middleware/db';
@@ -93,6 +94,12 @@ app.post('/:fileId/clear-transcription', db(), auth(), async (c) => {
     isTranscribing: false,
     transcriptionRequestedAt: null,
     transcript: null,
+  });
+
+  await cardActions.queuePublishedFileCardRefreshes({
+    dbClient: c.var.db,
+    env: c.env,
+    fileId,
   });
 
   return c.json({ success: true });

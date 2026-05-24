@@ -1,6 +1,7 @@
 import { deleteActivities } from '@/api/activity/delete-activities';
+import * as cardActions from '@/api/cards/card-actions';
 import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
-import { auth, db } from '@/api/middleware/db';
+import { auth, createAdminDb, db } from '@/api/middleware/db';
 import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as push from '@/api/push/web-push';
 import { fileAssetQuery } from '@/domain/files/query';
@@ -149,6 +150,7 @@ app.post(
             $: { fields: ['id', 'name'] },
             ...notificationRecipientLogQuery,
           },
+          tags: { $: { fields: ['id' as const] } },
         },
       },
     });
@@ -164,6 +166,7 @@ app.post(
             $: { fields: ['id', 'name'] },
             ...notificationRecipientLogQuery,
           },
+          tags: { $: { fields: ['id' as const] } },
         },
       });
 
@@ -205,6 +208,13 @@ app.post(
           text: trimmedText,
         })
       );
+
+      await cardActions.queuePublishedRecordCardRefreshes({
+        dbClient: c.var.db,
+        env: c.env,
+        logId: record.log.id,
+        recordTagIds: record.tags?.map((tag) => tag.id) ?? [],
+      });
 
       await push.sendPushNotifications(
         c.env,
@@ -277,6 +287,13 @@ app.post(
       })
     );
 
+    await cardActions.queuePublishedRecordCardRefreshes({
+      dbClient: c.var.db,
+      env: c.env,
+      logId: reply.record.log.id,
+      recordTagIds: reply.record.tags?.map((tag) => tag.id) ?? [],
+    });
+
     await push.sendPushNotifications(
       c.env,
       push.collectRecipientSubscriptions({
@@ -313,12 +330,14 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
       record: {
         $: { fields: ['id'] },
         log: {
+          $: { fields: ['id' as const] },
           team: {
             roles: {
               $: { fields: ['role'], where: { userId: c.var.user.id } },
             },
           },
         },
+        tags: { $: { fields: ['id' as const] } },
       },
       files: fileAssetQuery,
       activities: {},
@@ -344,12 +363,22 @@ app.delete('/:recordId/replies/:replyId', db({ asUser: true }), async (c) => {
   }
 
   await c.var.db.transact(c.var.db.tx.replies[replyId].delete());
+  const logId = reply.record?.log?.id;
+  const recordTagIds = reply.record?.tags?.map((tag) => tag.id) ?? [];
 
   await Promise.all([
     filesToDelete.length
       ? deleteUnusedFileAssets(c.env, filesToDelete)
       : undefined,
     deleteActivities(c.env, reply.activities ?? []),
+    !reply.isDraft && logId && recordTagIds.length
+      ? cardActions.queuePublishedRecordCardRefreshes({
+          dbClient: createAdminDb(c.env),
+          env: c.env,
+          logId,
+          recordTagIds,
+        })
+      : undefined,
   ]);
 
   return c.json({ success: true });

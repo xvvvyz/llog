@@ -1,4 +1,5 @@
 import * as openrouter from '@/api/cards/openrouter';
+import * as cardOutput from '@/domain/cards/output';
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 
 const originalFetch = globalThis.fetch;
@@ -73,6 +74,7 @@ const readChatRequest = async (
 type ResponseSchemaNode = {
   additionalProperties?: unknown;
   items?: ResponseSchemaNode;
+  maxLength?: unknown;
   properties?: Record<string, ResponseSchemaNode>;
   required?: unknown;
   type?: unknown;
@@ -342,6 +344,65 @@ describe('card openrouter', () => {
     expect(userPayload.requiredJsonShape).toBeUndefined();
   });
 
+  test('sends generation time', async () => {
+    const generationTime = '2026-05-20T12:34:56.000Z';
+    const cardTimes: unknown[] = [];
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      const request = await readChatRequest(input, init);
+
+      const userMessage = request.messages?.find(
+        (message) => message.role === 'user'
+      );
+
+      const payload = JSON.parse(String(userMessage?.content)) as {
+        card?: { generationTime?: unknown };
+      };
+
+      cardTimes.push(payload.card?.generationTime);
+
+      return jsonResponse({
+        output: { summary: 'Generated from current context.' },
+        title: 'Current context',
+      });
+    }) as never;
+
+    const records = [
+      {
+        date: '2026-05-20T00:00:00.000Z',
+        id: 'record-1',
+        tags: [{ name: 'sleep' }],
+        text: 'Slept well',
+      },
+    ];
+
+    await openrouter.generateCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      generationTime,
+      prompt: 'Track sleep',
+      records,
+    });
+
+    await openrouter.refreshCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      generationTime,
+      previousOutput: { metrics: [], milestones: [], summary: 'Old' },
+      prompt: 'Track sleep',
+      records,
+    });
+
+    await openrouter.tweakCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      generationTime,
+      previousOutput: { metrics: [], milestones: [], summary: 'Old' },
+      prompt: 'Track sleep',
+      records,
+      tweakPrompt: 'Make it current',
+    });
+
+    expect(cardTimes).toEqual([generationTime, generationTime, generationTime]);
+  });
+
   test('compacts record context', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
@@ -410,9 +471,10 @@ describe('card openrouter', () => {
     expect(userPayload.outputRules).toContain('numeric point-in-time metrics');
     expect(userPayload.outputRules).toContain('cumulative/extreme/count');
     expect(userPayload.outputRules).toContain('distinct job');
-    expect(userPayload.outputRules).toContain('obvious chart value');
+    expect(userPayload.outputRules).toContain('obvious chart values');
     expect(userPayload.outputRules).toContain('valueFormat');
     expect(userPayload.outputRules).toContain('full source record.date ISO');
+    expect(userPayload.outputRules).toContain('durationSince');
     expect(userPayload.outputRules).toContain('summary at most 320');
 
     expect(userPayload.outputRules).toContain(
@@ -426,6 +488,92 @@ describe('card openrouter', () => {
     expect(userPayload.sourceRules).toContain(
       'do not treat omitted records as inspected'
     );
+  });
+
+  test('scopes output rules', async () => {
+    let outputRules = '';
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      const request = await readChatRequest(input, init);
+
+      const userMessage = request.messages?.find(
+        (message) => message.role === 'user'
+      );
+
+      outputRules = (
+        JSON.parse(String(userMessage?.content)) as { outputRules?: string }
+      ).outputRules!;
+
+      return jsonResponse({
+        output: { summary: 'Sleep notes mention steady rest.' },
+        title: 'Sleep notes',
+      });
+    }) as never;
+
+    await openrouter.generateCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      prompt: 'Summarize sleep notes.',
+      records: [
+        {
+          date: '2026-05-20T00:00:00.000Z',
+          id: 'record-1',
+          tags: [{ name: 'sleep' }],
+          text: 'Slept steadily.',
+        },
+      ],
+    });
+
+    expect(outputRules).toContain('Charts are allowed');
+    expect(outputRules).toContain('summary at most 320');
+    expect(outputRules).not.toContain('numeric point-in-time metrics');
+    expect(outputRules).not.toContain('Bar charts use data');
+  });
+
+  test('allows implicit charts', async () => {
+    let outputRules = '';
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      const request = await readChatRequest(input, init);
+
+      const userMessage = request.messages?.find(
+        (message) => message.role === 'user'
+      );
+
+      outputRules = (
+        JSON.parse(String(userMessage?.content)) as { outputRules?: string }
+      ).outputRules!;
+
+      return jsonResponse({
+        output: {
+          chart: {
+            data: [
+              { label: 'Bedtime', value: 22 },
+              { label: 'Wake time', value: 7 },
+            ],
+            type: 'bar',
+          },
+          metrics: [],
+          milestones: [],
+        },
+        title: 'Sleep comparison',
+      });
+    }) as never;
+
+    await openrouter.generateCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      prompt: 'Compare bedtime with wake time.',
+      records: [
+        {
+          date: '2026-05-20T00:00:00.000Z',
+          id: 'record-1',
+          tags: [{ name: 'sleep' }],
+          text: 'Bedtime 10pm. Wake time 7am.',
+        },
+      ],
+    });
+
+    expect(outputRules).toContain('Bar charts use data');
+    expect(outputRules).toContain('Use charts only when clearer');
   });
 
   test('plans exact spec', async () => {
@@ -546,6 +694,11 @@ describe('card openrouter', () => {
       'null',
     ]);
 
+    const operationSchema = aggregation?.properties?.operation as
+      | { enum?: unknown[] }
+      | undefined;
+
+    expect(operationSchema?.enum).toContain('daysSinceLast');
     expect(filter?.required).toEqual(Object.keys(filter?.properties ?? {}));
     expect(filter?.properties?.endExclusive?.type).toEqual(['object', 'null']);
   });
@@ -974,7 +1127,7 @@ describe('card openrouter', () => {
     expect(userPayload.sourceRules).toContain('locked');
   });
 
-  test('dedupes exact metrics', async () => {
+  test('locks exact values', async () => {
     globalThis.fetch = mock(async () =>
       jsonResponse({
         output: {
@@ -1021,7 +1174,107 @@ describe('card openrouter', () => {
 
     expect(result.output.metrics).toEqual([
       { label: 'Total records', value: 485 },
-      { label: 'Sessions', value: 485 },
+    ]);
+  });
+
+  test('replaces exact metrics', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({ output: { summary: 'Updated exact facts.' } })
+    ) as never;
+
+    const result = await openrouter.refreshCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        metrics: [
+          {
+            label: 'Days since last',
+            unit: 'days',
+            value: '2026-02-23T17:00:00.000Z',
+            valueFormat: 'durationSince',
+          },
+        ],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 47,
+      },
+      previousOutput: {
+        metrics: [
+          { label: 'Since last >=3', unit: 'days', value: 0 },
+          {
+            label: 'Last >=3',
+            value: '2026-02-23T17:00:00.000Z',
+            valueFormat: 'datetime',
+          },
+        ],
+        milestones: [],
+      },
+      prompt: 'Add days since the last above-threshold session.',
+      records: [{ id: 'record-1', text: 'Peak distress (0-5): 3' }],
+    });
+
+    expect(result.output.metrics).toEqual([
+      {
+        label: 'Days since last',
+        unit: 'days',
+        value: '2026-02-23T17:00:00.000Z',
+        valueFormat: 'durationSince',
+      },
+    ]);
+  });
+
+  test('skips exact appends', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          metrics: [
+            { label: 'Days since last >=3', unit: 'days', value: 90 },
+            { label: 'Above-threshold total', unit: 'sessions', value: 9 },
+          ],
+        },
+        title: 'Above threshold',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        metrics: [
+          {
+            label: 'Above-threshold session count peak',
+            unit: 'sessions',
+            value: 9,
+          },
+          {
+            label: 'Days since last above-threshold session',
+            unit: 'days',
+            value: 90,
+          },
+        ],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 47,
+      },
+      prompt: 'Track above-threshold sessions.',
+      records: [{ id: 'record-1', text: 'Peak distress (0-5): 3' }],
+    });
+
+    expect(result.output.metrics).toEqual([
+      { label: 'Days since last >=3', unit: 'days', value: 90 },
+      { label: 'Above-threshold total', unit: 'sessions', value: 9 },
     ]);
   });
 
@@ -1331,7 +1584,7 @@ describe('card openrouter', () => {
     });
 
     expect(userPayload.outputRules).toContain('card.blueprint');
-    expect(userPayload.outputRules).toContain('card.blueprint.summary');
+    expect(userPayload.outputRules).toContain('milestone/summary presence');
     expect(userPayload.outputRules).toContain('Do not add sections absent');
   });
 
@@ -1520,6 +1773,14 @@ describe('card openrouter', () => {
       outputRules?: string;
     };
 
+    const metricProperties =
+      requestBody?.response_format?.json_schema?.schema?.properties?.output
+        ?.properties?.metrics?.items?.properties;
+
+    const valueFormatSchema = metricProperties?.valueFormat as
+      | { enum?: unknown[] }
+      | undefined;
+
     expect(result.output).not.toHaveProperty('sourceRecordIds');
 
     expect(userPayload.card?.previousOutput?.milestones?.[0]?.title).toBe(
@@ -1528,11 +1789,17 @@ describe('card openrouter', () => {
 
     expect(requestBody?.response_format?.type).toBe('json_schema');
 
+    expect(metricProperties?.label?.maxLength).toBe(
+      cardOutput.MAX_CARD_METRIC_LABEL_LENGTH
+    );
+
+    expect(valueFormatSchema?.enum).toContain('durationSince');
+
     expect(userPayload.outputRules).toContain(
       'curate the current best milestone set'
     );
 
-    expect(userPayload.outputRules).toContain('Prefer summary null');
+    expect(userPayload.outputRules).toContain('summary at most 320');
     expect(userPayload.outputRules).toContain('keep its title and detail');
     expect(userPayload.outputRules).toContain('date exactly');
   });

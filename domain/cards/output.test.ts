@@ -72,6 +72,12 @@ describe('card output', () => {
       }).success
     ).toBe(true);
 
+    expect(
+      cardOutput.validateCardOutput({
+        metrics: [{ label: 'Last above', value: 9, valueFormat: 'datetime' }],
+      }).success
+    ).toBe(false);
+
     expect(cardOutput.validateCardOutput({}).success).toBe(false);
 
     expect(
@@ -127,6 +133,22 @@ describe('card output', () => {
     });
   });
 
+  test('trims dangling labels', () => {
+    const normalized = cardOutput.normalizeRawCardOutput({
+      metrics: [
+        {
+          label: 'Last above-threshold session date for Peak distress ≥3',
+          value: '2026-02-23T17:00:00.000Z',
+          valueFormat: 'datetime',
+        },
+      ],
+    });
+
+    expect(normalized).toMatchObject({
+      metrics: [{ label: 'Last above-threshold session date' }],
+    });
+  });
+
   test('normalizes metric dates', () => {
     const normalized = cardOutput.normalizeRawCardOutput({
       metrics: [
@@ -140,17 +162,28 @@ describe('card output', () => {
           value: '2026-05-21T17:30:00.000Z',
           valueFormat: 'date_time',
         },
+        {
+          label: 'Days since last',
+          unit: 'days',
+          value: '2026-02-23T17:00:00.000Z',
+          valueFormat: 'durationSince',
+        },
         { label: 'Invalid date', value: '2026-05-20', valueFormat: 'date' },
+        { label: 'Invalid since', value: 90, valueFormat: 'durationSince' },
       ],
     });
 
     expect(cardOutput.validateCardOutput(normalized).success).toBe(true);
 
     expect(normalized).toMatchObject({
-      metrics: [{ valueFormat: 'date' }, { valueFormat: 'datetime' }],
+      metrics: [
+        { valueFormat: 'date' },
+        { valueFormat: 'datetime' },
+        { valueFormat: 'durationSince' },
+      ],
     });
 
-    expect((normalized as CardOutput).metrics).toHaveLength(2);
+    expect((normalized as CardOutput).metrics).toHaveLength(3);
   });
 
   test('uses source dates', () => {
@@ -254,5 +287,40 @@ describe('card output', () => {
     expect(merged.chart).toBeUndefined();
     expect(merged.metrics).toEqual([{ label: 'Sessions', value: 5 }]);
     expect(merged.milestones).toEqual([]);
+  });
+
+  test('replaces exact metrics', () => {
+    const merged = cardOutput.mergeCardOutputRefresh({
+      next: {
+        metrics: [
+          { label: 'Total above threshold', unit: 'sessions', value: 9 },
+          {
+            label: 'Days since last',
+            unit: 'days',
+            value: '2026-02-23T17:00:00.000Z',
+            valueFormat: 'durationSince',
+          },
+        ],
+        milestones: [],
+      },
+      previous: {
+        metrics: [
+          { label: 'Since last >=3', unit: 'days', value: 0 },
+          { label: 'Last >=3', value: '2026-02-23T17:00:00.000Z' },
+        ],
+        milestones: [],
+      },
+      replaceMetrics: true,
+    });
+
+    expect(merged.metrics).toEqual([
+      { label: 'Total above threshold', unit: 'sessions', value: 9 },
+      {
+        label: 'Days since last',
+        unit: 'days',
+        value: '2026-02-23T17:00:00.000Z',
+        valueFormat: 'durationSince',
+      },
+    ]);
   });
 });

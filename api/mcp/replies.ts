@@ -1,4 +1,5 @@
 import { runBulkItems } from '@/api/mcp/bulk';
+import * as cardActions from '@/api/cards/card-actions';
 import * as content from '@/api/mcp/content';
 import * as contentQueries from '@/api/mcp/content-queries';
 import * as mcpFields from '@/api/mcp/fields';
@@ -25,6 +26,23 @@ const repliesItemSchema = z.object({
 
 export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
   const fieldOptions = { appUrl: ctx.env.APP_URL };
+
+  const queueRecordCardRefreshes = (
+    record?: Pick<NonNullable<McpReply['record']>, 'log' | 'tags'> | null
+  ) => {
+    const logId = record?.log?.id;
+    const recordTagIds = record?.tags?.map((tag) => tag.id) ?? [];
+    if (!logId || !recordTagIds.length) return;
+
+    ctx.executionCtx.waitUntil(
+      cardActions.queuePublishedRecordCardRefreshes({
+        dbClient: ctx.notificationDb,
+        env: ctx.env,
+        logId,
+        recordTagIds,
+      })
+    );
+  };
 
   const getReply = async ({
     include = [],
@@ -234,6 +252,8 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
           : []),
       ]);
 
+      queueRecordCardRefreshes(reply.record);
+
       await push.sendPushNotifications(
         ctx.env,
         push.collectRecipientSubscriptions({
@@ -304,6 +324,8 @@ export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
         teamId,
       }),
     ]);
+
+    queueRecordCardRefreshes(record);
 
     await push.sendPushNotifications(
       ctx.env,

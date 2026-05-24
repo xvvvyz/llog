@@ -30,6 +30,8 @@ const NON_TRENDABLE_METRIC_LABEL_PATTERNS = [
   'under threshold',
 ];
 
+const SOURCE_DATE_METRIC_FORMATS = ['date', 'datetime', 'durationSince'];
+
 const metricLabelTokens = (value) =>
   String(value ?? '')
     .toLowerCase()
@@ -69,9 +71,8 @@ exports.cardOutput = (output) => {
     .map((point) => point.label)
     .filter(isDateLikeString);
 
-  const metricDateValues = metrics.filter(
-    (metric) =>
-      metric.valueFormat === 'date' || metric.valueFormat === 'datetime'
+  const metricDateValues = metrics.filter((metric) =>
+    SOURCE_DATE_METRIC_FORMATS.includes(metric.valueFormat)
   );
 
   return gradingResult({
@@ -112,8 +113,7 @@ exports.cardOutput = (output) => {
         pass: metrics.every(
           (metric) =>
             !isIsoDateTimeWithZone(metric.value) ||
-            metric.valueFormat === 'date' ||
-            metric.valueFormat === 'datetime'
+            SOURCE_DATE_METRIC_FORMATS.includes(metric.valueFormat)
         ),
       },
       {

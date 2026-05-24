@@ -106,6 +106,17 @@ describe('card charts', () => {
       chart.formatChartLegendLabel({ label: 'Alone time (min)', unit: 'min' })
     ).toBe('Alone time (min)');
 
+    expect(
+      chart.formatChartLegendLabel({
+        label: 'Monthly above-threshold Sessions',
+        unit: 'sessions',
+      })
+    ).toBe('Monthly above-threshold Sessions');
+
+    expect(
+      chart.formatChartLegendLabel({ label: 'Alone duration min', unit: 'min' })
+    ).toBe('Alone duration min');
+
     expect(chart.formatChartLegendLabel({ label: 'Value', unit: 'min' })).toBe(
       'Value (min)'
     );
@@ -113,6 +124,10 @@ describe('card charts', () => {
     expect(chart.formatChartLegendLabel({ label: 'min', unit: 'min' })).toBe(
       'Value (min)'
     );
+
+    expect(
+      chart.formatChartLegendLabel({ label: 'Session', unit: 'sessions' })
+    ).toBe('Value (sessions)');
 
     expect(chart.formatChartLegendLabel({ label: 'Peak distress' })).toBe(
       'Peak distress'

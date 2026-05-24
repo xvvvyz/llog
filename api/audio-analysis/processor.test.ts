@@ -59,7 +59,7 @@ mock.module('@/api/audio-analysis/audd-client', () => ({
 }));
 
 const processor = await import('@/api/audio-analysis/processor');
-const db = {} as never;
+const db = { query: async () => ({ files: [] }) } as never;
 const env = { R2: { get: async () => ({}) } } as unknown as CloudflareEnv;
 
 afterAll(() => {

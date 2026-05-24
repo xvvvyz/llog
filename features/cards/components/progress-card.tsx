@@ -1420,9 +1420,13 @@ const SingleSeriesChart = ({
   const showAxisXAxisLabels = showAxes && showXAxisLabels;
   const axisLabelFontSize = AXIS_LABEL_FONT_SIZE;
   const values = data.map((item) => item.value);
-  const sharedLineHover = type === 'line' && !!onHoverTargetChange;
+  const interactive = !compact;
+
+  const sharedLineHover =
+    interactive && type === 'line' && !!onHoverTargetChange;
 
   const hoveredIndex = React.useMemo(() => {
+    if (!interactive) return null;
     if (!sharedLineHover) return localHoveredIndex;
     if (!hoverTarget) return null;
 
@@ -1432,10 +1436,12 @@ const SingleSeriesChart = ({
 
     if (matchingLabelIndex >= 0) return matchingLabelIndex;
     return data[hoverTarget.index] ? hoverTarget.index : null;
-  }, [data, hoverTarget, localHoveredIndex, sharedLineHover]);
+  }, [data, hoverTarget, interactive, localHoveredIndex, sharedLineHover]);
 
   const updateHoveredIndex = React.useCallback(
     (index: number | null) => {
+      if (!interactive) return;
+
       if (sharedLineHover) {
         onHoverTargetChange(
           index == null ? null : { index, label: data[index]?.label ?? '' }
@@ -1446,7 +1452,7 @@ const SingleSeriesChart = ({
 
       setLocalHoveredIndex(index);
     },
-    [data, onHoverTargetChange, sharedLineHover]
+    [data, interactive, onHoverTargetChange, sharedLineHover]
   );
 
   const domain =
@@ -1785,10 +1791,10 @@ const SingleSeriesChart = ({
         <View
           className="overflow-visible w-full"
           onLayout={handleLayout}
-          onTouchCancel={resetChartTouchScrollLock}
-          onTouchEnd={resetChartTouchScrollLock}
-          onTouchMove={handleChartTouchMove}
-          onTouchStart={handleChartTouchStart}
+          onTouchCancel={interactive ? resetChartTouchScrollLock : undefined}
+          onTouchEnd={interactive ? resetChartTouchScrollLock : undefined}
+          onTouchMove={interactive ? handleChartTouchMove : undefined}
+          onTouchStart={interactive ? handleChartTouchStart : undefined}
           style={chartContainerStyle}
         >
           <Svg
@@ -1913,17 +1919,23 @@ const SingleSeriesChart = ({
       <View
         className="overflow-visible w-full"
         onLayout={handleLayout}
-        onPointerLeave={Platform.OS === 'web' ? clearHoveredIndex : undefined}
-        onTouchCancel={resetChartTouchScrollLock}
-        onTouchEnd={resetChartTouchScrollLock}
-        onTouchMove={handleChartTouchMove}
-        onTouchStart={handleChartTouchStart}
+        onTouchCancel={interactive ? resetChartTouchScrollLock : undefined}
+        onTouchEnd={interactive ? resetChartTouchScrollLock : undefined}
+        onTouchMove={interactive ? handleChartTouchMove : undefined}
+        onTouchStart={interactive ? handleChartTouchStart : undefined}
         style={chartContainerStyle}
         onPointerDown={
-          Platform.OS === 'web' ? handleBarPointerTarget : undefined
+          Platform.OS === 'web' && interactive
+            ? handleBarPointerTarget
+            : undefined
+        }
+        onPointerLeave={
+          Platform.OS === 'web' && interactive ? clearHoveredIndex : undefined
         }
         onPointerMove={
-          Platform.OS === 'web' ? handleBarPointerTarget : undefined
+          Platform.OS === 'web' && interactive
+            ? handleBarPointerTarget
+            : undefined
         }
       >
         <Svg
@@ -2041,17 +2053,23 @@ const SingleSeriesChart = ({
     <View
       className="overflow-visible w-full"
       onLayout={handleLayout}
-      onPointerLeave={Platform.OS === 'web' ? clearHoveredIndex : undefined}
-      onTouchCancel={resetChartTouchScrollLock}
-      onTouchEnd={resetChartTouchScrollLock}
-      onTouchMove={handleChartTouchMove}
-      onTouchStart={handleChartTouchStart}
+      onTouchCancel={interactive ? resetChartTouchScrollLock : undefined}
+      onTouchEnd={interactive ? resetChartTouchScrollLock : undefined}
+      onTouchMove={interactive ? handleChartTouchMove : undefined}
+      onTouchStart={interactive ? handleChartTouchStart : undefined}
       style={chartContainerStyle}
       onPointerDown={
-        Platform.OS === 'web' ? handleLinePointerTarget : undefined
+        Platform.OS === 'web' && interactive
+          ? handleLinePointerTarget
+          : undefined
+      }
+      onPointerLeave={
+        Platform.OS === 'web' && interactive ? clearHoveredIndex : undefined
       }
       onPointerMove={
-        Platform.OS === 'web' ? handleLinePointerTarget : undefined
+        Platform.OS === 'web' && interactive
+          ? handleLinePointerTarget
+          : undefined
       }
     >
       <Svg
@@ -2495,7 +2513,7 @@ export const ProgressCard = ({
             }
           >
             <Text className="text-muted-foreground text-xs" numberOfLines={1}>
-              {cardDisplay.formatCardText(metric.label)}
+              {cardDisplay.formatCardDisplayLabel(metric.label)}
             </Text>
             <View className="flex-row min-w-0 gap-2 items-center">
               <Text className="font-semibold text-sm shrink" numberOfLines={1}>

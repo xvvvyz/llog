@@ -1,4 +1,5 @@
 import { recognizeAudioFileMusic } from '@/api/audio-analysis/audd-client';
+import * as cardActions from '@/api/cards/card-actions';
 import * as openai from '@/api/audio-analysis/openai';
 import { getAudioFile, updateAudioFile } from '@/api/audio-analysis/repository';
 import * as audioSource from '@/api/audio-analysis/source';
@@ -61,6 +62,26 @@ const clearTranscriptionRequest = (params: CurrentAudioRequestUpdate) =>
     requestField: 'transcriptionRequestedAt',
   });
 
+const queueTranscriptionCardRefresh = async ({
+  db,
+  didWrite,
+  env,
+  fileId,
+}: {
+  db: Db;
+  didWrite: boolean;
+  env: CloudflareEnv;
+  fileId: string;
+}) => {
+  if (!didWrite) return;
+
+  await cardActions.queuePublishedFileCardRefreshes({
+    dbClient: db,
+    env,
+    fileId,
+  });
+};
+
 const clearIdentificationRequest = (params: CurrentAudioRequestUpdate) =>
   updateAudioFileIfCurrentRequest({
     ...params,
@@ -120,13 +141,14 @@ export const transcribeAudioFile = async ({
 
   try {
     if (isTooShortForAnalysis(file)) {
-      await clearTranscriptionRequest({
+      const didWrite = await clearTranscriptionRequest({
         db,
         fields: { transcript: [] },
         fileId,
         requestedAt,
       });
 
+      await queueTranscriptionCardRefresh({ db, didWrite, env, fileId });
       return true;
     }
 
@@ -172,6 +194,7 @@ export const transcribeAudioFile = async ({
       requestedAt,
     });
 
+    await queueTranscriptionCardRefresh({ db, didWrite, env, fileId });
     return { success: didWrite };
   } catch (error) {
     console.error('Audio transcription failed', { error, fileId });

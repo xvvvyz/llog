@@ -1,0 +1,1 @@
+Summarize care progress using parent notes, replies, and transcript evidence. Attribute observations to the right author, keep any dates as full ISO timestamps, and describe the latest reply evidence relative to the card generation time.

@@ -1,5 +1,6 @@
 import * as cardActions from '@/api/cards/card-actions';
 import * as cardAnalysis from '@/domain/cards/analysis';
+import * as sourceAssembly from '@/domain/cards/source-assembly';
 import { Role } from '@/domain/teams/role';
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 
@@ -409,6 +410,155 @@ describe('card generation', () => {
 
     expect(userPayload.existingCards?.[0]?.id).toBeUndefined();
     expect(userPayload.records?.fullTextRecords?.[0]?.author).toBe('Cade');
+  });
+
+  test('folds nested sources', async () => {
+    const requestedAt = '2026-05-20T00:00:00.000Z';
+
+    let requestBody:
+      | { messages?: { content?: unknown; role?: unknown }[] }
+      | undefined;
+
+    const card = {
+      generationRequestedAt: requestedAt,
+      id: 'card-1',
+      isGenerating: true,
+      logId: 'log-1',
+      prompt: 'Summarize follow-ups and audio evidence',
+      tags: [{ id: 'tag-a' }],
+      title: 'Follow-ups',
+    };
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        output: { summary: 'Nested evidence was used.' },
+        title: 'Follow-ups',
+      });
+    }) as never;
+
+    const entityTx = (entity: string) =>
+      new Proxy(
+        {},
+        {
+          get: (_target, id: string) => ({
+            update: (fields: Record<string, unknown>) => ({
+              entity,
+              fields,
+              id,
+            }),
+          }),
+        }
+      );
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('cards' in query) return { cards: [card] };
+
+        if ('records' in query) {
+          return {
+            records: [
+              {
+                author: { name: 'Cade' },
+                date: '2026-05-20T10:00:00.000Z',
+                files: [
+                  {
+                    order: 1,
+                    transcript: [
+                      { end: 6, start: 2, text: 'Parent audio evidence.' },
+                    ],
+                    type: 'audio',
+                  },
+                ],
+                id: 'record-1',
+                isDraft: false,
+                logId: 'log-1',
+                replies: [
+                  {
+                    author: { name: 'Mina' },
+                    date: '2026-05-20T11:00:00.000Z',
+                    files: [
+                      {
+                        order: 1,
+                        transcript: [
+                          { end: 10, start: 7, text: 'Reply audio evidence.' },
+                        ],
+                        type: 'video',
+                      },
+                    ],
+                    id: 'reply-1',
+                    isDraft: false,
+                    text: 'Published reply detail.',
+                  },
+                  {
+                    author: { name: 'Draft author' },
+                    date: '2026-05-20T12:00:00.000Z',
+                    id: 'reply-2',
+                    isDraft: true,
+                    text: 'Draft reply detail.',
+                  },
+                ],
+                tags: [{ id: 'tag-a', name: 'session' }],
+                text: '',
+              },
+            ],
+          };
+        }
+
+        return {};
+      },
+      transact: async (transaction: {
+        entity: string;
+        fields: Record<string, unknown>;
+        id: string;
+      }) => {
+        Object.assign(card, transaction.fields);
+      },
+      tx: { cards: entityTx('cards') },
+    };
+
+    await expect(
+      cardActions.generateCard({
+        cardId: 'card-1',
+        dbClient: db as never,
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        requestedAt,
+      })
+    ).resolves.toMatchObject({ success: true });
+
+    const userMessage = requestBody?.messages?.find(
+      (message) => message.role === 'user'
+    );
+
+    const userPayload = JSON.parse(String(userMessage?.content)) as {
+      card?: { generationTime?: string };
+      records?: { fullTextRecords?: { id?: unknown; text?: string }[] };
+    };
+
+    const sourceText = userPayload.records?.fullTextRecords?.[0]?.text ?? '';
+    expect(userPayload.card?.generationTime).toBe(requestedAt);
+
+    expect(sourceText).toContain(
+      '[record | author: Cade | time: 2026-05-20T10:00:00.000Z]'
+    );
+
+    expect(sourceText).toContain('Audio transcript:');
+    expect(sourceText).toContain('Parent audio evidence.');
+
+    expect(sourceText).toContain(
+      '[reply | author: Mina | time: 2026-05-20T11:00:00.000Z]'
+    );
+
+    expect(sourceText).toContain('Published reply detail.');
+    expect(sourceText).toContain('Video transcript:');
+    expect(sourceText).toContain('Reply audio evidence.');
+    expect(sourceText).toContain('author: Mina');
+    expect(sourceText).toContain('time: 2026-05-20T11:00:00.000Z');
+    expect(sourceText).not.toContain('offset:');
+    expect(sourceText).not.toContain('Draft reply detail.');
+    expect(sourceText).not.toContain('reply-1');
+    expect(userPayload.records?.fullTextRecords?.[0]?.id).toBeUndefined();
   });
 
   test('queues exact chunks', async () => {
@@ -1460,12 +1610,13 @@ describe('analysis jobs', () => {
     };
 
     const analysisSpecHash = cardAnalysis.analysisSpecHash(analysisSpec);
+    const assembledRecord = sourceAssembly.assembleCardLlmRecord(record)!;
 
     const factKey = cardAnalysis.factKey({
       analysisSpecHash,
       cardId: 'card-1',
       recordFingerprint: cardAnalysis.recordFingerprint({
-        record,
+        record: assembledRecord,
         selectedTagIds: ['tag-a'],
       }),
       recordId: record.id,
@@ -1698,6 +1849,12 @@ describe('analysis jobs', () => {
     }));
 
     const records = [...oldRecords, ...filteredRecords];
+    const assembledRecords = sourceAssembly.assembleCardLlmRecords(records);
+
+    const assembledRecordsById = new Map(
+      assembledRecords.map((record) => [record.id, record])
+    );
+
     const analysisSpecHash = cardAnalysis.analysisSpecHash(analysisSpec);
 
     const facts = filteredRecords.map((record, index) => ({
@@ -1714,7 +1871,7 @@ describe('analysis jobs', () => {
         analysisSpecHash,
         cardId: card.id,
         recordFingerprint: cardAnalysis.recordFingerprint({
-          record,
+          record: assembledRecordsById.get(record.id)!,
           selectedTagIds: ['tag-a'],
         }),
         recordId: record.id,
@@ -2117,6 +2274,159 @@ describe('card refresh queue', () => {
     });
 
     expect(sent[0]?.options?.delaySeconds).toBe(10);
+  });
+
+  test('queues file transcript records', async () => {
+    const cardUpdates: Record<string, unknown>[] = [];
+    const sent: { body: unknown; options?: QueueSendOptions }[] = [];
+
+    const entityTx = (entity: string) =>
+      new Proxy(
+        {},
+        {
+          get: (_target, id: string) => ({
+            update: (fields: Record<string, unknown>) => {
+              const transaction = { entity, fields, id };
+
+              return {
+                ...transaction,
+                link: (links: Record<string, string>) => ({
+                  ...transaction,
+                  links,
+                }),
+              };
+            },
+          }),
+        }
+      );
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('files' in query) {
+          return {
+            files: [
+              {
+                id: 'file-1',
+                reply: {
+                  id: 'reply-1',
+                  isDraft: false,
+                  record: {
+                    id: 'record-1',
+                    isDraft: false,
+                    logId: 'log-1',
+                    tags: [{ id: 'tag-a' }],
+                  },
+                },
+              },
+            ],
+          };
+        }
+
+        if ('cards' in query) {
+          return {
+            cards: [
+              { id: 'card-1', tags: [{ id: 'tag-a' }], teamId: 'team-1' },
+            ],
+          };
+        }
+
+        return {};
+      },
+      transact: async (
+        transactions:
+          | { entity: string; fields: Record<string, unknown>; id: string }
+          | { entity: string; fields: Record<string, unknown>; id: string }[]
+      ) => {
+        for (const transaction of Array.isArray(transactions)
+          ? transactions
+          : [transactions]) {
+          if (transaction.entity === 'cards') {
+            cardUpdates.push(transaction.fields);
+          }
+        }
+      },
+      tx: { cards: entityTx('cards') },
+    };
+
+    const env = {
+      JOBS_QUEUE: {
+        send: async (body: unknown, options?: QueueSendOptions) => {
+          sent.push({ body, options });
+
+          return {
+            metadata: { metrics: { backlogBytes: 0, backlogCount: 0 } },
+          };
+        },
+      } as Queue,
+    } as CloudflareEnv;
+
+    await cardActions.queuePublishedFileCardRefreshes({
+      dbClient: db as never,
+      env,
+      fileId: 'file-1',
+    });
+
+    expect(cardUpdates).toHaveLength(1);
+
+    expect(sent[0]?.body).toMatchObject({
+      cardId: 'card-1',
+      requestedAt: cardUpdates[0]?.generationRequestedAt,
+      schemaVersion: 1,
+      type: 'card.refresh',
+    });
+  });
+
+  test('skips draft file transcripts', async () => {
+    const sent: unknown[] = [];
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('files' in query) {
+          return {
+            files: [
+              {
+                id: 'file-1',
+                reply: {
+                  id: 'reply-1',
+                  isDraft: true,
+                  record: {
+                    id: 'record-1',
+                    isDraft: false,
+                    logId: 'log-1',
+                    tags: [{ id: 'tag-a' }],
+                  },
+                },
+              },
+            ],
+          };
+        }
+
+        if ('cards' in query) return { cards: [] };
+        return {};
+      },
+      transact: async () => undefined,
+      tx: { cards: {} },
+    };
+
+    const env = {
+      JOBS_QUEUE: {
+        send: async (body: unknown) => {
+          sent.push(body);
+
+          return {
+            metadata: { metrics: { backlogBytes: 0, backlogCount: 0 } },
+          };
+        },
+      } as Queue,
+    } as CloudflareEnv;
+
+    await cardActions.queuePublishedFileCardRefreshes({
+      dbClient: db as never,
+      env,
+      fileId: 'file-1',
+    });
+
+    expect(sent).toEqual([]);
   });
 
   test('keeps best effort', async () => {

@@ -1,4 +1,5 @@
 import * as cardOutput from '@/domain/cards/output';
+import * as cardSourceAssembly from '@/domain/cards/source-assembly';
 import * as cardSourceSelection from '@/domain/cards/source-selection';
 import type { AnalysisDateFilter } from '@/domain/cards/analysis-date-filters';
 import type { Profile, Record as LlogRecord, Tag } from '@/instant.entities';
@@ -42,6 +43,7 @@ const AGGREGATION_OPERATIONS = [
   'ratio',
   'currentStreak',
   'longestStreak',
+  'daysSinceLast',
 ] as const;
 
 const EVENT_COUNT_MODES = ['explicitOccurrences', 'recordPresence'] as const;
@@ -172,6 +174,7 @@ export type CardFactRecord = { facts?: unknown };
 export type CardSourceFactRecord = Pick<LlogRecord, 'id'> &
   Partial<Pick<LlogRecord, 'date' | 'isDraft' | 'logId' | 'text'>> & {
     author?: (Pick<Profile, 'name'> & Partial<Pick<Profile, 'id'>>) | null;
+    sourceAssemblyVersion?: string;
     tags?: (Pick<Tag, 'id'> & Partial<Pick<Tag, 'name'>>)[];
   };
 
@@ -217,6 +220,7 @@ export type DeterministicAggregateValue = {
   recordIds: string[];
   unit?: string;
   value: number | string;
+  valueFormat?: cardOutput.CardMetricValueFormat;
 };
 
 export type QualitativeAggregateFacts = {
@@ -386,6 +390,14 @@ const uniqueLabels = (values?: string[]) => [
 
 const normalizeEventCountMode = (value: unknown): EventCountMode =>
   value === 'recordPresence' ? 'recordPresence' : 'explicitOccurrences';
+
+const normalizeAggregationOperation = (
+  aggregation: z.infer<typeof analysisAggregationSchema>
+) =>
+  aggregation.operation === 'currentStreak' &&
+  /\bdays?\s+since\s+last\b/i.test(aggregation.label)
+    ? 'daysSinceLast'
+    : aggregation.operation;
 
 const normalizeScoreScale = (
   value: unknown
@@ -588,6 +600,7 @@ export const normalizeAnalysisSpec = (
         fieldId: _fieldId,
         groupBy: _groupBy,
         numeratorId: _numeratorId,
+        operation: _operation,
         ...normalizedAggregation
       } = aggregation;
 
@@ -615,6 +628,7 @@ export const normalizeAnalysisSpec = (
         id,
         label: normalizeText(aggregation.label, 60),
         ...(numeratorId && { numeratorId }),
+        operation: normalizeAggregationOperation(aggregation),
         ...(aggregation.period && { period: aggregation.period }),
         ...(aggregation.unit && {
           unit: normalizeText(aggregation.unit, 16).toLowerCase(),
@@ -1039,6 +1053,9 @@ export const recordFingerprint = ({
     isDraft: !!record.isDraft,
     logId: record.logId ?? null,
     matchingTags,
+    sourceAssemblyVersion:
+      record.sourceAssemblyVersion ??
+      cardSourceAssembly.CARD_SOURCE_ASSEMBLY_VERSION,
     text: record.text ?? '',
   });
 };
@@ -1388,6 +1405,11 @@ const recordTime = (record: CardSourceFactRecord) => {
   return Number.isFinite(time) ? time : 0;
 };
 
+const entriesByRecordDate = (entries: FactEntry[]) =>
+  [...entries].sort(
+    (left, right) => recordTime(left.record) - recordTime(right.record)
+  );
+
 const formatChartValue = (value: number) => {
   if (Number.isInteger(value)) return value;
   return Number(value.toFixed(2));
@@ -1397,7 +1419,7 @@ const normalizeExactMetric = (result: DeterministicAggregateValue) => {
   if (result.groups?.length) return;
 
   const label = cardOutput.normalizeCardDisplayLabel({
-    maxLength: 40,
+    maxLength: cardOutput.MAX_CARD_METRIC_LABEL_LENGTH,
     maxWords: 5,
     value: result.label,
   });
@@ -1405,7 +1427,7 @@ const normalizeExactMetric = (result: DeterministicAggregateValue) => {
   const value =
     typeof result.value === 'number'
       ? result.value
-      : normalizeText(result.value, 40);
+      : normalizeText(result.value, cardOutput.MAX_CARD_METRIC_VALUE_LENGTH);
 
   return label && value !== ''
     ? {
@@ -1414,6 +1436,7 @@ const normalizeExactMetric = (result: DeterministicAggregateValue) => {
           unit: normalizeText(result.unit, 16).toLowerCase(),
         }),
         value,
+        ...(result.valueFormat && { valueFormat: result.valueFormat }),
       }
     : undefined;
 };
@@ -1435,10 +1458,8 @@ const bucketDate = (
   const period: StreakPeriod =
     dimension === 'month' || dimension === 'week' ? dimension : 'day';
 
-  return {
-    key: dateBucketKey(date, period) ?? 'undated',
-    label: date.toISOString(),
-  };
+  const key = dateBucketKey(date, period) ?? 'undated';
+  return { key, label: period === 'day' ? date.toISOString() : key };
 };
 
 const dateBucketKey = (value: Date | number | string, period: StreakPeriod) => {
@@ -1489,6 +1510,24 @@ const nextBucketKey = (key: string, period: StreakPeriod) =>
 const matchesLabel = (value: string, target?: string) =>
   !target || normalizeToken(value) === normalizeToken(target);
 
+const labelMatchTokens = (value: string) =>
+  normalizeToken(value)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+
+const matchesEventLabel = (value: string, target?: string) => {
+  if (matchesLabel(value, target)) return true;
+  if (!target) return true;
+  const valueTokens = new Set(labelMatchTokens(value));
+  const targetTokens = labelMatchTokens(target);
+
+  return (
+    targetTokens.length > 0 &&
+    targetTokens.every((token) => valueTokens.has(token))
+  );
+};
+
 const fieldMatches = (fieldId: string, targetFieldId?: string) =>
   !targetFieldId || fieldId === targetFieldId;
 
@@ -1503,7 +1542,7 @@ const eventCountForEntries = (
     for (const event of entry.facts.events) {
       if (
         fieldMatches(event.fieldId, aggregation.fieldId) &&
-        matchesLabel(event.label, aggregation.eventLabel)
+        matchesEventLabel(event.label, aggregation.eventLabel)
       ) {
         value += event.count;
         if (event.count > 0) recordIds.add(entry.record.id);
@@ -1680,6 +1719,10 @@ const evaluateAggregation = ({
       generationTime,
       selectedTagIds,
     });
+  }
+
+  if (aggregation.operation === 'daysSinceLast') {
+    return evaluateDaysSinceLastAggregation({ aggregation, entries });
   }
 
   if (aggregation.operation === 'ratio') {
@@ -1994,6 +2037,35 @@ const evaluateStreakAggregation = ({
         value: result.value,
       }
     : undefined;
+};
+
+const evaluateDaysSinceLastAggregation = ({
+  aggregation,
+  entries,
+}: {
+  aggregation: AnalysisAggregationSpec;
+  entries: FactEntry[];
+}): DeterministicAggregateValue | undefined => {
+  if (aggregation.operation !== 'daysSinceLast') return;
+  const sortedEntries = entriesByRecordDate(entries);
+
+  const activeEntries = sortedEntries.filter((entry) =>
+    entryMatchesAggregationField(entry, aggregation)
+  );
+
+  const latestEntry = activeEntries.at(-1);
+  const latestDate = normalizeDate(latestEntry?.record.date);
+  if (!latestEntry || !latestDate) return;
+
+  return {
+    id: aggregation.id,
+    label: aggregation.label,
+    operation: aggregation.operation,
+    recordIds: [latestEntry.record.id],
+    unit: aggregation.unit ?? 'days',
+    value: latestDate.toISOString(),
+    valueFormat: 'durationSince',
+  };
 };
 
 const eventChartData = ({

@@ -2,6 +2,7 @@ import * as openrouter from '@/api/cards/openrouter';
 import * as cardAnalysis from '@/domain/cards/analysis';
 import type { CardBlueprint } from '@/domain/cards/blueprint';
 import * as cardOutput from '@/domain/cards/output';
+import * as sourceAssembly from '@/domain/cards/source-assembly';
 import { readFile } from 'node:fs/promises';
 
 type EvalMode =
@@ -35,8 +36,9 @@ type EvalFixture = {
     generationTime?: string;
     tagIds?: string[];
   };
+  generationTime?: string;
   name?: string;
-  records: openrouter.CardLlmRecord[];
+  records: sourceAssembly.CardSourceAssemblyRecord[];
   scenarios?: Partial<
     Record<Exclude<EvalMode, 'generate' | 'planned'>, EvalScenario>
   >;
@@ -118,7 +120,7 @@ const generatedExactFixture = ({
 }) => {
   const generated = exact.generated;
   if (!generated) return;
-  const records: openrouter.CardLlmRecord[] = [];
+  const records: sourceAssembly.CardSourceAssemblyRecord[] = [];
   const facts: cardAnalysis.ExtractedRecordFacts[] = [];
 
   for (let index = 0; index < generated.count; index += 1) {
@@ -173,7 +175,10 @@ const readFixture = async (fixturePath: string): Promise<EvalFixture> => {
   return fixture;
 };
 
-const sessionValue = (record: openrouter.CardLlmRecord, label: string) => {
+const sessionValue = (
+  record: sourceAssembly.CardSourceAssemblyRecord,
+  label: string
+) => {
   const match = (record.text ?? '').match(
     new RegExp(`${label}:\\s*(\\d+(?:\\.\\d+)?)`)
   );
@@ -182,10 +187,10 @@ const sessionValue = (record: openrouter.CardLlmRecord, label: string) => {
   return Number(match[1]);
 };
 
-const durationValue = (record: openrouter.CardLlmRecord) =>
+const durationValue = (record: sourceAssembly.CardSourceAssemblyRecord) =>
   sessionValue(record, 'Alone duration \\(min\\)');
 
-const distressValue = (record: openrouter.CardLlmRecord) =>
+const distressValue = (record: sourceAssembly.CardSourceAssemblyRecord) =>
   sessionValue(record, 'Peak distress \\(0-5\\)');
 
 const chartSeries = ({
@@ -195,9 +200,9 @@ const chartSeries = ({
   value,
 }: {
   label: string;
-  records: openrouter.CardLlmRecord[];
+  records: sourceAssembly.CardSourceAssemblyRecord[];
   unit: string;
-  value: (record: openrouter.CardLlmRecord) => number;
+  value: (record: sourceAssembly.CardSourceAssemblyRecord) => number;
 }) => ({
   data: records.map((record) => ({
     label: String(record.date),
@@ -207,7 +212,9 @@ const chartSeries = ({
   unit,
 });
 
-const safeIncreaseCount = (records: openrouter.CardLlmRecord[]) =>
+const safeIncreaseCount = (
+  records: sourceAssembly.CardSourceAssemblyRecord[]
+) =>
   records.slice(1).filter((record, index) => {
     const previous = records[index];
 
@@ -218,7 +225,7 @@ const safeIncreaseCount = (records: openrouter.CardLlmRecord[]) =>
   }).length;
 
 const durationProgressOutput = (
-  records: openrouter.CardLlmRecord[]
+  records: sourceAssembly.CardSourceAssemblyRecord[]
 ): cardOutput.CardOutput => {
   const latest = records.at(-1);
   if (!latest) throw new Error('Previous output records are required');
@@ -278,7 +285,7 @@ const durationProgressOutput = (
 };
 
 const durationEndpointsOutput = (
-  records: openrouter.CardLlmRecord[]
+  records: sourceAssembly.CardSourceAssemblyRecord[]
 ): cardOutput.CardOutput => {
   const first = records[0];
   const latest = records.at(-1);
@@ -314,7 +321,7 @@ const scenarioPreviousOutput = ({
   records,
   scenario,
 }: {
-  records: openrouter.CardLlmRecord[];
+  records: sourceAssembly.CardSourceAssemblyRecord[];
   scenario: EvalScenario | undefined;
 }) => {
   if (scenario?.previousOutput) return scenario.previousOutput;
@@ -332,7 +339,11 @@ const scenarioPreviousOutput = ({
   return undefined;
 };
 
-const recordsWithTagIds = (records: openrouter.CardLlmRecord[]) =>
+const recordsWithTagIds = <
+  T extends { tags?: { id?: string; name?: string }[] },
+>(
+  records: T[]
+) =>
   records.map((record) => ({
     ...record,
     tags: (record.tags ?? []).map((tag, index) => ({
@@ -341,7 +352,9 @@ const recordsWithTagIds = (records: openrouter.CardLlmRecord[]) =>
     })),
   }));
 
-const selectedTagIds = (records: openrouter.CardLlmRecord[]) => [
+const selectedTagIds = <T extends { tags?: { id?: string }[] }>(
+  records: T[]
+) => [
   ...new Set(
     records.flatMap((record) =>
       (record.tags ?? [])
@@ -358,12 +371,16 @@ const exactFactsForFixture = (fixture: EvalFixture) => {
     throw new Error('Exact fixture requires analysisSpec and facts');
   }
 
-  const records = recordsWithTagIds(fixture.records);
+  const records = sourceAssembly.assembleCardLlmRecords(
+    recordsWithTagIds(fixture.records)
+  );
+
+  const generationTime = fixture.generationTime ?? fixture.exact.generationTime;
 
   return cardAnalysis.aggregateExtractedFacts({
     analysisSpec: fixture.exact.analysisSpec,
     facts: fixture.exact.facts.map((facts) => ({ facts })),
-    generationTime: fixture.exact.generationTime,
+    generationTime,
     records,
     tagIds: fixture.exact.tagIds ?? selectedTagIds(records),
   });
@@ -389,6 +406,7 @@ const plannedCardResult = async ({
     // exact extraction because the date window is the behavior under test.
     return openrouter.generateCardResult({
       env,
+      generationTime,
       prompt,
       records: plannedRecords,
       totalRecordCount: plannedRecords.length,
@@ -410,6 +428,7 @@ const plannedCardResult = async ({
   ) {
     return openrouter.generateCardResult({
       env,
+      generationTime,
       prompt,
       records: plannedRecords,
       totalRecordCount: plannedRecords.length,
@@ -439,6 +458,7 @@ const plannedCardResult = async ({
     analysisMode: 'exact',
     env,
     exactFacts,
+    generationTime,
     prompt,
     records: exactRecords,
     totalRecordCount: exactRecords.length,
@@ -449,6 +469,13 @@ const main = async () => {
   const { fixturePath, mode, prompt, tweakPrompt } = readInput();
   const fixture = await readFixture(fixturePath);
   const env = process.env as unknown as CloudflareEnv;
+
+  const generationTime =
+    fixture.generationTime ?? fixture.exact?.generationTime;
+
+  const assembledRecords = sourceAssembly.assembleCardLlmRecords(
+    recordsWithTagIds(fixture.records)
+  );
 
   const scenario =
     mode === 'planned'
@@ -462,21 +489,19 @@ const main = async () => {
 
   const commonInput = {
     env,
+    generationTime,
     prompt,
-    records: fixture.records,
-    totalRecordCount: fixture.records.length,
+    records: assembledRecords,
+    totalRecordCount: assembledRecords.length,
   };
 
   const exactContext = fixture.exact
     ? {
         facts: requiredExactFacts(exactFactsForFixture(fixture)),
-        records: cardAnalysis.selectExactRecords(
-          recordsWithTagIds(fixture.records),
-          {
-            analysisSpec: fixture.exact.analysisSpec,
-            generationTime: fixture.exact.generationTime,
-          }
-        ),
+        records: cardAnalysis.selectExactRecords(assembledRecords, {
+          analysisSpec: fixture.exact.analysisSpec,
+          generationTime,
+        }),
       }
     : undefined;
 
@@ -488,16 +513,17 @@ const main = async () => {
             analysisMode: 'exact',
             env,
             exactFacts: requiredExactFacts(exactContext?.facts),
+            generationTime,
             prompt,
-            records: exactContext?.records ?? fixture.records,
+            records: exactContext?.records ?? assembledRecords,
             totalRecordCount:
-              exactContext?.records.length ?? fixture.records.length,
+              exactContext?.records.length ?? assembledRecords.length,
           })
         : mode === 'planned'
           ? await plannedCardResult({
               enableExactDatePlan: !!fixture.exact,
               ...commonInput,
-              generationTime: fixture.exact?.generationTime,
+              generationTime,
             })
           : mode === 'blueprint'
             ? await openrouter.generateCardResult({

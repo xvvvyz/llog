@@ -1,0 +1,63 @@
+{
+  "generationTime": "2026-05-24T12:00:00.000Z",
+  "name": "nested sources",
+  "records": [
+    {
+      "author": { "name": "Cade" },
+      "date": "2026-05-20T09:00:00.000Z",
+      "files": [
+        {
+          "order": 1,
+          "transcript": [
+            {
+              "end": 8,
+              "start": 2,
+              "text": "Audio note: medication was taken after breakfast."
+            }
+          ],
+          "type": "audio"
+        }
+      ],
+      "id": "record-1",
+      "tags": [{ "id": "tag-care", "name": "Care" }],
+      "text": "Morning check-in: appetite was low."
+    },
+    {
+      "author": { "name": "Cade" },
+      "date": "2026-05-22T18:30:00.000Z",
+      "files": [],
+      "id": "record-2",
+      "replies": [
+        {
+          "author": { "name": "Mina" },
+          "date": "2026-05-22T19:00:00.000Z",
+          "files": [
+            {
+              "order": 1,
+              "transcript": [
+                {
+                  "end": 14,
+                  "start": 10,
+                  "text": "Reply audio: energy improved after the short walk."
+                }
+              ],
+              "type": "audio"
+            }
+          ],
+          "id": "reply-1",
+          "isDraft": false,
+          "text": "Mina noticed brighter mood in the evening."
+        },
+        {
+          "author": { "name": "Draft Person" },
+          "date": "2026-05-22T20:00:00.000Z",
+          "id": "reply-draft",
+          "isDraft": true,
+          "text": "This draft should not be used."
+        }
+      ],
+      "tags": [{ "id": "tag-care", "name": "Care" }],
+      "text": ""
+    }
+  ]
+}

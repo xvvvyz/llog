@@ -244,6 +244,33 @@ describe('card analysis plan', () => {
     ]);
   });
 
+  test('normalizes since-last', () => {
+    expect(
+      cardAnalysis.normalizeAnalysisSpec({
+        aggregations: [
+          {
+            fieldId: 'above',
+            id: 'days_since_last',
+            label: 'Days since last above-threshold session',
+            operation: 'currentStreak',
+            period: 'day',
+            unit: 'days',
+          },
+        ],
+        charts: [],
+        extractionFields: [
+          {
+            countMode: 'recordPresence',
+            id: 'above',
+            label: 'Above threshold',
+            type: 'event',
+          },
+        ],
+        groupings: [],
+      })?.aggregations[0]?.operation
+    ).toBe('daysSinceLast');
+  });
+
   test('skips chart fallback', () => {
     const prompt =
       'Track separation progress: make a line chart over time with two series, Alone duration (min) and Peak distress (0-5). Summarize latest duration, current all-time max with distress <=2, and recent regressions where distress rose above 2 or duration was reduced.';
@@ -766,6 +793,111 @@ describe('card exact facts', () => {
       ],
       type: 'line',
     });
+  });
+
+  test('aggregates since-last', () => {
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: {
+        aggregations: [
+          {
+            eventLabel: 'Above threshold session peak distress 3',
+            fieldId: 'above',
+            id: 'above_count',
+            label: 'Above threshold sessions',
+            operation: 'count',
+            unit: 'sessions',
+          },
+          {
+            eventLabel: 'Above threshold session peak distress 3',
+            fieldId: 'above',
+            id: 'days_since_above',
+            label: 'Days since last above threshold',
+            operation: 'daysSinceLast',
+            unit: 'days',
+          },
+        ],
+        charts: [
+          {
+            id: 'above_by_month',
+            title: 'Above threshold by month',
+            type: 'bar',
+            x: { dimension: 'month', id: 'month' },
+            y: [{ aggregationId: 'above_count', label: 'Sessions' }],
+          },
+        ],
+        extractionFields: [
+          {
+            countMode: 'recordPresence',
+            id: 'above',
+            label: 'Above threshold',
+            type: 'event',
+          },
+        ],
+        groupings: [{ dimension: 'month', id: 'month' }],
+      },
+      facts: [
+        {
+          facts: {
+            events: [
+              {
+                count: 1,
+                fieldId: 'above',
+                label: 'above threshold session tag and peak distress 3',
+              },
+            ],
+            evidence: [],
+            numericValues: [],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordId: 'record-1',
+          },
+        },
+        {
+          facts: {
+            events: [
+              {
+                count: 1,
+                fieldId: 'above',
+                label: 'above threshold session tag and peak distress 3',
+              },
+            ],
+            evidence: [],
+            numericValues: [],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordId: 'record-2',
+          },
+        },
+      ],
+      generationTime: '2026-05-24T19:04:46.000Z',
+      records: [
+        { date: '2026-01-05T17:00:00.000Z', id: 'record-1' },
+        { date: '2026-02-23T17:00:00.000Z', id: 'record-2' },
+        { date: '2026-03-02T17:00:00.000Z', id: 'record-3' },
+      ],
+      tagIds: [],
+    });
+
+    expect(exactFacts.aggregateValues.days_since_above.value).toBe(
+      '2026-02-23T17:00:00.000Z'
+    );
+
+    expect(exactFacts.aggregateValues.days_since_above.valueFormat).toBe(
+      'durationSince'
+    );
+
+    expect(exactFacts.metrics).toContainEqual({
+      label: 'Days since last above threshold',
+      unit: 'days',
+      value: '2026-02-23T17:00:00.000Z',
+      valueFormat: 'durationSince',
+    });
+
+    expect(exactFacts.chart?.data).toEqual([
+      { label: '2026-01', value: 1 },
+      { label: '2026-02', value: 1 },
+      { label: '2026-03', value: 0 },
+    ]);
   });
 
   test('aggregates qualitative', () => {

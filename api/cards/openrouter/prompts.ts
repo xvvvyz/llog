@@ -25,11 +25,14 @@ const chartSelectionRules =
 const groundingRules =
   'Do not invent causes, advice, diagnoses, goals, records, missing values, or units. State sparse or mixed evidence plainly.';
 
+const sectionSelectionRules =
+  'Use only sections that help. Charts are allowed for comparisons, trends, distributions, and grouped counts; metrics for compact headline values; milestones for notable dated events; summary for useful context. Do not pad.';
+
 const chartOutputRules =
   'Bar charts use data. Use series only for multi-measure line charts. For record-level time series, labels must be source record.date full ISO timestamps, not YYYY-MM-DD. Order chronological points oldest-first.';
 
 const metricOutputRules =
-  'Keep metric labels concise and values compact. Order metrics by importance. Date metric values must put the full source record.date ISO timestamp in value and set valueFormat to date or datetime.';
+  'Keep metric labels concise and values compact. Order metrics by importance. Date metric values must put the full source record.date ISO timestamp in value and set valueFormat to date or datetime. For elapsed time since an event, put the latest source record.date ISO timestamp in value, set valueFormat to durationSince, and set unit to days, weeks, months, or years.';
 
 const milestoneOutputRules =
   'Use milestones only for prompt-relevant notable records or threshold crossings. Milestone dates must be source record.date full ISO timestamps. Order newest-first.';
@@ -37,10 +40,10 @@ const milestoneOutputRules =
 const summaryOutputRules = `Prefer summary only when it adds context not clear from chart or metrics. Keep summary at most ${cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH} characters; use null when there is nothing useful to add.`;
 
 const sectionDistinctnessRules =
-  'Give chart, metrics, and summary a distinct job. Avoid metrics or summary that only repeat an obvious chart value. Repeat values only when card.prompt asks for them or they are the main takeaway.';
+  'Give each included section a distinct job. Avoid metrics that say the same thing in different words, and avoid repeating obvious chart values in metrics or summary unless card.prompt asks for them or they are the main takeaway.';
 
 const labelSpecificityRules =
-  'Keep metric and chart labels concise, but preserve meaning-changing qualifiers: thresholds, score/scale names, units, groups, filters, and time windows.';
+  'Keep metric and chart labels concise and complete. Preserve meaning-changing qualifiers: thresholds, score/scale names, units, groups, filters, and time windows. Labels must not end with connector words such as for, of, by, with, or to.';
 
 const labelStyle =
   'Use short sentence case labels, usually 1-4 words, with no ending or decorative punctuation.';
@@ -77,22 +80,157 @@ const buildSourceRules = ({
 type OutputRulesOptions =
   | {
       blueprint?: boolean;
+      blueprintValue?: CardBlueprint;
       exact?: boolean;
+      exactFacts?: cardAnalysis.ExactCardFacts;
       existingCards?: boolean;
       mode: 'generate';
+      prompt: string;
     }
-  | { exact?: boolean; mode: 'refresh' }
-  | { exact?: boolean; mode: 'tweak' };
+  | {
+      exact?: boolean;
+      exactFacts?: cardAnalysis.ExactCardFacts;
+      mode: 'refresh';
+      previousOutput: cardOutput.CardOutput;
+      prompt: string;
+    }
+  | {
+      exact?: boolean;
+      exactFacts?: cardAnalysis.ExactCardFacts;
+      mode: 'tweak';
+      previousOutput: cardOutput.CardOutput;
+      prompt: string;
+      tweakPrompt: string;
+    };
+
+const CHART_PROMPT_PATTERNS = [
+  /\b(?:chart|charts|charted|charting|graph|graphs|plot|plots|plotted|plotting)\b/i,
+  /\b(?:compare|comparison|vs\.?|versus)\b/i,
+  /\b(?:trend|trends|trending|over time)\b/i,
+  /\b(?:distribution|breakdown|frequency)\b/i,
+  /\b(?:daily|weekly|monthly|yearly)\b/i,
+  /\b(?:by|per)\s+(?:day|week|month|year|tag|author|person|people|user|member|category|type|theme|outcome)\b/i,
+  /\bacross\s+(?:days|weeks|months|years|tags|authors|people|users|categories|types|themes|outcomes)\b/i,
+] as const;
+
+const METRIC_PROMPT_PATTERNS = [
+  /\b(?:metric|metrics|kpi|headline|stat|stats)\b/i,
+  /\b(?:average|avg|sum|total|count|counts|counting|how many|number of|ratio|min|minimum|max|maximum|latest|first)\b/i,
+  /\b(?:duration|score|rate|percent|percentage|threshold|streak)\b/i,
+  /\b(?:days?|weeks?|months?|years?)\s+since\b/i,
+] as const;
+
+const MILESTONE_PROMPT_PATTERNS = [
+  /\b(?:milestone|milestones|notable|highlight|highlights)\b/i,
+  /\b(?:first|latest|last|record|best|worst|peak)\b/i,
+  /\b(?:new high|new low|threshold crossing|crossed threshold)\b/i,
+] as const;
+
+const SUMMARY_PROMPT_PATTERNS = [
+  /\b(?:summary|summarize|summarise|takeaway|takeaways|insight|insights|describe|explain|pattern|patterns)\b/i,
+] as const;
+
+const ARITHMETIC_PROMPT_PATTERNS = [
+  /\b(?:average|avg|sum|total|count|counts|counting|how many|number of|ratio|min|minimum|max|maximum|latest|first|threshold|streak)\b/i,
+  /\b(?:compare|comparison|vs\.?|versus)\b/i,
+] as const;
+
+const promptMatches = (prompt: string, patterns: readonly RegExp[]) =>
+  patterns.some((pattern) => pattern.test(prompt));
+
+const promptTextForRules = (options: OutputRulesOptions) =>
+  options.mode === 'tweak'
+    ? `${options.prompt} ${options.tweakPrompt}`
+    : options.prompt;
+
+const promptLooksSummaryOnly = (prompt: string) =>
+  promptMatches(prompt, SUMMARY_PROMPT_PATTERNS) &&
+  !promptMatches(prompt, [
+    ...CHART_PROMPT_PATTERNS,
+    ...METRIC_PROMPT_PATTERNS,
+    ...MILESTONE_PROMPT_PATTERNS,
+  ]);
+
+const hasChartShape = (options: OutputRulesOptions) =>
+  options.mode === 'generate'
+    ? !!options.blueprintValue?.chart || !!options.exactFacts?.chart
+    : !!options.previousOutput.chart || !!options.exactFacts?.chart;
+
+const hasMetricShape = (options: OutputRulesOptions) =>
+  options.mode === 'generate'
+    ? !!options.blueprintValue?.metrics?.length ||
+      !!options.exactFacts?.metrics.length
+    : options.previousOutput.metrics.length > 0 ||
+      !!options.exactFacts?.metrics.length;
+
+const hasMilestoneShape = (options: OutputRulesOptions) =>
+  options.mode === 'generate'
+    ? options.blueprintValue?.milestones === true
+    : options.previousOutput.milestones.length > 0;
+
+const hasSummaryShape = (options: OutputRulesOptions) =>
+  options.mode === 'generate'
+    ? options.blueprintValue?.summary === true
+    : !!options.previousOutput.summary?.trim();
+
+const hasLockedOutputShape = (options: OutputRulesOptions) =>
+  options.mode === 'generate' ? !!options.blueprint : true;
+
+const outputRuleSections = (options: OutputRulesOptions) => {
+  const promptText = promptTextForRules(options);
+  const summaryOnly = promptLooksSummaryOnly(promptText);
+  const lockedShape = hasLockedOutputShape(options);
+
+  const chart =
+    hasChartShape(options) || promptMatches(promptText, CHART_PROMPT_PATTERNS);
+
+  const metrics =
+    hasMetricShape(options) ||
+    promptMatches(promptText, METRIC_PROMPT_PATTERNS) ||
+    (!lockedShape && !summaryOnly);
+
+  const milestones =
+    hasMilestoneShape(options) ||
+    promptMatches(promptText, MILESTONE_PROMPT_PATTERNS);
+
+  const summary =
+    hasSummaryShape(options) ||
+    promptMatches(promptText, SUMMARY_PROMPT_PATTERNS) ||
+    !lockedShape;
+
+  const sectionCount = [chart, metrics, milestones, summary].filter(
+    Boolean
+  ).length;
+
+  return {
+    chart,
+    metrics,
+    milestones,
+    multiSection: sectionCount > 1,
+    quantitative:
+      options.exact ||
+      chart ||
+      metrics ||
+      promptMatches(promptText, ARITHMETIC_PROMPT_PATTERNS),
+  };
+};
 
 const buildOutputRules = (options: OutputRulesOptions) => {
+  const sections = outputRuleSections(options);
+
   const rules =
     options.mode === 'generate'
       ? options.blueprint
-        ? 'Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true and summary only when card.blueprint.summary is true. Do not add sections absent from blueprint.'
-        : 'Include only useful sections; do not pad. Put the most important preview metrics first.'
+        ? 'Use card.blueprint as the requested output structure. Preserve defined sections, metric labels/order/value formatting, chart config, series labels, and milestone/summary presence. Do not add sections absent from blueprint.'
+        : 'Include only useful sections; lead with the strongest section.'
       : options.mode === 'refresh'
-        ? 'Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. Prefer summary null when it would only repeat other sections. When previousOutput has milestones, curate the current best milestone set: prefer recent/new milestones, keeping durable anchors only when high-signal. If an existing milestone remains relevant, keep its title and detail wording and date exactly unless source records show it is wrong. Update only metric values/trends, chart data, and summary text for existing sections.'
+        ? 'Preserve previousOutput shape and chart config. Do not add absent sections. Update only metric values/trends, chart data, summary text, and existing milestone content.'
         : 'Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins for this output. You may adjust format, labels, chart type, sections, or emphasis when asked.';
+
+  const refreshMilestoneRules =
+    options.mode === 'refresh' && options.previousOutput.milestones.length > 0
+      ? 'When previousOutput has milestones, curate the current best milestone set: prefer recent/new milestones, keeping durable anchors only when high-signal. If an existing milestone remains relevant, keep its title and detail wording and date exactly unless source records show it is wrong.'
+      : '';
 
   const existingCardRules =
     options.mode === 'generate' && options.existingCards
@@ -101,16 +239,22 @@ const buildOutputRules = (options: OutputRulesOptions) => {
 
   return [
     rules,
+    refreshMilestoneRules,
     existingCardRules,
-    sectionDistinctnessRules,
+    sectionSelectionRules,
+    sections.multiSection ? sectionDistinctnessRules : '',
     labelSpecificityRules,
-    metricTrendRules,
-    chartOutputRules,
-    metricOutputRules,
-    milestoneOutputRules,
+    sections.metrics ? metricTrendRules : '',
+    sections.chart ? chartOutputRules : '',
+    sections.metrics ? metricOutputRules : '',
+    sections.milestones ? milestoneOutputRules : '',
     summaryOutputRules,
-    options.exact ? exactArithmeticRules : arithmeticRules,
-    chartSelectionRules,
+    sections.quantitative
+      ? options.exact
+        ? exactArithmeticRules
+        : arithmeticRules
+      : '',
+    sections.chart ? chartSelectionRules : '',
     dateOutputRules,
     groundingRules,
   ]
@@ -123,6 +267,7 @@ export const buildMessages = ({
   blueprint,
   existingCards = [],
   exactFacts,
+  generationTime,
   repairMessage,
   prompt,
   records,
@@ -132,6 +277,7 @@ export const buildMessages = ({
   blueprint?: CardBlueprint;
   existingCards?: CardContextCard[];
   exactFacts?: cardAnalysis.ExactCardFacts;
+  generationTime?: string;
   repairMessage?: string;
   prompt: string;
   records: CardLlmRecord[];
@@ -157,14 +303,20 @@ export const buildMessages = ({
     },
     {
       content: JSON.stringify({
-        card: { ...(blueprint && { blueprint }), prompt },
+        card: {
+          generationTime: generationTime ?? null,
+          ...(blueprint && { blueprint }),
+          prompt,
+        },
         ...(generationCardContext.length > 0 && {
           existingCards: generationCardContext,
         }),
         outputRules: buildOutputRules({
           exact,
+          exactFacts: serializedExactFacts ? exactFacts : undefined,
           mode: 'generate',
-          ...(blueprint && { blueprint: true }),
+          prompt,
+          ...(blueprint && { blueprint: true, blueprintValue: blueprint }),
           ...(generationCardContext.length > 0 && { existingCards: true }),
         }),
         sourceRules: buildSourceRules({
@@ -187,6 +339,7 @@ export const buildMessages = ({
 export const buildRefreshMessages = ({
   analysisMode,
   exactFacts,
+  generationTime,
   previousOutput,
   previousTitle,
   prompt,
@@ -196,6 +349,7 @@ export const buildRefreshMessages = ({
 }: {
   analysisMode?: cardAnalysis.CardAnalysisMode;
   exactFacts?: cardAnalysis.ExactCardFacts;
+  generationTime?: string;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
   prompt: string;
@@ -220,8 +374,19 @@ export const buildRefreshMessages = ({
     },
     {
       content: JSON.stringify({
-        card: { previousOutput, previousTitle: previousTitle ?? null, prompt },
-        outputRules: buildOutputRules({ exact, mode: 'refresh' }),
+        card: {
+          generationTime: generationTime ?? null,
+          previousOutput,
+          previousTitle: previousTitle ?? null,
+          prompt,
+        },
+        outputRules: buildOutputRules({
+          exact,
+          exactFacts: serializedExactFacts ? exactFacts : undefined,
+          mode: 'refresh',
+          previousOutput,
+          prompt,
+        }),
         sourceRules: buildSourceRules({
           analysisMode: effectiveAnalysisMode,
           exactFacts,
@@ -242,6 +407,7 @@ export const buildRefreshMessages = ({
 export const buildTweakMessages = ({
   analysisMode,
   exactFacts,
+  generationTime,
   previousOutput,
   previousTitle,
   prompt,
@@ -252,6 +418,7 @@ export const buildTweakMessages = ({
 }: {
   analysisMode?: cardAnalysis.CardAnalysisMode;
   exactFacts?: cardAnalysis.ExactCardFacts;
+  generationTime?: string;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
   prompt: string;
@@ -278,12 +445,20 @@ export const buildTweakMessages = ({
     {
       content: JSON.stringify({
         card: {
+          generationTime: generationTime ?? null,
           previousOutput,
           previousTitle: previousTitle ?? null,
           prompt,
           tweakPrompt,
         },
-        outputRules: buildOutputRules({ exact, mode: 'tweak' }),
+        outputRules: buildOutputRules({
+          exact,
+          exactFacts: serializedExactFacts ? exactFacts : undefined,
+          mode: 'tweak',
+          previousOutput,
+          prompt,
+          tweakPrompt,
+        }),
         sourceRules: buildSourceRules({
           analysisMode: effectiveAnalysisMode,
           exactFacts,
@@ -321,7 +496,7 @@ export const buildAnalysisPlanMessages = ({
     content: JSON.stringify({
       card: { generationTime: generationTime ?? null, prompt },
       rules:
-        'Use the minimal spec needed. Include prompt-requested sparse fields, but do not add fields unsupported by the prompt and examples. Choose narrative for broad interpretation, advice, or open-ended comparison unless structured qualitative labels/scores are requested. Set analysisSpec to null for narrative mode. Use stable short ids. Event fields must set countMode: explicitOccurrences for occurrence totals, or recordPresence for records/sessions with an event. Qualitative scoreScale is only for ordinal scores with explicit scale bounds; preserve the source or prompt scale. Aggregations may use count, sum, average, min, max, latest, first, ratio, currentStreak, or longestStreak. Ratio aggregations must reference numeratorId and denominatorId. Streak aggregations should set period to day, week, or month and use groupBy for per-author or per-tag streaks; currentStreak is anchored to card.generationTime. Aggregation/chart labels should preserve thresholds, scale names, groups, and time windows compactly. Chart specs must reference aggregation ids and use chart.x for grouping by record, tag, author, event, day, week, month, or explicit range. Use record/day/week/month grouping for chronological charts. If the prompt asks for a date window, include filters on field record.date. Use startInclusive/endExclusive bounds. For relative rolling windows such as last/past N months, use type generationTime with an offset from card.generationTime for the start and generationTime for the end. Month/year offsets are rolling calendar offsets, not fixed day counts. For fixed date-only end bounds like through Apr 30, emit the requested date as endExclusive and the system will include that full UTC day. Records with missing or invalid dates are excluded by active filters. Qualitative specs request structured labels/scores/evidence, not freeform summaries.',
+        'Use the minimal spec needed. Include prompt-requested sparse fields, but do not add fields unsupported by the prompt and examples. Choose narrative for broad interpretation, advice, or open-ended comparison unless structured qualitative labels/scores are requested. Set analysisSpec to null for narrative mode. Use stable short ids. Event fields must set countMode: explicitOccurrences for occurrence totals, or recordPresence for records/sessions with an event. Qualitative scoreScale is only for ordinal scores with explicit scale bounds; preserve the source or prompt scale. Aggregations may use count, sum, average, min, max, latest, first, ratio, currentStreak, longestStreak, or daysSinceLast. Ratio aggregations must reference numeratorId and denominatorId. Streak aggregations should set period to day, week, or month and use groupBy for per-author or per-tag streaks; currentStreak is anchored to card.generationTime and counts consecutive active periods through that anchor. Use daysSinceLast for elapsed time since the latest matching event/value, with unit days, weeks, months, or years as requested. Aggregation/chart labels should preserve thresholds, scale names, groups, and time windows compactly. Chart specs must reference aggregation ids and use chart.x for grouping by record, tag, author, event, day, week, month, or explicit range. Use record/day/week/month grouping for chronological charts. If the prompt asks for a date window, include filters on field record.date. Use startInclusive/endExclusive bounds. For relative rolling windows such as last/past N months, use type generationTime with an offset from card.generationTime for the start and generationTime for the end. Month/year offsets are rolling calendar offsets, not fixed day counts. For fixed date-only end bounds like through Apr 30, emit the requested date as endExclusive and the system will include that full UTC day. Records with missing or invalid dates are excluded by active filters. Qualitative specs request structured labels/scores/evidence, not freeform summaries.',
       records: context.buildPlannerRecordContext({ records, totalRecordCount }),
     }),
     role: 'user',

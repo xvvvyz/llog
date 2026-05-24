@@ -64,6 +64,17 @@ tests:
       - type: javascript
         value: file://assertions/index.cjs:dateHandling
 
+  - description: generate nested source card
+    vars:
+      mode: generate
+      fixturePath: evals/cards/fixtures/nested-sources.json
+      promptPath: evals/cards/prompts/nested-sources.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:nestedSources
+
   - description: generate exact small cached counts
     vars:
       mode: exact

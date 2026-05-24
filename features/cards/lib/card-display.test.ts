@@ -35,6 +35,60 @@ describe('card display', () => {
     ).toContain('Jun 15, 2024');
   });
 
+  test('formats labels', () => {
+    expect(
+      cardDisplay.formatCardDisplayLabel(
+        'Last above-threshold session date for'
+      )
+    ).toBe('Last above-threshold session date');
+  });
+
+  test('formats since metrics', () => {
+    expect(
+      cardDisplay.formatMetricValue(
+        {
+          unit: 'days',
+          value: '2026-02-23T12:00:00.000Z',
+          valueFormat: 'durationSince',
+        },
+        new Date('2026-05-25T12:00:00.000Z')
+      )
+    ).toBe('91 days');
+
+    expect(
+      cardDisplay.formatMetricValue(
+        {
+          unit: 'weeks',
+          value: '2026-02-23T12:00:00.000Z',
+          valueFormat: 'durationSince',
+        },
+        new Date('2026-05-25T12:00:00.000Z')
+      )
+    ).toBe('13 weeks');
+
+    expect(
+      cardDisplay.formatMetricValue(
+        {
+          unit: 'months',
+          value: '2026-02-23T12:00:00.000Z',
+          valueFormat: 'durationSince',
+        },
+        new Date('2026-05-25T12:00:00.000Z')
+      )
+    ).toBe('3 months');
+
+    expect(
+      cardDisplay.formatMetricValue(
+        {
+          unit: 'years',
+          value: '2024-02-23T12:00:00.000Z',
+          valueFormat: 'durationSince',
+        },
+        new Date('2026-05-25T12:00:00.000Z')
+      )
+    ).toBe('2 years');
+  });
+
   test('formats card text', () => {
     const formatted = cardDisplay.formatCardText(
       'Latest check-in was 2024-06-15T12:30:00.000Z.'

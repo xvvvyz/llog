@@ -24,6 +24,32 @@ const trimFormattedNumber = (value: string) =>
 const stripTrailingParenthetical = (value: string) =>
   value.replace(/\s*\([^)]*\)\s*$/g, '').trim() || value.trim();
 
+const normalizeUnitToken = (token: string) =>
+  token.length > 3 && token.endsWith('s') && !token.endsWith('ss')
+    ? token.slice(0, -1)
+    : token;
+
+const labelTokens = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(normalizeUnitToken);
+
+const sameTokens = (left: string[], right: string[]) =>
+  left.length === right.length &&
+  left.every((token, index) => token === right[index]);
+
+const hasUnitToken = ({ label, unit }: { label: string[]; unit: string[] }) => {
+  if (!label.length || !unit.length) return false;
+
+  return label.some((_token, index) =>
+    unit.every((unitToken, offset) => label[index + offset] === unitToken)
+  );
+};
+
 export const formatChartLegendLabel = ({
   label,
   unit,
@@ -35,9 +61,18 @@ export const formatChartLegendLabel = ({
   const trimmedUnit = unit?.trim();
   if (!trimmedUnit) return trimmedLabel;
   const baseLabel = stripTrailingParenthetical(trimmedLabel);
+  const baseLabelTokens = labelTokens(baseLabel);
+  const unitTokens = labelTokens(trimmedUnit);
 
-  if (baseLabel.toLowerCase() === trimmedUnit.toLowerCase()) {
+  if (
+    baseLabel.toLowerCase() === trimmedUnit.toLowerCase() ||
+    sameTokens(baseLabelTokens, unitTokens)
+  ) {
     return `Value (${trimmedUnit})`;
+  }
+
+  if (hasUnitToken({ label: baseLabelTokens, unit: unitTokens })) {
+    return baseLabel;
   }
 
   return `${baseLabel} (${trimmedUnit})`;

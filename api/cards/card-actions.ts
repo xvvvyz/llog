@@ -5,6 +5,7 @@ import * as cardAnalysis from '@/domain/cards/analysis';
 import * as cardBlueprint from '@/domain/cards/blueprint';
 import * as constants from '@/domain/cards/constants';
 import * as cardOutput from '@/domain/cards/output';
+import * as cardSourceAssembly from '@/domain/cards/source-assembly';
 import * as cardSourceSelection from '@/domain/cards/source-selection';
 import * as cardTitle from '@/domain/cards/title';
 import { publishedContentWhere } from '@/domain/records/query';
@@ -91,12 +92,34 @@ type AnalysisCleanupCard = Pick<CardEntity, 'id'> & {
   facts?: Pick<instantEntities.Fact, 'id' | 'key'>[];
 };
 
-type PublishedCardSourceRecord = EntityProjection<
+type PublishedCardSourceRecord = cardSourceAssembly.AssembledCardSourceRecord;
+
+type FileCardRefreshSourceRecord = EntityProjection<
   instantEntities.Record,
-  'date' | 'isDraft' | 'logId' | 'text'
+  'isDraft' | 'logId'
 > & {
-  author?: Pick<instantEntities.Profile, 'id' | 'name'> | null;
-  tags?: CardTag[];
+  log?: Pick<instantEntities.Log, 'id'> | null;
+  tags?: Pick<instantEntities.Tag, 'id'>[];
+};
+
+type FileCardRefreshSource = Pick<instantEntities.FileItem, 'id'> & {
+  record?: FileCardRefreshSourceRecord | null;
+  reply?:
+    | (EntityProjection<instantEntities.Reply, 'isDraft'> & {
+        record?: FileCardRefreshSourceRecord | null;
+      })
+    | null;
+};
+
+const cardSourceFileQuery = {
+  $: {
+    fields: [
+      'id' as const,
+      'order' as const,
+      'transcript' as const,
+      'type' as const,
+    ],
+  },
 };
 
 const trimRequired = (value: string, maxLength: number, message: string) => {
@@ -303,7 +326,7 @@ const readCardOutput = (value: unknown) => {
   return parsed.success ? parsed.data : undefined;
 };
 
-const getPublishedTaggedSourceRecordRows = async ({
+const getPublishedTaggedSourceRecords = async ({
   dbClient,
   logId,
   tagIds,
@@ -319,19 +342,31 @@ const getPublishedTaggedSourceRecordRows = async ({
       $: {
         fields: ['date', 'id', 'isDraft', 'logId', 'text'],
         order: { date: 'asc' },
-        where: {
-          ...publishedContentWhere,
-          'tags.id': { $in: tagIds },
-          logId,
-          text: { $not: '' },
-        },
+        where: { ...publishedContentWhere, 'tags.id': { $in: tagIds }, logId },
       },
       author: { $: { fields: ['id' as const, 'name' as const] } },
+      files: cardSourceFileQuery,
+      replies: {
+        $: {
+          fields: [
+            'date' as const,
+            'id' as const,
+            'isDraft' as const,
+            'text' as const,
+          ],
+          order: { date: 'asc' as const },
+          where: publishedContentWhere,
+        },
+        author: { $: { fields: ['id' as const, 'name' as const] } },
+        files: cardSourceFileQuery,
+      },
       tags: { $: { fields: ['id', 'name'] } },
     },
   });
 
-  return records as PublishedCardSourceRecord[];
+  return cardSourceAssembly.assembleCardLlmRecords(
+    records as cardSourceAssembly.CardSourceAssemblyRecord[]
+  );
 };
 
 const noSourceRecordGenerationFields = ({
@@ -455,7 +490,7 @@ const getCardAnalysisContext = async ({
   prompt: string;
   tagIds: string[];
 }): Promise<CardAnalysisContext> => {
-  const allSourceRecords = await getPublishedTaggedSourceRecordRows({
+  const allSourceRecords = await getPublishedTaggedSourceRecords({
     dbClient,
     logId,
     tagIds,
@@ -515,12 +550,14 @@ const generateCardResult = async ({
   prompt: string;
   tagIds: string[];
 }) => {
+  const resolvedGenerationTime = generationTime ?? new Date().toISOString();
+
   const context =
     analysisContext ??
     (await getCardAnalysisContext({
       dbClient,
       env,
-      generationTime: generationTime ?? new Date().toISOString(),
+      generationTime: resolvedGenerationTime,
       logId,
       prompt,
       tagIds,
@@ -542,6 +579,7 @@ const generateCardResult = async ({
     env,
     exactFacts: context.exactFacts,
     existingCards,
+    generationTime: resolvedGenerationTime,
     prompt,
     records: sourceSelection.records,
     totalRecordCount: sourceSelection.totalMatchingRecords,
@@ -569,12 +607,14 @@ const refreshCardResult = async ({
   prompt: string;
   tagIds: string[];
 }) => {
+  const resolvedGenerationTime = generationTime ?? new Date().toISOString();
+
   const context =
     analysisContext ??
     (await getCardAnalysisContext({
       dbClient,
       env,
-      generationTime: generationTime ?? new Date().toISOString(),
+      generationTime: resolvedGenerationTime,
       logId,
       prompt,
       tagIds,
@@ -587,6 +627,7 @@ const refreshCardResult = async ({
     analysisMode: context.plan.mode,
     env,
     exactFacts: context.exactFacts,
+    generationTime: resolvedGenerationTime,
     previousOutput,
     previousTitle,
     prompt,
@@ -618,12 +659,14 @@ const tweakCardResult = async ({
   tagIds: string[];
   tweakPrompt: string;
 }) => {
+  const resolvedGenerationTime = generationTime ?? new Date().toISOString();
+
   const context =
     analysisContext ??
     (await getCardAnalysisContext({
       dbClient,
       env,
-      generationTime: generationTime ?? new Date().toISOString(),
+      generationTime: resolvedGenerationTime,
       logId,
       prompt,
       tagIds,
@@ -636,6 +679,7 @@ const tweakCardResult = async ({
     analysisMode: context.plan.mode,
     env,
     exactFacts: context.exactFacts,
+    generationTime: resolvedGenerationTime,
     previousOutput,
     previousTitle,
     prompt,
@@ -669,7 +713,7 @@ export const suggestCardPrompt = async ({
     teamId: access.teamId,
   });
 
-  const sourceRecords = await getPublishedTaggedSourceRecordRows({
+  const sourceRecords = await getPublishedTaggedSourceRecords({
     dbClient,
     logId: access.logId,
     tagIds,
@@ -1807,6 +1851,7 @@ export const finalizeCardAnalysis = async ({
         analysisContext,
         dbClient,
         env,
+        generationTime: requestedAt,
         logId: context.card.logId!,
         previousOutput,
         previousTitle: context.card.title,
@@ -1822,6 +1867,7 @@ export const finalizeCardAnalysis = async ({
         analysisContext,
         dbClient,
         env,
+        generationTime: requestedAt,
         logId: context.card.logId!,
         previousOutput,
         previousTitle: context.card.title,
@@ -1836,6 +1882,7 @@ export const finalizeCardAnalysis = async ({
         cardId: context.card.id,
         dbClient,
         env,
+        generationTime: requestedAt,
         logId: context.card.logId!,
         prompt: context.card.prompt!,
         tagIds: context.tagIds,
@@ -2210,6 +2257,69 @@ export const queuePublishedRecordCardRefreshes = async (params: {
     });
   } catch (error) {
     console.error('Card refresh enqueue failed after content change', error);
+  }
+};
+
+const fileCardRefreshRecord = (file: FileCardRefreshSource) => {
+  if (file.record?.id) return file.record.isDraft ? undefined : file.record;
+  const record = file.reply?.record;
+
+  if (!file.reply?.id || file.reply.isDraft || !record?.id || record.isDraft) {
+    return;
+  }
+
+  return record;
+};
+
+export const queuePublishedFileCardRefreshes = async ({
+  dbClient,
+  env,
+  fileId,
+}: {
+  dbClient: Db;
+  env: CloudflareEnv;
+  fileId: string;
+}) => {
+  try {
+    const { files } = await dbClient.query({
+      files: {
+        $: { fields: ['id' as const], where: { id: fileId } },
+        record: {
+          $: { fields: ['id' as const, 'isDraft' as const, 'logId' as const] },
+          log: { $: { fields: ['id' as const] } },
+          tags: { $: { fields: ['id' as const] } },
+        },
+        reply: {
+          $: { fields: ['id' as const, 'isDraft' as const] },
+          record: {
+            $: {
+              fields: ['id' as const, 'isDraft' as const, 'logId' as const],
+            },
+            log: { $: { fields: ['id' as const] } },
+            tags: { $: { fields: ['id' as const] } },
+          },
+        },
+      },
+    });
+
+    const file = files[0] as FileCardRefreshSource | undefined;
+    if (!file?.id) return;
+    const record = fileCardRefreshRecord(file);
+    const logId = record?.logId ?? record?.log?.id;
+    const recordTagIds = record?.tags?.map((tag) => tag.id) ?? [];
+    if (!logId || !recordTagIds.length) return;
+
+    await queuePublishedRecordCardRefreshes({
+      dbClient,
+      env,
+      logId,
+      recordTagIds,
+    });
+  } catch (error) {
+    console.error(
+      'Card refresh enqueue failed after file transcript change',
+      error
+    );
   }
 };
 

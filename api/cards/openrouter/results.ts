@@ -88,8 +88,7 @@ const mergeExactCardOutput = ({
   });
 
   const shouldAppendExactMetrics =
-    appendMissingExactMetrics &&
-    (output.metrics.length === 0 || shouldMergeChart || !output.chart);
+    appendMissingExactMetrics && output.metrics.length === 0;
 
   return {
     ...output,

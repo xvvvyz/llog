@@ -3,18 +3,21 @@ import { z } from 'zod/v4';
 
 const metricBlueprintSchema = z
   .object({
-    label: z.string().min(1).max(40),
+    label: z.string().min(1).max(cardOutput.MAX_CARD_METRIC_LABEL_LENGTH),
     trend: z.boolean().optional(),
-    unit: z.string().max(16).optional(),
-    value: z.union([z.string().max(40), z.number()]),
-    valueFormat: z.enum(['date', 'datetime']).optional(),
+    unit: z.string().max(cardOutput.MAX_CARD_UNIT_LENGTH).optional(),
+    value: z.union([
+      z.string().max(cardOutput.MAX_CARD_METRIC_VALUE_LENGTH),
+      z.number(),
+    ]),
+    valueFormat: z.enum(cardOutput.CARD_METRIC_VALUE_FORMATS).optional(),
   })
   .strict();
 
 const chartSeriesBlueprintSchema = z
   .object({
-    label: z.string().min(1).max(40),
-    unit: z.string().max(16).optional(),
+    label: z.string().min(1).max(cardOutput.MAX_CARD_CHART_SERIES_LABEL_LENGTH),
+    unit: z.string().max(cardOutput.MAX_CARD_UNIT_LENGTH).optional(),
   })
   .strict();
 
@@ -22,9 +25,9 @@ const chartBlueprintSchema = z
   .object({
     kind: z.enum(['data', 'series']),
     series: z.array(chartSeriesBlueprintSchema).optional(),
-    title: z.string().max(80).optional(),
+    title: z.string().max(cardOutput.MAX_CARD_CHART_TITLE_LENGTH).optional(),
     type: z.enum(['bar', 'line']),
-    unit: z.string().max(16).optional(),
+    unit: z.string().max(cardOutput.MAX_CARD_UNIT_LENGTH).optional(),
     xAxis: cardOutput.cardChartXAxisSchema.optional(),
     yAxis: cardOutput.cardChartYAxisSchema.optional(),
   })

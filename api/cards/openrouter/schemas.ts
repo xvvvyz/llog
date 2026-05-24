@@ -3,6 +3,12 @@ import type { JsonSchema } from './types';
 
 const nullableStringSchema = { type: ['string', 'null'] };
 
+const stringSchema = (maxLength: number) =>
+  ({ maxLength, type: 'string' }) satisfies JsonSchema;
+
+const nullableLimitedStringSchema = (maxLength: number) =>
+  ({ maxLength, type: ['string', 'null'] }) satisfies JsonSchema;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
@@ -61,7 +67,10 @@ const strictResponseSchema = (schema: unknown): unknown => {
 
 const datumSchema = {
   additionalProperties: false,
-  properties: { label: { type: 'string' }, value: { type: 'number' } },
+  properties: {
+    label: stringSchema(cardOutput.MAX_CARD_CHART_DATUM_LABEL_LENGTH),
+    value: { type: 'number' },
+  },
   required: ['label', 'value'],
   type: 'object',
 } satisfies JsonSchema;
@@ -94,8 +103,8 @@ const chartSeriesSchema = {
       maxItems: cardOutput.MAX_CARD_CHART_POINTS,
       type: 'array',
     },
-    label: { type: 'string' },
-    unit: nullableStringSchema,
+    label: stringSchema(cardOutput.MAX_CARD_CHART_SERIES_LABEL_LENGTH),
+    unit: nullableLimitedStringSchema(cardOutput.MAX_CARD_UNIT_LENGTH),
   },
   required: ['label', 'data'],
   type: 'object',
@@ -114,9 +123,9 @@ const chartSchema = {
       maxItems: cardOutput.MAX_CARD_CHART_SERIES,
       type: 'array',
     },
-    title: nullableStringSchema,
+    title: nullableLimitedStringSchema(cardOutput.MAX_CARD_CHART_TITLE_LENGTH),
     type: { enum: ['bar', 'line'], type: 'string' },
-    unit: nullableStringSchema,
+    unit: nullableLimitedStringSchema(cardOutput.MAX_CARD_UNIT_LENGTH),
     xAxis: xAxisSchema,
     yAxis: yAxisSchema,
   },
@@ -127,11 +136,14 @@ const chartSchema = {
 const metricSchema = {
   additionalProperties: false,
   properties: {
-    label: { type: 'string' },
+    label: stringSchema(cardOutput.MAX_CARD_METRIC_LABEL_LENGTH),
     trend: { enum: ['up', 'down', 'flat', null], type: ['string', 'null'] },
-    unit: nullableStringSchema,
-    value: { type: 'string' },
-    valueFormat: { enum: ['date', 'datetime', null], type: ['string', 'null'] },
+    unit: nullableLimitedStringSchema(cardOutput.MAX_CARD_UNIT_LENGTH),
+    value: stringSchema(cardOutput.MAX_CARD_METRIC_VALUE_LENGTH),
+    valueFormat: {
+      enum: [...cardOutput.CARD_METRIC_VALUE_FORMATS, null],
+      type: ['string', 'null'],
+    },
   },
   required: ['label', 'value'],
   type: 'object',
@@ -140,9 +152,13 @@ const metricSchema = {
 const milestoneSchema = {
   additionalProperties: false,
   properties: {
-    date: nullableStringSchema,
-    detail: nullableStringSchema,
-    title: { type: 'string' },
+    date: nullableLimitedStringSchema(
+      cardOutput.MAX_CARD_MILESTONE_DATE_LENGTH
+    ),
+    detail: nullableLimitedStringSchema(
+      cardOutput.MAX_CARD_MILESTONE_DETAIL_LENGTH
+    ),
+    title: stringSchema(cardOutput.MAX_CARD_MILESTONE_TITLE_LENGTH),
   },
   required: ['title'],
   type: 'object',
@@ -162,7 +178,9 @@ const cardOutputSchema = {
       maxItems: cardOutput.MAX_CARD_MILESTONES,
       type: 'array',
     },
-    summary: nullableStringSchema,
+    summary: nullableLimitedStringSchema(
+      cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH
+    ),
   },
   type: 'object',
 } satisfies JsonSchema;
@@ -194,7 +212,10 @@ export type JsonResponseSchema = ReturnType<typeof jsonResponseSchema>;
 export const generatedCardResponseSchema = jsonResponseSchema({
   description: 'Generated progress card output.',
   name: 'llog_card_generation',
-  properties: { title: { type: 'string' }, output: cardOutputSchema },
+  properties: {
+    title: stringSchema(cardOutput.MAX_CARD_GENERATED_TITLE_LENGTH),
+    output: cardOutputSchema,
+  },
 });
 
 export const refreshedCardResponseSchema = jsonResponseSchema({
@@ -206,7 +227,12 @@ export const refreshedCardResponseSchema = jsonResponseSchema({
 export const tweakedCardResponseSchema = jsonResponseSchema({
   description: 'Tweaked progress card output.',
   name: 'llog_card_tweak',
-  properties: { title: nullableStringSchema, output: cardOutputSchema },
+  properties: {
+    title: nullableLimitedStringSchema(
+      cardOutput.MAX_CARD_GENERATED_TITLE_LENGTH
+    ),
+    output: cardOutputSchema,
+  },
   required: ['output'],
 });
 
@@ -303,6 +329,7 @@ const analysisAggregationSchema = {
         'ratio',
         'currentStreak',
         'longestStreak',
+        'daysSinceLast',
       ],
       type: 'string',
     },

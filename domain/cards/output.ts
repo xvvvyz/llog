@@ -9,35 +9,77 @@ export const MAX_CARD_METRICS = 6;
 
 export const MAX_CARD_MILESTONES = 8;
 
+export const MAX_CARD_GENERATED_TITLE_LENGTH = 36;
+
 export const MAX_CARD_GENERATED_SUMMARY_LENGTH = 320;
+
+export const MAX_CARD_SUMMARY_LENGTH = 1200;
+
+export const MAX_CARD_METRIC_LABEL_LENGTH = 40;
+
+export const MAX_CARD_METRIC_VALUE_LENGTH = 40;
+
+export const MAX_CARD_UNIT_LENGTH = 16;
+
+export const MAX_CARD_MILESTONE_DATE_LENGTH = 32;
+
+export const MAX_CARD_MILESTONE_DETAIL_LENGTH = 240;
+
+export const MAX_CARD_MILESTONE_TITLE_LENGTH = 80;
+
+export const MAX_CARD_CHART_DATUM_LABEL_LENGTH = 32;
+
+export const MAX_CARD_CHART_SERIES_LABEL_LENGTH = 40;
+
+export const MAX_CARD_CHART_TITLE_LENGTH = 80;
+
+export const CARD_METRIC_VALUE_FORMATS = [
+  'date',
+  'datetime',
+  'durationSince',
+] as const;
+
+export type CardMetricValueFormat = (typeof CARD_METRIC_VALUE_FORMATS)[number];
 
 export const cardMetricSchema = z
   .object({
-    label: z.string().min(1).max(40),
+    label: z.string().min(1).max(MAX_CARD_METRIC_LABEL_LENGTH),
     trend: z.enum(['down', 'flat', 'up']).optional(),
-    unit: z.string().max(16).optional(),
-    value: z.union([z.string().max(40), z.number()]),
-    valueFormat: z.enum(['date', 'datetime']).optional(),
+    unit: z.string().max(MAX_CARD_UNIT_LENGTH).optional(),
+    value: z.union([z.string().max(MAX_CARD_METRIC_VALUE_LENGTH), z.number()]),
+    valueFormat: z.enum(CARD_METRIC_VALUE_FORMATS).optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (metric) =>
+      !metric.valueFormat ||
+      (typeof metric.value === 'string' && !!parseIsoDateTime(metric.value)),
+    {
+      message: 'Formatted metrics require an ISO timestamp string value',
+      path: ['value'],
+    }
+  );
 
 export const cardMilestoneSchema = z
   .object({
-    date: z.string().max(32).optional(),
-    detail: z.string().max(240).optional(),
-    title: z.string().min(1).max(80),
+    date: z.string().max(MAX_CARD_MILESTONE_DATE_LENGTH).optional(),
+    detail: z.string().max(MAX_CARD_MILESTONE_DETAIL_LENGTH).optional(),
+    title: z.string().min(1).max(MAX_CARD_MILESTONE_TITLE_LENGTH),
   })
   .strict();
 
 export const cardChartDatumSchema = z
-  .object({ label: z.string().min(1).max(32), value: z.number() })
+  .object({
+    label: z.string().min(1).max(MAX_CARD_CHART_DATUM_LABEL_LENGTH),
+    value: z.number(),
+  })
   .strict();
 
 export const cardChartSeriesSchema = z
   .object({
     data: z.array(cardChartDatumSchema).min(1).max(MAX_CARD_CHART_POINTS),
-    label: z.string().min(1).max(40),
-    unit: z.string().max(16).optional(),
+    label: z.string().min(1).max(MAX_CARD_CHART_SERIES_LABEL_LENGTH),
+    unit: z.string().max(MAX_CARD_UNIT_LENGTH).optional(),
   })
   .strict();
 
@@ -66,9 +108,9 @@ export const cardChartSchema = z
       .min(1)
       .max(MAX_CARD_CHART_SERIES)
       .optional(),
-    title: z.string().max(80).optional(),
+    title: z.string().max(MAX_CARD_CHART_TITLE_LENGTH).optional(),
     type: z.enum(['bar', 'line']),
-    unit: z.string().max(16).optional(),
+    unit: z.string().max(MAX_CARD_UNIT_LENGTH).optional(),
     xAxis: cardChartXAxisSchema.optional(),
     yAxis: cardChartYAxisSchema.optional(),
   })
@@ -88,7 +130,7 @@ export const cardOutputSchema = z
       .array(cardMilestoneSchema)
       .max(MAX_CARD_MILESTONES)
       .default([]),
-    summary: z.string().min(1).max(1200).optional(),
+    summary: z.string().min(1).max(MAX_CARD_SUMMARY_LENGTH).optional(),
   })
   .strict()
   .refine(
@@ -144,6 +186,36 @@ const getDisplayLabelText = (value: unknown, defaultValue?: string) => {
   return defaultValue?.trim();
 };
 
+const DANGLING_LABEL_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'at',
+  'by',
+  'for',
+  'from',
+  'in',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+  'with',
+]);
+
+const stripDanglingLabelWords = (value: string) => {
+  const words = value.split(' ').filter(Boolean);
+
+  while (
+    words.length > 1 &&
+    DANGLING_LABEL_WORDS.has(words.at(-1)?.toLowerCase() ?? '')
+  ) {
+    words.pop();
+  }
+
+  return words.join(' ');
+};
+
 export const normalizeCardDisplayLabel = ({
   defaultValue,
   maxLength,
@@ -179,6 +251,8 @@ export const normalizeCardDisplayLabel = ({
   }
 
   if (!label && words[0]) label = words[0].slice(0, maxLength);
+  if (!label) return undefined;
+  label = stripDanglingLabelWords(label);
   if (!label) return undefined;
   return label.replace(/^[a-z]/, (character) => character.toUpperCase());
 };
@@ -266,7 +340,7 @@ const readMetricTrend = ({
   label: string;
   trend: unknown;
   value: string | number;
-  valueFormat?: 'date' | 'datetime';
+  valueFormat?: CardMetricValueFormat;
 }): CardMetricTrend | undefined => {
   const parsedTrend = readTrend(trend);
 
@@ -293,6 +367,19 @@ const readMetricValueFormat = (value: unknown) => {
     return 'datetime';
   }
 
+  if (
+    valueFormat === 'duration_since' ||
+    valueFormat === 'durationsince' ||
+    valueFormat === 'elapsed_since' ||
+    valueFormat === 'elapsedsince' ||
+    valueFormat === 'time_since' ||
+    valueFormat === 'timesince' ||
+    valueFormat === 'days_since' ||
+    valueFormat === 'dayssince'
+  ) {
+    return 'durationSince';
+  }
+
   return undefined;
 };
 
@@ -317,13 +404,15 @@ const normalizeMetric = (value: unknown) => {
   const metric = asRecord(value);
 
   const label = normalizeCardDisplayLabel({
-    maxLength: 40,
+    maxLength: MAX_CARD_METRIC_LABEL_LENGTH,
     maxWords: 5,
     value: metric.label,
   });
 
   let metricValue =
-    readNumber(metric.value) ?? readString(metric.value, 40) ?? undefined;
+    readNumber(metric.value) ??
+    readString(metric.value, MAX_CARD_METRIC_VALUE_LENGTH) ??
+    undefined;
 
   if (!label || metricValue == null) return undefined;
   const unit = readUnit(metric.unit);
@@ -362,7 +451,7 @@ const normalizeMilestone = (value: unknown) => {
   });
 
   if (!title) return undefined;
-  const detail = readString(milestone.detail, 240);
+  const detail = readString(milestone.detail, MAX_CARD_MILESTONE_DETAIL_LENGTH);
 
   const date =
     typeof milestone.date === 'string' ||
@@ -376,7 +465,7 @@ const normalizeMilestone = (value: unknown) => {
 
 const normalizeChartDatum = (value: unknown) => {
   const datum = asRecord(value);
-  const label = readString(datum.label, 32);
+  const label = readString(datum.label, MAX_CARD_CHART_DATUM_LABEL_LENGTH);
   const dataValue = readNumber(datum.value);
   return label && dataValue != null ? { label, value: dataValue } : undefined;
 };
@@ -391,7 +480,7 @@ const normalizeChartSeries = (value: unknown) => {
   const series = asRecord(value);
 
   const label = normalizeCardDisplayLabel({
-    maxLength: 40,
+    maxLength: MAX_CARD_CHART_SERIES_LABEL_LENGTH,
     maxWords: 5,
     value: series.label,
   });
@@ -503,7 +592,12 @@ const mergeCardMetricRefresh = (
   next?: CardOutput['metrics'][number]
 ) => {
   const value = next?.value ?? previous.value;
-  const valueFormat = next?.valueFormat ?? previous.valueFormat;
+  const rawValueFormat = next?.valueFormat ?? previous.valueFormat;
+
+  const valueFormat =
+    rawValueFormat && typeof value === 'string' && !!parseIsoDateTime(value)
+      ? rawValueFormat
+      : undefined;
 
   const trend = readMetricTrend({
     label: previous.label,
@@ -577,9 +671,11 @@ const mergeCardSummaryRefresh = ({
 export const mergeCardOutputRefresh = ({
   next,
   previous,
+  replaceMetrics,
 }: {
   next: CardOutput;
   previous: CardOutput;
+  replaceMetrics?: boolean;
 }): CardOutput => {
   const summary = mergeCardSummaryRefresh({ next, previous });
   const nextMetricByLabel = outputItemByLabel(next.metrics);
@@ -588,13 +684,15 @@ export const mergeCardOutputRefresh = ({
     ...(previous.chart && {
       chart: mergeCardChartRefresh(previous.chart, next.chart),
     }),
-    metrics: previous.metrics.map((metric, index) => {
-      const nextMetric =
-        nextMetricByLabel.get(normalizeToken(metric.label)) ??
-        next.metrics[index];
+    metrics: replaceMetrics
+      ? next.metrics
+      : previous.metrics.map((metric, index) => {
+          const nextMetric =
+            nextMetricByLabel.get(normalizeToken(metric.label)) ??
+            next.metrics[index];
 
-      return mergeCardMetricRefresh(metric, nextMetric);
-    }),
+          return mergeCardMetricRefresh(metric, nextMetric);
+        }),
     milestones:
       previous.milestones.length > 0
         ? mergeCardMilestonesRefresh(next.milestones)

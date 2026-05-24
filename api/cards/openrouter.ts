@@ -101,6 +101,7 @@ export const generateCardResult = async ({
   env,
   existingCards,
   exactFacts,
+  generationTime,
   prompt,
   records,
   totalRecordCount = records.length,
@@ -110,6 +111,7 @@ export const generateCardResult = async ({
   env: CloudflareEnv;
   existingCards?: CardContextCard[];
   exactFacts?: cardAnalysis.ExactCardFacts;
+  generationTime?: string;
   prompt: string;
   records: CardLlmRecord[];
   totalRecordCount?: number;
@@ -126,6 +128,7 @@ export const generateCardResult = async ({
     blueprint,
     existingCards,
     exactFacts: lockedExactFacts,
+    generationTime,
     prompt,
     records,
     totalRecordCount,
@@ -153,6 +156,7 @@ export const generateCardResult = async ({
       blueprint,
       existingCards,
       exactFacts: lockedExactFacts,
+      generationTime,
       prompt,
       records,
       totalRecordCount,
@@ -176,6 +180,7 @@ export const refreshCardResult = async ({
   analysisMode,
   env,
   exactFacts,
+  generationTime,
   previousOutput,
   previousTitle,
   prompt,
@@ -185,6 +190,7 @@ export const refreshCardResult = async ({
   analysisMode?: cardAnalysis.CardAnalysisMode;
   env: CloudflareEnv;
   exactFacts?: cardAnalysis.ExactCardFacts;
+  generationTime?: string;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
   prompt: string;
@@ -197,6 +203,7 @@ export const refreshCardResult = async ({
   const messages = prompts.buildRefreshMessages({
     analysisMode,
     exactFacts: lockedExactFacts,
+    generationTime,
     previousOutput,
     previousTitle,
     prompt,
@@ -221,6 +228,7 @@ export const refreshCardResult = async ({
       output: cardOutput.mergeCardOutputRefresh({
         next: parsedResult.output,
         previous: previousOutput,
+        replaceMetrics: !!lockedExactFacts,
       }),
     };
   }
@@ -230,6 +238,7 @@ export const refreshCardResult = async ({
     messages: prompts.buildRefreshMessages({
       analysisMode,
       exactFacts: lockedExactFacts,
+      generationTime,
       previousOutput,
       previousTitle,
       prompt,
@@ -252,6 +261,7 @@ export const refreshCardResult = async ({
     output: cardOutput.mergeCardOutputRefresh({
       next: repairedResult.output,
       previous: previousOutput,
+      replaceMetrics: !!lockedExactFacts,
     }),
   };
 };
@@ -260,6 +270,7 @@ export const tweakCardResult = async ({
   analysisMode,
   env,
   exactFacts,
+  generationTime,
   previousOutput,
   previousTitle,
   prompt,
@@ -270,6 +281,7 @@ export const tweakCardResult = async ({
   analysisMode?: cardAnalysis.CardAnalysisMode;
   env: CloudflareEnv;
   exactFacts?: cardAnalysis.ExactCardFacts;
+  generationTime?: string;
   previousOutput: cardOutput.CardOutput;
   previousTitle?: string | null;
   prompt: string;
@@ -284,6 +296,7 @@ export const tweakCardResult = async ({
   const messages = prompts.buildTweakMessages({
     analysisMode,
     exactFacts: lockedExactFacts,
+    generationTime,
     previousOutput,
     previousTitle,
     prompt,
@@ -312,6 +325,7 @@ export const tweakCardResult = async ({
     messages: prompts.buildTweakMessages({
       analysisMode,
       exactFacts: lockedExactFacts,
+      generationTime,
       previousOutput,
       previousTitle,
       prompt,
