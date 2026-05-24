@@ -39,6 +39,8 @@ export const LogTemplateEditorSheet = () => {
   const inlineTextareaRef =
     React.useRef<React.ComponentRef<typeof Textarea>>(null);
 
+  const initializedSessionRef = React.useRef<string | null>(null);
+
   const fullscreenTextareaRef =
     React.useRef<React.ComponentRef<typeof Textarea>>(null);
 
@@ -106,6 +108,7 @@ export const LogTemplateEditorSheet = () => {
 
   React.useEffect(() => {
     if (!isOpen) {
+      initializedSessionRef.current = null;
       setText('');
       setInlineSelection({ end: 0, start: 0 });
       setSelectedTagIds(new Set());
@@ -116,6 +119,8 @@ export const LogTemplateEditorSheet = () => {
     }
 
     if (!isEditingTemplate) {
+      if (initializedSessionRef.current === sheetSessionKey) return;
+      initializedSessionRef.current = sheetSessionKey;
       setText('');
       setInlineSelection({ end: 0, start: 0 });
       setSelectedTagIds(new Set());
@@ -124,7 +129,10 @@ export const LogTemplateEditorSheet = () => {
       return;
     }
 
-    if (!template.id) return;
+    if (!template.id || initializedSessionRef.current === sheetSessionKey) {
+      return;
+    }
+
     const templateText = template.text ?? '';
     setText(templateText);
 
@@ -135,6 +143,7 @@ export const LogTemplateEditorSheet = () => {
 
     setFullscreenInitialSelection(null);
     setSelectedTagIds(new Set(template.tags?.map((tag) => tag.id) ?? []));
+    initializedSessionRef.current = sheetSessionKey;
   }, [
     isEditingTemplate,
     isOpen,

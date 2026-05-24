@@ -38,6 +38,8 @@ export const LogCardEditorSheet = () => {
   const inlineTextareaRef =
     React.useRef<React.ComponentRef<typeof Textarea>>(null);
 
+  const initializedCardIdRef = React.useRef<string | null>(null);
+
   const [selectedTagIds, setSelectedTagIds] = React.useState<Set<string>>(
     () => new Set()
   );
@@ -117,6 +119,7 @@ export const LogCardEditorSheet = () => {
 
   React.useEffect(() => {
     if (!isOpen) {
+      initializedCardIdRef.current = null;
       setIsSuggestingPrompt(false);
       setPrompt('');
       setInlineSelection({ end: 0, start: 0 });
@@ -129,17 +132,19 @@ export const LogCardEditorSheet = () => {
     if (!isOpen) return;
 
     if (!isEditing) {
+      initializedCardIdRef.current = null;
       setPrompt('');
       setInlineSelection({ end: 0, start: 0 });
       setSelectedTagIds(new Set());
       return;
     }
 
-    if (!card.id) return;
+    if (!card.id || initializedCardIdRef.current === card.id) return;
     const cardPrompt = card.prompt ?? '';
     setPrompt(cardPrompt);
     setInlineSelection({ end: cardPrompt.length, start: cardPrompt.length });
     setSelectedTagIds(new Set(card.tags?.map((tag) => tag.id) ?? []));
+    initializedCardIdRef.current = card.id;
   }, [card.id, card.prompt, card.tags, isEditing, isOpen, setInlineSelection]);
 
   const buildPayload = React.useCallback((): CardCreatePayload | null => {
@@ -177,7 +182,9 @@ export const LogCardEditorSheet = () => {
         tagIds: [...selectedTagIds],
       });
 
-      setPrompt(response.prompt);
+      const nextPrompt = response.prompt;
+      setPrompt(nextPrompt);
+      setInlineSelection({ end: nextPrompt.length, start: nextPrompt.length });
     } catch {
       // noop
     } finally {
@@ -189,6 +196,7 @@ export const LogCardEditorSheet = () => {
     isSuggestingPrompt,
     resolvedLogId,
     selectedTagIds,
+    setInlineSelection,
     showSuggestPrompt,
     sourceRecords.hasSourceRecords,
     sourceRecords.isLoading,
