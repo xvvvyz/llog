@@ -6,6 +6,7 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
+import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
 import { nativePointerEvents } from '@/ui/pointer-events';
@@ -68,7 +69,6 @@ const CardRow = ({
       <CardActionsMenu
         buttonSize="icon-xs"
         className="border-continuous rounded-lg"
-        containerClassName="ml-2 mr-1 web:pointer-events-auto"
         generatingIndicator="inline"
         iconSize={18}
         isGenerating={isGenerating}
@@ -78,6 +78,10 @@ const CardRow = ({
         onEdit={onEdit}
         onRefresh={onRefresh}
         onTweak={onTweak}
+        containerClassName={cn(
+          'mr-1 web:pointer-events-auto',
+          isGenerating ? 'ml-3' : 'ml-2'
+        )}
       />
     </View>
   </View>
