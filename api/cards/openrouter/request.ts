@@ -7,9 +7,6 @@ import { getString } from './utils';
 
 const OPENROUTER_JSON_PARSE_ATTEMPTS = 2;
 
-const supportsJsonSchemaResponseFormat = (model: string) =>
-  !model.startsWith('google/gemini-');
-
 export const requestOpenRouterJson = async ({
   env,
   messages,
@@ -25,16 +22,17 @@ export const requestOpenRouterJson = async ({
   const model = requireEnvString(env, 'OPENROUTER_CARD_MODEL');
   let parseError: unknown;
 
+  const responseFormat = {
+    jsonSchema: responseSchema,
+    type: 'json_schema',
+  } as const;
+
   for (
     let attempt = 1;
     attempt <= OPENROUTER_JSON_PARSE_ATTEMPTS;
     attempt += 1
   ) {
     let result: ChatResult;
-
-    const responseFormat = supportsJsonSchemaResponseFormat(model)
-      ? ({ jsonSchema: responseSchema, type: 'json_schema' } as const)
-      : ({ type: 'json_object' } as const);
 
     try {
       result = await client.chat.send({

@@ -25,19 +25,22 @@ const chartSelectionRules =
 const groundingRules =
   'Do not invent causes, advice, diagnoses, goals, records, missing values, or units. State sparse or mixed evidence plainly.';
 
-const outputSchemaDescription = {
-  chart: `optional { type: "bar" | "line", title?: string, unit?: string, xAxis?: { labelMode?: "auto" | "all" | "sparse" }, yAxis?: { decimals?: 0 | 1 | 2, tickCount?: 3 | 4 | 5 | 6 }, data?: [{ label: string, value: number }], series?: [{ label: string, unit?: string, data: [{ label: string, value: number }] }] }. Limits: ${cardOutput.MAX_CARD_CHART_POINTS} points per series, ${cardOutput.MAX_CARD_CHART_SERIES} series. Bar charts use data; use series only for multi-measure line charts. For record-level time series, labels must be source record.date full ISO timestamps, not YYYY-MM-DD. Order chronological points oldest-first.`,
-  metrics:
-    'optional array of at most 6 { label, value: string, unit?, trend: "up" | "down" | "flat" | null, valueFormat?: "date" | "datetime" | null }. Keep labels concise and values compact. Date metric values must put the full source record.date ISO timestamp in value and set valueFormat to "date" or "datetime". Order metrics by importance.',
-  milestones: `optional array of at most 8 { title, date?, detail? }. Use only for prompt-relevant notable records or threshold crossings. Dates must be source record.date full ISO timestamps. Order newest-first.`,
-  summary: `optional short summary, at most ${cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH} characters. Prefer summary when it adds context not clear from chart or metrics; return null when there is nothing useful to add. Do not write human-formatted dates; use full ISO timestamp tokens when an exact date/time is needed.`,
-};
+const chartOutputRules =
+  'Bar charts use data. Use series only for multi-measure line charts. For record-level time series, labels must be source record.date full ISO timestamps, not YYYY-MM-DD. Order chronological points oldest-first.';
+
+const metricOutputRules =
+  'Keep metric labels concise and values compact. Order metrics by importance. Date metric values must put the full source record.date ISO timestamp in value and set valueFormat to date or datetime.';
+
+const milestoneOutputRules =
+  'Use milestones only for prompt-relevant notable records or threshold crossings. Milestone dates must be source record.date full ISO timestamps. Order newest-first.';
+
+const summaryOutputRules = `Prefer summary only when it adds context not clear from chart or metrics. Keep summary at most ${cardOutput.MAX_CARD_GENERATED_SUMMARY_LENGTH} characters; use null when there is nothing useful to add.`;
 
 const sectionDistinctnessRules =
   'Give chart, metrics, and summary a distinct job. Avoid metrics or summary that only repeat an obvious chart value. Repeat values only when card.prompt asks for them or they are the main takeaway.';
 
 const labelSpecificityRules =
-  'Keep metric and chart labels concise, but preserve meaning-changing qualifiers: thresholds, score/scale names, units, groups, filters, and time windows. Prefer compact labels like "Current <=2 streak" over "Current streak"; use clear abbreviations such as wk, mo, avg, and max.';
+  'Keep metric and chart labels concise, but preserve meaning-changing qualifiers: thresholds, score/scale names, units, groups, filters, and time windows.';
 
 const labelStyle =
   'Use short sentence case labels, usually 1-4 words, with no ending or decorative punctuation.';
@@ -88,7 +91,7 @@ const buildOutputRules = (options: OutputRulesOptions) => {
         ? 'Use card.blueprint as the requested output structure: preserve visible sections, metric labels/order/value formatting, chart config, and series labels. Include milestones when card.blueprint.milestones is true and summary only when card.blueprint.summary is true. Do not add sections absent from blueprint.'
         : 'Include only useful sections; do not pad. Put the most important preview metrics first.'
       : options.mode === 'refresh'
-        ? `Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. Prefer summary null when it would only repeat other sections. When previousOutput has milestones, curate the current best milestone set at up to ${cardOutput.MAX_CARD_MILESTONES}: prefer recent/new milestones, keeping durable anchors only when high-signal. If an existing milestone remains relevant, keep its title and detail wording and date exactly unless source records show it is wrong. Update only metric values/trends, chart data, and summary text for existing sections.`
+        ? 'Preserve previousOutput shape: metrics, chart config, and sections. Do not add absent sections. Prefer summary null when it would only repeat other sections. When previousOutput has milestones, curate the current best milestone set: prefer recent/new milestones, keeping durable anchors only when high-signal. If an existing milestone remains relevant, keep its title and detail wording and date exactly unless source records show it is wrong. Update only metric values/trends, chart data, and summary text for existing sections.'
         : 'Apply tweakPrompt to previousOutput. If it conflicts with prompt, tweakPrompt wins for this output. You may adjust format, labels, chart type, sections, or emphasis when asked.';
 
   const existingCardRules =
@@ -102,6 +105,10 @@ const buildOutputRules = (options: OutputRulesOptions) => {
     sectionDistinctnessRules,
     labelSpecificityRules,
     metricTrendRules,
+    chartOutputRules,
+    metricOutputRules,
+    milestoneOutputRules,
+    summaryOutputRules,
     options.exact ? exactArithmeticRules : arithmeticRules,
     chartSelectionRules,
     dateOutputRules,
@@ -145,7 +152,7 @@ export const buildMessages = ({
 
   return [
     {
-      content: `Extract progress from records. ${recordContext} Return only valid JSON. ${exact ? 'Use only exactFacts for exact values and sampled records for wording/evidence.' : 'Use only the provided records.'} Keep language concise and specific. ${labelStyle}`,
+      content: `Extract progress from records. ${recordContext} Return JSON matching the response schema. ${exact ? 'Use only exactFacts for exact values and sampled records for wording/evidence.' : 'Use only the provided records.'} Keep language concise and specific. ${labelStyle}`,
       role: 'system',
     },
     {
@@ -154,13 +161,6 @@ export const buildMessages = ({
         ...(generationCardContext.length > 0 && {
           existingCards: generationCardContext,
         }),
-        outputSchema: {
-          output: outputSchemaDescription,
-          title:
-            'short generated card title, at most 36 characters, specific to the requested progress view',
-        },
-        requiredJsonShape:
-          'Return { "title": string, "output": object }. output must contain at least one useful non-empty section; omit empty sections.',
         outputRules: buildOutputRules({
           exact,
           mode: 'generate',
@@ -215,15 +215,12 @@ export const buildRefreshMessages = ({
 
   return [
     {
-      content: `Refresh an existing card from current source records. ${recordContext} Return only valid JSON. ${exact ? 'Use only exactFacts for exact values and sampled records for wording/evidence.' : 'Use only the provided records.'} Preserve the existing format unless locked exact facts require an update. ${labelStyle}`,
+      content: `Refresh an existing card from current source records. ${recordContext} Return JSON matching the response schema. ${exact ? 'Use only exactFacts for exact values and sampled records for wording/evidence.' : 'Use only the provided records.'} Preserve the existing format unless locked exact facts require an update. ${labelStyle}`,
       role: 'system',
     },
     {
       content: JSON.stringify({
         card: { previousOutput, previousTitle: previousTitle ?? null, prompt },
-        outputSchema: { output: outputSchemaDescription },
-        requiredJsonShape:
-          'Return { "output": object }. output must contain the same visible sections as previousOutput; do not add new sections.',
         outputRules: buildOutputRules({ exact, mode: 'refresh' }),
         sourceRules: buildSourceRules({
           analysisMode: effectiveAnalysisMode,
@@ -275,7 +272,7 @@ export const buildTweakMessages = ({
 
   return [
     {
-      content: `Tweak an existing card. ${recordContext} Return only valid JSON. ${exact ? 'Use only exactFacts for exact values and sampled records for wording/evidence.' : 'Use only the provided records.'} Apply only the requested tweak. Keep unrelated facts and structure stable unless locked exact facts require an update. ${labelStyle}`,
+      content: `Tweak an existing card. ${recordContext} Return JSON matching the response schema. ${exact ? 'Use only exactFacts for exact values and sampled records for wording/evidence.' : 'Use only the provided records.'} Apply only the requested tweak. Keep unrelated facts and structure stable unless locked exact facts require an update. ${labelStyle}`,
       role: 'system',
     },
     {
@@ -286,13 +283,6 @@ export const buildTweakMessages = ({
           prompt,
           tweakPrompt,
         },
-        outputSchema: {
-          output: outputSchemaDescription,
-          title:
-            'short generated card title, at most 36 characters, or null to keep the current title',
-        },
-        requiredJsonShape:
-          'Return { "title": string | null, "output": object }. output must contain at least one useful non-empty section; omit empty sections.',
         outputRules: buildOutputRules({ exact, mode: 'tweak' }),
         sourceRules: buildSourceRules({
           analysisMode: effectiveAnalysisMode,
@@ -324,19 +314,14 @@ export const buildAnalysisPlanMessages = ({
 }): CardChatMessage[] => [
   {
     content:
-      'Plan deterministic extraction and aggregation for a card over dated tagged records. Return only valid JSON. Choose exact only for counts, charts, numeric aggregations, ratios, latest/first values, or consistently extractable structured qualitative aggregation.',
+      'Plan deterministic extraction and aggregation for a card over dated tagged records. Return JSON matching the response schema. Choose exact only for counts, charts, numeric aggregations, ratios, latest/first values, or consistently extractable structured qualitative aggregation.',
     role: 'system',
   },
   {
     content: JSON.stringify({
       card: { generationTime: generationTime ?? null, prompt },
-      outputSchema: {
-        mode: 'exact when deterministic extraction/aggregation is needed; narrative when sampled prose is enough',
-        analysisSpec:
-          'For exact mode, extraction fields plus deterministic aggregations/charts and optional filters. For narrative mode, an empty object.',
-      },
       rules:
-        'Use the minimal spec needed. Include prompt-requested sparse fields, but do not add fields unsupported by the prompt and examples. Choose narrative for broad interpretation, advice, or open-ended comparison unless structured qualitative labels/scores are requested. Use stable short ids. Event fields must set countMode: explicitOccurrences for occurrence totals, or recordPresence for records/sessions with an event. Qualitative scoreScale is only for ordinal scores with explicit scale bounds; preserve the source or prompt scale. Aggregations may use count, sum, average, min, max, latest, first, or ratio. Ratio aggregations must reference numeratorId and denominatorId. Aggregation/chart labels should preserve thresholds, scale names, groups, and time windows compactly; use clear abbreviations such as wk, avg, and max. Chart specs must reference aggregation ids and use chart.x for grouping by record, tag, author, event, day, week, month, or explicit range. Use record/day/week/month grouping for chronological charts. If the prompt asks for a date window, include filters on field record.date. Use startInclusive/endExclusive bounds. For relative rolling windows such as last/past N months, use type generationTime with an offset from card.generationTime for the start and generationTime for the end. Month/year offsets are rolling calendar offsets, not fixed day counts. For fixed date-only end bounds like through Apr 30, emit the requested date as endExclusive and the system will include that full UTC day. Records with missing or invalid dates are excluded by active filters. Qualitative specs request structured labels/scores/evidence, not freeform summaries. For narrative mode, return an empty analysisSpec with empty arrays.',
+        'Use the minimal spec needed. Include prompt-requested sparse fields, but do not add fields unsupported by the prompt and examples. Choose narrative for broad interpretation, advice, or open-ended comparison unless structured qualitative labels/scores are requested. Set analysisSpec to null for narrative mode. Use stable short ids. Event fields must set countMode: explicitOccurrences for occurrence totals, or recordPresence for records/sessions with an event. Qualitative scoreScale is only for ordinal scores with explicit scale bounds; preserve the source or prompt scale. Aggregations may use count, sum, average, min, max, latest, first, or ratio. Ratio aggregations must reference numeratorId and denominatorId. Aggregation/chart labels should preserve thresholds, scale names, groups, and time windows compactly. Chart specs must reference aggregation ids and use chart.x for grouping by record, tag, author, event, day, week, month, or explicit range. Use record/day/week/month grouping for chronological charts. If the prompt asks for a date window, include filters on field record.date. Use startInclusive/endExclusive bounds. For relative rolling windows such as last/past N months, use type generationTime with an offset from card.generationTime for the start and generationTime for the end. Month/year offsets are rolling calendar offsets, not fixed day counts. For fixed date-only end bounds like through Apr 30, emit the requested date as endExclusive and the system will include that full UTC day. Records with missing or invalid dates are excluded by active filters. Qualitative specs request structured labels/scores/evidence, not freeform summaries.',
       records: context.buildPlannerRecordContext({ records, totalRecordCount }),
     }),
     role: 'user',
@@ -354,18 +339,14 @@ export const buildExtractionMessages = ({
 }): CardChatMessage[] => [
   {
     content:
-      'Extract deterministic structured facts from dated tagged records. Return only valid JSON. Extract only analysisSpec fields. Use exact field ids and explicit record evidence; do not infer absent behavior.',
+      'Extract deterministic structured facts from dated tagged records. Return JSON matching the response schema. Extract only analysisSpec fields. Use exact field ids and explicit record evidence; do not infer absent behavior.',
     role: 'system',
   },
   {
     content: JSON.stringify({
       analysisSpec,
-      outputSchema: {
-        records:
-          'one item per input record: { recordIndex, numericValues, events, qualitativeLabels, outcomes, evidence }. Use the provided 1-based recordIndex. Use empty arrays when no facts apply.',
-      },
       rules:
-        'Use only analysisSpec field ids; do not include record ids. Return one item per input record with empty arrays when no facts apply. Include short evidence for every emitted numeric value, event, qualitative label, and outcome. recordPresence events use count 1 when present. explicitOccurrences counts separate supported mentions or reported occurrences; otherwise use 1 when present. Count only affirmative event mentions; negated forms like "no [event]", "without [event]", or "did not [event]" are not occurrences. For numbers, use values and units supported by record text and analysisSpec. For qualitative fields, emit structured labels/evidence, not subjective prose. Emit scores only with scoreScale; otherwise score null. Keep labels normalized to analysisSpec labels where possible.',
+        'Use only analysisSpec field ids; do not include record ids. Return one item per input record using the provided 1-based recordIndex, with empty arrays when no facts apply. Include short evidence for every emitted numeric value, event, qualitative label, and outcome. recordPresence events use count 1 when present. explicitOccurrences counts separate supported mentions or reported occurrences; otherwise use 1 when present. Count only affirmative event mentions; negated forms like "no [event]", "without [event]", or "did not [event]" are not occurrences. For numbers, use values and units supported by record text and analysisSpec. For qualitative fields, emit structured labels/evidence, not subjective prose. Emit scores only with scoreScale; otherwise score null. Keep labels normalized to analysisSpec labels where possible.',
       ...(repairMessage && { repairMessage }),
       records: records.map(context.serializeIndexedFullRecord),
     }),
@@ -381,7 +362,7 @@ export const buildPromptSuggestionMessages = ({
   records: CardLlmRecord[];
 }): CardChatMessage[] => [
   {
-    content: `Suggest concise reusable card prompts. ${recordContext} Return only valid JSON. Use the provided records to infer what the card should track as new matching records arrive. Do not duplicate existing cards. Favor concrete charts, metrics, milestones, or focused summaries over vague analysis.`,
+    content: `Suggest concise reusable card prompts. ${recordContext} Return JSON matching the response schema. Use the provided records to infer what the card should track as new matching records arrive. Do not duplicate existing cards. Favor concrete charts, metrics, milestones, or focused summaries over vague analysis.`,
     role: 'system',
   },
   {
@@ -394,11 +375,7 @@ export const buildPromptSuggestionMessages = ({
             .filter((name): name is string => !!name) ?? [],
         title: card.title ?? '',
       })),
-      outputSchema: {
-        prompt:
-          'concise editable prompt, 1-2 sentences, at most 500 characters, asking for a distinct progress view',
-      },
-      outputRules: `Return one editable prompt for a card that will refresh from future records. Focus on a durable progress signal, comparison, or milestone pattern. Name clear events, metrics, groupings, or timeframes. Keep it distinct from existing cards. Avoid one-off questions, advice, diagnosis, and unsupported data. If suggesting a chart, stay within supportedCharts.`,
+      outputRules: `Return one editable prompt, 1-2 sentences and at most 500 characters, for a card that will refresh from future records. Focus on a durable progress signal, comparison, or milestone pattern. Name clear events, metrics, groupings, or timeframes. Keep it distinct from existing cards. Avoid one-off questions, advice, diagnosis, and unsupported data. If suggesting a chart, stay within supportedCharts.`,
       records: records.map((record) => ({
         author: context.recordAuthor(record),
         date: record.date ?? null,

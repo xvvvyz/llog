@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 
 const originalFetch = globalThis.fetch;
 const originalOpenRouterCardModel = process.env.OPENROUTER_CARD_MODEL;
-const TEST_OPENROUTER_CARD_MODEL = 'google/gemini-test-card-model';
+const TEST_CARD_MODEL = 'openai/gpt-test-card-model';
 
 const jsonResponse = (content: unknown) =>
   new Response(
@@ -19,7 +19,7 @@ const jsonResponse = (content: unknown) =>
       ],
       created: 1,
       id: 'chatcmpl-test',
-      model: TEST_OPENROUTER_CARD_MODEL,
+      model: TEST_CARD_MODEL,
       object: 'chat.completion',
       system_fingerprint: null,
     }),
@@ -38,7 +38,7 @@ const readChatRequest = async (
 };
 
 beforeEach(() => {
-  process.env.OPENROUTER_CARD_MODEL = TEST_OPENROUTER_CARD_MODEL;
+  process.env.OPENROUTER_CARD_MODEL = TEST_CARD_MODEL;
 });
 
 afterEach(() => {

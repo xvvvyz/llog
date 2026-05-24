@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 
 const originalFetch = globalThis.fetch;
 const originalOpenRouterCardModel = process.env.OPENROUTER_CARD_MODEL;
-const TEST_OPENROUTER_CARD_MODEL = 'google/gemini-test-card-model';
+const TEST_OPENROUTER_CARD_MODEL = 'openai/gpt-test-card-model';
 
 const jsonResponse = (content: unknown) =>
   new Response(
@@ -70,17 +70,21 @@ const readChatRequest = async (
   return JSON.parse(await request.text()) as ChatCompletionRequest;
 };
 
+type ResponseSchemaNode = {
+  additionalProperties?: unknown;
+  items?: ResponseSchemaNode;
+  properties?: Record<string, ResponseSchemaNode>;
+  required?: unknown;
+  type?: unknown;
+};
+
 type ChatCompletionRequest = {
   messages?: { content?: unknown; role?: unknown }[];
   model?: unknown;
   response_format?: {
     json_schema?: {
       name?: unknown;
-      schema?: {
-        additionalProperties?: unknown;
-        properties?: Record<string, unknown>;
-        required?: unknown;
-      };
+      schema?: ResponseSchemaNode;
       strict?: unknown;
     };
     type?: unknown;
@@ -102,6 +106,33 @@ afterEach(() => {
 });
 
 describe('card openrouter', () => {
+  test('requires card model', async () => {
+    delete process.env.OPENROUTER_CARD_MODEL;
+
+    const fetch = mock(async () =>
+      jsonResponse({ output: { summary: 'Unexpected' }, title: 'Unexpected' })
+    );
+
+    globalThis.fetch = fetch as never;
+
+    await expect(
+      openrouter.generateCardResult({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        prompt: 'Track sleep',
+        records: [
+          {
+            date: '2026-05-20T00:00:00.000Z',
+            id: 'record-1',
+            tags: [{ name: 'sleep' }],
+            text: 'Slept well',
+          },
+        ],
+      })
+    ).rejects.toThrow('OPENROUTER_CARD_MODEL is required');
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   test('repairs invalid output', async () => {
     let callCount = 0;
 
@@ -247,18 +278,16 @@ describe('card openrouter', () => {
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
-      outputSchema?: Record<string, unknown>;
+      outputSchema?: unknown;
+      requiredJsonShape?: unknown;
     };
 
-    expect(requestBody?.response_format?.type).toBe('json_object');
+    expect(requestBody?.response_format?.type).toBe('json_schema');
     expect(systemMessage?.content).toContain('Apply only the requested tweak');
     expect(userPayload.outputRules).toContain('tweakPrompt wins');
     expect(userPayload.outputRules).toContain('this output');
-
-    expect(Object.keys(userPayload.outputSchema ?? {}).sort()).toEqual([
-      'output',
-      'title',
-    ]);
+    expect(userPayload.outputSchema).toBeUndefined();
+    expect(userPayload.requiredJsonShape).toBeUndefined();
   });
 
   test('compacts record context', async () => {
@@ -294,21 +323,19 @@ describe('card openrouter', () => {
 
     const userPayload = JSON.parse(String(userMessage?.content)) as {
       outputRules?: string;
-      outputSchema?: {
-        output?: { metrics?: string; summary?: string };
-        title?: string;
-      };
+      outputSchema?: unknown;
       records?: {
         fullTextRecords?: { author?: unknown; id?: unknown; text?: string }[];
         timelineChunks?: {
           records?: { author?: unknown; id?: unknown; text?: string }[];
         }[];
       };
+      requiredJsonShape?: unknown;
       sourceRules?: string;
     };
 
     expect(requestBody?.model).toBe(TEST_OPENROUTER_CARD_MODEL);
-    expect(requestBody?.response_format?.type).toBe('json_object');
+    expect(requestBody?.response_format?.type).toBe('json_schema');
     expect(userPayload.records?.fullTextRecords?.[0]?.text).toHaveLength(2000);
     expect(userPayload.records?.fullTextRecords?.[0]?.author).toBe('Cade');
 
@@ -326,29 +353,22 @@ describe('card openrouter', () => {
       userPayload.records?.timelineChunks?.[0]?.records?.[0]?.id
     ).toBeUndefined();
 
-    expect(userPayload.outputSchema?.output?.metrics).toContain('valueFormat');
-
-    expect(userPayload.outputSchema?.output?.metrics).toContain(
-      'full source record.date ISO'
-    );
-
-    expect(userPayload.outputSchema?.output?.summary).toContain(
-      'Do not write human-formatted dates'
-    );
-
-    expect(userPayload.outputSchema?.output?.summary).toContain('320');
-
-    expect(userPayload.outputSchema?.output?.summary).toContain(
-      'adds context not clear from chart'
-    );
-
-    expect(userPayload.outputSchema?.title).toContain('short generated');
+    expect(userPayload.outputSchema).toBeUndefined();
+    expect(userPayload.requiredJsonShape).toBeUndefined();
     expect(userPayload.outputRules).toContain('numeric point-in-time metrics');
     expect(userPayload.outputRules).toContain('cumulative/extreme/count');
     expect(userPayload.outputRules).toContain('distinct job');
     expect(userPayload.outputRules).toContain('obvious chart value');
-    expect(userPayload.outputRules).toContain('Current <=2 streak');
-    expect(userPayload.outputRules).toContain('wk');
+    expect(userPayload.outputRules).toContain('valueFormat');
+    expect(userPayload.outputRules).toContain('full source record.date ISO');
+    expect(userPayload.outputRules).toContain('summary at most 320');
+
+    expect(userPayload.outputRules).toContain(
+      'adds context not clear from chart'
+    );
+
+    expect(userPayload.outputRules).toContain('meaning-changing qualifiers');
+    expect(userPayload.outputRules).toContain('time windows');
     expect(userPayload.outputRules).toContain('Never use date-only');
 
     expect(userPayload.sourceRules).toContain(
@@ -429,8 +449,53 @@ describe('card openrouter', () => {
     expect(userPayload.rules).toContain('countMode');
     expect(userPayload.rules).toContain('scoreScale');
     expect(userPayload.rules).toContain('thresholds');
-    expect(userPayload.rules).toContain('wk');
-    expect(requestBody?.response_format?.type).toBe('json_object');
+    expect(userPayload.rules).toContain('time windows compactly');
+    expect(requestBody?.model).toBe(TEST_OPENROUTER_CARD_MODEL);
+    expect(requestBody?.response_format?.type).toBe('json_schema');
+  });
+
+  test('uses strict planner schema', async () => {
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        analysisSpec: null,
+        mode: 'narrative',
+        rationale: null,
+      });
+    }) as never;
+
+    await openrouter.planCardAnalysis({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      prompt: 'Compare recent sessions.',
+      records: [{ id: 'record-1', text: 'Settled well.' }],
+    });
+
+    const schema = requestBody?.response_format?.json_schema?.schema;
+    const properties = schema?.properties ?? {};
+    const analysisSpec = properties.analysisSpec;
+    const specProperties = analysisSpec?.properties ?? {};
+    const aggregation = specProperties.aggregations?.items;
+    const filter = specProperties.filters?.items;
+    expect(requestBody?.response_format?.type).toBe('json_schema');
+    expect(schema?.required).toEqual(['analysisSpec', 'mode', 'rationale']);
+    expect(analysisSpec?.type).toEqual(['object', 'null']);
+
+    expect(aggregation?.required).toEqual(
+      Object.keys(aggregation?.properties ?? {})
+    );
+
+    expect(aggregation?.required).toContain('denominatorId');
+
+    expect(aggregation?.properties?.denominatorId?.type).toEqual([
+      'string',
+      'null',
+    ]);
+
+    expect(filter?.required).toEqual(Object.keys(filter?.properties ?? {}));
+    expect(filter?.properties?.endExclusive?.type).toEqual(['object', 'null']);
   });
 
   test('plans date filter', async () => {
@@ -1062,6 +1127,7 @@ describe('card openrouter', () => {
 
     expect(userPayload.records?.[0]).toMatchObject({ recordIndex: 1 });
     expect(userPayload.records?.[0]?.id).toBeUndefined();
+    expect(requestBody?.model).toBe(TEST_OPENROUTER_CARD_MODEL);
   });
 
   test('rejects omitted facts', async () => {
@@ -1355,7 +1421,8 @@ describe('card openrouter', () => {
     expect(userPayload.records?.[0]?.author).toBe('Cade');
     expect(userPayload.records?.[0]?.tags).toEqual(['progress']);
     expect(userPayload.records?.[0]?.id).toBeUndefined();
-    expect(requestBody?.response_format?.type).toBe('json_object');
+    expect(requestBody?.model).toBe(TEST_OPENROUTER_CARD_MODEL);
+    expect(requestBody?.response_format?.type).toBe('json_schema');
   });
 
   test('uses refresh schema', async () => {
@@ -1407,7 +1474,7 @@ describe('card openrouter', () => {
       'Old source'
     );
 
-    expect(requestBody?.response_format?.type).toBe('json_object');
+    expect(requestBody?.response_format?.type).toBe('json_schema');
 
     expect(userPayload.outputRules).toContain(
       'curate the current best milestone set'

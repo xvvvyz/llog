@@ -3,6 +3,62 @@ import type { JsonSchema } from './types';
 
 const nullableStringSchema = { type: ['string', 'null'] };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+const nullableSchema = (schema: unknown): unknown => {
+  if (!isRecord(schema)) return schema;
+  const type = schema.type;
+
+  const nullableEnum =
+    Array.isArray(schema.enum) && !schema.enum.includes(null)
+      ? [...schema.enum, null]
+      : undefined;
+
+  const enumSchema = nullableEnum ? { enum: nullableEnum } : {};
+
+  if (Array.isArray(type)) {
+    return type.includes('null')
+      ? { ...schema, ...enumSchema }
+      : { ...schema, ...enumSchema, type: [...type, 'null'] };
+  }
+
+  return typeof type === 'string'
+    ? { ...schema, ...enumSchema, type: [type, 'null'] }
+    : schema;
+};
+
+const strictResponseSchema = (schema: unknown): unknown => {
+  if (Array.isArray(schema)) return schema.map(strictResponseSchema);
+  if (!isRecord(schema)) return schema;
+  const next = { ...schema };
+  if ('items' in next) next.items = strictResponseSchema(next.items);
+
+  if (isRecord(next.properties)) {
+    const required = new Set(
+      Array.isArray(next.required)
+        ? next.required.filter((key): key is string => typeof key === 'string')
+        : []
+    );
+
+    const properties = Object.fromEntries(
+      Object.entries(next.properties).map(([key, property]) => {
+        const strictProperty = strictResponseSchema(property);
+
+        return [
+          key,
+          required.has(key) ? strictProperty : nullableSchema(strictProperty),
+        ];
+      })
+    );
+
+    next.properties = properties;
+    next.required = Object.keys(properties);
+  }
+
+  return next;
+};
+
 const datumSchema = {
   additionalProperties: false,
   properties: { label: { type: 'string' }, value: { type: 'number' } },
@@ -124,7 +180,12 @@ const jsonResponseSchema = ({
 }) => ({
   description,
   name,
-  schema: { additionalProperties: false, properties, required, type: 'object' },
+  schema: strictResponseSchema({
+    additionalProperties: false,
+    properties,
+    required,
+    type: 'object',
+  }) as JsonSchema,
   strict: true,
 });
 
@@ -336,7 +397,7 @@ export const analysisPlanResponseSchema = jsonResponseSchema({
   description: 'Planned deterministic progress card analysis.',
   name: 'llog_card_analysis_plan',
   properties: {
-    analysisSpec: analysisSpecSchema,
+    analysisSpec: nullableSchema(analysisSpecSchema),
     mode: { enum: ['exact', 'narrative'], type: 'string' },
     rationale: nullableStringSchema,
   },

@@ -280,10 +280,8 @@ exports.triggerTweak = (output, context) => {
       {
         name: 'average distress is 2.2',
         pass:
-          numericMetric(metrics, ['avg', 'distress']) ===
-            expected.averageDistress ||
           numericMetric(metrics, ['average', 'distress']) ===
-            expected.averageDistress,
+          expected.averageDistress,
       },
       {
         name: 'whine sessions is 3',
