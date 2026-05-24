@@ -25,7 +25,7 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 
   if (originalOpenAiSttModel === undefined) {
-    delete process.env.OPENAI_STT_MODEL;
+    Reflect.deleteProperty(process.env, 'OPENAI_STT_MODEL');
   } else {
     process.env.OPENAI_STT_MODEL = originalOpenAiSttModel;
   }

@@ -99,7 +99,7 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 
   if (originalOpenRouterCardModel === undefined) {
-    delete process.env.OPENROUTER_CARD_MODEL;
+    Reflect.deleteProperty(process.env, 'OPENROUTER_CARD_MODEL');
   } else {
     process.env.OPENROUTER_CARD_MODEL = originalOpenRouterCardModel;
   }
@@ -107,7 +107,7 @@ afterEach(() => {
 
 describe('card openrouter', () => {
   test('requires card model', async () => {
-    delete process.env.OPENROUTER_CARD_MODEL;
+    Reflect.deleteProperty(process.env, 'OPENROUTER_CARD_MODEL');
 
     const fetch = mock(async () =>
       jsonResponse({ output: { summary: 'Unexpected' }, title: 'Unexpected' })
