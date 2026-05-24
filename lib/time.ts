@@ -6,6 +6,7 @@ import {
   isYesterday,
 } from 'date-fns';
 import {
+  ISO_DATE_TIME_SOURCE,
   ISO_DATE_TIME_TOKEN_PATTERN,
   parseIsoDateTime,
 } from '@/lib/iso-date-time';
@@ -26,7 +27,69 @@ const parseLocalDateOnly = (value: string) => {
     : undefined;
 };
 
+const getLocalDateKey = (date: Date) => format(date, 'yyyy-MM-dd');
+
+const ISO_DATE_TIME_TEXT_PATTERN = new RegExp(
+  String.raw`(?:\b([Oo]n)\s+)?\b(${ISO_DATE_TIME_SOURCE})\b`,
+  'g'
+);
+
+const relativeDateLabels = new Set(['Today', 'Yesterday']);
+
 export type DateTimeDisplay = 'date' | 'datetime';
+
+const isSentenceStart = (text: string, index: number) => {
+  const before = text.slice(0, index).trimEnd();
+  return !before || /[.!?]$/.test(before);
+};
+
+const formatDateLabelInText = ({
+  label,
+  offset,
+  onPrefix,
+  source,
+}: {
+  label: string;
+  offset: number;
+  onPrefix?: string;
+  source: string;
+}) => {
+  if (!relativeDateLabels.has(label)) {
+    return `${onPrefix ? `${onPrefix} ` : ''}${label}`;
+  }
+
+  const relativeLabel = isSentenceStart(source, offset)
+    ? label
+    : label.toLowerCase();
+
+  return relativeLabel;
+};
+
+const formatIsoDateTimeText = (
+  text: string,
+  getDisplay: (value: string, date: Date) => DateTimeDisplay
+) =>
+  text.replace(
+    ISO_DATE_TIME_TEXT_PATTERN,
+    (
+      match,
+      onPrefix: string | undefined,
+      value: string,
+      offset: number,
+      source: string
+    ) => {
+      const date = parseIsoDateTime(value);
+      if (!date) return match;
+      const display = getDisplay(value, date);
+
+      const label =
+        display === 'date' ? getDateLabel(date) : formatDateTime(date);
+
+      return display === 'date'
+        ? formatDateLabelInText({ label, offset, onPrefix, source })
+        : `${onPrefix ? `${onPrefix} ` : ''}${label}`;
+    }
+  );
 
 export { parseIsoDateTime };
 
@@ -79,11 +142,27 @@ export const formatIsoDateTimeValue = (
 export const formatIsoDateTimeInText = (
   text: string,
   display: DateTimeDisplay = 'datetime'
-) =>
-  text.replace(
-    ISO_DATE_TIME_TOKEN_PATTERN,
-    (value) => formatIsoDateTimeValue(value, display) ?? value
-  );
+) => formatIsoDateTimeText(text, () => display);
+
+export const formatIsoDateTimeInTextByDay = (text: string) => {
+  const timestampsByDay = new Map<string, Set<number>>();
+
+  for (const value of text.match(ISO_DATE_TIME_TOKEN_PATTERN) ?? []) {
+    const date = parseIsoDateTime(value);
+    if (!date) continue;
+    const key = getLocalDateKey(date);
+    const timestamps = timestampsByDay.get(key) ?? new Set<number>();
+    timestamps.add(date.getTime());
+    timestampsByDay.set(key, timestamps);
+  }
+
+  if (!timestampsByDay.size) return text;
+
+  return formatIsoDateTimeText(text, (_value, date) => {
+    const timestamps = timestampsByDay.get(getLocalDateKey(date));
+    return (timestamps?.size ?? 0) > 1 ? 'datetime' : 'date';
+  });
+};
 
 export const formatDate = (date?: Date | string | number) => {
   if (!date) return '';

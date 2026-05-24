@@ -2562,7 +2562,7 @@ export const ProgressCard = ({
 
   const renderSummary = ({ lines }: { lines?: number } = {}) => {
     if (!summary) return null;
-    const formattedSummary = cardDisplay.formatCardText(summary);
+    const formattedSummary = cardDisplay.formatCardSummaryText(summary);
 
     return (
       <Text

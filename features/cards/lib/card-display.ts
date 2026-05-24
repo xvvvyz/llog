@@ -8,6 +8,9 @@ const EMPTY_CARD_SUMMARY = 'No matching records yet';
 export const formatCardText = (value: string) =>
   time.formatIsoDateTimeInText(value);
 
+export const formatCardSummaryText = (value: string) =>
+  time.formatIsoDateTimeInTextByDay(value);
+
 export const hasDisplayableCardOutput = (output?: CardOutput | null) => {
   if (!output) return false;
   const summary = output.summary?.trim();
