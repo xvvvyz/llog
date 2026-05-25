@@ -7,6 +7,7 @@ import { useResolveClassNames } from 'uniwind';
 export const Image = ({
   className,
   contentFit,
+  draggable,
   fill,
   height,
   maxHeight,
@@ -25,6 +26,7 @@ export const Image = ({
 }: {
   className?: string;
   contentFit?: ImageContentFit;
+  draggable?: boolean;
   fill?: boolean;
   height?: number;
   maxHeight?: number;
@@ -78,6 +80,7 @@ export const Image = ({
       <ExpoImage
         contentFit={contentFit ?? (fill ? 'cover' : undefined)}
         contentPosition="center"
+        draggable={draggable}
         onDisplay={onDisplay}
         onLoad={onLoad}
         source={source}

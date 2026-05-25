@@ -15,7 +15,6 @@ import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { BackButton } from '@/ui/back-button';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';
@@ -30,6 +29,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { DotsThreeVertical, Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 const TimelineRecordSeparator = () => <View className="h-4" />;
 
@@ -115,8 +115,16 @@ export default function Index() {
                   size="xs"
                   variant="secondary"
                   className={cn(
-                    'hidden active:opacity-90 md:flex web:hover:opacity-90',
-                    getSpectrumBackgroundClassName(logColor.colorIndex)
+                    'hidden md:flex',
+                    spectrumClassNames.getSpectrumBackgroundClassName(
+                      logColor.colorIndex
+                    )
+                  )}
+                  interactiveClassName={cn(
+                    'active:opacity-90 web:hover:opacity-90',
+                    spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+                      logColor.colorIndex
+                    )
                   )}
                   onPress={() =>
                     sheetManager.open(
@@ -207,8 +215,16 @@ export default function Index() {
             variant="secondary"
             wrapperClassName="rounded-full"
             className={cn(
-              'size-14 border-0 rounded-full active:opacity-90 web:hover:opacity-90',
-              getSpectrumBackgroundClassName(logColor.colorIndex)
+              'size-14 border-0 rounded-full',
+              spectrumClassNames.getSpectrumBackgroundClassName(
+                logColor.colorIndex
+              )
+            )}
+            interactiveClassName={cn(
+              'active:opacity-90 web:hover:opacity-90',
+              spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+                logColor.colorIndex
+              )
             )}
             onPress={() =>
               sheetManager.open('record-create', params.logId, undefined, {

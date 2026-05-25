@@ -21,12 +21,12 @@ import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { db } from '@/lib/db';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
 import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerTextSession from '@/features/records/hooks/use-composer-text-session';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 export const useReplyComposerModel = () => {
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
@@ -223,12 +223,18 @@ export const useReplyComposerModel = () => {
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
       replyId && recordId
-        ? { id: replyId, recordId, teamId: reply?.teamId, type: 'reply' }
+        ? {
+            id: replyId,
+            isDraft: !!reply?.isDraft,
+            recordId,
+            teamId: reply?.teamId,
+            type: 'reply',
+          }
         : undefined,
-    [recordId, reply?.teamId, replyId]
+    [recordId, reply?.isDraft, reply?.teamId, replyId]
   );
 
-  const { linkAttachmentCount, linkPreview, linkToolbarItems } =
+  const { linkAttachmentCount, linkAttachmentMenuItem, linkPreview } =
     useComposerLinkAttachments({
       links,
       onReorderLinks: handleReorderLinks,
@@ -237,8 +243,8 @@ export const useReplyComposerModel = () => {
 
   const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
     extraAttachmentCount: linkAttachmentCount,
+    extraAttachmentMenuItems: linkAttachmentMenuItem,
     extraPreview: linkPreview,
-    extraToolbarItems: linkToolbarItems,
     isOpen,
     files: reply?.files ?? [],
     deferQueuedUploads: !isEdit || shouldReplayReplyDraftIdentity,
@@ -407,7 +413,13 @@ export const useReplyComposerModel = () => {
     isSubmitting,
     isTextareaFocused,
     loading: isEdit ? !editReply : !!recordId && !draft.id,
-    logColorClassName: getSpectrumBackgroundClassName(logColor.colorIndex),
+    logColorClassName: spectrumClassNames.getSpectrumBackgroundClassName(
+      logColor.colorIndex
+    ),
+    logColorInteractiveClassName:
+      spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+        logColor.colorIndex
+      ),
     fileCount,
     filePreview,
     onChangeText: handleChangeText,

@@ -7,6 +7,7 @@ import type { FileItem } from '@/features/files/types/file';
 import * as outbox from '@/features/offline/outbox-hooks';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import type { QueuedAttachment, QueuedParent } from '@/features/offline/types';
+import { getReorderedItemOrders } from '@/lib/reorder-items';
 import { id } from '@instantdb/react-native';
 import * as React from 'react';
 import * as existingUpload from '@/features/files/lib/existing-upload';
@@ -42,6 +43,9 @@ export const useFileUploadPreviewState = ({
   const [optimisticUploads, setOptimisticUploads] = React.useState<
     fileComposer.PendingUpload[]
   >([]);
+
+  const pendingNameOverridesRef = React.useRef<Record<string, string>>({});
+  const pendingOrderOverridesRef = React.useRef<Record<string, number>>({});
 
   const [focusedAudioId, setFocusedAudioId] = React.useState<string | null>(
     null
@@ -115,6 +119,8 @@ export const useFileUploadPreviewState = ({
   React.useEffect(() => {
     setLocalPreviewUris({});
     setOptimisticUploads([]);
+    pendingNameOverridesRef.current = {};
+    pendingOrderOverridesRef.current = {};
     setFocusedAudioId(null);
     setActiveUploadIds(new Set());
   }, [scopeKey]);
@@ -174,15 +180,17 @@ export const useFileUploadPreviewState = ({
         }
 
         await onUploadFile(
-          asset ?? {
-            fileName: attachment.name,
-            height: attachment.height,
-            mimeType: attachment.mimeType,
-            size: attachment.size,
-            type: attachment.type,
-            uri: attachment.localUri,
-            width: attachment.width,
-          },
+          asset
+            ? { ...asset, fileName: attachment.name }
+            : {
+                fileName: attachment.name,
+                height: attachment.height,
+                mimeType: attachment.mimeType,
+                size: attachment.size,
+                type: attachment.type,
+                uri: attachment.localUri,
+                width: attachment.width,
+              },
           attachment.id,
           attachment.order
         );
@@ -292,6 +300,26 @@ export const useFileUploadPreviewState = ({
               status: 'persisting',
             });
 
+            const queuedAttachmentPatch: Partial<QueuedAttachment> = {};
+            const renamedName = pendingNameOverridesRef.current[fileId];
+            if (renamedName) queuedAttachmentPatch.name = renamedName;
+            const reorderedOrder = pendingOrderOverridesRef.current[fileId];
+
+            if (reorderedOrder != null) {
+              queuedAttachmentPatch.order = reorderedOrder;
+            }
+
+            const hasQueuedAttachmentPatch =
+              Object.keys(queuedAttachmentPatch).length > 0;
+
+            if (hasQueuedAttachmentPatch) {
+              outbox.updateQueuedAttachment(fileId, queuedAttachmentPatch);
+            }
+
+            const queuedAttachment = hasQueuedAttachmentPatch
+              ? { ...attachment, ...queuedAttachmentPatch }
+              : attachment;
+
             void outbox
               .persistPickedAttachmentBinary(fileId, asset)
               .then(() => {
@@ -300,11 +328,14 @@ export const useFileUploadPreviewState = ({
                 void outboxSyncCore.runOutboxSync();
               })
               .catch(() => {
-                void uploadQueuedAttachment(attachment, asset);
+                void uploadQueuedAttachment(queuedAttachment, asset);
               });
 
-            if (attachment.status !== 'persisting' && !deferQueuedUploads) {
-              await uploadQueuedAttachment(attachment, asset);
+            if (
+              queuedAttachment.status !== 'persisting' &&
+              !deferQueuedUploads
+            ) {
+              await uploadQueuedAttachment(queuedAttachment, asset);
             }
           } catch {
             void outbox.removeQueuedAttachment(fileId);
@@ -337,6 +368,88 @@ export const useFileUploadPreviewState = ({
       uploadQueuedAttachment,
       visibleFiles,
     ]
+  );
+
+  const renamePendingUpload = React.useCallback(
+    (fileId: string, name: string) => {
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
+
+      pendingNameOverridesRef.current = {
+        ...pendingNameOverridesRef.current,
+        [fileId]: trimmedName,
+      };
+
+      setOptimisticUploads((current) => {
+        let changed = false;
+
+        const next = current.map((item) => {
+          if (item.id !== fileId) return item;
+          changed = true;
+          return { ...item, name: trimmedName };
+        });
+
+        return changed ? next : current;
+      });
+
+      if (queuedAttachments.some((attachment) => attachment.id === fileId)) {
+        outbox.updateQueuedAttachment(fileId, { name: trimmedName });
+      }
+    },
+    [queuedAttachments]
+  );
+
+  const reorderPendingUploads = React.useCallback(
+    (items: { id: string; order?: number | null }[]) => {
+      const pendingUploadById = new Map(
+        pendingUploads.map((item) => [item.id, item])
+      );
+
+      const seenIds = new Set<string>();
+
+      const orderedItems = items.filter((item) => {
+        if (seenIds.has(item.id)) return false;
+        seenIds.add(item.id);
+        return true;
+      });
+
+      if (orderedItems.length < 2) return;
+      const itemOrderById = getReorderedItemOrders(orderedItems);
+
+      const orderById = new Map(
+        [...itemOrderById].flatMap(([id, order]) => {
+          if (!pendingUploadById.has(id)) return [];
+          return [[id, order] as const];
+        })
+      );
+
+      if (!orderById.size) return;
+
+      pendingOrderOverridesRef.current = {
+        ...pendingOrderOverridesRef.current,
+        ...Object.fromEntries(orderById),
+      };
+
+      setOptimisticUploads((current) => {
+        let changed = false;
+
+        const next = current.map((item) => {
+          const order = orderById.get(item.id);
+          if (order == null || item.order === order) return item;
+          changed = true;
+          return { ...item, order };
+        });
+
+        return changed ? next : current;
+      });
+
+      for (const attachment of queuedAttachments) {
+        const order = orderById.get(attachment.id);
+        if (order == null || attachment.order === order) continue;
+        outbox.updateQueuedAttachment(attachment.id, { order });
+      }
+    },
+    [pendingUploads, queuedAttachments]
   );
 
   React.useEffect(() => {
@@ -480,6 +593,8 @@ export const useFileUploadPreviewState = ({
     pendingAudio,
     pendingDocuments,
     pendingUploads,
+    reorderPendingUploads,
+    renamePendingUpload,
     removeLocalPreviewUri,
     uploadAssets,
   };

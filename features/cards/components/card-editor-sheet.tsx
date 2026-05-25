@@ -317,9 +317,12 @@ export const LogCardEditorSheet = () => {
               size="sm"
               variant="secondary"
               wrapperClassName="flex-1"
-              className={cn(
+              className={spectrumClassNames.getSpectrumBackgroundClassName(
+                logColor.colorIndex
+              )}
+              interactiveClassName={cn(
                 'active:opacity-90 web:hover:opacity-90',
-                spectrumClassNames.getSpectrumBackgroundClassName(
+                spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
                   logColor.colorIndex
                 )
               )}

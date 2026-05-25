@@ -14,7 +14,6 @@ import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { cn } from '@/lib/cn';
 import { resolveSpectrumColor } from '@/theme/spectrum';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Page } from '@/ui/page';
@@ -26,6 +25,7 @@ import { CornersOut } from 'phosphor-react-native';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 import * as textareaSelection from '@/features/records/hooks/use-textarea-selection';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 export const LogTemplateEditorSheet = () => {
   const sheetManager = useSheetManager();
@@ -278,9 +278,14 @@ export const LogTemplateEditorSheet = () => {
               size="sm"
               variant="secondary"
               wrapperClassName="flex-1"
-              className={cn(
+              className={spectrumClassNames.getSpectrumBackgroundClassName(
+                logColor.colorIndex
+              )}
+              interactiveClassName={cn(
                 'active:opacity-90 web:hover:opacity-90',
-                getSpectrumBackgroundClassName(logColor.colorIndex)
+                spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+                  logColor.colorIndex
+                )
               )}
             >
               {isSubmitting ? (

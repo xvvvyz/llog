@@ -7,7 +7,6 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import type { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
@@ -15,6 +14,7 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
 import { NotePencil, UserPlus, UsersThree } from 'phosphor-react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 const ACTION_BUTTON_WRAPPER_CLASS_NAME = 'w-32 self-center';
 
@@ -134,9 +134,14 @@ export const EmptyState = ({
       <Button
         size="xs"
         wrapperClassName="w-32 self-center"
-        className={cn(
+        className={spectrumClassNames.getSpectrumBackgroundClassName(
+          logColor.colorIndex
+        )}
+        interactiveClassName={cn(
           'active:opacity-90 web:hover:opacity-90',
-          getSpectrumBackgroundClassName(logColor.colorIndex)
+          spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+            logColor.colorIndex
+          )
         )}
         onPress={() =>
           sheetManager.open('record-create', logId, undefined, { teamId })

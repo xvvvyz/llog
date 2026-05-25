@@ -3,6 +3,7 @@ import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
+import { getReorderedItemOrders } from '@/lib/reorder-items';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Sheet } from '@/ui/sheet';
@@ -17,6 +18,24 @@ import Animated, { useAnimatedRef } from 'react-native-reanimated';
 const byOrder = (a: Link, b: Link) => (a.order ?? 0) - (b.order ?? 0);
 const getLinkLabel = (item: Link) => item.label?.trim() || 'Link';
 type LinkAttachmentItem = Link & { localStatus?: 'error' | 'pending' };
+
+type OrderedLinkAttachment = {
+  id: string;
+  localStatus?: LinkAttachmentItem['localStatus'];
+  order?: number | null;
+};
+
+const getReorderedLinkAttachments = (
+  items: LinkAttachmentItem[]
+): OrderedLinkAttachment[] => {
+  const orderById = getReorderedItemOrders(items);
+
+  return items.map((item, index) => ({
+    id: item.id,
+    localStatus: item.localStatus,
+    order: orderById.get(item.id) ?? index,
+  }));
+};
 
 const LinkUrlText = ({
   className,
@@ -72,6 +91,7 @@ export const LinkAttachments = ({
   portalName,
   sheetLoading,
   sheetOpen,
+  triggerActionClassName,
   triggerClassName,
   triggerIconClassName,
 }: {
@@ -80,12 +100,13 @@ export const LinkAttachments = ({
   hideTrigger?: boolean;
   links: LinkAttachmentItem[];
   onDeleteLink?: (linkId: string) => void;
-  onReorderLinks?: (links: { id: string }[]) => void;
+  onReorderLinks?: (links: OrderedLinkAttachment[]) => void;
   onSheetOpenChange?: (open: boolean) => void;
   parent?: sheetPayloads.RecordSheetParent;
   portalName?: string;
   sheetLoading?: boolean;
   sheetOpen?: boolean;
+  triggerActionClassName?: string;
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
@@ -172,9 +193,9 @@ export const LinkAttachments = ({
   );
 
   const handleDragEnd = React.useCallback(
-    (params: Sortable.SortableGridDragEndParams<Link>) => {
+    (params: Sortable.SortableGridDragEndParams<LinkAttachmentItem>) => {
       if (params.fromIndex === params.toIndex) return;
-      onReorderLinks?.(params.data);
+      onReorderLinks?.(getReorderedLinkAttachments(params.data));
     },
     [onReorderLinks]
   );
@@ -281,7 +302,7 @@ export const LinkAttachments = ({
               onPress={() => handleDeleteLink(firstItem.id)}
               size="icon-xs"
               variant="ghost"
-              wrapperClassName="-mr-1.5"
+              wrapperClassName={triggerActionClassName ?? '-mr-1.5'}
             >
               <Icon icon={X} />
             </Button>

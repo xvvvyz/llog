@@ -44,14 +44,16 @@ export const AddTagsInput = ({
     );
 
   const actionIcon = shouldShowAction ? (
-    <Icon className="-mr-0.5 ml-2 text-muted-foreground shrink-0" icon={Plus} />
+    <View className="-mr-[9px] ml-2 size-8 items-center justify-center shrink-0">
+      <Icon className="text-muted-foreground" icon={Plus} />
+    </View>
   ) : null;
 
   if (!onPress) {
     return (
       <View
         className={cn(
-          'h-auto min-h-10 w-full px-3 py-2 rounded-none items-center justify-start flex-row',
+          'h-auto min-h-10 w-full px-3 py-1 rounded-none items-center justify-start flex-row',
           className
         )}
       >
@@ -69,7 +71,7 @@ export const AddTagsInput = ({
       variant="ghost"
       wrapperClassName="w-full rounded-none border-continuous"
       className={cn(
-        'h-auto min-h-10 px-3 py-2 rounded-none items-center justify-start',
+        'h-auto min-h-10 px-3 py-1 rounded-none items-center justify-start',
         className
       )}
     >

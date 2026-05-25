@@ -5,7 +5,6 @@ import { useLogTemplates } from '@/features/logs/queries/use-templates';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -18,11 +17,12 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 import {
+  ArrowBendUpRight,
   DotsThreeVertical,
   NotePencil,
-  StackSimple,
   Trash,
 } from 'phosphor-react-native';
 
@@ -86,7 +86,7 @@ const TemplateRow = ({
             <Text>Edit</Text>
           </Menu.Item>
           <Menu.Item onPress={onCopy}>
-            <Icon className="text-placeholder" icon={StackSimple} />
+            <Icon className="text-placeholder" icon={ArrowBendUpRight} />
             <Text>Copy to</Text>
           </Menu.Item>
           <Menu.Separator />
@@ -180,9 +180,14 @@ export const LogTemplatesSheet = () => {
           size="sm"
           variant="secondary"
           wrapperClassName="flex-1"
-          className={cn(
+          className={spectrumClassNames.getSpectrumBackgroundClassName(
+            logColor.colorIndex
+          )}
+          interactiveClassName={cn(
             'active:opacity-90 web:hover:opacity-90',
-            getSpectrumBackgroundClassName(logColor.colorIndex)
+            spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+              logColor.colorIndex
+            )
           )}
         >
           <Text className="text-white">New</Text>

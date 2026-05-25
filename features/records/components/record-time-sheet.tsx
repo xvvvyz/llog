@@ -91,13 +91,14 @@ export const RecordTimePreviewRow = ({
     variant="ghost"
     wrapperClassName="w-full rounded-none border-continuous"
     className={cn(
-      'h-auto min-h-10 px-3 py-2 rounded-none justify-start gap-2.5',
+      'h-auto min-h-10 px-3 py-2 rounded-none justify-start gap-2',
       className
     )}
   >
     <Icon
       className={cn('shrink-0', iconClassName)}
       icon={Clock}
+      size={20}
       weight="fill"
     />
     <Text

@@ -151,6 +151,7 @@ export const RecordCreateSheet = () => {
           isTextareaFocused={composer.isTextareaFocused}
           isTextInputDisabled={composer.isTextInputDisabled}
           logColorClassName={composer.logColorClassName}
+          logColorInteractiveClassName={composer.logColorInteractiveClassName}
           onChangeText={composer.onChangeText}
           onSubmit={composer.onSubmit}
           onTextareaFocusChange={composer.onTextareaFocusChange}

@@ -9,14 +9,13 @@ import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { clampIndex } from '@/lib/clamp';
 import { cn } from '@/lib/cn';
 import { resolveSpectrumColor } from '@/theme/spectrum';
-import { Button } from '@/ui/button';
+import { BREAKPOINT_VALUES } from '@/theme/tokens';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
-import { Icon } from '@/ui/icon';
-import { CaretLeft, CaretRight } from 'phosphor-react-native';
 import * as React from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import * as cardActionsMenu from '@/features/cards/components/card-actions-menu';
+import { CardPaginationButton } from '@/features/cards/components/card-pagination-button';
 import * as progressCard from '@/features/cards/components/progress-card';
 
 import ReanimatedCarousel, {
@@ -120,12 +119,7 @@ export const CardsHeader = ({
   const [activeIndexState, setActiveIndexState] = React.useState(0);
 
   const visibleCards = React.useMemo(
-    () =>
-      cards.filter(
-        (card) =>
-          card.type === 'progress' &&
-          cardDisplay.hasDisplayableCardOutput(card.output)
-      ),
+    () => cards.filter(cardDisplay.isDisplayableProgressCard),
     [cards]
   );
 
@@ -145,8 +139,17 @@ export const CardsHeader = ({
   });
 
   const viewportWidth = Math.max(1, windowDimensions.width);
+
+  const useDesktopCardPager =
+    Platform.OS === 'web' && viewportWidth >= BREAKPOINT_VALUES.md;
+
   const pageWidth = Math.max(1, Math.min(viewportWidth, LIST_MAX_WIDTH));
   const carouselPageWidth = Math.max(1, pageWidth - LIST_SIDE_PADDING);
+
+  const carouselOverflow = useDesktopCardPager
+    ? ('hidden' as const)
+    : ('visible' as const);
+
   const sideOverflow = Math.max(0, (viewportWidth - pageWidth) / 2);
   const carouselOuterMargin = -(sideOverflow + LIST_SIDE_PADDING);
   const previousCarouselPageWidthRef = React.useRef(carouselPageWidth);
@@ -171,12 +174,35 @@ export const CardsHeader = ({
   );
 
   const setCardIndex = React.useCallback(
-    (index: number, animated = true) => {
+    (index: number, animated = !useDesktopCardPager) => {
       const nextIndex = syncCardIndex(index);
-      carouselRef.current?.scrollTo({ animated, index: nextIndex });
+
+      carouselRef.current?.scrollTo({
+        animated: animated && !useDesktopCardPager,
+        index: nextIndex,
+      });
     },
-    [syncCardIndex]
+    [syncCardIndex, useDesktopCardPager]
   );
+
+  const getAdjacentCardIndex = React.useCallback(
+    (direction: -1 | 1) => {
+      const count = visibleCards.length;
+      if (!count) return 0;
+      const nextIndex = activeIndexState + direction;
+      if (useDesktopCardPager) return (nextIndex + count) % count;
+      return clampIndex(nextIndex, count);
+    },
+    [activeIndexState, useDesktopCardPager, visibleCards.length]
+  );
+
+  const handlePreviousCard = React.useCallback(() => {
+    setCardIndex(getAdjacentCardIndex(-1));
+  }, [getAdjacentCardIndex, setCardIndex]);
+
+  const handleNextCard = React.useCallback(() => {
+    setCardIndex(getAdjacentCardIndex(1));
+  }, [getAdjacentCardIndex, setCardIndex]);
 
   const markNextCardPressSuppressed = React.useCallback(() => {
     if (suppressCardPressTimeoutRef.current) {
@@ -374,68 +400,81 @@ export const CardsHeader = ({
       >
         <View className="relative">
           <View
-            className={cn(visibleCards.length > 1 && 'md:cursor-grab')}
+            className={cn(
+              visibleCards.length > 1 &&
+                !useDesktopCardPager &&
+                'md:cursor-grab'
+            )}
             style={{
               alignItems: 'center',
               alignSelf: 'center',
               height: cardHeight,
+              overflow: carouselOverflow,
               width: pageWidth,
             }}
           >
             <ReanimatedCarousel
               ref={carouselRef}
-              containerStyle={{ overflow: 'visible' }}
+              containerStyle={{ overflow: carouselOverflow }}
               data={visibleCards}
               defaultIndex={activeIndexState}
-              enabled={visibleCards.length > 1}
+              enabled={visibleCards.length > 1 && !useDesktopCardPager}
               height={cardHeight}
               loop={false}
               onProgressChange={handleCardCarouselProgressChange}
               onScrollEnd={handleCardCarouselScrollEnd}
               onScrollStart={handleCardCarouselScrollStart}
               renderItem={renderCard}
-              style={{ overflow: 'visible' }}
+              style={{ overflow: carouselOverflow }}
               width={carouselPageWidth}
               windowSize={3}
             />
           </View>
+          {visibleCards.length > 1 && useDesktopCardPager && (
+            <View className="absolute inset-0 pointer-events-none items-center justify-center">
+              <View className="relative h-full max-w-sheet w-full pointer-events-none">
+                <View className="absolute -left-14 top-1/2 z-10 rounded-full -translate-y-1/2 pointer-events-auto">
+                  <CardPaginationButton
+                    direction="previous"
+                    onPress={handlePreviousCard}
+                  />
+                </View>
+                <View className="absolute -right-14 top-1/2 z-10 rounded-full -translate-y-1/2 pointer-events-auto">
+                  <CardPaginationButton
+                    direction="next"
+                    onPress={handleNextCard}
+                  />
+                </View>
+              </View>
+            </View>
+          )}
         </View>
-        {visibleCards.length > 1 && (
+        {visibleCards.length > 1 && !useDesktopCardPager && (
           <View
             className="flex-row mb-3 mt-3 items-center justify-between self-center"
             style={{ width: controlsWidth }}
           >
-            <Button
-              accessibilityLabel="Previous card"
-              className="size-10 rounded-full"
+            <CardPaginationButton
+              direction="previous"
               disabled={activeIndexState <= 0}
-              onPress={() => setCardIndex(activeIndexState - 1)}
-              size="icon-sm"
-              variant="ghost"
-              wrapperClassName="rounded-full"
-            >
-              <Icon className="text-foreground" icon={CaretLeft} />
-            </Button>
+              onPress={handlePreviousCard}
+            />
             <Dots
               activeIndex={activeIndex}
               count={visibleCards.length}
               onIndexPress={setCardIndex}
               size="sm"
             />
-            <Button
-              accessibilityLabel="Next card"
-              className="size-10 rounded-full"
+            <CardPaginationButton
+              direction="next"
               disabled={activeIndexState >= visibleCards.length - 1}
-              onPress={() => setCardIndex(activeIndexState + 1)}
-              size="icon-sm"
-              variant="ghost"
-              wrapperClassName="rounded-full"
-            >
-              <Icon className="text-foreground" icon={CaretRight} />
-            </Button>
+              onPress={handleNextCard}
+            />
           </View>
         )}
-        {visibleCards.length === 1 && <View className="h-4" />}
+        {(useDesktopCardPager || visibleCards.length === 1) && (
+          <View className="h-4" />
+        )}
       </View>
       <DestructiveConfirmSheet
         isPending={cardActions.isDeleting}

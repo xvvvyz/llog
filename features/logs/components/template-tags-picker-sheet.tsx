@@ -112,7 +112,6 @@ export const TemplateTagsPickerSheet = ({
       variant="list"
     >
       <TagSheetContent
-        canCreateTag={tagSheet.canCreateTag}
         canManageColor
         defaultTagColor={logColorIndex}
         emptyStateText="Create reusable tags for records in this log."
@@ -127,6 +126,7 @@ export const TemplateTagsPickerSheet = ({
         rawQuery={tagSheet.rawQuery}
         setRawQuery={tagSheet.setRawQuery}
         sortEnabled={!tagSheet.rawQuery}
+        tagInputAction={tagSheet.tagInputAction}
         visibleTags={tagSheet.visibleTags}
       />
     </Sheet>

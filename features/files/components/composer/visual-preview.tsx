@@ -2,14 +2,22 @@ import { PendingVideoPreview } from '@/features/files/components/composer/pendin
 import { PreviewImage } from '@/features/files/components/composer/preview-image';
 import type * as fileComposer from '@/features/files/types/composer';
 import { cn } from '@/lib/cn';
+import { getReorderedItems, type ReorderedItem } from '@/lib/reorder-items';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import * as Sortable from '@/ui/sortable';
 import { Spinner } from '@/ui/spinner';
 import { X } from 'phosphor-react-native';
 import * as React from 'react';
-import { Pressable, View, type GestureResponderEvent } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
+
+import {
+  Platform,
+  Pressable,
+  View,
+  type GestureResponderEvent,
+  type ViewStyle,
+} from 'react-native';
 
 const getItemOrderKey = (items: fileComposer.VisualPreviewItem[]) =>
   items.map((item) => item.id).join('\0');
@@ -18,6 +26,12 @@ const getVisualItemKey = (item: fileComposer.VisualPreviewItem) => item.id;
 
 const areOrderKeysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((id, index) => id === b[index]);
+
+const thumbnailPressableClassName =
+  'flex-1 overflow-hidden border-continuous rounded-lg bg-border select-none web:outline-hidden';
+
+const webNoSelectStyle =
+  Platform.OS === 'web' ? ({ userSelect: 'none' } as ViewStyle) : undefined;
 
 export const VisualPreview = ({
   actionsDisabled,
@@ -33,7 +47,7 @@ export const VisualPreview = ({
   autoPlayPendingVideoId?: string;
   onDeleteFile: (fileId: string) => void;
   onOpenVisual: (fileId: string) => void;
-  onReorderVisualItems?: (items: fileComposer.VisualPreviewItem[]) => void;
+  onReorderVisualItems?: (items: ReorderedItem[]) => void;
   onRemoteReady: (fileId: string) => void;
   showBottomBorder?: boolean;
   visualItems: fileComposer.VisualPreviewItem[];
@@ -95,7 +109,7 @@ export const VisualPreview = ({
     const orderKey = getItemOrderKey(displayedVisualItems);
     if (lastPersistedOrderKeyRef.current === orderKey) return;
     lastPersistedOrderKeyRef.current = orderKey;
-    onReorderVisualItems(displayedVisualItems);
+    onReorderVisualItems(getReorderedItems(displayedVisualItems));
   }, [displayedVisualItems, localOrderIds, onReorderVisualItems]);
 
   const handleDragEnd = React.useCallback(
@@ -107,7 +121,7 @@ export const VisualPreview = ({
       const orderKey = getItemOrderKey(orderedItems);
       setLocalOrderIds(orderedItems.map((item) => item.id));
       lastPersistedOrderKeyRef.current = orderKey;
-      onReorderVisualItems?.(orderedItems);
+      onReorderVisualItems?.(getReorderedItems(orderedItems));
     },
     [onReorderVisualItems]
   );
@@ -124,56 +138,71 @@ export const VisualPreview = ({
       onDeleteFile(item.id);
     };
 
-    return (
-      <View key={item.id} className="relative size-16">
-        {item.pending ? (
-          <Pressable
-            className="flex-1 overflow-hidden border-continuous rounded-lg bg-border"
-            disabled={!canOpenItem}
-            onPress={() => {
-              if (canOpenItem) onOpenVisual(item.id);
-            }}
-          >
-            <View className="flex-1 bg-card">
-              {item.type === 'video' ? (
-                <PendingVideoPreview
-                  autoPlay={item.id === autoPlayPendingVideoId}
-                  height={item.height}
-                  uri={item.localUri ?? item.uri}
-                  width={item.width}
-                />
-              ) : (
-                <Image
-                  contentFit="cover"
-                  fill
-                  uri={item.localUri ?? item.uri}
-                  wrapperClassName="bg-card"
-                />
-              )}
-              {item.status === 'uploading' && (
-                <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
-                  <Spinner size="xs" />
-                </View>
-              )}
-            </View>
-          </Pressable>
+    const handleOpenItem = () => {
+      if (canOpenItem) onOpenVisual(item.id);
+    };
+
+    const thumbnailContent = item.pending ? (
+      <View className="flex-1 bg-card">
+        {item.type === 'video' ? (
+          <PendingVideoPreview
+            autoPlay={item.id === autoPlayPendingVideoId}
+            height={item.height}
+            uri={item.localUri ?? item.uri}
+            width={item.width}
+          />
         ) : (
-          <Pressable
-            className="flex-1 overflow-hidden border-continuous rounded-lg bg-border"
-            disabled={!canOpenItem}
-            onPress={() => {
-              if (canOpenItem) onOpenVisual(item.id);
-            }}
-          >
-            <PreviewImage item={item} onRemoteReady={onRemoteReady} />
-          </Pressable>
+          <Image
+            contentFit="cover"
+            draggable={false}
+            fill
+            uri={item.localUri ?? item.uri}
+            wrapperClassName="bg-card"
+          />
         )}
+        {item.status === 'uploading' && (
+          <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
+            <Spinner size="xs" />
+          </View>
+        )}
+      </View>
+    ) : (
+      <PreviewImage item={item} onRemoteReady={onRemoteReady} />
+    );
+
+    const thumbnail = canDragItem ? (
+      <Sortable.SortableDragSurface
+        className={cn(thumbnailPressableClassName, 'cursor-grab')}
+        onPress={canOpenItem ? handleOpenItem : undefined}
+        style={webNoSelectStyle}
+      >
+        {thumbnailContent}
+      </Sortable.SortableDragSurface>
+    ) : (
+      <Pressable
+        className={thumbnailPressableClassName}
+        disabled={!canOpenItem}
+        onPress={handleOpenItem}
+        style={webNoSelectStyle}
+      >
+        {thumbnailContent}
+      </Pressable>
+    );
+
+    return (
+      <View
+        key={item.id}
+        className="relative size-16 select-none web:outline-hidden"
+        style={webNoSelectStyle}
+      >
+        {thumbnail}
         <View className="absolute inset-x-0 top-0 z-10 h-8 rounded-t-lg bg-gradient-to-b from-background/60 to-background/0 pointer-events-none" />
         {canDragItem && (
           <Sortable.SortableDragHandle
-            className="absolute left-0 top-0 z-20 size-6"
+            className="absolute left-0 top-0 z-20 size-6 pointer-events-none"
             iconClassName="text-foreground"
             iconSize={16}
+            interactive={false}
           />
         )}
         <Pressable
@@ -193,7 +222,8 @@ export const VisualPreview = ({
   return (
     <Animated.ScrollView
       ref={scrollViewRef}
-      contentContainerClassName="p-3"
+      contentContainerClassName="p-3 select-none"
+      contentContainerStyle={webNoSelectStyle}
       horizontal
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
@@ -204,11 +234,13 @@ export const VisualPreview = ({
       )}
     >
       {canSort ? (
-        <View>
+        <View className="select-none" style={webNoSelectStyle}>
           <Sortable.SortableGrid
+            activeItemScale={1}
             autoScrollDirection="horizontal"
             columnGap={12}
             data={displayedVisualItems}
+            inactiveItemOpacity={1}
             keyExtractor={getVisualItemKey}
             onDragEnd={handleDragEnd}
             renderItem={({ item }) => renderItem(item)}
@@ -218,7 +250,7 @@ export const VisualPreview = ({
           />
         </View>
       ) : (
-        <View className="flex-row gap-3">
+        <View className="flex-row select-none gap-3" style={webNoSelectStyle}>
           {displayedVisualItems.map(renderItem)}
         </View>
       )}

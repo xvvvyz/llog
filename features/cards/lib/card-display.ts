@@ -10,6 +10,12 @@ import {
 } from 'date-fns';
 
 type Metric = CardOutput['metrics'][number];
+
+type DisplayableProgressCard = {
+  output?: CardOutput | null;
+  type?: string | null;
+};
+
 const EMPTY_CARD_SUMMARY = 'No matching records yet';
 
 export const formatCardText = (value: string) =>
@@ -35,6 +41,9 @@ export const hasDisplayableCardOutput = (output?: CardOutput | null) => {
     (!!summary && summary !== EMPTY_CARD_SUMMARY)
   );
 };
+
+export const isDisplayableProgressCard = (card: DisplayableProgressCard) =>
+  card.type === 'progress' && hasDisplayableCardOutput(card.output);
 
 const durationUnit = (unit?: string) => {
   const normalized = unit?.trim().toLowerCase();

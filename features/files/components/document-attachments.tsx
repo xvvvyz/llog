@@ -4,6 +4,7 @@ import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
+import { getReorderedItems, type ReorderedItem } from '@/lib/reorder-items';
 import { UI } from '@/theme/ui';
 import { Button } from '@/ui/button';
 import { Field } from '@/ui/field';
@@ -38,6 +39,7 @@ export const DocumentAttachments = ({
   pendingDocuments = NO_PENDING_DOCUMENTS,
   portalName,
   sheetOpen,
+  triggerActionClassName,
   triggerClassName,
   triggerIconClassName,
 }: {
@@ -47,11 +49,12 @@ export const DocumentAttachments = ({
   hideTrigger?: boolean;
   onDeleteFile?: (fileId: string) => void;
   onRenameFile?: (fileId: string, name: string) => Promise<void>;
-  onReorderFiles?: (files: { id: string }[]) => void;
+  onReorderFiles?: (files: ReorderedItem[]) => void;
   onSheetOpenChange?: (open: boolean) => void;
   pendingDocuments?: fileComposer.PendingDocumentUpload[];
   portalName?: string;
   sheetOpen?: boolean;
+  triggerActionClassName?: string;
   triggerClassName?: string;
   triggerIconClassName?: string;
 }) => {
@@ -59,9 +62,9 @@ export const DocumentAttachments = ({
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const [localSheetOpen, setLocalSheetOpen] = React.useState(false);
 
-  const [editingDocument, setEditingDocument] = React.useState<FileItem | null>(
-    null
-  );
+  const [editingDocumentId, setEditingDocumentId] = React.useState<
+    string | null
+  >(null);
 
   const [editingName, setEditingName] = React.useState('');
   const [isRenaming, setIsRenaming] = React.useState(false);
@@ -112,11 +115,19 @@ export const DocumentAttachments = ({
   const shouldOpenDocumentsInline = !onDeleteFile;
   const canRenameDocuments = !!onRenameFile && !actionsDisabled;
 
-  const canSortDocumentSet =
-    !!onReorderFiles &&
-    items.length > 1 &&
-    items.every((item) => item.kind === 'file');
+  const canRenamePreviewItem = React.useCallback(
+    (item: DocumentAttachmentItem) =>
+      canRenameDocuments &&
+      (item.kind === 'file' || item.item.status !== 'uploading'),
+    [canRenameDocuments]
+  );
 
+  const editingDocument = React.useMemo(
+    () => items.find((item) => item.id === editingDocumentId) ?? null,
+    [editingDocumentId, items]
+  );
+
+  const canSortDocumentSet = !!onReorderFiles && items.length > 1;
   const canSortDocuments = canSortDocumentSet && !actionsDisabled;
 
   const shouldRenderSheet =
@@ -136,7 +147,9 @@ export const DocumentAttachments = ({
   const trimmedEditingName = editingName.trim();
 
   const canRenameDocument =
-    !!editingDocument && canRenameDocuments && !!trimmedEditingName;
+    !!editingDocument &&
+    canRenamePreviewItem(editingDocument) &&
+    !!trimmedEditingName;
 
   const moreDocumentsText =
     items.length > 1 ? `+${items.length - 1} more` : null;
@@ -146,18 +159,18 @@ export const DocumentAttachments = ({
   }, [setIsSheetOpen]);
 
   const handleOpenNameEditor = React.useCallback(
-    (item: FileItem) => {
+    (item: DocumentAttachmentItem) => {
       if (actionsDisabled) return;
-      if (!canRenameDocuments) return;
-      setEditingDocument(item);
-      setEditingName(documentAttachmentPrimitives.getDocumentName(item));
+      if (!canRenamePreviewItem(item)) return;
+      setEditingDocumentId(item.id);
+      setEditingName(documentAttachmentPrimitives.getDocumentName(item.item));
     },
-    [actionsDisabled, canRenameDocuments]
+    [actionsDisabled, canRenamePreviewItem]
   );
 
   const handleCloseNameEditor = React.useCallback(() => {
     if (isRenaming) return;
-    setEditingDocument(null);
+    setEditingDocumentId(null);
     setEditingName('');
   }, [isRenaming]);
 
@@ -173,43 +186,32 @@ export const DocumentAttachments = ({
   const handleDragEnd = React.useCallback(
     (params: Sortable.SortableGridDragEndParams<DocumentAttachmentItem>) => {
       if (params.fromIndex === params.toIndex) return;
-
-      const orderedFiles = params.data.flatMap((item) =>
-        item.kind === 'file' ? [item.item] : []
-      );
-
-      if (orderedFiles.length !== params.data.length) return;
-      onReorderFiles?.(orderedFiles);
+      onReorderFiles?.(getReorderedItems(params.data));
     },
     [onReorderFiles]
   );
 
   const handleRenameDocument = React.useCallback(async () => {
-    if (!canRenameDocument || !editingDocument || !onRenameFile) return;
+    if (!canRenameDocument || !editingDocumentId || !onRenameFile) return;
     setIsRenaming(true);
 
     try {
-      await onRenameFile(editingDocument.id, trimmedEditingName);
-      setEditingDocument(null);
+      await onRenameFile(editingDocumentId, trimmedEditingName);
+      setEditingDocumentId(null);
       setEditingName('');
     } catch {
       // noop
     } finally {
       setIsRenaming(false);
     }
-  }, [canRenameDocument, editingDocument, onRenameFile, trimmedEditingName]);
+  }, [canRenameDocument, editingDocumentId, onRenameFile, trimmedEditingName]);
 
   React.useEffect(() => {
-    if (!editingDocument) return;
-
-    const stillExists = items.some(
-      (item) => item.kind === 'file' && item.item.id === editingDocument.id
-    );
-
-    if (stillExists) return;
-    setEditingDocument(null);
+    if (!editingDocumentId) return;
+    if (editingDocument) return;
+    setEditingDocumentId(null);
     setEditingName('');
-  }, [editingDocument, items]);
+  }, [editingDocument, editingDocumentId]);
 
   const renderSheetItem = (previewItem: DocumentAttachmentItem) => {
     const item = previewItem.item;
@@ -248,27 +250,25 @@ export const DocumentAttachments = ({
       </View>
     );
 
-    const dragHandle =
-      canSortDocumentSet && previewItem.kind === 'file' ? (
-        <Sortable.SortableSheetDragHandle
-          className="-ml-1.5 mr-1"
-          disabled={!canSortDocuments}
-        />
-      ) : null;
+    const dragHandle = canSortDocumentSet ? (
+      <Sortable.SortableSheetDragHandle
+        className="-ml-1.5 mr-1"
+        disabled={!canSortDocuments}
+      />
+    ) : null;
 
-    const renameableDocument =
-      canRenameDocuments && previewItem.kind === 'file';
+    const renameableDocument = canRenamePreviewItem(previewItem);
 
     if (previewItem.kind === 'file') {
       if (onDeleteFile) {
         return (
-          <View key={previewItem.id} className="flex-row items-center">
+          <View key={previewItem.id} className="flex-row min-w-0 items-center">
             {dragHandle}
             {renameableDocument ? (
               <Button
                 className="flex-1 flex-row min-w-0 justify-start"
                 disabled={actionsDisabled}
-                onPress={() => handleOpenNameEditor(previewItem.item)}
+                onPress={() => handleOpenNameEditor(previewItem)}
                 variant="link"
                 wrapperClassName="flex-1 overflow-visible rounded-lg"
               >
@@ -308,11 +308,21 @@ export const DocumentAttachments = ({
     }
 
     return (
-      <View
-        key={previewItem.id}
-        className="flex-row opacity-70 gap-2 items-center"
-      >
-        {documentDetails}
+      <View key={previewItem.id} className="flex-row min-w-0 items-center">
+        {dragHandle}
+        {renameableDocument ? (
+          <Button
+            className="flex-1 flex-row min-w-0 justify-start"
+            disabled={actionsDisabled}
+            onPress={() => handleOpenNameEditor(previewItem)}
+            variant="link"
+            wrapperClassName="flex-1 overflow-visible rounded-lg"
+          >
+            {documentDetails}
+          </Button>
+        ) : (
+          documentDetails
+        )}
         {isUploading && <Spinner size="xs" />}
         {!!onDeleteFile && (
           <Button
@@ -349,7 +359,7 @@ export const DocumentAttachments = ({
         <View
           key={previewItem.id}
           className={cn(
-            'flex-row w-full min-w-0 gap-2 items-center px-4 opacity-70',
+            'flex-row w-full min-w-0 gap-2 items-center px-4',
             triggerClassName
           )}
         >
@@ -411,14 +421,13 @@ export const DocumentAttachments = ({
         <View
           className={cn(
             'flex-row w-full gap-2 items-center justify-between px-4',
-            firstItem.kind === 'pending' && 'opacity-70',
             triggerClassName
           )}
         >
-          {canRenameDocuments && firstItem.kind === 'file' ? (
+          {canRenamePreviewItem(firstItem) ? (
             <Button
               className="flex-1 flex-row min-w-0 gap-2 items-center"
-              onPress={() => handleOpenNameEditor(firstItem.item)}
+              onPress={() => handleOpenNameEditor(firstItem)}
               variant="link"
               wrapperClassName="flex-1 overflow-visible rounded-lg"
             >
@@ -467,7 +476,7 @@ export const DocumentAttachments = ({
                 onPress={() => handleDeleteDocument(firstItem.item.id)}
                 size="icon-xs"
                 variant="ghost"
-                wrapperClassName="-mr-1.5"
+                wrapperClassName={triggerActionClassName ?? '-mr-1.5'}
               >
                 <Icon icon={X} />
               </Button>
@@ -481,7 +490,7 @@ export const DocumentAttachments = ({
                     onPress={() => handleDeleteDocument(firstItem.item.id)}
                     size="icon-xs"
                     variant="ghost"
-                    wrapperClassName="-mr-1.5"
+                    wrapperClassName={triggerActionClassName ?? '-mr-1.5'}
                   >
                     <Icon icon={X} />
                   </Button>
@@ -567,7 +576,7 @@ export const DocumentAttachments = ({
         <Sheet
           className="md:max-w-sm"
           onDismiss={handleCloseNameEditor}
-          open={!!editingDocument}
+          open={!!editingDocumentId}
           portalName={nameEditorPortalName}
           topInset={64}
         >

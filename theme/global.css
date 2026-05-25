@@ -25,4 +25,12 @@
     display: flex;
     flex: 1;
   }
+
+  html[data-llog-sortable-selection-lock='true'],
+  html[data-llog-sortable-selection-lock='true'] * {
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    user-select: none !important;
+  }
 }

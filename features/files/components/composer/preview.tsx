@@ -3,9 +3,10 @@ import { VisualPreview } from '@/features/files/components/composer/visual-previ
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import type * as fileComposer from '@/features/files/types/composer';
 import type { FileItem } from '@/features/files/types/file';
-import { cn } from '@/lib/cn';
 import type * as React from 'react';
 import { View } from 'react-native';
+
+type OrderedPreviewItem = { id: string; order?: number | null };
 
 export const Preview = ({
   actionsDisabled,
@@ -19,7 +20,8 @@ export const Preview = ({
   onDeleteFile,
   onOpenVisual,
   onRenameFile,
-  onReorderFiles,
+  onReorderDocumentFiles,
+  onReorderVisualItems,
   onRemoteReady,
   pendingAudio,
   pendingDocuments,
@@ -36,16 +38,14 @@ export const Preview = ({
   onDeleteFile: (fileId: string) => void;
   onOpenVisual: (fileId: string) => void;
   onRenameFile?: (fileId: string, name: string) => Promise<void>;
-  onReorderFiles?: (files: { id: string }[]) => void;
+  onReorderDocumentFiles?: (files: OrderedPreviewItem[]) => void;
+  onReorderVisualItems?: (files: OrderedPreviewItem[]) => void;
   onRemoteReady: (fileId: string) => void;
   pendingAudio: fileComposer.PendingAudioUpload[];
   pendingDocuments: fileComposer.PendingDocumentUpload[];
   visualItems: fileComposer.VisualPreviewItem[];
 }) => {
   const hasAudioAttachments = audioMedia.length > 0 || pendingAudio.length > 0;
-
-  const documentAttachmentCount =
-    documentFiles.length + pendingDocuments.length;
 
   const hasDocumentAttachments =
     documentFiles.length > 0 || pendingDocuments.length > 0;
@@ -61,6 +61,9 @@ export const Preview = ({
   const showVisualAttachmentDivider =
     visualItems.length > 0 && hasLowerAttachments;
 
+  const lowerDocumentGapClassName =
+    hasDocumentAttachments && hasExtraAttachments ? 'gap-[18px]' : 'gap-4';
+
   return (
     <View className="border-border-secondary border-t">
       <VisualPreview
@@ -69,7 +72,7 @@ export const Preview = ({
         onDeleteFile={onDeleteFile}
         onOpenVisual={onOpenVisual}
         onRemoteReady={onRemoteReady}
-        onReorderVisualItems={onReorderFiles}
+        onReorderVisualItems={onReorderVisualItems}
         showBottomBorder={showVisualAttachmentDivider}
         visualItems={visualItems}
       />
@@ -86,22 +89,17 @@ export const Preview = ({
             />
           )}
           {(hasDocumentAttachments || hasExtraAttachments) && (
-            <View
-              className={cn(
-                hasDocumentAttachments && hasExtraAttachments
-                  ? 'gap-3'
-                  : 'gap-4'
-              )}
-            >
+            <View className={lowerDocumentGapClassName}>
               <DocumentAttachments
                 actionsDisabled={actionsDisabled}
-                className={cn(documentAttachmentCount === 1 && '-my-1.5')}
+                className={hasDocumentAttachments ? '-my-[9px]' : undefined}
                 documents={documentFiles}
                 onDeleteFile={onDeleteFile}
                 onRenameFile={onRenameFile}
-                onReorderFiles={onReorderFiles}
+                onReorderFiles={onReorderDocumentFiles}
                 pendingDocuments={pendingDocuments}
-                triggerClassName="px-0"
+                triggerActionClassName="-mr-[9px]"
+                triggerClassName="min-h-8 px-0"
               />
               {extraPreview}
             </View>

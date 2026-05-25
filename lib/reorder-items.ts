@@ -1,6 +1,11 @@
 import { db } from '@/lib/db';
 
-type OrderedItem = { id: string };
+export type OrderedItem = { id: string };
+
+export type OrderedItemWithOrder = OrderedItem & { order?: number | null };
+
+export type ReorderedItem = { id: string; order: number };
+
 type TransactionInput = Parameters<typeof db.transact>[0];
 type Transaction = Extract<TransactionInput, unknown[]>[number];
 
@@ -27,6 +32,29 @@ export const applyOrderedIds = <T extends OrderedItem>(
   return items.map((item) =>
     seenIds.has(item.id) ? orderedItems[orderedIndex++] : item
   );
+};
+
+export const getReorderedItemOrders = <T extends OrderedItemWithOrder>(
+  items: T[]
+) => {
+  const orderSlots = items
+    .map((item, index) => item.order ?? index)
+    .sort((a, b) => a - b);
+
+  return new Map(
+    items.map((item, index) => [item.id, orderSlots[index] ?? index])
+  );
+};
+
+export const getReorderedItems = <T extends OrderedItemWithOrder>(
+  items: T[]
+): ReorderedItem[] => {
+  const orderById = getReorderedItemOrders(items);
+
+  return items.map((item, index) => ({
+    id: item.id,
+    order: orderById.get(item.id) ?? index,
+  }));
 };
 
 export const reorderItems = async (

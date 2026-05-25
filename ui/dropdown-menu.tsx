@@ -176,7 +176,8 @@ const ItemContent = React.forwardRef<
       android_ripple={{ color: rippleColor }}
       disabled={disabled}
       className={cn(
-        'android:active:bg-transparent group active:bg-accent web:cursor-default web:outline-hidden web:hover:bg-accent web:focus:bg-accent relative flex h-10 flex-row items-center gap-4 pr-6 pl-4',
+        'android:active:bg-transparent group web:cursor-default web:outline-hidden relative flex h-10 flex-row items-center gap-4 pr-6 pl-4',
+        !disabled && 'active:bg-accent web:hover:bg-accent web:focus:bg-accent',
         disabled && 'opacity-50',
         className
       )}

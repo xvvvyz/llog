@@ -31,10 +31,12 @@ export const Checkbox = ({
       variant="secondary"
       className={cn(
         emptyUnchecked && 'rounded-md border-continuous',
-        checked && 'web:hover:opacity-90 active:opacity-90',
         checked && (checkedClassName ?? 'bg-primary'),
         className
       )}
+      interactiveClassName={
+        checked ? 'web:hover:opacity-90 active:opacity-90' : undefined
+      }
       wrapperClassName={cn(
         emptyUnchecked && 'rounded-md border-continuous',
         wrapperClassName

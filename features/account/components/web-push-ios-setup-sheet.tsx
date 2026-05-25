@@ -67,7 +67,7 @@ export const WebPushIosSetupSheet = () => {
           ))}
         </View>
         <Button
-          className="web:hover:opacity-90"
+          interactiveClassName="web:hover:opacity-90"
           onPress={() => sheetManager.close('web-push-ios-setup')}
           variant="secondary"
           wrapperClassName="mt-10"

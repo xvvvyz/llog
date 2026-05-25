@@ -5,6 +5,7 @@ import * as cardDisplay from '@/features/cards/lib/card-display';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
+import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { resolveSpectrumColor } from '@/theme/spectrum';
@@ -14,26 +15,31 @@ import { Sheet } from '@/ui/sheet';
 import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
 import * as React from 'react';
+import { Platform, View } from 'react-native';
 import * as cardActionsMenu from '@/features/cards/components/card-actions-menu';
+import { CardPaginationButton } from '@/features/cards/components/card-pagination-button';
 
 export const LogCardDetailSheet = () => {
+  const breakpoints = useBreakpoints();
   const sheetManager = useSheetManager();
   const isOpen = sheetManager.isOpen('log-card-detail');
   const cardId = sheetManager.getId('log-card-detail');
   const card = useLogCard({ enabled: isOpen, id: cardId });
+  const [logId, setLogId] = React.useState<string>();
+  const activeLogId = card.logId ?? logId;
 
   const cards = useLogCards({
-    enabled: isOpen && !!card.logId,
-    logId: card.logId ?? undefined,
+    enabled: isOpen && !!activeLogId,
+    logId: activeLogId,
   });
 
-  const log = useLog({ id: card.logId ?? undefined });
+  const log = useLog({ id: activeLogId });
   const myRole = useMyRole({ teamId: card.teamId ?? log.teamId ?? null });
   const resolvedTeamId = card.teamId ?? log.teamId ?? undefined;
 
   const recordTags = useTags({
-    enabled: isOpen && !!card.logId && !!resolvedTeamId,
-    logId: card.logId ?? undefined,
+    enabled: isOpen && !!activeLogId && !!resolvedTeamId,
+    logId: activeLogId,
     teamIds: resolvedTeamId ? [resolvedTeamId] : undefined,
     type: 'record',
   });
@@ -47,10 +53,34 @@ export const LogCardDetailSheet = () => {
 
   const isGenerating = !!card.isGenerating;
   const hasMultipleCards = cards.data.length > 1;
+  const currentCardId = card.id ?? cardId;
+
+  const detailCards = React.useMemo(
+    () => cards.data.filter(cardDisplay.isDisplayableProgressCard),
+    [cards.data]
+  );
+
+  const detailCardIndex = React.useMemo(
+    () => detailCards.findIndex((item) => item.id === currentCardId),
+    [currentCardId, detailCards]
+  );
+
+  const canPaginateCards = detailCards.length > 1 && detailCardIndex >= 0;
+  const useDesktopPagination = Platform.OS === 'web' && breakpoints.md;
+  const useFooterPagination = canPaginateCards && !useDesktopPagination;
 
   React.useEffect(() => {
     if (!isOpen) setDeletingCardId(undefined);
   }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setLogId(undefined);
+      return;
+    }
+
+    if (card.logId) setLogId(card.logId);
+  }, [card.logId, isOpen]);
 
   const handleDelete = React.useCallback(async () => {
     if (!deletingCardId) return;
@@ -71,9 +101,46 @@ export const LogCardDetailSheet = () => {
     await cardMutations.refreshCard(card.id);
   }, [card.id]);
 
+  const openAdjacentCard = React.useCallback(
+    (direction: -1 | 1) => {
+      if (!canPaginateCards) return;
+      const count = detailCards.length;
+      const nextIndex = (detailCardIndex + direction + count) % count;
+      const nextCardId = detailCards[nextIndex]?.id;
+      if (!nextCardId || nextCardId === currentCardId) return;
+      sheetManager.open('log-card-detail', nextCardId);
+    },
+    [
+      canPaginateCards,
+      currentCardId,
+      detailCardIndex,
+      detailCards,
+      sheetManager,
+    ]
+  );
+
+  const desktopPaginationAccessory =
+    canPaginateCards && useDesktopPagination ? (
+      <>
+        <View className="absolute -left-14 top-1/2 rounded-full -translate-y-1/2 pointer-events-auto">
+          <CardPaginationButton
+            direction="previous"
+            onPress={() => openAdjacentCard(-1)}
+          />
+        </View>
+        <View className="absolute -right-14 top-1/2 rounded-full -translate-y-1/2 pointer-events-auto">
+          <CardPaginationButton
+            direction="next"
+            onPress={() => openAdjacentCard(1)}
+          />
+        </View>
+      </>
+    ) : undefined;
+
   return (
     <>
       <Sheet
+        desktopAccessory={desktopPaginationAccessory}
         onDismiss={() => sheetManager.close('log-card-detail')}
         open={isOpen}
         portalName="log-card-detail"
@@ -136,14 +203,33 @@ export const LogCardDetailSheet = () => {
               />
             )}
         </SheetListScrollView>
-        <SheetFooter contentClassName="md:px-8 md:py-4">
+        <SheetFooter
+          contentClassName={
+            useFooterPagination
+              ? 'flex-row gap-4 md:px-8 md:py-4'
+              : 'md:px-8 md:py-4'
+          }
+        >
+          {useFooterPagination && (
+            <CardPaginationButton
+              direction="previous"
+              onPress={() => openAdjacentCard(-1)}
+            />
+          )}
           <Button
             onPress={() => sheetManager.close('log-card-detail')}
             size="sm"
             variant="secondary"
+            wrapperClassName={useFooterPagination ? 'flex-1' : undefined}
           >
             <Text>Close</Text>
           </Button>
+          {useFooterPagination && (
+            <CardPaginationButton
+              direction="next"
+              onPress={() => openAdjacentCard(1)}
+            />
+          )}
         </SheetFooter>
       </Sheet>
       <DestructiveConfirmSheet

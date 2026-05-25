@@ -741,6 +741,34 @@ export const reorderQueuedDraftLinks = (orderedIds: string[]) => {
   }));
 };
 
+export const reorderQueuedDraftLinksForParent = ({
+  baseLinks = [],
+  orderedIds,
+  parentId,
+  parentType,
+}: {
+  baseLinks?: types.QueuedLinkSnapshot[];
+  orderedIds: string[];
+  parentId: string;
+  parentType: 'record' | 'reply';
+}) => {
+  if (!orderedIds.length) return;
+  const orderById = new Map(orderedIds.map((id, order) => [id, order]));
+
+  updateQueuedDraft({ parentId, parentType }, (draft) => {
+    const links = draft.linksUpdated ? draft.links : baseLinks;
+    if (!links.some((link) => orderById.has(link.id))) return {};
+
+    return patchQueuedDraftLinks(
+      links.map((link) =>
+        orderById.has(link.id)
+          ? { ...link, order: orderById.get(link.id)! }
+          : link
+      )
+    );
+  });
+};
+
 export const updateQueuedDraftRecordPin = ({
   isPinned,
   recordId,

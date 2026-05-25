@@ -8,175 +8,424 @@ function resolveColor(color: unknown) {
 
 export function getSpectrumBackgroundClassName(color: unknown) {
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'bg-spectrum-light-0-default dark:bg-spectrum-dark-0-default';
-    case 1:
+    }
+
+    case 1: {
       return 'bg-spectrum-light-1-default dark:bg-spectrum-dark-1-default';
-    case 2:
+    }
+
+    case 2: {
       return 'bg-spectrum-light-2-default dark:bg-spectrum-dark-2-default';
-    case 3:
+    }
+
+    case 3: {
       return 'bg-spectrum-light-3-default dark:bg-spectrum-dark-3-default';
-    case 4:
+    }
+
+    case 4: {
       return 'bg-spectrum-light-4-default dark:bg-spectrum-dark-4-default';
-    case 5:
+    }
+
+    case 5: {
       return 'bg-spectrum-light-5-default dark:bg-spectrum-dark-5-default';
-    case 6:
+    }
+
+    case 6: {
       return 'bg-spectrum-light-6-default dark:bg-spectrum-dark-6-default';
-    case 7:
+    }
+
+    case 7: {
       return 'bg-spectrum-light-7-default dark:bg-spectrum-dark-7-default';
-    case 8:
+    }
+
+    case 8: {
       return 'bg-spectrum-light-8-default dark:bg-spectrum-dark-8-default';
-    case 9:
+    }
+
+    case 9: {
       return 'bg-spectrum-light-9-default dark:bg-spectrum-dark-9-default';
-    case 10:
+    }
+
+    case 10: {
       return 'bg-spectrum-light-10-default dark:bg-spectrum-dark-10-default';
-    default:
+    }
+
+    default: {
       return 'bg-spectrum-light-11-default dark:bg-spectrum-dark-11-default';
+    }
   }
+}
+
+export function getSpectrumHoverBackgroundClassName(color: unknown) {
+  switch (resolveColor(color)) {
+    case 0: {
+      return 'web:hover:bg-spectrum-light-0-default dark:web:hover:bg-spectrum-dark-0-default';
+    }
+
+    case 1: {
+      return 'web:hover:bg-spectrum-light-1-default dark:web:hover:bg-spectrum-dark-1-default';
+    }
+
+    case 2: {
+      return 'web:hover:bg-spectrum-light-2-default dark:web:hover:bg-spectrum-dark-2-default';
+    }
+
+    case 3: {
+      return 'web:hover:bg-spectrum-light-3-default dark:web:hover:bg-spectrum-dark-3-default';
+    }
+
+    case 4: {
+      return 'web:hover:bg-spectrum-light-4-default dark:web:hover:bg-spectrum-dark-4-default';
+    }
+
+    case 5: {
+      return 'web:hover:bg-spectrum-light-5-default dark:web:hover:bg-spectrum-dark-5-default';
+    }
+
+    case 6: {
+      return 'web:hover:bg-spectrum-light-6-default dark:web:hover:bg-spectrum-dark-6-default';
+    }
+
+    case 7: {
+      return 'web:hover:bg-spectrum-light-7-default dark:web:hover:bg-spectrum-dark-7-default';
+    }
+
+    case 8: {
+      return 'web:hover:bg-spectrum-light-8-default dark:web:hover:bg-spectrum-dark-8-default';
+    }
+
+    case 9: {
+      return 'web:hover:bg-spectrum-light-9-default dark:web:hover:bg-spectrum-dark-9-default';
+    }
+
+    case 10: {
+      return 'web:hover:bg-spectrum-light-10-default dark:web:hover:bg-spectrum-dark-10-default';
+    }
+
+    default: {
+      return 'web:hover:bg-spectrum-light-11-default dark:web:hover:bg-spectrum-dark-11-default';
+    }
+  }
+}
+
+export function getSpectrumActiveBackgroundClassName(color: unknown) {
+  switch (resolveColor(color)) {
+    case 0: {
+      return 'active:bg-spectrum-light-0-default dark:active:bg-spectrum-dark-0-default';
+    }
+
+    case 1: {
+      return 'active:bg-spectrum-light-1-default dark:active:bg-spectrum-dark-1-default';
+    }
+
+    case 2: {
+      return 'active:bg-spectrum-light-2-default dark:active:bg-spectrum-dark-2-default';
+    }
+
+    case 3: {
+      return 'active:bg-spectrum-light-3-default dark:active:bg-spectrum-dark-3-default';
+    }
+
+    case 4: {
+      return 'active:bg-spectrum-light-4-default dark:active:bg-spectrum-dark-4-default';
+    }
+
+    case 5: {
+      return 'active:bg-spectrum-light-5-default dark:active:bg-spectrum-dark-5-default';
+    }
+
+    case 6: {
+      return 'active:bg-spectrum-light-6-default dark:active:bg-spectrum-dark-6-default';
+    }
+
+    case 7: {
+      return 'active:bg-spectrum-light-7-default dark:active:bg-spectrum-dark-7-default';
+    }
+
+    case 8: {
+      return 'active:bg-spectrum-light-8-default dark:active:bg-spectrum-dark-8-default';
+    }
+
+    case 9: {
+      return 'active:bg-spectrum-light-9-default dark:active:bg-spectrum-dark-9-default';
+    }
+
+    case 10: {
+      return 'active:bg-spectrum-light-10-default dark:active:bg-spectrum-dark-10-default';
+    }
+
+    default: {
+      return 'active:bg-spectrum-light-11-default dark:active:bg-spectrum-dark-11-default';
+    }
+  }
+}
+
+export function getSpectrumInteractiveBackgroundClassName(color: unknown) {
+  return [
+    getSpectrumHoverBackgroundClassName(color),
+    getSpectrumActiveBackgroundClassName(color),
+  ].join(' ');
 }
 
 export function getSpectrumBorderClassName(color: unknown) {
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'border-spectrum-light-0-default dark:border-spectrum-dark-0-default';
-    case 1:
+    }
+
+    case 1: {
       return 'border-spectrum-light-1-default dark:border-spectrum-dark-1-default';
-    case 2:
+    }
+
+    case 2: {
       return 'border-spectrum-light-2-default dark:border-spectrum-dark-2-default';
-    case 3:
+    }
+
+    case 3: {
       return 'border-spectrum-light-3-default dark:border-spectrum-dark-3-default';
-    case 4:
+    }
+
+    case 4: {
       return 'border-spectrum-light-4-default dark:border-spectrum-dark-4-default';
-    case 5:
+    }
+
+    case 5: {
       return 'border-spectrum-light-5-default dark:border-spectrum-dark-5-default';
-    case 6:
+    }
+
+    case 6: {
       return 'border-spectrum-light-6-default dark:border-spectrum-dark-6-default';
-    case 7:
+    }
+
+    case 7: {
       return 'border-spectrum-light-7-default dark:border-spectrum-dark-7-default';
-    case 8:
+    }
+
+    case 8: {
       return 'border-spectrum-light-8-default dark:border-spectrum-dark-8-default';
-    case 9:
+    }
+
+    case 9: {
       return 'border-spectrum-light-9-default dark:border-spectrum-dark-9-default';
-    case 10:
+    }
+
+    case 10: {
       return 'border-spectrum-light-10-default dark:border-spectrum-dark-10-default';
-    default:
+    }
+
+    default: {
       return 'border-spectrum-light-11-default dark:border-spectrum-dark-11-default';
+    }
   }
 }
 
 export function getSpectrumTextClassName(color: unknown) {
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'text-spectrum-light-0-default dark:text-spectrum-dark-0-default';
-    case 1:
+    }
+
+    case 1: {
       return 'text-spectrum-light-1-default dark:text-spectrum-dark-1-default';
-    case 2:
+    }
+
+    case 2: {
       return 'text-spectrum-light-2-default dark:text-spectrum-dark-2-default';
-    case 3:
+    }
+
+    case 3: {
       return 'text-spectrum-light-3-default dark:text-spectrum-dark-3-default';
-    case 4:
+    }
+
+    case 4: {
       return 'text-spectrum-light-4-default dark:text-spectrum-dark-4-default';
-    case 5:
+    }
+
+    case 5: {
       return 'text-spectrum-light-5-default dark:text-spectrum-dark-5-default';
-    case 6:
+    }
+
+    case 6: {
       return 'text-spectrum-light-6-default dark:text-spectrum-dark-6-default';
-    case 7:
+    }
+
+    case 7: {
       return 'text-spectrum-light-7-default dark:text-spectrum-dark-7-default';
-    case 8:
+    }
+
+    case 8: {
       return 'text-spectrum-light-8-default dark:text-spectrum-dark-8-default';
-    case 9:
+    }
+
+    case 9: {
       return 'text-spectrum-light-9-default dark:text-spectrum-dark-9-default';
-    case 10:
+    }
+
+    case 10: {
       return 'text-spectrum-light-10-default dark:text-spectrum-dark-10-default';
-    default:
+    }
+
+    default: {
       return 'text-spectrum-light-11-default dark:text-spectrum-dark-11-default';
+    }
   }
 }
 
 export function getSpectrumDarkerTextClassName(color: unknown) {
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'text-spectrum-light-0-darker dark:text-spectrum-dark-0-darker';
-    case 1:
+    }
+
+    case 1: {
       return 'text-spectrum-light-1-darker dark:text-spectrum-dark-1-darker';
-    case 2:
+    }
+
+    case 2: {
       return 'text-spectrum-light-2-darker dark:text-spectrum-dark-2-darker';
-    case 3:
+    }
+
+    case 3: {
       return 'text-spectrum-light-3-darker dark:text-spectrum-dark-3-darker';
-    case 4:
+    }
+
+    case 4: {
       return 'text-spectrum-light-4-darker dark:text-spectrum-dark-4-darker';
-    case 5:
+    }
+
+    case 5: {
       return 'text-spectrum-light-5-darker dark:text-spectrum-dark-5-darker';
-    case 6:
+    }
+
+    case 6: {
       return 'text-spectrum-light-6-darker dark:text-spectrum-dark-6-darker';
-    case 7:
+    }
+
+    case 7: {
       return 'text-spectrum-light-7-darker dark:text-spectrum-dark-7-darker';
-    case 8:
+    }
+
+    case 8: {
       return 'text-spectrum-light-8-darker dark:text-spectrum-dark-8-darker';
-    case 9:
+    }
+
+    case 9: {
       return 'text-spectrum-light-9-darker dark:text-spectrum-dark-9-darker';
-    case 10:
+    }
+
+    case 10: {
       return 'text-spectrum-light-10-darker dark:text-spectrum-dark-10-darker';
-    default:
+    }
+
+    default: {
       return 'text-spectrum-light-11-darker dark:text-spectrum-dark-11-darker';
+    }
   }
 }
 
 export function getSpectrumAccentBackgroundClassName(color: unknown) {
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'bg-spectrum-light-0-darker dark:bg-spectrum-dark-0-lighter';
-    case 1:
+    }
+
+    case 1: {
       return 'bg-spectrum-light-1-darker dark:bg-spectrum-dark-1-lighter';
-    case 2:
+    }
+
+    case 2: {
       return 'bg-spectrum-light-2-darker dark:bg-spectrum-dark-2-lighter';
-    case 3:
+    }
+
+    case 3: {
       return 'bg-spectrum-light-3-darker dark:bg-spectrum-dark-3-lighter';
-    case 4:
+    }
+
+    case 4: {
       return 'bg-spectrum-light-4-darker dark:bg-spectrum-dark-4-lighter';
-    case 5:
+    }
+
+    case 5: {
       return 'bg-spectrum-light-5-darker dark:bg-spectrum-dark-5-lighter';
-    case 6:
+    }
+
+    case 6: {
       return 'bg-spectrum-light-6-darker dark:bg-spectrum-dark-6-lighter';
-    case 7:
+    }
+
+    case 7: {
       return 'bg-spectrum-light-7-darker dark:bg-spectrum-dark-7-lighter';
-    case 8:
+    }
+
+    case 8: {
       return 'bg-spectrum-light-8-darker dark:bg-spectrum-dark-8-lighter';
-    case 9:
+    }
+
+    case 9: {
       return 'bg-spectrum-light-9-darker dark:bg-spectrum-dark-9-lighter';
-    case 10:
+    }
+
+    case 10: {
       return 'bg-spectrum-light-10-darker dark:bg-spectrum-dark-10-lighter';
-    default:
+    }
+
+    default: {
       return 'bg-spectrum-light-11-darker dark:bg-spectrum-dark-11-lighter';
+    }
   }
 }
 
 export function getSpectrumAccentTextClassName(color: unknown) {
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'text-spectrum-light-0-darker dark:text-spectrum-dark-0-lighter';
-    case 1:
+    }
+
+    case 1: {
       return 'text-spectrum-light-1-darker dark:text-spectrum-dark-1-lighter';
-    case 2:
+    }
+
+    case 2: {
       return 'text-spectrum-light-2-darker dark:text-spectrum-dark-2-lighter';
-    case 3:
+    }
+
+    case 3: {
       return 'text-spectrum-light-3-darker dark:text-spectrum-dark-3-lighter';
-    case 4:
+    }
+
+    case 4: {
       return 'text-spectrum-light-4-darker dark:text-spectrum-dark-4-lighter';
-    case 5:
+    }
+
+    case 5: {
       return 'text-spectrum-light-5-darker dark:text-spectrum-dark-5-lighter';
-    case 6:
+    }
+
+    case 6: {
       return 'text-spectrum-light-6-darker dark:text-spectrum-dark-6-lighter';
-    case 7:
+    }
+
+    case 7: {
       return 'text-spectrum-light-7-darker dark:text-spectrum-dark-7-lighter';
-    case 8:
+    }
+
+    case 8: {
       return 'text-spectrum-light-8-darker dark:text-spectrum-dark-8-lighter';
-    case 9:
+    }
+
+    case 9: {
       return 'text-spectrum-light-9-darker dark:text-spectrum-dark-9-lighter';
-    case 10:
+    }
+
+    case 10: {
       return 'text-spectrum-light-10-darker dark:text-spectrum-dark-10-lighter';
-    default:
+    }
+
+    default: {
       return 'text-spectrum-light-11-darker dark:text-spectrum-dark-11-lighter';
+    }
   }
 }
 
@@ -185,31 +434,55 @@ export function getSpectrumSwatchBackgroundClassName(
   selected: boolean
 ) {
   if (!selected) return getSpectrumBackgroundClassName(color);
+
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'bg-spectrum-light-0-lighter dark:bg-spectrum-dark-0-darker';
-    case 1:
+    }
+
+    case 1: {
       return 'bg-spectrum-light-1-lighter dark:bg-spectrum-dark-1-darker';
-    case 2:
+    }
+
+    case 2: {
       return 'bg-spectrum-light-2-lighter dark:bg-spectrum-dark-2-darker';
-    case 3:
+    }
+
+    case 3: {
       return 'bg-spectrum-light-3-lighter dark:bg-spectrum-dark-3-darker';
-    case 4:
+    }
+
+    case 4: {
       return 'bg-spectrum-light-4-lighter dark:bg-spectrum-dark-4-darker';
-    case 5:
+    }
+
+    case 5: {
       return 'bg-spectrum-light-5-lighter dark:bg-spectrum-dark-5-darker';
-    case 6:
+    }
+
+    case 6: {
       return 'bg-spectrum-light-6-lighter dark:bg-spectrum-dark-6-darker';
-    case 7:
+    }
+
+    case 7: {
       return 'bg-spectrum-light-7-lighter dark:bg-spectrum-dark-7-darker';
-    case 8:
+    }
+
+    case 8: {
       return 'bg-spectrum-light-8-lighter dark:bg-spectrum-dark-8-darker';
-    case 9:
+    }
+
+    case 9: {
       return 'bg-spectrum-light-9-lighter dark:bg-spectrum-dark-9-darker';
-    case 10:
+    }
+
+    case 10: {
       return 'bg-spectrum-light-10-lighter dark:bg-spectrum-dark-10-darker';
-    default:
+    }
+
+    default: {
       return 'bg-spectrum-light-11-lighter dark:bg-spectrum-dark-11-darker';
+    }
   }
 }
 
@@ -218,30 +491,54 @@ export function getSpectrumSwatchBorderClassName(
   selected: boolean
 ) {
   if (!selected) return getSpectrumBorderClassName(color);
+
   switch (resolveColor(color)) {
-    case 0:
+    case 0: {
       return 'border-spectrum-light-0-darker dark:border-spectrum-dark-0-lighter';
-    case 1:
+    }
+
+    case 1: {
       return 'border-spectrum-light-1-darker dark:border-spectrum-dark-1-lighter';
-    case 2:
+    }
+
+    case 2: {
       return 'border-spectrum-light-2-darker dark:border-spectrum-dark-2-lighter';
-    case 3:
+    }
+
+    case 3: {
       return 'border-spectrum-light-3-darker dark:border-spectrum-dark-3-lighter';
-    case 4:
+    }
+
+    case 4: {
       return 'border-spectrum-light-4-darker dark:border-spectrum-dark-4-lighter';
-    case 5:
+    }
+
+    case 5: {
       return 'border-spectrum-light-5-darker dark:border-spectrum-dark-5-lighter';
-    case 6:
+    }
+
+    case 6: {
       return 'border-spectrum-light-6-darker dark:border-spectrum-dark-6-lighter';
-    case 7:
+    }
+
+    case 7: {
       return 'border-spectrum-light-7-darker dark:border-spectrum-dark-7-lighter';
-    case 8:
+    }
+
+    case 8: {
       return 'border-spectrum-light-8-darker dark:border-spectrum-dark-8-lighter';
-    case 9:
+    }
+
+    case 9: {
       return 'border-spectrum-light-9-darker dark:border-spectrum-dark-9-lighter';
-    case 10:
+    }
+
+    case 10: {
       return 'border-spectrum-light-10-darker dark:border-spectrum-dark-10-lighter';
-    default:
+    }
+
+    default: {
       return 'border-spectrum-light-11-darker dark:border-spectrum-dark-11-lighter';
+    }
   }
 }

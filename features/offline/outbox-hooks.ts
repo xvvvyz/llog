@@ -114,6 +114,8 @@ export const queueAudioAttachment = async ({
 
 export const removeQueuedAttachment = outboxStore.removeQueuedAttachment;
 
+export const updateQueuedAttachment = outboxStore.updateQueuedAttachment;
+
 export const setQueuedAttachmentStatus = outboxStore.setQueuedAttachmentStatus;
 
 export const queueSubmission = (input: types.QueueSubmissionInput) =>

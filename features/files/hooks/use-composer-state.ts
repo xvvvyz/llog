@@ -16,11 +16,14 @@ type UseFileComposerStateOptions = Pick<
   | 'deferQueuedUploads'
   | 'files'
   | 'onDeleteFile'
+  | 'onRenameFile'
   | 'onReorderFiles'
   | 'onUploadFile'
   | 'recordId'
   | 'replyId'
 > & { scopeKey: string };
+
+type OrderedFileInput = { id: string; order?: number | null };
 
 export const useFileComposerState = ({
   actionsDisabled,
@@ -28,6 +31,7 @@ export const useFileComposerState = ({
   isOpen,
   files,
   onDeleteFile,
+  onRenameFile,
   onReorderFiles,
   onUploadFile,
   recordId,
@@ -43,6 +47,11 @@ export const useFileComposerState = ({
   const visibleFiles = React.useMemo(
     () => files.filter((item) => !pendingDeletions[item.id]),
     [files, pendingDeletions]
+  );
+
+  const visibleFileIds = React.useMemo(
+    () => new Set(visibleFiles.map((item) => item.id)),
+    [visibleFiles]
   );
 
   const { audioMedia, documentFiles, visualMedia } =
@@ -75,6 +84,9 @@ export const useFileComposerState = ({
     focusedAudioId,
     pendingAudio,
     pendingDocuments,
+    pendingUploads,
+    reorderPendingUploads,
+    renamePendingUpload,
     removeLocalPreviewUri,
     uploadAssets,
   } = useFileUploadPreviewState({
@@ -91,6 +103,11 @@ export const useFileComposerState = ({
   const queuedAttachmentIds = React.useMemo(
     () => new Set(queuedAttachmentsForParent.map((item) => item.id)),
     [queuedAttachmentsForParent]
+  );
+
+  const pendingUploadIds = React.useMemo(
+    () => new Set(pendingUploads.map((item) => item.id)),
+    [pendingUploads]
   );
 
   const handleDeleteFile = React.useCallback(
@@ -113,16 +130,97 @@ export const useFileComposerState = ({
     ]
   );
 
-  const handleReorderFiles = React.useCallback(
-    (files: { id: string }[]) => {
+  const handleReorderDocumentFiles = React.useCallback(
+    (files: OrderedFileInput[]) => {
       if (actionsDisabled) return;
-      onReorderFiles?.(files);
+      if (deferQueuedUploads) reorderPendingUploads(files);
+
+      const persistedFiles = files.filter((file) =>
+        visibleFileIds.has(file.id)
+      );
+
+      if (!persistedFiles.length) return;
+      if (!deferQueuedUploads && queuedAttachmentsForParent.length > 0) return;
+      onReorderFiles?.(persistedFiles);
     },
-    [actionsDisabled, onReorderFiles]
+    [
+      actionsDisabled,
+      deferQueuedUploads,
+      onReorderFiles,
+      queuedAttachmentsForParent.length,
+      reorderPendingUploads,
+      visibleFileIds,
+    ]
   );
 
-  const canReorderFiles =
-    !actionsDisabled && queuedAttachmentsForParent.length === 0;
+  const handleReorderVisualItems = React.useCallback(
+    (files: OrderedFileInput[]) => {
+      if (actionsDisabled) return;
+
+      const allFilesArePendingUploads =
+        files.length > 1 &&
+        files.every(
+          (file) =>
+            pendingUploadIds.has(file.id) && !visibleFileIds.has(file.id)
+        );
+
+      if (allFilesArePendingUploads) {
+        reorderPendingUploads(files);
+        return;
+      }
+
+      if (queuedAttachmentsForParent.length > 0) return;
+      onReorderFiles?.(files);
+    },
+    [
+      actionsDisabled,
+      onReorderFiles,
+      pendingUploadIds,
+      queuedAttachmentsForParent.length,
+      reorderPendingUploads,
+      visibleFileIds,
+    ]
+  );
+
+  const handleRenameFile = React.useCallback(
+    async (fileId: string, name: string) => {
+      if (actionsDisabled) return;
+
+      if (
+        !visibleFileIds.has(fileId) &&
+        pendingUploads.some((item) => item.id === fileId)
+      ) {
+        renamePendingUpload(fileId, name);
+        return;
+      }
+
+      await onRenameFile?.(fileId, name);
+    },
+    [
+      actionsDisabled,
+      onRenameFile,
+      pendingUploads,
+      renamePendingUpload,
+      visibleFileIds,
+    ]
+  );
+
+  const canReorderPersistedFiles =
+    !!onReorderFiles &&
+    !actionsDisabled &&
+    queuedAttachmentsForParent.length === 0;
+
+  const canReorderDocumentFiles =
+    !!onReorderFiles &&
+    !actionsDisabled &&
+    documentFiles.length + pendingDocuments.length > 1 &&
+    (queuedAttachmentsForParent.length === 0 || !!deferQueuedUploads);
+
+  const canReorderQueuedVisualItems =
+    !!deferQueuedUploads &&
+    !actionsDisabled &&
+    allVisual.length > 1 &&
+    allVisual.every((item) => item.pending && pendingUploadIds.has(item.id));
 
   useClipboardFilePaste({
     enabled: isOpen && !actionsDisabled,
@@ -158,8 +256,14 @@ export const useFileComposerState = ({
     handleCaptureMedia,
     handleDeleteFile,
     handlePickDocuments,
-    handleReorderFiles:
-      onReorderFiles && canReorderFiles ? handleReorderFiles : undefined,
+    handleRenameFile: onRenameFile ? handleRenameFile : undefined,
+    handleReorderDocumentFiles: canReorderDocumentFiles
+      ? handleReorderDocumentFiles
+      : undefined,
+    handleReorderVisualItems:
+      canReorderPersistedFiles || canReorderQueuedVisualItems
+        ? handleReorderVisualItems
+        : undefined,
     isBusy: isDeleteTransitioning,
     fileCount,
     pendingAudio,

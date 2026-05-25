@@ -4,13 +4,13 @@ import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { type UseRecordResult } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Page } from '@/ui/page';
 import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { Animated, Easing, ScrollView, View } from 'react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 const TargetEntryHighlight = ({
   className,
@@ -185,7 +185,7 @@ export const DetailView = ({
               {shouldHighlight && (
                 <TargetEntryHighlight
                   targetKey={`${recordId}:${highlightKey}`}
-                  className={getSpectrumBackgroundClassName(
+                  className={spectrumClassNames.getSpectrumBackgroundClassName(
                     logColor.colorIndex
                   )}
                 />
@@ -218,9 +218,14 @@ export const DetailView = ({
             size="sm"
             variant="secondary"
             wrapperClassName="flex-1"
-            className={cn(
+            className={spectrumClassNames.getSpectrumBackgroundClassName(
+              logColor.colorIndex
+            )}
+            interactiveClassName={cn(
               'active:opacity-90 web:hover:opacity-90',
-              getSpectrumBackgroundClassName(logColor.colorIndex)
+              spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+                logColor.colorIndex
+              )
             )}
             onPress={() =>
               sheetManager.open('reply-create', recordId, undefined, {

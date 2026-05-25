@@ -2,6 +2,7 @@ import { LinkAttachments } from '@/features/records/components/link-attachments'
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
+import * as queuedLinks from '@/features/offline/queued-links';
 import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import { deleteLink } from '@/features/records/mutations/delete-link';
 import { reorderLinks } from '@/features/records/mutations/reorder-links';
@@ -153,12 +154,36 @@ export const LinkAttachmentsSheet = () => {
     [outbox.drafts, outbox.submissions]
   );
 
-  const handleReorderLinks = React.useCallback((links: { id: string }[]) => {
-    const orderedIds = links.map((link) => link.id);
-    void reorderLinks(links);
-    outboxStore.reorderQueuedLinks(orderedIds);
-    outboxStore.reorderQueuedDraftLinks(orderedIds);
-  }, []);
+  const handleReorderLinks = React.useCallback(
+    (
+      orderedLinks: {
+        id: string;
+        localStatus?: unknown;
+        order?: number | null;
+      }[]
+    ) => {
+      const orderedIds = orderedLinks.map((link) => link.id);
+
+      const persistedLinks = orderedLinks.filter(
+        (link) => !queuedLinks.isQueuedLinkLocalStatus(link.localStatus)
+      );
+
+      if (parent?.isDraft) {
+        outboxStore.reorderQueuedDraftLinksForParent({
+          baseLinks: links.map(queuedLinks.toQueuedLinkSnapshot),
+          orderedIds,
+          parentId: parent.id,
+          parentType: parent.type,
+        });
+      } else {
+        outboxStore.reorderQueuedDraftLinks(orderedIds);
+      }
+
+      outboxStore.reorderQueuedLinks(orderedIds);
+      if (persistedLinks.length) void reorderLinks(persistedLinks);
+    },
+    [links, parent]
+  );
 
   return (
     <LinkAttachments

@@ -5,10 +5,17 @@ import { deleteLink } from '@/features/records/mutations/delete-link';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import * as ScrollSheetMenu from '@/ui/scroll-sheet-menu';
+import { Text } from '@/ui/text';
 import { Link as LinkIcon } from 'phosphor-react-native';
 import * as React from 'react';
+
+type OrderedComposerLink = {
+  id: string;
+  localStatus?: unknown;
+  order?: number | null;
+};
 
 export const useComposerLinkAttachments = ({
   actionsDisabled,
@@ -18,7 +25,7 @@ export const useComposerLinkAttachments = ({
 }: {
   actionsDisabled?: boolean;
   links: Link[];
-  onReorderLinks?: (links: { id: string }[]) => void;
+  onReorderLinks?: (links: OrderedComposerLink[]) => void;
   parent?: sheetPayloads.RecordSheetParent;
 }) => {
   const sheetManager = useSheetManager();
@@ -54,27 +61,31 @@ export const useComposerLinkAttachments = ({
     () => (
       <LinkAttachments
         actionsDisabled={actionsDisabled}
-        className={cn(links.length === 1 && '-my-1.5')}
+        className={cn(links.length > 0 && '-my-[9px]')}
         links={links}
         onDeleteLink={handleDeleteLink}
         onReorderLinks={onReorderLinks}
         parent={parent ? { ...parent, links } : undefined}
-        triggerClassName="px-0"
+        triggerActionClassName="-mr-[9px]"
+        triggerClassName="min-h-8 px-0"
       />
     ),
     [actionsDisabled, handleDeleteLink, links, onReorderLinks, parent]
   );
 
-  const linkToolbarItems = (
-    <Button
+  const linkAttachmentMenuItem = (
+    <ScrollSheetMenu.Item
       disabled={actionsDisabled || !parent}
       onPress={handleOpenLinkEditor}
-      size="icon-xs"
-      variant="secondary"
     >
-      <Icon icon={LinkIcon} />
-    </Button>
+      <Icon className="text-placeholder" icon={LinkIcon} />
+      <Text>Add link</Text>
+    </ScrollSheetMenu.Item>
   );
 
-  return { linkAttachmentCount: links.length, linkPreview, linkToolbarItems };
+  return {
+    linkAttachmentCount: links.length,
+    linkAttachmentMenuItem,
+    linkPreview,
+  };
 };

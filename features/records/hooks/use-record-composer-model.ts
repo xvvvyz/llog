@@ -255,6 +255,12 @@ export const useRecordComposerModel = () => {
     ? spectrumClassNames.getSpectrumBackgroundClassName(logColor.colorIndex)
     : undefined;
 
+  const logColorInteractiveClassName = shouldUseLogAccent
+    ? spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+        logColor.colorIndex
+      )
+    : undefined;
+
   const myRole = useMyRole({ teamId: recordTeamId ?? null });
 
   const canCheckRecordTags =
@@ -531,12 +537,17 @@ export const useRecordComposerModel = () => {
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
       recordId
-        ? { id: recordId, teamId: recordTeamId, type: 'record' }
+        ? {
+            id: recordId,
+            isDraft: !!record?.isDraft,
+            teamId: recordTeamId,
+            type: 'record',
+          }
         : undefined,
-    [recordId, recordTeamId]
+    [record?.isDraft, recordId, recordTeamId]
   );
 
-  const { linkAttachmentCount, linkPreview, linkToolbarItems } =
+  const { linkAttachmentCount, linkAttachmentMenuItem, linkPreview } =
     useComposerLinkAttachments({
       links,
       onReorderLinks: handleReorderLinks,
@@ -665,15 +676,14 @@ export const useRecordComposerModel = () => {
       })
     : null;
 
-  const recordTimeToolbarItem =
-    recordId && (!isCopy || isSingleTargetCopy)
-      ? React.createElement(recordTimeSheet2.RecordTimeButton, {
-          disabled: false,
-          iconClassName: accentTextClassName,
-          isCustom: !!selectedRecordDate,
-          onPress: handleOpenRecordTime,
-        })
-      : null;
+  const recordTimeToolbarItem = recordId
+    ? React.createElement(recordTimeSheet2.RecordTimeButton, {
+        disabled: false,
+        iconClassName: accentTextClassName,
+        isCustom: !!selectedRecordDate,
+        onPress: handleOpenRecordTime,
+      })
+    : null;
 
   const recordTimeSheet = React.createElement(
     recordTimeSheet2.RecordTimeSheet,
@@ -690,11 +700,11 @@ export const useRecordComposerModel = () => {
 
   const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
     extraAttachmentCount: linkAttachmentCount,
+    extraAttachmentMenuItems: linkAttachmentMenuItem,
     extraPreview: linkPreview,
     extraToolbarItems: React.createElement(
       React.Fragment,
       null,
-      linkToolbarItems,
       recordTimeToolbarItem,
       tagToolbarItem,
       pinToolbarItem
@@ -939,6 +949,9 @@ export const useRecordComposerModel = () => {
         ? copyLoading || !copyDraft
         : !outbox.hydrated || (!!logId && !draft.id),
     logColorClassName: isEdit ? undefined : logColorClassName,
+    logColorInteractiveClassName: isEdit
+      ? undefined
+      : logColorInteractiveClassName,
     fileCount,
     filePreview,
     onChangeText: handleChangeText,

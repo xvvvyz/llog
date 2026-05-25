@@ -112,7 +112,7 @@ export const useTagSheetController = ({
     [canToggleTags, setSelected]
   );
 
-  const canCreateTag =
+  const canCreateTagFromInput =
     canToggleTags &&
     canCreateDefinitions &&
     canCreateNewTag &&
@@ -120,8 +120,15 @@ export const useTagSheetController = ({
     !!query &&
     !queryExistingTagId;
 
+  const tagInputAction = queryExistingTagId
+    ? canToggleTags && !tags.isLoading
+      ? ('add' as const)
+      : null
+    : canCreateTagFromInput
+      ? ('create' as const)
+      : null;
+
   return {
-    canCreateTag,
     getSelected,
     handleReorder,
     handleSelectTag,
@@ -130,6 +137,7 @@ export const useTagSheetController = ({
     query,
     rawQuery,
     setRawQuery,
+    tagInputAction,
     tagsIsLoading: tags.isLoading,
     visibleTags,
   };

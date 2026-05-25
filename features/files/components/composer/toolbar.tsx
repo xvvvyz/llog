@@ -1,5 +1,7 @@
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import * as ScrollSheetMenu from '@/ui/scroll-sheet-menu';
+import { Text } from '@/ui/text';
 import type * as React from 'react';
 import { Platform } from 'react-native';
 
@@ -8,36 +10,72 @@ import {
   ImageSquare,
   Microphone,
   Paperclip,
+  Plus,
   UploadSimple,
 } from 'phosphor-react-native';
 
 export const Toolbar = ({
+  attachmentMenuItems,
   disabled,
   canAddAudio,
   onBrowseMedia,
   onCaptureMedia,
   onOpenAudio,
   onPickDocuments,
+  portalName,
   trailingItems,
 }: {
+  attachmentMenuItems?: React.ReactNode;
   disabled?: boolean;
   canAddAudio: boolean;
   onBrowseMedia: () => void | Promise<void>;
   onCaptureMedia: () => void | Promise<void>;
   onOpenAudio: () => void;
   onPickDocuments: () => void | Promise<void>;
+  portalName: string;
   trailingItems?: React.ReactNode;
 }) => {
+  const attachmentMenu = (
+    <ScrollSheetMenu.Root
+      portalName={portalName}
+      trigger={({ open }) => (
+        <Button
+          accessibilityLabel="Add attachment"
+          disabled={disabled}
+          onPress={open}
+          size="icon-xs"
+          variant="secondary"
+        >
+          <Icon icon={Plus} />
+        </Button>
+      )}
+    >
+      <ScrollSheetMenu.Item disabled={disabled} onPress={onPickDocuments}>
+        <Icon
+          className="text-placeholder"
+          icon={Platform.OS === 'web' ? UploadSimple : Paperclip}
+        />
+        <Text>Upload file</Text>
+      </ScrollSheetMenu.Item>
+      {Platform.OS !== 'web' && (
+        <ScrollSheetMenu.Item disabled={disabled} onPress={onBrowseMedia}>
+          <Icon className="text-placeholder" icon={ImageSquare} />
+          <Text>Photo/video</Text>
+        </ScrollSheetMenu.Item>
+      )}
+      {Platform.OS === 'ios' && (
+        <ScrollSheetMenu.Item disabled={disabled} onPress={onCaptureMedia}>
+          <Icon className="text-placeholder" icon={Camera} />
+          <Text>Camera</Text>
+        </ScrollSheetMenu.Item>
+      )}
+      {attachmentMenuItems}
+    </ScrollSheetMenu.Root>
+  );
+
   return Platform.OS === 'web' ? (
     <>
-      <Button
-        disabled={disabled}
-        onPress={onPickDocuments}
-        size="icon-xs"
-        variant="secondary"
-      >
-        <Icon icon={UploadSimple} />
-      </Button>
+      {attachmentMenu}
       <Button
         disabled={disabled || !canAddAudio}
         onPress={onOpenAudio}
@@ -50,32 +88,7 @@ export const Toolbar = ({
     </>
   ) : (
     <>
-      <Button
-        disabled={disabled}
-        onPress={onPickDocuments}
-        size="icon-xs"
-        variant="secondary"
-      >
-        <Icon icon={Paperclip} />
-      </Button>
-      <Button
-        disabled={disabled}
-        onPress={onBrowseMedia}
-        size="icon-xs"
-        variant="secondary"
-      >
-        <Icon icon={ImageSquare} />
-      </Button>
-      {Platform.OS === 'ios' && (
-        <Button
-          disabled={disabled}
-          onPress={onCaptureMedia}
-          size="icon-xs"
-          variant="secondary"
-        >
-          <Icon icon={Camera} />
-        </Button>
-      )}
+      {attachmentMenu}
       <Button
         disabled={disabled || !canAddAudio}
         onPress={onOpenAudio}

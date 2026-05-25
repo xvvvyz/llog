@@ -97,6 +97,7 @@ export const SheetBackdrop = () => {
 export const Sheet = ({
   children,
   className,
+  desktopAccessory,
   layer = SHEET_LAYERS.action,
   loading,
   onDismiss,
@@ -109,6 +110,7 @@ export const Sheet = ({
 }: {
   children: React.ReactNode;
   className?: string;
+  desktopAccessory?: React.ReactNode;
   layer?: number;
   loading?: boolean;
   onDismiss: () => void;
@@ -253,6 +255,16 @@ export const Sheet = ({
             {sheetCard}
           </GestureDetector>
         )}
+        {isDesktopSheet && desktopAccessory ? (
+          <Animated.View
+            className="absolute inset-0 pointer-events-none items-center justify-center md:px-6"
+            style={sheetDragBehavior.sheetStyle}
+          >
+            <View className="relative h-full max-w-sheet w-full pointer-events-none">
+              {desktopAccessory}
+            </View>
+          </Animated.View>
+        ) : null}
         {isDesktopSheet ? null : (
           <Animated.View
             className="border-border border-x bg-popover"

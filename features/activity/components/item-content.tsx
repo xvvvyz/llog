@@ -26,21 +26,13 @@ export const ItemContent = ({
   switch (type) {
     case 'record_published': {
       return recordText ? (
-        <ActivityText
-          logColorIndex={logColorIndex}
-          text={recordText}
-          variant="record"
-        />
+        <ActivityText text={recordText} variant="record" />
       ) : null;
     }
 
     case 'reply_posted': {
       return replyText ? (
-        <ActivityText
-          logColorIndex={logColorIndex}
-          text={replyText}
-          variant="reply"
-        />
+        <ActivityText text={replyText} variant="reply" />
       ) : null;
     }
 
@@ -94,28 +86,16 @@ export const ItemContent = ({
 };
 
 const ActivityText = ({
-  logColorIndex,
   text,
   variant,
 }: {
-  logColorIndex?: number | null;
   text: string;
   variant: 'record' | 'reply';
 }) => (
   <TruncatedText
+    className={cn(variant === 'record' ? '-mt-1' : '-my-1', 'px-4')}
     expandable={false}
     numberOfLines={ACTIVITY_TEXT_LINES}
     text={text}
-    className={cn(
-      variant === 'record' ? '-mt-1' : '-my-1',
-      'px-4',
-      logColorIndex != null &&
-        spectrumClassNames.getSpectrumDarkerTextClassName(logColorIndex)
-    )}
-    linkClassName={
-      logColorIndex != null
-        ? spectrumClassNames.getSpectrumDarkerTextClassName(logColorIndex)
-        : undefined
-    }
   />
 );

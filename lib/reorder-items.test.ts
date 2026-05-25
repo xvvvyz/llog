@@ -16,9 +16,11 @@ const transact = mock((items: unknown) => {
 mock.module('@/lib/db', () => ({ db: { transact } }));
 let reorderItems!: (typeof import('@/lib/reorder-items'))['reorderItems'];
 let applyOrderedIds!: (typeof import('@/lib/reorder-items'))['applyOrderedIds'];
+let getReorderedItems!: (typeof import('@/lib/reorder-items'))['getReorderedItems'];
 
 beforeAll(async () => {
-  ({ applyOrderedIds, reorderItems } = await import('@/lib/reorder-items'));
+  ({ applyOrderedIds, getReorderedItems, reorderItems } =
+    await import('@/lib/reorder-items'));
 });
 
 beforeEach(() => {
@@ -102,6 +104,29 @@ describe('applyOrderedIds', () => {
       'second',
       'third',
       'fourth',
+    ]);
+  });
+});
+
+describe('getReorderedItems', () => {
+  test('keeps order slots', () => {
+    expect(
+      getReorderedItems([
+        { id: 'third', order: 30 },
+        { id: 'first', order: 10 },
+        { id: 'second', order: 20 },
+      ])
+    ).toEqual([
+      { id: 'third', order: 10 },
+      { id: 'first', order: 20 },
+      { id: 'second', order: 30 },
+    ]);
+  });
+
+  test('fills missing orders', () => {
+    expect(getReorderedItems([{ id: 'second' }, { id: 'first' }])).toEqual([
+      { id: 'second', order: 0 },
+      { id: 'first', order: 1 },
     ]);
   });
 });

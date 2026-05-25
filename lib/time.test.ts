@@ -68,6 +68,12 @@ describe('time', () => {
 
   test('formats relative date from now', () => {
     expect(
+      time.formatDate(new Date(2026, 4, 25, 9, 59, 45), {
+        now: new Date(2026, 4, 25, 10, 0),
+      })
+    ).toBe('Less than a minute ago');
+
+    expect(
       time.formatDate(new Date(2026, 4, 25, 9, 45), {
         now: new Date(2026, 4, 25, 10, 0),
       })

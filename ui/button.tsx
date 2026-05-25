@@ -46,19 +46,30 @@ const buttonVariants = cva(
         xs: 'h-8 px-2 rounded-lg gap-2 border-continuous',
       },
       variant: {
-        default: 'bg-primary web:hover:bg-primary/80 active:bg-primary/60',
-        destructive:
-          'bg-destructive web:hover:bg-destructive/80 active:bg-destructive/60',
-        ghost: 'web:hover:bg-accent active:bg-accent',
+        default: 'bg-primary',
+        destructive: 'bg-destructive',
+        ghost: '',
         link: 'p-0 h-auto w-auto rounded-none gap-1.5 border-continuous',
-        outline:
-          'bg-none web:hover:bg-accent active:bg-accent border border-border',
-        secondary:
-          'bg-secondary web:hover:opacity-80 active:opacity-60 border border-border-secondary',
+        outline: 'bg-none border border-border',
+        secondary: 'bg-secondary border border-border-secondary',
       },
     },
   }
 );
+
+const buttonInteractionVariants = cva('', {
+  defaultVariants: { variant: 'default' },
+  variants: {
+    variant: {
+      default: 'web:hover:bg-primary/80 active:bg-primary/60',
+      destructive: 'web:hover:bg-destructive/80 active:bg-destructive/60',
+      ghost: 'web:hover:bg-accent active:bg-accent',
+      link: '',
+      outline: 'web:hover:bg-accent active:bg-accent',
+      secondary: 'web:hover:opacity-80 active:opacity-60',
+    },
+  },
+});
 
 const buttonTextVariants = cva(
   'web:whitespace-nowrap leading-5 font-medium text-foreground web:transition-colors',
@@ -88,6 +99,7 @@ const buttonTextVariants = cva(
 
 type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
   VariantProps<typeof buttonVariants> & {
+    interactiveClassName?: string;
     pressOnWebTouchRelease?: boolean;
     ripple?: 'default' | 'inverse';
     wrapperClassName?: string;
@@ -194,6 +206,7 @@ const Button = React.forwardRef<
     {
       className,
       disabled,
+      interactiveClassName,
       onPress,
       pressOnWebTouchRelease,
       onTouchCancel,
@@ -225,6 +238,7 @@ const Button = React.forwardRef<
 
     const shouldHaveRipple = variant !== 'link';
     const shouldPressOnWebTouchRelease = pressOnWebTouchRelease ?? true;
+    const hasCustomInteractionClassName = !!interactiveClassName;
 
     const clearSkipPressResetTimeout = React.useCallback(() => {
       if (!skipPressResetTimeoutRef.current) return;
@@ -336,7 +350,6 @@ const Button = React.forwardRef<
         >
           <Pressable
             ref={ref}
-            className={cn(buttonVariants({ className, size, variant }))}
             disabled={disabled}
             onPress={onPress ? handlePress : undefined}
             onTouchEnd={shouldHandleTouchRelease ? handleTouchEnd : undefined}
@@ -347,6 +360,14 @@ const Button = React.forwardRef<
                 ? { color: rippleColor, borderless: false }
                 : undefined
             }
+            className={cn(
+              buttonVariants({ size, variant }),
+              className,
+              !disabled &&
+                !hasCustomInteractionClassName &&
+                buttonInteractionVariants({ variant }),
+              !disabled && interactiveClassName
+            )}
             onTouchCancel={
               shouldHandleTouchRelease ? handleTouchCancel : undefined
             }

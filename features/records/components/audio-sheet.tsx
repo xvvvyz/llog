@@ -8,11 +8,11 @@ import { uploadReplyFile } from '@/features/records/mutations/upload-reply-file'
 import { useRecord } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { durationSecondsToMs } from '@/lib/duration';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Sheet } from '@/ui/sheet';
 import { id } from '@instantdb/react-native';
 import * as React from 'react';
 import * as existingUpload from '@/features/files/lib/existing-upload';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 type AudioContext = { type: 'record' } | { type: 'reply'; recordId: string };
 
@@ -104,7 +104,13 @@ export const RecordAudioSheet = () => {
   const logColor = useLogColor({ id: record.log?.id });
 
   const saveColorClassName = record.log?.id
-    ? getSpectrumBackgroundClassName(logColor.colorIndex)
+    ? spectrumClassNames.getSpectrumBackgroundClassName(logColor.colorIndex)
+    : undefined;
+
+  const saveInteractiveColorClassName = record.log?.id
+    ? spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+        logColor.colorIndex
+      )
     : undefined;
 
   const isMicActive = isRecording && !isUploading;
@@ -366,6 +372,7 @@ export const RecordAudioSheet = () => {
         isMicActive={isMicActive}
         isUploading={isUploading}
         logColorClassName={saveColorClassName}
+        logColorInteractiveClassName={saveInteractiveColorClassName}
         onCancel={handleCancel}
         onSave={handleSave}
         startError={startError}

@@ -40,6 +40,7 @@ export const ComposerForm = ({
   isTextInputDisabled = false,
   isTextareaFocused,
   logColorClassName,
+  logColorInteractiveClassName,
   filePreview,
   fullscreenPortalName,
   onChangeText,
@@ -65,6 +66,7 @@ export const ComposerForm = ({
   isTextInputDisabled?: boolean;
   isTextareaFocused: boolean;
   logColorClassName?: string;
+  logColorInteractiveClassName?: string;
   filePreview: React.ReactNode;
   fullscreenPortalName: string;
   inputAccessory?: React.ReactNode;
@@ -375,14 +377,19 @@ export const ComposerForm = ({
               )}
             </View>
             <Button
+              className={logColorClassName}
               disabled={isBusy || isSubmitting || !hasContent}
               onPress={onSubmit}
               size="xs"
               variant={submitVariant}
-              className={cn(
-                'active:opacity-90 web:hover:opacity-90',
-                logColorClassName
-              )}
+              interactiveClassName={
+                logColorInteractiveClassName
+                  ? cn(
+                      'active:opacity-90 web:hover:opacity-90',
+                      logColorInteractiveClassName
+                    )
+                  : undefined
+              }
             >
               {isSubmitting ? (
                 <Spinner color={logColorClassName ? 'white' : undefined} />

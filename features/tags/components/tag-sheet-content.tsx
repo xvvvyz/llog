@@ -2,7 +2,6 @@ import { TagRow } from '@/features/tags/components/tag-row';
 import type { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
 import type { Color } from '@/theme/spectrum';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
@@ -13,9 +12,9 @@ import { Plus } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 export const TagSheetContent = ({
-  canCreateTag,
   canManageColor,
   canManageDefinitions = true,
   canToggleTags = true,
@@ -32,9 +31,9 @@ export const TagSheetContent = ({
   rawQuery,
   setRawQuery,
   sortEnabled,
+  tagInputAction,
   visibleTags,
 }: {
-  canCreateTag: boolean;
   canManageColor?: boolean;
   canManageDefinitions?: boolean;
   canToggleTags?: boolean;
@@ -51,6 +50,7 @@ export const TagSheetContent = ({
   rawQuery: string;
   setRawQuery: (query: string) => void;
   sortEnabled: boolean;
+  tagInputAction: 'add' | 'create' | null;
   visibleTags: Tag[];
 }) => {
   const searchInputRef =
@@ -75,13 +75,22 @@ export const TagSheetContent = ({
   );
 
   const hasVisibleTags = visibleTags.length > 0;
-  const showCreateTag = canCreateTag && !hasVisibleTags;
+  const showCreateTag = tagInputAction === 'create';
 
   const showEmptyState =
     !isLoading && !rawQuery && !hasVisibleTags && !showCreateTag;
 
   const showScrollArea =
     isLoading || hasVisibleTags || showCreateTag || showEmptyState;
+
+  const footerActionLabel =
+    tagInputAction === 'create'
+      ? 'Create'
+      : tagInputAction === 'add'
+        ? 'Add'
+        : 'Done';
+
+  const handleFooterAction = tagInputAction ? handleSubmitTag : onClose;
 
   return (
     <>
@@ -104,7 +113,9 @@ export const TagSheetContent = ({
                 <View
                   className={cn(
                     'size-3.5 border-border-secondary border-continuous rounded-full border',
-                    getSpectrumBackgroundClassName(defaultTagColor)
+                    spectrumClassNames.getSpectrumBackgroundClassName(
+                      defaultTagColor
+                    )
                   )}
                 />
               </View>
@@ -168,12 +179,31 @@ export const TagSheetContent = ({
           wrapperClassName="flex-1 min-w-0"
         />
         <Button
-          onPress={onClose}
+          onPress={handleFooterAction}
           size="sm"
           variant="secondary"
           wrapperClassName="shrink-0"
+          className={
+            tagInputAction
+              ? spectrumClassNames.getSpectrumBackgroundClassName(
+                  defaultTagColor
+                )
+              : undefined
+          }
+          interactiveClassName={
+            tagInputAction
+              ? cn(
+                  'active:opacity-90 web:hover:opacity-90',
+                  spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+                    defaultTagColor
+                  )
+                )
+              : undefined
+          }
         >
-          <Text>Done</Text>
+          <Text className={cn(tagInputAction && 'text-white')}>
+            {footerActionLabel}
+          </Text>
         </Button>
       </SheetFooter>
     </>

@@ -40,13 +40,14 @@ export interface UseFileComposerOptions {
   replyId?: string;
   isOpen: boolean;
   extraAttachmentCount?: number;
+  extraAttachmentMenuItems?: React.ReactNode;
   extraPreview?: React.ReactNode;
   extraToolbarItems?: React.ReactNode;
   files: FileItem[];
   onDeleteFile: (fileId: string) => Promise<void>;
   onOpenAudio: () => void;
   onRenameFile?: (fileId: string, name: string) => Promise<void>;
-  onReorderFiles?: (files: { id: string }[]) => void;
+  onReorderFiles?: (files: { id: string; order?: number | null }[]) => void;
   onUploadFile: (
     asset: pickedFiles.PickedFileAsset,
     fileId: string,

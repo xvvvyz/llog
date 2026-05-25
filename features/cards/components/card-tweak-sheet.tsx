@@ -4,7 +4,6 @@ import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { cn } from '@/lib/cn';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -12,6 +11,7 @@ import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
 import * as React from 'react';
 import { View } from 'react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 const CARD_TWEAK_PROMPT_MAX_LENGTH = 1000;
 
@@ -105,9 +105,14 @@ export const LogCardTweakSheet = () => {
             size="sm"
             variant="secondary"
             wrapperClassName="flex-1"
-            className={cn(
+            className={spectrumClassNames.getSpectrumBackgroundClassName(
+              logColor.colorIndex
+            )}
+            interactiveClassName={cn(
               'active:opacity-90 web:hover:opacity-90',
-              getSpectrumBackgroundClassName(logColor.colorIndex)
+              spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+                logColor.colorIndex
+              )
             )}
           >
             {isSubmitting ? (

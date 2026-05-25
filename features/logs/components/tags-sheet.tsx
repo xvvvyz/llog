@@ -85,7 +85,6 @@ export const LogTagsSheet = () => {
       variant="list"
     >
       <TagSheetContent
-        canCreateTag={tagSheet.canCreateTag}
         canManageColor
         defaultTagColor={logColorIndex}
         emptyStateText="Create tags to organize logs."
@@ -100,6 +99,7 @@ export const LogTagsSheet = () => {
         rawQuery={tagSheet.rawQuery}
         setRawQuery={tagSheet.setRawQuery}
         sortEnabled={!tagSheet.rawQuery}
+        tagInputAction={tagSheet.tagInputAction}
         visibleTags={tagSheet.visibleTags}
       />
     </Sheet>

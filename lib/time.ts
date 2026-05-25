@@ -167,6 +167,14 @@ export const formatIsoDateTimeInTextByDay = (text: string) => {
   });
 };
 
+const capitalizeInitialLowercase = (value: string) =>
+  value.replace(/^[a-z]/, (letter) => letter.toUpperCase());
+
+const formatRelativeTimeLabel = (date: Date | number, now: Date) =>
+  capitalizeInitialLowercase(
+    formatDistance(date, now, { addSuffix: true }).replace(/^about /, '')
+  );
+
 export const formatDate = (
   date?: Date | string | number,
   options?: { now?: Date | string | number }
@@ -174,10 +182,7 @@ export const formatDate = (
   if (!date) return '';
   if (typeof date === 'string') date = new Date(date);
   const now = options?.now == null ? new Date() : new Date(options.now);
-
-  if (isSameDay(date, now)) {
-    return formatDistance(date, now, { addSuffix: true }).replace('about ', '');
-  }
+  if (isSameDay(date, now)) return formatRelativeTimeLabel(date, now);
 
   if (isSameDay(date, subDays(now, 1))) {
     return `Yesterday at ${format(date, 'h:mm a')}`;

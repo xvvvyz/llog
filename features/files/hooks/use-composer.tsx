@@ -11,6 +11,7 @@ export const useFileComposer = ({
   replyId,
   isOpen,
   extraAttachmentCount = 0,
+  extraAttachmentMenuItems,
   extraPreview,
   extraToolbarItems,
   files,
@@ -33,7 +34,9 @@ export const useFileComposer = ({
     handleCaptureMedia,
     handleDeleteFile,
     handlePickDocuments,
-    handleReorderFiles,
+    handleRenameFile,
+    handleReorderDocumentFiles,
+    handleReorderVisualItems,
     isBusy,
     fileCount,
     pendingAudio,
@@ -45,6 +48,7 @@ export const useFileComposer = ({
     isOpen,
     files,
     onDeleteFile,
+    onRenameFile,
     onReorderFiles,
     onUploadFile,
     recordId,
@@ -74,8 +78,9 @@ export const useFileComposer = ({
       onFocusedAudioApplied={clearFocusedAudioId}
       onOpenVisual={handleOpenVisual}
       onRemoteReady={removeLocalPreviewUri}
-      onRenameFile={onRenameFile}
-      onReorderFiles={handleReorderFiles}
+      onRenameFile={handleRenameFile}
+      onReorderDocumentFiles={handleReorderDocumentFiles}
+      onReorderVisualItems={handleReorderVisualItems}
       pendingAudio={pendingAudio}
       pendingDocuments={pendingDocuments}
       visualItems={allVisual}
@@ -84,6 +89,7 @@ export const useFileComposer = ({
 
   const toolbar = (
     <Toolbar
+      attachmentMenuItems={extraAttachmentMenuItems}
       canAddAudio={canAddAudio}
       disabled={actionsDisabled}
       onBrowseMedia={handleBrowseMedia}
@@ -91,6 +97,11 @@ export const useFileComposer = ({
       onOpenAudio={onOpenAudio}
       onPickDocuments={handlePickDocuments}
       trailingItems={extraToolbarItems}
+      portalName={[
+        'file-composer-attachment-menu',
+        recordId ?? 'draft',
+        replyId ?? 'record',
+      ].join('-')}
     />
   );
 

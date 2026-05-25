@@ -12,6 +12,8 @@ type ComposerFileCallbacksOptions = {
   ) => Promise<void>;
 };
 
+type OrderedComposerFile = { id: string; order?: number | null };
+
 export const useComposerFileCallbacks = ({
   onDeleteFile,
   onUploadFile,
@@ -37,9 +39,12 @@ export const useComposerFileCallbacks = ({
     []
   );
 
-  const handleReorderFiles = React.useCallback((files: { id: string }[]) => {
-    void reorderFiles(files);
-  }, []);
+  const handleReorderFiles = React.useCallback(
+    (files: OrderedComposerFile[]) => {
+      void reorderFiles(files);
+    },
+    []
+  );
 
   return {
     handleDeleteFile,

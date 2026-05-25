@@ -61,12 +61,14 @@ export type RecordSheetLinkSnapshot = {
 export type RecordSheetParent =
   | {
       id: string;
+      isDraft?: boolean;
       links?: RecordSheetLinkSnapshot[];
       teamId?: string;
       type: 'record';
     }
   | {
       id: string;
+      isDraft?: boolean;
       links?: RecordSheetLinkSnapshot[];
       recordId: string;
       teamId?: string;

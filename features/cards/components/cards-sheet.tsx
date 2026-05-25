@@ -7,7 +7,6 @@ import { TemplateTagSummary } from '@/features/logs/components/template-tag-summ
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { cn } from '@/lib/cn';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
 import { nativePointerEvents } from '@/ui/pointer-events';
@@ -19,6 +18,7 @@ import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 const CardRow = ({
   card,
@@ -209,9 +209,14 @@ export const LogCardsSheet = () => {
             size="sm"
             variant="secondary"
             wrapperClassName="flex-1"
-            className={cn(
+            className={spectrumClassNames.getSpectrumBackgroundClassName(
+              logColor.colorIndex
+            )}
+            interactiveClassName={cn(
               'active:opacity-90 web:hover:opacity-90',
-              getSpectrumBackgroundClassName(logColor.colorIndex)
+              spectrumClassNames.getSpectrumInteractiveBackgroundClassName(
+                logColor.colorIndex
+              )
             )}
           >
             <Text className="text-white">New</Text>

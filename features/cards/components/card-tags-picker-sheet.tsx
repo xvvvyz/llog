@@ -109,7 +109,6 @@ export const CardTagsPickerSheet = ({
       variant="list"
     >
       <TagSheetContent
-        canCreateTag={tagSheet.canCreateTag}
         canManageColor
         defaultTagColor={logColorIndex}
         emptyStateText="Create reusable tags for records in this log."
@@ -124,6 +123,7 @@ export const CardTagsPickerSheet = ({
         rawQuery={tagSheet.rawQuery}
         setRawQuery={tagSheet.setRawQuery}
         sortEnabled={!tagSheet.rawQuery}
+        tagInputAction={tagSheet.tagInputAction}
         visibleTags={tagSheet.visibleTags}
       />
     </Sheet>

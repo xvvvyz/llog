@@ -34,10 +34,6 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
-const CHART_PADDING = { bottom: 24, left: 0, right: 0, top: 12 };
-const COMPACT_CHART_PADDING = { bottom: 4, left: 0, right: 0, top: 4 };
-const COMPACT_BAR_CHART_PADDING = { bottom: 24, left: 0, right: 0, top: 8 };
-const HIDDEN_X_AXIS_BOTTOM_PADDING = 8;
 const MAX_Y_AXIS_TICKS = 6;
 const CHART_SCROLL_LOCK_DISTANCE = 8;
 const AXIS_LABEL_FONT_SIZE = 11;
@@ -50,8 +46,30 @@ const AXIS_LABEL_SVG_FONT_FAMILY =
 
 const AXIS_TICK_SIZE = 4;
 const X_AXIS_TICK_LABEL_GAP = 5;
+
+const X_AXIS_LABEL_BOTTOM_PADDING =
+  AXIS_TICK_SIZE + X_AXIS_TICK_LABEL_GAP + AXIS_LABEL_FONT_SIZE;
+
 const X_AXIS_LABEL_MIN_GAP = 8;
 const Y_AXIS_TICK_LABEL_GAP = 8;
+
+const CHART_PADDING = {
+  bottom: X_AXIS_LABEL_BOTTOM_PADDING,
+  left: 0,
+  right: 0,
+  top: 12,
+};
+
+const COMPACT_CHART_PADDING = { bottom: 4, left: 0, right: 0, top: 4 };
+
+const COMPACT_BAR_CHART_PADDING = {
+  bottom: X_AXIS_LABEL_BOTTOM_PADDING,
+  left: 0,
+  right: 0,
+  top: 8,
+};
+
+const HIDDEN_X_AXIS_BOTTOM_PADDING = 8;
 const LINE_DOMAIN_PADDING = 0.08;
 const CHART_GRID_OPACITY = 0.35;
 const COMPACT_CHART_GRID_OPACITY = 0.24;
@@ -1309,9 +1327,7 @@ const ChartLegend = ({
             <Text
               numberOfLines={1}
               className={cn(
-                chart.type === 'bar'
-                  ? 'text-foreground'
-                  : 'text-muted-foreground',
+                'text-muted-foreground',
                 compact ? 'text-[11px]' : 'text-xs'
               )}
             >

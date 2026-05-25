@@ -10,11 +10,11 @@ import { View } from 'react-native';
 
 import {
   ArrowClockwise,
+  ArrowBendUpRight,
   DotsThreeVertical,
   ListNumbers,
   MagicWand,
   NotePencil,
-  StackSimple,
   Trash,
 } from 'phosphor-react-native';
 
@@ -113,7 +113,7 @@ const CardActionsMenuContent = ({
       )}
       {!!onCopy && (
         <Menu.Item disabled={isRefreshPending} onPress={onCopy}>
-          <Icon className="text-placeholder" icon={StackSimple} />
+          <Icon className="text-placeholder" icon={ArrowBendUpRight} />
           <Text>Copy to</Text>
         </Menu.Item>
       )}

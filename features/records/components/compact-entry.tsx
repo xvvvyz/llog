@@ -70,7 +70,12 @@ export const CompactEntry = ({
           size={42}
         />
         <View className="flex-1">
-          <View className="flex-row gap-2 items-start justify-between">
+          <View
+            className={cn(
+              'flex-row gap-2 items-start justify-between',
+              displayText && 'mb-1'
+            )}
+          >
             <View className="flex-1 flex-row -mt-0.5 gap-2 items-baseline">
               <Text
                 className="font-medium leading-snug shrink"

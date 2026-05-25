@@ -37,6 +37,7 @@ export const PreviewImage = ({
         <ImagePrimitive
           contentFit="cover"
           contentPosition="center"
+          draggable={false}
           source={{ uri: item.localUri }}
           style={StyleSheet.absoluteFill}
         />
@@ -45,6 +46,7 @@ export const PreviewImage = ({
         <ImagePrimitive
           contentFit="cover"
           contentPosition="center"
+          draggable={false}
           onDisplay={handleRemoteReady}
           onLoad={handleRemoteReady}
           source={remoteSource}

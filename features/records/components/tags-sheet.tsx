@@ -252,7 +252,6 @@ export const RecordTagsSheet = () => {
       variant="list"
     >
       <TagSheetContent
-        canCreateTag={tagSheet.canCreateTag}
         canManageColor={canMutateDefinitions}
         canManageDefinitions={canMutateDefinitions}
         canToggleTags={canManageRecordTags}
@@ -269,6 +268,7 @@ export const RecordTagsSheet = () => {
         rawQuery={tagSheet.rawQuery}
         setRawQuery={tagSheet.setRawQuery}
         sortEnabled={!tagSheet.rawQuery && canMutateDefinitions}
+        tagInputAction={tagSheet.tagInputAction}
         visibleTags={tagSheet.visibleTags}
       />
     </Sheet>
