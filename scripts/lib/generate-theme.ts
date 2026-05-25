@@ -1,5 +1,5 @@
 import { COLORS } from '@/theme/base';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import chroma from 'chroma-js';
 import fs from 'fs';
 import path from 'path';
@@ -244,12 +244,16 @@ export function generateTheme() {
 
   log('Formatting generated theme files');
 
-  const oxfmtOutput = execSync(
-    'bunx oxfmt --write "theme/generated.css" "theme/spectrum.ts" "theme/spectrum-class-names.ts" "theme/ui.ts"',
+  const formatOutput = execFileSync(
+    'bun',
+    [
+      'scripts/format.ts',
+      ...outputPaths.map((output) => path.relative(process.cwd(), output.path)),
+    ],
     { encoding: 'utf8' }
   );
 
-  for (const line of oxfmtOutput.split('\n')) {
+  for (const line of formatOutput.split('\n')) {
     const trimmedLine = line.trim();
     if (trimmedLine.length > 0) progress(trimmedLine);
   }
