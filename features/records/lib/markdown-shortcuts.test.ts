@@ -132,6 +132,38 @@ describe('getMarkdownShortcutEdit', () => {
     ).toEqual({ selectionEnd: 7, selectionStart: 1, text: '*italic*' });
   });
 
+  test('inserts placeholder after bold line', () => {
+    const text = '**bold**\n\n';
+
+    expect(
+      markdownShortcuts.getMarkdownShortcutEdit({
+        selectionEnd: text.length,
+        selectionStart: text.length,
+        shortcut: 'bold',
+        text,
+      })
+    ).toEqual({
+      selectionEnd: 16,
+      selectionStart: 12,
+      text: '**bold**\n\n**bold**',
+    });
+  });
+
+  test('ignores wrappers from another line', () => {
+    expect(
+      markdownShortcuts.getMarkdownShortcutEdit({
+        selectionEnd: 8,
+        selectionStart: 8,
+        shortcut: 'bold',
+        text: '**one\n\ntwo**',
+      })
+    ).toEqual({
+      selectionEnd: 12,
+      selectionStart: 9,
+      text: '**one\n\n**two****',
+    });
+  });
+
   test('wraps underline selection', () => {
     expect(
       markdownShortcuts.getMarkdownShortcutEdit({

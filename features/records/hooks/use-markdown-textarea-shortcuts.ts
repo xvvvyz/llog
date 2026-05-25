@@ -40,6 +40,9 @@ export const useMarkdownTextareaShortcuts = ({
   const lastSelectedTextRangeRef =
     React.useRef<textareaSelection.TextSelection | null>(null);
 
+  const pendingShortcutSelectionRef =
+    React.useRef<textareaSelection.TextSelection | null>(null);
+
   const {
     getSelection,
     handleSelectionChange: handleTextareaSelectionChange,
@@ -58,6 +61,11 @@ export const useMarkdownTextareaShortcuts = ({
   }, [textareaRef]);
 
   React.useEffect(() => {
+    if (latestTextRef.current !== text) {
+      lastSelectedTextRangeRef.current = null;
+      pendingShortcutSelectionRef.current = null;
+    }
+
     latestTextRef.current = text;
   }, [text]);
 
@@ -75,7 +83,7 @@ export const useMarkdownTextareaShortcuts = ({
 
       if (selection && selection.start !== selection.end) {
         lastSelectedTextRangeRef.current = selection;
-      }
+      } else if (selection) lastSelectedTextRangeRef.current = null;
     },
     [handleTextareaSelectionChange]
   );
@@ -117,11 +125,14 @@ export const useMarkdownTextareaShortcuts = ({
       if (disabled) return;
       const currentText = getCurrentText();
       const currentSelection = getSelection();
+      const pendingSelection = pendingShortcutSelectionRef.current;
+      pendingShortcutSelectionRef.current = null;
 
       const selection =
-        currentSelection.start === currentSelection.end
+        pendingSelection ??
+        (currentSelection.start === currentSelection.end
           ? (lastSelectedTextRangeRef.current ?? currentSelection)
-          : currentSelection;
+          : currentSelection);
 
       const edit = markdownShortcuts.getMarkdownShortcutEdit({
         selectionEnd: Math.min(selection.end, currentText.length),
@@ -207,7 +218,12 @@ export const useMarkdownTextareaShortcuts = ({
 
   const handleShortcutPressStart = React.useCallback(
     (event: unknown) => {
-      readSelection();
+      const selection = readSelection();
+      pendingShortcutSelectionRef.current = selection;
+
+      lastSelectedTextRangeRef.current =
+        selection.start === selection.end ? null : selection;
+
       if (Platform.OS !== 'web') return;
       const preventableEvent = event as WebPreventablePressStartEvent;
 
@@ -226,6 +242,7 @@ export const useMarkdownTextareaShortcuts = ({
 
   const handleTouchStart = React.useCallback(() => {
     lastSelectedTextRangeRef.current = null;
+    pendingShortcutSelectionRef.current = null;
   }, []);
 
   return {

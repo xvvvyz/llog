@@ -793,15 +793,20 @@ function getContainingWrappedEdit({
   start: number;
   text: string;
 }): MarkdownShortcutEdit | undefined {
+  const line = getInlineLineRange({ end, start, text });
+  if (!line) return;
+
   for (
     let openStart = text.lastIndexOf(marker, start);
     openStart !== -1;
-    openStart = text.lastIndexOf(marker, openStart - 1)
+    openStart = getPreviousInlineMarkerIndex({ marker, openStart, text })
   ) {
+    if (openStart < line.start) break;
     const contentStart = openStart + marker.length;
     const closeStart = text.indexOf(closeMarker, contentStart);
     if (closeStart === -1) continue;
     const closeEnd = closeStart + closeMarker.length;
+    if (closeEnd > line.end) continue;
     if (start < contentStart || end > closeStart) continue;
     if (marker.length === 1 && text[openStart - 1] === marker) continue;
     if (marker.length === 1 && text[contentStart] === marker) continue;
@@ -815,6 +820,35 @@ function getContainingWrappedEdit({
         text.slice(closeEnd),
     };
   }
+}
+
+function getPreviousInlineMarkerIndex({
+  marker,
+  openStart,
+  text,
+}: {
+  marker: string;
+  openStart: number;
+  text: string;
+}) {
+  if (openStart <= 0) return -1;
+  return text.lastIndexOf(marker, openStart - 1);
+}
+
+function getInlineLineRange({
+  end,
+  start,
+  text,
+}: {
+  end: number;
+  start: number;
+  text: string;
+}) {
+  const lineStart = text.slice(0, start).lastIndexOf('\n') + 1;
+  const nextLineBreak = text.indexOf('\n', start);
+  const lineEnd = nextLineBreak === -1 ? text.length : nextLineBreak;
+  if (end > lineEnd) return;
+  return { end: lineEnd, start: lineStart };
 }
 
 function getContainingMarkdownLink({
