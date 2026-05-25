@@ -12,7 +12,7 @@ export const AudioSheetContent = ({
   duration,
   isMicActive,
   isUploading,
-  logColor,
+  logColorClassName,
   onCancel,
   onSave,
   startError,
@@ -21,7 +21,7 @@ export const AudioSheetContent = ({
   duration: number;
   isMicActive: boolean;
   isUploading: boolean;
-  logColor?: string | null;
+  logColorClassName?: string | null;
   onCancel: () => void;
   onSave: () => void;
   startError?: string | null;
@@ -57,11 +57,13 @@ export const AudioSheetContent = ({
       </View>
       <View className="gap-3">
         <Button
-          className="active:opacity-90 web:hover:opacity-90"
           disabled={isUploading || !canSave}
           onPress={onSave}
           size="sm"
-          style={logColor ? { backgroundColor: logColor } : undefined}
+          className={cn(
+            'active:opacity-90 web:hover:opacity-90',
+            logColorClassName
+          )}
         >
           {isUploading ? <Spinner /> : <Text>Save</Text>}
         </Button>

@@ -65,4 +65,12 @@ describe('time', () => {
       )
     ).toBe('Streak reached 2 weeks yesterday.');
   });
+
+  test('formats relative date from now', () => {
+    expect(
+      time.formatDate(new Date(2026, 4, 25, 9, 45), {
+        now: new Date(2026, 4, 25, 10, 0),
+      })
+    ).toBe('15 minutes ago');
+  });
 });

@@ -4,10 +4,9 @@ import { QuotedRecord } from '@/features/activity/components/quoted-record';
 import { GroupedActivity } from '@/features/activity/lib/group-activities';
 import { openRecordDetail } from '@/features/records/lib/route';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/time';
-import { SPECTRUM } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Avatar } from '@/ui/avatar';
 import { Card } from '@/ui/card';
 import { Text } from '@/ui/text';
@@ -30,13 +29,12 @@ export const Item = ({
   className?: string;
   group: GroupedActivity;
 }) => {
-  const colorScheme = useColorScheme();
   const first = group.activities[0];
   const actor = first.actor;
   const log = first.log;
   const record = first.record;
   const team = first.team;
-  const logColor = log?.color != null ? SPECTRUM[colorScheme][log.color] : null;
+  const logColorIndex = log?.color ?? null;
   const category = CATEGORY_LABELS[group.type];
   const canOpenRecord = Boolean(record?.id);
   const uniqueActors = [...new Set(group.activities.map((a) => a.actor?.id))];
@@ -123,8 +121,11 @@ export const Item = ({
               group.type !== 'member_left' && (
                 <View className="flex-row gap-1 items-center shrink">
                   <View
-                    className="size-2.5 border-continuous rounded-xs shrink-0"
-                    style={{ backgroundColor: logColor?.default }}
+                    className={cn(
+                      'size-2.5 border-continuous rounded-xs shrink-0',
+                      logColorIndex != null &&
+                        getSpectrumBackgroundClassName(logColorIndex)
+                    )}
                   />
                   <Text className="text-xs shrink" numberOfLines={1}>
                     {log.name}
@@ -158,13 +159,13 @@ export const Item = ({
             canAnalyzeAudio={canAnalyzeAudio}
             files={record.files}
             links={record.links}
-            logColor={logColor}
+            logColorIndex={logColorIndex}
             recordId={record.id}
             text={quotedRecordText}
           />
         </View>
       )}
-      <ItemContent group={group} logColor={logColor} />
+      <ItemContent group={group} logColorIndex={logColorIndex} />
       {fileProps && (
         <ItemFiles canAnalyzeAudio={canAnalyzeAudio} {...fileProps} />
       )}

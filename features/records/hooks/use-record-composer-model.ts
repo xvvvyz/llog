@@ -14,6 +14,7 @@ import { useComposerLinkReorder } from '@/features/records/hooks/use-composer-li
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import * as composerPayloads from '@/features/records/lib/composer-payloads';
+import * as recordTime from '@/features/records/lib/record-time';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { deleteRecord } from '@/features/records/mutations/delete-record';
 import { deleteRecordFile } from '@/features/records/mutations/delete-record-file';
@@ -31,6 +32,7 @@ import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { db } from '@/lib/db';
 import type { RecordSheetParent } from '@/lib/sheet-names';
+import { formatDate } from '@/lib/time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { PushPin, Tag } from 'phosphor-react-native';
@@ -39,9 +41,58 @@ import * as outboxHooks from '@/features/offline/outbox-hooks';
 import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
 import * as outboxSyncCore from '@/features/offline/outbox-sync-core';
 import * as composerTextSession from '@/features/records/hooks/use-composer-text-session';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
+import { UI } from '@/theme/ui';
+import * as recordTimeSheet2 from '@/features/records/components/record-time-sheet';
+
+type ComposerToolbarIconButtonOptions = {
+  accessibilityLabel?: string;
+  activeClassName?: string;
+  disabled?: boolean;
+  icon: React.ComponentProps<typeof Icon>['icon'];
+  isActive?: boolean;
+  onPress: NonNullable<React.ComponentProps<typeof Button>['onPress']>;
+};
+
+const createComposerToolbarIconButton = ({
+  accessibilityLabel,
+  activeClassName,
+  disabled,
+  icon,
+  isActive = false,
+  onPress,
+}: ComposerToolbarIconButtonOptions) =>
+  React.createElement(
+    Button,
+    {
+      accessibilityLabel,
+      accessibilityState: { selected: isActive },
+      disabled,
+      onPress,
+      size: 'icon-xs',
+      variant: 'secondary',
+    },
+    React.createElement(Icon, {
+      className: isActive ? activeClassName : undefined,
+      icon,
+      weight: isActive ? 'fill' : 'regular',
+    })
+  );
 
 export const useRecordComposerModel = () => {
+  const [isRecordTimeSheetOpen, setIsRecordTimeSheetOpen] =
+    React.useState(false);
+
+  const [recordDateOverride, setRecordDateOverride] = React.useState<
+    string | undefined
+  >();
+
+  const [recordDatePreviewNow, setRecordDatePreviewNow] = React.useState(() =>
+    Date.now()
+  );
+
   const [isTextareaFocused, setIsTextareaFocused] = React.useState(false);
+  const recordTimeResetKeyRef = React.useRef<string | undefined>(undefined);
   const { ignoreDraftId, ignoredDraftIds } = useIgnoredDraftIds();
   const cleanupDraftIdsRef = React.useRef(new Set<string>());
   const sheetManager = useSheetManager();
@@ -182,8 +233,28 @@ export const useRecordComposerModel = () => {
       : logId;
 
   const recordTeamId = record?.teamId ?? createTeamId;
-  const logColor = useLogColor({ id: recordLogId });
-  const accentColor = logColor[colorScheme === 'dark' ? 'lighter' : 'darker'];
+  const shouldUseLogAccent = !isCopy || isSingleTargetCopy;
+  const accentLogId = shouldUseLogAccent ? recordLogId : undefined;
+  const logColor = useLogColor({ id: accentLogId });
+
+  const accentColor = shouldUseLogAccent
+    ? logColor[colorScheme === 'dark' ? 'lighter' : 'darker']
+    : UI[colorScheme].primary;
+
+  const accentColorClassName = shouldUseLogAccent
+    ? spectrumClassNames.getSpectrumAccentBackgroundClassName(
+        logColor.colorIndex
+      )
+    : 'bg-primary';
+
+  const accentTextClassName = shouldUseLogAccent
+    ? spectrumClassNames.getSpectrumAccentTextClassName(logColor.colorIndex)
+    : 'text-primary';
+
+  const logColorClassName = shouldUseLogAccent
+    ? spectrumClassNames.getSpectrumBackgroundClassName(logColor.colorIndex)
+    : undefined;
+
   const myRole = useMyRole({ teamId: recordTeamId ?? null });
 
   const canCheckRecordTags =
@@ -243,6 +314,55 @@ export const useRecordComposerModel = () => {
 
   const queuedRecordDraft =
     queuedDraft?.type === 'record' ? queuedDraft : undefined;
+
+  const queuedRecordDate =
+    queuedRecordDraft?.recordDateUpdated === true
+      ? queuedRecordDraft.recordDate
+      : undefined;
+
+  const currentRecordDate = recordTime.normalizeRecordDate(record?.date);
+
+  const selectedRecordDate = isEdit
+    ? (recordDateOverride ?? currentRecordDate)
+    : (queuedRecordDate ?? recordDateOverride);
+
+  React.useEffect(() => {
+    if (!isOpen || !selectedRecordDate) return;
+    setRecordDatePreviewNow(Date.now());
+
+    const interval = setInterval(() => {
+      setRecordDatePreviewNow(Date.now());
+    }, 30 * 1000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, selectedRecordDate]);
+
+  const recordDatePreviewLabel = React.useMemo(() => {
+    if (!selectedRecordDate) return undefined;
+    const date = new Date(selectedRecordDate);
+
+    return Number.isNaN(date.getTime())
+      ? undefined
+      : formatDate(date, { now: recordDatePreviewNow });
+  }, [recordDatePreviewNow, selectedRecordDate]);
+
+  const recordTimeResetKey = isOpen
+    ? [
+        isEdit ? 'edit' : isCopy ? 'copy' : 'create',
+        recordId ?? '',
+        isEdit ? (currentRecordDate ?? '') : (queuedRecordDate ?? ''),
+      ].join(':')
+    : 'closed';
+
+  React.useEffect(() => {
+    if (recordTimeResetKeyRef.current === recordTimeResetKey) return;
+    recordTimeResetKeyRef.current = recordTimeResetKey;
+    setRecordDateOverride(isEdit ? currentRecordDate : queuedRecordDate);
+  }, [currentRecordDate, isEdit, queuedRecordDate, recordTimeResetKey]);
+
+  React.useEffect(() => {
+    if (!isOpen) setIsRecordTimeSheetOpen(false);
+  }, [isOpen]);
 
   const queuedRecordAttachments = React.useMemo(
     () =>
@@ -444,12 +564,51 @@ export const useRecordComposerModel = () => {
     sheetManager,
   ]);
 
+  const handleOpenRecordTime = React.useCallback(() => {
+    blurActiveTextInput();
+    setIsRecordTimeSheetOpen(true);
+  }, []);
+
+  const handleChangeRecordDate = React.useCallback(
+    (nextDate?: string) => {
+      setRecordDateOverride(nextDate);
+      if (!recordId) return;
+
+      if (isEdit) {
+        if (!nextDate) return;
+
+        if (isEditingLocalRecord) {
+          outboxStore.updateQueuedRecordDate({
+            recordDate: nextDate,
+            recordId,
+          });
+
+          return;
+        }
+
+        void db
+          .transact(db.tx.records[recordId].update({ date: nextDate }))
+          .catch(() => undefined);
+
+        return;
+      }
+
+      if (shouldUseQueuedRecordDraft) {
+        outboxStore.updateQueuedDraftRecordDate({
+          recordDate: nextDate,
+          recordId,
+        });
+      }
+    },
+    [isEdit, isEditingLocalRecord, recordId, shouldUseQueuedRecordDraft]
+  );
+
+  const hasSelectedTags = selectedTags.some((tag) => !!tag.id);
+
   const canOpenTags =
     (!isCopy || isSingleTargetCopy) &&
     !!recordId &&
-    (!!myRole.canManage ||
-      recordTags.hasRecordTags ||
-      selectedTags.some((tag) => !!tag.id));
+    (!!myRole.canManage || recordTags.hasRecordTags || hasSelectedTags);
 
   const isTagsDisabled = false;
   const canToggleCopyPin = !isCopy || isSingleTargetCopy;
@@ -486,36 +645,48 @@ export const useRecordComposerModel = () => {
   ]);
 
   const tagToolbarItem = canOpenTags
-    ? React.createElement(
-        Button,
-        {
-          disabled: isTagsDisabled,
-          onPress: handleOpenTags,
-          size: 'icon-xs',
-          variant: 'secondary',
-        },
-        React.createElement(Icon, { icon: Tag })
-      )
+    ? createComposerToolbarIconButton({
+        activeClassName: accentTextClassName,
+        disabled: isTagsDisabled,
+        icon: Tag,
+        isActive: hasSelectedTags,
+        onPress: handleOpenTags,
+      })
     : null;
 
   const pinToolbarItem = canTogglePin
-    ? React.createElement(
-        Button,
-        {
-          accessibilityLabel: isPinned ? 'Unpin record' : 'Pin record',
-          accessibilityState: { selected: isPinned },
-          disabled: isPinDisabled,
-          onPress: handleTogglePin,
-          size: 'icon-xs',
-          variant: 'secondary',
-        },
-        React.createElement(Icon, {
-          color: isPinned ? accentColor : undefined,
-          icon: PushPin,
-          weight: isPinned ? 'fill' : 'regular',
-        })
-      )
+    ? createComposerToolbarIconButton({
+        accessibilityLabel: isPinned ? 'Unpin record' : 'Pin record',
+        activeClassName: accentTextClassName,
+        disabled: isPinDisabled,
+        icon: PushPin,
+        isActive: isPinned,
+        onPress: handleTogglePin,
+      })
     : null;
+
+  const recordTimeToolbarItem =
+    recordId && (!isCopy || isSingleTargetCopy)
+      ? React.createElement(recordTimeSheet2.RecordTimeButton, {
+          disabled: false,
+          iconClassName: accentTextClassName,
+          isCustom: !!selectedRecordDate,
+          onPress: handleOpenRecordTime,
+        })
+      : null;
+
+  const recordTimeSheet = React.createElement(
+    recordTimeSheet2.RecordTimeSheet,
+    {
+      accentColor,
+      accentColorClassName,
+      canUseSubmissionTime: !isEdit,
+      onChange: handleChangeRecordDate,
+      onClose: () => setIsRecordTimeSheetOpen(false),
+      open: isOpen && isRecordTimeSheetOpen,
+      value: selectedRecordDate,
+    }
+  );
 
   const { isBusy, fileCount, filePreview, toolbar } = useFileComposer({
     extraAttachmentCount: linkAttachmentCount,
@@ -524,6 +695,7 @@ export const useRecordComposerModel = () => {
       React.Fragment,
       null,
       linkToolbarItems,
+      recordTimeToolbarItem,
       tagToolbarItem,
       pinToolbarItem
     ),
@@ -617,6 +789,7 @@ export const useRecordComposerModel = () => {
             links: links.map(queuedLinks.toQueuedLinkSnapshot),
             logId: recordLogId,
             needsDraftReplay: false,
+            recordDate: selectedRecordDate,
             tags: queuedTags.toQueuedTagSnapshots(selectedTags),
             teamId: recordTeamId,
             text,
@@ -666,7 +839,12 @@ export const useRecordComposerModel = () => {
           });
         }
 
-        await finalizeRecordCopy({ id: recordId, logIds: copyTargetLogIds });
+        await finalizeRecordCopy({
+          date: selectedRecordDate,
+          id: recordId,
+          logIds: copyTargetLogIds,
+        });
+
         ignoreDraftId(recordId);
 
         for (const targetLogId of copyTargetLogIds) {
@@ -692,6 +870,7 @@ export const useRecordComposerModel = () => {
         links: links.map(queuedLinks.toQueuedLinkSnapshot),
         logId: recordLogId,
         needsDraftReplay: true,
+        recordDate: selectedRecordDate,
         tags: queuedTags.toQueuedTagSnapshots(selectedTags),
         teamId: recordTeamId,
         text,
@@ -732,6 +911,7 @@ export const useRecordComposerModel = () => {
     recordTeamId,
     record?.files,
     runSubmit,
+    selectedRecordDate,
     setLatestText,
     selectedTags,
     isPinned,
@@ -758,16 +938,20 @@ export const useRecordComposerModel = () => {
       : isCopy
         ? copyLoading || !copyDraft
         : !outbox.hydrated || (!!logId && !draft.id),
-    logColor: isEdit || isCopy ? undefined : logColor.default,
+    logColorClassName: isEdit ? undefined : logColorClassName,
     fileCount,
     filePreview,
     onChangeText: handleChangeText,
     onDismiss: handleDismiss,
     onApplyTemplate: handleApplyTemplate,
     onSubmit: handleSubmit,
+    onOpenRecordTime: handleOpenRecordTime,
     onOpenTags: handleOpenTags,
     onTextareaFocusChange: setIsTextareaFocused,
     onTogglePin: handleTogglePin,
+    recordTimeSheet,
+    recordDatePreviewClassName: accentTextClassName,
+    recordDatePreviewLabel,
     selectedTags,
     showFormattingControls: myRole.canManage,
     submitLabel: isEdit ? 'Done' : 'Record',

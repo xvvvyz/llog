@@ -41,7 +41,7 @@ export const Dots = ({
       style={{ height: dotSize.size, width: containerWidth }}
     >
       <Animated.View
-        className={size === 'sm' ? 'flex-row gap-1.5' : 'flex-row gap-2'}
+        className={cn(size === 'sm' ? 'flex-row gap-1.5' : 'flex-row gap-2')}
       >
         {Array.from({ length: count }, (_, i) => (
           <CarouselDot
@@ -97,7 +97,7 @@ const CarouselDot = ({
 
   return (
     <AnimatedDotView
-      className={size === 'sm' ? 'size-1.5' : 'size-2'}
+      className={cn(size === 'sm' ? 'size-1.5' : 'size-2')}
       style={style}
     >
       {onPress ? (

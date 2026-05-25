@@ -14,6 +14,8 @@ import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { BackButton } from '@/ui/back-button';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';
@@ -110,10 +112,12 @@ export default function Index() {
             <View className="flex-row items-center">
               {hasRecords && (
                 <Button
-                  className="hidden active:opacity-90 md:flex web:hover:opacity-90"
                   size="xs"
-                  style={{ backgroundColor: logColor.default }}
                   variant="secondary"
+                  className={cn(
+                    'hidden active:opacity-90 md:flex web:hover:opacity-90',
+                    getSpectrumBackgroundClassName(logColor.colorIndex)
+                  )}
                   onPress={() =>
                     sheetManager.open(
                       'record-create',
@@ -199,11 +203,13 @@ export default function Index() {
           style={{ marginBottom: insets.bottom }}
         >
           <Button
-            className="size-14 border-0 rounded-full active:opacity-90 web:hover:opacity-90"
             size="icon"
-            style={{ backgroundColor: logColor.default }}
             variant="secondary"
             wrapperClassName="rounded-full"
+            className={cn(
+              'size-14 border-0 rounded-full active:opacity-90 web:hover:opacity-90',
+              getSpectrumBackgroundClassName(logColor.colorIndex)
+            )}
             onPress={() =>
               sheetManager.open('record-create', params.logId, undefined, {
                 teamId: log.teamId,

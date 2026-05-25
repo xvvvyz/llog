@@ -9,10 +9,8 @@ import { TeamSwitcher } from '@/features/teams/components/switcher';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useBreakpointColumns } from '@/hooks/use-breakpoint-columns';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { createSearchIndex } from '@/lib/search';
-import { SPECTRUM } from '@/theme/spectrum';
 import { Button } from '@/ui/button';
 import { Header } from '@/ui/header';
 import { Icon } from '@/ui/icon';
@@ -34,7 +32,6 @@ type LogSearchDocument = {
 export default function Index() {
   const [rawQuery, setRawQuery] = React.useState('');
   const breakpoints = useBreakpoints();
-  const colorScheme = useColorScheme();
   const columns = useBreakpointColumns([2, 2, 3, 3, 4, 5, 6]);
   const tags = useTags();
   const { canManage } = useMyRole();
@@ -150,32 +147,27 @@ export default function Index() {
             />
           )}
           <View className="flex-row flex-wrap">
-            {filteredLogs.map((item) => {
-              const color =
-                SPECTRUM[colorScheme][item.color] ?? SPECTRUM[colorScheme][0];
-
-              return (
-                <View
-                  key={item.id}
-                  className={cn(
-                    columns === 2 && 'w-1/2',
-                    columns === 3 && 'w-1/3',
-                    columns === 4 && 'w-1/4',
-                    columns === 5 && 'w-1/5',
-                    columns === 6 && 'w-1/6'
-                  )}
-                >
-                  <ListItem
-                    className="p-1.5 md:p-2"
-                    color={color}
-                    id={item.id}
-                    name={item.name}
-                    profiles={item.profiles ?? []}
-                    tags={tagsByLogId.get(item.id) ?? []}
-                  />
-                </View>
-              );
-            })}
+            {filteredLogs.map((item) => (
+              <View
+                key={item.id}
+                className={cn(
+                  columns === 2 && 'w-1/2',
+                  columns === 3 && 'w-1/3',
+                  columns === 4 && 'w-1/4',
+                  columns === 5 && 'w-1/5',
+                  columns === 6 && 'w-1/6'
+                )}
+              >
+                <ListItem
+                  className="p-1.5 md:p-2"
+                  color={item.color}
+                  id={item.id}
+                  name={item.name}
+                  profiles={item.profiles ?? []}
+                  tags={tagsByLogId.get(item.id) ?? []}
+                />
+              </View>
+            ))}
           </View>
         </ScrollView>
       )}

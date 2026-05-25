@@ -31,7 +31,7 @@ export type EntryRecord = Partial<
 >;
 
 export type EntrySharedProps = {
-  accentColor?: string;
+  accentTextClassName?: string;
   audioMedia: FileItem[];
   canAnalyzeAudio: boolean;
   canOpenReply?: boolean;

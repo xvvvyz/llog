@@ -6,7 +6,7 @@ import * as React from 'react';
 
 export const Checkbox = ({
   checked,
-  checkedColor,
+  checkedClassName,
   className,
   emptyUnchecked = false,
   onCheckedChange,
@@ -14,7 +14,7 @@ export const Checkbox = ({
   ...rest
 }: ButtonProps & {
   checked: boolean;
-  checkedColor?: string;
+  checkedClassName?: string;
   emptyUnchecked?: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) => {
@@ -28,11 +28,11 @@ export const Checkbox = ({
       onPress={handleChange}
       role="checkbox"
       size="icon"
-      style={checked && { backgroundColor: checkedColor }}
       variant="secondary"
       className={cn(
         emptyUnchecked && 'rounded-md border-continuous',
-        checked && 'bg-primary web:hover:opacity-90 active:opacity-90',
+        checked && 'web:hover:opacity-90 active:opacity-90',
+        checked && (checkedClassName ?? 'bg-primary'),
         className
       )}
       wrapperClassName={cn(

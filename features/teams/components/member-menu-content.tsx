@@ -2,6 +2,7 @@ import { Role } from '@/domain/teams/role';
 import { updateRole } from '@/features/teams/mutations/update-role';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
 import { UI } from '@/theme/ui';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -124,7 +125,7 @@ export const TeamMemberMenuContent = ({
         <>
           <Menu.Separator />
           <Menu.Item
-            className={loadingRole ? 'opacity-50' : ''}
+            className={cn(loadingRole && 'opacity-50')}
             disabled={!!loadingRole}
             onPress={() => onOpenMemberLogs(memberId)}
           >
@@ -135,7 +136,7 @@ export const TeamMemberMenuContent = ({
       )}
       <Menu.Separator />
       <Menu.Item
-        className={!canRemoveMember || loadingRole ? 'opacity-50' : ''}
+        className={cn((!canRemoveMember || loadingRole) && 'opacity-50')}
         disabled={!canRemoveMember || !!loadingRole}
         onPress={() => sheetManager.open('member-remove', memberId)}
       >

@@ -60,7 +60,7 @@ describe('renderRecordMarkdownText', () => {
     platform.OS = 'web';
 
     const nodes = renderRecordMarkdownText({
-      color: '#2255aa',
+      linkClassName: 'text-primary',
       text: '- [ ] one\n- [x] two',
     });
 

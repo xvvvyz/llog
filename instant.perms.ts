@@ -29,7 +29,7 @@ const contentAuthorIsMemberByTeamId = `data.ref('author.user.id').exists(userId,
   "data.ref('author.user.roles.key')"
 )})`;
 
-const contentCanEditManagedText = ruleStrings.or(
+const contentCanEditManagedContent = ruleStrings.or(
   'isOwnerByTeamId',
   ruleStrings.group(
     ruleStrings.and('isAdminByTeamId', 'authorIsMemberByTeamId')
@@ -292,8 +292,8 @@ const rules = {
       contentIsAdminByTeamId,
       'authorIsMemberByTeamId',
       contentAuthorIsMemberByTeamId,
-      'canEditManagedText',
-      contentCanEditManagedText,
+      'canEditManagedContent',
+      contentCanEditManagedContent,
       'canDeleteOwn',
       'isAuthor && isTeamMember',
       'canDeleteFromOwnRecord',
@@ -314,7 +314,7 @@ const rules = {
         ),
         ruleStrings.group(
           ruleStrings.and(
-            'canEditManagedText',
+            'canEditManagedContent',
             '!isDraft',
             'onlyModifiesText',
             'isValidNewText'
@@ -866,6 +866,8 @@ const rules = {
       "auth.id in data.ref('author.user.id')",
       'onlyModifiesText',
       "request.modifiedFields.all(field, field in ['text'])",
+      'onlyModifiesDate',
+      "request.modifiedFields.all(field, field in ['date'])",
       'onlyModifiesTextAndTags',
       "request.modifiedFields.all(field, field in ['text', 'tags'])",
       'onlyModifiesPinnedState',
@@ -893,8 +895,8 @@ const rules = {
       contentIsAdminByTeamId,
       'authorIsMemberByTeamId',
       contentAuthorIsMemberByTeamId,
-      'canEditManagedText',
-      contentCanEditManagedText,
+      'canEditManagedContent',
+      contentCanEditManagedContent,
       'canDeleteOwn',
       ruleStrings.and(recordIsAuthor, recordIsTeamMember),
       'isTeamMemberByTeamId',
@@ -944,11 +946,21 @@ const rules = {
           )
         ),
         ruleStrings.group(
+          ruleStrings.and('isAuthor', 'isTeamMember', 'onlyModifiesDate')
+        ),
+        ruleStrings.group(
           ruleStrings.and(
-            'canEditManagedText',
+            'canEditManagedContent',
             '!isDraft',
             'onlyModifiesText',
             'isValidNewText'
+          )
+        ),
+        ruleStrings.group(
+          ruleStrings.and(
+            'canEditManagedContent',
+            '!isDraft',
+            'onlyModifiesDate'
           )
         ),
         ruleStrings.group(

@@ -16,7 +16,7 @@ import { Text } from '@/ui/text';
 import { View } from 'react-native';
 
 export const CompactEntry = ({
-  accentColor,
+  accentTextClassName,
   audioMedia,
   canAnalyzeAudio,
   className,
@@ -83,7 +83,7 @@ export const CompactEntry = ({
               </Text>
             </View>
             <EntryMenuContent
-              accentColor={accentColor}
+              accentTextClassName={accentTextClassName}
               authorId={record.author?.id}
               className="-mb-3 -mr-1.5 -mt-1.5"
               isDetail
@@ -100,7 +100,7 @@ export const CompactEntry = ({
           {!!displayText && (
             <TruncatedText
               className="select-text"
-              color={accentColor}
+              linkClassName={accentTextClassName}
               numberOfLines={numberOfLines}
               text={displayText}
             />
@@ -137,7 +137,7 @@ export const CompactEntry = ({
             </View>
           )}
           <ReactionsRow
-            accentColor={accentColor}
+            accentTextClassName={accentTextClassName}
             className="mt-3"
             disabled={!!record.localStatus}
             logId={logId}

@@ -1,6 +1,7 @@
 import type { FileItem } from '@/instant.entities';
 import type { Profile } from '@/features/account/types/profile';
 import type { EntryRecord } from '@/features/records/types/entry';
+import * as recordTime from '@/features/records/lib/record-time';
 import type * as types from '@/features/offline/types';
 
 const ACTIVE_STATUSES = new Set([
@@ -97,7 +98,7 @@ export const queuedRecordToEntry = ({
   submission: Extract<types.QueuedSubmission, { type: 'record' }>;
 }): EntryRecord => ({
   author: getAuthor(profile),
-  date: submission.createdAt,
+  date: recordTime.getRecordDate(submission),
   files: attachmentsForSubmission(attachments, submission),
   id: submission.contentId,
   isDraft: true,

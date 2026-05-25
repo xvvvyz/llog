@@ -2,6 +2,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import { resolveSpectrumColor, SPECTRUM } from '@/theme/spectrum';
+import * as React from 'react';
 
 export const useLogColor = ({ id }: { id?: string }) => {
   const colorScheme = useColorScheme();
@@ -21,5 +22,10 @@ export const useLogColor = ({ id }: { id?: string }) => {
   const log =
     id && hasCurrentResult ? data?.logs?.find((item) => item.id === id) : null;
 
-  return SPECTRUM[colorScheme][resolveSpectrumColor(log?.color)];
+  const colorIndex = resolveSpectrumColor(log?.color);
+
+  return React.useMemo(
+    () => ({ ...SPECTRUM[colorScheme][colorIndex], colorIndex }),
+    [colorIndex, colorScheme]
+  );
 };

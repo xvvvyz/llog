@@ -79,7 +79,7 @@ export const LogTemplateCopyEditorSheet = () => {
       topInset={64}
     >
       <View className="mx-auto max-w-lg w-full pb-4">
-        <View className="p-4 pb-4 md:p-4 sm:pt-8">
+        <View className="p-4 pb-4 md:p-4">
           <View className="overflow-hidden border-border-secondary border-continuous rounded-xl bg-input border">
             <Textarea
               autoFocus

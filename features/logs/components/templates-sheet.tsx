@@ -4,6 +4,8 @@ import { reorderTemplates } from '@/features/logs/mutations/reorder-templates';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
@@ -173,13 +175,15 @@ export const LogTemplatesSheet = () => {
           <Text>Close</Text>
         </Button>
         <Button
-          className="active:opacity-90 web:hover:opacity-90"
           disabled={!logId}
           onPress={() => openTemplateEditor()}
           size="sm"
-          style={{ backgroundColor: logColor.default }}
           variant="secondary"
           wrapperClassName="flex-1"
+          className={cn(
+            'active:opacity-90 web:hover:opacity-90',
+            getSpectrumBackgroundClassName(logColor.colorIndex)
+          )}
         >
           <Text className="text-white">New</Text>
         </Button>

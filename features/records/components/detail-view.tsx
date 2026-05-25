@@ -4,6 +4,7 @@ import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { type UseRecordResult } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Page } from '@/ui/page';
 import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
@@ -12,10 +13,10 @@ import * as React from 'react';
 import { Animated, Easing, ScrollView, View } from 'react-native';
 
 const TargetEntryHighlight = ({
-  color,
+  className,
   targetKey,
 }: {
-  color: string;
+  className: string;
   targetKey: string;
 }) => {
   const opacity = React.useRef(new Animated.Value(1)).current;
@@ -40,9 +41,8 @@ const TargetEntryHighlight = ({
   return (
     <View className="absolute inset-0 overflow-hidden pointer-events-none">
       <Animated.View
-        className="absolute inset-0"
+        className={cn('absolute inset-0', className)}
         style={{
-          backgroundColor: color,
           opacity: opacity.interpolate({
             inputRange: [0, 1],
             outputRange: [0, 0.08],
@@ -184,8 +184,10 @@ export const DetailView = ({
             >
               {shouldHighlight && (
                 <TargetEntryHighlight
-                  color={logColor.default}
                   targetKey={`${recordId}:${highlightKey}`}
+                  className={getSpectrumBackgroundClassName(
+                    logColor.colorIndex
+                  )}
                 />
               )}
               <Entry
@@ -212,12 +214,14 @@ export const DetailView = ({
             <Text>Close</Text>
           </Button>
           <Button
-            className="active:opacity-90 web:hover:opacity-90"
             disabled={!canReply}
             size="sm"
-            style={{ backgroundColor: logColor.default }}
             variant="secondary"
             wrapperClassName="flex-1"
+            className={cn(
+              'active:opacity-90 web:hover:opacity-90',
+              getSpectrumBackgroundClassName(logColor.colorIndex)
+            )}
             onPress={() =>
               sheetManager.open('reply-create', recordId, undefined, {
                 teamId: record.teamId,

@@ -10,6 +10,7 @@ import { TruncatedText } from '@/features/records/components/truncated-text';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { Link } from '@/features/records/types/link';
 import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import { Spinner } from '@/ui/spinner';
@@ -80,7 +81,7 @@ const QuotedRecordThumb = ({
 
 export const QuotedRecord = ({
   canAnalyzeAudio,
-  logColor,
+  logColorIndex,
   links = [],
   files,
   recordId,
@@ -88,7 +89,7 @@ export const QuotedRecord = ({
 }: {
   canAnalyzeAudio: boolean;
   links?: Link[];
-  logColor: { lighter: string; default: string; darker: string } | null;
+  logColorIndex?: number | null;
   files?: FileItem[];
   recordId?: string;
   text?: string;
@@ -128,10 +129,11 @@ export const QuotedRecord = ({
         {!!displayText && (
           <View className="flex-row max-w-full min-w-0 p-3 gap-2.5">
             <View
-              className="w-1 border-continuous rounded-full bg-border self-stretch"
-              style={
-                logColor ? { backgroundColor: logColor.default } : undefined
-              }
+              className={cn(
+                'w-1 border-continuous rounded-full bg-border self-stretch',
+                logColorIndex != null &&
+                  getSpectrumBackgroundClassName(logColorIndex)
+              )}
             />
             <View className="flex-1 min-w-0">
               <QuotedRecordText text={displayText} />

@@ -1,6 +1,5 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
-import { SPECTRUM, resolveSpectrumColor } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
@@ -30,12 +29,6 @@ export const TagChip = React.forwardRef<
     },
     ref
   ) => {
-    const colorScheme = useColorScheme();
-
-    const accentColor = showColorAccent
-      ? SPECTRUM[colorScheme][resolveSpectrumColor(color)].default
-      : undefined;
-
     return (
       <Pressable
         ref={ref}
@@ -50,10 +43,12 @@ export const TagChip = React.forwardRef<
         )}
         {...props}
       >
-        {showColorAccent && !!accentColor && (
+        {showColorAccent && (
           <View
-            className="size-2.5 rounded-full shrink-0"
-            style={{ backgroundColor: accentColor }}
+            className={cn(
+              'size-2.5 rounded-full shrink-0',
+              getSpectrumBackgroundClassName(color)
+            )}
           />
         )}
         <Text

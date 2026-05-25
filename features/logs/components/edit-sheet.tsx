@@ -1,19 +1,17 @@
 import { LOG_NAME_MAX_LENGTH } from '@/features/logs/lib/limits';
 import { updateLog } from '@/features/logs/mutations/update-log';
 import { useLog } from '@/features/logs/queries/use-log';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { SPECTRUM } from '@/theme/spectrum';
+import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';
 import { View } from 'react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 export const LogEditSheet = () => {
-  const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
-  const isDark = colorScheme === 'dark';
   const log = useLog({ id: sheetManager.getId('log-edit') });
 
   return (
@@ -43,29 +41,21 @@ export const LogEditSheet = () => {
                 {row.map((color) => (
                   <Button
                     key={`color-${color}`}
-                    className="h-full w-full border-4 rounded-full"
                     onPress={() => updateLog({ color, id: log.id! })}
                     ripple="default"
                     variant="ghost"
                     wrapperClassName="shrink w-16 aspect-square rounded-full"
-                    style={{
-                      backgroundColor:
-                        SPECTRUM[colorScheme][color][
-                          log.color === color
-                            ? isDark
-                              ? 'darker'
-                              : 'lighter'
-                            : 'default'
-                        ],
-                      borderColor:
-                        SPECTRUM[colorScheme][color][
-                          log.color === color
-                            ? isDark
-                              ? 'lighter'
-                              : 'darker'
-                            : 'default'
-                        ],
-                    }}
+                    className={cn(
+                      'h-full w-full border-4 rounded-full',
+                      spectrumClassNames.getSpectrumSwatchBackgroundClassName(
+                        color,
+                        log.color === color
+                      ),
+                      spectrumClassNames.getSpectrumSwatchBorderClassName(
+                        color,
+                        log.color === color
+                      )
+                    )}
                   />
                 ))}
               </View>

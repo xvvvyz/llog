@@ -21,7 +21,7 @@ import { ArrowBendDownLeft, PushPin } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const EntryCard = ({
-  accentColor,
+  accentTextClassName,
   audioMedia,
   canAnalyzeAudio,
   canOpenReply = true,
@@ -66,11 +66,16 @@ export const EntryCard = ({
             variant="ghost"
             wrapperClassName="opacity-100"
           >
-            <Icon color={accentColor} icon={PushPin} size={16} weight="fill" />
+            <Icon
+              className={accentTextClassName}
+              icon={PushPin}
+              size={16}
+              weight="fill"
+            />
           </Button>
         )}
         <EntryMenuContent
-          accentColor={accentColor}
+          accentTextClassName={accentTextClassName}
           authorId={record.author?.id}
           isLocalPending={!!record.localStatus}
           isPinned={'isPinned' in record ? !!record.isPinned : undefined}
@@ -154,7 +159,7 @@ export const EntryCard = ({
       {!!displayText && (
         <TruncatedText
           className="-mt-1 px-4 select-text"
-          color={accentColor}
+          linkClassName={accentTextClassName}
           numberOfLines={numberOfLines}
           text={displayText}
         />
@@ -184,7 +189,7 @@ export const EntryCard = ({
         </View>
       )}
       <ReactionsRow
-        accentColor={accentColor}
+        accentTextClassName={accentTextClassName}
         className="-mt-1 pb-3 px-3"
         disabled={!!record.localStatus}
         logId={logId}

@@ -2,6 +2,7 @@ import { createLink } from '@/features/records/mutations/create-link';
 import { deleteLink } from '@/features/records/mutations/delete-link';
 import { replayRecordDraft } from '@/features/records/mutations/replay-record-draft';
 import { replayReplyDraft } from '@/features/records/mutations/replay-reply-draft';
+import * as recordTime from '@/features/records/lib/record-time';
 import * as queuedLinks from '@/features/offline/queued-links';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as outboxState from '@/features/offline/outbox-state';
@@ -116,6 +117,7 @@ const draftMatchesSubmission = async (submission: types.QueuedSubmission) => {
     return (
       (submission.isPinned == null ||
         !!record.isPinned === submission.isPinned) &&
+      record.date === recordTime.getRecordDate(submission) &&
       (record.text?.trim() ?? '') === submission.text &&
       outboxState.queuedLinkSnapshotsMatchExactly(
         submission.links,
@@ -210,7 +212,7 @@ export const replayQueuedRecordDraft = async (
 
   await replayRecordDraft({
     authorId,
-    date: submission.createdAt,
+    date: recordTime.getRecordDate(submission),
     id: submission.contentId,
     isPinned: submission.isPinned,
     logId: submission.logId,

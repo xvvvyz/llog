@@ -5,6 +5,7 @@ import * as lookup from '@/features/search/lib/lookup';
 import { TagChipList } from '@/features/tags/components/tag-chip-list';
 import { Tag } from '@/features/tags/types/tag';
 import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Avatar } from '@/ui/avatar';
 import { Icon } from '@/ui/icon';
 import { nativePointerEvents } from '@/ui/pointer-events';
@@ -31,7 +32,7 @@ export const ListItem = ({
   tags,
 }: {
   className?: string;
-  color: { darker: string; default: string; lighter: string };
+  color?: number | null;
   id: string;
   name: string;
   profiles: ListItemProfile[];
@@ -51,8 +52,10 @@ export const ListItem = ({
       )}
     >
       <View
-        className="relative overflow-hidden h-28 w-full border-continuous rounded-2xl"
-        style={{ backgroundColor: color.default }}
+        className={cn(
+          'relative overflow-hidden h-28 w-full border-continuous rounded-2xl',
+          getSpectrumBackgroundClassName(color)
+        )}
       >
         <Link asChild href={`/${id}`}>
           <Pressable
@@ -91,9 +94,9 @@ export const ListItem = ({
                 {profiles.map((profile, i) => (
                   <View
                     key={profile.id}
-                    style={{ backgroundColor: color.default }}
                     className={cn(
                       'size-avatar-stack-sm items-center justify-center overflow-hidden rounded-full p-px border-continuous',
+                      getSpectrumBackgroundClassName(color),
                       i > 0 && '-ml-avatar-stack-sm-overlap'
                     )}
                   >

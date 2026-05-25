@@ -126,6 +126,7 @@ const submissionDraftSyncKey = (submission: types.QueuedSubmission) =>
         submission.type,
         submission.contentId,
         submission.isPinned == null ? '' : String(submission.isPinned),
+        submission.recordDate ?? '',
         submission.text,
         submission.tagIds.join('\u0000'),
         submission.links.map(linkSyncKey).join('\u0001'),

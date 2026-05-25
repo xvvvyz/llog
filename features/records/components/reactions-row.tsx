@@ -8,7 +8,7 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export const ReactionsRow = ({
-  accentColor,
+  accentTextClassName,
   className,
   disabled,
   logId,
@@ -18,7 +18,7 @@ export const ReactionsRow = ({
   replyId,
   trailing,
 }: {
-  accentColor?: string;
+  accentTextClassName?: string;
   className?: string;
   disabled?: boolean;
   logId?: string;
@@ -37,7 +37,7 @@ export const ReactionsRow = ({
     (emoji) => !usedEmojis.has(emoji)
   ) && (
     <EmojiPicker
-      color={accentColor}
+      colorClassName={accentTextClassName}
       disabled={disabled}
       logId={logId}
       reactions={record.reactions}
@@ -54,7 +54,7 @@ export const ReactionsRow = ({
       <View className="flex-row flex-wrap min-w-0 gap-1 items-center self-center shrink">
         {hasReactions ? (
           <Reactions
-            color={accentColor}
+            colorClassName={accentTextClassName}
             disabled={disabled}
             leading={reactionPicker}
             logId={logId}

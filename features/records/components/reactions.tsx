@@ -15,7 +15,7 @@ import { View } from 'react-native';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 
 export const Reactions = ({
-  color,
+  colorClassName,
   disabled,
   leading,
   logId,
@@ -24,7 +24,7 @@ export const Reactions = ({
   teamId,
   replyId,
 }: {
-  color?: string;
+  colorClassName?: string;
   disabled?: boolean;
   leading?: React.ReactNode;
   logId?: string;
@@ -119,20 +119,18 @@ export const Reactions = ({
                   }}
                 >
                   <Icon
-                    color={userReacted ? color : undefined}
                     icon={REACTION_ICONS[reactionEmoji]}
                     weight={userReacted ? 'fill' : 'regular'}
                     className={cn(
                       '-ml-0.5',
-                      userReacted && !color && 'text-primary',
+                      userReacted && (colorClassName ?? 'text-primary'),
                       !userReacted && 'text-muted-foreground'
                     )}
                   />
                   <Text
-                    style={userReacted && color ? { color } : undefined}
                     className={cn(
                       'text-sm',
-                      userReacted && !color && 'text-primary',
+                      userReacted && (colorClassName ?? 'text-primary'),
                       !userReacted && 'text-muted-foreground'
                     )}
                   >

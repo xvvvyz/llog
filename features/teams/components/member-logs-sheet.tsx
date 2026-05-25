@@ -1,12 +1,12 @@
 import { useUi } from '@/features/account/queries/use-ui';
 import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
 import { db } from '@/lib/db';
-import { SPECTRUM } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { SearchInput } from '@/ui/search-input';
@@ -24,7 +24,6 @@ export const MemberLogsSheet = () => {
   const { activeTeamId } = useUi();
   const payload = sheetManager.getPayload('member-logs');
   const teamId = payload?.teamId ?? activeTeamId;
-  const colorScheme = useColorScheme();
 
   const { data, isLoading } = db.useQuery(
     open && teamId && roleId
@@ -94,7 +93,6 @@ export const MemberLogsSheet = () => {
         <SheetListScrollView loading={sheetIsLoading} variant="rows">
           {visibleLogs.map((log) => {
             const isSelected = getSelected(log.id);
-            const color = SPECTRUM[colorScheme][log.color ?? 11];
 
             return (
               <View
@@ -103,8 +101,10 @@ export const MemberLogsSheet = () => {
               >
                 <View className="flex-row gap-4 items-center">
                   <View
-                    className="size-4 border-continuous rounded-md"
-                    style={{ backgroundColor: color.default }}
+                    className={cn(
+                      'size-4 border-continuous rounded-md',
+                      getSpectrumBackgroundClassName(log.color)
+                    )}
                   />
                   <Text numberOfLines={1}>{log.name}</Text>
                 </View>

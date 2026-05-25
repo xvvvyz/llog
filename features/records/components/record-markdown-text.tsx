@@ -11,19 +11,19 @@ const SHORT_LIST_MARKER_COLUMN_CH = 2.25;
 const LONG_LIST_MARKER_COLUMN_CH = 3.25;
 
 export function renderRecordMarkdownText({
-  color,
   flattenListItems = false,
+  linkClassName,
   text,
 }: {
-  color?: string;
   flattenListItems?: boolean;
+  linkClassName?: string;
   text: string;
 }) {
   return recordMarkdown
     .parseRecordMarkdown(text)
     .flatMap((block, index, blocks) => {
       return [
-        renderBlock({ block, color, flattenListItems, index }),
+        renderBlock({ block, flattenListItems, index, linkClassName }),
         getBlockSeparator(block, index, blocks, flattenListItems),
       ];
     });
@@ -31,19 +31,19 @@ export function renderRecordMarkdownText({
 
 function renderBlock({
   block,
-  color,
   flattenListItems = false,
   index,
+  linkClassName,
 }: {
   block: recordMarkdown.RecordMarkdownBlock;
-  color?: string;
   flattenListItems?: boolean;
   index: number;
+  linkClassName?: string;
 }) {
   if (block.kind === 'list-item') {
     const indent = block.indent;
     const marker = block.marker;
-    const content = renderInlines(block.children, `${index}`, color);
+    const content = renderInlines(block.children, `${index}`, linkClassName);
 
     if (flattenListItems) {
       const flattenedContent = [
@@ -77,7 +77,7 @@ function renderBlock({
         className="text-muted-foreground italic"
         style={getBlockquoteStyle()}
       >
-        {renderInlines(block.children, `${index}`, color)}
+        {renderInlines(block.children, `${index}`, linkClassName)}
       </Text>
     );
   }
@@ -95,7 +95,7 @@ function renderBlock({
   }
 
   if (block.kind === 'blank-line') return '';
-  const content = renderInlines(block.children, `${index}`, color);
+  const content = renderInlines(block.children, `${index}`, linkClassName);
 
   if (flattenListItems) {
     return <React.Fragment key={`block:${index}`}>{content}</React.Fragment>;
@@ -236,7 +236,7 @@ function getListMarkerClassName(marker: string) {
 function renderInlines(
   inlines: recordMarkdown.RecordMarkdownInline[],
   keyPrefix: string,
-  color?: string,
+  linkClassName?: string,
   shouldLinkifyText = true
 ): React.ReactNode[] {
   return inlines.map((inline, index) => {
@@ -244,14 +244,19 @@ function renderInlines(
 
     if (inline.kind === 'text') {
       if (!shouldLinkifyText) return inline.text;
-      return renderLinkifiedText({ color, keyPrefix: key, text: inline.text });
+
+      return renderLinkifiedText({
+        keyPrefix: key,
+        linkClassName,
+        text: inline.text,
+      });
     }
 
     if (inline.kind === 'link') {
       return renderMarkdownLink({
-        children: renderInlines(inline.children, key, color, false),
-        color,
+        children: renderInlines(inline.children, key, linkClassName, false),
         href: inline.href,
+        linkClassName,
         linkText: getPlainInlineText(inline.children),
         reactKey: key,
       });
@@ -259,7 +264,7 @@ function renderInlines(
 
     return (
       <Text key={key} className={getInlineClassName(inline.kind)}>
-        {renderInlines(inline.children, key, color, shouldLinkifyText)}
+        {renderInlines(inline.children, key, linkClassName, shouldLinkifyText)}
       </Text>
     );
   });
@@ -274,20 +279,20 @@ function getInlineClassName(kind: recordMarkdown.RecordMarkdownInline['kind']) {
 
 function renderMarkdownLink({
   children,
-  color,
   href,
+  linkClassName,
   linkText,
   reactKey,
 }: {
   children: React.ReactNode;
-  color?: string;
   href: string;
+  linkClassName?: string;
   linkText: string;
   reactKey: string;
 }) {
   const url = normalizeMarkdownLinkHref(href);
   if (!url) return `[${linkText}](${href})`;
-  return renderLink({ children, color, reactKey, url });
+  return renderLink({ children, linkClassName, reactKey, url });
 }
 
 function normalizeMarkdownLinkHref(href: string) {
@@ -313,12 +318,12 @@ function getPlainInlineText(
 }
 
 function renderLinkifiedText({
-  color,
   keyPrefix,
+  linkClassName,
   text,
 }: {
-  color?: string;
   keyPrefix: string;
+  linkClassName?: string;
   text: string;
 }) {
   const matches = linkify.match(text);
@@ -337,7 +342,7 @@ function renderLinkifiedText({
     parts.push(
       renderLink({
         children: match.text,
-        color,
+        linkClassName,
         reactKey: `${keyPrefix}:${url}:${index}`,
         url,
       })
@@ -352,17 +357,15 @@ function renderLinkifiedText({
 
 function renderLink({
   children,
-  color,
+  linkClassName,
   reactKey,
   url,
 }: {
   children: React.ReactNode;
-  color?: string;
+  linkClassName?: string;
   reactKey: string;
   url: string;
 }) {
-  const linkStyle = color ? { color } : undefined;
-
   if (Platform.OS === 'web') {
     const isExternal = /^(https?:)?\/\//i.test(url);
 
@@ -370,8 +373,7 @@ function renderLink({
       <Text
         key={reactKey}
         asChild
-        className={cn('underline', !color && 'text-primary')}
-        style={linkStyle}
+        className={cn('underline', linkClassName ?? 'text-primary')}
       >
         <a
           href={url}
@@ -388,9 +390,8 @@ function renderLink({
   return (
     <Text
       key={reactKey}
-      className={cn('underline', !color && 'text-primary')}
+      className={cn('underline', linkClassName ?? 'text-primary')}
       onPress={() => Linking.openURL(url)}
-      style={linkStyle}
     >
       {children}
     </Text>

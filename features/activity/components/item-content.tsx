@@ -4,17 +4,19 @@ import { TruncatedText } from '@/features/records/components/truncated-text';
 import { groupReactionItems } from '@/features/records/lib/group-reaction-items';
 import { REACTION_ICONS } from '@/features/records/lib/reaction-icons';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
+import { cn } from '@/lib/cn';
 import { Icon } from '@/ui/icon';
 import { View } from 'react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 const ACTIVITY_TEXT_LINES = 2;
 
 export const ItemContent = ({
   group,
-  logColor,
+  logColorIndex,
 }: {
   group: GroupedActivity;
-  logColor: { lighter: string; default: string; darker: string } | null;
+  logColorIndex?: number | null;
 }) => {
   const { type, activities } = group;
   const first = activities[0];
@@ -24,13 +26,21 @@ export const ItemContent = ({
   switch (type) {
     case 'record_published': {
       return recordText ? (
-        <ActivityText logColor={logColor} text={recordText} variant="record" />
+        <ActivityText
+          logColorIndex={logColorIndex}
+          text={recordText}
+          variant="record"
+        />
       ) : null;
     }
 
     case 'reply_posted': {
       return replyText ? (
-        <ActivityText logColor={logColor} text={replyText} variant="reply" />
+        <ActivityText
+          logColorIndex={logColorIndex}
+          text={replyText}
+          variant="reply"
+        />
       ) : null;
     }
 
@@ -56,10 +66,15 @@ export const ItemContent = ({
               {group.map(({ emoji, icon }) => (
                 <Icon
                   key={emoji}
-                  className="text-muted-foreground"
-                  color={logColor?.default}
                   icon={icon}
                   weight="fill"
+                  className={
+                    logColorIndex != null
+                      ? spectrumClassNames.getSpectrumTextClassName(
+                          logColorIndex
+                        )
+                      : 'text-muted-foreground'
+                  }
                 />
               ))}
             </View>
@@ -79,19 +94,28 @@ export const ItemContent = ({
 };
 
 const ActivityText = ({
-  logColor,
+  logColorIndex,
   text,
   variant,
 }: {
-  logColor: { lighter: string; default: string; darker: string } | null;
+  logColorIndex?: number | null;
   text: string;
   variant: 'record' | 'reply';
 }) => (
   <TruncatedText
-    className={`${variant === 'record' ? '-mt-1' : '-my-1'} px-4`}
-    color={logColor?.darker}
     expandable={false}
     numberOfLines={ACTIVITY_TEXT_LINES}
     text={text}
+    className={cn(
+      variant === 'record' ? '-mt-1' : '-my-1',
+      'px-4',
+      logColorIndex != null &&
+        spectrumClassNames.getSpectrumDarkerTextClassName(logColorIndex)
+    )}
+    linkClassName={
+      logColorIndex != null
+        ? spectrumClassNames.getSpectrumDarkerTextClassName(logColorIndex)
+        : undefined
+    }
   />
 );

@@ -7,7 +7,7 @@ import * as React from 'react';
 
 import {
   CaretLeft,
-  DotsThreeVertical,
+  DotsThree,
   LinkSimple,
   ListBullets,
   ListNumbers,
@@ -60,14 +60,16 @@ export const MarkdownShortcutToolbar = ({
   disabled,
   onShortcut,
   onShortcutPressStart,
+  showAllBreakpoint = 'sm',
 }: {
   disabled?: boolean;
   onShortcut: (shortcut: markdownShortcuts.MarkdownShortcut) => void;
   onShortcutPressStart?: (event: unknown) => void;
+  showAllBreakpoint?: 'xs' | 'sm';
 }) => {
   const breakpoints = useBreakpoints();
   const [isOverflowOpen, setIsOverflowOpen] = React.useState(false);
-  const showAllShortcuts = breakpoints.sm;
+  const showAllShortcuts = breakpoints[showAllBreakpoint];
 
   React.useEffect(() => {
     if (disabled || showAllShortcuts) setIsOverflowOpen(false);
@@ -119,7 +121,7 @@ export const MarkdownShortcutToolbar = ({
               : 'Show more markdown formatting'
           }
         >
-          <Icon icon={isOverflowOpen ? CaretLeft : DotsThreeVertical} />
+          <Icon icon={isOverflowOpen ? CaretLeft : DotsThree} />
         </buttonGroup.ButtonGroupButton>
       )}
     </buttonGroup.ButtonGroup>

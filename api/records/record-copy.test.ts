@@ -189,11 +189,20 @@ describe('finalize copy', () => {
 
     await recordCopy.finalizeRecordCopy({
       dbClient: db as never,
+      date: '2026-05-12T08:30:00.000Z',
       draftRecordId: 'draft-record',
       env,
       logIds: ['target-log'],
       userId: 'user-1',
     });
+
+    const copiedRecord = transactions.find(
+      (transaction) =>
+        transaction.entity === 'records' &&
+        transaction.fields?.text === 'Copied record'
+    );
+
+    expect(copiedRecord?.fields?.date).toBe('2026-05-12T08:30:00.000Z');
 
     const cardUpdate = transactions.find(
       (transaction) =>

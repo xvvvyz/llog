@@ -1,7 +1,7 @@
 import type { Log } from '@/features/logs/types/log';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
-import { SPECTRUM } from '@/theme/spectrum';
+import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { SearchInput } from '@/ui/search-input';
@@ -31,7 +31,6 @@ export const LogsSheetContent = ({
   selectedLogIds: Set<string>;
   setQuery: (query: string) => void;
 }) => {
-  const colorScheme = useColorScheme();
   const visibleLogs = useNameSearch(logs, query);
 
   return (
@@ -40,7 +39,6 @@ export const LogsSheetContent = ({
         <SheetListScrollView loading={isSheetLoading} variant="rows">
           {visibleLogs.map((log) => {
             const isSelected = selectedLogIds.has(log.id);
-            const color = SPECTRUM[colorScheme][log.color ?? 11];
 
             return (
               <View
@@ -49,8 +47,10 @@ export const LogsSheetContent = ({
               >
                 <View className="flex-row gap-3 items-center">
                   <View
-                    className="size-4 border-continuous rounded-md"
-                    style={{ backgroundColor: color.default }}
+                    className={cn(
+                      'size-4 border-continuous rounded-md',
+                      getSpectrumBackgroundClassName(log.color)
+                    )}
                   />
                   <Text numberOfLines={1}>{log.name}</Text>
                 </View>

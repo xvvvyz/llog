@@ -3,6 +3,8 @@ import { useLogCard } from '@/features/cards/queries/use-cards';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
+import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
 import { Spinner } from '@/ui/spinner';
@@ -72,7 +74,7 @@ export const LogCardTweakSheet = () => {
       topInset={64}
     >
       <View className="mx-auto max-w-lg w-full pb-4">
-        <View className="p-4 pb-4 md:p-4 sm:pt-8">
+        <View className="p-4 pb-4 md:p-4">
           <View className="overflow-hidden border-border-secondary border-continuous rounded-xl bg-input border">
             <Textarea
               autoFocus
@@ -98,13 +100,15 @@ export const LogCardTweakSheet = () => {
             <Text>Cancel</Text>
           </Button>
           <Button
-            className="active:opacity-90 web:hover:opacity-90"
             disabled={!canSubmit}
             onPress={handleSubmit}
             size="sm"
-            style={{ backgroundColor: logColor.default }}
             variant="secondary"
             wrapperClassName="flex-1"
+            className={cn(
+              'active:opacity-90 web:hover:opacity-90',
+              getSpectrumBackgroundClassName(logColor.colorIndex)
+            )}
           >
             {isSubmitting ? (
               <Spinner color="white" />

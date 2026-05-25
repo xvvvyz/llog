@@ -95,7 +95,7 @@ export const SortableDragHandle = ({
       )}
     >
       <Icon
-        className={iconClassName ?? 'text-placeholder'}
+        className={cn(iconClassName ?? 'text-placeholder')}
         icon={DotsSixVertical}
         size={iconSize}
       />

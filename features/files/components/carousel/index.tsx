@@ -12,6 +12,7 @@ import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
+import { cn } from '@/lib/cn';
 import { Spinner } from '@/ui/spinner';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -606,9 +607,10 @@ export const Carousel = ({
         </Animated.View>
       </Animated.View>
       <Animated.View
-        className={`absolute left-4 right-4 z-10 items-center md:left-8 md:right-8 ${
-          files.length > 1 ? '' : 'pointer-events-none'
-        }`}
+        className={cn(
+          'absolute left-4 right-4 z-10 items-center md:left-8 md:right-8',
+          files.length <= 1 && 'pointer-events-none'
+        )}
         style={[
           overlayOpacityStyle,
           files.length > 1 && { pointerEvents: 'box-none' },

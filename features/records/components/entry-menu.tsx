@@ -33,7 +33,7 @@ import {
 } from 'phosphor-react-native';
 
 type EntryMenuProps = {
-  accentColor?: string;
+  accentTextClassName?: string;
   authorId?: string;
   className?: string;
   replyId?: string;
@@ -120,7 +120,7 @@ export const useEntryMenuState = ({
 };
 
 const EntryMenuDropdownContent = ({
-  accentColor,
+  accentTextClassName,
   authorId,
   logId,
   replyId,
@@ -271,10 +271,11 @@ const EntryMenuDropdownContent = ({
             }}
           >
             <Icon
-              className={!isPinned ? 'text-placeholder' : undefined}
-              color={isPinned ? accentColor : undefined}
               icon={PushPin}
               weight={isPinned ? 'fill' : 'regular'}
+              className={cn(
+                isPinned ? accentTextClassName : 'text-placeholder'
+              )}
             />
             <Text>{isPinned ? 'Unpin' : 'Pin'}</Text>
           </Menu.Item>

@@ -21,6 +21,7 @@ import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { db } from '@/lib/db';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
 import { useOutboxNetworkReachability } from '@/features/offline/outbox-network';
@@ -406,7 +407,7 @@ export const useReplyComposerModel = () => {
     isSubmitting,
     isTextareaFocused,
     loading: isEdit ? !editReply : !!recordId && !draft.id,
-    logColor: logColor?.default,
+    logColorClassName: getSpectrumBackgroundClassName(logColor.colorIndex),
     fileCount,
     filePreview,
     onChangeText: handleChangeText,

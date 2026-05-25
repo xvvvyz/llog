@@ -11,8 +11,8 @@ import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { toggleReaction } from '@/features/records/mutations/toggle-reaction';
 import type * as EntryTypes from '@/features/records/types/entry';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { getSpectrumAccentTextClassName } from '@/theme/spectrum-class-names';
 import * as React from 'react';
 
 export const Entry = ({
@@ -34,9 +34,12 @@ export const Entry = ({
   recordId?: string;
   variant?: 'compact';
 }) => {
-  const colorScheme = useColorScheme();
   const logColor = useLogColor({ id: logId });
-  const accentColor = logColor?.[colorScheme === 'dark' ? 'lighter' : 'darker'];
+
+  const accentTextClassName = getSpectrumAccentTextClassName(
+    logColor.colorIndex
+  );
+
   const myRole = useMyRole({ teamId: record.teamId });
   const recordId = recordIdProp ?? record.id ?? '';
   const profile = useProfile();
@@ -129,7 +132,7 @@ export const Entry = ({
   ]);
 
   const sharedProps: EntryTypes.EntrySharedProps = {
-    accentColor,
+    accentTextClassName,
     audioMedia,
     canAnalyzeAudio: myRole.canManage,
     canOpenReply: !isLocalPending,

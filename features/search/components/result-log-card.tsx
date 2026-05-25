@@ -1,9 +1,8 @@
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { SearchResult } from '@/features/search/types/search';
 import { TagChipList } from '@/features/tags/components/tag-chip-list';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
-import { SPECTRUM } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Avatar } from '@/ui/avatar';
 import { Text } from '@/ui/text';
 import { Pressable, View } from 'react-native';
@@ -17,13 +16,6 @@ export const ResultLogCard = ({
   onPress: () => void;
   result: SearchResult;
 }) => {
-  const colorScheme = useColorScheme();
-
-  const spectrum =
-    result.logColor != null
-      ? SPECTRUM[colorScheme][result.logColor]
-      : undefined;
-
   const tags = (result.tagItems ?? []).filter((tag) =>
     trimDisplayText(tag.name)
   );
@@ -31,8 +23,11 @@ export const ResultLogCard = ({
   return (
     <Pressable className={className} onPress={onPress}>
       <View
-        className="flex flex-col overflow-hidden min-h-24 w-full p-4 border-continuous rounded-2xl justify-between"
-        style={{ backgroundColor: spectrum?.default }}
+        className={cn(
+          'flex flex-col overflow-hidden min-h-24 w-full p-4 border-continuous rounded-2xl justify-between',
+          result.logColor != null &&
+            getSpectrumBackgroundClassName(result.logColor)
+        )}
       >
         <View className="-ml-1.5 -mt-1.5 w-full pr-6">
           {!!tags.length && (
@@ -54,9 +49,10 @@ export const ResultLogCard = ({
               {result.profiles.map((profile, index) => (
                 <View
                   key={profile.id}
-                  style={{ backgroundColor: spectrum?.default }}
                   className={cn(
                     'size-avatar-stack-sm items-center justify-center overflow-hidden rounded-full p-px border-continuous',
+                    result.logColor != null &&
+                      getSpectrumBackgroundClassName(result.logColor),
                     index > 0 && '-ml-avatar-stack-sm-overlap'
                   )}
                 >

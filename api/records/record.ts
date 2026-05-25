@@ -15,6 +15,7 @@ import { z } from 'zod/v4';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 const copyTargetsSchema = z.object({
+  date: z.union([z.string(), z.number()]).optional(),
   logIds: z.array(z.string()).min(1).max(100),
 });
 
@@ -85,10 +86,11 @@ app.post(
   zValidator('json', copyTargetsSchema),
   async (c) => {
     const user = c.var.user!;
-    const { logIds } = c.req.valid('json');
+    const { date, logIds } = c.req.valid('json');
 
     const copy = await recordCopy.finalizeRecordCopy({
       dbClient: c.var.db,
+      date,
       draftRecordId: c.req.param('recordId'),
       env: c.env,
       logIds,

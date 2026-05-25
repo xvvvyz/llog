@@ -1,6 +1,7 @@
 import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { ComposerForm } from '@/features/records/components/composer-form';
+import { RecordTimePreviewRow } from '@/features/records/components/record-time-sheet';
 import { useRecordComposerModel } from '@/features/records/hooks/use-record-composer-model';
 import { AddTagsInput } from '@/features/tags/components/add-tags-input';
 import { Button } from '@/ui/button';
@@ -112,6 +113,9 @@ export const RecordCreateSheet = () => {
   const composer = useRecordComposerModel();
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = React.useState(false);
   const hasSelectedTags = composer.selectedTags.some((tag) => !!tag.name);
+  const hasRecordDatePreview = !!composer.recordDatePreviewLabel;
+  const showTagContainer = composer.canOpenTags && hasSelectedTags;
+  const showComposerAccessory = hasRecordDatePreview || showTagContainer;
 
   React.useEffect(() => {
     if (composer.isOpen && composer.canOpenTemplates) return;
@@ -146,7 +150,7 @@ export const RecordCreateSheet = () => {
           isSubmitting={composer.isSubmitting}
           isTextareaFocused={composer.isTextareaFocused}
           isTextInputDisabled={composer.isTextInputDisabled}
-          logColor={composer.logColor}
+          logColorClassName={composer.logColorClassName}
           onChangeText={composer.onChangeText}
           onSubmit={composer.onSubmit}
           onTextareaFocusChange={composer.onTextareaFocusChange}
@@ -157,13 +161,28 @@ export const RecordCreateSheet = () => {
           text={composer.currentText}
           toolbar={composer.toolbar}
           inputAccessory={
-            composer.canOpenTags &&
-            hasSelectedTags && (
-              <AddTagsInput
-                disabled={composer.isTagsDisabled}
-                onPress={composer.onOpenTags}
-                tags={composer.selectedTags}
-              />
+            showComposerAccessory && (
+              <React.Fragment>
+                {composer.recordDatePreviewLabel ? (
+                  <RecordTimePreviewRow
+                    className="border-b border-border-secondary border-continuous"
+                    iconClassName={composer.recordDatePreviewClassName}
+                    label={composer.recordDatePreviewLabel}
+                    onPress={composer.onOpenRecordTime}
+                  />
+                ) : null}
+                {showTagContainer ? (
+                  <AddTagsInput
+                    className="border-b border-border-secondary border-continuous"
+                    disabled={composer.canOpenTags && composer.isTagsDisabled}
+                    showAction={composer.canOpenTags}
+                    tags={composer.selectedTags}
+                    onPress={
+                      composer.canOpenTags ? composer.onOpenTags : undefined
+                    }
+                  />
+                ) : null}
+              </React.Fragment>
             )
           }
           inputAction={
@@ -181,6 +200,7 @@ export const RecordCreateSheet = () => {
           }
         />
       </Sheet>
+      {composer.recordTimeSheet}
       <TemplatePickerSheet
         onClose={() => setIsTemplatePickerOpen(false)}
         onSelectTemplate={handleSelectTemplate}

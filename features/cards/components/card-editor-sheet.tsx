@@ -23,6 +23,7 @@ import { Sparkle } from 'phosphor-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import * as textareaSelection from '@/features/records/hooks/use-textarea-selection';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 export const LogCardEditorSheet = () => {
   const sheetManager = useSheetManager();
@@ -237,7 +238,7 @@ export const LogCardEditorSheet = () => {
         topInset={64}
       >
         <View className="mx-auto max-w-lg w-full pb-4">
-          <View className="p-4 pb-4 md:p-4 sm:pt-8">
+          <View className="p-4 pb-4 md:p-4">
             <View className="overflow-hidden border-border-secondary border-continuous rounded-xl bg-input border">
               <AddTagsInput
                 disabled={!resolvedLogId || !teamId || isSuggestingPrompt}
@@ -283,10 +284,12 @@ export const LogCardEditorSheet = () => {
                             />
                           ) : (
                             <Icon
-                              color={logColor.default}
                               icon={Sparkle}
                               size={18}
                               weight="fill"
+                              className={spectrumClassNames.getSpectrumTextClassName(
+                                logColor.colorIndex
+                              )}
                             />
                           )}
                           <Text className="mt-px">Suggest</Text>
@@ -309,13 +312,17 @@ export const LogCardEditorSheet = () => {
               <Text>Cancel</Text>
             </Button>
             <Button
-              className="active:opacity-90 web:hover:opacity-90"
               disabled={!canSubmit}
               onPress={handleSubmit}
               size="sm"
-              style={{ backgroundColor: logColor.default }}
               variant="secondary"
               wrapperClassName="flex-1"
+              className={cn(
+                'active:opacity-90 web:hover:opacity-90',
+                spectrumClassNames.getSpectrumBackgroundClassName(
+                  logColor.colorIndex
+                )
+              )}
             >
               {isSubmitting ? (
                 <Spinner color="white" />

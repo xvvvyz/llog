@@ -168,7 +168,7 @@ export const CardActionsMenu = ({
         <Menu.Trigger asChild>
           <Button
             accessibilityLabel="Card actions"
-            className={buttonSize === 'icon' ? 'size-8 rounded-lg' : undefined}
+            className={cn(buttonSize === 'icon' && 'size-8 rounded-lg')}
             size={buttonSize}
             variant="ghost"
             wrapperClassName={className ?? 'rounded-lg'}

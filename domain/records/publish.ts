@@ -81,6 +81,7 @@ export const buildPublishDraftRecordTransactions = ({
 export const buildCreatePublishedRecordTransactions = ({
   activityId,
   authorId,
+  contentDate,
   db,
   isPinned,
   logId,
@@ -91,6 +92,7 @@ export const buildCreatePublishedRecordTransactions = ({
 }: {
   activityId: string;
   authorId: string;
+  contentDate?: string | number;
   db: DbWithTransactions;
   isPinned?: boolean;
   logId: string;
@@ -102,7 +104,7 @@ export const buildCreatePublishedRecordTransactions = ({
   db.tx.records[recordId]
     .update({
       ...recordIdentity.getRecordIdentityFields({ authorId, logId }),
-      date: now,
+      date: normalizeDate(contentDate) ?? now,
       isDraft: false,
       ...(isPinned ? { isPinned } : {}),
       teamId,

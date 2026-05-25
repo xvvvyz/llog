@@ -1,10 +1,10 @@
 import { SpectrumSwatchPicker } from '@/features/tags/components/spectrum-swatch-picker';
 import { updateTag } from '@/features/tags/mutations/update-tag';
 import type { Tag } from '@/features/tags/types/tag';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { cn } from '@/lib/cn';
-import { SPECTRUM, resolveSpectrumColor, type Color } from '@/theme/spectrum';
+import { resolveSpectrumColor, type Color } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import * as Menu from '@/ui/dropdown-menu';
@@ -42,10 +42,8 @@ export const TagRow = ({
     React.useState(false);
 
   const [draftName, setDraftName] = React.useState(name);
-  const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const colorValue = resolveSpectrumColor(color);
-  const accentColor = SPECTRUM[colorScheme][colorValue].default;
   const canEditColor = !!canManageColor && !!onColorChange;
 
   React.useEffect(() => {
@@ -88,8 +86,10 @@ export const TagRow = ({
                 wrapperClassName="-ml-2 mr-2 rounded-full border-continuous"
               >
                 <View
-                  className="size-3.5 border-border-secondary border-continuous rounded-full border"
-                  style={{ backgroundColor: accentColor }}
+                  className={cn(
+                    'size-3.5 border-border-secondary border-continuous rounded-full border',
+                    getSpectrumBackgroundClassName(colorValue)
+                  )}
                 />
               </Button>
             </Menu.Trigger>
@@ -113,8 +113,10 @@ export const TagRow = ({
             )}
           >
             <View
-              className="size-3 border-border-secondary border-continuous rounded-full border"
-              style={{ backgroundColor: accentColor }}
+              className={cn(
+                'size-3 border-border-secondary border-continuous rounded-full border',
+                getSpectrumBackgroundClassName(colorValue)
+              )}
             />
           </View>
         )}
@@ -147,7 +149,7 @@ export const TagRow = ({
         ) : (
           <Checkbox
             checked={isSelected}
-            checkedColor={accentColor}
+            checkedClassName={getSpectrumBackgroundClassName(colorValue)}
             className="size-8 border-0"
             disabled={!canToggle}
             onCheckedChange={(selected) => onCheckedChange?.(selected)}

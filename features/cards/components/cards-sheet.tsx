@@ -7,6 +7,7 @@ import { TemplateTagSummary } from '@/features/logs/components/template-tag-summ
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { DestructiveConfirmSheet } from '@/ui/destructive-confirm-sheet';
 import { nativePointerEvents } from '@/ui/pointer-events';
@@ -203,13 +204,15 @@ export const LogCardsSheet = () => {
             <Text>Close</Text>
           </Button>
           <Button
-            className="active:opacity-90 web:hover:opacity-90"
             disabled={!logId}
             onPress={() => openEditor()}
             size="sm"
-            style={{ backgroundColor: logColor.default }}
             variant="secondary"
             wrapperClassName="flex-1"
+            className={cn(
+              'active:opacity-90 web:hover:opacity-90',
+              getSpectrumBackgroundClassName(logColor.colorIndex)
+            )}
           >
             <Text className="text-white">New</Text>
           </Button>

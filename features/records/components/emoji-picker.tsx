@@ -12,7 +12,7 @@ import { SmileySticker } from 'phosphor-react-native';
 import * as React from 'react';
 
 export const EmojiPicker = ({
-  color,
+  colorClassName,
   disabled,
   logId,
   recordId,
@@ -20,7 +20,7 @@ export const EmojiPicker = ({
   replyId,
   reactions,
 }: {
-  color?: string;
+  colorClassName?: string;
   disabled?: boolean;
   logId?: string;
   recordId: string;
@@ -94,11 +94,10 @@ export const EmojiPicker = ({
               }}
             >
               <Icon
-                color={color && selected ? color : undefined}
                 icon={REACTION_ICONS[emoji]}
                 weight={selected ? 'fill' : 'regular'}
                 className={cn(
-                  selected && !color && 'text-primary',
+                  selected && (colorClassName ?? 'text-primary'),
                   !selected && 'text-muted-foreground'
                 )}
               />

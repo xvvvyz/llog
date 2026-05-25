@@ -6,6 +6,8 @@ import type { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import type { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
@@ -130,10 +132,12 @@ export const EmptyState = ({
         </>
       ) : null}
       <Button
-        className="active:opacity-90 web:hover:opacity-90"
         size="xs"
-        style={{ backgroundColor: logColor.default }}
         wrapperClassName="w-32 self-center"
+        className={cn(
+          'active:opacity-90 web:hover:opacity-90',
+          getSpectrumBackgroundClassName(logColor.colorIndex)
+        )}
         onPress={() =>
           sheetManager.open('record-create', logId, undefined, { teamId })
         }

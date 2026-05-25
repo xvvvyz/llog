@@ -3,10 +3,9 @@ import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import * as resultAttachmentPreview from '@/features/search/components/result-attachment-preview';
 import { ResultHighlightedText } from '@/features/search/components/result-highlighted-text';
 import { SearchResult } from '@/features/search/types/search';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/time';
-import { SPECTRUM } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Avatar } from '@/ui/avatar';
 import { Card } from '@/ui/card';
 import { Text } from '@/ui/text';
@@ -21,13 +20,6 @@ export const ResultRecordCard = ({
   onPress: () => void;
   result: SearchResult;
 }) => {
-  const colorScheme = useColorScheme();
-
-  const logColor =
-    result.logColor != null
-      ? SPECTRUM[colorScheme][result.logColor]
-      : undefined;
-
   const displayText = trimDisplayText(result.text);
 
   const attachmentNames = result.attachmentNames?.filter(
@@ -99,8 +91,11 @@ export const ResultRecordCard = ({
               {result.logName && (
                 <View className="flex-row gap-1 items-center shrink">
                   <View
-                    className="size-2.5 border-continuous rounded-xs shrink-0"
-                    style={{ backgroundColor: logColor?.default }}
+                    className={cn(
+                      'size-2.5 border-continuous rounded-xs shrink-0',
+                      result.logColor != null &&
+                        getSpectrumBackgroundClassName(result.logColor)
+                    )}
                   />
                   <Text className="text-xs shrink" numberOfLines={1}>
                     {result.logName}

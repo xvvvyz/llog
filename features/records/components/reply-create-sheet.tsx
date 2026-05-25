@@ -22,7 +22,7 @@ export const ReplyCreateSheet = () => {
         isOpen={composer.isOpen}
         isSubmitting={composer.isSubmitting}
         isTextareaFocused={composer.isTextareaFocused}
-        logColor={composer.logColor}
+        logColorClassName={composer.logColorClassName}
         onChangeText={composer.onChangeText}
         onSubmit={composer.onSubmit}
         onTextareaFocusChange={composer.onTextareaFocusChange}

@@ -4,6 +4,7 @@ import * as sheetPayloads from '@/features/records/lib/sheet-payloads';
 import { deleteLink } from '@/features/records/mutations/delete-link';
 import type { Link } from '@/features/records/types/link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Link as LinkIcon } from 'phosphor-react-native';
@@ -53,7 +54,7 @@ export const useComposerLinkAttachments = ({
     () => (
       <LinkAttachments
         actionsDisabled={actionsDisabled}
-        className={links.length === 1 ? '-my-1.5' : undefined}
+        className={cn(links.length === 1 && '-my-1.5')}
         links={links}
         onDeleteLink={handleDeleteLink}
         onReorderLinks={onReorderLinks}

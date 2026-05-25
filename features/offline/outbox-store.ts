@@ -349,6 +349,7 @@ export const queueSubmission = (input: types.QueueSubmissionInput) => {
           links,
           logId: input.logId,
           needsDraftReplay: input.needsDraftReplay,
+          recordDate: input.recordDate,
           status: 'pending',
           tagIds: (input.tags ?? []).map((tag) => tag.id),
           tags: input.tags ?? [],
@@ -751,6 +752,32 @@ export const updateQueuedDraftRecordPin = ({
 
   updateQueuedDraft({ parentId: recordId, parentType: 'record' }, (draft) =>
     draft.type === 'record' ? { isPinned } : {}
+  );
+};
+
+export const updateQueuedDraftRecordDate = ({
+  recordDate,
+  recordId,
+}: {
+  recordDate?: string;
+  recordId: string;
+}) => {
+  if (!recordId) return;
+
+  updateQueuedDraft({ parentId: recordId, parentType: 'record' }, (draft) =>
+    draft.type === 'record' ? { recordDate, recordDateUpdated: true } : {}
+  );
+};
+
+export const updateQueuedRecordDate = ({
+  recordDate,
+  recordId,
+}: {
+  recordDate?: string;
+  recordId: string;
+}) => {
+  updateQueuedSubmission(`record:${recordId}`, (submission) =>
+    submission.type === 'record' ? { recordDate } : {}
   );
 };
 

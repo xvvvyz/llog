@@ -1,7 +1,8 @@
 import { TagRow } from '@/features/tags/components/tag-row';
 import type { Tag } from '@/features/tags/types/tag';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { SPECTRUM, type Color } from '@/theme/spectrum';
+import { cn } from '@/lib/cn';
+import type { Color } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { SearchInput } from '@/ui/search-input';
@@ -55,7 +56,6 @@ export const TagSheetContent = ({
   const searchInputRef =
     React.useRef<React.ComponentRef<typeof SearchInput>>(null);
 
-  const colorScheme = useColorScheme();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
 
   const focusSearchInput = React.useCallback(() => {
@@ -83,8 +83,6 @@ export const TagSheetContent = ({
   const showScrollArea =
     isLoading || hasVisibleTags || showCreateTag || showEmptyState;
 
-  const defaultTagColorValue = SPECTRUM[colorScheme][defaultTagColor].default;
-
   return (
     <>
       {showScrollArea && (
@@ -104,8 +102,10 @@ export const TagSheetContent = ({
             >
               <View className="h-10 w-10 items-center justify-center">
                 <View
-                  className="size-3.5 border-border-secondary border-continuous rounded-full border"
-                  style={{ backgroundColor: defaultTagColorValue }}
+                  className={cn(
+                    'size-3.5 border-border-secondary border-continuous rounded-full border',
+                    getSpectrumBackgroundClassName(defaultTagColor)
+                  )}
                 />
               </View>
               <Text className="flex-1 text-left" numberOfLines={1}>

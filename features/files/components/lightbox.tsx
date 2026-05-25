@@ -7,6 +7,7 @@ import { type FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
+import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { useDismissStack } from '@/ui/dismiss-stack';
 import * as Menu from '@/ui/dropdown-menu';
@@ -183,9 +184,10 @@ export const Lightbox = ({
       onTouchEnd={webTouchHandlers.onTouchEnd}
       onTouchMove={webTouchHandlers.onTouchMove}
       onTouchStart={webTouchHandlers.onTouchStart}
-      className={`absolute inset-0 ${
+      className={cn(
+        'absolute inset-0',
         isClosing ? 'pointer-events-none' : 'pointer-events-auto'
-      }`}
+      )}
     >
       {Platform.OS !== 'web' && <StatusBar animated hidden />}
       <Animated.View

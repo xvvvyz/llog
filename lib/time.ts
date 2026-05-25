@@ -1,9 +1,12 @@
 import {
   format,
-  formatDistanceToNow,
+  formatDistance,
+  isSameDay,
+  isSameYear,
   isThisYear,
   isToday,
   isYesterday,
+  subDays,
 } from 'date-fns';
 import {
   ISO_DATE_TIME_SOURCE,
@@ -164,15 +167,22 @@ export const formatIsoDateTimeInTextByDay = (text: string) => {
   });
 };
 
-export const formatDate = (date?: Date | string | number) => {
+export const formatDate = (
+  date?: Date | string | number,
+  options?: { now?: Date | string | number }
+) => {
   if (!date) return '';
   if (typeof date === 'string') date = new Date(date);
+  const now = options?.now == null ? new Date() : new Date(options.now);
 
-  if (isToday(date)) {
-    return formatDistanceToNow(date, { addSuffix: true }).replace('about ', '');
+  if (isSameDay(date, now)) {
+    return formatDistance(date, now, { addSuffix: true }).replace('about ', '');
   }
 
-  if (isYesterday(date)) return `Yesterday at ${format(date, 'h:mm a')}`;
-  if (isThisYear(date)) return format(date, "MMM d 'at' h:mm a");
+  if (isSameDay(date, subDays(now, 1))) {
+    return `Yesterday at ${format(date, 'h:mm a')}`;
+  }
+
+  if (isSameYear(date, now)) return format(date, "MMM d 'at' h:mm a");
   return format(date, "MMM d, yyyy 'at' h:mm a");
 };

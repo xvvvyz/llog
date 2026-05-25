@@ -1,10 +1,10 @@
 import * as cardMutations from '@/features/cards/mutations/cards';
 import { useCopyTargets } from '@/features/records/queries/use-copy-targets';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
-import { SPECTRUM } from '@/theme/spectrum';
+import { cn } from '@/lib/cn';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
@@ -17,7 +17,6 @@ import * as React from 'react';
 import { View } from 'react-native';
 
 export const LogCardCopyToSheet = () => {
-  const colorScheme = useColorScheme();
   const sheetManager = useSheetManager();
   const cardId = sheetManager.getId('log-card-copy-to');
   const sourceLogId = sheetManager.getContext('log-card-copy-to');
@@ -90,7 +89,6 @@ export const LogCardCopyToSheet = () => {
         <SheetListScrollView loading={copyTargets.isLoading} variant="rows">
           {visibleLogs.map((log) => {
             const isSelected = selectedLogIds.has(log.id);
-            const color = SPECTRUM[colorScheme][log.color ?? 11];
 
             return (
               <View
@@ -107,8 +105,10 @@ export const LogCardCopyToSheet = () => {
                   />
                   <Text className="text-placeholder">/</Text>
                   <View
-                    className="size-4 border-continuous rounded-md shrink-0"
-                    style={{ backgroundColor: color.default }}
+                    className={cn(
+                      'size-4 border-continuous rounded-md shrink-0',
+                      getSpectrumBackgroundClassName(log.color)
+                    )}
                   />
                   <Text className="flex-1 min-w-0" numberOfLines={1}>
                     {log.name}

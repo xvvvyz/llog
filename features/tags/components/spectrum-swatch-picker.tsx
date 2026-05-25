@@ -1,7 +1,8 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { SPECTRUM, type Color } from '@/theme/spectrum';
+import { cn } from '@/lib/cn';
+import type { Color } from '@/theme/spectrum';
 import * as Menu from '@/ui/dropdown-menu';
 import { View } from 'react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 const SPECTRUM_COLOR_ROWS = [
   [11, 0, 9, 8, 7, 6],
@@ -15,16 +16,12 @@ export const SpectrumSwatchPicker = ({
   onValueChange: (color: Color) => void;
   value?: Color;
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   return (
     <View className="gap-2">
       {SPECTRUM_COLOR_ROWS.map((row, rowIndex) => (
         <View key={`row-${rowIndex}`} className="flex-row gap-2">
           {row.map((color) => {
             const selected = value === color;
-            const spectrum = SPECTRUM[colorScheme][color];
 
             return (
               <Menu.Item
@@ -34,17 +31,17 @@ export const SpectrumSwatchPicker = ({
                 onPress={() => onValueChange(color)}
               >
                 <View
-                  className="size-5 border-[3px] border-continuous rounded-full"
-                  style={{
-                    backgroundColor:
-                      spectrum[
-                        selected ? (isDark ? 'darker' : 'lighter') : 'default'
-                      ],
-                    borderColor:
-                      spectrum[
-                        selected ? (isDark ? 'lighter' : 'darker') : 'default'
-                      ],
-                  }}
+                  className={cn(
+                    'size-5 border-[3px] border-continuous rounded-full',
+                    spectrumClassNames.getSpectrumSwatchBackgroundClassName(
+                      color,
+                      selected
+                    ),
+                    spectrumClassNames.getSpectrumSwatchBorderClassName(
+                      color,
+                      selected
+                    )
+                  )}
                 />
               </Menu.Item>
             );

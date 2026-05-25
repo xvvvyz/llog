@@ -8,14 +8,14 @@ import { Platform, Pressable, View } from 'react-native';
 
 export const TruncatedText = ({
   className,
-  color,
   expandable = true,
+  linkClassName,
   numberOfLines,
   text,
 }: {
   className?: string;
-  color?: string;
   expandable?: boolean;
+  linkClassName?: string;
   numberOfLines?: number;
   text: string;
 }) => {
@@ -79,8 +79,8 @@ export const TruncatedText = ({
   if (!displayText) return null;
 
   const renderedText = renderRecordMarkdownText({
-    color,
     flattenListItems: shouldUseWebNumberOfLines,
+    linkClassName,
     text: visibleText,
   });
 
@@ -96,8 +96,7 @@ export const TruncatedText = ({
       {expandable && truncated && !expanded && (
         <Pressable className="px-4" onPress={() => setExpanded(true)}>
           <Text
-            className={cn(!color && 'text-primary', 'hover:underline')}
-            style={color ? { color } : undefined}
+            className={cn('hover:underline', linkClassName ?? 'text-primary')}
           >
             Show more
           </Text>

@@ -242,6 +242,7 @@ const prepareRecordCopySource = async ({
 
 const buildPublishedRecordCopies = ({
   authorId,
+  contentDate,
   dbClient,
   files,
   isPinned,
@@ -251,6 +252,7 @@ const buildPublishedRecordCopies = ({
   text,
 }: {
   authorId: string;
+  contentDate?: string | number;
   dbClient: Db;
   files?: RecordCopyFile[];
   isPinned?: boolean;
@@ -270,6 +272,7 @@ const buildPublishedRecordCopies = ({
       ...recordPublish.buildCreatePublishedRecordTransactions({
         activityId: id(),
         authorId,
+        contentDate,
         db: dbClient,
         isPinned,
         logId,
@@ -355,6 +358,7 @@ export const createRecordCopyDraft = async ({
 
 export const finalizeRecordCopy = async ({
   dbClient,
+  date,
   draftRecordId,
   env,
   logIds,
@@ -362,6 +366,7 @@ export const finalizeRecordCopy = async ({
   userId,
 }: {
   dbClient: Db;
+  date?: string | number;
   draftRecordId?: string;
   env: CloudflareEnv;
   logIds: string[];
@@ -421,6 +426,7 @@ export const finalizeRecordCopy = async ({
 
   const { copiedRecords, transactions } = buildPublishedRecordCopies({
     authorId: record.author.id,
+    contentDate: date,
     dbClient,
     files: record.files,
     isPinned: record.isPinned,

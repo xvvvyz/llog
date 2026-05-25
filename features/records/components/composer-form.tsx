@@ -39,7 +39,7 @@ export const ComposerForm = ({
   isSubmitting,
   isTextInputDisabled = false,
   isTextareaFocused,
-  logColor,
+  logColorClassName,
   filePreview,
   fullscreenPortalName,
   onChangeText,
@@ -64,7 +64,7 @@ export const ComposerForm = ({
   isSubmitting: boolean;
   isTextInputDisabled?: boolean;
   isTextareaFocused: boolean;
-  logColor?: string;
+  logColorClassName?: string;
   filePreview: React.ReactNode;
   fullscreenPortalName: string;
   inputAccessory?: React.ReactNode;
@@ -288,14 +288,10 @@ export const ComposerForm = ({
   return (
     <React.Fragment>
       <View className="mx-auto max-h-full max-w-lg min-h-0 w-full">
-        <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
+        <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4">
           <View className="overflow-hidden min-h-0 border-border-secondary border-continuous rounded-xl bg-input border shrink">
-            {showInputAccessory && (
-              <View className="border-b border-border-secondary border-continuous">
-                {inputAccessory}
-              </View>
-            )}
-            <View className="relative">
+            {showInputAccessory && inputAccessory}
+            <View className="relative -my-px">
               <Textarea
                 ref={inlineTextareaRef}
                 autoFocus={shouldAutoFocus}
@@ -319,23 +315,21 @@ export const ComposerForm = ({
                   'border-0 bg-transparent',
                   isTextInputDisabled && 'opacity-50',
                   hasInlineAttachmentSummarySpace && 'min-h-16 pb-8',
-                  showInputAction && showFullscreenControl && 'pr-44',
+                  showInputAction && showFullscreenControl && 'pr-40',
                   showInputAction && !showFullscreenControl && 'pr-32',
-                  !showInputAction && showFullscreenControl && 'pr-14'
+                  !showInputAction && showFullscreenControl && 'pr-12'
                 )}
               />
               {showInputControls && (
-                <View className="absolute right-1 top-1 flex-row gap-1">
+                <View className="absolute right-1 top-1 flex-row -mr-px">
                   {showInputAction && inputAction}
                   {showFullscreenControl && (
                     <Button
                       accessibilityLabel="Open fullscreen composer"
-                      className="h-8 w-8 rounded-lg"
                       disabled={isTextInputDisabled}
                       onPress={handleOpenFullscreen}
-                      size="icon"
+                      size="icon-xs"
                       variant="ghost"
-                      wrapperClassName="rounded-lg border-continuous"
                     >
                       <Icon
                         className="text-muted-foreground"
@@ -381,15 +375,17 @@ export const ComposerForm = ({
               )}
             </View>
             <Button
-              className="active:opacity-90 web:hover:opacity-90"
               disabled={isBusy || isSubmitting || !hasContent}
               onPress={onSubmit}
               size="xs"
-              style={logColor ? { backgroundColor: logColor } : undefined}
               variant={submitVariant}
+              className={cn(
+                'active:opacity-90 web:hover:opacity-90',
+                logColorClassName
+              )}
             >
               {isSubmitting ? (
-                <Spinner color={logColor ? 'white' : undefined} />
+                <Spinner color={logColorClassName ? 'white' : undefined} />
               ) : (
                 <Text className={submitTextClassName}>{submitLabel}</Text>
               )}
@@ -406,7 +402,7 @@ export const ComposerForm = ({
       >
         <Page className="flex-col overflow-hidden max-h-full min-h-0 bg-popover">
           <View className="flex-1 mx-auto max-h-full max-w-4xl min-h-0 w-full">
-            <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
+            <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4">
               <View className="relative flex-1 overflow-hidden min-h-0 border-border-secondary border-continuous rounded-2xl bg-input border">
                 <Textarea
                   ref={fullscreenTextareaRef}
@@ -435,6 +431,7 @@ export const ComposerForm = ({
                     <MarkdownShortcutToolbar
                       disabled={isTextInputDisabled}
                       onShortcut={handleFullscreenMarkdownShortcut}
+                      showAllBreakpoint="xs"
                       onShortcutPressStart={
                         handleFullscreenMarkdownShortcutPressStart
                       }

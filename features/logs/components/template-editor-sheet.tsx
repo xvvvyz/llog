@@ -12,7 +12,9 @@ import { useTags } from '@/features/tags/queries/use-tags';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
 import { blurActiveTextInput } from '@/lib/blur-active-text-input';
+import { cn } from '@/lib/cn';
 import { resolveSpectrumColor } from '@/theme/spectrum';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import { Page } from '@/ui/page';
@@ -218,7 +220,7 @@ export const LogTemplateEditorSheet = () => {
         topInset={64}
       >
         <View className="mx-auto max-w-lg w-full pb-4">
-          <View className="p-4 pb-4 md:p-4 sm:pt-8">
+          <View className="p-4 pb-4 md:p-4">
             <View className="overflow-hidden border-border-secondary border-continuous rounded-xl bg-input border">
               <AddTagsInput
                 disabled={!resolvedLogId || !teamId}
@@ -271,13 +273,15 @@ export const LogTemplateEditorSheet = () => {
               <Text>Cancel</Text>
             </Button>
             <Button
-              className="active:opacity-90 web:hover:opacity-90"
               disabled={!canSubmit || isSubmitting}
               onPress={handleSubmit}
               size="sm"
-              style={{ backgroundColor: logColor.default }}
               variant="secondary"
               wrapperClassName="flex-1"
+              className={cn(
+                'active:opacity-90 web:hover:opacity-90',
+                getSpectrumBackgroundClassName(logColor.colorIndex)
+              )}
             >
               {isSubmitting ? (
                 <Spinner color="white" />
@@ -306,7 +310,7 @@ export const LogTemplateEditorSheet = () => {
       >
         <Page className="flex-col overflow-hidden max-h-full min-h-0 bg-popover">
           <View className="flex-1 mx-auto max-h-full max-w-4xl min-h-0 w-full">
-            <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4 sm:pt-8">
+            <View className="flex-1 min-h-0 p-4 pb-4 gap-3 md:p-4">
               <View className="relative flex-1 overflow-hidden min-h-0 border-border-secondary border-continuous rounded-2xl bg-input border">
                 <Textarea
                   ref={fullscreenTextareaRef}

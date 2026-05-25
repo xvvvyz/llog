@@ -6,6 +6,7 @@ import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
@@ -100,8 +101,10 @@ export const LogMembersSheet = () => {
                 </View>
                 <Checkbox
                   checked={isSelected}
-                  checkedColor={logColor.default}
                   className="size-8 border-0"
+                  checkedClassName={getSpectrumBackgroundClassName(
+                    logColor.colorIndex
+                  )}
                   onCheckedChange={(selected) =>
                     setSelected(profile.id, selected)
                   }
