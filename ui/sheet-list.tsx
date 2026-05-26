@@ -64,11 +64,17 @@ export const SheetListScrollView = React.forwardRef<
         contentContainerClassName={cn(
           sheetListContentVariants({ variant }),
           contentContainerClassName,
-          loading && 'min-h-24 items-center justify-center'
+          'relative',
+          loading && 'min-h-24'
         )}
         {...props}
       >
-        {loading ? <Spinner /> : children}
+        {children}
+        {loading && (
+          <View className="absolute inset-0 z-10 min-h-24 bg-popover/80 items-center justify-center">
+            <Spinner />
+          </View>
+        )}
       </ScrollView>
     );
   }

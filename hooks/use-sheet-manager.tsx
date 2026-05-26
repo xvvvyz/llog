@@ -19,6 +19,7 @@ export type SheetManager = {
     name: Name
   ) => sheetNames.SheetPayload<Name> | undefined;
   isOpen: (name: sheetNames.SheetName) => boolean;
+  isTop: (name: sheetNames.SheetName) => boolean;
   open: <Name extends sheetNames.SheetName>(
     name: Name,
     id?: string,
@@ -79,6 +80,12 @@ export const SheetManagerProvider = ({
     [sheetStack]
   );
 
+  const isTop = React.useCallback(
+    (name: sheetNames.SheetName) =>
+      sheetStack[sheetStack.length - 1]?.name === name,
+    [sheetStack]
+  );
+
   const open = React.useCallback(
     <Name extends sheetNames.SheetName>(
       name: Name,
@@ -100,7 +107,7 @@ export const SheetManagerProvider = ({
 
   return (
     <SheetContext.Provider
-      value={{ close, getContext, getId, getPayload, isOpen, open }}
+      value={{ close, getContext, getId, getPayload, isOpen, isTop, open }}
     >
       {children}
     </SheetContext.Provider>

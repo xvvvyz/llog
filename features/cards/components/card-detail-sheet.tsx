@@ -2,6 +2,7 @@ import { ProgressCard } from '@/features/cards/components/progress-card';
 import * as cardMutations from '@/features/cards/mutations/cards';
 import { useLogCard, useLogCards } from '@/features/cards/queries/use-cards';
 import * as cardDisplay from '@/features/cards/lib/card-display';
+import type { LogCard } from '@/features/cards/types/card';
 import { useLog } from '@/features/logs/queries/use-log';
 import { useTags } from '@/features/tags/queries/use-tags';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
@@ -19,14 +20,112 @@ import { Platform, View } from 'react-native';
 import * as cardActionsMenu from '@/features/cards/components/card-actions-menu';
 import { CardPaginationButton } from '@/features/cards/components/card-pagination-button';
 
+type DisplayedLogCard = LogCard & { id: string; title: string };
+
+const getDisplayableCardSnapshot = ({
+  error,
+  generationRequestedAt,
+  id,
+  isGenerating,
+  lastGeneratedAt,
+  logId,
+  order,
+  output,
+  prompt,
+  tags,
+  teamId,
+  title,
+  type,
+}: Partial<LogCard>): DisplayedLogCard | undefined => {
+  if (!id || !title || !cardDisplay.hasDisplayableCardOutput(output)) return;
+
+  return {
+    error,
+    generationRequestedAt,
+    id,
+    isGenerating,
+    lastGeneratedAt,
+    logId,
+    order,
+    output,
+    prompt,
+    tags,
+    teamId,
+    title,
+    type,
+  } as DisplayedLogCard;
+};
+
+const useRetainedDisplayableCard = ({
+  card,
+  isOpen,
+}: {
+  card: ReturnType<typeof useLogCard>;
+  isOpen: boolean;
+}) => {
+  const [displayedCard, setDisplayedCard] = React.useState<DisplayedLogCard>();
+
+  const currentDisplayableCard = React.useMemo(
+    () =>
+      getDisplayableCardSnapshot({
+        error: card.error,
+        generationRequestedAt: card.generationRequestedAt,
+        id: card.id,
+        isGenerating: card.isGenerating,
+        lastGeneratedAt: card.lastGeneratedAt,
+        logId: card.logId,
+        order: card.order,
+        output: card.output,
+        prompt: card.prompt,
+        tags: card.tags,
+        teamId: card.teamId,
+        title: card.title,
+        type: card.type,
+      }),
+    [
+      card.error,
+      card.generationRequestedAt,
+      card.id,
+      card.isGenerating,
+      card.lastGeneratedAt,
+      card.logId,
+      card.order,
+      card.output,
+      card.prompt,
+      card.tags,
+      card.teamId,
+      card.title,
+      card.type,
+    ]
+  );
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setDisplayedCard(undefined);
+      return;
+    }
+
+    if (currentDisplayableCard) {
+      setDisplayedCard(currentDisplayableCard);
+      return;
+    }
+
+    if (!card.isLoading) setDisplayedCard(undefined);
+  }, [card.isLoading, currentDisplayableCard, isOpen]);
+
+  return currentDisplayableCard ?? displayedCard;
+};
+
 export const LogCardDetailSheet = () => {
   const breakpoints = useBreakpoints();
   const sheetManager = useSheetManager();
   const isOpen = sheetManager.isOpen('log-card-detail');
+  const isTopSheet = sheetManager.isTop('log-card-detail');
   const cardId = sheetManager.getId('log-card-detail');
   const card = useLogCard({ enabled: isOpen, id: cardId });
   const [logId, setLogId] = React.useState<string>();
-  const activeLogId = card.logId ?? logId;
+  const visibleCard = useRetainedDisplayableCard({ card, isOpen });
+  const activeLogId = card.logId ?? visibleCard?.logId ?? logId;
 
   const cards = useLogCards({
     enabled: isOpen && !!activeLogId,
@@ -34,8 +133,12 @@ export const LogCardDetailSheet = () => {
   });
 
   const log = useLog({ id: activeLogId });
-  const myRole = useMyRole({ teamId: card.teamId ?? log.teamId ?? null });
-  const resolvedTeamId = card.teamId ?? log.teamId ?? undefined;
+
+  const myRole = useMyRole({
+    teamId: visibleCard?.teamId ?? log.teamId ?? null,
+  });
+
+  const resolvedTeamId = visibleCard?.teamId ?? log.teamId ?? undefined;
 
   const recordTags = useTags({
     enabled: isOpen && !!activeLogId && !!resolvedTeamId,
@@ -44,16 +147,19 @@ export const LogCardDetailSheet = () => {
     type: 'record',
   });
 
-  const title = card.title;
+  const title = visibleCard?.title;
   const logColorIndex = resolveSpectrumColor(log.color);
   const [deletingCardId, setDeletingCardId] = React.useState<string>();
 
   const { isSubmitting: isDeleting, runSubmit: runDelete } =
     useSheetSubmitState({ isOpen: !!deletingCardId });
 
-  const isGenerating = !!card.isGenerating;
+  const isGenerating = !!visibleCard?.isGenerating;
   const hasMultipleCards = cards.data.length > 1;
   const currentCardId = card.id ?? cardId;
+
+  const isContentLoading =
+    card.isLoading && (!visibleCard || visibleCard.id !== currentCardId);
 
   const detailCards = React.useMemo(
     () => cards.data.filter(cardDisplay.isDisplayableProgressCard),
@@ -96,10 +202,10 @@ export const LogCardDetailSheet = () => {
     );
   }, [deletingCardId, runDelete, sheetManager]);
 
-  const handleRefresh = React.useCallback(async () => {
-    if (!card.id) return;
-    await cardMutations.refreshCard(card.id);
-  }, [card.id]);
+  const handleRefresh = React.useCallback(
+    (cardId: string) => cardMutations.refreshCard(cardId),
+    []
+  );
 
   const openAdjacentCard = React.useCallback(
     (direction: -1 | 1) => {
@@ -118,6 +224,21 @@ export const LogCardDetailSheet = () => {
       sheetManager,
     ]
   );
+
+  React.useEffect(() => {
+    if (!isOpen || !isTopSheet || !canPaginateCards || Platform.OS !== 'web') {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        openAdjacentCard(-1);
+      } else if (event.key === 'ArrowRight') openAdjacentCard(1);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [canPaginateCards, isOpen, isTopSheet, openAdjacentCard]);
 
   const desktopPaginationAccessory =
     canPaginateCards && useDesktopPagination ? (
@@ -149,38 +270,37 @@ export const LogCardDetailSheet = () => {
         <SheetListScrollView
           className="max-h-none md:max-h-none"
           contentContainerClassName="mx-auto w-full max-w-lg p-8 md:p-8 items-stretch"
-          loading={card.isLoading}
+          loading={isContentLoading}
         >
-          {!!card.id &&
+          {!!visibleCard?.id &&
             !!title &&
-            cardDisplay.hasDisplayableCardOutput(card.output) && (
+            cardDisplay.hasDisplayableCardOutput(visibleCard.output) && (
               <ProgressCard
-                card={{ tags: card.tags, title }}
-                chartTags={recordTags.data.length ? recordTags.data : card.tags}
+                card={{ tags: visibleCard.tags, title }}
                 frame="none"
                 logColorIndex={logColorIndex}
-                output={card.output}
+                output={visibleCard.output}
                 variant="detail"
                 actionMenu={
                   myRole.canManage ? (
                     <cardActionsMenu.CardActionsMenu
                       isGenerating={isGenerating}
-                      isTweakDisabled={!card.output}
-                      onDelete={() => setDeletingCardId(card.id)}
-                      onRefresh={handleRefresh}
-                      showGeneratingIndicator={!!card.output}
+                      isTweakDisabled={!visibleCard.output}
+                      onDelete={() => setDeletingCardId(visibleCard.id)}
+                      onRefresh={() => handleRefresh(visibleCard.id)}
+                      showGeneratingIndicator={!!visibleCard.output}
                       onCopy={() =>
                         sheetManager.open(
                           'log-card-copy-to',
-                          card.id,
-                          card.logId ?? undefined
+                          visibleCard.id,
+                          visibleCard.logId ?? undefined
                         )
                       }
                       onEdit={() =>
                         sheetManager.open(
                           'log-card-editor',
-                          card.id,
-                          card.logId ?? undefined
+                          visibleCard.id,
+                          visibleCard.logId ?? undefined
                         )
                       }
                       onManage={
@@ -188,17 +308,20 @@ export const LogCardDetailSheet = () => {
                           ? () =>
                               sheetManager.open(
                                 'log-cards',
-                                card.logId ?? undefined
+                                visibleCard.logId ?? undefined
                               )
                           : undefined
                       }
                       onTweak={() =>
-                        sheetManager.open('log-card-tweak', card.id)
+                        sheetManager.open('log-card-tweak', visibleCard.id)
                       }
                     />
-                  ) : isGenerating && !!card.output ? (
+                  ) : isGenerating && !!visibleCard.output ? (
                     <cardActionsMenu.CardGeneratingIndicator />
                   ) : undefined
+                }
+                chartTags={
+                  recordTags.data.length ? recordTags.data : visibleCard.tags
                 }
               />
             )}
