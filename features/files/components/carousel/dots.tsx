@@ -1,5 +1,4 @@
-import { cn } from '@/lib/cn';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import Animated, {
   createAnimatedComponent,
@@ -20,12 +19,10 @@ type DotSize = keyof typeof DOT_SIZES;
 export const Dots = ({
   activeIndex,
   count,
-  onIndexPress,
   size = 'default',
 }: {
   activeIndex: SharedValue<number>;
   count: number;
-  onIndexPress?: (index: number) => void;
   size?: DotSize;
 }) => {
   const dotSize = DOT_SIZES[size];
@@ -37,11 +34,11 @@ export const Dots = ({
 
   return (
     <View
-      className={cn('overflow-hidden', onIndexPress && 'pointer-events-auto')}
+      className="overflow-hidden"
       style={{ height: dotSize.size, width: containerWidth }}
     >
       <Animated.View
-        className={cn(size === 'sm' ? 'flex-row gap-1.5' : 'flex-row gap-2')}
+        className={size === 'sm' ? 'flex-row gap-1.5' : 'flex-row gap-2'}
       >
         {Array.from({ length: count }, (_, i) => (
           <CarouselDot
@@ -50,7 +47,6 @@ export const Dots = ({
             count={count}
             dotStep={dotStep}
             index={i}
-            onPress={onIndexPress ? () => onIndexPress(i) : undefined}
             size={size}
           />
         ))}
@@ -64,14 +60,12 @@ const CarouselDot = ({
   count,
   dotStep,
   index,
-  onPress,
   size,
 }: {
   activeIndex: SharedValue<number>;
   count: number;
   dotStep: number;
   index: number;
-  onPress?: () => void;
   size: DotSize;
 }) => {
   const style = useAnimatedStyle(() => {
@@ -97,22 +91,10 @@ const CarouselDot = ({
 
   return (
     <AnimatedDotView
-      className={cn(size === 'sm' ? 'size-1.5' : 'size-2')}
+      className={size === 'sm' ? 'size-1.5' : 'size-2'}
       style={style}
     >
-      {onPress ? (
-        <Pressable
-          accessibilityLabel={`Go to carousel item ${index + 1}`}
-          className="h-full w-full"
-          hitSlop={8}
-          onPress={onPress}
-          role="button"
-        >
-          <View className="h-full w-full border-continuous rounded-full bg-popover-foreground shadow-xl" />
-        </Pressable>
-      ) : (
-        <View className="h-full w-full border-continuous rounded-full bg-popover-foreground shadow-xl" />
-      )}
+      <View className="h-full w-full border-continuous rounded-full bg-popover-foreground shadow-xl" />
     </AnimatedDotView>
   );
 };

@@ -34,6 +34,12 @@ export const getRecordMediaHref = (recordId: string, fileId: string) =>
     fileId
   )}` as Href;
 
+export const getRecordMediaUrl = (
+  recordId: string,
+  fileId: string,
+  appUrl?: string
+) => getAppUrl(getRecordMediaHref(recordId, fileId) as string, appUrl);
+
 export const openRecordDetail = (
   recordId?: string,
   replyId?: string,

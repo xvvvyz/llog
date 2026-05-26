@@ -9,6 +9,7 @@ const {
   getRecordDetailHref,
   getRecordDetailUrl,
   getRecordMediaHref,
+  getRecordMediaUrl,
   getRecordReplyDetailUrl,
   openRecordDetail,
 } = await import('@/features/records/lib/route');
@@ -38,6 +39,10 @@ describe('record routes', () => {
     expect(
       getRecordReplyDetailUrl('record/id', 'reply?id=1', 'https://llog.example')
     ).toBe('https://llog.example/records/record%2Fid?replyId=reply%3Fid%3D1');
+
+    expect(
+      getRecordMediaUrl('record/id', 'file#1', 'https://llog.example')
+    ).toBe('https://llog.example/records/record%2Fid/files/file%231');
   });
 
   test('opens record routes', () => {

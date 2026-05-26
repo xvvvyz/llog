@@ -5,9 +5,11 @@ import { useMediaLightboxTransition } from '@/features/files/hooks/use-lightbox-
 import * as mediaPlaybackRate from '@/features/files/lib/media-playback-rate';
 import { type FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
+import * as recordRoutes from '@/features/records/lib/route';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { cn } from '@/lib/cn';
+import { shareUrl } from '@/lib/share';
 import { Button } from '@/ui/button';
 import { useDismissStack } from '@/ui/dismiss-stack';
 import * as Menu from '@/ui/dropdown-menu';
@@ -26,6 +28,7 @@ import {
   Check,
   CornersOut,
   DotsThreeVertical,
+  ShareNetwork,
   Speedometer,
 } from 'phosphor-react-native';
 
@@ -36,6 +39,7 @@ export const Lightbox = ({
   onActiveMediaChange,
   onCloseAnimationEnd,
   onRequestClose,
+  recordId,
 }: {
   canAnalyzeAudio?: boolean;
   media: FileItem[];
@@ -43,6 +47,7 @@ export const Lightbox = ({
   onActiveMediaChange?: (mediaId: string) => void;
   onCloseAnimationEnd?: () => void;
   onRequestClose: () => void;
+  recordId?: string;
 }) => {
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -103,9 +108,16 @@ export const Lightbox = ({
   const hasRenderedPreview = defaultIndex !== -1;
   const topControlStyle = { top: insets.top + (headerHeight - 44) / 2 };
 
-  const renderActiveVideoMenu = React.useCallback(
+  const renderActiveMediaMenu = React.useCallback(
     (file: FileItem) => {
+      const isVideo = file.type === 'video';
+
+      const shareTargetUrl = recordId
+        ? recordRoutes.getRecordMediaUrl(recordId, file.id)
+        : undefined;
+
       const hasAnalysisMenuItems =
+        isVideo &&
         audioAnalysisMenuItems.shouldShowAudioAnalysisMenu({
           canAnalyze: canAnalyzeAudio,
           file,
@@ -115,7 +127,7 @@ export const Lightbox = ({
         <Menu.Root>
           <Menu.Trigger asChild>
             <Button
-              accessibilityLabel="Video options"
+              accessibilityLabel={isVideo ? 'Video options' : 'Image options'}
               className="size-11"
               size="icon"
               variant="link"
@@ -134,40 +146,62 @@ export const Lightbox = ({
             portalHostName={overlayLayers.MEDIA_LIGHTBOX_PORTAL_HOST}
           >
             <Menu.Item
-              onPress={() => videoHandleRef.current?.enterFullscreen()}
-            >
-              <Icon className="text-placeholder" icon={CornersOut} />
-              <Text>Fullscreen</Text>
-            </Menu.Item>
-            <Menu.Separator />
-            {mediaPlaybackRate.PLAYBACK_RATES.map((playbackRate) => {
-              const isSelected = playbackRate === videoPlaybackRate;
+              closeOnPress={false}
+              disabled={!shareTargetUrl}
+              onPress={async () => {
+                if (!shareTargetUrl) return;
 
-              return (
-                <Menu.Item
-                  key={playbackRate}
-                  onPress={() => setVideoPlaybackRate(playbackRate)}
-                >
-                  <Icon
-                    className="text-placeholder"
-                    icon={isSelected ? Check : Speedometer}
-                  />
-                  <Text className="tabular-nums">
-                    {playbackRate.toFixed(1)}×
-                  </Text>
-                </Menu.Item>
-              );
-            })}
-            {hasAnalysisMenuItems && <Menu.Separator />}
-            <audioAnalysisMenuItems.AudioAnalysisMenuItems
-              canAnalyze={canAnalyzeAudio}
-              file={file}
-            />
+                try {
+                  await shareUrl({ title: 'llog', url: shareTargetUrl });
+                } catch {
+                  // noop
+                }
+              }}
+            >
+              <Icon className="text-placeholder" icon={ShareNetwork} />
+              <Text>Share</Text>
+            </Menu.Item>
+            {isVideo && (
+              <Menu.Item
+                onPress={() => videoHandleRef.current?.enterFullscreen()}
+              >
+                <Icon className="text-placeholder" icon={CornersOut} />
+                <Text>Fullscreen</Text>
+              </Menu.Item>
+            )}
+            {isVideo && (
+              <React.Fragment>
+                <Menu.Separator />
+                {mediaPlaybackRate.PLAYBACK_RATES.map((playbackRate) => {
+                  const isSelected = playbackRate === videoPlaybackRate;
+
+                  return (
+                    <Menu.Item
+                      key={playbackRate}
+                      onPress={() => setVideoPlaybackRate(playbackRate)}
+                    >
+                      <Icon
+                        className="text-placeholder"
+                        icon={isSelected ? Check : Speedometer}
+                      />
+                      <Text className="tabular-nums">
+                        {playbackRate.toFixed(1)}×
+                      </Text>
+                    </Menu.Item>
+                  );
+                })}
+                {hasAnalysisMenuItems && <Menu.Separator />}
+                <audioAnalysisMenuItems.AudioAnalysisMenuItems
+                  canAnalyze={canAnalyzeAudio}
+                  file={file}
+                />
+              </React.Fragment>
+            )}
           </Menu.Content>
         </Menu.Root>
       );
     },
-    [canAnalyzeAudio, videoPlaybackRate]
+    [canAnalyzeAudio, recordId, videoPlaybackRate]
   );
 
   useDismissStack({
@@ -229,7 +263,7 @@ export const Lightbox = ({
           onActiveMediaChange={onActiveMediaChange}
           onDismissLockChange={setIsDismissLocked}
           onUiHiddenChange={setIsUiHidden}
-          renderVideoActions={renderActiveVideoMenu}
+          renderMediaActions={renderActiveMediaMenu}
           topActionsOffset={topControlStyle.top}
           videoHandleRef={videoHandleRef}
           videoPlaybackRate={videoPlaybackRate}

@@ -103,6 +103,7 @@ export default function MediaLightboxRoute() {
       onActiveMediaChange={handleActiveMediaChange}
       onCloseAnimationEnd={handleCloseAnimationEnd}
       onRequestClose={handleRequestClose}
+      recordId={routeRecordId}
     />
   );
 }

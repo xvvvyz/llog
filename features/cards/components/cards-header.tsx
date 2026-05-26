@@ -462,7 +462,6 @@ export const CardsHeader = ({
             <Dots
               activeIndex={activeIndex}
               count={visibleCards.length}
-              onIndexPress={setCardIndex}
               size="sm"
             />
             <CardPaginationButton

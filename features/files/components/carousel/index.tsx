@@ -9,13 +9,16 @@ import { useCarouselVideoControls } from '@/features/files/hooks/use-carousel-vi
 import * as carouselHelpers from '@/features/files/lib/carousel';
 import { FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
+import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useDelayedTrue } from '@/hooks/use-delayed-true';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
-import { cn } from '@/lib/cn';
+import { Button } from '@/ui/button';
+import { Icon } from '@/ui/icon';
 import { Spinner } from '@/ui/spinner';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
+import { CaretLeft, CaretRight } from 'phosphor-react-native';
 
 import Animated, {
   Extrapolation,
@@ -40,7 +43,7 @@ export const Carousel = ({
   onActiveMediaChange,
   onDismissLockChange,
   onUiHiddenChange,
-  renderVideoActions,
+  renderMediaActions,
   topActionsOffset = 0,
   videoHandleRef: externalVideoHandleRef,
   videoPlaybackRate = 1,
@@ -55,11 +58,12 @@ export const Carousel = ({
   onActiveMediaChange?: (fileId: string) => void;
   onDismissLockChange?: (isLocked: boolean) => void;
   onUiHiddenChange?: (isHidden: boolean) => void;
-  renderVideoActions?: (file: FileItem) => React.ReactNode;
+  renderMediaActions?: (file: FileItem) => React.ReactNode;
   topActionsOffset?: number;
   videoHandleRef?: React.RefObject<VideoPlayerHandle | null>;
   videoPlaybackRate?: number;
 }) => {
+  const breakpoints = useBreakpoints();
   const insets = useSafeAreaInsets();
   const carouselRef = React.useRef<ICarouselInstance>(null);
   const localVideoHandleRef = React.useRef<VideoPlayerHandle | null>(null);
@@ -163,6 +167,9 @@ export const Carousel = ({
   const activeMedia = files[activeIndexState];
   const isActiveVideo = activeMedia?.type === 'video';
   const isOverlaySheetOpen = isTrackSheetOpen || isTranscriptSheetOpen;
+  const canPaginate = files.length > 1;
+  const isPaginationDisabled = isNavigationLocked || isDismissGestureActive;
+  const showDesktopPagination = Platform.OS === 'web' && breakpoints.md;
 
   const showImageLoadingIndicator =
     activeMedia?.type === 'image' && isActiveMediaLoading;
@@ -230,12 +237,16 @@ export const Carousel = ({
     [getClampedIndex]
   );
 
-  const handleDotPress = React.useCallback(
-    (index: number) => {
-      if (isNavigationLocked || isDismissGestureActive) return;
-      setPage(index);
+  const openAdjacentPage = React.useCallback(
+    (direction: -1 | 1) => {
+      if (isPaginationDisabled) return;
+
+      const currentIndex =
+        carouselRef.current?.getCurrentIndex() ?? activeIndexState;
+
+      setPage(currentIndex + direction);
     },
-    [isDismissGestureActive, isNavigationLocked, setPage]
+    [activeIndexState, isPaginationDisabled, setPage]
   );
 
   React.useEffect(() => {
@@ -559,16 +570,53 @@ export const Carousel = ({
             { pointerEvents: 'box-none' },
           ]}
         >
+          {!!activeMedia && renderMediaActions && (
+            <View
+              className="absolute right-4 z-10 flex-row pointer-events-auto items-center md:right-8"
+              style={{ top: topActionsOffset }}
+            >
+              {canPaginate && showDesktopPagination && (
+                <React.Fragment>
+                  <Button
+                    accessibilityLabel="Previous media"
+                    className="size-11"
+                    disabled={isPaginationDisabled || activeIndexState <= 0}
+                    onPress={() => openAdjacentPage(-1)}
+                    size="icon"
+                    variant="link"
+                    wrapperClassName="rounded-full"
+                  >
+                    <Icon
+                      className="text-popover-foreground"
+                      icon={CaretLeft}
+                      size={24}
+                    />
+                  </Button>
+                  <Button
+                    accessibilityLabel="Next media"
+                    className="size-11"
+                    onPress={() => openAdjacentPage(1)}
+                    size="icon"
+                    variant="link"
+                    wrapperClassName="rounded-full"
+                    disabled={
+                      isPaginationDisabled ||
+                      activeIndexState >= files.length - 1
+                    }
+                  >
+                    <Icon
+                      className="text-popover-foreground"
+                      icon={CaretRight}
+                      size={24}
+                    />
+                  </Button>
+                </React.Fragment>
+              )}
+              {renderMediaActions(activeMedia)}
+            </View>
+          )}
           {isActiveVideo && (
             <React.Fragment>
-              {renderVideoActions && (
-                <View
-                  className="absolute right-4 z-10 border-continuous rounded-full pointer-events-auto md:right-8"
-                  style={{ top: topActionsOffset }}
-                >
-                  {renderVideoActions(activeMedia)}
-                </View>
-              )}
               <VideoMetadataOverlay
                 currentTime={videoCurrentTime}
                 file={activeMedia}
@@ -607,22 +655,11 @@ export const Carousel = ({
         </Animated.View>
       </Animated.View>
       <Animated.View
-        className={cn(
-          'absolute left-4 right-4 z-10 items-center md:left-8 md:right-8',
-          files.length <= 1 && 'pointer-events-none'
-        )}
-        style={[
-          overlayOpacityStyle,
-          files.length > 1 && { pointerEvents: 'box-none' },
-          { bottom: dotsBottomOffset },
-        ]}
+        className="absolute left-4 right-4 z-10 pointer-events-none items-center md:left-8 md:right-8"
+        style={[overlayOpacityStyle, { bottom: dotsBottomOffset }]}
       >
         {files.length > 1 && (
-          <Dots
-            activeIndex={activeIndex}
-            count={files.length}
-            onIndexPress={handleDotPress}
-          />
+          <Dots activeIndex={activeIndex} count={files.length} />
         )}
       </Animated.View>
     </View>
