@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { clampIndex } from '@/lib/clamp';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import { nativePointerEvents } from '@/ui/pointer-events';
 import { Spinner } from '@/ui/spinner';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -560,15 +561,12 @@ export const Carousel = ({
         )}
       </Animated.View>
       <Animated.View
-        className="absolute inset-0"
-        style={[overlayOpacityStyle, { pointerEvents: 'box-none' }]}
+        className="absolute inset-0 web:pointer-events-none"
+        style={[overlayOpacityStyle, nativePointerEvents.boxNone]}
       >
         <Animated.View
-          className="absolute inset-0"
-          style={[
-            activeMediaOverlayProgressStyle,
-            { pointerEvents: 'box-none' },
-          ]}
+          className="absolute inset-0 web:pointer-events-none"
+          style={[activeMediaOverlayProgressStyle, nativePointerEvents.boxNone]}
         >
           {!!activeMedia && renderMediaActions && (
             <View
