@@ -192,7 +192,7 @@ export const useSearch = ({ query }: { query: string }) => {
             records: {
               $: {
                 order: { date: 'desc' as const },
-                where: { isDraft: false },
+                where: recordQueries.publishedRecordWhere,
               },
               ...recordQueries.recordSearchDocumentQuery,
             },

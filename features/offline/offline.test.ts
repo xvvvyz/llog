@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import * as recordStatus from '@/domain/records/status';
 import * as localEntry from '@/features/offline/local-entry';
 import * as outboxNormalize from '@/features/offline/outbox-normalize';
 import * as outboxState from '@/features/offline/outbox-state';
@@ -524,6 +525,20 @@ describe('pending entries', () => {
     expect(record.localStatus).toBe('pending');
   });
 
+  test('marks future records scheduled', () => {
+    const queuedRecord = pendingEntries.queuedRecordToEntry({
+      attachments: [],
+      profile: { id: fixtures.profileId, name: 'Member' },
+      submission: queuedRecordSubmission({
+        recordDate: '2999-05-13T00:00:00.000Z',
+        status: 'complete',
+      }),
+    });
+
+    expect(queuedRecord.date).toBe('2999-05-13T00:00:00.000Z');
+    expect(recordStatus.recordIsScheduled(queuedRecord)).toBe(true);
+  });
+
   test('keeps sync errors', () => {
     const queuedRecord = pendingEntries.queuedRecordToEntry({
       attachments: [],
@@ -630,6 +645,22 @@ describe('pending entries', () => {
         )
         .map((reply) => reply.id)
     ).toEqual(['reply-a', 'reply-b']);
+  });
+
+  test('breaks reply ties', () => {
+    expect(
+      pendingEntries
+        .mergePendingReplies(
+          [
+            { date: fixtures.date, id: 'reply-c' },
+            { date: fixtures.date, id: 'reply-b' },
+            { id: 'reply-z' },
+            { id: 'reply-a' },
+          ],
+          []
+        )
+        .map((reply) => reply.id)
+    ).toEqual(['reply-a', 'reply-z', 'reply-b', 'reply-c']);
   });
 
   test('keeps pending reply data', () => {

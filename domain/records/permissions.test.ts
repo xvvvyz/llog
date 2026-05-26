@@ -53,7 +53,7 @@ describe('record permissions', () => {
         actorRole: Role.Member,
         hasLog: true,
         isAuthor: true,
-        isDraft: false,
+        isUnpublished: false,
       })
     ).toBe(true);
   });
@@ -64,7 +64,7 @@ describe('record permissions', () => {
         actorRole: null,
         hasLog: true,
         isAuthor: true,
-        isDraft: false,
+        isUnpublished: false,
       })
     ).toBe(false);
   });
@@ -75,7 +75,7 @@ describe('record permissions', () => {
         actorRole: null,
         hasLog: false,
         isAuthor: true,
-        isDraft: true,
+        isUnpublished: true,
       })
     ).toBe(true);
   });
@@ -86,7 +86,7 @@ describe('record permissions', () => {
         actorRole: Role.Admin,
         hasLog: true,
         isAuthor: false,
-        isDraft: false,
+        isUnpublished: false,
       })
     ).toBe(true);
   });

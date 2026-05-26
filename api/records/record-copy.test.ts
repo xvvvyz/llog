@@ -110,6 +110,116 @@ describe('copy draft team', () => {
   });
 });
 
+describe('create copy draft', () => {
+  test('copies scheduled source', async () => {
+    const transactions: Transaction[] = [];
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('records' in query) {
+          return {
+            records: [
+              {
+                author: { id: 'profile-1', user: { id: 'user-1' } },
+                files: [],
+                id: 'scheduled-record',
+                links: [],
+                log: { id: 'source-log' },
+                status: 'scheduled',
+                tags: [],
+                teamId: 'team-1',
+                text: 'Scheduled record',
+              },
+            ],
+          };
+        }
+
+        if ('roles' in query) return { roles: [{ id: 'role-1' }] };
+
+        if ('logs' in query) {
+          return {
+            logs: [
+              {
+                id: 'target-log',
+                profiles: [{ user: { id: 'user-1' } }],
+                team: { roles: [{ role: Role.Member }] },
+                teamId: 'team-1',
+              },
+            ],
+          };
+        }
+
+        if ('tags' in query) return { tags: [] };
+        return {};
+      },
+      transact: async (transaction: Transaction | Transaction[]) => {
+        transactions.push(
+          ...(Array.isArray(transaction) ? transaction : [transaction])
+        );
+      },
+      tx: {
+        files: entityTx('files'),
+        links: entityTx('links'),
+        records: entityTx('records'),
+      },
+    };
+
+    const result = await recordCopy.createRecordCopyDraft({
+      dbClient: db as never,
+      logIds: ['target-log'],
+      now: '2026-05-26T12:00:00.000Z',
+      recordId: 'scheduled-record',
+      userId: 'user-1',
+    });
+
+    const draftRecord = transactions.find(
+      (transaction) =>
+        transaction.entity === 'records' &&
+        transaction.fields?.text === 'Scheduled record'
+    );
+
+    expect(result.targetLogIds).toEqual(['target-log']);
+
+    expect(draftRecord?.fields).toMatchObject({
+      authorId: 'profile-1',
+      date: '2026-05-26T12:00:00.000Z',
+      status: 'draft',
+      teamId: 'team-1',
+      text: 'Scheduled record',
+    });
+  });
+
+  test('rejects draft source', async () => {
+    const db = {
+      query: async () => ({
+        records: [
+          {
+            author: { id: 'profile-1', user: { id: 'user-1' } },
+            files: [],
+            id: 'draft-record',
+            links: [],
+            log: { id: 'source-log' },
+            status: 'draft',
+            tags: [],
+            teamId: 'team-1',
+            text: 'Draft record',
+          },
+        ],
+      }),
+      tx: { records: entityTx('records') },
+    };
+
+    await expect(
+      recordCopy.createRecordCopyDraft({
+        dbClient: db as never,
+        logIds: ['target-log'],
+        recordId: 'draft-record',
+        userId: 'user-1',
+      })
+    ).rejects.toThrow(HTTPException);
+  });
+});
+
 describe('finalize copy', () => {
   test('refreshes cards', async () => {
     const transactions: Transaction[] = [];
@@ -124,8 +234,8 @@ describe('finalize copy', () => {
                 author: { id: 'profile-1', user: { id: 'user-1' } },
                 files: [],
                 id: 'draft-record',
-                isDraft: true,
                 links: [],
+                status: 'draft',
                 tags: [
                   {
                     id: 'target-tag',

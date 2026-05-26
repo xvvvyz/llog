@@ -135,6 +135,7 @@ describe('recordSummaryFields', () => {
       mcpFields.recordSummaryFields({
         date: new Date('2026-01-02T03:04:05.000Z'),
         id: 'record-1',
+        status: 'published',
       })
     ).toMatchObject({ date: '2026-01-02T03:04:05.000Z', id: 'record-1' });
   });
@@ -144,6 +145,7 @@ describe('recordSummaryFields', () => {
       mcpFields.recordSummaryFields({
         date: new Date('2026-01-02T03:04:05.000Z'),
         id: 'record-1',
+        status: 'published',
         text: 'Line 1\nLine 2',
       })
     ).toMatchObject({ text: 'Line 1\nLine 2' });
@@ -152,7 +154,11 @@ describe('recordSummaryFields', () => {
   test('adds record URLs', () => {
     expect(
       mcpFields.recordSummaryFields(
-        { date: new Date('2026-01-02T03:04:05.000Z'), id: 'record 1' },
+        {
+          date: new Date('2026-01-02T03:04:05.000Z'),
+          id: 'record 1',
+          status: 'published',
+        },
         { appUrl: 'https://llog.example' }
       )
     ).toMatchObject({ url: 'https://llog.example/records/record%201' });

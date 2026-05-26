@@ -1,7 +1,11 @@
 import { visibleFileQuery } from '@/domain/files/query';
 import { recordTagsQuery } from '@/domain/tags/query';
 
-export const publishedContentWhere = { isDraft: { $not: true } } as const;
+export const publishedRecordWhere = { status: 'published' } as const;
+
+export const publishedReplyWhere = { isDraft: { $not: true } } as const;
+
+export const scheduledRecordWhere = { status: 'scheduled' } as const;
 
 export const countFileQuery = { $: { fields: ['id' as const] } };
 
@@ -25,7 +29,7 @@ export const recordListItemQuery = {
   files: visibleFileQuery,
   links: {},
   reactions: { author: {} },
-  replies: { $: { fields: ['id' as const], where: publishedContentWhere } },
+  replies: { $: { fields: ['id' as const], where: publishedReplyWhere } },
   tags: recordTagsQuery,
 };
 
@@ -36,7 +40,7 @@ export const recordDetailQuery = {
   log: {},
   reactions: { author: {} },
   replies: {
-    $: { order: { date: 'asc' as const }, where: publishedContentWhere },
+    $: { order: { date: 'asc' as const }, where: publishedReplyWhere },
     author: entryAuthorQuery,
     files: visibleFileQuery,
     links: {},
@@ -109,7 +113,7 @@ export const recordSearchQuery = {
         'text' as const,
       ],
       order: { date: 'asc' as const },
-      where: publishedContentWhere,
+      where: publishedReplyWhere,
     },
     files: searchFileQuery,
     links: searchLinkQuery,

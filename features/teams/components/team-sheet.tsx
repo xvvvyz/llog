@@ -44,10 +44,6 @@ const ROLE_LABELS: Record<string, string> = {
   [Role.Member]: 'Member',
 };
 
-const ROW_BUTTON_CLASS_NAME =
-  'h-auto px-8 py-3 rounded-none gap-4 justify-between';
-
-const ROW_BUTTON_WRAPPER_CLASS_NAME = '-mx-8 w-auto rounded-none';
 const TEAM_NAME_INPUT_ID = 'team-name';
 
 export const TeamSheet = () => {
@@ -161,7 +157,7 @@ export const TeamSheet = () => {
                 <Button
                   className="w-full pb-3 pt-3 px-8 rounded-none items-end justify-between"
                   variant="link"
-                  wrapperClassName={ROW_BUTTON_WRAPPER_CLASS_NAME}
+                  wrapperClassName="-mx-8 w-auto rounded-none"
                 >
                   <Text className="leading-tight text-base text-muted-foreground shrink-0">
                     Avatar
@@ -236,10 +232,10 @@ export const TeamSheet = () => {
           </Pressable>
         </View>
         <Button
-          className={ROW_BUTTON_CLASS_NAME}
+          className="h-auto px-8 py-3 rounded-none gap-4 justify-between"
           onPress={() => teamId && sheetManager.open('team-members', teamId)}
           variant="ghost"
-          wrapperClassName={ROW_BUTTON_WRAPPER_CLASS_NAME}
+          wrapperClassName="-mx-8 w-auto rounded-none"
         >
           <View className="flex-1">
             <Text className="font-normal leading-normal text-muted-foreground">
@@ -260,10 +256,10 @@ export const TeamSheet = () => {
           return (
             <View key={role}>
               <Button
-                className={ROW_BUTTON_CLASS_NAME}
+                className="h-auto px-8 py-3 rounded-none gap-4 justify-between"
                 onPress={() => handleInvite(role)}
                 variant="ghost"
-                wrapperClassName={ROW_BUTTON_WRAPPER_CLASS_NAME}
+                wrapperClassName="-mx-8 w-auto rounded-none"
               >
                 <View className="flex-1">
                   <Text className="font-normal leading-normal text-muted-foreground">
@@ -287,9 +283,9 @@ export const TeamSheet = () => {
         })}
         {canDeleteTeam && (
           <Button
-            className={ROW_BUTTON_CLASS_NAME}
+            className="h-auto px-8 py-3 rounded-none gap-4 justify-between"
             variant="ghost"
-            wrapperClassName={ROW_BUTTON_WRAPPER_CLASS_NAME}
+            wrapperClassName="-mx-8 w-auto rounded-none"
             onPress={() =>
               sheetManager.open('team-delete', undefined, undefined, { teamId })
             }

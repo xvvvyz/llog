@@ -168,7 +168,7 @@ export const LinkAttachmentsSheet = () => {
         (link) => !queuedLinks.isQueuedLinkLocalStatus(link.localStatus)
       );
 
-      if (parent?.isDraft) {
+      if (parent?.usesQueuedDraftLinks) {
         outboxStore.reorderQueuedDraftLinksForParent({
           baseLinks: links.map(queuedLinks.toQueuedLinkSnapshot),
           orderedIds,

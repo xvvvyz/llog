@@ -1,7 +1,8 @@
+import * as recordStatus from '@/domain/records/status';
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { EntryMenuContent } from '@/features/records/components/entry-menu';
-import { EntrySyncStatus } from '@/features/records/components/entry-sync-status';
+import { EntryTimestamp } from '@/features/records/components/entry-timestamp';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { RecordTagChips } from '@/features/records/components/record-tag-chips';
@@ -10,7 +11,6 @@ import { TruncatedText } from '@/features/records/components/truncated-text';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { type EntrySharedProps } from '@/features/records/types/entry';
 import { cn } from '@/lib/cn';
-import { formatDate } from '@/lib/time';
 import { Avatar } from '@/ui/avatar';
 import { Text } from '@/ui/text';
 import { View } from 'react-native';
@@ -36,8 +36,9 @@ export const CompactEntry = ({
   const displayText = trimDisplayText(record.text);
   const hasDocumentFiles = documentFiles.length > 0;
   const hasLinks = links.length > 0;
+  const isScheduled = recordStatus.recordIsScheduled(record);
   const hasRecordTags = record.tags?.some((tag) => !!tag.name);
-  const hasTopMeta = hasRecordTags || !!syncStatus;
+  const hasTopMeta = hasRecordTags;
 
   return (
     <View
@@ -48,9 +49,6 @@ export const CompactEntry = ({
     >
       {hasTopMeta && (
         <View className="flex-row flex-wrap mb-3 gap-1 items-start">
-          {syncStatus && (
-            <EntrySyncStatus className="shrink-0" status={syncStatus} />
-          )}
           {hasRecordTags && (
             <RecordTagChips
               className="flex-1 gap-1 justify-start"
@@ -83,9 +81,13 @@ export const CompactEntry = ({
               >
                 {record.author?.name}
               </Text>
-              <Text className="leading-snug text-muted-foreground text-sm shrink-0">
-                {formatDate(record.date)}
-              </Text>
+              <EntryTimestamp
+                accentTextClassName={accentTextClassName}
+                className="shrink-0"
+                date={record.date}
+                isScheduled={isScheduled}
+                syncStatus={syncStatus}
+              />
             </View>
             <EntryMenuContent
               accentTextClassName={accentTextClassName}
@@ -144,7 +146,7 @@ export const CompactEntry = ({
           <ReactionsRow
             accentTextClassName={accentTextClassName}
             className="mt-3"
-            disabled={!!record.localStatus}
+            disabled={!!record.localStatus || isScheduled}
             logId={logId}
             onDoubleTapReaction={onDoubleTapReaction}
             record={record}

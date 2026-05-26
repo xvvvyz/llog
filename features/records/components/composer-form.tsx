@@ -88,7 +88,6 @@ export const ComposerForm = ({
 
   const isVirtualKeyboardVisible = useVirtualKeyboardVisible(isTextareaFocused);
   const isComposerCompact = isVirtualKeyboardVisible;
-  const showMarkdownShortcuts = showFormattingControls && isComposerCompact;
   const showInputAccessory = !isComposerCompact && !!inputAccessory;
   const showInputAction = !isComposerCompact && !!inputAction;
   const showInputControls = showInputAction || showFullscreenControl;
@@ -171,8 +170,6 @@ export const ComposerForm = ({
   const {
     handleKeyDown: handleInlineKeyDown,
     handleSelectionChange: handleInlineSelectionChange,
-    handleShortcut: handleInlineMarkdownShortcut,
-    handleShortcutPressStart: handleInlineMarkdownShortcutPressStart,
     handleTouchStart: handleInlineTextareaTouchStart,
     readSelection: readInlineSelection,
   } = useMarkdownTextareaShortcuts({
@@ -366,15 +363,7 @@ export const ComposerForm = ({
           </View>
           <View className="flex-row px-4 gap-3 items-center shrink-0">
             <View className="flex-1 flex-row gap-2 items-center">
-              {showMarkdownShortcuts ? (
-                <MarkdownShortcutToolbar
-                  disabled={isTextInputDisabled}
-                  onShortcut={handleInlineMarkdownShortcut}
-                  onShortcutPressStart={handleInlineMarkdownShortcutPressStart}
-                />
-              ) : (
-                toolbar
-              )}
+              {toolbar}
             </View>
             <Button
               className={logColorClassName}

@@ -105,9 +105,9 @@ const schema = i.schema({
     records: i.entity({
       authorId: i.string().indexed().optional(),
       date: i.date().indexed(),
-      isDraft: i.boolean().indexed(),
       isPinned: i.boolean().optional().indexed(),
       logId: i.string().indexed().optional(),
+      status: i.string().indexed(),
       teamId: i.string().indexed(),
       text: i.string().optional(),
     }),

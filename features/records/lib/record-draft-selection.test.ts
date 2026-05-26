@@ -7,8 +7,8 @@ describe('record draft selection', () => {
       ignoredDraftIds: new Set(['record-a']),
       logId: 'log-a',
       records: [
-        { id: 'record-a', log: { id: 'log-a' } },
-        { id: 'record-b', log: { id: 'log-a' } },
+        { id: 'record-a', log: { id: 'log-a' }, status: 'draft' },
+        { id: 'record-b', log: { id: 'log-a' }, status: 'draft' },
       ],
     });
 
@@ -20,8 +20,8 @@ describe('record draft selection', () => {
       logId: 'log-a',
       outboxDraftIds: new Set(['record-a']),
       records: [
-        { id: 'record-a', log: { id: 'log-a' } },
-        { id: 'record-b', log: { id: 'log-b' } },
+        { id: 'record-a', log: { id: 'log-a' }, status: 'draft' },
+        { id: 'record-b', log: { id: 'log-b' }, status: 'draft' },
       ],
     });
 

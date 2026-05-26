@@ -61,9 +61,6 @@ export const Preview = ({
   const showVisualAttachmentDivider =
     visualItems.length > 0 && hasLowerAttachments;
 
-  const lowerDocumentGapClassName =
-    hasDocumentAttachments && hasExtraAttachments ? 'gap-[18px]' : 'gap-4';
-
   return (
     <View className="border-border-secondary border-t">
       <VisualPreview
@@ -89,7 +86,13 @@ export const Preview = ({
             />
           )}
           {(hasDocumentAttachments || hasExtraAttachments) && (
-            <View className={lowerDocumentGapClassName}>
+            <View
+              className={
+                hasDocumentAttachments && hasExtraAttachments
+                  ? 'gap-[18px]'
+                  : 'gap-4'
+              }
+            >
               <DocumentAttachments
                 actionsDisabled={actionsDisabled}
                 className={hasDocumentAttachments ? '-my-[9px]' : undefined}

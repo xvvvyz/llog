@@ -20,7 +20,6 @@ import * as React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 const QUOTED_TEXT_LINES = 2;
-const QUOTED_TEXT_CLASS_NAME = 'text-muted-foreground text-sm';
 
 const QuotedRecordThumb = ({
   item,
@@ -204,9 +203,9 @@ export const QuotedRecord = ({
 };
 
 const QuotedRecordText = ({ text }: { text: string }) => (
-  <TextContext.Provider value={QUOTED_TEXT_CLASS_NAME}>
+  <TextContext.Provider value="text-muted-foreground text-sm">
     <TruncatedText
-      className={cn('max-w-full shrink', QUOTED_TEXT_CLASS_NAME)}
+      className="max-w-full text-muted-foreground text-sm shrink"
       expandable={false}
       numberOfLines={QUOTED_TEXT_LINES}
       text={text}

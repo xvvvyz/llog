@@ -6,8 +6,8 @@ const baseRecord = {
   author: { name: 'Cade' },
   date: '2026-05-20T10:00:00.000Z',
   id: 'record-1',
-  isDraft: false,
   logId: 'log-1',
+  status: 'published',
   tags: [{ id: 'tag-a', name: 'Session' }],
 };
 

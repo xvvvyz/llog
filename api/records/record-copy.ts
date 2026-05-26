@@ -1,6 +1,9 @@
 import type { Db } from '@/api/middleware/db';
 import * as cardActions from '@/api/cards/card-actions';
+import * as recordScheduler from '@/api/records/record-scheduler';
 import { copyFileQuery } from '@/domain/files/query';
+import * as recordIdentity from '@/domain/records/identity-fields';
+import * as recordStatus from '@/domain/records/status';
 import * as copyTags from '@/domain/records/copy-tags';
 import * as recordPublish from '@/domain/records/publish';
 import * as permissions from '@/domain/teams/permissions';
@@ -35,6 +38,14 @@ export type RecordCopyLink = Partial<
 >;
 
 type RecordCopyTargetLog = Pick<LogEntity, 'id' | 'teamId'>;
+
+const normalizeCopyDate = (date?: string | number) => {
+  if (!date) return undefined;
+  return typeof date === 'string' ? date : new Date(date).toISOString();
+};
+
+const isFutureDate = (date: string, now: string) =>
+  new Date(date).getTime() > new Date(now).getTime();
 
 export const normalizeCopyOrder = (
   order: number | null | undefined,
@@ -214,7 +225,7 @@ const prepareRecordCopySource = async ({
   const record = records[0];
   if (!record) throw new HTTPException(404, { message: 'Record not found' });
 
-  if (record.isDraft) {
+  if (recordStatus.getRecordStatus(record) === 'draft') {
     throw new HTTPException(409, { message: 'Record is still a draft' });
   }
 
@@ -297,6 +308,59 @@ const buildPublishedRecordCopies = ({
   return { copiedRecords, transactions };
 };
 
+const buildScheduledRecordCopies = ({
+  authorId,
+  contentDate,
+  dbClient,
+  files,
+  isPinned,
+  links,
+  targetLogs,
+  text,
+}: {
+  authorId: string;
+  contentDate: string;
+  dbClient: Db;
+  files?: RecordCopyFile[];
+  isPinned?: boolean;
+  links?: RecordCopyLink[];
+  targetLogs: RecordCopyTargetLog[];
+  text?: string | null;
+}) => {
+  const copiedRecords = targetLogs.map((log) => ({
+    id: id(),
+    logId: log.id,
+    teamId: log.teamId,
+  }));
+
+  const transactions = copiedRecords.flatMap(
+    ({ id: copiedRecordId, logId, teamId }) => [
+      dbClient.tx.records[copiedRecordId]
+        .update({
+          ...recordIdentity.getRecordIdentityFields({ authorId, logId }),
+          date: contentDate,
+          ...recordIdentity.getStatusFields('scheduled'),
+          ...(isPinned ? { isPinned } : {}),
+          teamId,
+          ...(text != null ? { text } : {}),
+        })
+        .link({ author: authorId, log: logId }),
+      ...(links ?? []).map((link, order) =>
+        dbClient.tx.links[id()]
+          .update(getClonedLinkData(link, teamId, order))
+          .link({ record: copiedRecordId })
+      ),
+      ...(files ?? []).map((file, order) =>
+        dbClient.tx.files[id()]
+          .update(getClonedFileData(file, order))
+          .link({ record: copiedRecordId })
+      ),
+    ]
+  );
+
+  return { copiedRecords, transactions };
+};
+
 export const createRecordCopyDraft = async ({
   dbClient,
   logIds,
@@ -333,7 +397,7 @@ export const createRecordCopyDraft = async ({
       .update({
         authorId,
         date: draftDate,
-        isDraft: true,
+        ...recordIdentity.getStatusFields('draft'),
         teamId: draftTeamId,
         ...(record.text != null ? { text: record.text } : {}),
       })
@@ -397,7 +461,7 @@ export const finalizeRecordCopy = async ({
     throw new HTTPException(403, { message: 'Forbidden' });
   }
 
-  if (!record.isDraft || record.log?.id) {
+  if (recordStatus.getRecordStatus(record) !== 'draft' || record.log?.id) {
     throw new HTTPException(409, { message: 'Invalid copy draft' });
   }
 
@@ -423,18 +487,33 @@ export const finalizeRecordCopy = async ({
   });
 
   const copyDate = now ?? new Date().toISOString();
+  const contentDate = normalizeCopyDate(date);
 
-  const { copiedRecords, transactions } = buildPublishedRecordCopies({
-    authorId: record.author.id,
-    contentDate: date,
-    dbClient,
-    files: record.files,
-    isPinned: record.isPinned,
-    links: record.links,
-    now: copyDate,
-    targetLogs,
-    text: trimmedText,
-  });
+  const shouldScheduleCopies =
+    !!contentDate && isFutureDate(contentDate, copyDate);
+
+  const { copiedRecords, transactions } = shouldScheduleCopies
+    ? buildScheduledRecordCopies({
+        authorId: record.author.id,
+        contentDate: contentDate!,
+        dbClient,
+        files: record.files,
+        isPinned: record.isPinned,
+        links: record.links,
+        targetLogs,
+        text: trimmedText,
+      })
+    : buildPublishedRecordCopies({
+        authorId: record.author.id,
+        contentDate,
+        dbClient,
+        files: record.files,
+        isPinned: record.isPinned,
+        links: record.links,
+        now: copyDate,
+        targetLogs,
+        text: trimmedText,
+      });
 
   const copiedRecordTagIds =
     targetLogs.length === 1
@@ -453,13 +532,24 @@ export const finalizeRecordCopy = async ({
         )
       : [];
 
+  if (shouldScheduleCopies) {
+    await Promise.all(
+      copiedRecords.map((copiedRecord) =>
+        recordScheduler.scheduleRecordPublish(env, {
+          publishAt: contentDate!,
+          recordId: copiedRecord.id,
+        })
+      )
+    );
+  }
+
   await dbClient.transact([
     ...transactions,
     ...tagTransactions,
     dbClient.tx.records[draftRecordId].delete(),
   ]);
 
-  if (targetLogs.length === 1) {
+  if (!shouldScheduleCopies && targetLogs.length === 1) {
     await cardActions.queuePublishedRecordCardRefreshes({
       dbClient,
       env,
@@ -468,5 +558,10 @@ export const finalizeRecordCopy = async ({
     });
   }
 
-  return { records: copiedRecords };
+  return {
+    records: copiedRecords.map((record) => ({
+      ...record,
+      status: shouldScheduleCopies ? 'scheduled' : 'published',
+    })),
+  };
 };

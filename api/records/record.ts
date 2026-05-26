@@ -4,13 +4,15 @@ import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { auth, createAdminDb, db } from '@/api/middleware/db';
 import * as recordCopy from '@/api/records/record-copy';
 import { replayOfflineRecordDraft } from '@/api/records/record-offline-draft-replay';
-import { publishDraftRecord } from '@/api/records/record-publish';
+import * as recordScheduler from '@/api/records/record-scheduler';
 import { fileAssetQuery } from '@/domain/files/query';
 import * as recordPermissions from '@/domain/records/permissions';
+import * as recordStatus from '@/domain/records/status';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod/v4';
+import * as recordPublish from '@/api/records/record-publish';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -29,18 +31,44 @@ const offlineDraftReplaySchema = z.object({
   text: z.string().max(10240),
 });
 
+const scheduleUpdateSchema = z.object({
+  date: z.union([z.string(), z.number()]),
+  text: z.string().max(10240).optional(),
+});
+
 app.post('/:recordId/publish', db(), auth(), async (c) => {
   const user = c.var.user!;
 
-  await publishDraftRecord({
+  const result = await recordPublish.publishDraftRecord({
     dbClient: c.var.db,
     env: c.env,
     recordId: c.req.param('recordId'),
     userId: user.id,
   });
 
-  return c.json({ success: true });
+  return c.json({ success: true, ...result });
 });
+
+app.put(
+  '/:recordId/schedule',
+  db(),
+  auth(),
+  zValidator('json', scheduleUpdateSchema),
+  async (c) => {
+    const body = c.req.valid('json');
+
+    const result = await recordPublish.updateScheduledRecordSchedule({
+      date: body.date,
+      dbClient: c.var.db,
+      env: c.env,
+      recordId: c.req.param('recordId'),
+      text: body.text,
+      userId: c.var.user.id,
+    });
+
+    return c.json({ success: true, ...result });
+  }
+);
 
 app.put(
   '/:recordId/offline-draft-replay',
@@ -107,7 +135,7 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
 
   const { records } = await c.var.db.query({
     records: {
-      $: { fields: ['id', 'isDraft', 'logId'], where: { id: recordId } },
+      $: { fields: ['id', 'logId', 'status'], where: { id: recordId } },
       author: { user: { $: { fields: ['id'] } } },
       log: {
         $: { fields: ['id'] },
@@ -132,7 +160,7 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
     actorRole: callerRole,
     hasLog,
     isAuthor,
-    isDraft: !!record.isDraft,
+    isUnpublished: recordStatus.recordIsUnpublished(record),
   });
 
   if (!canDelete) throw new HTTPException(403, { message: 'Forbidden' });
@@ -160,7 +188,10 @@ app.delete('/:recordId', db({ asUser: true }), async (c) => {
       ? deleteUnusedFileAssets(c.env, filesToDelete)
       : undefined,
     deleteActivities(c.env, activities),
-    !record.isDraft && logId && recordTagIds.length
+    recordStatus.recordIsScheduled(record)
+      ? recordScheduler.cancelRecordPublishSchedules(c.env, recordId)
+      : undefined,
+    recordStatus.recordIsPublished(record) && logId && recordTagIds.length
       ? cardActions.queuePublishedRecordCardRefreshes({
           dbClient: createAdminDb(c.env),
           env: c.env,

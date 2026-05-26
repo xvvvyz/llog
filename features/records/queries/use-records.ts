@@ -1,5 +1,5 @@
 import * as recordIdentity from '@/domain/records/identity-fields';
-import { recordListItemQuery } from '@/domain/records/query';
+import * as query from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
@@ -38,7 +38,25 @@ export const useRecords = ({ logId }: { logId?: string }) => {
                 isPinned: true,
               },
             },
-            ...recordListItemQuery,
+            ...query.recordListItemQuery,
+          },
+        }
+      : null
+  );
+
+  const { data: scheduledData, isLoading: scheduledLoading } = db.useQuery(
+    logId && profile.id
+      ? {
+          records: {
+            $: {
+              order: { date: 'desc' },
+              where: {
+                ...query.scheduledRecordWhere,
+                authorId: profile.id,
+                logId,
+              },
+            },
+            ...query.recordListItemQuery,
           },
         }
       : null
@@ -58,7 +76,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
               order: { date: 'desc' },
               where: recordIdentity.getPublishedLogRecordWhere(logId),
             },
-            ...recordListItemQuery,
+            ...query.recordListItemQuery,
           },
         }
       : (null as never)
@@ -66,6 +84,14 @@ export const useRecords = ({ logId }: { logId?: string }) => {
 
   const hasCurrentPinnedResult = useCurrentQueryResult(logId, pinnedData);
   const hasCurrentPagedResult = useCurrentQueryResult(logId, pagedData);
+
+  const scheduledResultKey =
+    logId && profile.id ? `${profile.id}:${logId}:scheduled` : undefined;
+
+  const hasCurrentScheduledResult = useCurrentQueryResult(
+    scheduledResultKey,
+    scheduledData
+  );
 
   const pinnedRecords = React.useMemo(
     () => (logId && hasCurrentPinnedResult ? (pinnedData?.records ?? []) : []),
@@ -77,14 +103,32 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     [hasCurrentPagedResult, logId, pagedData?.records]
   );
 
+  const scheduledRecords = React.useMemo(
+    () =>
+      scheduledResultKey && hasCurrentScheduledResult
+        ? (scheduledData?.records ?? [])
+        : [],
+    [hasCurrentScheduledResult, scheduledData?.records, scheduledResultKey]
+  );
+
   const hasPinnedResult = !logId || hasCurrentPinnedResult;
   const hasPagedResult = !logId || hasCurrentPagedResult;
+  const hasScheduledResult = !scheduledResultKey || hasCurrentScheduledResult;
 
   React.useEffect(() => {
-    if (!logId || !hasCurrentPinnedResult || !hasCurrentPagedResult) return;
+    if (
+      !logId ||
+      !hasCurrentPinnedResult ||
+      !hasCurrentPagedResult ||
+      !hasScheduledResult
+    ) {
+      return;
+    }
 
     const visibleRecordIds = new Set(
-      [...pinnedRecords, ...pagedRecords].map((record) => record.id)
+      [...pinnedRecords, ...pagedRecords, ...scheduledRecords].map(
+        (record) => record.id
+      )
     );
 
     const completedSubmissionIds = outbox.submissions
@@ -108,10 +152,12 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   }, [
     hasCurrentPagedResult,
     hasCurrentPinnedResult,
+    hasScheduledResult,
     logId,
     outbox.submissions,
     pagedRecords,
     pinnedRecords,
+    scheduledRecords,
   ]);
 
   const queuedRecordPins = outbox.recordPins;
@@ -124,6 +170,10 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     }
 
     for (const record of pagedRecords) {
+      merged.set(record.id, record);
+    }
+
+    for (const record of scheduledRecords) {
       merged.set(record.id, record);
     }
 
@@ -224,6 +274,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     pinnedRecords,
     profile,
     queuedRecordPins,
+    scheduledRecords,
   ]);
 
   React.useEffect(() => {
@@ -252,7 +303,12 @@ export const useRecords = ({ logId }: { logId?: string }) => {
   const isQueryLoading =
     !!logId &&
     !hasRecords &&
-    (pinnedLoading || pagedLoading || !hasPinnedResult || !hasPagedResult);
+    (pinnedLoading ||
+      pagedLoading ||
+      scheduledLoading ||
+      !hasPinnedResult ||
+      !hasPagedResult ||
+      !hasScheduledResult);
 
   const canShowEmptyResult = !!logId && !isQueryLoading && !hasRecords;
 

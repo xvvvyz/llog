@@ -17,6 +17,22 @@ export const getRecordDate = ({
   recordDate?: string;
 }) => recordDate ?? createdAt;
 
+const toValidDate = (date?: string | number | Date | null) => {
+  if (!date) return undefined;
+  const value = date instanceof Date ? date : new Date(date);
+  return Number.isNaN(value.getTime()) ? undefined : value;
+};
+
+export const isFutureRecordDate = (
+  date?: string | number | Date | null,
+  now: string | number | Date = new Date()
+) => {
+  const value = toValidDate(date);
+  const nowValue = toValidDate(now);
+  if (!value || !nowValue) return false;
+  return value.getTime() > nowValue.getTime();
+};
+
 export const toRecordDateInputValue = (date: Date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 

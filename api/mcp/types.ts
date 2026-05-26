@@ -120,7 +120,7 @@ export type McpReply = Pick<ReplyEntity, 'id' | 'text'> & {
     | null;
 } & Partial<Pick<ReplyEntity, 'isDraft' | 'teamId'>>;
 
-export type McpRecord = Pick<RecordEntity, 'id'> & {
+export type McpRecord = Pick<RecordEntity, 'id' | 'status'> & {
   author?: McpProfile | null;
   date: McpDate;
   files?: McpFile[];
@@ -129,7 +129,7 @@ export type McpRecord = Pick<RecordEntity, 'id'> & {
   reactions?: McpReaction[];
   replies?: McpReply[];
   tags?: McpTag[];
-} & Partial<Pick<RecordEntity, 'isDraft' | 'isPinned' | 'teamId' | 'text'>>;
+} & Partial<Pick<RecordEntity, 'isPinned' | 'teamId' | 'text'>>;
 
 type McpFileFields = Pick<McpFile, 'id' | 'type'> &
   Partial<

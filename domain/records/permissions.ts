@@ -19,14 +19,14 @@ export const canDeleteRecord = ({
   actorRole,
   hasLog,
   isAuthor,
-  isDraft,
+  isUnpublished,
 }: {
   actorRole?: string | null;
   hasLog: boolean;
   isAuthor: boolean;
-  isDraft: boolean;
+  isUnpublished: boolean;
 }) =>
   teamPermissions.canDeleteOwnOrManagedResource({
     actorRole,
-    isAuthor: isAuthor && (!!actorRole || (!hasLog && isDraft)),
+    isAuthor: isAuthor && (!!actorRole || (!hasLog && isUnpublished)),
   });

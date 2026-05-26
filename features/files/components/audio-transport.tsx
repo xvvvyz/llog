@@ -66,14 +66,6 @@ export const AudioTransport = ({
   const isDefaultSize = size === 'default';
   const buttonSize = isDefaultSize ? 'icon-sm' : 'icon-xs';
   const iconSize = isDefaultSize ? 20 : 16;
-
-  const heightClassName = isDefaultSize
-    ? 'h-10 min-h-10 max-h-10'
-    : 'h-8 min-h-8 max-h-8';
-
-  const gapClassName = isDefaultSize ? 'gap-3' : 'gap-2';
-  const timeTextClassName = isDefaultSize ? 'text-sm' : 'text-xs';
-  const trailingPaddingClassName = isDefaultSize ? 'pr-4' : 'pr-3';
   const hasOptionsMenuContent = optionsMenuContent != null;
 
   const shouldShowOptionsMenu =
@@ -146,9 +138,9 @@ export const AudioTransport = ({
     <View
       className={cn(
         'flex-row min-w-0 items-center overflow-hidden px-0',
-        heightClassName,
-        gapClassName,
-        !hasTrailingControls && trailingPaddingClassName,
+        isDefaultSize ? 'h-10 min-h-10 max-h-10' : 'h-8 min-h-8 max-h-8',
+        isDefaultSize ? 'gap-3' : 'gap-2',
+        !hasTrailingControls && (isDefaultSize ? 'pr-4' : 'pr-3'),
         className
       )}
     >
@@ -165,14 +157,14 @@ export const AudioTransport = ({
       <View
         className={cn(
           'flex-1 flex-row min-w-0 items-center',
-          heightClassName,
-          gapClassName
+          isDefaultSize ? 'h-10 min-h-10 max-h-10' : 'h-8 min-h-8 max-h-8',
+          isDefaultSize ? 'gap-3' : 'gap-2'
         )}
       >
         <View
           className={cn(
             'relative flex-1 min-w-0 justify-center',
-            heightClassName
+            isDefaultSize ? 'h-10 min-h-10 max-h-10' : 'h-8 min-h-8 max-h-8'
           )}
         >
           <View
@@ -193,7 +185,7 @@ export const AudioTransport = ({
         <Text
           className={cn(
             'leading-tight text-placeholder text-right shrink-0 tabular-nums',
-            timeTextClassName
+            isDefaultSize ? 'text-sm' : 'text-xs'
           )}
         >
           {formatTime(timeLabelTime)}

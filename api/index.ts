@@ -16,6 +16,8 @@ import { getMaxQueueJobDeliveryAttempts } from '@/wrangler.generated';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
+export { SchedulingAgent } from '@/api/scheduling-agent';
+
 installConsoleErrorSerializer();
 const api = new Hono().basePath('/api/v1');
 api.use(headers());

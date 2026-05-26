@@ -19,6 +19,7 @@
         }
       ],
       "id": "record-1",
+      "status": "published",
       "tags": [{ "id": "tag-care", "name": "Care" }],
       "text": "Morning check-in: appetite was low."
     },
@@ -27,6 +28,7 @@
       "date": "2026-05-22T18:30:00.000Z",
       "files": [],
       "id": "record-2",
+      "status": "published",
       "replies": [
         {
           "author": { "name": "Mina" },

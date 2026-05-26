@@ -172,7 +172,7 @@ export type CardAnalysisPlan = {
 export type CardFactRecord = { facts?: unknown };
 
 export type CardSourceFactRecord = Pick<LlogRecord, 'id'> &
-  Partial<Pick<LlogRecord, 'date' | 'isDraft' | 'logId' | 'text'>> & {
+  Partial<Pick<LlogRecord, 'date' | 'logId' | 'status' | 'text'>> & {
     author?: (Pick<Profile, 'name'> & Partial<Pick<Profile, 'id'>>) | null;
     sourceAssemblyVersion?: string;
     tags?: (Pick<Tag, 'id'> & Partial<Pick<Tag, 'name'>>)[];
@@ -1050,12 +1050,12 @@ export const recordFingerprint = ({
 
   return stableHash({
     date: record.date ?? null,
-    isDraft: !!record.isDraft,
     logId: record.logId ?? null,
     matchingTags,
     sourceAssemblyVersion:
       record.sourceAssemblyVersion ??
       cardSourceAssembly.CARD_SOURCE_ASSEMBLY_VERSION,
+    status: record.status ?? null,
     text: record.text ?? '',
   });
 };

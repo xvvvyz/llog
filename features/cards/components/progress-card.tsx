@@ -84,7 +84,6 @@ const BAR_DIMMED_OPACITY = 0.62;
 
 export const PROGRESS_CARD_PREVIEW_HEIGHT = 208;
 
-const ACTION_MENU_SLOT_CLASS = '-mr-1.5 -mt-1.5';
 const HORIZONTAL_BAR_COMPACT_MIN_HEIGHT = 64;
 const HORIZONTAL_BAR_ROW_HEIGHT = 20;
 const HORIZONTAL_BAR_HEIGHT = 8;
@@ -2670,7 +2669,7 @@ export const ProgressCard = ({
           </Text>
         </View>
         {actionMenu ? (
-          <View className={ACTION_MENU_SLOT_CLASS}>{actionMenu}</View>
+          <View className="-mr-1.5 -mt-1.5">{actionMenu}</View>
         ) : null}
       </View>
       {resolvedOutput ? (

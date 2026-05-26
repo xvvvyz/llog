@@ -8,7 +8,9 @@ const tagColorValues = '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
 const logNameMaxLength = 32;
 const templateTextMaxLength = 10240;
 const recordIsAuthor = "auth.id in data.ref('author.user.id')";
-const recordIsDraft = 'data.isDraft == true';
+const recordIsDraft = "data.status == 'draft'";
+const recordIsUnpublished = "data.status != 'published'";
+const recordIsPublished = "data.status == 'published'";
 const recordHasLog = "size(data.ref('log.id')) > 0";
 const recordHasNoLog = "size(data.ref('log.id')) == 0";
 const recordIsTeamMember = "auth.id in data.ref('log.team.roles.user.id')";
@@ -371,7 +373,7 @@ const rules = {
       'isReplyTeamMember',
       "auth.id in data.ref('reply.record.log.team.roles.user.id')",
       'isLoglessDraftRecordFile',
-      "true in data.ref('record.isDraft') && data.ref('record.log.id') == [] && isRecordAuthor",
+      "'draft' in data.ref('record.status') && data.ref('record.log.id') == [] && isRecordAuthor",
       'isRecordLogMember',
       "auth.id in data.ref('record.log.profiles.user.id')",
       'isReplyLogMember',
@@ -547,7 +549,7 @@ const rules = {
       'canViewReply',
       'isReplyTeamMember && (canManageReply || isReplyLogMember)',
       'isLoglessDraftRecordLink',
-      "true in data.ref('record.isDraft') && data.ref('record.log.id') == [] && isRecordAuthor",
+      "'draft' in data.ref('record.status') && data.ref('record.log.id') == [] && isRecordAuthor",
     ],
     allow: {
       view: ruleStrings.or(
@@ -874,11 +876,13 @@ const rules = {
       "request.modifiedFields.all(field, field in ['isPinned'])",
       'onlyPublishesDraft',
       ruleStrings.and(
-        "request.modifiedFields.all(field, field in ['isDraft', 'text'])",
-        'newData.isDraft == false'
+        "request.modifiedFields.all(field, field in ['status', 'text'])",
+        "newData.status == 'published'"
       ),
-      'isDraft',
-      recordIsDraft,
+      'isUnpublished',
+      recordIsUnpublished,
+      'isPublished',
+      recordIsPublished,
       'hasLog',
       recordHasLog,
       'isAuthorOwnedLoglessDraft',
@@ -921,7 +925,7 @@ const rules = {
               ruleStrings.or(
                 ruleStrings.group(
                   ruleStrings.and(
-                    '!isDraft',
+                    'isPublished',
                     ruleStrings.group(
                       ruleStrings.or('canManage', 'isLogMember')
                     )
@@ -951,7 +955,7 @@ const rules = {
         ruleStrings.group(
           ruleStrings.and(
             'canEditManagedContent',
-            '!isDraft',
+            'isPublished',
             'onlyModifiesText',
             'isValidNewText'
           )
@@ -959,7 +963,7 @@ const rules = {
         ruleStrings.group(
           ruleStrings.and(
             'canEditManagedContent',
-            '!isDraft',
+            'isPublished',
             'onlyModifiesDate'
           )
         ),
@@ -967,7 +971,7 @@ const rules = {
           ruleStrings.and(
             'isAuthor',
             'isTeamMember',
-            'isDraft',
+            'isUnpublished',
             ruleStrings.group(ruleStrings.or('canManage', 'isLogMember')),
             'onlyPublishesDraft',
             'isValidNewText'
@@ -992,7 +996,7 @@ const rules = {
         ),
         ruleStrings.group(
           ruleStrings.and(
-            'isDraft',
+            'isUnpublished',
             'canManageRecordTags',
             'onlyModifiesTextAndTags',
             'isValidNewText',

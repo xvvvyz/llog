@@ -1,5 +1,5 @@
 import * as cardSourceSelection from '@/domain/cards/source-selection';
-import { publishedContentWhere } from '@/domain/records/query';
+import { publishedRecordWhere } from '@/domain/records/query';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import * as React from 'react';
@@ -34,7 +34,7 @@ export const useHasCardSourceRecords = ({
               limit: 1,
               order: { date: 'asc' as const },
               where: {
-                ...publishedContentWhere,
+                ...publishedRecordWhere,
                 'tags.id': { $in: normalizedTagIds },
                 logId,
                 text: { $not: '' },

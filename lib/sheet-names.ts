@@ -61,18 +61,18 @@ export type RecordSheetLinkSnapshot = {
 export type RecordSheetParent =
   | {
       id: string;
-      isDraft?: boolean;
       links?: RecordSheetLinkSnapshot[];
       teamId?: string;
       type: 'record';
+      usesQueuedDraftLinks?: boolean;
     }
   | {
       id: string;
-      isDraft?: boolean;
       links?: RecordSheetLinkSnapshot[];
       recordId: string;
       teamId?: string;
       type: 'reply';
+      usesQueuedDraftLinks?: boolean;
     };
 
 export type SheetPayloadMap = {

@@ -11,6 +11,8 @@ import { getVisibleLog, requireVisibleLog } from '@/api/mcp/viewer';
 import * as push from '@/api/push/web-push';
 import * as recordIdentity from '@/domain/records/identity-fields';
 import * as recordPublish from '@/domain/records/publish';
+import { scheduledRecordWhere } from '@/domain/records/query';
+import * as recordStatus from '@/domain/records/status';
 import { id } from '@instantdb/admin';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
@@ -60,12 +62,25 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   }: {
     limit?: number;
     logId?: string;
-    status?: 'draft' | 'published';
+    status?: recordStatus.RecordStatus;
   }) => {
     if (!logId) throw new Error('logId is required to list records');
     const viewer = await requireVisibleLog(ctx, logId);
     const profileId = viewer.profile?.id;
-    if (status === 'draft' && !profileId) throw new Error('Profile not found');
+
+    if (status !== 'published' && !profileId) {
+      throw new Error('Profile not found');
+    }
+
+    const where =
+      status === 'draft'
+        ? recordIdentity.getDraftRecordLookupWhere({
+            authorId: profileId!,
+            logId,
+          })
+        : status === 'scheduled'
+          ? { ...scheduledRecordWhere, authorId: profileId!, logId }
+          : recordIdentity.getPublishedLogRecordWhere(logId);
 
     const { records } = (await ctx.db.query({
       records: {
@@ -73,35 +88,30 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
           fields: [
             'date' as const,
             'id' as const,
-            'isDraft' as const,
             'isPinned' as const,
+            'status' as const,
             'teamId' as const,
             'text' as const,
           ],
           limit,
           order: { date: 'desc' },
-          where:
-            status === 'draft'
-              ? recordIdentity.getDraftRecordLookupWhere({
-                  authorId: profileId!,
-                  logId,
-                })
-              : recordIdentity.getPublishedLogRecordWhere(logId),
+          where,
         },
         ...contentQueries.recordSummaryQuery,
       },
     })) as unknown as { records?: McpRecord[] };
 
-    const items = (records ?? []).map((record) =>
-      mcpFields.recordSummaryFields(record, fieldOptions)
-    );
+    const items = (records ?? [])
+      .filter((record) => recordStatus.getRecordStatus(record) === status)
+      .map((record) => mcpFields.recordSummaryFields(record, fieldOptions));
 
     return mcpFields.textResult(
       { records: items },
       mcpFields.table(
-        ['Date', 'Text', 'Tags', 'Replies', 'URL'],
+        ['Date', 'Status', 'Text', 'Tags', 'Replies', 'URL'],
         items.map((record) => [
           String(record.date),
+          record.status,
           record.text,
           record.tags?.map((tag) => tag.name).join(', '),
           record.replyCount,
@@ -280,7 +290,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
               logId,
             }),
             date: records?.[0]?.date ?? now,
-            isDraft: true,
+            ...recordIdentity.getStatusFields('draft'),
             teamId,
             text: text ?? records?.[0]?.text ?? '',
           })

@@ -103,8 +103,18 @@ export const RecordAudioSheet = () => {
 
   const logColor = useLogColor({ id: record.log?.id });
 
+  const logBackgroundClassName =
+    spectrumClassNames.getSpectrumBackgroundClassName(logColor.colorIndex);
+
+  const activeMicBorderClassName =
+    spectrumClassNames.getSpectrumBorderClassName(logColor.colorIndex);
+
+  const activeMicIconClassName = spectrumClassNames.getSpectrumTextClassName(
+    logColor.colorIndex
+  );
+
   const saveColorClassName = record.log?.id
-    ? spectrumClassNames.getSpectrumBackgroundClassName(logColor.colorIndex)
+    ? logBackgroundClassName
     : undefined;
 
   const saveInteractiveColorClassName = record.log?.id
@@ -367,6 +377,9 @@ export const RecordAudioSheet = () => {
       portalName="record-audio"
     >
       <AudioSheetContent
+        activeMicBackgroundClassName={logBackgroundClassName}
+        activeMicBorderClassName={activeMicBorderClassName}
+        activeMicIconClassName={activeMicIconClassName}
         canSave={!!recorder.isRecording || !!recorder.uri}
         duration={duration}
         isMicActive={isMicActive}

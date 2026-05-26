@@ -1,3 +1,4 @@
+import * as recordStatus from '@/domain/records/status';
 import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
@@ -46,6 +47,7 @@ export const Entry = ({
   const sheetManager = useSheetManager();
   const ui = useUi();
   const isLocalPending = !!record.localStatus;
+  const isScheduled = recordStatus.recordIsScheduled(record);
   const isCompletedLocalSubmission = record.localOutboxStatus === 'complete';
 
   const isActiveLocalSubmission =
@@ -104,6 +106,7 @@ export const Entry = ({
 
   const handleDoubleTapReaction = React.useCallback(() => {
     if (isLocalPending) return;
+    if (isScheduled) return;
     if (!record.teamId) return;
     const emoji = ui.doubleTapEmoji;
 
@@ -123,6 +126,7 @@ export const Entry = ({
   }, [
     logId,
     isLocalPending,
+    isScheduled,
     profile.id,
     record.reactions,
     record.teamId,
@@ -135,7 +139,7 @@ export const Entry = ({
     accentTextClassName,
     audioMedia,
     canAnalyzeAudio: myRole.canManage,
-    canOpenReply: !isLocalPending,
+    canOpenReply: !isLocalPending && !isScheduled,
     documentFiles,
     entryMenuState,
     links: record.links ?? [],
@@ -152,12 +156,13 @@ export const Entry = ({
 
   const handleOpenReply = React.useCallback(() => {
     if (isLocalPending) return;
+    if (isScheduled) return;
     if (!record.id) return;
 
     sheetManager.open('reply-create', record.id, undefined, {
       teamId: record.teamId,
     });
-  }, [isLocalPending, record.id, record.teamId, sheetManager]);
+  }, [isLocalPending, isScheduled, record.id, record.teamId, sheetManager]);
 
   const handleUnpin = React.useCallback(() => {
     if (isLocalPending) {

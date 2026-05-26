@@ -8,6 +8,9 @@ import { Microphone } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 export const AudioSheetContent = ({
+  activeMicBackgroundClassName,
+  activeMicBorderClassName,
+  activeMicIconClassName,
   canSave,
   duration,
   isMicActive,
@@ -18,6 +21,9 @@ export const AudioSheetContent = ({
   onSave,
   startError,
 }: {
+  activeMicBackgroundClassName: string;
+  activeMicBorderClassName: string;
+  activeMicIconClassName: string;
   canSave: boolean;
   duration: number;
   isMicActive: boolean;
@@ -33,18 +39,34 @@ export const AudioSheetContent = ({
       <View className="gap-4 items-center">
         <View
           className={cn(
-            'size-16 items-center justify-center rounded-full border border-continuous',
+            'relative size-16 items-center justify-center overflow-hidden rounded-full border border-continuous',
             isMicActive
-              ? 'border-destructive/20 bg-destructive/10'
+              ? 'border-transparent'
               : 'border-border-secondary bg-secondary'
           )}
         >
+          {isMicActive && (
+            <>
+              <View
+                className={cn(
+                  'absolute inset-0 rounded-full opacity-10',
+                  activeMicBackgroundClassName
+                )}
+              />
+              <View
+                className={cn(
+                  'absolute inset-0 rounded-full border border-continuous opacity-20',
+                  activeMicBorderClassName
+                )}
+              />
+            </>
+          )}
           <Icon
             icon={Microphone}
             size={28}
             weight="fill"
             className={
-              isMicActive ? 'text-destructive' : 'text-muted-foreground'
+              isMicActive ? activeMicIconClassName : 'text-muted-foreground'
             }
           />
         </View>

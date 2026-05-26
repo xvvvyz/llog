@@ -1,4 +1,9 @@
-type RecordDraftCandidate = { id?: string; log?: { id?: string } | null };
+import * as recordStatus from '@/domain/records/status';
+
+type RecordDraftCandidate = recordStatus.OptionalRecordStatusSource & {
+  id?: string;
+  log?: { id?: string } | null;
+};
 
 export const findReusableRecordDraft = <T extends RecordDraftCandidate>({
   ignoredDraftIds,
@@ -15,6 +20,7 @@ export const findReusableRecordDraft = <T extends RecordDraftCandidate>({
     (item) =>
       item.id &&
       item.log?.id === logId &&
+      recordStatus.getOptionalRecordStatus(item) === 'draft' &&
       !ignoredDraftIds?.has(item.id) &&
       !outboxDraftIds?.has(item.id)
   );

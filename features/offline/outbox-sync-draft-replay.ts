@@ -1,3 +1,4 @@
+import * as recordStatus from '@/domain/records/status';
 import { createLink } from '@/features/records/mutations/create-link';
 import { deleteLink } from '@/features/records/mutations/delete-link';
 import { replayRecordDraft } from '@/features/records/mutations/replay-record-draft';
@@ -112,7 +113,7 @@ const draftMatchesSubmission = async (submission: types.QueuedSubmission) => {
   if (submission.type === 'record') {
     const record = await queryRecordDraft(submission);
     if (!record) return false;
-    if (!record.isDraft) return true;
+    if (recordStatus.getOptionalRecordStatus(record) !== 'draft') return true;
 
     return (
       (submission.isPinned == null ||
@@ -299,12 +300,13 @@ export const queuedReplyNeedsDraftReplay = async (
 export const queuedSubmissionIsPublished = async (
   submission: types.QueuedSubmission
 ) => {
-  const content =
-    submission.type === 'record'
-      ? await queryRecordDraft(submission)
-      : await queryReplyDraft(submission);
+  if (submission.type === 'record') {
+    const record = await queryRecordDraft(submission);
+    return !!record && recordStatus.getOptionalRecordStatus(record) !== 'draft';
+  }
 
-  return content?.isDraft === false;
+  const reply = await queryReplyDraft(submission);
+  return reply?.isDraft === false;
 };
 
 export const isReplyForQueuedRecord = (

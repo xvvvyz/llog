@@ -60,7 +60,7 @@ const activityRecordQuery = {
     fields: [
       'date' as const,
       'id' as const,
-      'isDraft' as const,
+      'status' as const,
       'teamId' as const,
       'text' as const,
     ],

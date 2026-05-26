@@ -53,11 +53,14 @@ describe('permissions', () => {
   });
 
   test('allows managed content edits', () => {
-    const managedTextEdit =
-      'canEditManagedContent && !isDraft && onlyModifiesText && isValidNewText';
+    const recordManagedTextEdit =
+      'canEditManagedContent && isPublished && onlyModifiesText && isValidNewText';
 
-    const managedDateEdit =
-      'canEditManagedContent && !isDraft && onlyModifiesDate';
+    const recordManagedDateEdit =
+      'canEditManagedContent && isPublished && onlyModifiesDate';
+
+    const replyManagedTextEdit =
+      'canEditManagedContent && !isDraft && onlyModifiesText && isValidNewText';
 
     const managedContentPolicy =
       'isOwnerByTeamId || (isAdminByTeamId && authorIsMemberByTeamId)';
@@ -65,9 +68,9 @@ describe('permissions', () => {
     const authorMemberRole =
       "data.ref('author.user.id').exists(userId, 'member_' + userId + '_' + data.teamId in data.ref('author.user.roles.key'))";
 
-    expect(rules.records.allow.update).toContain(managedTextEdit);
-    expect(rules.records.allow.update).toContain(managedDateEdit);
-    expect(rules.replies.allow.update).toContain(managedTextEdit);
+    expect(rules.records.allow.update).toContain(recordManagedTextEdit);
+    expect(rules.records.allow.update).toContain(recordManagedDateEdit);
+    expect(rules.replies.allow.update).toContain(replyManagedTextEdit);
     expect(rules.records.bind).toContain(managedContentPolicy);
     expect(rules.replies.bind).toContain(managedContentPolicy);
     expect(rules.records.bind).toContain(authorMemberRole);

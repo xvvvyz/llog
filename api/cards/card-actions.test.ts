@@ -472,7 +472,6 @@ describe('card generation', () => {
                   },
                 ],
                 id: 'record-1',
-                isDraft: false,
                 logId: 'log-1',
                 replies: [
                   {
@@ -500,6 +499,7 @@ describe('card generation', () => {
                   },
                 ],
                 tags: [{ id: 'tag-a', name: 'session' }],
+                status: 'published',
                 text: '',
               },
             ],
@@ -602,8 +602,8 @@ describe('card generation', () => {
       const records = Array.from({ length: recordCount }, (_item, index) => ({
         date: `2026-05-${String((index % 28) + 1).padStart(2, '0')}T00:00:00.000Z`,
         id: `record-${index}`,
-        isDraft: false,
         logId: 'log-1',
+        status: 'published',
         tags: [{ id: 'tag-a', name: 'Session' }],
         text: `Session ${index}`,
       }));
@@ -753,8 +753,8 @@ describe('card generation', () => {
       const oldRecords = Array.from({ length: 12 }, (_item, index) => ({
         date: `2026-01-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`,
         id: `old-${index}`,
-        isDraft: false,
         logId: 'log-1',
+        status: 'published',
         tags: [{ id: 'tag-a', name: 'Session' }],
         text: `Old session ${index}`,
       }));
@@ -764,8 +764,8 @@ describe('card generation', () => {
         (_item, index) => ({
           date: new Date(Date.UTC(2026, 3, 1, 0, index)).toISOString(),
           id: `record-${index}`,
-          isDraft: false,
           logId: 'log-1',
+          status: 'published',
           tags: [{ id: 'tag-a', name: 'Session' }],
           text: `Session ${index}`,
         })
@@ -921,8 +921,8 @@ describe('card generation', () => {
               {
                 date: '2026-05-20T00:00:00.000Z',
                 id: 'record-1',
-                isDraft: false,
                 logId: 'log-1',
+                status: 'published',
                 tags: [{ id: 'tag-a', name: 'Session' }],
                 text: 'Settled calmly.',
               },
@@ -1033,8 +1033,8 @@ describe('card generation', () => {
               {
                 date: '2026-05-20T00:00:00.000Z',
                 id: 'record-1',
-                isDraft: false,
                 logId: 'log-1',
+                status: 'published',
                 tags: [{ id: 'tag-a', name: 'Session' }],
                 text: 'Alone duration (min): 85\nPeak distress (0-5): 2',
               },
@@ -1219,8 +1219,8 @@ describe('analysis jobs', () => {
       {
         date: requestedAt,
         id: 'record-1',
-        isDraft: false,
         logId: 'log-1',
+        status: 'published',
         tags: [{ id: 'tag-a', name: 'Session' }],
         text: 'Whined twice.',
       },
@@ -1415,24 +1415,24 @@ describe('analysis jobs', () => {
       {
         date: '2026-01-01T00:00:00.000Z',
         id: 'old-record',
-        isDraft: false,
         logId: 'log-1',
+        status: 'published',
         tags: [{ id: 'tag-a', name: 'Session' }],
         text: 'Old whining.',
       },
       {
         date: '2026-04-01T00:00:00.000Z',
         id: 'new-record',
-        isDraft: false,
         logId: 'log-1',
+        status: 'published',
         tags: [{ id: 'tag-a', name: 'Session' }],
         text: 'Whined twice.',
       },
       {
         date: 'not-a-date',
         id: 'invalid-record',
-        isDraft: false,
         logId: 'log-1',
+        status: 'published',
         tags: [{ id: 'tag-a', name: 'Session' }],
         text: 'Invalid date whining.',
       },
@@ -1603,8 +1603,8 @@ describe('analysis jobs', () => {
     const record = {
       date: requestedAt,
       id: 'record-1',
-      isDraft: false,
       logId: 'log-1',
+      status: 'published',
       tags: [{ id: 'tag-a', name: 'Session' }],
       text: 'Whined twice.',
     };
@@ -1833,8 +1833,8 @@ describe('analysis jobs', () => {
     const oldRecords = Array.from({ length: 10 }, (_item, index) => ({
       date: `2026-01-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`,
       id: `old-${index}`,
-      isDraft: false,
       logId: 'log-1',
+      status: 'published',
       tags: [{ id: 'tag-a', name: 'Session' }],
       text: `Old session ${index}`,
     }));
@@ -1842,8 +1842,8 @@ describe('analysis jobs', () => {
     const filteredRecords = Array.from({ length: 245 }, (_item, index) => ({
       date: new Date(Date.UTC(2026, 3, 1, 0, index)).toISOString(),
       id: `record-${index}`,
-      isDraft: false,
       logId: 'log-1',
+      status: 'published',
       tags: [{ id: 'tag-a', name: 'Session' }],
       text: `Session ${index}`,
     }));
@@ -2312,8 +2312,8 @@ describe('card refresh queue', () => {
                   isDraft: false,
                   record: {
                     id: 'record-1',
-                    isDraft: false,
                     logId: 'log-1',
+                    status: 'published',
                     tags: [{ id: 'tag-a' }],
                   },
                 },
@@ -2391,8 +2391,8 @@ describe('card refresh queue', () => {
                   isDraft: true,
                   record: {
                     id: 'record-1',
-                    isDraft: false,
                     logId: 'log-1',
+                    status: 'published',
                     tags: [{ id: 'tag-a' }],
                   },
                 },
@@ -2547,7 +2547,6 @@ describe('record refresh', () => {
             {
               author: { user: { id: 'user-1' } },
               id: 'record-1',
-              isDraft: false,
               log: {
                 team: {
                   roles: actorRole
@@ -2555,6 +2554,7 @@ describe('record refresh', () => {
                     : [],
                 },
               },
+              status: 'published',
               logId: 'log-1',
               teamId: 'team-1',
             },

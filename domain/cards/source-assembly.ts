@@ -20,7 +20,7 @@ type SourceReply = Pick<instantEntities.Reply, 'id'> &
 
 export type CardSourceAssemblyRecord = Pick<instantEntities.Record, 'id'> &
   Partial<
-    Pick<instantEntities.Record, 'date' | 'isDraft' | 'logId' | 'text'>
+    Pick<instantEntities.Record, 'date' | 'logId' | 'status' | 'text'>
   > & {
     author?: SourceProfile;
     files?: SourceFile[];
@@ -39,7 +39,7 @@ export type CardSourceItem = {
 
 export type AssembledCardSourceRecord = Pick<
   CardSourceAssemblyRecord,
-  'author' | 'date' | 'id' | 'isDraft' | 'logId' | 'tags'
+  'author' | 'date' | 'id' | 'logId' | 'status' | 'tags'
 > & {
   sourceAssemblyVersion: typeof CARD_SOURCE_ASSEMBLY_VERSION;
   text: string;
@@ -148,9 +148,9 @@ export const assembleCardLlmRecord = (
     author: record.author,
     date: record.date,
     id: record.id,
-    isDraft: record.isDraft,
     logId: record.logId,
     sourceAssemblyVersion: CARD_SOURCE_ASSEMBLY_VERSION,
+    status: record.status,
     tags: record.tags,
     text,
   };

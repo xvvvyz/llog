@@ -64,7 +64,8 @@ export const buildPublishDraftRecordTransactions = ({
 }): Transaction[] => [
   db.tx.records[recordId].update({
     ...optionalDate(contentDate),
-    ...recordIdentity.getPublishedLogRecordWhere(logId),
+    ...recordIdentity.getRecordIdentityFields({ authorId: actorId, logId }),
+    ...recordIdentity.getStatusFields('published'),
     text,
   }),
   buildRecordPublishedActivityTransaction({
@@ -105,7 +106,7 @@ export const buildCreatePublishedRecordTransactions = ({
     .update({
       ...recordIdentity.getRecordIdentityFields({ authorId, logId }),
       date: normalizeDate(contentDate) ?? now,
-      isDraft: false,
+      ...recordIdentity.getStatusFields('published'),
       ...(isPinned ? { isPinned } : {}),
       teamId,
       ...(text != null ? { text } : {}),
@@ -155,7 +156,6 @@ export const buildPublishDraftReplyTransactions = ({
   activityId,
   activityDate,
   actorId,
-  contentDate,
   db,
   logId,
   recordId,
@@ -166,7 +166,6 @@ export const buildPublishDraftReplyTransactions = ({
   activityId: string;
   activityDate: string;
   actorId: string;
-  contentDate?: string | number;
   db: DbWithTransactions;
   logId: string;
   recordId: string;
@@ -174,11 +173,7 @@ export const buildPublishDraftReplyTransactions = ({
   text: string;
   teamId: string;
 }): Transaction[] => [
-  db.tx.replies[replyId].update({
-    ...optionalDate(contentDate),
-    isDraft: false,
-    text,
-  }),
+  db.tx.replies[replyId].update({ date: activityDate, isDraft: false, text }),
   buildReplyPostedActivityTransaction({
     activityId,
     actorId,

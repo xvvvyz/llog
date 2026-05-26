@@ -1,3 +1,5 @@
+import type { RecordStatus } from '@/domain/records/status';
+
 export const getRecordIdentityFields = ({
   authorId,
   logId,
@@ -12,9 +14,14 @@ export const getDraftRecordLookupWhere = ({
 }: {
   authorId: string;
   logId: string;
-}) => ({ ...getRecordIdentityFields({ authorId, logId }), isDraft: true });
+}) => ({
+  ...getRecordIdentityFields({ authorId, logId }),
+  status: 'draft' as const,
+});
 
 export const getPublishedLogRecordWhere = (logId: string) => ({
-  isDraft: false,
   logId,
+  status: 'published' as const,
 });
+
+export const getStatusFields = (status: RecordStatus) => ({ status });

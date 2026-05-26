@@ -1,6 +1,7 @@
 import { mcpFileUrl } from '@/api/mcp/file-urls';
 import type * as mcpTypes from '@/api/mcp/types';
 import * as mediaMetadata from '@/domain/files/media-metadata';
+import * as recordStatus from '@/domain/records/status';
 import { isRecord } from '@/lib/coerce';
 
 type McpFieldOptions = {
@@ -224,7 +225,6 @@ export const recordFields = (
     ? (record.files ?? []).map((file) => fileFields(file, options))
     : undefined,
   id: record.id,
-  isDraft: !!record.isDraft,
   isPinned: !!record.isPinned,
   linkCount: record.links?.length,
   links: options?.includeLinks
@@ -236,6 +236,7 @@ export const recordFields = (
     ? reactionCounts(record.reactions)
     : undefined,
   replyCount: (record.replies ?? []).filter((reply) => !reply.isDraft).length,
+  status: recordStatus.getRecordStatus(record),
   tags: (record.tags ?? []).map(tagFields),
   teamId: record.teamId,
   text: record.text ?? '',
@@ -301,12 +302,12 @@ export const recordSummaryFields = (
   date: dateField(record.date),
   fileCount: record.files?.length,
   id: record.id,
-  isDraft: !!record.isDraft,
   isPinned: !!record.isPinned,
   linkCount: record.links?.length,
   log: record.log ? { id: record.log.id, name: record.log.name } : undefined,
   reactionCount: record.reactions?.length,
   replyCount: (record.replies ?? []).filter((reply) => !reply.isDraft).length,
+  status: recordStatus.getRecordStatus(record),
   tags: (record.tags ?? []).map(tagFields),
   text: textPreview(record.text),
   url: recordUrl(record.id, options),

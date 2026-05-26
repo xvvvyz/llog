@@ -1,4 +1,5 @@
 import { visibleFileQuery } from '@/domain/files/query';
+import * as recordStatus from '@/domain/records/status';
 import { useFileComposer } from '@/features/files/hooks/use-composer';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
@@ -21,6 +22,7 @@ import { deleteRecordFile } from '@/features/records/mutations/delete-record-fil
 import { finalizeRecordCopy } from '@/features/records/mutations/finalize-record-copy';
 import { toggleRecordPin } from '@/features/records/mutations/toggle-pin';
 import { updateRecordDraft } from '@/features/records/mutations/update-record-draft';
+import { updateScheduledRecordSchedule } from '@/features/records/mutations/update-scheduled-record-schedule';
 import { uploadRecordFile } from '@/features/records/mutations/upload-record-file';
 import { useHasRecordTagsForLog } from '@/features/records/queries/use-has-record-tags-for-log';
 import { useRecordDraft } from '@/features/records/queries/use-record-draft';
@@ -332,6 +334,22 @@ export const useRecordComposerModel = () => {
     ? (recordDateOverride ?? currentRecordDate)
     : (queuedRecordDate ?? recordDateOverride);
 
+  const isScheduledRecordEdit =
+    isEdit && recordStatus.recordIsScheduled(record ?? {});
+
+  const isPublishedRecordEdit =
+    isEdit && !!record && recordStatus.recordIsPublished(record);
+
+  const isUnpublishedRecordEdit =
+    isEdit && !!record && recordStatus.recordIsUnpublished(record);
+
+  const isFutureSelectedRecordDate = recordTime.isFutureRecordDate(
+    selectedRecordDate,
+    recordDatePreviewNow
+  );
+
+  const isSchedulingRecord = !isEdit && isFutureSelectedRecordDate;
+
   React.useEffect(() => {
     if (!isOpen || !selectedRecordDate) return;
     setRecordDatePreviewNow(Date.now());
@@ -382,7 +400,11 @@ export const useRecordComposerModel = () => {
     [outbox, recordId]
   );
 
-  const shouldUseQueuedRecordDraft = !!record?.isDraft || isEditingLocalRecord;
+  const isRecordStatusDraft =
+    recordStatus.getOptionalRecordStatus(record) === 'draft';
+
+  const shouldUseQueuedRecordDraft =
+    (isRecordStatusDraft && !isScheduledRecordEdit) || isEditingLocalRecord;
 
   const links = React.useMemo(
     () =>
@@ -539,12 +561,12 @@ export const useRecordComposerModel = () => {
       recordId
         ? {
             id: recordId,
-            isDraft: !!record?.isDraft,
             teamId: recordTeamId,
             type: 'record',
+            usesQueuedDraftLinks: isRecordStatusDraft && !isScheduledRecordEdit,
           }
         : undefined,
-    [record?.isDraft, recordId, recordTeamId]
+    [isRecordStatusDraft, isScheduledRecordEdit, recordId, recordTeamId]
   );
 
   const { linkAttachmentCount, linkAttachmentMenuItem, linkPreview } =
@@ -582,8 +604,27 @@ export const useRecordComposerModel = () => {
 
   const handleChangeRecordDate = React.useCallback(
     (nextDate?: string) => {
+      if (
+        isPublishedRecordEdit &&
+        recordTime.isFutureRecordDate(nextDate, Date.now())
+      ) {
+        return;
+      }
+
       setRecordDateOverride(nextDate);
       if (!recordId) return;
+
+      if (isScheduledRecordEdit) {
+        if (!nextDate) return;
+
+        void updateScheduledRecordSchedule({
+          date: nextDate,
+          id: recordId,
+          text: latestTextRef.current.trim(),
+        }).catch(() => undefined);
+
+        return;
+      }
 
       if (isEdit) {
         if (!nextDate) return;
@@ -611,7 +652,15 @@ export const useRecordComposerModel = () => {
         });
       }
     },
-    [isEdit, isEditingLocalRecord, recordId, shouldUseQueuedRecordDraft]
+    [
+      isEdit,
+      isEditingLocalRecord,
+      isPublishedRecordEdit,
+      isScheduledRecordEdit,
+      latestTextRef,
+      recordId,
+      shouldUseQueuedRecordDraft,
+    ]
   );
 
   const hasSelectedTags = selectedTags.some((tag) => !!tag.id);
@@ -680,7 +729,7 @@ export const useRecordComposerModel = () => {
     ? React.createElement(recordTimeSheet2.RecordTimeButton, {
         disabled: false,
         iconClassName: accentTextClassName,
-        isCustom: !!selectedRecordDate,
+        isCustom: isFutureSelectedRecordDate,
         onPress: handleOpenRecordTime,
       })
     : null;
@@ -691,9 +740,11 @@ export const useRecordComposerModel = () => {
       accentColor,
       accentColorClassName,
       canUseSubmissionTime: !isEdit,
+      maxDate: isPublishedRecordEdit ? recordDatePreviewNow : undefined,
       onChange: handleChangeRecordDate,
       onClose: () => setIsRecordTimeSheetOpen(false),
       open: isOpen && isRecordTimeSheetOpen,
+      resetToNow: !isEdit || (isUnpublishedRecordEdit && !isEditingLocalRecord),
       value: selectedRecordDate,
     }
   );
@@ -789,6 +840,11 @@ export const useRecordComposerModel = () => {
     }
 
     if (isEdit) {
+      if (isScheduledRecordEdit) {
+        closeSheet();
+        return;
+      }
+
       if (!isEditingLocalRecord) {
         if (queuedRecordAttachments.length > 0 && recordLogId) {
           outboxHooks.queueSubmission({
@@ -910,6 +966,7 @@ export const useRecordComposerModel = () => {
     isCopy,
     isEdit,
     isEditingLocalRecord,
+    isScheduledRecordEdit,
     isBusy,
     latestTextRef,
     fileCount,
@@ -963,11 +1020,13 @@ export const useRecordComposerModel = () => {
     onTextareaFocusChange: setIsTextareaFocused,
     onTogglePin: handleTogglePin,
     recordTimeSheet,
-    recordDatePreviewClassName: accentTextClassName,
+    recordDatePreviewClassName: isFutureSelectedRecordDate
+      ? accentTextClassName
+      : undefined,
     recordDatePreviewLabel,
     selectedTags,
     showFormattingControls: myRole.canManage,
-    submitLabel: isEdit ? 'Done' : 'Record',
+    submitLabel: isEdit ? 'Done' : isSchedulingRecord ? 'Schedule' : 'Record',
     submitVariant: isEdit ? ('secondary' as const) : undefined,
     templates: isCreate ? templates.data : [],
     toolbar,

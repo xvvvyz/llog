@@ -6,6 +6,7 @@ import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import * as queuedTags from '@/features/offline/queued-tags';
 import * as recordTags from '@/features/records/mutations/record-tags';
+import * as recordStatus from '@/domain/records/status';
 import { useRecordTagsTarget } from '@/features/records/queries/use-record-tags-target';
 import { TagSheetContent } from '@/features/tags/components/tag-sheet-content';
 import { useTagSheetController } from '@/features/tags/hooks/use-tag-sheet-controller';
@@ -47,6 +48,11 @@ export const RecordTagsSheet = () => {
     (canManageDefinitions ||
       (!!profile.id && profile.id === record.author?.id));
 
+  const isRecordStatusDraft =
+    recordStatus.getOptionalRecordStatus(record) === 'draft';
+
+  const isScheduledRecord = recordStatus.recordIsScheduled(record ?? {});
+
   const pendingRecord = React.useMemo(
     () =>
       record?.id
@@ -72,14 +78,21 @@ export const RecordTagsSheet = () => {
 
   const currentRecordTags = React.useMemo(
     () =>
-      record?.isDraft &&
+      isRecordStatusDraft &&
+      !isScheduledRecord &&
       queuedRecordDraft?.type === 'record' &&
       queuedRecordDraft.tagsUpdated
         ? queuedRecordDraft.tags
         : pendingRecord?.type === 'record'
           ? pendingRecord.tags
           : (record?.tags ?? []),
-    [pendingRecord, queuedRecordDraft, record?.isDraft, record?.tags]
+    [
+      isRecordStatusDraft,
+      isScheduledRecord,
+      pendingRecord,
+      queuedRecordDraft,
+      record?.tags,
+    ]
   );
 
   const currentQueuedRecordTags = React.useMemo(
@@ -90,7 +103,8 @@ export const RecordTagsSheet = () => {
     [currentRecordTags]
   );
 
-  const shouldMirrorQueuedDraftTags = !!record?.isDraft && !pendingRecord;
+  const shouldMirrorQueuedDraftTags =
+    isRecordStatusDraft && !isScheduledRecord && !pendingRecord;
 
   const selectedTagIds = React.useMemo(
     () => new Set(currentRecordTags.map((tag) => tag.id)),

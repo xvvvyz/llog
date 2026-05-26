@@ -22,7 +22,7 @@ export const assertCanUploadToOwnedTarget = async ({
   if (linkField === 'record') {
     const { records } = await dbClient.query({
       records: {
-        $: { fields: ['id', 'isDraft', 'teamId'], where: { id: recordId } },
+        $: { fields: ['id', 'status', 'teamId'], where: { id: recordId } },
         author: { user: { $: { fields: ['id'] } } },
         log: {
           $: { fields: ['id'] },
@@ -36,7 +36,7 @@ export const assertCanUploadToOwnedTarget = async ({
 
     const record = records[0];
     const hasLogTeamRole = !!record?.log?.team?.roles?.[0]?.id;
-    const isLoglessDraft = record?.isDraft && !record.log?.id;
+    const isLoglessDraft = record?.status === 'draft' && !record.log?.id;
     let hasTeamRole = hasLogTeamRole;
 
     if (!hasTeamRole && isLoglessDraft && record.teamId) {

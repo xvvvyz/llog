@@ -28,12 +28,6 @@ export {
   type TranscriptMetadataControls,
 } from '@/features/files/components/transcript-metadata';
 
-const SHEET_AUDIO_TRANSPORT_CLASS_NAME =
-  'rounded-xl border border-border-secondary bg-secondary border-continuous';
-
-const SHEET_AUDIO_TRANSPORT_BUTTON_CLASS_NAME = 'rounded-none';
-const SHEET_AUDIO_TRANSPORT_BUTTON_WRAPPER_CLASS_NAME = 'rounded-none';
-
 type AudioMetadataControls = audioTransport.AudioTransportControls & {
   currentTime: number;
   pause: () => void;
@@ -155,14 +149,12 @@ export const AudioTranscriptMetadata = ({
         renderFooter={({ closeSheet }) => (
           <React.Fragment>
             <audioTransport.AudioTransport
-              className={SHEET_AUDIO_TRANSPORT_CLASS_NAME}
-              controlButtonClassName={SHEET_AUDIO_TRANSPORT_BUTTON_CLASS_NAME}
+              className="border-border-secondary border-continuous rounded-xl bg-secondary border"
+              controlButtonClassName="rounded-none"
+              controlButtonWrapperClassName="rounded-none"
               controls={controls}
               showOptionsMenu={false}
               size="default"
-              controlButtonWrapperClassName={
-                SHEET_AUDIO_TRANSPORT_BUTTON_WRAPPER_CLASS_NAME
-              }
             />
             <Button
               onPress={closeSheet}
@@ -206,8 +198,8 @@ export const AudioTracksMetadata = ({
 }) => {
   const sheetTransportTrailingAccessory = (
     <AudioTrackSkipControls
-      buttonClassName={SHEET_AUDIO_TRANSPORT_BUTTON_CLASS_NAME}
-      buttonWrapperClassName={SHEET_AUDIO_TRANSPORT_BUTTON_WRAPPER_CLASS_NAME}
+      buttonClassName="rounded-none"
+      buttonWrapperClassName="rounded-none"
       controls={controls}
       size="default"
       tracks={tracks}
@@ -223,15 +215,13 @@ export const AudioTracksMetadata = ({
         renderFooter={({ closeSheet }) => (
           <React.Fragment>
             <audioTransport.AudioTransport
-              className={SHEET_AUDIO_TRANSPORT_CLASS_NAME}
-              controlButtonClassName={SHEET_AUDIO_TRANSPORT_BUTTON_CLASS_NAME}
+              className="border-border-secondary border-continuous rounded-xl bg-secondary border"
+              controlButtonClassName="rounded-none"
+              controlButtonWrapperClassName="rounded-none"
               controls={controls}
               showOptionsMenu={false}
               size="default"
               trailingAccessory={sheetTransportTrailingAccessory}
-              controlButtonWrapperClassName={
-                SHEET_AUDIO_TRANSPORT_BUTTON_WRAPPER_CLASS_NAME
-              }
             />
             <Button
               onPress={closeSheet}

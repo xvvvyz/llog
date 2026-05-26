@@ -16,8 +16,6 @@ import { View } from 'react-native';
 import { NotePencil, UserPlus, UsersThree } from 'phosphor-react-native';
 import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
-const ACTION_BUTTON_WRAPPER_CLASS_NAME = 'w-32 self-center';
-
 type EmptyStateProps = {
   canManage: boolean;
   invites: ReturnType<typeof useTeamInvites>['invites'];
@@ -97,7 +95,7 @@ export const EmptyState = ({
             onPress={() => sheetManager.open('log-edit', logId)}
             size="xs"
             variant="secondary"
-            wrapperClassName={ACTION_BUTTON_WRAPPER_CLASS_NAME}
+            wrapperClassName="w-32 self-center"
           >
             <Text>Edit</Text>
             <Icon className="-mr-0.5" icon={NotePencil} />
@@ -108,7 +106,7 @@ export const EmptyState = ({
               onPress={() => sheetManager.open('log-members', logId)}
               size="xs"
               variant="secondary"
-              wrapperClassName={ACTION_BUTTON_WRAPPER_CLASS_NAME}
+              wrapperClassName="w-32 self-center"
             >
               <Text>Members</Text>
               <Icon className="-mr-0.5" icon={UsersThree} />
@@ -120,7 +118,7 @@ export const EmptyState = ({
             onPress={handleInvite}
             size="xs"
             variant="secondary"
-            wrapperClassName={ACTION_BUTTON_WRAPPER_CLASS_NAME}
+            wrapperClassName="w-32 self-center"
           >
             <Text>Invite</Text>
             {isInviteLoading ? (

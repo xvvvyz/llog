@@ -8,11 +8,12 @@ import * as cardOutput from '@/domain/cards/output';
 import * as cardSourceAssembly from '@/domain/cards/source-assembly';
 import * as cardSourceSelection from '@/domain/cards/source-selection';
 import * as cardTitle from '@/domain/cards/title';
-import { publishedContentWhere } from '@/domain/records/query';
+import * as recordStatus from '@/domain/records/status';
 import * as permissions from '@/domain/teams/permissions';
 import { id as generateId, lookup } from '@instantdb/admin';
 import { HTTPException } from 'hono/http-exception';
 import type * as instantEntities from '@/instant.entities';
+import * as query2 from '@/domain/records/query';
 
 export const CARD_TITLE_MAX_LENGTH = cardTitle.CARD_TITLE_MAX_LENGTH;
 
@@ -96,7 +97,7 @@ type PublishedCardSourceRecord = cardSourceAssembly.AssembledCardSourceRecord;
 
 type FileCardRefreshSourceRecord = EntityProjection<
   instantEntities.Record,
-  'isDraft' | 'logId'
+  'logId' | 'status'
 > & {
   log?: Pick<instantEntities.Log, 'id'> | null;
   tags?: Pick<instantEntities.Tag, 'id'>[];
@@ -340,9 +341,13 @@ const getPublishedTaggedSourceRecords = async ({
   const { records } = await dbClient.query({
     records: {
       $: {
-        fields: ['date', 'id', 'isDraft', 'logId', 'text'],
+        fields: ['date', 'id', 'logId', 'status', 'text'],
         order: { date: 'asc' },
-        where: { ...publishedContentWhere, 'tags.id': { $in: tagIds }, logId },
+        where: {
+          ...query2.publishedRecordWhere,
+          'tags.id': { $in: tagIds },
+          logId,
+        },
       },
       author: { $: { fields: ['id' as const, 'name' as const] } },
       files: cardSourceFileQuery,
@@ -355,7 +360,7 @@ const getPublishedTaggedSourceRecords = async ({
             'text' as const,
           ],
           order: { date: 'asc' as const },
-          where: publishedContentWhere,
+          where: query2.publishedReplyWhere,
         },
         author: { $: { fields: ['id' as const, 'name' as const] } },
         files: cardSourceFileQuery,
@@ -2261,10 +2266,20 @@ export const queuePublishedRecordCardRefreshes = async (params: {
 };
 
 const fileCardRefreshRecord = (file: FileCardRefreshSource) => {
-  if (file.record?.id) return file.record.isDraft ? undefined : file.record;
+  if (file.record?.id) {
+    return recordStatus.recordIsPublished(file.record)
+      ? file.record
+      : undefined;
+  }
+
   const record = file.reply?.record;
 
-  if (!file.reply?.id || file.reply.isDraft || !record?.id || record.isDraft) {
+  if (
+    !file.reply?.id ||
+    file.reply.isDraft ||
+    !record?.id ||
+    !recordStatus.recordIsPublished(record)
+  ) {
     return;
   }
 
@@ -2285,16 +2300,14 @@ export const queuePublishedFileCardRefreshes = async ({
       files: {
         $: { fields: ['id' as const], where: { id: fileId } },
         record: {
-          $: { fields: ['id' as const, 'isDraft' as const, 'logId' as const] },
+          $: { fields: ['id' as const, 'logId' as const, 'status' as const] },
           log: { $: { fields: ['id' as const] } },
           tags: { $: { fields: ['id' as const] } },
         },
         reply: {
           $: { fields: ['id' as const, 'isDraft' as const] },
           record: {
-            $: {
-              fields: ['id' as const, 'isDraft' as const, 'logId' as const],
-            },
+            $: { fields: ['id' as const, 'logId' as const, 'status' as const] },
             log: { $: { fields: ['id' as const] } },
             tags: { $: { fields: ['id' as const] } },
           },
@@ -2375,7 +2388,7 @@ export const refreshRecordCardsForUser = async ({
   const { records } = await dbClient.query({
     records: {
       $: {
-        fields: ['id', 'isDraft', 'logId', 'teamId'],
+        fields: ['id', 'logId', 'status', 'teamId'],
         where: { id: input.recordId },
       },
       author: { user: { $: { fields: ['id'] } } },
@@ -2394,7 +2407,7 @@ export const refreshRecordCardsForUser = async ({
     throw new HTTPException(404, { message: 'Record not found' });
   }
 
-  if (record.isDraft) return { success: true };
+  if (!recordStatus.recordIsPublished(record)) return { success: true };
 
   if (!record.logId) {
     throw new HTTPException(400, { message: 'Invalid record' });

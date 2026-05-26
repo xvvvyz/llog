@@ -1,7 +1,8 @@
+import * as recordStatus from '@/domain/records/status';
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
 import { EntryMenuContent } from '@/features/records/components/entry-menu';
-import { EntrySyncStatus } from '@/features/records/components/entry-sync-status';
+import { EntryTimestamp } from '@/features/records/components/entry-timestamp';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
 import { MediaGrid } from '@/features/records/components/media-grid';
 import { ReactionsRow } from '@/features/records/components/reactions-row';
@@ -11,7 +12,6 @@ import { openRecordDetail } from '@/features/records/lib/route';
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
 import { type EntrySharedProps } from '@/features/records/types/entry';
 import { cn } from '@/lib/cn';
-import { formatDate } from '@/lib/time';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
@@ -52,8 +52,10 @@ export const EntryCard = ({
   const hasLinks = links.length > 0;
   const hasPinnedAction = 'isPinned' in record && !!record.isPinned;
   const hasHeaderActions = hasPinnedAction || entryMenuState.hasMenu;
+  const isScheduled = recordStatus.recordIsScheduled(record);
   const hasRecordTags = record.tags?.some((tag) => !!tag.name);
-  const hasTopMeta = hasRecordTags || !!syncStatus;
+  const hasTopMeta = hasRecordTags;
+  const areEntryActionsDisabled = !!record.localStatus || isScheduled;
 
   const headerActions = hasHeaderActions && (
     <View className="max-w-52 items-end shrink">
@@ -102,9 +104,6 @@ export const EntryCard = ({
                 !hasPinnedAction && hasHeaderActions && 'pr-12'
               )}
             >
-              {syncStatus && (
-                <EntrySyncStatus className="shrink-0" status={syncStatus} />
-              )}
               {hasRecordTags && (
                 <RecordTagChips
                   className="flex-1 gap-1 justify-start"
@@ -130,9 +129,12 @@ export const EntryCard = ({
               <Text className="font-medium leading-snug" numberOfLines={1}>
                 {record.author?.name}
               </Text>
-              <Text className="leading-snug text-muted-foreground text-sm">
-                {formatDate(record.date)}
-              </Text>
+              <EntryTimestamp
+                accentTextClassName={accentTextClassName}
+                date={record.date}
+                isScheduled={isScheduled}
+                syncStatus={syncStatus}
+              />
             </View>
           </View>
         </View>
@@ -149,9 +151,12 @@ export const EntryCard = ({
             <Text className="font-medium leading-snug" numberOfLines={1}>
               {record.author?.name}
             </Text>
-            <Text className="leading-snug text-muted-foreground text-sm">
-              {formatDate(record.date)}
-            </Text>
+            <EntryTimestamp
+              accentTextClassName={accentTextClassName}
+              date={record.date}
+              isScheduled={isScheduled}
+              syncStatus={syncStatus}
+            />
           </View>
           {headerActions}
         </View>
@@ -191,7 +196,7 @@ export const EntryCard = ({
       <ReactionsRow
         accentTextClassName={accentTextClassName}
         className="-mt-1 pb-3 px-3"
-        disabled={!!record.localStatus}
+        disabled={areEntryActionsDisabled}
         logId={logId}
         onDoubleTapReaction={onDoubleTapReaction}
         record={record}
@@ -202,7 +207,7 @@ export const EntryCard = ({
             <View className="flex-row gap-1.5 items-center self-end">
               {record.replies.length > 0 && (
                 <Button
-                  disabled={!!record.localStatus}
+                  disabled={areEntryActionsDisabled}
                   onPress={() => openRecordDetail(recordId)}
                   size="xs"
                   variant="ghost"

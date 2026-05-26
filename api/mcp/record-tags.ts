@@ -6,6 +6,7 @@ import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext, McpRecord, McpTag } from '@/api/mcp/types';
 import { getVisibleLog } from '@/api/mcp/viewer';
+import * as recordStatus from '@/domain/records/status';
 import { recordTagFields, recordTagLogsQuery } from '@/domain/tags/query';
 import { findExactTagId, searchTags } from '@/domain/tags/search-tags';
 import * as permissions from '@/domain/teams/permissions';
@@ -127,7 +128,7 @@ export const registerTagTools = (server: McpServer, ctx: McpContext) => {
     record: McpRecord;
     tagId: string;
   }) => {
-    if (record.isDraft) return;
+    if (!recordStatus.recordIsPublished(record)) return;
 
     ctx.executionCtx.waitUntil(
       cardActions.queuePublishedRecordCardRefreshes({

@@ -1,3 +1,4 @@
+import { recordStatuses } from '@/domain/records/status';
 import { z } from 'zod/v4';
 
 export const linkInputSchema = z.object({
@@ -5,7 +6,7 @@ export const linkInputSchema = z.object({
   url: z.string().url(),
 });
 
-export const contentStatusSchema = z.enum(['published', 'draft']).optional();
+export const contentStatusSchema = z.enum(recordStatuses).optional();
 
 export const recordIncludeSchema = z.enum([
   'files',
@@ -111,12 +112,12 @@ const recordSummaryOutputSchema = z.object({
   date: dateOutputSchema.optional(),
   fileCount: z.number().optional(),
   id: z.string(),
-  isDraft: z.boolean().optional(),
   isPinned: z.boolean().optional(),
   linkCount: z.number().optional(),
   log: logOutputSchema.optional(),
   reactionCount: z.number().optional(),
   replyCount: z.number().optional(),
+  status: z.enum(recordStatuses).optional(),
   tags: z.array(tagOutputSchema).optional(),
   text: z.string().optional(),
   url: z.string().url().optional(),
@@ -133,7 +134,8 @@ const recordOutputSchema = recordSummaryOutputSchema.extend({
   teamId: z.string().optional(),
 });
 
-const statusOutputSchema = z.enum(['published', 'draft']);
+const recordStatusOutputSchema = z.enum(recordStatuses);
+const contentStatusOutputSchema = z.enum(['published', 'draft']);
 
 export const accountOutputSchema = {
   email: z.string().optional(),
@@ -174,7 +176,7 @@ export const recordsOutputSchema = {
         record: recordOutputSchema.optional(),
         recordId: z.string().optional(),
         records: z.array(recordSummaryOutputSchema).optional(),
-        status: statusOutputSchema.optional(),
+        status: recordStatusOutputSchema.optional(),
       })
     )
     .optional(),
@@ -186,7 +188,7 @@ export const repliesOutputSchema = {
       z.object({
         reply: replyOutputSchema.optional(),
         replyId: z.string().optional(),
-        status: statusOutputSchema.optional(),
+        status: contentStatusOutputSchema.optional(),
       })
     )
     .optional(),

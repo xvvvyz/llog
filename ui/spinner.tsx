@@ -16,16 +16,19 @@ import {
 const spinnerVariants = cva('shrink-0 items-center justify-center', {
   defaultVariants: { size: 'sm' },
   variants: {
-    size: {
-      icon: 'h-3.5 w-3.5',
-      sm: 'h-5 w-5',
-      xs: 'h-5 w-5',
-      xxs: 'h-2.5 w-2.5',
-    },
+    size: { icon: 'h-3.5 w-3.5', sm: 'h-5 w-5', xs: 'h-5 w-5', xxs: 'h-4 w-4' },
   },
 });
 
-const spinnerIndicatorSizes = { icon: 14, sm: 20, xs: 16, xxs: 10 } as const;
+const spinnerIndicatorSizes = { icon: 14, sm: 20, xs: 16, xxs: 14 } as const;
+
+const spinnerIndicatorClassNames = {
+  icon: undefined,
+  sm: undefined,
+  xs: undefined,
+  xxs: 'scale-[0.928571]',
+} as const;
+
 type SpinnerVariantSize = keyof typeof spinnerIndicatorSizes;
 type ThemeColors = (typeof UI)[keyof typeof UI];
 
@@ -83,15 +86,17 @@ export const Spinner = ({
       className={cn(spinnerVariants({ size: normalizedSize }), className)}
       style={style}
     >
-      <ActivityIndicator
-        size={spinnerIndicatorSizes[normalizedSize]}
-        color={
-          color ??
-          getSpinnerContextColor(textClass, colors) ??
-          colors.foreground
-        }
-        {...props}
-      />
+      <View className={spinnerIndicatorClassNames[normalizedSize]}>
+        <ActivityIndicator
+          size={spinnerIndicatorSizes[normalizedSize]}
+          color={
+            color ??
+            getSpinnerContextColor(textClass, colors) ??
+            colors.foreground
+          }
+          {...props}
+        />
+      </View>
     </View>
   );
 };

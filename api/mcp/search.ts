@@ -5,6 +5,7 @@ import * as mcpSchemas from '@/api/mcp/schemas';
 import type * as mcpTypes from '@/api/mcp/types';
 import { recordSearchQuery } from '@/domain/records/query';
 import { logTagsQuery } from '@/domain/tags/query';
+import * as recordQueries from '@/domain/records/query';
 import { normalizeSearchText, parseSearchQuery } from '@/lib/search';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
@@ -70,7 +71,7 @@ export const registerSearchTool = (
           limit: recordScanLimit + 1,
           offset: searchCursor.offset,
           order: { date: 'desc' },
-          where: { isDraft: false },
+          where: recordQueries.publishedRecordWhere,
         },
         ...recordSearchQuery,
       },

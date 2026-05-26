@@ -277,7 +277,6 @@ app.post(
         activityDate: now,
         activityId: id(),
         actorId: reply.author.id,
-        contentDate: reply.date ?? now,
         db: c.var.db,
         logId: reply.record.log.id,
         recordId,

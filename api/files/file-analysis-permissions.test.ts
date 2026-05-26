@@ -8,7 +8,7 @@ describe('canAnalyzeSharedLogFile', () => {
       canAnalyzeSharedLogFile({
         actorRole: Role.Admin,
         isAuthor: false,
-        isDraft: false,
+        isUnpublished: false,
       })
     ).toBe(true);
 
@@ -16,17 +16,17 @@ describe('canAnalyzeSharedLogFile', () => {
       canAnalyzeSharedLogFile({
         actorRole: Role.Owner,
         isAuthor: true,
-        isDraft: false,
+        isUnpublished: false,
       })
     ).toBe(true);
   });
 
-  test('checks draft author', () => {
+  test('checks unpublished author', () => {
     expect(
       canAnalyzeSharedLogFile({
         actorRole: Role.Admin,
         isAuthor: false,
-        isDraft: true,
+        isUnpublished: true,
       })
     ).toBe(false);
 
@@ -34,7 +34,7 @@ describe('canAnalyzeSharedLogFile', () => {
       canAnalyzeSharedLogFile({
         actorRole: Role.Admin,
         isAuthor: true,
-        isDraft: true,
+        isUnpublished: true,
       })
     ).toBe(true);
   });
@@ -44,7 +44,7 @@ describe('canAnalyzeSharedLogFile', () => {
       canAnalyzeSharedLogFile({
         actorRole: Role.Member,
         isAuthor: true,
-        isDraft: false,
+        isUnpublished: false,
       })
     ).toBe(false);
 
@@ -52,7 +52,7 @@ describe('canAnalyzeSharedLogFile', () => {
       canAnalyzeSharedLogFile({
         actorRole: null,
         isAuthor: true,
-        isDraft: false,
+        isUnpublished: false,
       })
     ).toBe(false);
   });

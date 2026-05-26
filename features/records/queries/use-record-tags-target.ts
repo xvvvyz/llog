@@ -80,8 +80,8 @@ export const useRecordTagsTarget = ({
         ? {
             author: { id: payloadContext.authorId ?? profile.id },
             id: queuedDraft.contentId,
-            isDraft: true,
             log: { id: payloadLogId },
+            status: 'draft',
             tags: queuedDraft.tagsUpdated
               ? queuedDraft.tags
               : payloadContext.tags,
@@ -91,8 +91,8 @@ export const useRecordTagsTarget = ({
           ? {
               author: { id: payloadContext.authorId ?? profile.id },
               id: recordId,
-              isDraft: true,
               log: { id: payloadLogId },
+              status: 'draft',
               tags: payloadContext.tags,
               teamId: payloadContext.teamId,
             }

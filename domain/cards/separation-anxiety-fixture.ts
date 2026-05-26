@@ -27,8 +27,8 @@ export const separationAnxietyRecords: cardAnalysis.CardSourceFactRecord[] =
   fixture.records.map((record) => ({
     date: record.date,
     id: record.id,
-    isDraft: false,
     logId: 'separation-anxiety',
+    status: 'published',
     tags: record.tags.map((tag, index) => ({
       id: tagId(tag.name, index),
       name: tag.name,

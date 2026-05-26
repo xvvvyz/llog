@@ -2,6 +2,7 @@ import type { McpContext, McpLog, McpRecord, McpReply } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
 import { notificationRecipientLogQuery } from '@/api/push/query';
 import * as contentQueries from '@/api/mcp/content-queries';
+import * as recordStatus from '@/domain/records/status';
 
 type ReadOptions = { query?: object };
 
@@ -44,7 +45,7 @@ export const getVisibleRecord = async (
   const [{ records }, viewer] = await Promise.all([
     ctx.db.query({
       records: {
-        $: { where: { id: recordId, isDraft: false } },
+        $: { where: { id: recordId, status: 'published' } },
         ...(queryShape as typeof contentQueries.recordReadQuery),
       },
     }) as Promise<{ records?: McpRecord[] }>,
@@ -66,7 +67,7 @@ export const getCallerDraftRecord = async (
   const [{ records }, viewer] = await Promise.all([
     ctx.db.query({
       records: {
-        $: { where: { id: recordId, isDraft: true } },
+        $: { where: { id: recordId, status: 'draft' } },
         ...(queryShape as typeof contentQueries.recordReadQuery),
       },
     }) as Promise<{ records?: McpRecord[] }>,
@@ -107,7 +108,7 @@ export const getReadableRecord = async (
   if (!record?.log?.id) throw new Error('Record not found or not visible');
 
   if (
-    record.isDraft &&
+    recordStatus.recordIsUnpublished(record) &&
     (!viewer.profile?.id || record.author?.id !== viewer.profile.id)
   ) {
     throw new Error('Record not found or not visible');

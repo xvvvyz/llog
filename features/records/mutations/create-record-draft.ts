@@ -26,7 +26,7 @@ export const createRecordDraft = async ({
             logId,
           }),
           date: new Date().toISOString(),
-          isDraft: true,
+          ...recordIdentity.getStatusFields('draft'),
           teamId: resolved.teamId,
         },
         { upsert: true }

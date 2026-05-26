@@ -11,9 +11,6 @@ import { Pause, Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { ScrollView, View, type LayoutChangeEvent } from 'react-native';
 
-const TRACK_ARTWORK_OVERLAY_CLASS_NAME =
-  'absolute inset-0 items-center justify-center overflow-hidden border-continuous rounded-md bg-background/45';
-
 type TrackListPressScrollSuppression = {
   hasMatchedTrack: boolean;
   index: number;
@@ -66,7 +63,7 @@ const TrackArtworkButton = ({
       {showPersistentIcon ? (
         <View
           className={cn(
-            TRACK_ARTWORK_OVERLAY_CLASS_NAME,
+            'absolute inset-0 items-center justify-center overflow-hidden border-continuous rounded-md bg-background/45',
             'pointer-events-none opacity-100'
           )}
         >
@@ -80,7 +77,7 @@ const TrackArtworkButton = ({
       ) : (
         <View
           className={cn(
-            TRACK_ARTWORK_OVERLAY_CLASS_NAME,
+            'absolute inset-0 items-center justify-center overflow-hidden border-continuous rounded-md bg-background/45',
             'pointer-events-none opacity-0 web:transition-opacity web:group-hover:opacity-100'
           )}
         >

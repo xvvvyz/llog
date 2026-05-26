@@ -28,7 +28,7 @@ const recordSummaryQuery = {
   replies: {
     $: {
       fields: ['id' as const, 'isDraft' as const],
-      where: recordQueries.publishedContentWhere,
+      where: recordQueries.publishedReplyWhere,
     },
   },
   tags: recordTagsQuery,
@@ -86,14 +86,14 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
           fields: [
             'date' as const,
             'id' as const,
-            'isDraft' as const,
             'isPinned' as const,
+            'status' as const,
             'teamId' as const,
             'text' as const,
           ],
           limit: LOG_RECORD_PREVIEW_LIMIT,
           order: { date: 'desc' },
-          where: { isDraft: false, log: log.id },
+          where: { ...recordQueries.publishedRecordWhere, log: log.id },
         },
         ...recordSummaryQuery,
       },

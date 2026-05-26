@@ -35,6 +35,7 @@ const record = {
       text: 'Reply',
     },
   ],
+  status: 'published',
   tags: [{ id: 'tag-1', name: 'Work', order: 1 }],
   teamId: 'team-1',
   text: 'Record',
@@ -93,7 +94,10 @@ describe('output schemas', () => {
   test('accepts bulk results', () => {
     expect(() =>
       parseShape(mcpSchemas.recordsOutputSchema, {
-        results: [{ recordId: 'record-1', status: 'published' }],
+        results: [
+          { recordId: 'record-1', status: 'published' },
+          { recordId: 'record-2', status: 'scheduled' },
+        ],
       })
     ).not.toThrow();
 

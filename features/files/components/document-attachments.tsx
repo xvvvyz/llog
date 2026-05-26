@@ -331,7 +331,7 @@ export const DocumentAttachments = ({
             onPress={() => handleDeleteDocument(item.id)}
             size="icon-xs"
             variant="ghost"
-            wrapperClassName="-mr-1.5"
+            wrapperClassName="ml-2 -mr-1.5"
           >
             <Icon icon={X} />
           </Button>

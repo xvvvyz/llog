@@ -31,7 +31,7 @@ export const updateRecordDraft = async ({
       ? {
           ...recordIdentity.getRecordIdentityFields(requiredDraftFields),
           date: date ?? new Date().toISOString(),
-          isDraft: true,
+          ...recordIdentity.getStatusFields('draft'),
           teamId: requiredDraftFields.teamId,
         }
       : {}),

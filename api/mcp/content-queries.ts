@@ -18,7 +18,7 @@ export const recordReadQuery = {
   replies: {
     $: {
       order: { date: 'asc' as const },
-      where: recordQueries.publishedContentWhere,
+      where: recordQueries.publishedReplyWhere,
     },
     author: { image: {} },
     files: visibleFileQuery,
@@ -35,7 +35,7 @@ export const recordSummaryQuery = {
   replies: {
     $: {
       fields: ['id' as const, 'isDraft' as const],
-      where: recordQueries.publishedContentWhere,
+      where: recordQueries.publishedReplyWhere,
     },
   },
   tags: recordTagsQuery,
@@ -72,7 +72,7 @@ export const recordDetailQuery = ({
         ],
         limit: replyLimit,
         order: { date: 'asc' as const },
-        where: recordQueries.publishedContentWhere,
+        where: recordQueries.publishedReplyWhere,
       },
       author: recordQueries.summaryProfileQuery,
       files: includeFiles ? visibleFileQuery : recordQueries.countFileQuery,

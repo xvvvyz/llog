@@ -88,6 +88,11 @@ const syncErrorForSubmission = (
 const getAuthor = (profile?: Partial<Profile>) =>
   profile?.id ? ({ ...profile, id: profile.id } as Profile) : undefined;
 
+const getQueuedRecordStatus = (
+  submission: Extract<types.QueuedSubmission, { type: 'record' }>
+) =>
+  recordTime.isFutureRecordDate(submission.recordDate) ? 'scheduled' : 'draft';
+
 export const queuedRecordToEntry = ({
   attachments,
   profile,
@@ -101,7 +106,6 @@ export const queuedRecordToEntry = ({
   date: recordTime.getRecordDate(submission),
   files: attachmentsForSubmission(attachments, submission),
   id: submission.contentId,
-  isDraft: true,
   isPinned: submission.isPinned,
   links: submission.links,
   log: { id: submission.logId },
@@ -110,6 +114,7 @@ export const queuedRecordToEntry = ({
   reactions: [],
   replies: [],
   syncError: syncErrorForSubmission(attachments, submission),
+  status: getQueuedRecordStatus(submission),
   tags: submission.tags,
   teamId: submission.teamId,
   text: submission.text,
@@ -185,13 +190,13 @@ const mergePendingEntry = <T extends { files?: FileItem[] }>(
   }) as T & EntryRecord;
 
 const getEntryDateTime = (entry: { date?: Date | string | number | null }) => {
-  if (!entry.date) return null;
+  if (!entry.date) return Number.NEGATIVE_INFINITY;
   const time = new Date(entry.date).getTime();
-  return Number.isFinite(time) ? time : null;
+  return Number.isFinite(time) ? time : Number.NEGATIVE_INFINITY;
 };
 
 const sortRepliesByDateAsc = <
-  T extends { date?: Date | string | number | null },
+  T extends { date?: Date | string | number | null; id?: string },
 >(
   replies: T[]
 ) =>
@@ -200,11 +205,9 @@ const sortRepliesByDateAsc = <
     .sort((a, b) => {
       const aTime = getEntryDateTime(a.reply);
       const bTime = getEntryDateTime(b.reply);
-
-      if (aTime !== null && bTime !== null && aTime !== bTime) {
-        return aTime - bTime;
-      }
-
+      if (aTime !== bTime) return aTime - bTime;
+      const idComparison = (a.reply.id ?? '').localeCompare(b.reply.id ?? '');
+      if (idComparison !== 0) return idComparison;
       return a.index - b.index;
     })
     .map(({ reply }) => reply);

@@ -1,4 +1,5 @@
 import { type Db } from '@/api/middleware/db';
+import * as recordStatus from '@/domain/records/status';
 import * as permissions from '@/domain/teams/permissions';
 import { HTTPException } from 'hono/http-exception';
 
@@ -17,15 +18,15 @@ const getTeamRoleForUser = async (
 type SharedLogFileAnalysisPolicyInput = {
   actorRole?: string | null;
   isAuthor: boolean;
-  isDraft?: boolean | null;
+  isUnpublished?: boolean | null;
 };
 
 export const canAnalyzeSharedLogFile = ({
   actorRole,
   isAuthor,
-  isDraft,
+  isUnpublished,
 }: SharedLogFileAnalysisPolicyInput) => {
-  if (isDraft && !isAuthor) return false;
+  if (isUnpublished && !isAuthor) return false;
   return permissions.canManageTeam(actorRole);
 };
 
@@ -48,7 +49,7 @@ const assertCanAnalyzeRecordFiles = async ({
 }) => {
   const { records } = await dbClient.query({
     records: {
-      $: { fields: ['id', 'isDraft', 'teamId'], where: { id: recordId } },
+      $: { fields: ['id', 'status', 'teamId'], where: { id: recordId } },
       author: { user: { $: { fields: ['id'] } } },
       log: {
         $: { fields: ['id'] },
@@ -67,7 +68,8 @@ const assertCanAnalyzeRecordFiles = async ({
   }
 
   const isAuthor = record.author?.user?.id === userId;
-  const isLoglessDraft = record.isDraft && !record.log?.id;
+  const isLoglessDraft = record.status === 'draft' && !record.log?.id;
+  const isUnpublished = recordStatus.recordIsUnpublished(record);
 
   const actorRole =
     record.log?.team?.roles?.[0]?.role ??
@@ -75,11 +77,7 @@ const assertCanAnalyzeRecordFiles = async ({
       ? await getTeamRoleForUser(dbClient, record.teamId, userId)
       : undefined);
 
-  assertCanAnalyzeSharedLogFile({
-    actorRole,
-    isAuthor,
-    isDraft: record.isDraft,
-  });
+  assertCanAnalyzeSharedLogFile({ actorRole, isAuthor, isUnpublished });
 };
 
 const assertCanAnalyzeReplyFiles = async ({
@@ -124,7 +122,7 @@ const assertCanAnalyzeReplyFiles = async ({
   assertCanAnalyzeSharedLogFile({
     actorRole,
     isAuthor,
-    isDraft: reply.isDraft,
+    isUnpublished: reply.isDraft,
   });
 };
 

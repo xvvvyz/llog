@@ -1,4 +1,5 @@
 import type { Db } from '@/api/middleware/db';
+import * as recordIdentity from '@/domain/records/identity-fields';
 import * as permissions from '@/domain/teams/permissions';
 import { HTTPException } from 'hono/http-exception';
 
@@ -43,7 +44,7 @@ export const authorizeRecordDraftReplay = async ({
     },
     records: {
       $: {
-        fields: ['id' as const, 'isDraft' as const],
+        fields: ['id' as const, 'status' as const],
         where: { id: recordId },
       },
       author: {
@@ -86,7 +87,7 @@ export const authorizeRecordDraftReplay = async ({
   }
 
   if (existingRecord?.id) {
-    if (existingRecord.isDraft !== true) {
+    if (existingRecord.status !== 'draft') {
       throw new HTTPException(409, { message: 'Record already published' });
     }
 
@@ -155,7 +156,7 @@ export const replayOfflineRecordDraft = async ({
       {
         authorId,
         date: date ?? now ?? new Date().toISOString(),
-        isDraft: true,
+        ...recordIdentity.getStatusFields('draft'),
         ...(isPinned != null ? { isPinned } : {}),
         logId,
         teamId,

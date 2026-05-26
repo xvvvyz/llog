@@ -220,18 +220,24 @@ export const useReplyComposerModel = () => {
     shouldReorderQueuedLinks: true,
   });
 
+  const isReplyDraft = !!(
+    reply &&
+    'isDraft' in reply &&
+    reply.isDraft === true
+  );
+
   const attachmentParent = React.useMemo<RecordSheetParent | undefined>(
     () =>
       replyId && recordId
         ? {
             id: replyId,
-            isDraft: !!reply?.isDraft,
             recordId,
             teamId: reply?.teamId,
             type: 'reply',
+            usesQueuedDraftLinks: isReplyDraft,
           }
         : undefined,
-    [recordId, reply?.isDraft, reply?.teamId, replyId]
+    [isReplyDraft, recordId, reply?.teamId, replyId]
   );
 
   const { linkAttachmentCount, linkAttachmentMenuItem, linkPreview } =

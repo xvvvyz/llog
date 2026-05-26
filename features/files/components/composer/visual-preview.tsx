@@ -27,9 +27,6 @@ const getVisualItemKey = (item: fileComposer.VisualPreviewItem) => item.id;
 const areOrderKeysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((id, index) => id === b[index]);
 
-const thumbnailPressableClassName =
-  'flex-1 overflow-hidden border-continuous rounded-lg bg-border select-none web:outline-hidden';
-
 const webNoSelectStyle =
   Platform.OS === 'web' ? ({ userSelect: 'none' } as ViewStyle) : undefined;
 
@@ -172,15 +169,18 @@ export const VisualPreview = ({
 
     const thumbnail = canDragItem ? (
       <Sortable.SortableDragSurface
-        className={cn(thumbnailPressableClassName, 'cursor-grab')}
         onPress={canOpenItem ? handleOpenItem : undefined}
         style={webNoSelectStyle}
+        className={cn(
+          'flex-1 overflow-hidden border-continuous rounded-lg bg-border select-none web:outline-hidden',
+          'cursor-grab'
+        )}
       >
         {thumbnailContent}
       </Sortable.SortableDragSurface>
     ) : (
       <Pressable
-        className={thumbnailPressableClassName}
+        className="flex-1 overflow-hidden border-continuous rounded-lg bg-border select-none web:outline-hidden"
         disabled={!canOpenItem}
         onPress={handleOpenItem}
         style={webNoSelectStyle}
