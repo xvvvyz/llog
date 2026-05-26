@@ -125,10 +125,15 @@ describe('card output', () => {
 
   test('preserves label symbols', () => {
     const normalized = cardOutput.normalizeRawCardOutput({
+      exactMetricLabelOverrides: {
+        latest_duration: 'Session length',
+        empty_label: '',
+      },
       metrics: [{ label: 'Next milestone 60/90/120 min', value: '90 min' }],
     });
 
     expect(normalized).toMatchObject({
+      exactMetricLabelOverrides: { latest_duration: 'Session length' },
       metrics: [{ label: 'Next milestone 60/90/120 min' }],
     });
   });
@@ -322,5 +327,18 @@ describe('card output', () => {
         valueFormat: 'durationSince',
       },
     ]);
+  });
+
+  test('strips output metadata', () => {
+    expect(
+      cardOutput.stripCardOutputMetadata({
+        exactMetricLabelOverrides: { latest_duration: 'Session length' },
+        metrics: [{ label: 'Session length', unit: 'min', value: 85 }],
+        milestones: [],
+      })
+    ).toEqual({
+      metrics: [{ label: 'Session length', unit: 'min', value: 85 }],
+      milestones: [],
+    });
   });
 });

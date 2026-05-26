@@ -1,5 +1,5 @@
-import type { ChatMessages } from '@openrouter/sdk/models';
 import type * as instantEntities from '@/instant.entities';
+import type { ModelMessage } from 'ai';
 
 export type CardLlmRecord = Pick<instantEntities.Record, 'id'> &
   Partial<Pick<instantEntities.Record, 'date' | 'text'>> & {
@@ -13,7 +13,7 @@ export type CardContextCard = Pick<instantEntities.Card, 'id'> &
   };
 
 export type CardChatMessage = Extract<
-  ChatMessages,
+  ModelMessage,
   { role: 'system' | 'user' }
 >;
 

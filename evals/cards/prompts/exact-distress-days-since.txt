@@ -1,0 +1,3 @@
+Track days since the last Session where peak distress was >=3.
+
+Use peak distress as the numeric field. Return one concise metric for the elapsed time since the latest Session with peak distress >=3.

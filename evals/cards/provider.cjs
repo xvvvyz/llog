@@ -4,7 +4,8 @@ const path = require('node:path');
 const ts = require('typescript');
 const { promisify } = require('node:util');
 const execFileAsync = promisify(execFile);
-const ENV_FILE_NAMES = ['.dev.vars', '.dev.vars.production'];
+const ENV_FILE_NAMES = ['.dev.vars'];
+const EVAL_ENVIRONMENT = 'development';
 
 const readTextVar = (value, pathValue) => {
   if (typeof value === 'string' && value.trim()) return value;
@@ -60,9 +61,10 @@ const evalEnv = () => {
   }
 
   return {
-    ...parseWranglerVars(process.env.ENV ?? env.ENV),
-    ...env,
     ...process.env,
+    ...parseWranglerVars(EVAL_ENVIRONMENT),
+    ...env,
+    ENV: EVAL_ENVIRONMENT,
   };
 };
 

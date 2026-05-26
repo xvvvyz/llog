@@ -10,6 +10,7 @@ import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import * as cardDisplay from '@/features/cards/lib/card-display';
+import * as metricDisplay from '@/features/cards/lib/metric-display';
 
 import Svg, {
   Circle,
@@ -365,8 +366,8 @@ const getPreviewSections = (output: CardOutput): PreviewSection[] => {
   if (hasMilestones) {
     if (hasSummary) {
       return [
-        { key: 'summary', lines: 2, rows: 1, type: 'summary' },
         { key: 'milestones', limit: 2, rows: 2, type: 'milestones' },
+        { key: 'summary', lines: 2, rows: 1, type: 'summary' },
       ];
     }
 
@@ -2514,43 +2515,57 @@ export const ProgressCard = ({
     );
 
     return (
-      <View className="flex-row flex-wrap gap-2">
-        {metrics.map((metric) => (
-          <View
-            key={metric.label}
-            className={cn(
-              isSummary
-                ? 'flex-1 min-w-0 gap-0.5'
-                : 'gap-0.5 px-3 py-1.5 border-continuous rounded-xl bg-input'
-            )}
-            style={
-              isSummary && rows > 1 ? { flexBasis: '48%' as const } : undefined
-            }
-          >
-            <Text className="text-muted-foreground text-xs" numberOfLines={1}>
-              {cardDisplay.formatCardDisplayLabel(metric.label)}
-            </Text>
-            <View className="flex-row min-w-0 gap-2 items-center">
-              <Text className="font-semibold text-sm shrink" numberOfLines={1}>
-                {cardDisplay.formatMetricValue(metric)}
-              </Text>
-              {!!metric.trend && (
-                <Icon
-                  icon={trendIcons[metric.trend]}
-                  size={16}
-                  className={
-                    metric.trend === 'flat'
-                      ? 'text-muted-foreground'
-                      : undefined
-                  }
-                  color={
-                    metric.trend === 'flat' ? undefined : milestoneDotColor
-                  }
-                />
+      <View
+        className={cn(
+          'flex-row flex-wrap',
+          isSummary ? 'gap-x-4 gap-y-2' : 'gap-2'
+        )}
+      >
+        {metrics.map((metric) => {
+          const display = metricDisplay.formatMetricDisplay(metric);
+
+          return (
+            <View
+              key={metric.label}
+              className={cn(
+                isSummary
+                  ? 'flex-1 min-w-0 gap-0.5'
+                  : 'gap-0.5 px-3 py-1.5 border-continuous rounded-xl bg-input'
               )}
+              style={
+                isSummary && rows > 1
+                  ? { flexBasis: '48%' as const }
+                  : undefined
+              }
+            >
+              <Text className="text-muted-foreground text-xs" numberOfLines={1}>
+                {display.label}
+              </Text>
+              <View className="flex-row min-w-0 gap-2 items-center">
+                <Text
+                  className="font-semibold text-sm shrink"
+                  numberOfLines={1}
+                >
+                  {display.value}
+                </Text>
+                {!!metric.trend && (
+                  <Icon
+                    icon={trendIcons[metric.trend]}
+                    size={16}
+                    className={
+                      metric.trend === 'flat'
+                        ? 'text-muted-foreground'
+                        : undefined
+                    }
+                    color={
+                      metric.trend === 'flat' ? undefined : milestoneDotColor
+                    }
+                  />
+                )}
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
     );
   };
@@ -2701,8 +2716,8 @@ export const ProgressCard = ({
                 />
               </View>
             )}
-            {renderSummary()}
             {resolvedOutput.milestones.length > 0 && renderMilestones()}
+            {renderSummary()}
           </View>
         )
       ) : null}

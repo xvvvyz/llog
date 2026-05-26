@@ -1,0 +1,50 @@
+{
+  "generationTime": "2026-05-12T12:00:00.000Z",
+  "name": "Exact distress threshold days since",
+  "records": [],
+  "exact": {
+    "generationTime": "2026-05-12T12:00:00.000Z",
+    "tagIds": ["tag-a"],
+    "analysisSpec": {
+      "extractionFields": [
+        {
+          "id": "peak",
+          "label": "Peak distress",
+          "type": "number",
+          "unit": "0-5"
+        }
+      ],
+      "aggregations": [
+        {
+          "id": "days_since_high",
+          "label": "Days since last Peak distress >=3 session",
+          "operation": "daysSinceLast",
+          "fieldId": "peak",
+          "threshold": { "operator": ">=", "value": 3 },
+          "unit": "days"
+        }
+      ],
+      "groupings": [],
+      "charts": []
+    },
+    "generated": {
+      "count": 8,
+      "startDate": "2026-05-01T12:00:00.000Z",
+      "tagId": "tag-a",
+      "tagName": "Session",
+      "numericValues": [
+        {
+          "fieldId": "peak",
+          "label": "Peak distress (0-5)",
+          "unit": "0-5",
+          "valuePattern": [3, 2, 1, 4, 2, 2, 1, 2]
+        }
+      ]
+    },
+    "expected": {
+      "dateMetrics": {
+        "Since last peak distress >=3": "2026-05-04T12:00:00.000Z"
+      }
+    }
+  }
+}

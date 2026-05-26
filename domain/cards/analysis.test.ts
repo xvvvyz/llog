@@ -176,6 +176,81 @@ describe('card analysis plan', () => {
     });
   });
 
+  test('plans requested streak operation', () => {
+    const plan = cardAnalysis.planCardAnalysis({
+      mode: 'narrative',
+      prompt: 'Track the longest record streak.',
+      totalMatchingRecords: 47,
+    });
+
+    expect(plan.analysisSpec?.aggregations).toEqual([
+      expect.objectContaining({ operation: 'longestStreak', period: 'record' }),
+    ]);
+  });
+
+  test('routes conditioned streaks to planner', () => {
+    expect(
+      cardAnalysis.promptRequestsExactCandidate(
+        'Track the longest distress <=2 streak.'
+      )
+    ).toBe(true);
+
+    expect(
+      cardAnalysis.planCardAnalysis({
+        mode: 'narrative',
+        prompt: 'Track the longest distress <=2 streak.',
+        totalMatchingRecords: 47,
+      })
+    ).toEqual({ mode: 'narrative' });
+
+    expect(
+      cardAnalysis.planCardAnalysis({
+        mode: 'narrative',
+        prompt: 'Track current and longest calm streaks.',
+        totalMatchingRecords: 47,
+      })
+    ).toEqual({ mode: 'narrative' });
+  });
+
+  test('skips unscoped streak fallback', () => {
+    const plan = cardAnalysis.planCardAnalysis({
+      analysisSpec: {
+        aggregations: [
+          {
+            eventLabel: 'calm',
+            fieldId: 'calm',
+            id: 'longest_calm',
+            label: 'Calm streak',
+            operation: 'longestStreak',
+            period: 'record',
+            unit: 'sessions',
+          },
+        ],
+        charts: [],
+        extractionFields: [
+          {
+            countMode: 'recordPresence',
+            id: 'calm',
+            label: 'Calm',
+            type: 'event',
+          },
+        ],
+        groupings: [],
+      },
+      mode: 'exact',
+      prompt: 'Track current and longest calm streaks.',
+      totalMatchingRecords: 47,
+    });
+
+    expect(plan.analysisSpec?.aggregations).toEqual([
+      expect.objectContaining({
+        fieldId: 'calm',
+        id: 'longest_calm',
+        operation: 'longestStreak',
+      }),
+    ]);
+  });
+
   test('keeps planned streaks', () => {
     const plan = cardAnalysis.planCardAnalysis({
       analysisSpec: {
@@ -269,6 +344,28 @@ describe('card analysis plan', () => {
         groupings: [],
       })?.aggregations[0]?.operation
     ).toBe('daysSinceLast');
+  });
+
+  test('normalizes thresholds', () => {
+    expect(
+      cardAnalysis.normalizeAnalysisSpec({
+        aggregations: [
+          {
+            fieldId: 'distress',
+            id: 'distress_streak',
+            label: 'Distress <=2 streak',
+            operation: 'longestStreak',
+            period: 'record',
+            threshold: { operator: '<=', value: 2 },
+          },
+        ],
+        charts: [],
+        extractionFields: [
+          { id: 'distress', label: 'Peak distress', type: 'number' },
+        ],
+        groupings: [],
+      })?.aggregations[0]
+    ).toMatchObject({ threshold: { operator: '<=', value: 2 } });
   });
 
   test('skips chart fallback', () => {
@@ -795,6 +892,194 @@ describe('card exact facts', () => {
     });
   });
 
+  test('labels record charts by date', () => {
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: {
+        aggregations: [
+          {
+            fieldId: 'duration',
+            id: 'duration_latest',
+            label: 'Duration',
+            operation: 'latest',
+            unit: 'min',
+          },
+          {
+            fieldId: 'distress',
+            id: 'distress_latest',
+            label: 'Distress',
+            operation: 'latest',
+          },
+        ],
+        charts: [
+          {
+            id: 'progress',
+            title: 'Progress',
+            type: 'line',
+            x: { dimension: 'record', id: 'record', label: 'Session date' },
+            y: [
+              { aggregationId: 'duration_latest', label: 'Duration' },
+              { aggregationId: 'distress_latest', label: 'Distress' },
+            ],
+          },
+        ],
+        extractionFields: [
+          { id: 'duration', label: 'Duration', type: 'number', unit: 'min' },
+          { id: 'distress', label: 'Distress', type: 'number' },
+        ],
+        groupings: [],
+      },
+      facts: [
+        {
+          facts: {
+            events: [],
+            evidence: [],
+            numericValues: [
+              { fieldId: 'duration', value: 2 },
+              { fieldId: 'distress', value: 4 },
+            ],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordId: 'record-1',
+          },
+        },
+        {
+          facts: {
+            events: [],
+            evidence: [],
+            numericValues: [
+              { fieldId: 'duration', value: 6 },
+              { fieldId: 'distress', value: 2 },
+            ],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordId: 'record-2',
+          },
+        },
+      ],
+      records: [
+        { date: '2026-01-05T17:00:00.000Z', id: 'record-1' },
+        { date: '2026-01-13T17:00:00.000Z', id: 'record-2' },
+      ],
+      tagIds: [],
+    });
+
+    expect(exactFacts.chart?.series?.map((series) => series.data)).toEqual([
+      [
+        { label: '2026-01-05T17:00:00.000Z', value: 2 },
+        { label: '2026-01-13T17:00:00.000Z', value: 6 },
+      ],
+      [
+        { label: '2026-01-05T17:00:00.000Z', value: 4 },
+        { label: '2026-01-13T17:00:00.000Z', value: 2 },
+      ],
+    ]);
+
+    expect(exactFacts.metrics).toEqual([
+      { label: 'Duration', trend: 'up', unit: 'min', value: 6 },
+      { label: 'Distress', trend: 'down', value: 2 },
+    ]);
+  });
+
+  test('charts scored latest values', () => {
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: {
+        aggregations: [
+          {
+            fieldId: 'duration',
+            id: 'duration_latest',
+            label: 'Duration',
+            operation: 'latest',
+            unit: 'min',
+          },
+          {
+            fieldId: 'distress',
+            id: 'distress_latest',
+            label: 'Distress',
+            operation: 'latest',
+            unit: '0-5',
+          },
+        ],
+        charts: [
+          {
+            id: 'progress',
+            title: 'Progress',
+            type: 'line',
+            x: { dimension: 'record', id: 'record', label: 'Session date' },
+            y: [
+              { aggregationId: 'duration_latest', label: 'Duration' },
+              { aggregationId: 'distress_latest', label: 'Distress' },
+            ],
+          },
+        ],
+        extractionFields: [
+          { id: 'duration', label: 'Duration', type: 'number', unit: 'min' },
+          {
+            id: 'distress',
+            label: 'Distress',
+            scoreScale: { max: 5, min: 0 },
+            type: 'qualitative',
+          },
+        ],
+        groupings: [],
+      },
+      facts: [
+        {
+          facts: {
+            events: [],
+            evidence: [],
+            numericValues: [{ fieldId: 'duration', value: 75 }],
+            outcomes: [],
+            qualitativeLabels: [
+              { fieldId: 'distress', label: 'distress', score: 1 },
+            ],
+            recordId: 'record-1',
+          },
+        },
+        {
+          facts: {
+            events: [],
+            evidence: [],
+            numericValues: [{ fieldId: 'duration', value: 85 }],
+            outcomes: [],
+            qualitativeLabels: [
+              { fieldId: 'distress', label: 'distress', score: 2 },
+            ],
+            recordId: 'record-2',
+          },
+        },
+      ],
+      records: [
+        { date: '2026-03-09T17:00:00.000Z', id: 'record-1' },
+        { date: '2026-03-10T17:00:00.000Z', id: 'record-2' },
+      ],
+      tagIds: [],
+    });
+
+    expect(exactFacts.chart?.series).toEqual([
+      {
+        data: [
+          { label: '2026-03-09T17:00:00.000Z', value: 75 },
+          { label: '2026-03-10T17:00:00.000Z', value: 85 },
+        ],
+        label: 'Duration',
+        unit: 'min',
+      },
+      {
+        data: [
+          { label: '2026-03-09T17:00:00.000Z', value: 1 },
+          { label: '2026-03-10T17:00:00.000Z', value: 2 },
+        ],
+        label: 'Distress',
+        unit: '0-5',
+      },
+    ]);
+
+    expect(exactFacts.metrics).toEqual([
+      { label: 'Duration', trend: 'up', unit: 'min', value: 85 },
+      { label: 'Distress', trend: 'up', unit: '0-5', value: 2 },
+    ]);
+  });
+
   test('aggregates since-last', () => {
     const exactFacts = cardAnalysis.aggregateExtractedFacts({
       analysisSpec: {
@@ -898,6 +1183,66 @@ describe('card exact facts', () => {
       { label: '2026-02', value: 1 },
       { label: '2026-03', value: 0 },
     ]);
+  });
+
+  test('labels threshold since-last', () => {
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: {
+        aggregations: [
+          {
+            fieldId: 'peak',
+            id: 'days_since_high',
+            label: 'Days since last Peak distress >=3 session',
+            operation: 'daysSinceLast',
+            threshold: { operator: '>=', value: 3 },
+            unit: 'days',
+          },
+        ],
+        charts: [],
+        extractionFields: [
+          { id: 'peak', label: 'Peak distress', type: 'number', unit: '0-5' },
+        ],
+        groupings: [],
+      },
+      facts: [
+        {
+          facts: {
+            events: [],
+            evidence: [],
+            numericValues: [
+              { fieldId: 'peak', label: 'Peak distress', value: 3 },
+            ],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordId: 'record-1',
+          },
+        },
+        {
+          facts: {
+            events: [],
+            evidence: [],
+            numericValues: [
+              { fieldId: 'peak', label: 'Peak distress', value: 2 },
+            ],
+            outcomes: [],
+            qualitativeLabels: [],
+            recordId: 'record-2',
+          },
+        },
+      ],
+      records: [
+        { date: '2026-02-23T17:00:00.000Z', id: 'record-1' },
+        { date: '2026-03-10T17:00:00.000Z', id: 'record-2' },
+      ],
+      tagIds: [],
+    });
+
+    expect(exactFacts.metrics).toContainEqual({
+      label: 'Since last peak distress >=3',
+      unit: 'days',
+      value: '2026-02-23T17:00:00.000Z',
+      valueFormat: 'durationSince',
+    });
   });
 
   test('aggregates qualitative', () => {
@@ -1114,6 +1459,201 @@ describe('card exact facts', () => {
     expect(exactFacts.metrics.map((metric) => metric.label)).not.toContain(
       'Longest weekly streak'
     );
+  });
+
+  test('counts record streaks', () => {
+    const records = separationAnxietyFixture.separationAnxietyRecords;
+
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: {
+        aggregations: [
+          {
+            fieldId: 'distress',
+            id: 'longest_under_threshold',
+            label: 'Distress <=2 streak',
+            operation: 'longestStreak',
+            period: 'record',
+            threshold: { operator: '<=', value: 2 },
+            unit: 'sessions',
+          },
+        ],
+        charts: [],
+        extractionFields: [
+          { id: 'distress', label: 'Peak distress', type: 'number' },
+        ],
+        groupings: [],
+      },
+      facts: separationAnxietyFixture.separationAnxietyFacts,
+      records,
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
+    });
+
+    const longest = exactFacts.aggregateValues.longest_under_threshold;
+    expect(longest).toMatchObject({ unit: 'sessions', value: 14 });
+    expect(longest.recordIds).toHaveLength(14);
+
+    expect(longest.recordIds.at(0)).toBe(
+      '44f57021-4b66-4951-817e-2230008e03e2'
+    );
+
+    expect(longest.recordIds.at(-1)).toBe(
+      '3c8caf81-a7e0-432a-bb5c-b440c9b78c68'
+    );
+
+    expect(exactFacts.metrics).toContainEqual({
+      label: 'Longest distress <=2 streak',
+      unit: 'sessions',
+      value: 14,
+    });
+  });
+
+  test('breaks record streaks', () => {
+    const matchingRecordIds = new Set([
+      'record-1',
+      'record-2',
+      'record-4',
+      'record-5',
+    ]);
+
+    const sourceRecords = Array.from({ length: 6 }, (_, index) => ({
+      date: `2026-01-0${index + 1}T17:00:00.000Z`,
+      id: `record-${index + 1}`,
+    }));
+
+    const facts = sourceRecords.map((record) => ({
+      facts: {
+        events: matchingRecordIds.has(record.id)
+          ? [{ count: 1, fieldId: 'calm', label: 'calm' }]
+          : [],
+        evidence: [],
+        numericValues: [],
+        outcomes: [],
+        qualitativeLabels: [],
+        recordId: record.id,
+      },
+    }));
+
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: {
+        aggregations: [
+          {
+            eventLabel: 'calm',
+            fieldId: 'calm',
+            id: 'current_calm',
+            label: 'Calm streak',
+            operation: 'currentStreak',
+            period: 'record',
+            unit: 'sessions',
+          },
+          {
+            eventLabel: 'calm',
+            fieldId: 'calm',
+            id: 'longest_calm',
+            label: 'Calm streak',
+            operation: 'longestStreak',
+            period: 'record',
+            unit: 'sessions',
+          },
+        ],
+        charts: [],
+        extractionFields: [
+          {
+            countMode: 'recordPresence',
+            id: 'calm',
+            label: 'Calm',
+            type: 'event',
+          },
+        ],
+        groupings: [],
+      },
+      facts,
+      records: sourceRecords,
+      tagIds: [],
+    });
+
+    expect(exactFacts.aggregateValues.current_calm).toMatchObject({
+      recordIds: [],
+      value: 0,
+    });
+
+    expect(exactFacts.aggregateValues.longest_calm).toMatchObject({
+      recordIds: ['record-1', 'record-2'],
+      value: 2,
+    });
+
+    expect(exactFacts.metrics).toContainEqual({
+      label: 'Current calm streak',
+      unit: 'sessions',
+      value: 0,
+    });
+
+    expect(exactFacts.metrics).toContainEqual({
+      label: 'Longest calm streak',
+      unit: 'sessions',
+      value: 2,
+    });
+  });
+
+  test('evals threshold streak plan', () => {
+    const prompt = 'Track the longest distress <=2 streak.';
+
+    const plan = cardAnalysis.planCardAnalysis({
+      analysisSpec: {
+        aggregations: [
+          {
+            fieldId: 'distress',
+            id: 'longest_distress_under_threshold',
+            label: 'Longest streak',
+            operation: 'longestStreak',
+            period: 'record',
+            threshold: { operator: '<=', value: 2 },
+            unit: 'sessions',
+          },
+        ],
+        charts: [],
+        extractionFields: [
+          {
+            id: 'distress',
+            label: 'Peak distress',
+            type: 'number',
+            unit: '0-5',
+          },
+        ],
+        groupings: [],
+      },
+      mode: 'exact',
+      prompt,
+      totalMatchingRecords:
+        separationAnxietyFixture.separationAnxietyRecords.length,
+    });
+
+    if (!plan.analysisSpec) throw new Error('Expected analysis spec');
+
+    expect(plan.analysisSpec.aggregations).toEqual([
+      expect.objectContaining({
+        fieldId: 'distress',
+        operation: 'longestStreak',
+        period: 'record',
+        threshold: { operator: '<=', value: 2 },
+      }),
+    ]);
+
+    const exactFacts = cardAnalysis.aggregateExtractedFacts({
+      analysisSpec: plan.analysisSpec,
+      facts: separationAnxietyFixture.separationAnxietyFacts,
+      records: separationAnxietyFixture.separationAnxietyRecords,
+      tagIds: separationAnxietyFixture.separationSessionTagIds,
+    });
+
+    expect(
+      exactFacts.aggregateValues.longest_distress_under_threshold
+    ).toMatchObject({ unit: 'sessions', value: 14 });
+
+    expect(exactFacts.metrics).toContainEqual({
+      label: 'Longest distress <=2 streak',
+      unit: 'sessions',
+      value: 14,
+    });
   });
 
   test('filters invalid facts', () => {

@@ -1,0 +1,1 @@
+Rename the metric label to Calm streak.

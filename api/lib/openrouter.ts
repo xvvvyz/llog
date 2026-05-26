@@ -1,20 +1,31 @@
-import { OpenRouter } from '@openrouter/sdk';
-import { OpenRouterError } from '@openrouter/sdk/models/errors';
+import { createOpenRouter as createOpenRouterProvider } from '@openrouter/ai-sdk-provider';
+import { APICallError, NoObjectGeneratedError } from 'ai';
 
 export const createOpenRouter = (env: CloudflareEnv) => {
   const apiKey = env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is required');
 
-  return new OpenRouter({
+  return createOpenRouterProvider({
     apiKey,
-    appTitle: 'llog',
-    ...(env.APP_URL ? { httpReferer: env.APP_URL } : {}),
+    compatibility: 'strict',
+    ...(env.APP_URL ? { appUrl: env.APP_URL } : {}),
   });
 };
 
 export const describeOpenRouterError = (error: unknown) => {
-  if (error instanceof OpenRouterError) {
-    return `${error.statusCode}: ${error.body || error.message}`;
+  if (APICallError.isInstance(error)) {
+    const details =
+      error.responseBody ||
+      (error.data ? JSON.stringify(error.data) : undefined) ||
+      error.message;
+
+    return error.statusCode ? `${error.statusCode}: ${details}` : details;
+  }
+
+  if (NoObjectGeneratedError.isInstance(error)) {
+    return error.cause instanceof Error
+      ? `${error.message}: ${error.cause.message}`
+      : error.message;
   }
 
   if (error instanceof Error) return error.message;

@@ -12,14 +12,19 @@ export const asArray = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
 
 export const cleanNullableObject = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(cleanNullableObject);
+  if (Array.isArray(value)) {
+    return value
+      .map(cleanNullableObject)
+      .filter((item) => item !== undefined && item !== null);
+  }
 
   if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .filter(([, item]) => item != null)
-        .map(([key, item]) => [key, cleanNullableObject(item)])
-    );
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => [key, cleanNullableObject(item)] as const)
+      .filter(([, item]) => item !== undefined && item !== null);
+
+    if (!entries.length) return undefined;
+    return Object.fromEntries(entries);
   }
 
   return value;

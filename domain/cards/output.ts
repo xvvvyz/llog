@@ -21,6 +21,8 @@ export const MAX_CARD_METRIC_VALUE_LENGTH = 40;
 
 export const MAX_CARD_UNIT_LENGTH = 16;
 
+export const MAX_CARD_EXACT_METRIC_OVERRIDE_KEY_LENGTH = 120;
+
 export const MAX_CARD_MILESTONE_DATE_LENGTH = 32;
 
 export const MAX_CARD_MILESTONE_DETAIL_LENGTH = 240;
@@ -125,6 +127,12 @@ export const cardChartSchema = z
 export const cardOutputSchema = z
   .object({
     chart: cardChartSchema.optional(),
+    exactMetricLabelOverrides: z
+      .record(
+        z.string().min(1).max(MAX_CARD_EXACT_METRIC_OVERRIDE_KEY_LENGTH),
+        z.string().min(1).max(MAX_CARD_METRIC_LABEL_LENGTH)
+      )
+      .optional(),
     metrics: z.array(cardMetricSchema).max(MAX_CARD_METRICS).default([]),
     milestones: z
       .array(cardMilestoneSchema)
@@ -546,13 +554,40 @@ const normalizeChart = (value: unknown) => {
   };
 };
 
+const normalizeExactMetricLabelOverrides = (value: unknown) => {
+  const overrides = asRecord(value);
+  const normalized: Record<string, string> = {};
+
+  for (const [rawKey, rawLabel] of Object.entries(overrides)) {
+    const key = rawKey
+      .trim()
+      .slice(0, MAX_CARD_EXACT_METRIC_OVERRIDE_KEY_LENGTH);
+
+    const label = normalizeCardDisplayLabel({
+      maxLength: MAX_CARD_METRIC_LABEL_LENGTH,
+      maxWords: 5,
+      value: rawLabel,
+    });
+
+    if (key && label) normalized[key] = label;
+  }
+
+  return Object.keys(normalized).length ? normalized : undefined;
+};
+
 export const normalizeRawCardOutput = (value: unknown): unknown => {
   const output = asRecord(value);
   const chart = normalizeChart(output.chart);
+
+  const exactMetricLabelOverrides = normalizeExactMetricLabelOverrides(
+    output.exactMetricLabelOverrides
+  );
+
   const summary = readString(output.summary, MAX_CARD_GENERATED_SUMMARY_LENGTH);
 
   return {
     ...(chart && { chart }),
+    ...(exactMetricLabelOverrides && { exactMetricLabelOverrides }),
     metrics: asArray(output.metrics)
       .map(normalizeMetric)
       .filter((metric): metric is NonNullable<typeof metric> => !!metric)
@@ -585,6 +620,11 @@ export const normalizeCardOutputMilestoneDates = (
     .map(({ milestone }) => milestone);
 
   return { ...output, milestones };
+};
+
+export const stripCardOutputMetadata = (output: CardOutput): CardOutput => {
+  const { exactMetricLabelOverrides: _overrides, ...content } = output;
+  return content;
 };
 
 const mergeCardMetricRefresh = (
@@ -683,6 +723,9 @@ export const mergeCardOutputRefresh = ({
   return {
     ...(previous.chart && {
       chart: mergeCardChartRefresh(previous.chart, next.chart),
+    }),
+    ...(next.exactMetricLabelOverrides && {
+      exactMetricLabelOverrides: next.exactMetricLabelOverrides,
     }),
     metrics: replaceMetrics
       ? next.metrics

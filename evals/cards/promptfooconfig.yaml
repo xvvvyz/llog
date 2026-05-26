@@ -119,6 +119,40 @@ tests:
       - type: javascript
         value: file://assertions/index.cjs:exactCounts
 
+  - description: planned exact distress threshold streak
+    vars:
+      mode: planned
+      fixturePath: evals/cards/fixtures/exact-distress-streak.json
+      promptPath: evals/cards/prompts/exact-distress-streak.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:exactCounts
+
+  - description: generate exact distress threshold days since
+    vars:
+      mode: exact
+      fixturePath: evals/cards/fixtures/exact-distress-days-since.json
+      promptPath: evals/cards/prompts/exact-distress-days-since.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:exactCounts
+
+  - description: tweak exact metric label override
+    vars:
+      mode: tweak
+      fixturePath: evals/cards/fixtures/exact-distress-streak-label-tweak.json
+      promptPath: evals/cards/prompts/exact-distress-streak.txt
+      tweakPromptPath: evals/cards/prompts/exact-label-override-tweak.txt
+    assert:
+      - type: javascript
+        value: file://assertions/index.cjs:cardOutput
+      - type: javascript
+        value: file://assertions/index.cjs:exactCounts
+
   - description: tweak trigger resilience
     vars:
       mode: tweak

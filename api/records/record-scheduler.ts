@@ -1,4 +1,4 @@
-import type { SchedulingAgent } from '@/api/scheduling-agent';
+import type { SchedulingAgent } from '@/api/index';
 
 export type ScheduledRecordPublishPayload = {
   publishAt: string;

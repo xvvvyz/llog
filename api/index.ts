@@ -11,12 +11,72 @@ import { handleAuthorizationCodeReplay } from '@/api/oauth/authorization-code-re
 import * as oauthProviderModule from '@/api/oauth/provider';
 import push from '@/api/push';
 import records from '@/api/records';
+import { publishScheduledRecord } from '@/api/records/record-publish';
+import type { ScheduledRecordPublishPayload } from '@/api/records/record-scheduler';
 import teams from '@/api/teams';
 import { getMaxQueueJobDeliveryAttempts } from '@/wrangler.generated';
+import { Agent } from 'agents';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
-export { SchedulingAgent } from '@/api/scheduling-agent';
+const isScheduledRecordPayload = (
+  value: unknown
+): value is ScheduledRecordPublishPayload => {
+  if (typeof value !== 'object' || value === null) return false;
+  const payload = value as Partial<ScheduledRecordPublishPayload>;
+
+  return (
+    typeof payload.recordId === 'string' &&
+    payload.recordId.length > 0 &&
+    typeof payload.publishAt === 'string' &&
+    payload.publishAt.length > 0
+  );
+};
+
+export class SchedulingAgent extends Agent<CloudflareEnv> {
+  async scheduleRecordPublish(payload: ScheduledRecordPublishPayload) {
+    const schedule = await this.schedule(
+      new Date(payload.publishAt),
+      'publishScheduledRecord',
+      payload,
+      { idempotent: true }
+    );
+
+    return { scheduleId: schedule.id };
+  }
+
+  async cancelRecordPublishSchedules({
+    exceptScheduleId,
+    recordId,
+  }: {
+    exceptScheduleId?: string;
+    recordId: string;
+  }) {
+    const schedules = await this.listSchedules({ type: 'scheduled' });
+    let canceled = 0;
+
+    for (const schedule of schedules) {
+      if (schedule.id === exceptScheduleId) continue;
+      if (schedule.callback !== 'publishScheduledRecord') continue;
+      if (!isScheduledRecordPayload(schedule.payload)) continue;
+      if (schedule.payload.recordId !== recordId) continue;
+      if (await this.cancelSchedule(schedule.id)) canceled += 1;
+    }
+
+    return { canceled };
+  }
+
+  async publishScheduledRecord(payload: ScheduledRecordPublishPayload) {
+    const dbClient = createAdminDb(this.env);
+
+    return publishScheduledRecord({
+      dbClient,
+      env: this.env,
+      publishAt: payload.publishAt,
+      recordId: payload.recordId,
+    });
+  }
+}
 
 installConsoleErrorSerializer();
 const api = new Hono().basePath('/api/v1');

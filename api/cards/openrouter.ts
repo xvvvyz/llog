@@ -221,6 +221,7 @@ export const refreshCardResult = async ({
   const parsedResult = results.parseCardOutputResult({
     exactFacts: lockedExactFacts,
     parsedJson,
+    previousOutput,
   });
 
   if (parsedResult.success) {
@@ -253,6 +254,7 @@ export const refreshCardResult = async ({
   const repairedResult = results.parseCardOutputResult({
     exactFacts: lockedExactFacts,
     parsedJson: repairedJson,
+    previousOutput,
   });
 
   if (!repairedResult.success) throw new Error(repairedResult.errorMessage);
@@ -316,6 +318,8 @@ export const tweakCardResult = async ({
     defaultTitle,
     exactFacts: lockedExactFacts,
     parsedJson,
+    previousOutput,
+    tweakPrompt,
   });
 
   if (parsedResult.success) return parsedResult;
@@ -342,6 +346,8 @@ export const tweakCardResult = async ({
     defaultTitle,
     exactFacts: lockedExactFacts,
     parsedJson: repairedJson,
+    previousOutput,
+    tweakPrompt,
   });
 
   if (!repairedResult.success) throw new Error(repairedResult.errorMessage);

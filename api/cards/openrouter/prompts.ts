@@ -19,6 +19,9 @@ const arithmeticRules =
 const exactArithmeticRules =
   'When exactFacts are present, do not recalculate or adjust locked values from sampled records. Compare, summarize, or select among locked values only when exactFacts include the needed baseline, groups, or time series.';
 
+const exactStreakRules =
+  'For exact streaks, preserve current vs longest in labels and summary wording. Do not introduce a streak value in the summary unless that same current/longest streak value is present in the output metrics or chart.';
+
 const chartSelectionRules =
   'Use charts only when clearer than metrics or prose: line for chronological or ordered numeric series, bar for category totals or direct comparisons.';
 
@@ -43,7 +46,7 @@ const sectionDistinctnessRules =
   'Give each included section a distinct job. Avoid metrics that say the same thing in different words, and avoid repeating obvious chart values in metrics or summary unless card.prompt asks for them or they are the main takeaway.';
 
 const labelSpecificityRules =
-  'Keep metric and chart labels concise and complete. Preserve meaning-changing qualifiers: thresholds, score/scale names, units, groups, filters, and time windows. Labels must not end with connector words such as for, of, by, with, or to.';
+  'Keep metric and chart labels concise and complete. Preserve meaning-changing qualifiers: thresholds, score/scale names, units, groups, filters, and time windows. Avoid repeating equivalent threshold wording in one label; use either a named threshold or the numeric comparator when one implies the other. Labels must not end with connector words such as for, of, by, with, or to.';
 
 const labelStyle =
   'Use short sentence case labels, usually 1-4 words, with no ending or decorative punctuation.';
@@ -254,6 +257,7 @@ const buildOutputRules = (options: OutputRulesOptions) => {
         ? exactArithmeticRules
         : arithmeticRules
       : '',
+    options.exact ? exactStreakRules : '',
     sections.chart ? chartSelectionRules : '',
     dateOutputRules,
     groundingRules,
@@ -359,6 +363,9 @@ export const buildRefreshMessages = ({
 }): CardChatMessage[] => {
   const exact = analysisMode === 'exact' && !!exactFacts;
 
+  const promptPreviousOutput =
+    cardOutput.stripCardOutputMetadata(previousOutput);
+
   const effectiveAnalysisMode: cardAnalysis.CardAnalysisMode = exact
     ? 'exact'
     : 'narrative';
@@ -376,7 +383,7 @@ export const buildRefreshMessages = ({
       content: JSON.stringify({
         card: {
           generationTime: generationTime ?? null,
-          previousOutput,
+          previousOutput: promptPreviousOutput,
           previousTitle: previousTitle ?? null,
           prompt,
         },
@@ -384,7 +391,7 @@ export const buildRefreshMessages = ({
           exact,
           exactFacts: serializedExactFacts ? exactFacts : undefined,
           mode: 'refresh',
-          previousOutput,
+          previousOutput: promptPreviousOutput,
           prompt,
         }),
         sourceRules: buildSourceRules({
@@ -429,6 +436,9 @@ export const buildTweakMessages = ({
 }): CardChatMessage[] => {
   const exact = analysisMode === 'exact' && !!exactFacts;
 
+  const promptPreviousOutput =
+    cardOutput.stripCardOutputMetadata(previousOutput);
+
   const effectiveAnalysisMode: cardAnalysis.CardAnalysisMode = exact
     ? 'exact'
     : 'narrative';
@@ -446,7 +456,7 @@ export const buildTweakMessages = ({
       content: JSON.stringify({
         card: {
           generationTime: generationTime ?? null,
-          previousOutput,
+          previousOutput: promptPreviousOutput,
           previousTitle: previousTitle ?? null,
           prompt,
           tweakPrompt,
@@ -455,7 +465,7 @@ export const buildTweakMessages = ({
           exact,
           exactFacts: serializedExactFacts ? exactFacts : undefined,
           mode: 'tweak',
-          previousOutput,
+          previousOutput: promptPreviousOutput,
           prompt,
           tweakPrompt,
         }),
@@ -496,7 +506,7 @@ export const buildAnalysisPlanMessages = ({
     content: JSON.stringify({
       card: { generationTime: generationTime ?? null, prompt },
       rules:
-        'Use the minimal spec needed. Include prompt-requested sparse fields, but do not add fields unsupported by the prompt and examples. Choose narrative for broad interpretation, advice, or open-ended comparison unless structured qualitative labels/scores are requested. Set analysisSpec to null for narrative mode. Use stable short ids. Event fields must set countMode: explicitOccurrences for occurrence totals, or recordPresence for records/sessions with an event. Qualitative scoreScale is only for ordinal scores with explicit scale bounds; preserve the source or prompt scale. Aggregations may use count, sum, average, min, max, latest, first, ratio, currentStreak, longestStreak, or daysSinceLast. Ratio aggregations must reference numeratorId and denominatorId. Streak aggregations should set period to day, week, or month and use groupBy for per-author or per-tag streaks; currentStreak is anchored to card.generationTime and counts consecutive active periods through that anchor. Use daysSinceLast for elapsed time since the latest matching event/value, with unit days, weeks, months, or years as requested. Aggregation/chart labels should preserve thresholds, scale names, groups, and time windows compactly. Chart specs must reference aggregation ids and use chart.x for grouping by record, tag, author, event, day, week, month, or explicit range. Use record/day/week/month grouping for chronological charts. If the prompt asks for a date window, include filters on field record.date. Use startInclusive/endExclusive bounds. For relative rolling windows such as last/past N months, use type generationTime with an offset from card.generationTime for the start and generationTime for the end. Month/year offsets are rolling calendar offsets, not fixed day counts. For fixed date-only end bounds like through Apr 30, emit the requested date as endExclusive and the system will include that full UTC day. Records with missing or invalid dates are excluded by active filters. Qualitative specs request structured labels/scores/evidence, not freeform summaries.',
+        'Use the minimal spec needed. Include prompt-requested sparse fields, but do not add fields unsupported by the prompt and examples. Choose narrative for broad interpretation, advice, or open-ended comparison unless structured qualitative labels/scores are requested. Set analysisSpec to null for narrative mode. Use stable short ids. Event fields must set countMode: explicitOccurrences for occurrence totals, or recordPresence for records/sessions with an event. Qualitative scoreScale is only for ordinal scores with explicit scale bounds; preserve the source or prompt scale. Use number fields for explicit numeric measurements, ratings, durations, counts, and numeric scales. Aggregations may use count, sum, average, min, max, latest, first, ratio, currentStreak, longestStreak, or daysSinceLast. For numeric threshold requests such as <=2, >=80, or below/above a score, extract the raw number field and put threshold: { operator, value } on the aggregation; do not model numeric thresholds as separate events when a numeric field is available. Ratio aggregations must reference numeratorId and denominatorId. Streak aggregations should set period to record for consecutive source records/sessions, or day/week/month only when a calendar cadence is requested; use groupBy for per-author or per-tag streaks. Calendar currentStreak is anchored to card.generationTime and counts consecutive active periods through that anchor. Record currentStreak counts consecutive matching records through the latest source record. Use daysSinceLast for elapsed time since the latest matching event/value, with unit days, weeks, months, or years as requested. Aggregation/chart labels should preserve thresholds, scale names, groups, and time windows compactly. Chart specs must reference aggregation ids and use chart.x for grouping by record, tag, author, event, day, week, month, or explicit range. Use record/day/week/month grouping for chronological charts. If the prompt asks for a date window, include filters on field record.date. Use startInclusive/endExclusive bounds. For relative rolling windows such as last/past N months, use type generationTime with an offset from card.generationTime for the start and generationTime for the end. Month/year offsets are rolling calendar offsets, not fixed day counts. For fixed date-only end bounds like through Apr 30, emit the requested date as endExclusive and the system will include that full UTC day. Records with missing or invalid dates are excluded by active filters. Qualitative specs request structured labels/scores/evidence, not freeform summaries.',
       records: context.buildPlannerRecordContext({ records, totalRecordCount }),
     }),
     role: 'user',

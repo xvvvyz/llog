@@ -1,4 +1,5 @@
 import * as openrouter from '@/api/cards/openrouter';
+import type { ExactCardFacts } from '@/domain/cards/analysis';
 import * as cardOutput from '@/domain/cards/output';
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 
@@ -71,9 +72,28 @@ const readChatRequest = async (
   return JSON.parse(await request.text()) as ChatCompletionRequest;
 };
 
+const chatMessageText = (message?: { content?: unknown }) => {
+  const content = message?.content;
+  if (typeof content === 'string') return content;
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) =>
+        part && typeof part === 'object' && 'text' in part
+          ? String(part.text)
+          : ''
+      )
+      .join('');
+  }
+
+  return '';
+};
+
 type ResponseSchemaNode = {
   additionalProperties?: unknown;
+  enum?: unknown;
   items?: ResponseSchemaNode;
+  maxItems?: unknown;
   maxLength?: unknown;
   properties?: Record<string, ResponseSchemaNode>;
   required?: unknown;
@@ -106,6 +126,33 @@ afterEach(() => {
     process.env.OPENROUTER_CARD_MODEL = originalOpenRouterCardModel;
   }
 });
+
+const latestDurationExactFacts = (): ExactCardFacts => {
+  const metric = { label: 'Latest duration', unit: 'min', value: 85 };
+
+  return {
+    aggregateValues: {
+      latest_duration: {
+        id: 'latest_duration',
+        label: 'Latest duration',
+        operation: 'latest',
+        recordIds: ['record-1'],
+        unit: 'min',
+        value: 85,
+      },
+    },
+    analysisSpec: {
+      aggregations: [],
+      charts: [],
+      extractionFields: [],
+      groupings: [],
+    },
+    exactMetricBindings: [{ aggregationId: 'latest_duration', metric }],
+    metrics: [metric],
+    selectedTagCounts: {},
+    totalMatchingRecordCount: 1,
+  };
+};
 
 describe('card openrouter', () => {
   test('requires card model', async () => {
@@ -337,7 +384,11 @@ describe('card openrouter', () => {
     };
 
     expect(requestBody?.response_format?.type).toBe('json_schema');
-    expect(systemMessage?.content).toContain('Apply only the requested tweak');
+
+    expect(chatMessageText(systemMessage)).toContain(
+      'Apply only the requested tweak'
+    );
+
     expect(userPayload.outputRules).toContain('tweakPrompt wins');
     expect(userPayload.outputRules).toContain('this output');
     expect(userPayload.outputSchema).toBeUndefined();
@@ -703,6 +754,42 @@ describe('card openrouter', () => {
     expect(filter?.properties?.endExclusive?.type).toEqual(['object', 'null']);
   });
 
+  test('uses gemini schema profile', async () => {
+    process.env.OPENROUTER_CARD_MODEL = 'google/gemini-test-card-model';
+    let requestBody: ChatCompletionRequest | undefined;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init) => {
+      requestBody = await readChatRequest(input, init);
+
+      return jsonResponse({
+        output: { summary: 'Sleep was steady.' },
+        title: 'Sleep',
+      });
+    }) as never;
+
+    await openrouter.generateCardResult({
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      prompt: 'Track sleep.',
+      records: [{ id: 'record-1', text: 'Slept well.' }],
+    });
+
+    const chart =
+      requestBody?.response_format?.json_schema?.schema?.properties?.output
+        ?.properties?.chart;
+
+    const chartProperties = chart?.properties ?? {};
+    const yAxis = chartProperties.yAxis;
+    const yAxisProperties = yAxis?.properties ?? {};
+    expect(requestBody?.model).toBe('google/gemini-test-card-model');
+    expect(chart?.type).toBe('object');
+    expect(chartProperties.type?.type).toEqual(['string', 'null']);
+    expect(chartProperties.series?.maxItems).toBeUndefined();
+    expect(chartProperties.title?.maxLength).toBeUndefined();
+    expect(yAxis?.type).toBe('object');
+    expect(yAxisProperties.decimals?.enum).toBeUndefined();
+    expect(yAxisProperties.decimals?.type).toEqual(['integer', 'null']);
+  });
+
   test('plans date filter', async () => {
     let requestBody: ChatCompletionRequest | undefined;
 
@@ -842,6 +929,72 @@ describe('card openrouter', () => {
     ).resolves.toMatchObject({
       analysisSpec: {
         filters: [{ id: 'last_3_months', field: 'record.date' }],
+      },
+      mode: 'exact',
+    });
+  });
+
+  test('keeps conditioned streak scoped', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        mode: 'exact',
+        rationale: 'The prompt asks for a numeric threshold streak.',
+        analysisSpec: {
+          aggregations: [
+            {
+              denominatorId: null,
+              eventLabel: null,
+              fieldId: 'distress',
+              id: 'longest_distress_under_threshold',
+              label: 'Distress <=2 streak',
+              numeratorId: null,
+              operation: 'longestStreak',
+              outcomeLabel: null,
+              period: 'record',
+              qualitativeLabel: null,
+              threshold: { operator: '<=', value: 2 },
+              unit: 'sessions',
+            },
+          ],
+          charts: [],
+          extractionFields: [
+            {
+              countMode: null,
+              id: 'distress',
+              label: 'Peak distress',
+              labels: [],
+              scoreScale: null,
+              type: 'number',
+              unit: '0-5',
+            },
+          ],
+          groupings: [],
+        },
+      })
+    ) as never;
+
+    await expect(
+      openrouter.planCardAnalysis({
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        prompt: 'Track the longest distress <=2 streak.',
+        records: [
+          {
+            date: '2026-05-20T00:00:00.000Z',
+            id: 'record-1',
+            text: 'Peak distress (0-5): 2',
+          },
+        ],
+      })
+    ).resolves.toMatchObject({
+      analysisSpec: {
+        aggregations: [
+          {
+            fieldId: 'distress',
+            operation: 'longestStreak',
+            period: 'record',
+            threshold: { operator: '<=', value: 2 },
+          },
+        ],
       },
       mode: 'exact',
     });
@@ -1171,10 +1324,304 @@ describe('card openrouter', () => {
     });
 
     expect(result.output.chart?.data).toEqual([{ label: 'links', value: 100 }]);
+    expect(result.output.metrics).toEqual([{ label: 'Records', value: 485 }]);
+  });
+
+  test('keeps exact metric trends', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          metrics: [
+            { label: 'Latest duration', trend: 'up', unit: 'min', value: 80 },
+          ],
+        },
+        title: 'Duration',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        metrics: [{ label: 'Latest duration', unit: 'min', value: 85 }],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 47,
+      },
+      prompt: 'Track latest duration trend.',
+      records: [{ id: 'record-1', text: 'Alone duration (min): 85' }],
+    });
 
     expect(result.output.metrics).toEqual([
-      { label: 'Total records', value: 485 },
+      { label: 'Latest duration', trend: 'up', unit: 'min', value: 85 },
     ]);
+  });
+
+  test('keeps exact metric labels with display trends', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          chart: {
+            data: [
+              { label: '2026-03-09T17:00:00.000Z', value: 75 },
+              { label: '2026-03-10T17:00:00.000Z', value: 85 },
+            ],
+            title: 'Duration',
+            type: 'line',
+            unit: 'min',
+          },
+          metrics: [
+            { label: 'Current duration', unit: 'min', value: 85 },
+            { label: 'Current distress', unit: '0-5', value: 2 },
+            { label: 'Longest streak', unit: 'days', value: 3 },
+          ],
+        },
+        title: 'Duration',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        chart: {
+          series: [
+            {
+              data: [
+                { label: '2026-03-09T17:00:00.000Z', value: 75 },
+                { label: '2026-03-10T17:00:00.000Z', value: 85 },
+              ],
+              label: 'Alone duration',
+              unit: 'min',
+            },
+            {
+              data: [
+                { label: '2026-03-09T17:00:00.000Z', value: 1 },
+                { label: '2026-03-10T17:00:00.000Z', value: 2 },
+              ],
+              label: 'Peak distress (0-5)',
+              unit: '0-5',
+            },
+          ],
+          title: 'Duration and distress',
+          type: 'line',
+        },
+        metrics: [
+          { label: 'Alone duration', trend: 'up', unit: 'min', value: 85 },
+          { label: 'Peak distress (0-5)', trend: 'up', unit: '0-5', value: 2 },
+          { label: 'Longest streak', unit: 'days', value: 3 },
+        ],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 47,
+      },
+      prompt: 'Track latest duration and distress trend.',
+      records: [{ id: 'record-1', text: 'Alone duration (min): 85' }],
+    });
+
+    expect(result.output.metrics).toEqual([
+      { label: 'Alone duration', trend: 'up', unit: 'min', value: 85 },
+      { label: 'Peak distress (0-5)', trend: 'up', unit: '0-5', value: 2 },
+      { label: 'Longest streak', unit: 'days', value: 3 },
+    ]);
+
+    expect(result.output.chart).toMatchObject({
+      series: [
+        { label: 'Alone duration', unit: 'min' },
+        { label: 'Peak distress (0-5)', unit: '0-5' },
+      ],
+      type: 'line',
+    });
+  });
+
+  test('preserves exact streak operation labels', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          metrics: [
+            { label: 'Distress <=2 streak', unit: 'sessions', value: 14 },
+          ],
+          summary:
+            'Latest session reached 85 min with peak distress at 2; the current below-threshold (<=2) streak is 11 sessions.',
+        },
+        title: 'Below threshold',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {
+          longest_under_threshold: {
+            id: 'longest_under_threshold',
+            label: 'Distress <=2 streak',
+            operation: 'longestStreak',
+            recordIds: [],
+            unit: 'sessions',
+            value: 14,
+          },
+        },
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        metrics: [
+          { label: 'Longest distress <=2 streak', unit: 'sessions', value: 14 },
+        ],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 47,
+      },
+      prompt: 'Track the longest below-threshold <=2 streak.',
+      records: [
+        {
+          id: 'record-1',
+          text: 'Alone duration (min): 85. Peak distress (0-5): 2.',
+        },
+      ],
+    });
+
+    expect(result.output.metrics).toEqual([
+      { label: 'Longest distress <=2 streak', unit: 'sessions', value: 14 },
+    ]);
+
+    expect(result.output.summary).toBeUndefined();
+  });
+
+  test('preserves exact threshold field labels', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          metrics: [
+            { label: 'Longest session streak <=2', unit: 'sessions', value: 3 },
+          ],
+        },
+        title: 'Low distress streak',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        metrics: [
+          { label: 'Longest distress <=2 streak', unit: 'sessions', value: 3 },
+        ],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 8,
+      },
+      prompt: 'Track the longest distress <=2 streak.',
+      records: [{ id: 'record-1', text: 'Peak distress (0-5): 2.' }],
+    });
+
+    expect(result.output.metrics).toEqual([
+      { label: 'Longest distress <=2 streak', unit: 'sessions', value: 3 },
+    ]);
+  });
+
+  test('applies exact label override on tweak', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          metrics: [{ label: 'Session length', unit: 'min', value: 85 }],
+        },
+        title: 'Duration',
+      })
+    ) as never;
+
+    const result = await openrouter.tweakCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: latestDurationExactFacts(),
+      previousOutput: {
+        metrics: [{ label: 'Latest duration', unit: 'min', value: 80 }],
+        milestones: [],
+      },
+      previousTitle: 'Duration',
+      prompt: 'Track latest duration.',
+      records: [{ id: 'record-1', text: 'Alone duration (min): 85' }],
+      tweakPrompt: 'Rename the latest duration label to Session length.',
+    });
+
+    expect(result.output).toMatchObject({
+      exactMetricLabelOverrides: { latest_duration: 'Session length' },
+      metrics: [{ label: 'Session length', unit: 'min', value: 85 }],
+    });
+  });
+
+  test('preserves exact label override on refresh', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          metrics: [{ label: 'Latest duration', unit: 'min', value: 85 }],
+        },
+      })
+    ) as never;
+
+    const result = await openrouter.refreshCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: latestDurationExactFacts(),
+      previousOutput: {
+        exactMetricLabelOverrides: { latest_duration: 'Session length' },
+        metrics: [{ label: 'Session length', unit: 'min', value: 80 }],
+        milestones: [],
+      },
+      previousTitle: 'Duration',
+      prompt: 'Track latest duration.',
+      records: [{ id: 'record-1', text: 'Alone duration (min): 85' }],
+    });
+
+    expect(result.output).toMatchObject({
+      exactMetricLabelOverrides: { latest_duration: 'Session length' },
+      metrics: [{ label: 'Session length', unit: 'min', value: 85 }],
+    });
+  });
+
+  test('ignores exact relabel outside label tweak', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          metrics: [{ label: 'Session length', unit: 'min', value: 85 }],
+        },
+        title: 'Duration',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      exactFacts: latestDurationExactFacts(),
+      prompt: 'Track latest duration.',
+      records: [{ id: 'record-1', text: 'Alone duration (min): 85' }],
+    });
+
+    expect(result.output).toMatchObject({
+      metrics: [{ label: 'Latest duration', unit: 'min', value: 85 }],
+    });
+
+    expect(result.output.exactMetricLabelOverrides).toBeUndefined();
   });
 
   test('replaces exact metrics', async () => {
@@ -1273,8 +1720,16 @@ describe('card openrouter', () => {
     });
 
     expect(result.output.metrics).toEqual([
-      { label: 'Days since last >=3', unit: 'days', value: 90 },
-      { label: 'Above-threshold total', unit: 'sessions', value: 9 },
+      {
+        label: 'Days since last above-threshold session',
+        unit: 'days',
+        value: 90,
+      },
+      {
+        label: 'Above-threshold session count peak',
+        unit: 'sessions',
+        value: 9,
+      },
     ]);
   });
 
@@ -1713,9 +2168,13 @@ describe('card openrouter', () => {
       supportedCharts?: string;
     };
 
-    expect(systemMessage?.content).toContain('reusable');
-    expect(systemMessage?.content).toContain('dated tagged user log entries');
-    expect(systemMessage?.content).toContain('new matching records');
+    expect(chatMessageText(systemMessage)).toContain('reusable');
+
+    expect(chatMessageText(systemMessage)).toContain(
+      'dated tagged user log entries'
+    );
+
+    expect(chatMessageText(systemMessage)).toContain('new matching records');
     expect(userPayload.outputRules).toContain('one editable prompt');
     expect(userPayload.outputRules).toContain('future records');
     expect(userPayload.outputRules).toContain('supportedCharts');

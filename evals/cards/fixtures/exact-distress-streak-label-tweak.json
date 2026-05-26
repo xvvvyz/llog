@@ -1,0 +1,65 @@
+{
+  "generationTime": "2026-05-12T12:00:00.000Z",
+  "name": "Exact distress threshold streak label tweak",
+  "records": [],
+  "scenarios": {
+    "tweak": {
+      "previousTitle": "Distress streak",
+      "previousOutput": {
+        "metrics": [
+          {
+            "label": "Longest distress <=2 streak",
+            "unit": "sessions",
+            "value": 3
+          }
+        ],
+        "milestones": []
+      }
+    }
+  },
+  "exact": {
+    "generationTime": "2026-05-12T12:00:00.000Z",
+    "tagIds": ["tag-a"],
+    "analysisSpec": {
+      "extractionFields": [
+        {
+          "id": "distress",
+          "label": "Peak distress",
+          "type": "number",
+          "unit": "0-5"
+        }
+      ],
+      "aggregations": [
+        {
+          "id": "longest_distress_under_threshold",
+          "label": "Distress <=2 streak",
+          "operation": "longestStreak",
+          "fieldId": "distress",
+          "period": "record",
+          "threshold": { "operator": "<=", "value": 2 },
+          "unit": "sessions"
+        }
+      ],
+      "groupings": [],
+      "charts": []
+    },
+    "generated": {
+      "count": 8,
+      "startDate": "2026-05-01T12:00:00.000Z",
+      "tagId": "tag-a",
+      "tagName": "Session",
+      "numericValues": [
+        {
+          "fieldId": "distress",
+          "label": "Peak distress (0-5)",
+          "unit": "0-5",
+          "valuePattern": [3, 2, 1, 2, 4, 2, 2, 3]
+        }
+      ]
+    },
+    "expected": {
+      "metrics": { "Calm streak": 3 },
+      "labelOverrides": { "longest_distress_under_threshold": "Calm streak" }
+    }
+  }
+}

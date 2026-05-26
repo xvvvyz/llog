@@ -131,6 +131,11 @@ export const CardsHeader = ({
   const logColorIndex = resolveSpectrumColor(logColor);
   const resolvedTeamId = visibleCards[0]?.teamId ?? teamId ?? undefined;
 
+  const safeActiveIndexState = clampIndex(
+    activeIndexState,
+    visibleCards.length
+  );
+
   const recordTags = useTags({
     enabled: !!logId && !!resolvedTeamId,
     logId,
@@ -189,11 +194,11 @@ export const CardsHeader = ({
     (direction: -1 | 1) => {
       const count = visibleCards.length;
       if (!count) return 0;
-      const nextIndex = activeIndexState + direction;
+      const nextIndex = safeActiveIndexState + direction;
       if (useDesktopCardPager) return (nextIndex + count) % count;
       return clampIndex(nextIndex, count);
     },
-    [activeIndexState, useDesktopCardPager, visibleCards.length]
+    [safeActiveIndexState, useDesktopCardPager, visibleCards.length]
   );
 
   const handlePreviousCard = React.useCallback(() => {
@@ -417,7 +422,7 @@ export const CardsHeader = ({
               ref={carouselRef}
               containerStyle={{ overflow: carouselOverflow }}
               data={visibleCards}
-              defaultIndex={activeIndexState}
+              defaultIndex={safeActiveIndexState}
               enabled={visibleCards.length > 1 && !useDesktopCardPager}
               height={cardHeight}
               loop={false}
@@ -456,7 +461,7 @@ export const CardsHeader = ({
           >
             <CardPaginationButton
               direction="previous"
-              disabled={activeIndexState <= 0}
+              disabled={safeActiveIndexState <= 0}
               onPress={handlePreviousCard}
             />
             <Dots
@@ -466,7 +471,7 @@ export const CardsHeader = ({
             />
             <CardPaginationButton
               direction="next"
-              disabled={activeIndexState >= visibleCards.length - 1}
+              disabled={safeActiveIndexState >= visibleCards.length - 1}
               onPress={handleNextCard}
             />
           </View>

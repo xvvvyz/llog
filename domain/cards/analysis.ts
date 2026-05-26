@@ -46,9 +46,14 @@ const AGGREGATION_OPERATIONS = [
   'daysSinceLast',
 ] as const;
 
+const THRESHOLD_OPERATORS = ['<', '<=', '=', '>=', '>'] as const;
 const EVENT_COUNT_MODES = ['explicitOccurrences', 'recordPresence'] as const;
-const STREAK_PERIODS = ['day', 'week', 'month'] as const;
+// "record" means consecutive selected source records, not a calendar bucket.
+const STREAK_PERIODS = ['record', 'day', 'week', 'month'] as const;
 type StreakPeriod = (typeof STREAK_PERIODS)[number];
+type DateStreakPeriod = Exclude<StreakPeriod, 'record'>;
+type ThresholdOperator = (typeof THRESHOLD_OPERATORS)[number];
+type NumberThreshold = { operator: ThresholdOperator; value: number };
 
 const GROUPING_DIMENSIONS = [
   'record',
@@ -112,6 +117,10 @@ const analysisAggregationSchema = z
     period: z.enum(STREAK_PERIODS).optional(),
     qualitativeLabel: z.string().min(1).max(60).optional(),
     numeratorId: z.string().min(1).max(48).optional(),
+    threshold: z
+      .object({ operator: z.enum(THRESHOLD_OPERATORS), value: z.number() })
+      .strict()
+      .optional(),
     unit: z.string().min(1).max(16).optional(),
   })
   .strict();
@@ -212,12 +221,17 @@ export type ExtractedRecordFacts = {
   recordId: string;
 };
 
+type DeterministicMetricTrend = NonNullable<
+  cardOutput.CardOutput['metrics'][number]['trend']
+>;
+
 export type DeterministicAggregateValue = {
   groups?: { label: string; recordIds: string[]; value: number | string }[];
   id: string;
   label: string;
   operation: AnalysisAggregationSpec['operation'];
   recordIds: string[];
+  trend?: DeterministicMetricTrend;
   unit?: string;
   value: number | string;
   valueFormat?: cardOutput.CardMetricValueFormat;
@@ -240,13 +254,17 @@ export type ExactCardFacts = {
   analysisSpec: CardAnalysisSpec;
   chart?: cardOutput.CardChart;
   eventCounts?: Record<string, number>;
+  exactMetricBindings?: {
+    aggregationId: string;
+    metric: cardOutput.CardOutput['metrics'][number];
+  }[];
   metrics: cardOutput.CardOutput['metrics'];
   qualitative?: QualitativeAggregateFacts;
   selectedTagCounts: Record<string, number>;
   totalMatchingRecordCount: number;
 };
 
-const EXACT_PROMPT_PATTERNS = [
+const EXACT_PROMPT_BASE_PATTERNS = [
   /\baverage\b/i,
   /\bchart(s|ed|ing)?\b/i,
   /\bcompare\b/i,
@@ -273,6 +291,12 @@ const EXACT_PROMPT_PATTERNS = [
   /\btotal(s|ed)?\b/i,
   /\btall(y|ies|ied)\b/i,
   /\btrend\b.*\b(day|week|month|over time)\b/i,
+];
+
+const NUMERIC_THRESHOLD_PROMPT_PATTERNS = [
+  /(?:<=|>=|<|>|=|≤|≥)\s*-?\d+(?:\.\d+)?/i,
+  /\b(?:above|below|under|over|at\s+(?:least|most)|greater\s+than|less\s+than|no\s+(?:more|less)\s+than)\s+(?:the\s+)?(?:threshold|target|goal|score|rating|level|value|-?\d)/i,
+  /\b-?\d+(?:\.\d+)?\s+or\s+(?:less|fewer|lower|more|greater|higher)\b/i,
 ];
 
 const RECORD_PRESENCE_PATTERNS = [
@@ -398,6 +422,13 @@ const normalizeAggregationOperation = (
   /\bdays?\s+since\s+last\b/i.test(aggregation.label)
     ? 'daysSinceLast'
     : aggregation.operation;
+
+const normalizeNumberThreshold = (
+  threshold?: NumberThreshold
+): NumberThreshold | undefined =>
+  threshold && Number.isFinite(threshold.value)
+    ? { operator: threshold.operator, value: threshold.value }
+    : undefined;
 
 const normalizeScoreScale = (
   value: unknown
@@ -529,7 +560,13 @@ const normalizeGrouping = (
 });
 
 const streakPeriodUnit = (period: StreakPeriod) =>
-  period === 'day' ? 'days' : period === 'week' ? 'weeks' : 'months';
+  period === 'record'
+    ? 'records'
+    : period === 'day'
+      ? 'days'
+      : period === 'week'
+        ? 'weeks'
+        : 'months';
 
 export const normalizeAnalysisSpec = (
   value: unknown
@@ -601,6 +638,7 @@ export const normalizeAnalysisSpec = (
         groupBy: _groupBy,
         numeratorId: _numeratorId,
         operation: _operation,
+        threshold: _threshold,
         ...normalizedAggregation
       } = aggregation;
 
@@ -620,6 +658,8 @@ export const normalizeAnalysisSpec = (
         ? normalizeGrouping(aggregation.groupBy, `${id}_group`)
         : undefined;
 
+      const threshold = normalizeNumberThreshold(aggregation.threshold);
+
       return {
         ...normalizedAggregation,
         ...(denominatorId && { denominatorId }),
@@ -630,6 +670,7 @@ export const normalizeAnalysisSpec = (
         ...(numeratorId && { numeratorId }),
         operation: normalizeAggregationOperation(aggregation),
         ...(aggregation.period && { period: aggregation.period }),
+        ...(threshold && { threshold }),
         ...(aggregation.unit && {
           unit: normalizeText(aggregation.unit, 16).toLowerCase(),
         }),
@@ -778,10 +819,43 @@ const buildMetadataCountFallbackAnalysisSpec = (
 
 const promptRequestsStreaks = (prompt: string) => /\bstreaks?\b/i.test(prompt);
 
+const promptRequestsNumericThreshold = (prompt: string) =>
+  NUMERIC_THRESHOLD_PROMPT_PATTERNS.some((pattern) => pattern.test(prompt));
+
+const promptRequestsCurrentStreak = (prompt: string) =>
+  /\b(?:active|current|ongoing)\b.{0,40}\bstreaks?\b/i.test(prompt) ||
+  /\bstreaks?\b.{0,40}\b(?:active|current|ongoing)\b/i.test(prompt);
+
+const promptRequestsLongestStreak = (prompt: string) =>
+  /\b(?:best|longest|max(?:imum)?)\b.{0,40}\bstreaks?\b/i.test(prompt) ||
+  /\bstreaks?\b.{0,40}\b(?:best|longest|max(?:imum)?)\b/i.test(prompt);
+
+const promptRequestsCadenceAndLongestStreaks = (prompt: string) =>
+  /\b(?:daily|weekly|monthly)\b\s+(?:and|\/|\+)\s+(?:best|longest|max(?:imum)?)\s+streaks?\b/i.test(
+    prompt
+  );
+
+const promptStreakOperations = (prompt: string) => {
+  const current = promptRequestsCurrentStreak(prompt);
+  const longest = promptRequestsLongestStreak(prompt);
+  const plural = /\bstreaks\b/i.test(prompt);
+  const cadenceAndLongest = promptRequestsCadenceAndLongestStreaks(prompt);
+
+  if (current || longest || plural) {
+    return {
+      current: current || cadenceAndLongest || (!longest && plural),
+      longest: longest || (!current && plural),
+    };
+  }
+
+  return { current: true, longest: false };
+};
+
 const promptStreakPeriod = (prompt: string): StreakPeriod => {
   if (/\b(monthly|months?)\b/i.test(prompt)) return 'month';
   if (/\b(weekly|weeks?)\b/i.test(prompt)) return 'week';
-  return 'day';
+  if (/\b(daily|days?)\b/i.test(prompt)) return 'day';
+  return 'record';
 };
 
 const promptStreakGroupBy = (
@@ -796,8 +870,79 @@ const promptStreakGroupBy = (
     ? { dimension: 'author', id: 'author', label: 'Author' }
     : undefined;
 
+const STREAK_FALLBACK_DESCRIPTOR_FILLER = new Set([
+  'a',
+  'active',
+  'and',
+  'best',
+  'by',
+  'current',
+  'daily',
+  'each',
+  'entries',
+  'entry',
+  'for',
+  'include',
+  'including',
+  'longest',
+  'max',
+  'maximum',
+  'monthly',
+  'of',
+  'ongoing',
+  'or',
+  'post',
+  'posting',
+  'posts',
+  'record',
+  'records',
+  'selected',
+  'session',
+  'sessions',
+  'show',
+  'showing',
+  'shows',
+  'source',
+  'the',
+  'track',
+  'tracking',
+  'tracks',
+  'weekly',
+  'with',
+]);
+
+const streakDescriptorTokens = (value: string) =>
+  normalizeToken(value)
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((token) => !STREAK_FALLBACK_DESCRIPTOR_FILLER.has(token));
+
+const promptHasConditionedStreakDescriptor = (prompt: string) => {
+  const normalized = normalizeText(prompt).toLowerCase();
+
+  const pattern =
+    /\b((?:[a-z0-9<>=≤≥-]+\s+){0,6}[a-z0-9<>=≤≥-]+)\s+streaks?\b/gi;
+
+  for (const match of normalized.matchAll(pattern)) {
+    if (streakDescriptorTokens(match[1] ?? '').length > 0) return true;
+  }
+
+  return false;
+};
+
+const promptAllowsStreakFallback = (prompt: string) =>
+  promptRequestsStreaks(prompt) &&
+  !promptRequestsNumericThreshold(prompt) &&
+  !promptHasConditionedStreakDescriptor(prompt);
+
 const periodLabel = (period: StreakPeriod) =>
-  period === 'day' ? 'daily' : period === 'week' ? 'weekly' : 'monthly';
+  period === 'record'
+    ? 'record'
+    : period === 'day'
+      ? 'daily'
+      : period === 'week'
+        ? 'weekly'
+        : 'monthly';
 
 const streakIdSuffix = ({
   groupBy,
@@ -810,35 +955,44 @@ const streakIdSuffix = ({
 const buildStreakFallbackAnalysisSpec = (
   prompt: string
 ): CardAnalysisSpec | undefined => {
-  if (!promptRequestsStreaks(prompt)) return;
+  if (!promptAllowsStreakFallback(prompt)) return;
   const period = promptStreakPeriod(prompt);
   const groupBy = promptStreakGroupBy(prompt);
   const unit = streakPeriodUnit(period);
   const suffix = streakIdSuffix({ groupBy, period });
+  const operations = promptStreakOperations(prompt);
+  const aggregations: AnalysisAggregationSpec[] = [];
 
-  return {
-    aggregations: [
-      {
-        ...(groupBy && { groupBy }),
-        id: normalizeId(`current_${suffix}`, 'current_streak'),
-        label: `Current ${periodLabel(period)} streak`,
-        operation: 'currentStreak',
-        period,
-        unit,
-      },
-      {
-        ...(groupBy && { groupBy }),
-        id: normalizeId(`longest_${suffix}`, 'longest_streak'),
-        label: `Longest ${periodLabel(period)} streak`,
-        operation: 'longestStreak',
-        period,
-        unit,
-      },
-    ],
-    charts: [],
-    extractionFields: [],
-    groupings: groupBy ? [groupBy] : [],
-  };
+  if (operations.current) {
+    aggregations.push({
+      ...(groupBy && { groupBy }),
+      id: normalizeId(`current_${suffix}`, 'current_streak'),
+      label: `Current ${periodLabel(period)} streak`,
+      operation: 'currentStreak',
+      period,
+      unit,
+    });
+  }
+
+  if (operations.longest) {
+    aggregations.push({
+      ...(groupBy && { groupBy }),
+      id: normalizeId(`longest_${suffix}`, 'longest_streak'),
+      label: `Longest ${periodLabel(period)} streak`,
+      operation: 'longestStreak',
+      period,
+      unit,
+    });
+  }
+
+  return aggregations.length
+    ? {
+        aggregations,
+        charts: [],
+        extractionFields: [],
+        groupings: groupBy ? [groupBy] : [],
+      }
+    : undefined;
 };
 
 const aggregationStreakPeriod = (
@@ -846,23 +1000,36 @@ const aggregationStreakPeriod = (
 ): StreakPeriod => {
   if (aggregation.period) return aggregation.period;
   const dimension = aggregation.groupBy?.dimension;
-  return dimension === 'week' || dimension === 'month' ? dimension : 'day';
+
+  return dimension === 'day' || dimension === 'week' || dimension === 'month'
+    ? dimension
+    : 'record';
 };
 
 const hasEquivalentStreakAggregation = (
   spec: CardAnalysisSpec | undefined,
   fallback: AnalysisAggregationSpec
 ) =>
-  spec?.aggregations.some(
-    (aggregation) =>
-      aggregation.operation === fallback.operation &&
-      (aggregation.operation === 'currentStreak' ||
-        aggregation.operation === 'longestStreak') &&
-      aggregationStreakPeriod(aggregation) ===
-        aggregationStreakPeriod(fallback) &&
-      (aggregation.groupBy?.dimension ?? '') ===
+  spec?.aggregations.some((aggregation) => {
+    if (
+      aggregation.operation !== 'currentStreak' &&
+      aggregation.operation !== 'longestStreak'
+    ) {
+      return false;
+    }
+
+    if (
+      aggregationStreakPeriod(aggregation) !==
+        aggregationStreakPeriod(fallback) ||
+      (aggregation.groupBy?.dimension ?? '') !==
         (fallback.groupBy?.dimension ?? '')
-  ) ?? false;
+    ) {
+      return false;
+    }
+
+    if (aggregation.operation === fallback.operation) return true;
+    return !fallback.fieldId && !!aggregation.fieldId;
+  }) ?? false;
 
 const pruneStreakFallbackSpec = (
   fallback: CardAnalysisSpec | undefined,
@@ -968,7 +1135,9 @@ export const analysisSpecHash = (spec: CardAnalysisSpec) =>
   stableHash({ analysisVersion: CARD_ANALYSIS_VERSION, spec });
 
 export const promptRequestsExactAnalysis = (prompt: string) =>
-  EXACT_PROMPT_PATTERNS.some((pattern) => pattern.test(prompt));
+  EXACT_PROMPT_BASE_PATTERNS.some((pattern) => pattern.test(prompt)) ||
+  promptRequestsStreaks(prompt) ||
+  promptRequestsNumericThreshold(prompt);
 
 export const promptRequestsExactCandidate = promptRequestsExactAnalysis;
 
@@ -1156,6 +1325,114 @@ const extractionFieldsById = (analysisSpec?: CardAnalysisSpec) =>
   analysisSpec
     ? new Map(analysisSpec.extractionFields.map((field) => [field.id, field]))
     : undefined;
+
+const GENERIC_FIELD_ID_TOKENS = new Set([
+  'amount',
+  'count',
+  'duration',
+  'level',
+  'minutes',
+  'number',
+  'rating',
+  'score',
+  'value',
+]);
+
+const fieldIdLabel = (fieldId: string) =>
+  normalizeText(fieldId.replace(/[_-]+/g, ' '), 60).toLowerCase();
+
+const labelTokens = (label: string) =>
+  normalizeToken(label).split(/\s+/).filter(Boolean);
+
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const compactThresholdFieldLabel = ({
+  label,
+  unit,
+}: {
+  label: string;
+  unit?: string;
+}) => {
+  const compacted = normalizeText(label, 60)
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\b\d+(?:\.\d+)?\s*(?:-|to)\s*\d+(?:\.\d+)?\b/gi, ' ')
+    .replace(/\s+\d+(?:\.\d+)?\s+\d+(?:\.\d+)?$/g, '')
+    .replace(unit ? new RegExp(`\\b${escapeRegex(unit)}\\b$`, 'i') : /a^/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return compacted || label;
+};
+
+const fieldLabelForAggregation = (
+  aggregation: AnalysisAggregationSpec,
+  fieldById?: ExtractionFieldById,
+  options: { preferFieldLabel?: boolean } = {}
+) => {
+  if (!aggregation.fieldId) return '';
+  const field = fieldById?.get(aggregation.fieldId);
+  const idLabel = fieldIdLabel(aggregation.fieldId);
+  const fieldLabel = normalizeText(field?.label, 60) || idLabel;
+  const idTokens = labelTokens(idLabel);
+  const fieldTokens = new Set(labelTokens(fieldLabel));
+
+  const hasSpecificIdToken = idTokens.some(
+    (token) => !GENERIC_FIELD_ID_TOKENS.has(token)
+  );
+
+  const label =
+    !options.preferFieldLabel &&
+    hasSpecificIdToken &&
+    idTokens.every((token) => fieldTokens.has(token))
+      ? idLabel
+      : fieldLabel;
+
+  return aggregation.threshold
+    ? compactThresholdFieldLabel({ label, unit: field?.unit })
+    : label;
+};
+
+const thresholdValueLabel = (value: number) =>
+  Number.isInteger(value)
+    ? String(value)
+    : String(Math.round(value * 100) / 100);
+
+const thresholdLabel = (threshold: NumberThreshold) =>
+  `${threshold.operator}${thresholdValueLabel(threshold.value)}`;
+
+const aggregationResultLabel = (
+  aggregation: AnalysisAggregationSpec,
+  fieldById?: ExtractionFieldById
+) => {
+  if (!aggregation.threshold || !aggregation.fieldId) return aggregation.label;
+  const fieldLabel = fieldLabelForAggregation(aggregation, fieldById);
+  if (!fieldLabel) return aggregation.label;
+  const threshold = thresholdLabel(aggregation.threshold);
+
+  if (
+    aggregation.operation === 'currentStreak' ||
+    aggregation.operation === 'longestStreak'
+  ) {
+    return `${fieldLabel} ${threshold} streak`;
+  }
+
+  return `${fieldLabel} ${threshold}`;
+};
+
+const daysSinceLastResultLabel = (
+  aggregation: AnalysisAggregationSpec,
+  fieldById?: ExtractionFieldById
+) => {
+  if (!aggregation.threshold || !aggregation.fieldId) return aggregation.label;
+
+  const fieldLabel = fieldLabelForAggregation(aggregation, fieldById, {
+    preferFieldLabel: true,
+  });
+
+  if (!fieldLabel) return aggregation.label;
+  return `Since last ${fieldLabel} ${thresholdLabel(aggregation.threshold)}`;
+};
 
 const factField = ({
   fallback,
@@ -1400,6 +1677,21 @@ export const readExtractedRecordFacts = (
 
 type FactEntry = { facts: ExtractedRecordFacts; record: CardSourceFactRecord };
 
+type FirstLatestNumberCandidate = {
+  record: CardSourceFactRecord;
+  type: 'number';
+  value: number;
+};
+
+type FirstLatestCandidate =
+  | FirstLatestNumberCandidate
+  | { record: CardSourceFactRecord; type: 'qualitative'; value: string };
+
+type FirstLatestCandidateSet = {
+  candidates: FirstLatestCandidate[];
+  numberCandidates: FirstLatestNumberCandidate[];
+};
+
 const recordTime = (record: CardSourceFactRecord) => {
   const time = new Date(record.date ?? 0).getTime();
   return Number.isFinite(time) ? time : 0;
@@ -1415,13 +1707,49 @@ const formatChartValue = (value: number) => {
   return Number(value.toFixed(2));
 };
 
+const metricTrendFromValues = (
+  previous: number,
+  next: number
+): DeterministicMetricTrend => {
+  if (next > previous) return 'up';
+  if (next < previous) return 'down';
+  return 'flat';
+};
+
+const streakOperationLabel = (
+  operation: AnalysisAggregationSpec['operation']
+) =>
+  operation === 'currentStreak'
+    ? 'current'
+    : operation === 'longestStreak'
+      ? 'longest'
+      : undefined;
+
+const labelWithStreakOperation = (result: DeterministicAggregateValue) => {
+  const operationLabel = streakOperationLabel(result.operation);
+  if (!operationLabel) return result.label;
+
+  if (new RegExp(`\\b${operationLabel}\\b`, 'i').test(result.label)) {
+    return result.label;
+  }
+
+  const oppositeLabel =
+    operationLabel === 'current' ? /\blongest\b/i : /\bcurrent\b/i;
+
+  if (oppositeLabel.test(result.label)) {
+    return result.label.replace(oppositeLabel, operationLabel);
+  }
+
+  return `${operationLabel} ${result.label}`;
+};
+
 const normalizeExactMetric = (result: DeterministicAggregateValue) => {
   if (result.groups?.length) return;
 
   const label = cardOutput.normalizeCardDisplayLabel({
     maxLength: cardOutput.MAX_CARD_METRIC_LABEL_LENGTH,
     maxWords: 5,
-    value: result.label,
+    value: labelWithStreakOperation(result),
   });
 
   const value =
@@ -1437,6 +1765,7 @@ const normalizeExactMetric = (result: DeterministicAggregateValue) => {
         }),
         value,
         ...(result.valueFormat && { valueFormat: result.valueFormat }),
+        ...(result.trend && { trend: result.trend }),
       }
     : undefined;
 };
@@ -1455,14 +1784,17 @@ const bucketDate = (
   const date = normalizeDate(record.date);
   if (!date) return { key: 'undated', label: 'Undated' };
 
-  const period: StreakPeriod =
+  const period: DateStreakPeriod =
     dimension === 'month' || dimension === 'week' ? dimension : 'day';
 
   const key = dateBucketKey(date, period) ?? 'undated';
   return { key, label: period === 'day' ? date.toISOString() : key };
 };
 
-const dateBucketKey = (value: Date | number | string, period: StreakPeriod) => {
+const dateBucketKey = (
+  value: Date | number | string,
+  period: DateStreakPeriod
+) => {
   const date = normalizeDate(value);
   if (!date) return;
   const year = date.getUTCFullYear();
@@ -1483,7 +1815,11 @@ const dateBucketKey = (value: Date | number | string, period: StreakPeriod) => {
   return date.toISOString().slice(0, 10);
 };
 
-const shiftBucketKey = (key: string, period: StreakPeriod, amount: number) => {
+const shiftBucketKey = (
+  key: string,
+  period: DateStreakPeriod,
+  amount: number
+) => {
   if (period === 'month') {
     const [year, month] = key.split('-').map((part) => Number(part));
     if (!Number.isFinite(year) || !Number.isFinite(month)) return '';
@@ -1501,10 +1837,10 @@ const shiftBucketKey = (key: string, period: StreakPeriod, amount: number) => {
   return date.toISOString().slice(0, 10);
 };
 
-const previousBucketKey = (key: string, period: StreakPeriod) =>
+const previousBucketKey = (key: string, period: DateStreakPeriod) =>
   shiftBucketKey(key, period, -1);
 
-const nextBucketKey = (key: string, period: StreakPeriod) =>
+const nextBucketKey = (key: string, period: DateStreakPeriod) =>
   shiftBucketKey(key, period, 1);
 
 const matchesLabel = (value: string, target?: string) =>
@@ -1530,6 +1866,15 @@ const matchesEventLabel = (value: string, target?: string) => {
 
 const fieldMatches = (fieldId: string, targetFieldId?: string) =>
   !targetFieldId || fieldId === targetFieldId;
+
+const numberMatchesThreshold = (value: number, threshold?: NumberThreshold) => {
+  if (!threshold) return true;
+  if (threshold.operator === '<') return value < threshold.value;
+  if (threshold.operator === '<=') return value <= threshold.value;
+  if (threshold.operator === '=') return value === threshold.value;
+  if (threshold.operator === '>=') return value >= threshold.value;
+  return value > threshold.value;
+};
 
 const eventCountForEntries = (
   entries: FactEntry[],
@@ -1579,9 +1924,56 @@ const numberFactsForAggregation = (
 ) =>
   entries.flatMap((entry) =>
     entry.facts.numericValues
-      .filter((fact) => fieldMatches(fact.fieldId, aggregation.fieldId))
+      .filter(
+        (fact) =>
+          fieldMatches(fact.fieldId, aggregation.fieldId) &&
+          numberMatchesThreshold(fact.value, aggregation.threshold)
+      )
       .map((fact) => ({ fact, record: entry.record }))
   );
+
+const sortFirstLatestCandidates = <T extends FirstLatestCandidate>(
+  candidates: T[]
+) =>
+  candidates.sort(
+    (left, right) => recordTime(left.record) - recordTime(right.record)
+  );
+
+const firstLatestCandidatesForAggregation = (
+  entries: FactEntry[],
+  aggregation: AnalysisAggregationSpec
+): FirstLatestCandidateSet => {
+  const numericCandidates: FirstLatestNumberCandidate[] =
+    numberFactsForAggregation(entries, aggregation).map((item) => ({
+      record: item.record,
+      type: 'number',
+      value: item.fact.value,
+    }));
+
+  const qualitativeCandidates: FirstLatestCandidate[] =
+    qualitativeFactsForAggregation(entries, aggregation).map((item) =>
+      item.fact.score == null
+        ? {
+            record: item.record,
+            type: 'qualitative',
+            value: item.fact.value ?? item.fact.label,
+          }
+        : { record: item.record, type: 'number', value: item.fact.score }
+    );
+
+  return {
+    candidates: sortFirstLatestCandidates([
+      ...numericCandidates,
+      ...qualitativeCandidates,
+    ]),
+    numberCandidates: sortFirstLatestCandidates([
+      ...numericCandidates,
+      ...qualitativeCandidates.filter(
+        (item): item is FirstLatestNumberCandidate => item.type === 'number'
+      ),
+    ]),
+  };
+};
 
 const firstOrLatestValue = ({
   aggregation,
@@ -1590,16 +1982,10 @@ const firstOrLatestValue = ({
   aggregation: AnalysisAggregationSpec;
   entries: FactEntry[];
 }) => {
-  const candidates = [
-    ...numberFactsForAggregation(entries, aggregation).map((item) => ({
-      record: item.record,
-      value: item.fact.value,
-    })),
-    ...qualitativeFactsForAggregation(entries, aggregation).map((item) => ({
-      record: item.record,
-      value: item.fact.value ?? item.fact.label,
-    })),
-  ].sort((left, right) => recordTime(left.record) - recordTime(right.record));
+  const { candidates, numberCandidates } = firstLatestCandidatesForAggregation(
+    entries,
+    aggregation
+  );
 
   if (!candidates.length && !aggregation.fieldId) {
     const records = entries
@@ -1619,9 +2005,26 @@ const firstOrLatestValue = ({
   const candidate =
     aggregation.operation === 'first' ? candidates[0] : candidates.at(-1);
 
-  return candidate
-    ? { recordIds: [candidate.record.id], value: candidate.value }
-    : undefined;
+  if (!candidate) return;
+
+  const candidateNumberIndex =
+    candidate.type === 'number' ? numberCandidates.indexOf(candidate) : -1;
+
+  const previousNumber =
+    aggregation.operation === 'latest' && candidateNumberIndex > 0
+      ? numberCandidates[candidateNumberIndex - 1]
+      : undefined;
+
+  const trend =
+    candidate.type === 'number' && previousNumber
+      ? metricTrendFromValues(previousNumber.value, candidate.value)
+      : undefined;
+
+  return {
+    recordIds: [candidate.record.id],
+    ...(trend && { trend }),
+    value: candidate.value,
+  };
 };
 
 const evaluateBaseAggregation = ({
@@ -1640,6 +2043,7 @@ const evaluateBaseAggregation = ({
       ? {
           operation: aggregation.operation,
           recordIds: result.recordIds,
+          ...(result.trend && { trend: result.trend }),
           ...(aggregation.unit && { unit: aggregation.unit }),
           value: result.value,
         }
@@ -1699,12 +2103,14 @@ const evaluateBaseAggregation = ({
 const evaluateAggregation = ({
   aggregation,
   entries,
+  fieldById,
   generationTime,
   resultsById,
   selectedTagIds,
 }: {
   aggregation: AnalysisAggregationSpec;
   entries: FactEntry[];
+  fieldById?: ExtractionFieldById;
   generationTime?: Date | number | string | null;
   resultsById: Map<string, DeterministicAggregateValue>;
   selectedTagIds: string[];
@@ -1716,13 +2122,18 @@ const evaluateAggregation = ({
     return evaluateStreakAggregation({
       aggregation,
       entries,
+      fieldById,
       generationTime,
       selectedTagIds,
     });
   }
 
   if (aggregation.operation === 'daysSinceLast') {
-    return evaluateDaysSinceLastAggregation({ aggregation, entries });
+    return evaluateDaysSinceLastAggregation({
+      aggregation,
+      entries,
+      fieldById,
+    });
   }
 
   if (aggregation.operation === 'ratio') {
@@ -1750,7 +2161,7 @@ const evaluateAggregation = ({
 
     return {
       id: aggregation.id,
-      label: aggregation.label,
+      label: aggregationResultLabel(aggregation, fieldById),
       operation: aggregation.operation,
       recordIds: [
         ...new Set([
@@ -1766,7 +2177,11 @@ const evaluateAggregation = ({
   const result = evaluateBaseAggregation({ aggregation, entries });
 
   return result
-    ? { ...result, id: aggregation.id, label: aggregation.label }
+    ? {
+        ...result,
+        id: aggregation.id,
+        label: aggregationResultLabel(aggregation, fieldById),
+      }
     : undefined;
 };
 
@@ -1809,6 +2224,14 @@ const groupEntries = ({
       const bucket = bucketDate(entry.record, grouping.dimension);
       add(bucket.key, bucket.label, entry);
     }
+  } else if (grouping.dimension === 'record') {
+    for (const entry of entries) {
+      add(
+        entry.record.id,
+        normalizeDate(entry.record.date)?.toISOString() ?? entry.record.id,
+        entry
+      );
+    }
   } else if (grouping.dimension === 'range') {
     for (const range of grouping.ranges ?? []) {
       const start = range.start ? new Date(range.start).getTime() : -Infinity;
@@ -1844,7 +2267,7 @@ const streakPeriodForAggregation = (
 
   return dimension && dateGroupingDimensions.has(dimension)
     ? (dimension as StreakPeriod)
-    : 'day';
+    : 'record';
 };
 
 const entryMatchesAggregationField = (
@@ -1871,7 +2294,7 @@ const recordIdsForBucketKeys = (
   ),
 ];
 
-const streakForEntries = ({
+const calendarStreakForEntries = ({
   entries,
   generationTime,
   operation,
@@ -1880,7 +2303,7 @@ const streakForEntries = ({
   entries: FactEntry[];
   generationTime?: Date | number | string | null;
   operation: 'currentStreak' | 'longestStreak';
-  period: StreakPeriod;
+  period: DateStreakPeriod;
 }) => {
   const buckets = new Map<string, FactEntry[]>();
 
@@ -1938,14 +2361,66 @@ const streakForEntries = ({
   };
 };
 
+const recordStreakForEntries = ({
+  entries,
+  matches,
+  operation,
+}: {
+  entries: FactEntry[];
+  matches: (entry: FactEntry) => boolean;
+  operation: 'currentStreak' | 'longestStreak';
+}) => {
+  const sortedEntries = entriesByRecordDate(entries);
+  if (!sortedEntries.length) return;
+
+  if (operation === 'currentStreak') {
+    const streakEntries: FactEntry[] = [];
+
+    for (let index = sortedEntries.length - 1; index >= 0; index -= 1) {
+      const entry = sortedEntries[index];
+      if (!matches(entry)) break;
+      streakEntries.unshift(entry);
+    }
+
+    return {
+      recordIds: streakEntries.map((entry) => entry.record.id),
+      value: streakEntries.length,
+    };
+  }
+
+  let bestEntries: FactEntry[] = [];
+  let currentEntries: FactEntry[] = [];
+
+  for (const entry of sortedEntries) {
+    if (matches(entry)) {
+      currentEntries = [...currentEntries, entry];
+
+      if (currentEntries.length > bestEntries.length) {
+        bestEntries = currentEntries;
+      }
+    } else {
+      currentEntries = [];
+    }
+  }
+
+  return bestEntries.length
+    ? {
+        recordIds: bestEntries.map((entry) => entry.record.id),
+        value: bestEntries.length,
+      }
+    : undefined;
+};
+
 const evaluateStreakAggregation = ({
   aggregation,
   entries,
+  fieldById,
   generationTime,
   selectedTagIds,
 }: {
   aggregation: AnalysisAggregationSpec;
   entries: FactEntry[];
+  fieldById?: ExtractionFieldById;
   generationTime?: Date | number | string | null;
   selectedTagIds: string[];
 }): DeterministicAggregateValue | undefined => {
@@ -1959,26 +2434,33 @@ const evaluateStreakAggregation = ({
   const period = streakPeriodForAggregation(aggregation);
   const operation = aggregation.operation;
 
-  const activeEntries = entries.filter((entry) =>
-    entryMatchesAggregationField(entry, aggregation)
-  );
+  const matches = (entry: FactEntry) =>
+    entryMatchesAggregationField(entry, aggregation);
 
-  if (!activeEntries.length) return;
+  const activeEntries = entries.filter(matches);
+  if (!activeEntries.length && operation !== 'currentStreak') return;
   const grouping = aggregation.groupBy;
 
   if (grouping) {
     const groups = groupEntries({
-      entries: activeEntries,
+      entries: period === 'record' ? entries : activeEntries,
       grouping,
       selectedTagIds,
     })
       .map((group) => {
-        const result = streakForEntries({
-          entries: group.entries,
-          generationTime,
-          operation,
-          period,
-        });
+        const result =
+          period === 'record'
+            ? recordStreakForEntries({
+                entries: group.entries,
+                matches,
+                operation,
+              })
+            : calendarStreakForEntries({
+                entries: group.entries,
+                generationTime,
+                operation,
+                period,
+              });
 
         return result
           ? {
@@ -2006,7 +2488,7 @@ const evaluateStreakAggregation = ({
     return {
       groups,
       id: aggregation.id,
-      label: aggregation.label,
+      label: aggregationResultLabel(aggregation, fieldById),
       operation: aggregation.operation,
       recordIds: [
         ...new Set(
@@ -2020,17 +2502,20 @@ const evaluateStreakAggregation = ({
     };
   }
 
-  const result = streakForEntries({
-    entries: activeEntries,
-    generationTime,
-    operation,
-    period,
-  });
+  const result =
+    period === 'record'
+      ? recordStreakForEntries({ entries, matches, operation })
+      : calendarStreakForEntries({
+          entries: activeEntries,
+          generationTime,
+          operation,
+          period,
+        });
 
   return result
     ? {
         id: aggregation.id,
-        label: aggregation.label,
+        label: aggregationResultLabel(aggregation, fieldById),
         operation: aggregation.operation,
         recordIds: result.recordIds,
         unit: aggregation.unit ?? streakPeriodUnit(period),
@@ -2042,9 +2527,11 @@ const evaluateStreakAggregation = ({
 const evaluateDaysSinceLastAggregation = ({
   aggregation,
   entries,
+  fieldById,
 }: {
   aggregation: AnalysisAggregationSpec;
   entries: FactEntry[];
+  fieldById?: ExtractionFieldById;
 }): DeterministicAggregateValue | undefined => {
   if (aggregation.operation !== 'daysSinceLast') return;
   const sortedEntries = entriesByRecordDate(entries);
@@ -2059,7 +2546,7 @@ const evaluateDaysSinceLastAggregation = ({
 
   return {
     id: aggregation.id,
-    label: aggregation.label,
+    label: daysSinceLastResultLabel(aggregation, fieldById),
     operation: aggregation.operation,
     recordIds: [latestEntry.record.id],
     unit: aggregation.unit ?? 'days',
@@ -2330,6 +2817,7 @@ export const aggregateExtractedFacts = ({
     record,
   }));
 
+  const fieldById = extractionFieldsById(analysisSpec);
   const resultsById = new Map<string, DeterministicAggregateValue>();
 
   for (const aggregation of analysisSpec.aggregations) {
@@ -2338,6 +2826,7 @@ export const aggregateExtractedFacts = ({
     const result = evaluateAggregation({
       aggregation,
       entries,
+      fieldById,
       generationTime,
       resultsById,
       selectedTagIds: tagIds,
@@ -2352,6 +2841,7 @@ export const aggregateExtractedFacts = ({
     const result = evaluateAggregation({
       aggregation,
       entries,
+      fieldById,
       generationTime,
       resultsById,
       selectedTagIds: tagIds,
@@ -2363,10 +2853,14 @@ export const aggregateExtractedFacts = ({
   const qualitative = buildQualitativeAggregates(entries);
   const aggregateValues = [...resultsById.values()];
 
-  const metrics = aggregateValues
-    .map(normalizeExactMetric)
-    .filter((metric): metric is NonNullable<typeof metric> => !!metric)
+  const exactMetricBindings = aggregateValues
+    .flatMap((aggregateValue) => {
+      const metric = normalizeExactMetric(aggregateValue);
+      return metric ? [{ aggregationId: aggregateValue.id, metric }] : [];
+    })
     .slice(0, cardOutput.MAX_CARD_METRICS);
+
+  const metrics = exactMetricBindings.map(({ metric }) => metric);
 
   const chart = analysisSpec.charts
     .map((item) =>
@@ -2386,6 +2880,7 @@ export const aggregateExtractedFacts = ({
     analysisSpec,
     ...(chart && { chart }),
     eventCounts: buildEventCounts(entries),
+    exactMetricBindings,
     metrics,
     qualitative,
     selectedTagCounts: countSelectedTags({ records: filteredRecords, tagIds }),

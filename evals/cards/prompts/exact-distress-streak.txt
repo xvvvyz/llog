@@ -1,0 +1,3 @@
+Track the longest distress <=2 streak across Session records.
+
+Use peak distress as the numeric field. Return a concise metric for the longest consecutive Session streak where peak distress is <=2.

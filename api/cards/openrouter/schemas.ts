@@ -65,6 +65,101 @@ const strictResponseSchema = (schema: unknown): unknown => {
   return next;
 };
 
+const schemaTypeIncludes = (value: unknown, type: string) =>
+  value === type || (Array.isArray(value) && value.includes(type));
+
+const removeNullableContainerType = (value: unknown, type: string) => {
+  if (
+    !Array.isArray(value) ||
+    !value.includes(type) ||
+    !value.includes('null')
+  ) {
+    return value;
+  }
+
+  const types = value.filter((item) => item !== 'null');
+  return types.length === 1 ? types[0] : types;
+};
+
+const nullableGeminiObjectProperty = (schema: unknown): unknown => {
+  if (!isRecord(schema)) return schema;
+
+  if (
+    schemaTypeIncludes(schema.type, 'object') ||
+    schemaTypeIncludes(schema.type, 'array')
+  ) {
+    return schema;
+  }
+
+  return nullableSchema(schema);
+};
+
+const geminiResponseSchema = (schema: unknown): unknown => {
+  if (Array.isArray(schema)) return schema.map(geminiResponseSchema);
+  if (!isRecord(schema)) return schema;
+  const type = schema.type;
+
+  const nullableObject =
+    Array.isArray(type) && type.includes('object') && type.includes('null');
+
+  const next: Record<string, unknown> = {
+    ...schema,
+    type: schemaTypeIncludes(type, 'object')
+      ? removeNullableContainerType(type, 'object')
+      : schemaTypeIncludes(type, 'array')
+        ? removeNullableContainerType(type, 'array')
+        : type,
+  };
+
+  if (
+    schemaTypeIncludes(next.type, 'integer') ||
+    schemaTypeIncludes(next.type, 'number')
+  ) {
+    delete next.enum;
+  }
+
+  delete next.maxItems;
+  delete next.maxLength;
+  if ('items' in next) next.items = geminiResponseSchema(next.items);
+
+  if (isRecord(next.properties)) {
+    const required = new Set(
+      Array.isArray(next.required)
+        ? next.required.filter((key): key is string => typeof key === 'string')
+        : []
+    );
+
+    next.properties = Object.fromEntries(
+      Object.entries(next.properties).map(([key, property]) => {
+        const geminiProperty = geminiResponseSchema(property);
+
+        return [
+          key,
+          nullableObject && required.has(key)
+            ? nullableGeminiObjectProperty(geminiProperty)
+            : geminiProperty,
+        ];
+      })
+    );
+  }
+
+  return next;
+};
+
+const usesGeminiSchemaProfile = (model: string) =>
+  /^(?:google\/)?gemini(?:-|$)/i.test(model);
+
+export const responseJsonSchemaForModel = ({
+  model,
+  responseSchema,
+}: {
+  model: string;
+  responseSchema: JsonResponseSchema;
+}) =>
+  usesGeminiSchemaProfile(model)
+    ? (geminiResponseSchema(responseSchema.schema) as JsonSchema)
+    : responseSchema.schema;
+
 const datumSchema = {
   additionalProperties: false,
   properties: {
@@ -334,9 +429,21 @@ const analysisAggregationSchema = {
       type: 'string',
     },
     outcomeLabel: nullableStringSchema,
-    period: { enum: ['day', 'week', 'month', null], type: ['string', 'null'] },
+    period: {
+      enum: ['record', 'day', 'week', 'month', null],
+      type: ['string', 'null'],
+    },
     qualitativeLabel: nullableStringSchema,
     groupBy: nullableSchema(analysisGroupingSchema),
+    threshold: nullableSchema({
+      additionalProperties: false,
+      properties: {
+        operator: { enum: ['<', '<=', '=', '>=', '>'], type: 'string' },
+        value: { type: 'number' },
+      },
+      required: ['operator', 'value'],
+      type: 'object',
+    }),
     unit: nullableStringSchema,
   },
   required: ['id', 'label', 'operation'],

@@ -9,84 +9,16 @@ const yesterdayIso = () => {
 };
 
 describe('card display', () => {
-  test('formats metrics', () => {
-    expect(cardDisplay.formatMetricValue({ unit: 'hrs', value: 7 })).toBe(
-      '7 hrs'
-    );
-
-    expect(cardDisplay.formatMetricValue({ value: 'Improving' })).toBe(
-      'Improving'
-    );
-  });
-
-  test('formats date metrics', () => {
-    expect(
-      cardDisplay.formatMetricValue({
-        value: '2024-06-15T12:30:00.000Z',
-        valueFormat: 'date',
-      })
-    ).toBe('June 15, 2024');
-
-    expect(
-      cardDisplay.formatMetricValue({
-        value: '2024-06-15T12:30:00.000Z',
-        valueFormat: 'datetime',
-      })
-    ).toContain('Jun 15, 2024');
-  });
-
   test('formats labels', () => {
     expect(
       cardDisplay.formatCardDisplayLabel(
         'Last above-threshold session date for'
       )
     ).toBe('Last above-threshold session date');
-  });
 
-  test('formats since metrics', () => {
-    expect(
-      cardDisplay.formatMetricValue(
-        {
-          unit: 'days',
-          value: '2026-02-23T12:00:00.000Z',
-          valueFormat: 'durationSince',
-        },
-        new Date('2026-05-25T12:00:00.000Z')
-      )
-    ).toBe('91 days');
-
-    expect(
-      cardDisplay.formatMetricValue(
-        {
-          unit: 'weeks',
-          value: '2026-02-23T12:00:00.000Z',
-          valueFormat: 'durationSince',
-        },
-        new Date('2026-05-25T12:00:00.000Z')
-      )
-    ).toBe('13 weeks');
-
-    expect(
-      cardDisplay.formatMetricValue(
-        {
-          unit: 'months',
-          value: '2026-02-23T12:00:00.000Z',
-          valueFormat: 'durationSince',
-        },
-        new Date('2026-05-25T12:00:00.000Z')
-      )
-    ).toBe('3 months');
-
-    expect(
-      cardDisplay.formatMetricValue(
-        {
-          unit: 'years',
-          value: '2024-02-23T12:00:00.000Z',
-          valueFormat: 'durationSince',
-        },
-        new Date('2026-05-25T12:00:00.000Z')
-      )
-    ).toBe('2 years');
+    expect(cardDisplay.formatCardDisplayLabel('Days since last >=3')).toBe(
+      'Days since last ≥3'
+    );
   });
 
   test('formats card text', () => {
@@ -96,6 +28,10 @@ describe('card display', () => {
 
     expect(formatted).toContain('Latest check-in was');
     expect(formatted).not.toContain('2024-06-15T12:30:00.000Z');
+
+    expect(cardDisplay.formatCardText('Events !=0 and distress <=2')).toBe(
+      'Events ≠0 and distress ≤2'
+    );
   });
 
   test('formats summary dates', () => {
