@@ -20,6 +20,8 @@ export type {
 
 export const CARD_ANALYSIS_VERSION = 4;
 
+export const CARD_SOURCE_FINGERPRINT_VERSION = 1;
+
 export const CARD_EXACT_ANALYSIS_CHUNK_SIZE = 20;
 
 export type CardAnalysisMode = 'exact' | 'narrative';
@@ -1226,6 +1228,42 @@ export const recordFingerprint = ({
       cardSourceAssembly.CARD_SOURCE_ASSEMBLY_VERSION,
     status: record.status ?? null,
     text: record.text ?? '',
+  });
+};
+
+const generationDateFingerprint = (value?: Date | number | string | null) => {
+  if (value == null) return null;
+  const date = new Date(value);
+
+  return Number.isFinite(date.getTime())
+    ? date.toISOString().slice(0, 10)
+    : null;
+};
+
+export const cardSourceFingerprint = ({
+  generationTime,
+  prompt,
+  records,
+  selectedTagIds,
+}: {
+  generationTime?: Date | number | string | null;
+  prompt: string;
+  records: CardSourceFactRecord[];
+  selectedTagIds: Iterable<string>;
+}) => {
+  const tagIds = cardSourceSelection.uniqueCardTagIds(selectedTagIds);
+
+  return stableHash({
+    analysisVersion: CARD_ANALYSIS_VERSION,
+    generationDate: generationDateFingerprint(generationTime),
+    prompt: normalizeText(prompt),
+    records: records.map((record) => ({
+      fingerprint: recordFingerprint({ record, selectedTagIds: tagIds }),
+      id: record.id,
+    })),
+    sourceAssemblyVersion: cardSourceAssembly.CARD_SOURCE_ASSEMBLY_VERSION,
+    tagIds,
+    version: CARD_SOURCE_FINGERPRINT_VERSION,
   });
 };
 

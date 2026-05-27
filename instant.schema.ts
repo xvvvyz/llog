@@ -30,6 +30,7 @@ const schema = i.schema({
       order: i.number().indexed(),
       output: i.any().optional(),
       prompt: i.string(),
+      sourceFingerprint: i.string().optional(),
       teamId: i.string().indexed(),
       title: i.string().indexed(),
       type: i.string().indexed(),

@@ -180,6 +180,7 @@ describe('card generation', () => {
       isGenerating: false,
       lastGeneratedAt: null,
       output: null,
+      sourceFingerprint: expect.any(String),
       title: 'Track sleep',
     });
   });
@@ -268,6 +269,7 @@ describe('card generation', () => {
         milestones: [],
         summary: 'Generated sleep summary.',
       },
+      sourceFingerprint: expect.any(String),
       title: 'Copied sleep',
     });
   });
@@ -2180,6 +2182,185 @@ describe('card refresh queue', () => {
       schemaVersion: 1,
       type: 'card.refresh',
     });
+  });
+
+  test('skips unchanged manual', async () => {
+    const sent: unknown[] = [];
+    const updates: Record<string, unknown>[] = [];
+    const generationTime = new Date().toISOString();
+
+    const record = {
+      date: '2026-05-20T00:00:00.000Z',
+      id: 'record-1',
+      logId: 'log-1',
+      status: 'published',
+      tags: [{ id: 'tag-a', name: 'Session' }],
+      text: 'Ran 3 miles.',
+    };
+
+    const sourceFingerprint = cardAnalysis.cardSourceFingerprint({
+      generationTime,
+      prompt: 'Progress',
+      records: [sourceAssembly.assembleCardLlmRecord(record)!],
+      selectedTagIds: ['tag-a'],
+    });
+
+    const card = {
+      id: 'card-1',
+      logId: 'log-1',
+      output: { summary: 'Current progress.' },
+      prompt: 'Progress',
+      sourceFingerprint,
+      tags: [{ id: 'tag-a' }],
+      teamId: 'team-1',
+      title: 'Progress',
+    };
+
+    const entityTx = (entity: string) =>
+      new Proxy(
+        {},
+        {
+          get: (_target, id: string) => ({
+            update: (fields: Record<string, unknown>) => ({
+              entity,
+              fields,
+              id,
+            }),
+          }),
+        }
+      );
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('cards' in query) return { cards: [card] };
+
+        if ('logs' in query) {
+          return {
+            logs: [
+              {
+                id: 'log-1',
+                team: { roles: [{ role: Role.Owner, userId: 'user-1' }] },
+                teamId: 'team-1',
+              },
+            ],
+          };
+        }
+
+        if ('records' in query) return { records: [record] };
+        return {};
+      },
+      transact: async (transaction: {
+        entity: string;
+        fields: Record<string, unknown>;
+        id: string;
+      }) => {
+        updates.push(transaction.fields);
+      },
+      tx: { cards: entityTx('cards') },
+    };
+
+    const env = {
+      JOBS_QUEUE: {
+        send: async (body: unknown) => {
+          sent.push(body);
+
+          return {
+            metadata: { metrics: { backlogBytes: 0, backlogCount: 0 } },
+          };
+        },
+      } as Queue,
+    } as CloudflareEnv;
+
+    await expect(
+      cardActions.refreshCardForUser({
+        cardId: 'card-1',
+        dbClient: db as never,
+        env,
+        userId: 'user-1',
+      })
+    ).resolves.toEqual({ queued: false, skipped: true, success: true });
+
+    expect(sent).toEqual([]);
+    expect(updates).toEqual([]);
+  });
+
+  test('skips unchanged job', async () => {
+    const requestedAt = '2026-05-20T00:00:00.000Z';
+    const updates: Record<string, unknown>[] = [];
+
+    const record = {
+      date: '2026-05-19T00:00:00.000Z',
+      id: 'record-1',
+      logId: 'log-1',
+      status: 'published',
+      tags: [{ id: 'tag-a', name: 'Session' }],
+      text: 'Ran 3 miles.',
+    };
+
+    const card = {
+      generationRequestedAt: requestedAt,
+      id: 'card-1',
+      logId: 'log-1',
+      output: { summary: 'Current progress.' },
+      prompt: 'Progress',
+      sourceFingerprint: cardAnalysis.cardSourceFingerprint({
+        generationTime: requestedAt,
+        prompt: 'Progress',
+        records: [sourceAssembly.assembleCardLlmRecord(record)!],
+        selectedTagIds: ['tag-a'],
+      }),
+      tags: [{ id: 'tag-a' }],
+      teamId: 'team-1',
+      title: 'Progress',
+    };
+
+    globalThis.fetch = mock(async () => {
+      throw new Error('unexpected refresh');
+    }) as never;
+
+    const entityTx = (entity: string) =>
+      new Proxy(
+        {},
+        {
+          get: (_target, id: string) => ({
+            update: (fields: Record<string, unknown>) => ({
+              entity,
+              fields,
+              id,
+            }),
+          }),
+        }
+      );
+
+    const db = {
+      query: async (query: Record<string, unknown>) => {
+        if ('cards' in query) return { cards: [card] };
+        if ('records' in query) return { records: [record] };
+        return {};
+      },
+      transact: async (transaction: {
+        entity: string;
+        fields: Record<string, unknown>;
+        id: string;
+      }) => {
+        updates.push(transaction.fields);
+        Object.assign(card, transaction.fields);
+      },
+      tx: { cards: entityTx('cards') },
+    };
+
+    await expect(
+      cardActions.refreshCard({
+        cardId: 'card-1',
+        dbClient: db as never,
+        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        requestedAt,
+      })
+    ).resolves.toEqual({ skipped: true, stale: false, success: true });
+
+    expect(updates).toEqual([
+      { error: '', generationRequestedAt: null, isGenerating: false },
+    ]);
   });
 
   test('queues records', async () => {

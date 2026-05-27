@@ -782,6 +782,45 @@ describe('card fact cache', () => {
     ).not.toBe(original);
   });
 
+  test('fingerprints card source', () => {
+    const [record] = records(1);
+    const generationTime = '2026-05-20T12:00:00.000Z';
+
+    const original = cardAnalysis.cardSourceFingerprint({
+      generationTime,
+      prompt: 'Track sessions',
+      records: [record],
+      selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
+    });
+
+    expect(
+      cardAnalysis.cardSourceFingerprint({
+        generationTime: '2026-05-20T23:00:00.000Z',
+        prompt: 'Track sessions',
+        records: [record],
+        selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
+      })
+    ).toBe(original);
+
+    expect(
+      cardAnalysis.cardSourceFingerprint({
+        generationTime: '2026-05-21T00:00:00.000Z',
+        prompt: 'Track sessions',
+        records: [record],
+        selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
+      })
+    ).not.toBe(original);
+
+    expect(
+      cardAnalysis.cardSourceFingerprint({
+        generationTime,
+        prompt: 'Track duration',
+        records: [record],
+        selectedTagIds: separationAnxietyFixture.separationSessionTagIds,
+      })
+    ).not.toBe(original);
+  });
+
   test('reuses keys', () => {
     const [record] = records(1);
 

@@ -30,7 +30,9 @@ export const tweakCard = ({ id, prompt }: { id: string; prompt: string }) =>
   });
 
 export const refreshCard = (id: string) =>
-  postJson<{ queued: boolean; success: boolean }>(`/cards/${id}/refresh`);
+  postJson<{ queued: boolean; skipped?: boolean; success: boolean }>(
+    `/cards/${id}/refresh`
+  );
 
 export const copyCard = ({
   id,

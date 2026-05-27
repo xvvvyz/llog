@@ -65,6 +65,7 @@ type CardEntity = Omit<
     | 'order'
     | 'output'
     | 'prompt'
+    | 'sourceFingerprint'
     | 'teamId'
     | 'title'
   >,
@@ -73,6 +74,7 @@ type CardEntity = Omit<
   blueprint?: unknown;
   generationRequestedAt?: Date | number | string | null;
   output?: unknown;
+  sourceFingerprint?: string | null;
   tags?: CardTag[];
 };
 
@@ -377,16 +379,19 @@ const getPublishedTaggedSourceRecords = async ({
 const noSourceRecordGenerationFields = ({
   previousOutput,
   prompt,
+  sourceFingerprint,
   title,
 }: {
   previousOutput?: unknown;
   prompt: string;
+  sourceFingerprint?: string;
   title?: string;
 }) => ({
   generationRequestedAt: null,
   isGenerating: false,
   lastGeneratedAt: null,
   ...(previousOutput != null && { output: null }),
+  ...(sourceFingerprint && { sourceFingerprint }),
   title: title ?? cardTitle.fallbackCardTitle(prompt),
 });
 
@@ -438,6 +443,7 @@ const getGenerationContextCards = async ({
 type CardAnalysisContext = {
   exactFacts?: cardAnalysis.ExactCardFacts;
   plan: cardAnalysis.CardAnalysisPlan;
+  sourceFingerprint: string;
   sourceRecords: PublishedCardSourceRecord[];
   sourceSelection: {
     records: PublishedCardSourceRecord[];
@@ -479,27 +485,38 @@ const planCardAnalysisForContext = async ({
 };
 
 const getCardAnalysisContext = async ({
+  allSourceRecords,
   analysisPlan,
   dbClient,
   env,
   generationTime,
   logId,
   prompt,
+  sourceFingerprint: existingSourceFingerprint,
   tagIds,
 }: {
+  allSourceRecords?: PublishedCardSourceRecord[];
   analysisPlan?: cardAnalysis.CardAnalysisPlan;
   dbClient: Db;
   env?: CloudflareEnv;
   generationTime: string;
   logId: string;
   prompt: string;
+  sourceFingerprint?: string;
   tagIds: string[];
 }): Promise<CardAnalysisContext> => {
-  const allSourceRecords = await getPublishedTaggedSourceRecords({
-    dbClient,
-    logId,
-    tagIds,
-  });
+  const records =
+    allSourceRecords ??
+    (await getPublishedTaggedSourceRecords({ dbClient, logId, tagIds }));
+
+  const sourceFingerprint =
+    existingSourceFingerprint ??
+    cardAnalysis.cardSourceFingerprint({
+      generationTime,
+      prompt,
+      records,
+      selectedTagIds: tagIds,
+    });
 
   const plan =
     analysisPlan ??
@@ -507,24 +524,62 @@ const getCardAnalysisContext = async ({
       env,
       generationTime,
       prompt,
-      sourceRecords: allSourceRecords,
+      sourceRecords: records,
     }));
 
   const sourceRecords =
     plan.mode === 'exact'
-      ? cardAnalysis.selectExactRecords(allSourceRecords, {
+      ? cardAnalysis.selectExactRecords(records, {
           analysisSpec: plan.analysisSpec,
           generationTime,
         })
-      : allSourceRecords;
+      : records;
 
   const sourceSelection = cardSourceSelection.selectCardSourceRecordCoverage({
     records: sourceRecords,
     tagIds,
   });
 
-  return { plan, sourceRecords, sourceSelection };
+  return { plan, sourceFingerprint, sourceRecords, sourceSelection };
 };
+
+const getCardSourceFingerprintContext = async ({
+  dbClient,
+  generationTime,
+  logId,
+  prompt,
+  tagIds,
+}: {
+  dbClient: Db;
+  generationTime: string;
+  logId: string;
+  prompt: string;
+  tagIds: string[];
+}) => {
+  const allSourceRecords = await getPublishedTaggedSourceRecords({
+    dbClient,
+    logId,
+    tagIds,
+  });
+
+  return {
+    allSourceRecords,
+    sourceFingerprint: cardAnalysis.cardSourceFingerprint({
+      generationTime,
+      prompt,
+      records: allSourceRecords,
+      selectedTagIds: tagIds,
+    }),
+  };
+};
+
+const cardSourceFingerprintMatches = ({
+  card,
+  sourceFingerprint,
+}: {
+  card: Pick<CardEntity, 'sourceFingerprint'>;
+  sourceFingerprint: string;
+}) => !!card.sourceFingerprint && card.sourceFingerprint === sourceFingerprint;
 
 const withAnalysisSpec = (plan: cardAnalysis.CardAnalysisPlan) => {
   if (plan.mode !== 'exact' || !plan.analysisSpec) {
@@ -789,6 +844,7 @@ const writeNoSourceRecordGenerationResult = async ({
   previousOutput,
   prompt,
   requestedAt,
+  sourceFingerprint,
   title,
 }: {
   cardId: string;
@@ -796,6 +852,7 @@ const writeNoSourceRecordGenerationResult = async ({
   previousOutput?: unknown;
   prompt: string;
   requestedAt: string;
+  sourceFingerprint?: string;
   title?: string;
 }) => {
   const didWrite = await updateCardIfGenerationCurrent({
@@ -804,6 +861,7 @@ const writeNoSourceRecordGenerationResult = async ({
     fields: noSourceRecordGenerationFields({
       previousOutput,
       prompt,
+      sourceFingerprint,
       ...(title && { title }),
     }),
     requestedAt,
@@ -883,6 +941,7 @@ export const generateCard = async ({
         previousOutput: card.output,
         prompt: card.prompt,
         requestedAt,
+        sourceFingerprint: analysisContext.sourceFingerprint,
         ...(blueprint && currentTitle && { title: currentTitle }),
       });
     }
@@ -917,6 +976,7 @@ export const generateCard = async ({
         previousOutput: card.output,
         prompt: card.prompt,
         requestedAt,
+        sourceFingerprint: analysisContext.sourceFingerprint,
         ...(blueprint && currentTitle && { title: currentTitle }),
       });
     }
@@ -932,6 +992,7 @@ export const generateCard = async ({
         lastGeneratedAt: new Date().toISOString(),
         blueprint: null,
         output: result.output,
+        sourceFingerprint: analysisContext.sourceFingerprint,
         title,
       },
       requestedAt,
@@ -997,12 +1058,34 @@ export const refreshCard = async ({
   try {
     const tagIds = card.tags?.map((tag) => tag.id) ?? [];
 
+    const { allSourceRecords, sourceFingerprint } =
+      await getCardSourceFingerprintContext({
+        dbClient,
+        generationTime: requestedAt,
+        logId: card.logId,
+        prompt: card.prompt,
+        tagIds,
+      });
+
+    if (cardSourceFingerprintMatches({ card, sourceFingerprint })) {
+      const didWrite = await updateCardIfGenerationCurrent({
+        cardId,
+        dbClient,
+        fields: { error: '', generationRequestedAt: null, isGenerating: false },
+        requestedAt,
+      });
+
+      return { skipped: true, stale: !didWrite, success: didWrite };
+    }
+
     const analysisContext = await getCardAnalysisContext({
+      allSourceRecords,
       dbClient,
       env,
       generationTime: requestedAt,
       logId: card.logId,
       prompt: card.prompt,
+      sourceFingerprint,
       tagIds,
     });
 
@@ -1013,6 +1096,7 @@ export const refreshCard = async ({
         previousOutput: card.output,
         prompt: card.prompt,
         requestedAt,
+        sourceFingerprint: analysisContext.sourceFingerprint,
       });
     }
 
@@ -1046,6 +1130,7 @@ export const refreshCard = async ({
         previousOutput: card.output,
         prompt: card.prompt,
         requestedAt,
+        sourceFingerprint: analysisContext.sourceFingerprint,
       });
     }
 
@@ -1057,6 +1142,7 @@ export const refreshCard = async ({
         isGenerating: false,
         lastGeneratedAt: new Date().toISOString(),
         output: result.output,
+        sourceFingerprint: analysisContext.sourceFingerprint,
       },
       requestedAt,
     });
@@ -1142,6 +1228,7 @@ export const tweakCard = async ({
         previousOutput: card.output,
         prompt: card.prompt,
         requestedAt,
+        sourceFingerprint: analysisContext.sourceFingerprint,
       });
     }
 
@@ -1177,6 +1264,7 @@ export const tweakCard = async ({
         previousOutput: card.output,
         prompt: card.prompt,
         requestedAt,
+        sourceFingerprint: analysisContext.sourceFingerprint,
       });
     }
 
@@ -1188,6 +1276,7 @@ export const tweakCard = async ({
         isGenerating: false,
         lastGeneratedAt: new Date().toISOString(),
         output: result.output,
+        sourceFingerprint: analysisContext.sourceFingerprint,
         title: result.title,
       },
       requestedAt,
@@ -1901,6 +1990,7 @@ export const finalizeCardAnalysis = async ({
         previousOutput: context.card.output,
         prompt: context.card.prompt!,
         requestedAt,
+        sourceFingerprint: analysisContext.sourceFingerprint,
         ...(blueprint && currentTitle && { title: currentTitle }),
       });
     }
@@ -1926,6 +2016,7 @@ export const finalizeCardAnalysis = async ({
         lastGeneratedAt: new Date().toISOString(),
         ...(!isRefresh && { blueprint: null, title }),
         output: result.output,
+        sourceFingerprint: analysisContext.sourceFingerprint,
       },
       requestedAt,
     });
@@ -2061,6 +2152,7 @@ export const updateCard = async ({
       generationRequestedAt: requestedAt,
       isGenerating: true,
       prompt: normalized.prompt,
+      sourceFingerprint: null,
     }),
     ...unlinkTagIds.map((tagId) =>
       dbClient.tx.cards[cardId].unlink({ tags: tagId })
@@ -2105,8 +2197,24 @@ export const refreshCardForUser = async ({
   env: CloudflareEnv;
   userId: string;
 }) => {
-  await getManageableCard({ cardId, dbClient, userId });
+  const card = await getManageableCard({ cardId, dbClient, userId });
   const requestedAt = new Date().toISOString();
+
+  if (card.logId && card.prompt && readCardOutput(card.output)) {
+    const tagIds = card.tags?.map((tag) => tag.id) ?? [];
+
+    const { sourceFingerprint } = await getCardSourceFingerprintContext({
+      dbClient,
+      generationTime: requestedAt,
+      logId: card.logId,
+      prompt: card.prompt,
+      tagIds,
+    });
+
+    if (cardSourceFingerprintMatches({ card, sourceFingerprint })) {
+      return { queued: false, skipped: true, success: true };
+    }
+  }
 
   await dbClient.transact(
     dbClient.tx.cards[cardId].update({
