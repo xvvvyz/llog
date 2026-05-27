@@ -21,7 +21,9 @@ const renderChip = ({
       {chip}
     </Link>
   ) : (
-    <View key={key}>{chip}</View>
+    <View key={key} className="max-w-full min-w-0">
+      {chip}
+    </View>
   );
 
 export const TagChipList = ({

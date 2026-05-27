@@ -29,10 +29,10 @@ export const AddTagsInput = ({
 
   const content =
     visibleTags.length > 0 ? (
-      <View className="flex-1 flex-row flex-wrap min-w-0 gap-1">
+      <View className="flex-1 min-w-0">
         <TagChipList
           chipClassName="light:bg-muted"
-          className="gap-1"
+          className="min-w-0 w-full gap-1"
           maxVisible={visibleTags.length}
           tags={visibleTags}
         />
@@ -44,7 +44,12 @@ export const AddTagsInput = ({
     );
 
   const actionIcon = shouldShowAction ? (
-    <View className="-mr-[9px] ml-2 size-8 items-center justify-center shrink-0">
+    <View
+      className={cn(
+        '-mr-[9px] ml-2 size-8 items-center justify-center shrink-0',
+        onPress && '-my-2.5'
+      )}
+    >
       <Icon className="text-muted-foreground" icon={Plus} />
     </View>
   ) : null;
@@ -71,7 +76,7 @@ export const AddTagsInput = ({
       variant="ghost"
       wrapperClassName="w-full rounded-none border-continuous"
       className={cn(
-        'h-auto min-h-10 px-3 py-1 rounded-none items-center justify-start',
+        'h-auto min-h-10 px-3 py-2.5 rounded-none items-center justify-start',
         className
       )}
     >
