@@ -1,6 +1,7 @@
 import { recordDetailQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
 import type { FileItem } from '@/features/files/types/file';
+import * as localEntry from '@/features/offline/local-entry';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as outboxStore from '@/features/offline/outbox-store';
 import * as pendingEntries from '@/features/offline/pending-entries';
@@ -18,7 +19,7 @@ const hasOwn = (value: object, key: keyof EntryRecord) =>
   Object.prototype.hasOwnProperty.call(value, key);
 
 const hasLoadedReplyDetail = (reply: EntryRecord) =>
-  !!reply.localStatus ||
+  localEntry.hasLocalStatus(reply) ||
   hasOwn(reply, 'author') ||
   hasOwn(reply, 'date') ||
   hasOwn(reply, 'files') ||

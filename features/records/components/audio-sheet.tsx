@@ -1,4 +1,5 @@
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import * as localEntry from '@/features/offline/local-entry';
 import * as outbox from '@/features/offline/outbox-hooks';
 import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments';
 import { AudioSheetContent } from '@/features/records/components/audio-sheet-content';
@@ -84,22 +85,18 @@ export const RecordAudioSheet = () => {
     [audioContext.type, draftId, record.files, record.replies]
   );
 
+  const isLocalRecord = localEntry.hasLocalStatus(record);
+
   const canUploadQueuedAudioNow = React.useMemo(() => {
     if (!draftId) return false;
 
     if (audioContext.type === 'reply') {
       const reply = record.replies.find((reply) => reply.id === draftId);
-      return !!reply?.id && !reply.localStatus;
+      return !!reply?.id && !localEntry.hasLocalStatus(reply);
     }
 
-    return record.id === draftId && !record.localStatus;
-  }, [
-    audioContext.type,
-    draftId,
-    record.id,
-    record.localStatus,
-    record.replies,
-  ]);
+    return record.id === draftId && !isLocalRecord;
+  }, [audioContext.type, draftId, isLocalRecord, record.id, record.replies]);
 
   const logColor = useLogColor({ id: record.log?.id });
 

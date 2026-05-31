@@ -1,6 +1,7 @@
 import * as recordStatus from '@/domain/records/status';
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
+import * as localEntry from '@/features/offline/local-entry';
 import { EntryMenuContent } from '@/features/records/components/entry-menu';
 import { EntryTimestamp } from '@/features/records/components/entry-timestamp';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
@@ -53,9 +54,10 @@ export const EntryCard = ({
   const hasPinnedAction = 'isPinned' in record && !!record.isPinned;
   const hasHeaderActions = hasPinnedAction || entryMenuState.hasMenu;
   const isScheduled = recordStatus.recordIsScheduled(record);
+  const isLocalPending = localEntry.hasLocalStatus(record);
   const hasRecordTags = record.tags?.some((tag) => !!tag.name);
   const hasTopMeta = hasRecordTags;
-  const areEntryActionsDisabled = !!record.localStatus || isScheduled;
+  const areEntryActionsDisabled = isLocalPending || isScheduled;
 
   const headerActions = hasHeaderActions && (
     <View className="max-w-52 items-end shrink">
@@ -79,7 +81,7 @@ export const EntryCard = ({
         <EntryMenuContent
           accentTextClassName={accentTextClassName}
           authorId={record.author?.id}
-          isLocalPending={!!record.localStatus}
+          isLocalPending={isLocalPending}
           isPinned={'isPinned' in record ? !!record.isPinned : undefined}
           logId={logId}
           recordId={recordId}

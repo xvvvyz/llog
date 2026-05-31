@@ -93,6 +93,13 @@ const getQueuedRecordStatus = (
 ) =>
   recordTime.isFutureRecordDate(submission.recordDate) ? 'scheduled' : 'draft';
 
+const getLocalStatusFields = (submission: types.QueuedSubmission) =>
+  submission.status === 'complete'
+    ? {}
+    : ({
+        localStatus: submission.status === 'error' ? 'error' : 'pending',
+      } as const);
+
 export const queuedRecordToEntry = ({
   attachments,
   profile,
@@ -110,7 +117,7 @@ export const queuedRecordToEntry = ({
   links: submission.links,
   log: { id: submission.logId },
   localOutboxStatus: submission.status,
-  localStatus: submission.status === 'error' ? 'error' : 'pending',
+  ...getLocalStatusFields(submission),
   reactions: [],
   replies: [],
   syncError: syncErrorForSubmission(attachments, submission),
@@ -137,7 +144,7 @@ export const queuedReplyToEntry = ({
   links: submission.links,
   localNeedsDraftReplay: submission.needsDraftReplay,
   localOutboxStatus: submission.status,
-  localStatus: submission.status === 'error' ? 'error' : 'pending',
+  ...getLocalStatusFields(submission),
   reactions: [],
   syncError: syncErrorForSubmission(attachments, submission),
   teamId: submission.teamId,

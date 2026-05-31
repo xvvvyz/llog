@@ -1,4 +1,5 @@
 import { useRippleColor } from '@/hooks/use-ripple-color';
+import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/button';
 import { Sheet } from '@/ui/sheet';
@@ -33,7 +34,12 @@ const Root = ({
 }: RootProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const close = React.useCallback(() => setIsOpen(false), []);
-  const open = React.useCallback(() => setIsOpen(true), []);
+
+  const open = React.useCallback(() => {
+    blurActiveTextInput();
+    setIsOpen(true);
+  }, []);
+
   const context = React.useMemo(() => ({ close }), [close]);
 
   return (

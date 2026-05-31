@@ -1,4 +1,5 @@
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import * as localEntry from '@/features/offline/local-entry';
 import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { type UseRecordResult } from '@/features/records/queries/use-record';
@@ -81,7 +82,7 @@ export const DetailView = ({
   const sheetManager = useSheetManager();
   const handleScroll = useSheetScrollHandler();
   const logColor = useLogColor({ id: record.log?.id });
-  const canReply = !record.localStatus;
+  const canReply = !localEntry.hasLocalStatus(record);
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: recordId,

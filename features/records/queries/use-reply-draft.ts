@@ -1,5 +1,6 @@
 import { replyDraftQuery } from '@/domain/records/query';
 import { useProfile } from '@/features/account/queries/use-profile';
+import * as localEntry from '@/features/offline/local-entry';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import { createReplyDraft } from '@/features/records/mutations/create-reply-draft';
 import { useRecord } from '@/features/records/queries/use-record';
@@ -103,7 +104,7 @@ export const useReplyDraft = ({
 
   const reply = queriedReply ?? fallbackReply;
   const hasReply = !!reply;
-  const isLocalParentRecord = !!record.localStatus;
+  const isLocalParentRecord = localEntry.hasLocalStatus(record);
 
   React.useEffect(() => {
     if (!queriedReply) return;

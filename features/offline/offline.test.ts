@@ -452,6 +452,7 @@ describe('queued links', () => {
 describe('local entries', () => {
   test('detects local metadata', () => {
     expect(localEntry.hasLocalStatus({ localStatus: 'pending' })).toBe(true);
+    expect(localEntry.hasLocalStatus({ localStatus: undefined })).toBe(false);
     expect(localEntry.hasLocalStatus({ status: 'pending' })).toBe(false);
 
     expect(localEntry.needsIdentityReplay({ needsIdentityReplay: true })).toBe(
@@ -599,6 +600,8 @@ describe('pending entries', () => {
       profile: { id: fixtures.profileId, name: 'Member' },
       submission: queuedRecordSubmission({ status: 'complete' }),
     });
+
+    expect(queuedRecord).not.toHaveProperty('localStatus');
 
     expect(
       pendingEntries

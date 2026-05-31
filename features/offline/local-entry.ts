@@ -1,7 +1,12 @@
-export const hasLocalStatus = (
-  value: unknown
-): value is { localStatus: unknown } =>
-  !!value && typeof value === 'object' && 'localStatus' in value;
+type LocalStatus = 'error' | 'pending';
+
+export const hasLocalStatus = <T>(
+  value: T
+): value is T & { localStatus: LocalStatus } => {
+  if (!value || typeof value !== 'object') return false;
+  const status = (value as { localStatus?: unknown }).localStatus;
+  return status === 'pending' || status === 'error';
+};
 
 export const needsIdentityReplay = (
   value: unknown

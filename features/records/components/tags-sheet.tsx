@@ -66,6 +66,8 @@ export const RecordTagsSheet = () => {
     [outbox.submissions, record?.id]
   );
 
+  const isLocalPendingRecord = localEntry.hasLocalStatus(record);
+
   const queuedRecordDraft = React.useMemo(
     () =>
       record?.id
@@ -83,10 +85,11 @@ export const RecordTagsSheet = () => {
       queuedRecordDraft?.type === 'record' &&
       queuedRecordDraft.tagsUpdated
         ? queuedRecordDraft.tags
-        : pendingRecord?.type === 'record'
+        : isLocalPendingRecord && pendingRecord?.type === 'record'
           ? pendingRecord.tags
           : (record?.tags ?? []),
     [
+      isLocalPendingRecord,
       isRecordStatusDraft,
       isScheduledRecord,
       pendingRecord,
@@ -166,7 +169,7 @@ export const RecordTagsSheet = () => {
           type: 'record' as const,
         };
 
-        if (pendingRecord) {
+        if (isLocalPendingRecord && pendingRecord) {
           outboxStore.updateQueuedRecordTagSelection({
             recordId: record.id,
             selected: true,
@@ -187,6 +190,7 @@ export const RecordTagsSheet = () => {
       },
       [
         currentQueuedRecordTags,
+        isLocalPendingRecord,
         logColorIndex,
         logId,
         pendingRecord,
@@ -212,7 +216,7 @@ export const RecordTagsSheet = () => {
       async (tagId: string, selected: boolean) => {
         const tag = visibleTagsRef.current.find((tag) => tag.id === tagId);
 
-        if (pendingRecord) {
+        if (isLocalPendingRecord && pendingRecord) {
           outboxStore.updateQueuedRecordTagSelection({
             recordId: record?.id ?? '',
             selected,
@@ -231,7 +235,7 @@ export const RecordTagsSheet = () => {
           });
         }
 
-        if (localEntry.hasLocalStatus(record)) return;
+        if (isLocalPendingRecord) return;
 
         await recordTags.toggleRecordTag({
           tagId,
@@ -241,6 +245,7 @@ export const RecordTagsSheet = () => {
       },
       [
         currentQueuedRecordTags,
+        isLocalPendingRecord,
         pendingRecord,
         record,
         shouldMirrorQueuedDraftTags,

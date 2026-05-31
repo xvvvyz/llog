@@ -68,14 +68,11 @@ export const useRecordTagsTarget = ({
   const resolvedRecord =
     record ??
     (pendingRecord
-      ? {
-          author: { id: pendingRecord.authorId ?? profile.id },
-          id: pendingRecord.contentId,
-          log: { id: pendingRecord.logId },
-          localStatus: pendingRecord.status === 'error' ? 'error' : 'pending',
-          tags: pendingRecord.tags,
-          teamId: pendingRecord.teamId,
-        }
+      ? pendingEntries.queuedRecordToEntry({
+          attachments: outbox.attachments,
+          profile,
+          submission: pendingRecord,
+        })
       : queuedDraft?.type === 'record'
         ? {
             author: { id: payloadContext.authorId ?? profile.id },

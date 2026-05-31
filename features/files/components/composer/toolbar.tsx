@@ -1,3 +1,4 @@
+import { blurActiveTextInput } from '@/lib/blur-active-text-input';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
 import * as ScrollSheetMenu from '@/ui/scroll-sheet-menu';
@@ -35,6 +36,11 @@ export const Toolbar = ({
   portalName: string;
   trailingItems?: React.ReactNode;
 }) => {
+  const handleOpenAudio = () => {
+    blurActiveTextInput();
+    onOpenAudio();
+  };
+
   const attachmentMenu = (
     <ScrollSheetMenu.Root
       portalName={portalName}
@@ -73,25 +79,12 @@ export const Toolbar = ({
     </ScrollSheetMenu.Root>
   );
 
-  return Platform.OS === 'web' ? (
+  return (
     <>
       {attachmentMenu}
       <Button
         disabled={disabled || !canAddAudio}
-        onPress={onOpenAudio}
-        size="icon-xs"
-        variant="secondary"
-      >
-        <Icon icon={Microphone} />
-      </Button>
-      {trailingItems}
-    </>
-  ) : (
-    <>
-      {attachmentMenu}
-      <Button
-        disabled={disabled || !canAddAudio}
-        onPress={onOpenAudio}
+        onPress={handleOpenAudio}
         size="icon-xs"
         variant="secondary"
       >

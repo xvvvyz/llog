@@ -3,6 +3,7 @@ import { useProfile } from '@/features/account/queries/use-profile';
 import { useUi } from '@/features/account/queries/use-ui';
 import { useFilteredFiles } from '@/features/files/hooks/use-filtered-files';
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import * as localEntry from '@/features/offline/local-entry';
 import * as outboxStore from '@/features/offline/outbox-store';
 import { CompactEntry } from '@/features/records/components/compact-entry';
 import { EntryCard } from '@/features/records/components/entry-card';
@@ -46,12 +47,8 @@ export const Entry = ({
   const profile = useProfile();
   const sheetManager = useSheetManager();
   const ui = useUi();
-  const isLocalPending = !!record.localStatus;
+  const isLocalPending = localEntry.hasLocalStatus(record);
   const isScheduled = recordStatus.recordIsScheduled(record);
-  const isCompletedLocalSubmission = record.localOutboxStatus === 'complete';
-
-  const isActiveLocalSubmission =
-    isLocalPending && record.localOutboxStatus !== 'complete';
 
   const isUploadingLocalSubmission =
     record.localOutboxStatus === 'syncing' ||
@@ -59,16 +56,14 @@ export const Entry = ({
 
   const isPublishingLocalSubmission = record.localOutboxStatus === 'publishing';
 
-  const syncStatus = isActiveLocalSubmission
+  const syncStatus = isLocalPending
     ? isUploadingLocalSubmission
       ? 'uploading'
       : 'queued'
     : undefined;
 
   const canManageLocalPendingEntry =
-    isLocalPending &&
-    !isCompletedLocalSubmission &&
-    (!replyId || record.localNeedsDraftReplay === true);
+    isLocalPending && (!replyId || record.localNeedsDraftReplay === true);
 
   const { audioMedia, documentFiles, visualMedia } = useFilteredFiles(
     record.files || []

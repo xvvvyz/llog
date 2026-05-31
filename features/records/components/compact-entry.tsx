@@ -1,6 +1,7 @@
 import * as recordStatus from '@/domain/records/status';
 import { AudioPlaylist } from '@/features/files/components/audio-player';
 import { DocumentAttachments } from '@/features/files/components/document-attachments';
+import * as localEntry from '@/features/offline/local-entry';
 import { EntryMenuContent } from '@/features/records/components/entry-menu';
 import { EntryTimestamp } from '@/features/records/components/entry-timestamp';
 import { LinkAttachments } from '@/features/records/components/link-attachments';
@@ -37,6 +38,7 @@ export const CompactEntry = ({
   const hasDocumentFiles = documentFiles.length > 0;
   const hasLinks = links.length > 0;
   const isScheduled = recordStatus.recordIsScheduled(record);
+  const isLocalPending = localEntry.hasLocalStatus(record);
   const hasRecordTags = record.tags?.some((tag) => !!tag.name);
   const hasTopMeta = hasRecordTags;
 
@@ -94,7 +96,7 @@ export const CompactEntry = ({
               authorId={record.author?.id}
               className="-mb-3 -mr-1.5 -mt-1.5"
               isDetail
-              isLocalPending={!!record.localStatus}
+              isLocalPending={isLocalPending}
               isPinned={'isPinned' in record ? !!record.isPinned : undefined}
               logId={logId}
               recordId={recordId}
@@ -146,7 +148,7 @@ export const CompactEntry = ({
           <ReactionsRow
             accentTextClassName={accentTextClassName}
             className="mt-3"
-            disabled={!!record.localStatus || isScheduled}
+            disabled={isLocalPending || isScheduled}
             logId={logId}
             onDoubleTapReaction={onDoubleTapReaction}
             record={record}
