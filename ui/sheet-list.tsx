@@ -1,25 +1,14 @@
 import { cn } from '@/lib/cn';
 import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
 import { Spinner } from '@/ui/spinner';
-import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
-
-const sheetListContentVariants = cva('mx-auto w-full max-w-lg', {
-  defaultVariants: { variant: 'default' },
-  variants: {
-    variant: {
-      default: 'px-8 py-6 md:p-4',
-      flush: 'py-8 md:py-4',
-      rows: 'gap-2 px-8 py-8 md:p-4',
-    },
-  },
-});
+import * as sheetScrollStyle from '@/ui/sheet-scroll-style';
 
 type SheetListScrollViewProps = React.ComponentPropsWithoutRef<
   typeof ScrollView
 > &
-  VariantProps<typeof sheetListContentVariants> & {
+  sheetScrollStyle.SheetScrollContentVariantProps & {
     className?: string;
     contentContainerClassName?: string;
     loading?: boolean;
@@ -51,18 +40,15 @@ export const SheetListScrollView = React.forwardRef<
     return (
       <ScrollView
         ref={ref}
+        className={cn(sheetScrollStyle.SHEET_SCROLL_VIEW_CLASS_NAME, className)}
         keyboardDismissMode={keyboardDismissMode}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         onScroll={handleScroll}
         scrollEventThrottle={scrollEventThrottle}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         style={style}
-        className={cn(
-          '-mx-px max-h-64 min-h-0 border-b border-border-secondary border-x rounded-b-4xl md:max-h-96 md:rounded-b-3xl border-continuous',
-          className
-        )}
         contentContainerClassName={cn(
-          sheetListContentVariants({ variant }),
+          sheetScrollStyle.sheetScrollContentVariants({ variant }),
           contentContainerClassName,
           'relative',
           loading && 'min-h-24'

@@ -1,6 +1,8 @@
 import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
+import * as structuredTemplates from '@/features/logs/lib/structured-template';
 import type { LogTemplate } from '@/features/logs/types/template';
 import { ComposerForm } from '@/features/records/components/composer-form';
+import { RecordTemplateFormSheet } from '@/features/records/components/record-template-form-sheet';
 import { RecordTimePreviewRow } from '@/features/records/components/record-time-sheet';
 import { useRecordComposerModel } from '@/features/records/hooks/use-record-composer-model';
 import { AddTagsInput } from '@/features/tags/components/add-tags-input';
@@ -34,6 +36,10 @@ const TemplatePickerSheet = ({
     return templates.filter(
       (template) =>
         template.text.toLowerCase().includes(normalizedQuery) ||
+        structuredTemplates
+          .formatStructuredTemplatePreview(template.text)
+          .toLowerCase()
+          .includes(normalizedQuery) ||
         template.tags?.some((tag) =>
           tag.name.toLowerCase().includes(normalizedQuery)
         )
@@ -71,12 +77,17 @@ const TemplatePickerSheet = ({
             >
               <View className="flex-1 flex-row min-w-0 gap-3 items-center">
                 <TemplateTagSummary className="-ml-1.5" tags={template.tags} />
-                <Text
-                  className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
-                  numberOfLines={1}
-                >
-                  {template.text}
-                </Text>
+                <View className="flex-1 overflow-hidden min-w-0">
+                  <Text
+                    className="font-normal text-muted-foreground text-sm web:truncate"
+                    ellipsizeMode="tail"
+                    numberOfLines={1}
+                  >
+                    {structuredTemplates.formatStructuredTemplatePreview(
+                      template.text
+                    )}
+                  </Text>
+                </View>
               </View>
               <Icon className="-mr-1 text-muted-foreground" icon={ArrowRight} />
             </Button>
@@ -112,6 +123,10 @@ const TemplatePickerSheet = ({
 export const RecordCreateSheet = () => {
   const composer = useRecordComposerModel();
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = React.useState(false);
+
+  const [selectedStructuredTemplate, setSelectedStructuredTemplate] =
+    React.useState<LogTemplate | null>(null);
+
   const hasSelectedTags = composer.selectedTags.some((tag) => !!tag.name);
   const hasRecordDatePreview = !!composer.recordDatePreviewLabel;
   const showTagContainer = composer.canOpenTags && hasSelectedTags;
@@ -120,10 +135,17 @@ export const RecordCreateSheet = () => {
   React.useEffect(() => {
     if (composer.isOpen && composer.canOpenTemplates) return;
     setIsTemplatePickerOpen(false);
+    setSelectedStructuredTemplate(null);
   }, [composer.canOpenTemplates, composer.isOpen]);
 
   const handleSelectTemplate = React.useCallback(
     (template: LogTemplate) => {
+      if (structuredTemplates.structuredTemplateHasFields(template.text)) {
+        setSelectedStructuredTemplate(template);
+        setIsTemplatePickerOpen(false);
+        return;
+      }
+
       composer.onApplyTemplate(template);
       setIsTemplatePickerOpen(false);
     },
@@ -207,6 +229,17 @@ export const RecordCreateSheet = () => {
         onSelectTemplate={handleSelectTemplate}
         open={isTemplatePickerOpen}
         templates={composer.templates}
+      />
+      <RecordTemplateFormSheet
+        checkboxCheckedClassName={composer.logColorClassName}
+        continueButtonClassName={composer.logColorClassName}
+        onApply={composer.onApplyStructuredTemplate}
+        onClose={() => setSelectedStructuredTemplate(null)}
+        open={!!selectedStructuredTemplate}
+        template={selectedStructuredTemplate}
+        continueButtonInteractiveClassName={
+          composer.logColorInteractiveClassName
+        }
       />
     </React.Fragment>
   );

@@ -25,7 +25,7 @@ const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
-const WebDateTimeInput = ({
+export const WebDateTimeInput = ({
   accessibilityLabel,
   max,
   onChange,

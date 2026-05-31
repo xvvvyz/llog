@@ -1,5 +1,6 @@
 import { visibleFileQuery } from '@/domain/files/query';
 import * as recordStatus from '@/domain/records/status';
+import * as queuedAttachmentUtils from '@/features/files/lib/queued-attachments';
 import { useFileComposer } from '@/features/files/hooks/use-composer';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
@@ -15,6 +16,7 @@ import { useComposerLinkReorder } from '@/features/records/hooks/use-composer-li
 import { useComposerLinkAttachments } from '@/features/records/hooks/use-composer-link-attachments';
 import { useIgnoredDraftIds } from '@/features/records/hooks/use-ignored-draft-ids';
 import * as composerPayloads from '@/features/records/lib/composer-payloads';
+import type { RecordTemplateAttachment } from '@/features/records/lib/record-template-attachments';
 import * as recordTime from '@/features/records/lib/record-time';
 import { requestPostSubmitScroll } from '@/features/records/lib/post-submit-scroll';
 import { deleteRecord } from '@/features/records/mutations/delete-record';
@@ -37,6 +39,7 @@ import type { RecordSheetParent } from '@/lib/sheet-names';
 import { formatDate } from '@/lib/time';
 import { Button } from '@/ui/button';
 import { Icon } from '@/ui/icon';
+import { id } from '@instantdb/react-native';
 import { PushPin, Tag } from 'phosphor-react-native';
 import * as React from 'react';
 import * as outboxHooks from '@/features/offline/outbox-hooks';
@@ -80,6 +83,23 @@ const createComposerToolbarIconButton = ({
       weight: isActive ? 'fill' : 'regular',
     })
   );
+
+const getNextLinkOrder = (links?: { order?: number | null }[]) =>
+  (links ?? []).reduce((max, item) => Math.max(max, item.order ?? 0), -1) + 1;
+
+const mergeTagsById = <TagItem extends { id: string }>(
+  ...tagSets: (TagItem[] | undefined)[]
+) => {
+  const tagsById = new Map<string, TagItem>();
+
+  for (const tagSet of tagSets) {
+    for (const tag of tagSet ?? []) {
+      tagsById.set(tag.id, tag);
+    }
+  }
+
+  return [...tagsById.values()];
+};
 
 export const useRecordComposerModel = () => {
   const [isRecordTimeSheetOpen, setIsRecordTimeSheetOpen] =
@@ -485,10 +505,8 @@ export const useRecordComposerModel = () => {
     },
   });
 
-  const handleApplyTemplate = React.useCallback(
-    (template: LogTemplate) => {
-      if (latestTextRef.current.trim()) return;
-      const text = template.text;
+  const applyTemplateDraft = React.useCallback(
+    ({ template, text }: { template: LogTemplate; text: string }) => {
       setLatestText(text);
 
       if (isEdit) {
@@ -523,11 +541,177 @@ export const useRecordComposerModel = () => {
     },
     [
       isEdit,
-      latestTextRef,
       recordDraftUpdateFields,
       recordId,
       setLatestText,
       updateServerRecordDraft,
+    ]
+  );
+
+  const handleApplyTemplate = React.useCallback(
+    (template: LogTemplate) => {
+      if (latestTextRef.current.trim()) return;
+      applyTemplateDraft({ template, text: template.text });
+    },
+    [applyTemplateDraft, latestTextRef]
+  );
+
+  const handleApplyStructuredTemplate = React.useCallback(
+    async ({
+      attachments,
+      template,
+      text,
+    }: {
+      attachments: RecordTemplateAttachment[];
+      template: LogTemplate;
+      text: string;
+    }) => {
+      if (latestTextRef.current.trim()) return;
+      if (!recordId || !recordLogId) return;
+
+      const fileAttachments = attachments.filter(
+        (
+          attachment
+        ): attachment is Exclude<RecordTemplateAttachment, { type: 'link' }> =>
+          attachment.type !== 'link'
+      );
+
+      const linkAttachments = attachments.filter(
+        (
+          attachment
+        ): attachment is Extract<RecordTemplateAttachment, { type: 'link' }> =>
+          attachment.type === 'link'
+      );
+
+      await runSubmit(async ({ keepPendingUntilClose }) => {
+        const parent = {
+          parentId: recordId,
+          parentType: 'record' as const,
+          recordId,
+        };
+
+        const queuedTemplateAttachmentIds: string[] = [];
+
+        try {
+          const baseAttachmentOrder =
+            queuedAttachmentUtils.getNextAttachmentOrder({
+              files: record?.files,
+              queuedAttachments: queuedRecordAttachments,
+            });
+
+          for (const [index, attachment] of fileAttachments.entries()) {
+            const fileId = id();
+            const order = baseAttachmentOrder + index;
+
+            if (attachment.type === 'file') {
+              await outboxHooks.queuePickedAttachment({
+                ...parent,
+                asset: attachment.asset,
+                fileId,
+                order,
+              });
+
+              queuedTemplateAttachmentIds.push(fileId);
+              continue;
+            }
+
+            await outboxHooks.queueAudioAttachment({
+              ...parent,
+              audioUri: attachment.uri,
+              duration: attachment.duration,
+              fileId,
+              order,
+            });
+
+            queuedTemplateAttachmentIds.push(fileId);
+          }
+
+          const baseLinkOrder = getNextLinkOrder(links);
+
+          const templateLinks = recordTeamId
+            ? linkAttachments.map((attachment, index) => ({
+                id: id(),
+                label: attachment.label,
+                localStatus: 'pending' as const,
+                order: baseLinkOrder + index,
+                teamId: recordTeamId,
+                url: attachment.url,
+              }))
+            : [];
+
+          const nextIsPinned = shouldUseQueuedRecordDraft
+            ? (queuedRecordDraft?.isPinned ??
+              composerPayloads.getRecordIsPinned(record))
+            : composerPayloads.getRecordIsPinned(record);
+
+          outboxHooks.queueSubmission({
+            authorId: profile.id,
+            contentId: recordId,
+            files: record?.files ?? [],
+            isPinned: nextIsPinned,
+            links: [
+              ...links.map(queuedLinks.toQueuedLinkSnapshot),
+              ...templateLinks,
+            ],
+            logId: recordLogId,
+            needsDraftReplay: true,
+            recordDate: selectedRecordDate,
+            tags: queuedTags.toQueuedTagSnapshots(
+              mergeTagsById(selectedTags, template.tags)
+            ),
+            teamId: recordTeamId,
+            text,
+            type: 'record',
+          });
+        } catch (error) {
+          await Promise.allSettled(
+            queuedTemplateAttachmentIds.map((fileId) =>
+              outboxHooks.removeQueuedAttachment(fileId)
+            )
+          );
+
+          throw error;
+        }
+
+        outboxStore.rememberSubmittedRecordDraftId(recordId);
+
+        outboxStore.clearQueuedDraft({
+          parentId: recordId,
+          parentType: 'record',
+        });
+
+        void outboxSyncCore.runOutboxSync();
+        setLatestText('');
+        ignoreDraftId(recordId);
+
+        requestPostSubmitScroll({
+          id: recordLogId,
+          scope: 'log',
+          target: 'top',
+        });
+
+        sheetManager.close('record-create');
+        setIsTextareaFocused(false);
+        keepPendingUntilClose();
+      });
+    },
+    [
+      ignoreDraftId,
+      latestTextRef,
+      links,
+      profile.id,
+      queuedRecordAttachments,
+      queuedRecordDraft?.isPinned,
+      record,
+      recordId,
+      recordLogId,
+      recordTeamId,
+      runSubmit,
+      selectedRecordDate,
+      selectedTags,
+      setLatestText,
+      sheetManager,
+      shouldUseQueuedRecordDraft,
     ]
   );
 
@@ -1014,6 +1198,7 @@ export const useRecordComposerModel = () => {
     onChangeText: handleChangeText,
     onDismiss: handleDismiss,
     onApplyTemplate: handleApplyTemplate,
+    onApplyStructuredTemplate: handleApplyStructuredTemplate,
     onSubmit: handleSubmit,
     onOpenRecordTime: handleOpenRecordTime,
     onOpenTags: handleOpenTags,

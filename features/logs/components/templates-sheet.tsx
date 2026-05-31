@@ -1,5 +1,6 @@
 import { TemplateTagSummary } from '@/features/logs/components/template-tag-summary';
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import { formatStructuredTemplatePreview } from '@/features/logs/lib/structured-template';
 import { reorderTemplates } from '@/features/logs/mutations/reorder-templates';
 import { useLogTemplates } from '@/features/logs/queries/use-templates';
 import type { LogTemplate } from '@/features/logs/types/template';
@@ -58,12 +59,15 @@ const TemplateRow = ({
         style={nativePointerEvents.none}
       >
         <TemplateTagSummary tags={template.tags} />
-        <Text
-          className="flex-1 min-w-0 font-normal text-muted-foreground text-sm"
-          numberOfLines={1}
-        >
-          {template.text}
-        </Text>
+        <View className="flex-1 overflow-hidden min-w-0">
+          <Text
+            className="font-normal text-muted-foreground text-sm web:truncate"
+            ellipsizeMode="tail"
+            numberOfLines={1}
+          >
+            {formatStructuredTemplatePreview(template.text)}
+          </Text>
+        </View>
       </View>
       <Menu.Root>
         <Menu.Trigger asChild>

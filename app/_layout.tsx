@@ -13,6 +13,7 @@ import { setBackgroundColorAsync } from 'expo-system-ui';
 import * as React from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 setBackgroundColorAsync('transparent');
 // react-native-gesture-handler on web throws "Cannot find single active touch"
@@ -119,12 +120,14 @@ export default function Layout() {
         }}
       >
         <GestureHandlerRootView className="flex-1">
-          <SheetManagerProvider disabled={isSignedOut}>
-            <OutboxSyncRunner />
-            <Slot />
-            <SheetBackdrop />
-            <PortalHost />
-          </SheetManagerProvider>
+          <KeyboardProvider>
+            <SheetManagerProvider disabled={isSignedOut}>
+              <OutboxSyncRunner />
+              <Slot />
+              <SheetBackdrop />
+              <PortalHost />
+            </SheetManagerProvider>
+          </KeyboardProvider>
         </GestureHandlerRootView>
       </ThemeProvider>
     </React.Fragment>

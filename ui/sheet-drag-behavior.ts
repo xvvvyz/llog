@@ -175,13 +175,13 @@ export const useSheetDragBehavior = ({
   const sheetStyle = useAnimatedStyle(() => {
     const translationY = Math.max(0, translateY.value);
 
-    return {
-      opacity: sheetDragMetrics.getSheetDragOpacity(
-        translationY,
-        dismissThreshold
-      ),
-      transform: [{ translateY: translationY }],
-    };
+    const opacity = sheetDragMetrics.getSheetDragOpacity(
+      translationY,
+      dismissThreshold
+    );
+
+    if (translationY <= 0.5) return { opacity };
+    return { opacity, transform: [{ translateY: translationY }] };
   });
 
   const backdropStyle = sheetDragMetrics.useSheetBackdropDragStyle(
