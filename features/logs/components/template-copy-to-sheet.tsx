@@ -150,7 +150,7 @@ export const LogTemplateCopyToSheet = () => {
             </Text>
           </Pressable>
         )}
-        <View className="flex-row gap-4">
+        <View className="flex-row gap-3">
           <SearchInput
             query={query}
             setQuery={setQuery}

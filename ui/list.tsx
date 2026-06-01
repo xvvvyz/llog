@@ -1,7 +1,12 @@
 import { cn } from '@/lib/cn';
-import { LegendList, LegendListProps, LegendListRef } from '@legendapp/list';
 import * as React from 'react';
 import { withUniwind } from 'uniwind';
+
+import {
+  LegendList,
+  type LegendListProps,
+  type LegendListRef,
+} from '@legendapp/list/react-native';
 
 import {
   Animated,

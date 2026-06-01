@@ -1,4 +1,4 @@
-import { getInviteSheetPayload } from '@/features/invites/lib/sheet';
+import { getInviteLinkSheetPayload } from '@/features/invites/lib/sheet';
 import { deleteInviteLink } from '@/features/invites/mutations/delete-link';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { useSheetSubmitState } from '@/hooks/use-sheet-submit-state';
@@ -12,7 +12,7 @@ import { View } from 'react-native';
 export const InviteLinkDeleteSheet = () => {
   const sheetManager = useSheetManager();
 
-  const payload = getInviteSheetPayload(
+  const payload = getInviteLinkSheetPayload(
     sheetManager.getPayload('invite-link-delete')
   );
 
@@ -28,8 +28,9 @@ export const InviteLinkDeleteSheet = () => {
     await runSubmit(
       async ({ keepPendingUntilClose }) => {
         await deleteInviteLink({ id: payload.inviteId });
+        payload.onDeleted?.(payload.inviteId);
         sheetManager.close('invite-link-delete');
-        sheetManager.close('invite');
+        sheetManager.close('invite-link');
         keepPendingUntilClose();
       },
       { suppressError: true }

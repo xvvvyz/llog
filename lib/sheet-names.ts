@@ -9,11 +9,13 @@ export type SheetName =
   | 'invite-delete'
   | 'member-remove'
   | 'invite-logs'
-  | 'invite'
+  | 'invite-link'
   | 'invite-link-delete'
   | 'log-delete'
   | 'log-edit'
   | 'log-members'
+  | 'log-notes'
+  | 'log-notes-delete'
   | 'log-template-copy-to'
   | 'log-template-copy-editor'
   | 'log-template-delete'
@@ -38,7 +40,14 @@ export type SheetName =
   | 'web-push-ios-setup';
 
 type TeamScopedPayload = { teamId?: string };
-type InviteLinkPayload = { inviteId?: string; teamId?: string };
+
+type InviteLinkPayload = {
+  inviteId?: string;
+  onDeleted?: (inviteId: string) => void;
+  teamId?: string;
+};
+
+type LogNotesDeletePayload = { noteId?: string; teamId?: string };
 
 type RecordTagPayloadItem = {
   color: number;
@@ -76,9 +85,11 @@ export type RecordSheetParent =
     };
 
 export type SheetPayloadMap = {
-  invite: InviteLinkPayload;
+  'invite-delete': TeamScopedPayload;
+  'invite-link': InviteLinkPayload;
   'invite-link-delete': InviteLinkPayload;
   'invite-logs': TeamScopedPayload;
+  'log-notes-delete': LogNotesDeletePayload;
   'log-template-copy-editor': {
     createMissingTags?: boolean;
     logIds?: string[];

@@ -61,15 +61,14 @@ app.patch(
       throw new HTTPException(403, { message: 'Forbidden' });
     }
 
-    const tx: Transaction[] = [
-      c.var.db.tx.roles[roleId].update({
-        key: `${nextRole}_${targetRole.userId}_${teamId}`,
-        role: nextRole,
-        teamId,
-        userId: targetRole.userId,
-      }),
-    ];
+    const updatedRole = {
+      key: `${nextRole}_${targetRole.userId}_${teamId}`,
+      role: nextRole,
+      teamId,
+      userId: targetRole.userId,
+    };
 
+    const tx: Transaction[] = [c.var.db.tx.roles[roleId].update(updatedRole)];
     const profileId = targetRole.user?.profile?.id;
 
     if (profileId && targetRole.role !== nextRole) {
@@ -99,7 +98,7 @@ app.patch(
     }
 
     await c.var.db.transact(tx);
-    return c.json({ status: 'updated' });
+    return c.json({ role: { id: roleId, ...updatedRole }, status: 'updated' });
   }
 );
 

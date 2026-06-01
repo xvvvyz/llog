@@ -82,6 +82,46 @@ describe('permissions', () => {
     expect(rules.cards.allow.delete).toBe('canManage');
   });
 
+  test('guards notes', () => {
+    const noteBindings = rules.notes.bind.join(' ');
+    expect(rules.notes.allow.view).toBe('canManage');
+
+    expect(rules.notes.allow.create).toBe(
+      'canManage && isValidText && isNonEmptyText && isValidLogId && isValidTeamId'
+    );
+
+    expect(rules.notes.allow.update).toBe(
+      'canManage && onlyModifiesText && isValidText'
+    );
+
+    expect(rules.notes.allow.delete).toBe('canManage');
+    expect(rules.notes.allow.link.log).toContain('linkedData.id == data.logId');
+
+    expect(rules.notes.allow.link.log).toContain(
+      ') && linkedData.id == data.logId'
+    );
+
+    expect(rules.notes.allow.link.log).toContain(
+      'linkedData.teamId == data.teamId'
+    );
+
+    expect(rules.logs.allow.link.note).toContain(
+      "'owner_' + auth.id + '_' + data.teamId"
+    );
+
+    expect(rules.logs.allow.link.note).toContain(
+      "'admin_' + auth.id + '_' + data.teamId"
+    );
+
+    expect(rules.logs.allow.link.note).not.toContain('linkedData');
+    expect(noteBindings).toContain("'owner_' + auth.id + '_' + data.teamId");
+    expect(noteBindings).toContain("'admin_' + auth.id + '_' + data.teamId");
+    expect(noteBindings).toContain('size(newData.text) <= 10240');
+    expect(noteBindings).toContain('size(newData.text) > 0');
+    expect(noteBindings).not.toContain("data.id == 'note_'");
+    expect(noteBindings).not.toContain("'member_'");
+  });
+
   test('denies analyses', () => {
     expect(rules.analyses.allow.$default).toBe('false');
     expect(rules.facts.allow.$default).toBe('false');

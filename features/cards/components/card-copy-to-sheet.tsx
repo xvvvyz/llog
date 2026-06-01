@@ -124,7 +124,7 @@ export const LogCardCopyToSheet = () => {
           })}
         </SheetListScrollView>
       )}
-      <SheetFooter contentClassName="flex-row gap-4">
+      <SheetFooter contentClassName="flex-row gap-3">
         <SearchInput
           query={query}
           setQuery={setQuery}

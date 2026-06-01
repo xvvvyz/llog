@@ -1,9 +1,6 @@
-import { isMemberRole } from '@/domain/teams/permissions';
-import { LogDropdownItems } from '@/features/invites/components/log-dropdown-items';
 import { useLog } from '@/features/logs/queries/use-log';
 import * as lookup from '@/features/search/lib/lookup';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
-import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
@@ -17,6 +14,7 @@ import {
   Cards,
   NoteBlank,
   NotePencil,
+  Notepad,
   Tag,
   Trash,
   UsersThree,
@@ -38,7 +36,6 @@ export const DropdownMenu = ({
   const log = useLog({ id });
   const { canManage } = useMyRole({ teamId: log.teamId });
   const sheetManager = useSheetManager();
-  const { members } = useTeamMembers({ teamId: log.teamId });
 
   const searchQuery = lookup.getLogSearchQuery({
     id: log.id ?? id,
@@ -49,12 +46,6 @@ export const DropdownMenu = ({
     ? lookup.getLookupHref(searchQuery)
     : undefined;
 
-  const hasMembers = React.useMemo(
-    () => members.some((m) => isMemberRole(m.role)),
-    [members]
-  );
-
-  const shouldShowMembers = hasMembers;
   if (!canManage && !searchHref) return null;
 
   return (
@@ -80,6 +71,10 @@ export const DropdownMenu = ({
               <Icon className="text-placeholder" icon={NotePencil} />
               <Text>Edit</Text>
             </Menu.Item>
+            <Menu.Item onPress={() => sheetManager.open('log-notes', id)}>
+              <Icon className="text-placeholder" icon={Notepad} />
+              <Text>Notes</Text>
+            </Menu.Item>
             <Menu.Item onPress={() => sheetManager.open('log-tags', id)}>
               <Icon className="text-placeholder" icon={Tag} />
               <Text>Tags</Text>
@@ -92,13 +87,10 @@ export const DropdownMenu = ({
               <Icon className="text-placeholder" icon={NoteBlank} />
               <Text>Templates</Text>
             </Menu.Item>
-            {shouldShowMembers && (
-              <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
-                <Icon className="text-placeholder" icon={UsersThree} />
-                <Text>Members</Text>
-              </Menu.Item>
-            )}
-            <LogDropdownItems id={id} />
+            <Menu.Item onPress={() => sheetManager.open('log-members', id)}>
+              <Icon className="text-placeholder" icon={UsersThree} />
+              <Text>Members</Text>
+            </Menu.Item>
           </>
         )}
         <Menu.Item disabled={!searchHref} href={searchHref}>

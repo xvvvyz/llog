@@ -166,7 +166,7 @@ export const TagSheetContent = ({
           )}
         </SheetListScrollView>
       )}
-      <SheetFooter contentClassName="flex-row gap-4">
+      <SheetFooter contentClassName="flex-row gap-3">
         <SearchInput
           ref={searchInputRef}
           maxLength={16}

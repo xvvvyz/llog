@@ -82,7 +82,7 @@ export const InviteLogsSheet = () => {
         const invite = await getInviteUrlForSelection();
         sheetManager.close('invite-logs');
 
-        sheetManager.open('invite', invite.url, undefined, {
+        sheetManager.open('invite-link', invite.url, undefined, {
           inviteId: invite.id,
           teamId: invite.teamId,
         });
@@ -109,6 +109,7 @@ export const InviteLogsSheet = () => {
 
   return (
     <Sheet
+      className="md:max-w-sm"
       onDismiss={handleDismiss}
       open={open}
       portalName="invite-logs"

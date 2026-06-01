@@ -17,6 +17,8 @@ export type Link = InstaQLEntity<typeof schema, 'links'>;
 
 export type Log = InstaQLEntity<typeof schema, 'logs'>;
 
+export type Note = InstaQLEntity<typeof schema, 'notes'>;
+
 export type Profile = InstaQLEntity<typeof schema, 'profiles'>;
 
 export type Reaction = InstaQLEntity<typeof schema, 'reactions'>;

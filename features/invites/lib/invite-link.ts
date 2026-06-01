@@ -1,7 +1,9 @@
-import type { InviteLinkInfo } from '@/domain/invites/invite-link';
 import { Role } from '@/domain/teams/role';
 import * as permissions from '@/domain/teams/permissions';
 import { db } from '@/lib/db';
+import * as inviteLink from '@/domain/invites/invite-link';
+
+export { normalizeInviteLogIds } from '@/domain/invites/invite-link';
 
 export const getInviteRuleParams = (token: string) => ({ inviteToken: token });
 
@@ -24,10 +26,6 @@ const getRoleKey = ({
   teamId: string;
   userId: string;
 }) => `${role}_${userId}_${teamId}`;
-
-export const normalizeInviteLogIds = (logIds?: string[]) => [
-  ...new Set((logIds ?? []).map((logId) => logId.trim()).filter(Boolean)),
-];
 
 type InviteProfile = {
   avatarSeedId?: string | null;
@@ -63,8 +61,14 @@ const profileInfo = (profile?: InviteProfile | null) => {
 
 export const buildInviteLinkInfo = (
   invite?: InviteRecord | null
-): InviteLinkInfo => {
-  if (!invite?.id || !invite.team?.id) return { isValid: false };
+): inviteLink.InviteLinkInfo => {
+  if (
+    !invite?.id ||
+    !invite.team?.id ||
+    !inviteLink.hasValidInviteLogScope(invite)
+  ) {
+    return { isValid: false };
+  }
 
   const adminMembers = (invite.team.roles ?? [])
     .filter((role) => permissions.isManagedRole(role.role))
@@ -151,16 +155,18 @@ export const buildRedeemInviteLinkTransactions = ({
   const teamId = invite.team?.id;
   const invitedRole = invite.role;
 
-  if (!teamId || (invitedRole !== Role.Admin && invitedRole !== Role.Member)) {
+  if (
+    !teamId ||
+    (invitedRole !== Role.Admin && invitedRole !== Role.Member) ||
+    !inviteLink.hasValidInviteLogScope(invite)
+  ) {
     throw new Error('Invalid invite link');
   }
 
   const params = getInviteRuleParams(token);
 
   const logIds =
-    invitedRole === Role.Member
-      ? normalizeInviteLogIds(invite.logs?.flatMap((log) => log.id ?? []) ?? [])
-      : [];
+    invitedRole === Role.Member ? inviteLink.getInviteLogIds(invite) : [];
 
   const effectiveRole = existingRole
     ? permissions.getInviteRedemptionRole({

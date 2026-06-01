@@ -1,15 +1,16 @@
 import { DropdownMenu } from '@/features/logs/components/dropdown-menu';
 import { EmptyState } from '@/features/logs/components/empty-state';
+import { LogNotesPreview } from '@/features/logs/components/notes-preview';
 import { useLogColor } from '@/features/logs/hooks/use-color';
+import * as logNotes from '@/features/logs/lib/notes';
+import { useLogNote } from '@/features/logs/queries/use-log-note';
 import { useLog } from '@/features/logs/queries/use-log';
 import { CardsHeader } from '@/features/cards/components/cards-header';
 import { useLogCards } from '@/features/cards/queries/use-cards';
-import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { useRecords } from '@/features/records/queries/use-records';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
-import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useBreakpoints } from '@/hooks/use-breakpoints';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
@@ -42,6 +43,8 @@ export default function Index() {
   const sheetManager = useSheetManager();
   const log = useLog({ id: params.logId });
   const logColor = useLogColor({ id: params.logId });
+  const logRole = useMyRole({ teamId: log.teamId ?? null });
+  const note = useLogNote({ enabled: logRole.canManage, logId: params.logId });
   const cards = useLogCards({ logId: params.logId });
   const records = useRecords({ logId: params.logId });
   const recordData = records.data;
@@ -49,35 +52,41 @@ export default function Index() {
   const recordsLoading = records.isLoading;
   const logNotFound = !params.logId || (!log.isLoading && !log.id);
   const hasRecords = recordData.length > 0;
-  const showEmpty = !!log.id && records.isEmptyReady;
-  const emptyStateTeamId = showEmpty ? (log.teamId ?? null) : null;
-  const emptyStateRole = useMyRole({ teamId: emptyStateTeamId });
+  const notesLoading = !!params.logId && logRole.canManage && note.isLoading;
 
-  const managedEmptyStateTeamId =
-    showEmpty && emptyStateRole.canManage ? (log.teamId ?? null) : null;
+  const showNotesPreview =
+    !!params.logId &&
+    logNotes.canShowLogNotesPreview({
+      canManage: logRole.canManage,
+      text: note.text,
+    });
 
-  const emptyStateMembers = useTeamMembers({ teamId: managedEmptyStateTeamId });
-  const emptyStateInvites = useTeamInvites({ teamId: managedEmptyStateTeamId });
+  const showEmpty = !!log.id && records.isEmptyReady && !showNotesPreview;
 
   const emptyStateActionsLoading =
-    showEmpty &&
-    (!log.teamId ||
-      !emptyStateRole.isReady ||
-      emptyStateRole.isLoading ||
-      (emptyStateRole.canManage &&
-        (!emptyStateMembers.isReady ||
-          emptyStateMembers.isLoading ||
-          !emptyStateInvites.isReady ||
-          emptyStateInvites.isLoading)));
+    showEmpty && (!log.teamId || !logRole.isReady || logRole.isLoading);
 
   const showLoading =
-    log.isLoading || cardsLoading || recordsLoading || emptyStateActionsLoading;
+    log.isLoading ||
+    cardsLoading ||
+    recordsLoading ||
+    notesLoading ||
+    emptyStateActionsLoading;
 
-  const showFab = hasRecords && !breakpoints.md;
-  const showEmptyManagerActions = emptyStateRole.canManage;
+  const showFab = !!log.id && !showEmpty && !showLoading && !breakpoints.md;
+  const showHeaderRecordButton = hasRecords || showNotesPreview;
+  const showEmptyManagerActions = logRole.canManage;
 
   const listFooterHeight =
     insets.bottom + (showFab ? 104 : breakpoints.md ? 32 : 16);
+
+  const notesPreview = showNotesPreview ? (
+    <LogNotesPreview
+      canManage={logRole.canManage}
+      logId={params.logId}
+      note={note}
+    />
+  ) : null;
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: params.logId,
@@ -110,7 +119,7 @@ export default function Index() {
         right={
           !!log.id && (
             <View className="flex-row items-center">
-              {hasRecords && (
+              {showHeaderRecordButton && (
                 <Button
                   size="xs"
                   variant="secondary"
@@ -166,10 +175,8 @@ export default function Index() {
         <Loading />
       ) : showEmpty ? (
         <EmptyState
-          canManage={emptyStateRole.canManage}
-          invites={emptyStateInvites.invites}
+          canManage={logRole.canManage}
           logId={params.logId}
-          members={emptyStateMembers.members}
           showManagerActions={showEmptyManagerActions}
           teamId={log.teamId!}
         />
@@ -188,12 +195,15 @@ export default function Index() {
           recycleItems={false}
           wrapperClassName="flex-1"
           ListHeaderComponent={
-            <CardsHeader
-              cards={cards.data}
-              logColor={log.color}
-              logId={params.logId}
-              teamId={log.teamId}
-            />
+            <>
+              <CardsHeader
+                cards={cards.data}
+                logColor={log.color}
+                logId={params.logId}
+                teamId={log.teamId}
+              />
+              {notesPreview}
+            </>
           }
           renderItem={({ item }) => (
             <Entry

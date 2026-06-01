@@ -13,7 +13,8 @@ import { View } from 'react-native';
 export const InviteDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const role = sheetManager.getId('invite-delete');
-  const { invites } = useTeamInvites();
+  const payload = sheetManager.getPayload('invite-delete');
+  const { invites } = useTeamInvites({ teamId: payload?.teamId });
   const open = sheetManager.isOpen('invite-delete');
 
   const { isSubmitting: isLoading, runSubmit } = useSheetSubmitState({

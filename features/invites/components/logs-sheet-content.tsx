@@ -36,7 +36,11 @@ export const LogsSheetContent = ({
   return (
     <>
       {(isSheetLoading || !!visibleLogs.length) && (
-        <SheetListScrollView loading={isSheetLoading} variant="rows">
+        <SheetListScrollView
+          contentContainerClassName="max-w-md"
+          loading={isSheetLoading}
+          variant="rows"
+        >
           {visibleLogs.map((log) => {
             const isSelected = selectedLogIds.has(log.id);
 
@@ -64,7 +68,7 @@ export const LogsSheetContent = ({
           })}
         </SheetListScrollView>
       )}
-      <SheetFooter contentClassName="flex-row gap-4">
+      <SheetFooter contentClassName="max-w-md flex-row gap-3">
         <SearchInput
           query={query}
           setQuery={setQuery}

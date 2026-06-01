@@ -1,6 +1,5 @@
 import * as permissions from '@/domain/teams/permissions';
 import { Role } from '@/domain/teams/role';
-import { openInviteSheet } from '@/features/invites/lib/sheet';
 import { createInviteLink } from '@/features/invites/mutations/create-link';
 import { useTeamInvites } from '@/features/invites/queries/use-team-links';
 import { useLogs } from '@/features/logs/queries/use-logs';
@@ -11,14 +10,13 @@ import { uploadTeamImage } from '@/features/teams/mutations/upload-image';
 import { useMyRole } from '@/features/teams/queries/use-my-role';
 import { useTeam } from '@/features/teams/queries/use-team';
 import { useTeamMembers } from '@/features/teams/queries/use-team-members';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
 import { db } from '@/lib/db';
-import { UI } from '@/theme/ui';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
+import * as inputGroup from '@/ui/input-group';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Sheet } from '@/ui/sheet';
@@ -28,13 +26,15 @@ import { Text } from '@/ui/text';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
+import * as inviteLinkField from '@/features/invites/components/invite-link-field';
 
 import {
   DotsThreeVertical,
+  LinkBreak,
+  Plus,
   SignOut,
   Trash,
   UploadSimple,
-  UserPlus,
   UsersThree,
 } from 'phosphor-react-native';
 
@@ -46,18 +46,87 @@ const ROLE_LABELS: Record<string, string> = {
 
 const TEAM_NAME_INPUT_ID = 'team-name';
 
+const TeamAdminInviteLinkField = ({
+  invite,
+  isLoading,
+  teamId,
+}: {
+  invite?: inviteLinkField.InviteLinkFieldInvite;
+  isLoading?: boolean;
+  teamId?: string;
+}) => {
+  const getOrCreateInvite = React.useCallback(async () => {
+    if (!teamId) return;
+    if (invite?.id && invite.teamId && invite.token) return invite;
+    const createdInvite = await createInviteLink({ role: Role.Admin, teamId });
+    return { ...createdInvite, teamId };
+  }, [invite, teamId]);
+
+  return (
+    <inviteLinkField.InviteLinkField
+      createLabel="Admin"
+      invite={invite}
+      isLoading={isLoading}
+      onGetOrCreateInvite={getOrCreateInvite}
+      teamId={teamId}
+      viewLabel="Admin"
+    />
+  );
+};
+
+const TeamMemberInviteLinkButton = ({
+  disabled,
+  isInvalidateDisabled,
+  isLoading,
+  onInvalidate,
+  onPress,
+}: {
+  disabled?: boolean;
+  isInvalidateDisabled?: boolean;
+  isLoading?: boolean;
+  onInvalidate: () => void;
+  onPress: () => void;
+}) => (
+  <inputGroup.InputGroup size="xs">
+    <Button
+      className="flex-1 h-full min-w-0 rounded-none justify-start"
+      disabled={disabled || isLoading}
+      onPress={onPress}
+      size="xs"
+      variant="ghost"
+      wrapperClassName="h-full flex-1 min-w-0 rounded-none"
+    >
+      {isLoading ? (
+        <Spinner size="xxs" />
+      ) : (
+        <Icon className="text-muted-foreground" icon={Plus} size={16} />
+      )}
+      <Text className="flex-1 min-w-0 native:leading-5" numberOfLines={1}>
+        Member
+      </Text>
+    </Button>
+    <Button
+      accessibilityLabel="Invalidate all member invite links"
+      className="h-full rounded-none"
+      disabled={isInvalidateDisabled}
+      onPress={onInvalidate}
+      size="icon-xs"
+      variant="ghost"
+      wrapperClassName="h-full shrink-0 rounded-none border-l border-border-secondary"
+    >
+      <Icon icon={LinkBreak} size={16} />
+    </Button>
+  </inputGroup.InputGroup>
+);
+
 export const TeamSheet = () => {
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('team');
   const teamId = sheetManager.getId('team');
-  const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
   const nameInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
-  const colorScheme = useColorScheme();
   const team = useTeam({ teamId });
   const myRole = useMyRole({ teamId });
   const { canDeleteTeam, canManage } = myRole;
-  const { invites } = useTeamInvites({ teamId });
-  const logs = useLogs({ teamIds: teamId ? [teamId] : [] });
   const { members } = useTeamMembers({ teamId });
 
   const teamAdminCount = members.filter(
@@ -68,21 +137,11 @@ export const TeamSheet = () => {
     (member) => member.role === Role.Member
   ).length;
 
-  const inviteRoles = canManage
-    ? [Role.Admin, Role.Member].filter(
-        (role) => role === Role.Admin || logs.data.length > 0
-      )
-    : [];
-
-  const hasTeamActionRows = inviteRoles.length > 0 || canDeleteTeam;
-
   const memberSummary = [
     teamAdminCount > 0
-      ? `${teamAdminCount} team ${teamAdminCount === 1 ? 'admin' : 'admins'}`
+      ? `${teamAdminCount} ${teamAdminCount === 1 ? 'admin' : 'admins'}`
       : null,
-    logMemberCount > 0
-      ? `${logMemberCount} ${logMemberCount === 1 ? 'member' : 'members'}`
-      : null,
+    `${logMemberCount} ${logMemberCount === 1 ? 'member' : 'members'}`,
   ]
     .filter((part): part is string => !!part)
     .join(', ');
@@ -99,43 +158,6 @@ export const TeamSheet = () => {
     if (picker.canceled) return;
     await uploadTeamImage(picker.assets[0], teamId);
   }, [teamId]);
-
-  const getOrCreateAdminLink = React.useCallback(async () => {
-    const existing = invites.find((l) => l.role === Role.Admin);
-    if (existing) return existing;
-    if (!teamId) return null;
-    const invite = await createInviteLink({ teamId, role: Role.Admin });
-    return { ...invite, teamId };
-  }, [invites, teamId]);
-
-  const getOrCreateAdminInvite = React.useCallback(async () => {
-    const invite = await getOrCreateAdminLink();
-
-    if (!invite?.id || !invite.token || !invite.teamId) {
-      throw new Error('Failed to create invite link');
-    }
-
-    return { id: invite.id, teamId: invite.teamId, token: invite.token };
-  }, [getOrCreateAdminLink]);
-
-  const handleInvite = React.useCallback(
-    async (role: string) => {
-      if (role === Role.Member) {
-        sheetManager.open('invite-logs', undefined, undefined, { teamId });
-        return;
-      }
-
-      setLoadingAction(`invite-${role}`);
-
-      try {
-        const invite = await getOrCreateAdminInvite();
-        openInviteSheet(sheetManager, invite);
-      } finally {
-        setLoadingAction(null);
-      }
-    },
-    [getOrCreateAdminInvite, sheetManager, teamId]
-  );
 
   return (
     <Sheet
@@ -249,38 +271,7 @@ export const TeamSheet = () => {
           </View>
           <Icon className="text-placeholder" icon={UsersThree} />
         </Button>
-        {hasTeamActionRows && <View className="border-border border-t" />}
-        {inviteRoles.map((role, index) => {
-          const hasItemBelow = index < inviteRoles.length - 1 || canDeleteTeam;
-
-          return (
-            <View key={role}>
-              <Button
-                className="h-auto px-8 py-3 rounded-none gap-4 justify-between"
-                onPress={() => handleInvite(role)}
-                variant="ghost"
-                wrapperClassName="-mx-8 w-auto rounded-none"
-              >
-                <View className="flex-1">
-                  <Text className="font-normal leading-normal text-muted-foreground">
-                    Invite {role === Role.Admin ? 'team admins' : 'members'}
-                  </Text>
-                  <Text className="pb-0.5 font-normal leading-normal text-placeholder text-xs">
-                    {role === Role.Admin
-                      ? 'Can manage team and logs'
-                      : 'Can access selected logs'}
-                  </Text>
-                </View>
-                {loadingAction === `invite-${role}` ? (
-                  <Spinner color={UI[colorScheme].mutedForeground} size="xs" />
-                ) : (
-                  <Icon className="text-placeholder" icon={UserPlus} />
-                )}
-              </Button>
-              {hasItemBelow && <View className="border-border border-t" />}
-            </View>
-          );
-        })}
+        {canDeleteTeam && <View className="border-border border-t" />}
         {canDeleteTeam && (
           <Button
             className="h-auto px-8 py-3 rounded-none gap-4 justify-between"
@@ -313,16 +304,27 @@ export const TeamMembersSheet = () => {
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('team-members');
   const teamId = sheetManager.getId('team-members');
+  const auth = db.useAuth();
+  const myRole = useMyRole({ teamId });
+  const logs = useLogs({ teamIds: teamId ? [teamId] : [] });
+  const { members, isLoading } = useTeamMembers({ teamId });
+  const { invites, isLoading: invitesLoading } = useTeamInvites({ teamId });
+  const ownerCount = members.filter((m) => m.role === Role.Owner).length;
+  const canShowInviteLinks = myRole.canManage;
+  const canCreateMemberInvite = logs.data.length > 0;
 
   const [pendingMemberLogsRoleId, setPendingMemberLogsRoleId] = React.useState<
     string | null
   >(null);
 
-  const auth = db.useAuth();
-  const myRole = useMyRole({ teamId });
-  const logs = useLogs({ teamIds: teamId ? [teamId] : [] });
-  const { members, isLoading } = useTeamMembers({ teamId });
-  const ownerCount = members.filter((m) => m.role === Role.Owner).length;
+  const adminInvite = React.useMemo(
+    () => invites.find((invite) => invite.role === Role.Admin),
+    [invites]
+  );
+
+  const memberInviteCount = invites.filter(
+    (invite) => invite.role === Role.Member
+  ).length;
 
   const activeTeamLogIds = React.useMemo(
     () => new Set(logs.data.map((log) => log.id)),
@@ -331,6 +333,12 @@ export const TeamMembersSheet = () => {
 
   React.useEffect(() => {
     if (!pendingMemberLogsRoleId) return;
+
+    if (!open) {
+      setPendingMemberLogsRoleId(null);
+      return;
+    }
+
     const member = members.find((m) => m.id === pendingMemberLogsRoleId);
     if (!member || member.role !== Role.Member) return;
 
@@ -348,6 +356,7 @@ export const TeamMembersSheet = () => {
   }, [
     activeTeamLogIds,
     members,
+    open,
     pendingMemberLogsRoleId,
     sheetManager,
     teamId,
@@ -367,6 +376,14 @@ export const TeamMembersSheet = () => {
     },
     []
   );
+
+  const handleCreateMemberInvite = React.useCallback(() => {
+    sheetManager.open('invite-logs', undefined, undefined, { teamId });
+  }, [sheetManager, teamId]);
+
+  const handleInvalidateMemberInvites = React.useCallback(() => {
+    sheetManager.open('invite-delete', Role.Member, undefined, { teamId });
+  }, [sheetManager, teamId]);
 
   return (
     <Sheet
@@ -497,7 +514,27 @@ export const TeamMembersSheet = () => {
           );
         })}
       </SheetListScrollView>
-      <SheetFooter>
+      <SheetFooter contentClassName="gap-3">
+        {canShowInviteLinks && (
+          <View className="flex-row gap-3">
+            <View className="flex-1 min-w-0">
+              <TeamAdminInviteLinkField
+                invite={adminInvite}
+                isLoading={invitesLoading}
+                teamId={teamId}
+              />
+            </View>
+            <View className="flex-1 min-w-0">
+              <TeamMemberInviteLinkButton
+                disabled={!canCreateMemberInvite}
+                isInvalidateDisabled={invitesLoading || memberInviteCount === 0}
+                isLoading={logs.isLoading}
+                onInvalidate={handleInvalidateMemberInvites}
+                onPress={handleCreateMemberInvite}
+              />
+            </View>
+          </View>
+        )}
         <Button
           onPress={() => sheetManager.close('team-members')}
           size="sm"

@@ -94,7 +94,6 @@ export default function Activity() {
           onEndReached={loadNextPage}
           onEndReachedThreshold={1}
           renderItem={renderItem}
-          waitForInitialLayout
         />
       )}
     </Page>

@@ -1,4 +1,5 @@
 import { isMemberRole } from '@/domain/teams/permissions';
+import { LogInviteLinkField } from '@/features/logs/components/invite-link-field';
 import { useLogColor } from '@/features/logs/hooks/use-color';
 import { toggleLogMember } from '@/features/logs/mutations/toggle-member';
 import { useLog } from '@/features/logs/queries/use-log';
@@ -6,7 +7,6 @@ import { useTeamMembers } from '@/features/teams/queries/use-team-members';
 import { useNameSearch } from '@/hooks/use-name-search';
 import { useOptimisticSelection } from '@/hooks/use-optimistic-selection';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
-import { getSpectrumBackgroundClassName } from '@/theme/spectrum-class-names';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
@@ -16,6 +16,7 @@ import { SheetFooter, SheetListScrollView } from '@/ui/sheet-list';
 import { Text } from '@/ui/text';
 import * as React from 'react';
 import { View } from 'react-native';
+import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
 export const LogMembersSheet = () => {
   const [query, setQuery] = React.useState('');
@@ -49,6 +50,7 @@ export const LogMembersSheet = () => {
   );
 
   const visibleMemberRows = useNameSearch(memberRows, query);
+  const canSearchMembers = memberRows.length > 0;
 
   const { getSelected, setSelected } = useOptimisticSelection({
     onChange: React.useCallback(
@@ -75,13 +77,18 @@ export const LogMembersSheet = () => {
 
   return (
     <Sheet
+      className="md:max-w-sm"
       onDismiss={() => sheetManager.close('log-members')}
       open={open}
       portalName="log-members"
       variant="list"
     >
       {(isLoading || !!visibleMemberRows.length) && (
-        <SheetListScrollView loading={isLoading} variant="rows">
+        <SheetListScrollView
+          contentContainerClassName="max-w-md"
+          loading={isLoading}
+          variant="rows"
+        >
           {visibleMemberRows.map(({ member, profile }) => {
             const isSelected = getSelected(profile.id);
 
@@ -102,7 +109,7 @@ export const LogMembersSheet = () => {
                 <Checkbox
                   checked={isSelected}
                   className="size-8 border-0"
-                  checkedClassName={getSpectrumBackgroundClassName(
+                  checkedClassName={spectrumClassNames.getSpectrumBackgroundClassName(
                     logColor.colorIndex
                   )}
                   onCheckedChange={(selected) =>
@@ -114,21 +121,26 @@ export const LogMembersSheet = () => {
           })}
         </SheetListScrollView>
       )}
-      <SheetFooter contentClassName="flex-row gap-4">
-        <SearchInput
-          query={query}
-          setQuery={setQuery}
-          size="sm"
-          wrapperClassName="flex-1 min-w-0"
-        />
-        <Button
-          onPress={() => sheetManager.close('log-members')}
-          size="sm"
-          variant="secondary"
-          wrapperClassName="shrink-0"
-        >
-          <Text>Done</Text>
-        </Button>
+      <SheetFooter contentClassName="max-w-md gap-3">
+        <LogInviteLinkField logId={log.id} teamId={log.teamId} />
+        <View className="flex-row gap-3">
+          {canSearchMembers && (
+            <SearchInput
+              query={query}
+              setQuery={setQuery}
+              size="sm"
+              wrapperClassName="flex-1 min-w-0"
+            />
+          )}
+          <Button
+            onPress={() => sheetManager.close('log-members')}
+            size="sm"
+            variant="secondary"
+            wrapperClassName={canSearchMembers ? 'shrink-0' : 'w-full'}
+          >
+            <Text>Done</Text>
+          </Button>
+        </View>
       </SheetFooter>
     </Sheet>
   );

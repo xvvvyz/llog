@@ -130,6 +130,16 @@ describe('invite links', () => {
     });
   });
 
+  test('rejects empty member preview', () => {
+    expect(
+      inviteLink.buildInviteLinkInfo({
+        id: 'invite-1',
+        role: Role.Member,
+        team: { id: 'team-1' },
+      })
+    ).toEqual({ isValid: false });
+  });
+
   test('builds member redemption', () => {
     const result = inviteLink.buildRedeemInviteLinkTransactions({
       db: createDb(),
@@ -178,6 +188,19 @@ describe('invite links', () => {
         },
       ],
     });
+  });
+
+  test('rejects empty member redemption', () => {
+    expect(() =>
+      inviteLink.buildRedeemInviteLinkTransactions({
+        db: createDb(),
+        invite: { role: Role.Member, team: { id: 'team-1' } },
+        profileId: 'profile-1',
+        roleId: 'role-1',
+        token: 'token-1',
+        userId: 'user-1',
+      })
+    ).toThrow('Invalid invite link');
   });
 
   test('builds admin upgrade', () => {

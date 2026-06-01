@@ -45,4 +45,25 @@ describe('schema', () => {
       required: true,
     });
   });
+
+  test('cascades notes', () => {
+    expect(schema.entities.notes.attrs.logId.config).toMatchObject({
+      indexed: true,
+      unique: true,
+    });
+
+    expect(schema.links.logsNotes.forward).toMatchObject({
+      has: 'one',
+      label: 'note',
+      on: 'logs',
+    });
+
+    expect(schema.links.logsNotes.reverse).toMatchObject({
+      has: 'one',
+      label: 'log',
+      on: 'notes',
+      onDelete: 'cascade',
+      required: true,
+    });
+  });
 });

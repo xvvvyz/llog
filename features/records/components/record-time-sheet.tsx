@@ -398,7 +398,7 @@ export const RecordTimeSheet = ({
         <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4">
           <View className="min-h-0 shrink">
             {Platform.OS === 'web' ? (
-              <inputGroup.InputGroup className="h-10 w-full">
+              <inputGroup.InputGroup className="w-full" size="sm">
                 <WebDateTimeInput
                   accessibilityLabel="Record date"
                   max={maxDateText}
@@ -424,7 +424,7 @@ export const RecordTimeSheet = ({
                 {showResetAction && (
                   <inputGroup.InputGroupButton
                     accessibilityLabel={resetActionAccessibilityLabel}
-                    className="h-10 px-3"
+                    className="px-3"
                     onPress={handleResetAction}
                     size="sm"
                     variant="ghost"

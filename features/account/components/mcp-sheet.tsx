@@ -11,7 +11,6 @@ import { Text } from '@/ui/text';
 import { ArrowSquareOut, Check, Copy, Trash } from 'phosphor-react-native';
 import * as React from 'react';
 import { Linking, View } from 'react-native';
-import * as inputGroup from '@/ui/input-group';
 
 type Grant = {
   clientId: string;
@@ -39,6 +38,14 @@ export const McpSheet = () => {
   const { copied, copy } = useCopy();
   const sheetManager = useSheetManager();
   const isOpen = sheetManager.isOpen('mcp');
+
+  const handleCopyMcpUrl = React.useCallback(async () => {
+    try {
+      await copy(mcpUrl);
+    } catch {
+      // noop
+    }
+  }, [copy]);
 
   const refresh = React.useCallback(async ({ showLoading = true } = {}) => {
     if (showLoading) setIsLoading(true);
@@ -151,20 +158,29 @@ export const McpSheet = () => {
         )}
       </SheetListScrollView>
       <SheetFooter contentClassName="gap-3">
-        <inputGroup.InputGroup>
-          <inputGroup.InputGroupInput editable={false} value={mcpUrl} />
-          <inputGroup.InputGroupButton
-            onPress={() => copy(mcpUrl)}
-            size="icon-sm"
+        <Button
+          className="justify-start"
+          onPress={handleCopyMcpUrl}
+          size="sm"
+          variant="secondary"
+          wrapperClassName="w-full"
+        >
+          <Text
+            className="flex-1 min-w-0 font-normal text-foreground"
+            numberOfLines={1}
           >
-            <Icon icon={copied ? Check : Copy} />
-          </inputGroup.InputGroupButton>
-        </inputGroup.InputGroup>
+            {mcpUrl}
+          </Text>
+          <Icon
+            className="text-muted-foreground"
+            icon={copied ? Check : Copy}
+          />
+        </Button>
         <Button
           onPress={() => sheetManager.close('mcp')}
           size="sm"
           variant="secondary"
-          wrapperClassName="flex-1"
+          wrapperClassName="w-full"
         >
           <Text>Close</Text>
         </Button>

@@ -3,10 +3,28 @@ import { deleteUnusedFileAssets } from '@/api/files/delete-file-assets';
 import { db } from '@/api/middleware/db';
 import { fileAssetQuery } from '@/domain/files/query';
 import * as permissions from '@/domain/teams/permissions';
+import { Role } from '@/domain/teams/role';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import * as inviteLink from '@/domain/invites/invite-link';
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
+type LogDeleteInvite = inviteLink.InviteLogScope & { id?: string };
+
+export const getLogDeleteInviteIds = (
+  logId: string,
+  invites: readonly LogDeleteInvite[]
+) => [
+  ...new Set(
+    invites
+      .filter((invite) => {
+        if (!invite.id || invite.role !== Role.Member) return false;
+        const logIds = inviteLink.getInviteLogIds(invite);
+        return logIds.length === 1 && logIds[0] === logId;
+      })
+      .map((invite) => invite.id as string)
+  ),
+];
 
 app.delete('/:logId', db({ asUser: true }), async (c) => {
   const logId = c.req.param('logId');
@@ -18,6 +36,10 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
       activities: {},
       team: {
         roles: { $: { fields: ['role'], where: { userId: c.var.user.id } } },
+      },
+      invites: {
+        $: { fields: ['id', 'role'] },
+        logs: { $: { fields: ['id'] } },
       },
       records: {
         files: fileAssetQuery,
@@ -54,7 +76,14 @@ app.delete('/:logId', db({ asUser: true }), async (c) => {
     }
   }
 
-  await c.var.db.transact(c.var.db.tx.logs[logId].delete());
+  const inviteIdsToDelete = getLogDeleteInviteIds(logId, log.invites ?? []);
+
+  await c.var.db.transact([
+    ...inviteIdsToDelete.map((inviteId) =>
+      c.var.db.tx.invites[inviteId].delete()
+    ),
+    c.var.db.tx.logs[logId].delete(),
+  ]);
 
   await Promise.all([
     filesToDelete.length

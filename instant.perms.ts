@@ -6,6 +6,7 @@ import * as ruleStrings from './instant.perms.rules';
 
 const tagColorValues = '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
 const logNameMaxLength = 32;
+const noteTextMaxLength = 10240;
 const templateTextMaxLength = 10240;
 const recordIsAuthor = "auth.id in data.ref('author.user.id')";
 const recordIsDraft = "data.status == 'draft'";
@@ -685,6 +686,36 @@ const rules = {
       delete: 'canManage',
     },
   },
+  notes: {
+    bind: [
+      'isValidText',
+      `newData.text != null && size(newData.text) <= ${noteTextMaxLength}`,
+      'isNonEmptyText',
+      'newData.text != null && size(newData.text) > 0',
+      'isValidLogId',
+      "newData.logId in data.ref('log.id')",
+      'isValidTeamId',
+      "newData.teamId in data.ref('log.team.id')",
+      'onlyModifiesText',
+      "request.modifiedFields.all(field, field in ['text'])",
+      'canManage',
+      ruleStrings.canManageAuthTeam('data.teamId'),
+    ],
+    allow: {
+      view: 'canManage',
+      create:
+        'canManage && isValidText && isNonEmptyText && isValidLogId && isValidTeamId',
+      update: 'canManage && onlyModifiesText && isValidText',
+      delete: 'canManage',
+      link: {
+        log: ruleStrings.and(
+          ruleStrings.group(ruleStrings.canManageAuthTeam('data.teamId')),
+          'linkedData.id == data.logId',
+          'linkedData.teamId == data.teamId'
+        ),
+      },
+    },
+  },
   templates: {
     bind: [
       'isValidText',
@@ -748,6 +779,7 @@ const rules = {
       link: {
         activities: activityCanLinkSameTeamContent,
         invites: 'auth.id != null',
+        note: logCanManage,
         profiles: logCanLinkProfiles,
         records: logCanLinkContent,
       },

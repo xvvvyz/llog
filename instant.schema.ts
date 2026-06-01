@@ -90,6 +90,11 @@ const schema = i.schema({
       name: i.string().indexed(),
       teamId: i.string().indexed(),
     }),
+    notes: i.entity({
+      logId: i.string().unique().indexed(),
+      teamId: i.string().indexed(),
+      text: i.string(),
+    }),
     profiles: i.entity({
       avatarSeedId: i.string().optional(),
       name: i.string(),
@@ -211,6 +216,16 @@ const schema = i.schema({
       forward: { on: 'logs', has: 'many', label: 'cards' },
       reverse: {
         on: 'cards',
+        has: 'one',
+        label: 'log',
+        required: true,
+        onDelete: 'cascade',
+      },
+    },
+    logsNotes: {
+      forward: { on: 'logs', has: 'one', label: 'note' },
+      reverse: {
+        on: 'notes',
         has: 'one',
         label: 'log',
         required: true,

@@ -98,7 +98,7 @@ const TemplatePickerSheet = ({
           </Text>
         )}
       </SheetListScrollView>
-      <SheetFooter contentClassName="flex-row gap-4">
+      <SheetFooter contentClassName="flex-row gap-3">
         <SearchInput
           onSubmitEditing={handleSubmitSearch}
           query={query}

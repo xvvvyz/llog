@@ -7,12 +7,14 @@ import { LogCardTweakSheet } from '@/features/cards/components/card-tweak-sheet'
 import { LogCardsSheet } from '@/features/cards/components/cards-sheet';
 import { useSignInHref } from '@/features/account/lib/auth-redirect';
 import { InviteDeleteSheet } from '@/features/invites/components/delete-sheet';
-import { InviteSheet } from '@/features/invites/components/invite-sheet';
+import { InviteLinkSheet } from '@/features/invites/components/invite-link-sheet';
 import { InviteLinkDeleteSheet } from '@/features/invites/components/link-delete-sheet';
 import { InviteLogsSheet } from '@/features/invites/components/logs-sheet';
 import { LogDeleteSheet } from '@/features/logs/components/delete-sheet';
 import { LogEditSheet } from '@/features/logs/components/edit-sheet';
 import { LogMembersSheet } from '@/features/logs/components/members-sheet';
+import { LogNotesDeleteSheet } from '@/features/logs/components/notes-delete-sheet';
+import { LogNotesSheet } from '@/features/logs/components/notes-sheet';
 import { LogTagsSheet } from '@/features/logs/components/tags-sheet';
 import { LogTemplateCopyEditorSheet } from '@/features/logs/components/template-copy-editor-sheet';
 import { LogTemplateCopyToSheet } from '@/features/logs/components/template-copy-to-sheet';
@@ -66,10 +68,6 @@ export default function Layout() {
       </Stack>
       <ReplyCreateSheet />
       <ReplyDeleteSheet />
-      <InviteDeleteSheet />
-      <InviteLogsSheet />
-      <InviteSheet />
-      <InviteLinkDeleteSheet />
       <LogEditSheet />
       <LogCardsSheet />
       <LogCardCopyToSheet />
@@ -77,6 +75,8 @@ export default function Layout() {
       <LogCardEditorSheet />
       <LogCardTweakSheet />
       <LogMembersSheet />
+      <LogNotesSheet />
+      <LogNotesDeleteSheet />
       <LogTemplatesSheet />
       <LogTemplateCopyToSheet />
       <LogTemplateCopyEditorSheet />
@@ -96,6 +96,10 @@ export default function Layout() {
       <TagDeleteSheet />
       <teamSheet.TeamSheet />
       <teamSheet.TeamMembersSheet />
+      <InviteDeleteSheet />
+      <InviteLogsSheet />
+      <InviteLinkSheet />
+      <InviteLinkDeleteSheet />
       <TeamDeleteSheet />
       <TeamLeaveSheet />
       <McpSheet />
