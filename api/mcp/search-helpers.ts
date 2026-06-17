@@ -1,7 +1,7 @@
 import * as mcpFields from '@/api/mcp/fields';
 import type * as mcpTypes from '@/api/mcp/types';
 import * as mediaMetadata from '@/domain/files/media-metadata';
-import { normalizeSearchText } from '@/lib/search';
+import { normalizeSearchText, tagFiltersExcludeReplies } from '@/lib/search';
 import type { ParsedSearchQuery } from '@/lib/search';
 
 export type SearchResult =
@@ -206,6 +206,14 @@ const matchesReplySearchFilters = (
   matchesTagFilters(record.tags, filters.tag) &&
   matchesAuthorFilters(reply.author, filters.author);
 
+const isRecordTagScopedSearch = ({
+  filters,
+  recordTagIdSet,
+}: {
+  filters: ParsedSearchQuery['filters'];
+  recordTagIdSet?: ReadonlySet<string>;
+}) => !!recordTagIdSet || tagFiltersExcludeReplies(filters);
+
 const getFileMediaMatchesFromItems = (
   items: readonly FileMediaSearchItem[],
   query: string
@@ -319,6 +327,11 @@ export const getRecordSearchResults = ({
 }): SearchResult[] => {
   if (!record.log?.id) return [];
 
+  const recordTagScopedSearch = isRecordTagScopedSearch({
+    filters: parsedQuery.filters,
+    recordTagIdSet,
+  });
+
   const hasSelectedRecordTag =
     !recordTagIdSet || record.tags?.some((tag) => recordTagIdSet.has(tag.id));
 
@@ -352,6 +365,8 @@ export const getRecordSearchResults = ({
       type: 'record',
     });
   }
+
+  if (recordTagScopedSearch) return results;
 
   for (const reply of record.replies ?? []) {
     const replyMediaItems = getFileMediaSearchItems(reply.files);

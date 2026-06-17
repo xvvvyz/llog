@@ -59,6 +59,7 @@ export const VideoPlayer = ({
   const onPlayingChangeRef = React.useRef(onPlayingChange);
   const onTimeChangeRef = React.useRef(onTimeChange);
   const [isBuffering, setIsBuffering] = React.useState(Boolean(source));
+  const [hasLoadError, setHasLoadError] = React.useState(false);
   const [isScrubbing, setIsScrubbing] = React.useState(false);
 
   const [showInitialLoadingIndicator, setShowInitialLoadingIndicator] =
@@ -77,6 +78,9 @@ export const VideoPlayer = ({
 
   const [isAtStart, setIsAtStart] = React.useState(true);
 
+  const [nativeControlsEnabled, setNativeControlsEnabled] =
+    React.useState(false);
+
   const markVideoReady = React.useCallback(() => {
     videoPreload.markVideoWarm(source);
     setShowInitialLoadingIndicator(false);
@@ -93,10 +97,18 @@ export const VideoPlayer = ({
   }, [markVideoReady]);
 
   const showThumbnail =
-    Boolean(thumbnailUri) && isAtStart && !hasRenderedFirstFrame;
+    Boolean(source) &&
+    !hasLoadError &&
+    Boolean(thumbnailUri) &&
+    isAtStart &&
+    !hasRenderedFirstFrame;
 
   const showLoadingIndicator =
-    showInitialLoadingIndicator && isBuffering && !isScrubbing;
+    !source ||
+    hasLoadError ||
+    (showInitialLoadingIndicator && isBuffering && !isScrubbing);
+
+  const shouldRenderVideoView = Boolean(source) && !hasLoadError;
 
   const player = useVideoPlayer(source, (player) => {
     player.loop = true;
@@ -126,7 +138,20 @@ export const VideoPlayer = ({
 
   React.useImperativeHandle(handleRef, () => ({
     enterFullscreen: () => {
-      void videoViewRef.current?.enterFullscreen();
+      setNativeControlsEnabled(true);
+
+      requestAnimationFrame(() => {
+        const videoView = videoViewRef.current;
+
+        if (!videoView) {
+          setNativeControlsEnabled(false);
+          return;
+        }
+
+        void videoView
+          .enterFullscreen()
+          .catch(() => setNativeControlsEnabled(false));
+      });
     },
     pause: () => {
       player.pause();
@@ -236,8 +261,9 @@ export const VideoPlayer = ({
   React.useEffect(() => {
     if (previousResetTokenRef.current === resetToken) return;
     previousResetTokenRef.current = resetToken;
-    player.pause();
+    pausePlayback();
     setIsBuffering(false);
+    setHasLoadError(false);
     setIsScrubbing(false);
     setHasRenderedFirstFrame(false);
     setIsAtStart(true);
@@ -257,10 +283,12 @@ export const VideoPlayer = ({
 
     player.currentTime = 0;
     onTimeChangeRef.current?.(0, player.duration);
-  }, [player, resetToken]);
+  }, [pausePlayback, player, resetToken]);
 
   React.useEffect(() => {
+    pausePlayback();
     setIsBuffering(Boolean(source));
+    setHasLoadError(false);
     setIsScrubbing(false);
 
     setShowInitialLoadingIndicator(
@@ -285,7 +313,7 @@ export const VideoPlayer = ({
     readyNotifiedRef.current = false;
     wasAutoPlayRef.current = false;
     onTimeChangeRef.current?.(0, 0);
-  }, [player, source, thumbnailUri]);
+  }, [pausePlayback, player, source, thumbnailUri]);
 
   React.useEffect(() => {
     if (!source) {
@@ -295,8 +323,24 @@ export const VideoPlayer = ({
     }
 
     const statusSub = player.addListener('statusChange', ({ status }) => {
-      setIsBuffering(status === 'loading');
-      if (status !== 'loading') markVideoReady();
+      if (status === 'loading') {
+        setIsBuffering(true);
+        return;
+      }
+
+      setIsBuffering(false);
+
+      if (status === 'error') {
+        setHasLoadError(true);
+        setShowInitialLoadingIndicator(false);
+        releasePlayback();
+        return;
+      }
+
+      if (status === 'readyToPlay') {
+        setHasLoadError(false);
+        markVideoReady();
+      }
     });
 
     const playingSub = player.addListener('playingChange', ({ isPlaying }) => {
@@ -343,34 +387,38 @@ export const VideoPlayer = ({
     wasAutoPlayRef.current = Boolean(autoPlay);
 
     if (!autoPlay) {
-      if (wasAutoPlay) player.pause();
+      pausePlayback();
       return;
     }
 
     if (!wasAutoPlay) void startPlayback();
-  }, [autoPlay, player, startPlayback]);
+  }, [autoPlay, pausePlayback, startPlayback]);
 
   return (
     <View
       className="overflow-hidden"
       style={{ width: maxWidth, height: maxHeight }}
     >
-      <VideoView
-        ref={videoViewRef}
-        allowsPictureInPicture={false}
-        allowsVideoFrameAnalysis={false}
-        contentFit={contentFit}
-        fullscreenOptions={{ enable: true }}
-        nativeControls={false}
-        onFirstFrameRender={markFirstFrameRendered}
-        player={player}
-        surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
-        style={[
-          StyleSheet.absoluteFill,
-          { pointerEvents: 'none' },
-          showThumbnail && { opacity: 0 },
-        ]}
-      />
+      {shouldRenderVideoView && (
+        <VideoView
+          ref={videoViewRef}
+          allowsPictureInPicture={false}
+          allowsVideoFrameAnalysis={false}
+          contentFit={contentFit}
+          fullscreenOptions={{ enable: true }}
+          nativeControls={nativeControlsEnabled}
+          onFirstFrameRender={markFirstFrameRendered}
+          onFullscreenEnter={() => setNativeControlsEnabled(true)}
+          onFullscreenExit={() => setNativeControlsEnabled(false)}
+          player={player}
+          surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
+          style={[
+            StyleSheet.absoluteFill,
+            { pointerEvents: 'none' },
+            showThumbnail && { opacity: 0 },
+          ]}
+        />
+      )}
       {showThumbnail && (
         <View className="absolute inset-0 pointer-events-none">
           <Image

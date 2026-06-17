@@ -1,23 +1,26 @@
 import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
+import { dismissKeyboard } from '@/lib/keyboard';
 import { BREAKPOINT_VALUES } from '@/theme/tokens';
 import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
+import { OverlayPortalHostProvider } from '@/ui/overlay-portal-host';
+import { useActiveRouteSheetHostName } from '@/ui/route-sheet-host';
 import { useSheetDragBehavior } from '@/ui/sheet-drag-behavior';
 import { SHEET_DRAG_SURFACE_PROPS } from '@/ui/sheet-drag-constants';
 import { SheetDragProviders } from '@/ui/sheet-drag-context';
 import { useSheetPlatformLayout } from '@/ui/sheet-platform';
 import { useSheetStack, useSheetStackBackdrop } from '@/ui/sheet-stack';
 import { Spinner } from '@/ui/spinner';
-import { Portal } from '@rn-primitives/portal';
+import { Portal, PortalHost } from '@rn-primitives/portal';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { GestureDetector } from 'react-native-gesture-handler';
 import * as sheetDragMetrics from '@/ui/sheet-drag-metrics';
 
 import {
+  BackHandler,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   useWindowDimensions,
@@ -42,6 +45,31 @@ export const SHEET_LAYERS = {
   route: OVERLAY_LAYERS.routeSheet,
   action: OVERLAY_LAYERS.actionSheet,
 } as const;
+
+export const SHEET_DEFAULT_TOP_INSET = 72;
+
+export const getSheetAvailableHeight = ({
+  insetBottom,
+  insetTop,
+  isDesktopSheet,
+  topInset,
+  viewportHeight,
+}: {
+  insetBottom: number;
+  insetTop: number;
+  isDesktopSheet: boolean;
+  topInset: number;
+  viewportHeight: number;
+}) =>
+  Math.max(
+    1,
+    Math.round(
+      viewportHeight -
+        insetTop -
+        (isDesktopSheet ? topInset * 2 : topInset) -
+        insetBottom
+    )
+  );
 
 const sheetVariants = cva(
   'border-border-secondary bg-popover min-h-0 overflow-hidden rounded-t-4xl border-x border-t md:w-full md:rounded-4xl md:border-b border-continuous',
@@ -104,7 +132,7 @@ export const Sheet = ({
   open,
   portalHostName,
   portalName,
-  topInset = 72,
+  topInset = SHEET_DEFAULT_TOP_INSET,
   variant,
   width,
 }: {
@@ -123,6 +151,31 @@ export const Sheet = ({
   const inset = useSafeAreaInsets();
   const windowDimensions = useWindowDimensions();
   const isDesktopSheet = windowDimensions.width >= BREAKPOINT_VALUES.md;
+  const overlayPortalHostId = React.useId();
+  // Native modal routes are presented above the root portal host, so sheets
+  // without an explicit host portal into the active route host instead. The
+  // host is captured when the sheet opens so an already-open sheet is never
+  // re-parented (which would remount its content) by route changes under it.
+  const activeRouteSheetHostName = useActiveRouteSheetHostName();
+  const openRouteSheetHostNameRef = React.useRef<string | undefined>(undefined);
+  const wasOpenForRouteHostRef = React.useRef(false);
+
+  if (open && !wasOpenForRouteHostRef.current) {
+    openRouteSheetHostNameRef.current = isWeb
+      ? undefined
+      : activeRouteSheetHostName;
+  }
+
+  wasOpenForRouteHostRef.current = open;
+
+  const resolvedPortalHostName =
+    portalHostName ?? openRouteSheetHostNameRef.current;
+
+  const overlayPortalHostName = React.useMemo(
+    () =>
+      `sheet-overlay-${portalName}-${overlayPortalHostId.replace(/:/g, '')}`,
+    [overlayPortalHostId, portalName]
+  );
 
   const sheetContentRef =
     React.useRef<React.ComponentRef<typeof Animated.View>>(null);
@@ -131,12 +184,15 @@ export const Sheet = ({
     windowDimensions.height
   );
 
+  const shouldRenderInlineBackdrop = !isWeb || portalHostName != null;
+
   const sheetStack = useSheetStack({
     backdropFadeDistance: dragMetrics.dismissThreshold,
     backdropTranslateY: dragMetrics.translateY,
     layer,
     onDismiss,
     open,
+    usesGlobalBackdrop: !shouldRenderInlineBackdrop,
   });
 
   const platformLayout = useSheetPlatformLayout({
@@ -147,26 +203,68 @@ export const Sheet = ({
     windowHeight: windowDimensions.height,
   });
 
-  const availableHeight = Math.max(
-    1,
-    Math.round(
-      platformLayout.viewportHeight -
-        inset.top -
-        (isDesktopSheet ? topInset * 2 : topInset) -
-        inset.bottom
-    )
-  );
+  const availableHeight = getSheetAvailableHeight({
+    insetBottom: inset.bottom,
+    insetTop: inset.top,
+    isDesktopSheet,
+    topInset,
+    viewportHeight: platformLayout.viewportHeight,
+  });
 
   const heightStyle = { maxHeight: availableHeight };
-  const shouldRenderInlineBackdrop = !isWeb || portalHostName != null;
+  // When a close goes through the slide-out animation, the sheet is already
+  // off-screen by the time it unmounts — the exiting layout animation would
+  // invisibly retain the whole native subtree for another animation pass.
+  const [isClosingWithSlide, setIsClosingWithSlide] = React.useState(false);
+
+  const handleCloseAnimationStart = React.useCallback(
+    () => setIsClosingWithSlide(true),
+    []
+  );
+
+  React.useEffect(() => {
+    if (open) setIsClosingWithSlide(false);
+  }, [open]);
 
   const sheetDragBehavior = useSheetDragBehavior({
     ...dragMetrics,
     isTopSheet: sheetStack.isTopSheet,
     isWeb,
+    onCloseAnimationStart: handleCloseAnimationStart,
     onDismiss,
     open,
   });
+
+  const { closeWithAnimation } = sheetDragBehavior;
+
+  const requestDismiss = React.useCallback(() => {
+    if (isWeb) {
+      onDismiss();
+      return;
+    }
+
+    dismissKeyboard({ immediate: true });
+    closeWithAnimation(onDismiss);
+  }, [closeWithAnimation, isWeb, onDismiss]);
+
+  React.useEffect(() => {
+    if (isWeb || !open) return;
+    return () => dismissKeyboard({ immediate: true });
+  }, [isWeb, open]);
+
+  React.useEffect(() => {
+    if (isWeb || !open || !sheetStack.isTopSheet) return;
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        requestDismiss();
+        return true;
+      }
+    );
+
+    return () => subscription.remove();
+  }, [isWeb, open, requestDismiss, sheetStack.isTopSheet]);
 
   const sheetCard = (
     <Animated.View
@@ -210,11 +308,15 @@ export const Sheet = ({
   const sheet = (
     <Animated.View
       entering={animation(FadeInDown)}
-      exiting={animation(isDesktopSheet ? FadeOut : FadeOutDown)}
       className={cn(
         'absolute inset-0',
         isWeb ? 'pointer-events-none' : 'pointer-events-auto'
       )}
+      exiting={
+        isClosingWithSlide
+          ? undefined
+          : animation(isDesktopSheet ? FadeOut : FadeOutDown)
+      }
     >
       {shouldRenderInlineBackdrop && (
         <Animated.View
@@ -232,10 +334,17 @@ export const Sheet = ({
           >
             <Pressable
               className="h-full w-full cursor-default"
-              onPress={onDismiss}
+              onPress={requestDismiss}
             />
           </Animated.View>
         </Animated.View>
+      )}
+      {!isWeb && !isDesktopSheet && platformLayout.keyboardBackdropStyle && (
+        <Animated.View
+          className="absolute bottom-0 left-0 right-0 bg-popover"
+          pointerEvents="none"
+          style={platformLayout.keyboardBackdropStyle}
+        />
       )}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -278,29 +387,23 @@ export const Sheet = ({
     </Animated.View>
   );
 
-  return (
-    <Portal hostName={portalHostName} name={portalName}>
-      {isWeb ? (
-        open ? (
-          <View
-            className="fixed inset-0 pointer-events-none"
-            style={{ zIndex: sheetStack.zIndex }}
-          >
-            {sheet}
-          </View>
-        ) : null
-      ) : (
-        <Modal
-          focusable={false}
-          onRequestClose={onDismiss}
-          presentationStyle="overFullScreen"
-          statusBarTranslucent
-          transparent
-          visible={open}
-        >
-          {sheet}
-        </Modal>
+  const portalContent = open ? (
+    <View
+      style={{ elevation: sheetStack.zIndex, zIndex: sheetStack.zIndex }}
+      className={cn(
+        isWeb ? 'fixed inset-0 pointer-events-none' : 'absolute inset-0'
       )}
+    >
+      <OverlayPortalHostProvider hostName={overlayPortalHostName}>
+        {sheet}
+      </OverlayPortalHostProvider>
+      <PortalHost name={overlayPortalHostName} />
+    </View>
+  ) : null;
+
+  return (
+    <Portal hostName={resolvedPortalHostName} name={portalName}>
+      {portalContent}
     </Portal>
   );
 };

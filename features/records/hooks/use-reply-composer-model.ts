@@ -253,7 +253,9 @@ export const useReplyComposerModel = () => {
     extraPreview: linkPreview,
     isOpen,
     files: reply?.files ?? [],
-    deferQueuedUploads: !isEdit || shouldReplayReplyDraftIdentity,
+    deferQueuedUploads:
+      shouldReplayReplyDraftIdentity ||
+      (!isEdit && networkReachability !== true),
     onDeleteFile: handleDeleteFile,
     onOpenAudio: () =>
       sheetManager.open('record-audio', replyId, `reply:${recordId}`),

@@ -170,7 +170,7 @@ describe('card generation', () => {
       cardActions.generateCard({
         cardId: 'card-1',
         dbClient: db as never,
-        env: {} as CloudflareEnv,
+        env: {} as unknown as CloudflareEnv,
         requestedAt,
       })
     ).resolves.toEqual({ empty: true, stale: false, success: true });
@@ -255,7 +255,7 @@ describe('card generation', () => {
       cardActions.generateCard({
         cardId: 'card-1',
         dbClient: db as never,
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         requestedAt,
       })
     ).resolves.toMatchObject({ success: true, title: 'Copied sleep' });
@@ -388,7 +388,7 @@ describe('card generation', () => {
       cardActions.generateCard({
         cardId: 'card-1',
         dbClient: db as never,
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         requestedAt,
       })
     ).resolves.toMatchObject({ success: true });
@@ -524,7 +524,7 @@ describe('card generation', () => {
       cardActions.generateCard({
         cardId: 'card-1',
         dbClient: db as never,
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         requestedAt,
       })
     ).resolves.toMatchObject({ success: true });
@@ -675,7 +675,7 @@ describe('card generation', () => {
           },
         } as Queue,
         OPENROUTER_API_KEY: 'key',
-      } as CloudflareEnv;
+      } as unknown as CloudflareEnv;
 
       await expect(
         cardActions.generateCard({
@@ -842,7 +842,7 @@ describe('card generation', () => {
           },
         } as Queue,
         OPENROUTER_API_KEY: 'key',
-      } as CloudflareEnv;
+      } as unknown as CloudflareEnv;
 
       await expect(
         cardActions.generateCard({
@@ -951,7 +951,7 @@ describe('card generation', () => {
         },
       } as Queue,
       OPENROUTER_API_KEY: 'key',
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await expect(
       cardActions.generateCard({
@@ -1063,7 +1063,7 @@ describe('card generation', () => {
         },
       } as Queue,
       OPENROUTER_API_KEY: 'key',
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await expect(
       cardActions.generateCard({
@@ -1157,7 +1157,7 @@ describe('analysis jobs', () => {
       },
     };
 
-    const env = { OPENROUTER_API_KEY: 'key' } as CloudflareEnv;
+    const env = { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv;
 
     await expect(
       cardActions.extractCardAnalysisChunk({
@@ -1332,7 +1332,7 @@ describe('analysis jobs', () => {
         },
       } as Queue,
       OPENROUTER_API_KEY: 'key',
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await expect(
       cardActions.extractCardAnalysisChunk({
@@ -1548,7 +1548,7 @@ describe('analysis jobs', () => {
         },
       } as Queue,
       OPENROUTER_API_KEY: 'key',
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await expect(
       cardActions.extractCardAnalysisChunk({
@@ -1770,7 +1770,7 @@ describe('analysis jobs', () => {
         analysisId: 'analysis-current',
         cardId: 'card-1',
         dbClient: db as never,
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         requestedAt,
       })
     ).resolves.toMatchObject({ success: true });
@@ -1979,7 +1979,7 @@ describe('analysis jobs', () => {
         analysisId: 'analysis-current',
         cardId: card.id,
         dbClient: db as never,
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         requestedAt,
       })
     ).resolves.toMatchObject({ success: true });
@@ -2069,7 +2069,7 @@ describe('card tweak', () => {
       cardActions.tweakCard({
         cardId: 'card-1',
         dbClient: db as never,
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         requestedAt,
         tweakPrompt: 'Make it weekly',
       })
@@ -2163,7 +2163,7 @@ describe('card refresh queue', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await expect(
       cardActions.refreshCardForUser({
@@ -2269,7 +2269,7 @@ describe('card refresh queue', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await expect(
       cardActions.refreshCardForUser({
@@ -2353,7 +2353,7 @@ describe('card refresh queue', () => {
       cardActions.refreshCard({
         cardId: 'card-1',
         dbClient: db as never,
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         requestedAt,
       })
     ).resolves.toEqual({ skipped: true, stale: false, success: true });
@@ -2430,7 +2430,7 @@ describe('card refresh queue', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await cardActions.refreshPublishedRecordCards({
       dbClient: db as never,
@@ -2539,7 +2539,7 @@ describe('card refresh queue', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await cardActions.queuePublishedFileCardRefreshes({
       dbClient: db as never,
@@ -2599,7 +2599,7 @@ describe('card refresh queue', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await cardActions.queuePublishedFileCardRefreshes({
       dbClient: db as never,

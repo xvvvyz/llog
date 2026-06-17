@@ -71,6 +71,7 @@ export const VideoPlayer = ({
     useExclusiveFilePlayback(pausePlayback);
 
   const [isBuffering, setIsBuffering] = React.useState(true);
+  const [hasLoadError, setHasLoadError] = React.useState(false);
 
   const [showInitialLoadingIndicator, setShowInitialLoadingIndicator] =
     React.useState(() => Boolean(src) && !videoPreload.isVideoWarm(src));
@@ -97,8 +98,17 @@ export const VideoPlayer = ({
     }
   }, [onReady, src]);
 
-  const showThumbnail = Boolean(poster) && isAtStart && !hasRenderedFirstFrame;
-  const showLoadingIndicator = showInitialLoadingIndicator && isBuffering;
+  const showThumbnail =
+    Boolean(src) &&
+    !hasLoadError &&
+    Boolean(poster) &&
+    isAtStart &&
+    !hasRenderedFirstFrame;
+
+  const showLoadingIndicator =
+    !src || hasLoadError || (showInitialLoadingIndicator && isBuffering);
+
+  const shouldRenderVideoElement = Boolean(src) && !hasLoadError;
 
   React.useEffect(() => {
     onPlayingChangeRef.current = onPlayingChange;
@@ -117,7 +127,9 @@ export const VideoPlayer = ({
   }, [onTimeChange, src]);
 
   React.useEffect(() => {
+    pausePlayback();
     setIsBuffering(Boolean(src));
+    setHasLoadError(false);
 
     setShowInitialLoadingIndicator(
       Boolean(src) && !videoPreload.isVideoWarm(src)
@@ -128,15 +140,16 @@ export const VideoPlayer = ({
     readyNotifiedRef.current = false;
     wasAutoPlayRef.current = false;
     onTimeChangeRef.current?.(0, 0);
-  }, [src]);
+  }, [pausePlayback, src]);
 
   React.useEffect(() => {
     if (previousResetTokenRef.current === resetToken) return;
     previousResetTokenRef.current = resetToken;
     const video = ref.current;
     if (!video) return;
-    video.pause();
+    pausePlayback();
     setIsBuffering(false);
+    setHasLoadError(false);
     setHasRenderedFirstFrame(false);
     setIsAtStart(true);
     readyNotifiedRef.current = false;
@@ -149,7 +162,7 @@ export const VideoPlayer = ({
     } catch {}
 
     onTimeChangeRef.current?.(0, video.duration);
-  }, [resetToken]);
+  }, [pausePlayback, resetToken]);
 
   const play = React.useCallback(async () => {
     const video = ref.current;
@@ -275,11 +288,12 @@ export const VideoPlayer = ({
     const video = ref.current;
     if (!video) return;
     video.playbackRate = playbackRate;
-  }, [playbackRate]);
+  }, [playbackRate, shouldRenderVideoElement]);
 
   React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
+    if (!shouldRenderVideoElement) return;
 
     if (!src) {
       resetVideoSource(video);
@@ -305,6 +319,7 @@ export const VideoPlayer = ({
       hls.on(HlsEvents.ERROR, (_, data) => {
         if (data.fatal) {
           setIsBuffering(false);
+          setHasLoadError(true);
           setShowInitialLoadingIndicator(false);
           releasePlayback();
         }
@@ -324,27 +339,38 @@ export const VideoPlayer = ({
     return () => {
       resetVideoSource(video);
     };
-  }, [markVideoReady, releasePlayback, src]);
+  }, [markVideoReady, releasePlayback, shouldRenderVideoElement, src]);
 
   React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
     if (!src) return;
+    if (!shouldRenderVideoElement) return;
     const onWaiting = () => setIsBuffering(true);
+
+    const onError = () => {
+      setIsBuffering(false);
+      setHasLoadError(true);
+      setShowInitialLoadingIndicator(false);
+      releasePlayback();
+    };
 
     const onPlaying = () => {
       setIsBuffering(false);
+      setHasLoadError(false);
       setHasRenderedFirstFrame(true);
       markVideoReady();
     };
 
     const onCanPlay = () => {
       setIsBuffering(false);
+      setHasLoadError(false);
       markVideoReady();
     };
 
     const onLoadedData = () => {
       setIsBuffering(false);
+      setHasLoadError(false);
       setHasRenderedFirstFrame(true);
       markVideoReady();
       syncTime();
@@ -364,6 +390,7 @@ export const VideoPlayer = ({
     };
 
     video.addEventListener('waiting', onWaiting);
+    video.addEventListener('error', onError);
     video.addEventListener('playing', onPlaying);
     video.addEventListener('canplay', onCanPlay);
     video.addEventListener('loadeddata', onLoadedData);
@@ -387,6 +414,7 @@ export const VideoPlayer = ({
 
     return () => {
       video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('error', onError);
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('canplay', onCanPlay);
       video.removeEventListener('loadeddata', onLoadedData);
@@ -397,11 +425,17 @@ export const VideoPlayer = ({
       video.removeEventListener('play', onPlay);
       video.removeEventListener('pause', onPause);
     };
-  }, [claimPlayback, markVideoReady, releasePlayback, src]);
+  }, [
+    claimPlayback,
+    markVideoReady,
+    releasePlayback,
+    shouldRenderVideoElement,
+    src,
+  ]);
 
   React.useEffect(() => {
     const video = ref.current;
-    if (!video || !src) return;
+    if (!video || !src || !shouldRenderVideoElement) return;
 
     const tick = () => {
       onTimeChangeRef.current?.(
@@ -432,40 +466,43 @@ export const VideoPlayer = ({
       video.removeEventListener('pause', stop);
       video.removeEventListener('ended', stop);
     };
-  }, [src]);
+  }, [shouldRenderVideoElement, src]);
 
   React.useEffect(() => {
     const video = ref.current;
     if (!video) return;
     if (!src) return;
+    if (!shouldRenderVideoElement) return;
     const wasAutoPlay = wasAutoPlayRef.current;
     wasAutoPlayRef.current = Boolean(autoPlay);
 
     if (!autoPlay) {
-      if (wasAutoPlay) video.pause();
+      pausePlayback();
       return;
     }
 
     if (!wasAutoPlay) void play();
-  }, [autoPlay, play, src]);
+  }, [autoPlay, pausePlayback, play, shouldRenderVideoElement, src]);
 
   return (
     <div
       className="relative overflow-hidden"
       style={{ width: maxWidth, height: maxHeight }}
     >
-      <video
-        ref={ref}
-        loop
-        muted={muted}
-        playsInline
-        preload="auto"
-        className={cn(
-          'absolute inset-0 block h-full w-full',
-          contentFit === 'cover' ? 'object-cover' : 'object-contain',
-          showThumbnail ? 'opacity-0' : 'opacity-100'
-        )}
-      />
+      {shouldRenderVideoElement && (
+        <video
+          ref={ref}
+          loop
+          muted={muted}
+          playsInline
+          preload="auto"
+          className={cn(
+            'absolute inset-0 block h-full w-full',
+            contentFit === 'cover' ? 'object-cover' : 'object-contain',
+            showThumbnail ? 'opacity-0' : 'opacity-100'
+          )}
+        />
+      )}
       {showThumbnail && (
         <img
           alt=""

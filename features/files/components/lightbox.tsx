@@ -40,6 +40,7 @@ export const Lightbox = ({
   onCloseAnimationEnd,
   onRequestClose,
   recordId,
+  shareableMediaIds,
 }: {
   canAnalyzeAudio?: boolean;
   media: FileItem[];
@@ -48,6 +49,7 @@ export const Lightbox = ({
   onCloseAnimationEnd?: () => void;
   onRequestClose: () => void;
   recordId?: string;
+  shareableMediaIds?: ReadonlySet<string>;
 }) => {
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -112,9 +114,10 @@ export const Lightbox = ({
     (file: FileItem) => {
       const isVideo = file.type === 'video';
 
-      const shareTargetUrl = recordId
-        ? recordRoutes.getRecordMediaUrl(recordId, file.id)
-        : undefined;
+      const shareTargetUrl =
+        recordId && shareableMediaIds?.has(file.id)
+          ? recordRoutes.getRecordMediaUrl(recordId, file.id)
+          : undefined;
 
       const hasAnalysisMenuItems =
         isVideo &&
@@ -122,6 +125,8 @@ export const Lightbox = ({
           canAnalyze: canAnalyzeAudio,
           file,
         });
+
+      if (!shareTargetUrl && !isVideo) return null;
 
       return (
         <Menu.Root>
@@ -145,22 +150,21 @@ export const Lightbox = ({
             className="min-w-48"
             portalHostName={overlayLayers.MEDIA_LIGHTBOX_PORTAL_HOST}
           >
-            <Menu.Item
-              closeOnPress={false}
-              disabled={!shareTargetUrl}
-              onPress={async () => {
-                if (!shareTargetUrl) return;
-
-                try {
-                  await shareUrl({ title: 'llog', url: shareTargetUrl });
-                } catch {
-                  // noop
-                }
-              }}
-            >
-              <Icon className="text-placeholder" icon={ShareNetwork} />
-              <Text>Share</Text>
-            </Menu.Item>
+            {!!shareTargetUrl && (
+              <Menu.Item
+                closeOnPress={false}
+                onPress={async () => {
+                  try {
+                    await shareUrl({ title: 'llog', url: shareTargetUrl });
+                  } catch {
+                    // noop
+                  }
+                }}
+              >
+                <Icon className="text-placeholder" icon={ShareNetwork} />
+                <Text>Share</Text>
+              </Menu.Item>
+            )}
             {isVideo && (
               <Menu.Item
                 onPress={() => videoHandleRef.current?.enterFullscreen()}
@@ -201,7 +205,7 @@ export const Lightbox = ({
         </Menu.Root>
       );
     },
-    [canAnalyzeAudio, recordId, videoPlaybackRate]
+    [canAnalyzeAudio, recordId, shareableMediaIds, videoPlaybackRate]
   );
 
   useDismissStack({
@@ -278,7 +282,7 @@ export const Lightbox = ({
       animationType="none"
       focusable={false}
       onRequestClose={handleInstantRequestClose}
-      presentationStyle="fullScreen"
+      presentationStyle="overFullScreen"
       transparent
       visible={isModalVisible}
     >

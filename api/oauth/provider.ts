@@ -22,12 +22,3 @@ export const createOAuthProvider = (
     scopesSupported: LLOG_OAUTH_SCOPES,
     tokenEndpoint: '/api/v1/oauth/token',
   });
-
-export const normalizePublicOrigin = (request: Request, appUrl: string) => {
-  const publicUrl = new URL(appUrl);
-  const requestUrl = new URL(request.url);
-  if (requestUrl.origin === publicUrl.origin) return request;
-  requestUrl.protocol = publicUrl.protocol;
-  requestUrl.host = publicUrl.host;
-  return new Request(requestUrl, request);
-};

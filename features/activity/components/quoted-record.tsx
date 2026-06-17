@@ -17,9 +17,19 @@ import { Spinner } from '@/ui/spinner';
 import { TextContext } from '@/ui/text';
 import { Play } from 'phosphor-react-native';
 import * as React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 const QUOTED_TEXT_LINES = 2;
+// Horizontal chrome around the compact quote text: the w-1 color bar (4) +
+// p-3 container padding (12 × 2) + the gap-2.5 between bar and text (10).
+const QUOTED_TEXT_CHROME_WIDTH = 38;
 
 const QuotedRecordThumb = ({
   item,
@@ -99,11 +109,36 @@ export const QuotedRecord = ({
     visualMedia: visualItems,
   } = useFilteredFiles(files || []);
 
+  const [availableWidth, setAvailableWidth] = React.useState(0);
   const displayText = trimDisplayText(text);
   const { openMediaLightbox } = useMediaLightbox({ recordId });
   const hasAudioFiles = audioMedia.length > 0;
   const hasDocumentFiles = documentFiles.length > 0;
   const hasLinks = links.length > 0;
+  const hasFullWidthContent = hasAudioFiles || hasDocumentFiles || hasLinks;
+
+  const shouldMeasureTextWidth =
+    Platform.OS !== 'web' && !!displayText && !hasFullWidthContent;
+
+  const compactMaxWidth =
+    shouldMeasureTextWidth && availableWidth > 0 ? availableWidth : undefined;
+
+  const compactTextMaxWidth =
+    compactMaxWidth != null
+      ? Math.max(1, compactMaxWidth - QUOTED_TEXT_CHROME_WIDTH)
+      : undefined;
+
+  const handleMeasureAvailableWidth = React.useCallback(
+    (event: LayoutChangeEvent) => {
+      if (!shouldMeasureTextWidth) return;
+      const nextWidth = Math.ceil(event.nativeEvent.layout.width);
+
+      setAvailableWidth((current) =>
+        current === nextWidth ? current : nextWidth
+      );
+    },
+    [shouldMeasureTextWidth]
+  );
 
   if (
     !displayText &&
@@ -115,90 +150,101 @@ export const QuotedRecord = ({
     return null;
   }
 
+  const quote = (
+    <View
+      className={cn(
+        'bg-input max-w-full min-w-0 overflow-hidden rounded-xl border-continuous',
+        hasFullWidthContent ? 'w-full self-stretch' : 'self-start'
+      )}
+      style={
+        compactMaxWidth != null ? { maxWidth: compactMaxWidth } : undefined
+      }
+    >
+      {!!displayText && (
+        <View className="flex-row max-w-full min-w-0 p-3 gap-2.5">
+          <View
+            className={cn(
+              'w-1 border-continuous rounded-full bg-border self-stretch',
+              logColorIndex != null &&
+                getSpectrumBackgroundClassName(logColorIndex)
+            )}
+          />
+          <View
+            className={cn(!shouldMeasureTextWidth && 'flex-1', 'min-w-0')}
+            style={
+              compactTextMaxWidth != null
+                ? { maxWidth: compactTextMaxWidth }
+                : undefined
+            }
+          >
+            <QuotedRecordText text={displayText} />
+          </View>
+        </View>
+      )}
+      {!!visualItems.length && (
+        <ScrollView
+          className="max-w-full grow-0 self-start"
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName={cn(
+            'px-3 pb-3',
+            displayText ? 'pt-0' : 'pt-3'
+          )}
+        >
+          <View className="flex-row gap-0.5">
+            {visualItems.map((item) => (
+              <QuotedRecordThumb
+                key={item.id}
+                item={item}
+                onPress={openMediaLightbox}
+                recordId={recordId}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      )}
+      {hasAudioFiles && (
+        <View
+          className={cn(
+            'gap-2 px-3 pb-3',
+            !displayText && !visualItems.length && 'pt-3'
+          )}
+        >
+          <AudioPlaylist canAnalyzeAudio={canAnalyzeAudio} clips={audioMedia} />
+        </View>
+      )}
+      {(hasDocumentFiles || hasLinks) && (
+        <View
+          className={cn(
+            'gap-2 pb-3',
+            !displayText && !visualItems.length && !hasAudioFiles && 'pt-3'
+          )}
+        >
+          {hasDocumentFiles && (
+            <DocumentAttachments
+              documents={documentFiles}
+              triggerClassName="px-3"
+              triggerIconClassName="-ml-px"
+            />
+          )}
+          {hasLinks && (
+            <LinkAttachments
+              links={links}
+              triggerClassName="px-3"
+              triggerIconClassName="-ml-px"
+            />
+          )}
+        </View>
+      )}
+    </View>
+  );
+
+  if (!shouldMeasureTextWidth) return quote;
+
   return (
-    <React.Fragment>
-      <View
-        className={cn(
-          'bg-input max-w-full min-w-0 overflow-hidden rounded-xl border-continuous',
-          hasAudioFiles || hasDocumentFiles || hasLinks
-            ? 'w-full self-stretch'
-            : 'self-start'
-        )}
-      >
-        {!!displayText && (
-          <View className="flex-row max-w-full min-w-0 p-3 gap-2.5">
-            <View
-              className={cn(
-                'w-1 border-continuous rounded-full bg-border self-stretch',
-                logColorIndex != null &&
-                  getSpectrumBackgroundClassName(logColorIndex)
-              )}
-            />
-            <View className="flex-1 min-w-0">
-              <QuotedRecordText text={displayText} />
-            </View>
-          </View>
-        )}
-        {!!visualItems.length && (
-          <ScrollView
-            className="max-w-full grow-0 self-start"
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerClassName={cn(
-              'px-3 pb-3',
-              displayText ? 'pt-0' : 'pt-3'
-            )}
-          >
-            <View className="flex-row gap-0.5">
-              {visualItems.map((item) => (
-                <QuotedRecordThumb
-                  key={item.id}
-                  item={item}
-                  onPress={openMediaLightbox}
-                  recordId={recordId}
-                />
-              ))}
-            </View>
-          </ScrollView>
-        )}
-        {hasAudioFiles && (
-          <View
-            className={cn(
-              'gap-2 px-3 pb-3',
-              !displayText && !visualItems.length && 'pt-3'
-            )}
-          >
-            <AudioPlaylist
-              canAnalyzeAudio={canAnalyzeAudio}
-              clips={audioMedia}
-            />
-          </View>
-        )}
-        {(hasDocumentFiles || hasLinks) && (
-          <View
-            className={cn(
-              'gap-2 pb-3',
-              !displayText && !visualItems.length && !hasAudioFiles && 'pt-3'
-            )}
-          >
-            {hasDocumentFiles && (
-              <DocumentAttachments
-                documents={documentFiles}
-                triggerClassName="px-3"
-                triggerIconClassName="-ml-px"
-              />
-            )}
-            {hasLinks && (
-              <LinkAttachments
-                links={links}
-                triggerClassName="px-3"
-                triggerIconClassName="-ml-px"
-              />
-            )}
-          </View>
-        )}
-      </View>
-    </React.Fragment>
+    <View className="w-full items-start" onLayout={handleMeasureAvailableWidth}>
+      {quote}
+    </View>
   );
 };
 

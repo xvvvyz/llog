@@ -1,5 +1,5 @@
 import type { ParsedSearchQuery } from '@/lib/search';
-import { normalizeSearchText } from '@/lib/search';
+import { normalizeSearchText, tagFiltersExcludeReplies } from '@/lib/search';
 import type * as searchTypes from '@/features/search/types/search';
 
 export type SearchFilterDocument = {
@@ -54,10 +54,17 @@ export const uniqueSearchTags = (tags: searchTypes.SearchTag[]) => {
   return unique;
 };
 
+const shouldExcludeReplyForFilters = (
+  document: SearchFilterDocument,
+  filters: ParsedSearchQuery['filters']
+) => document.type === 'reply' && tagFiltersExcludeReplies(filters);
+
 export const matchesSearchFilters = (
   document: SearchFilterDocument,
   filters: ParsedSearchQuery['filters']
 ) => {
+  if (shouldExcludeReplyForFilters(document, filters)) return false;
+
   if (
     !matchesEveryFilter(
       filters.log,

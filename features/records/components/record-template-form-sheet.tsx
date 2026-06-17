@@ -216,9 +216,12 @@ export const RecordTemplateFormSheet = ({
         topInset={64}
       >
         <SheetFormScrollView
+          centerFocusedInput
+          centerTopInset={64}
           className="max-h-none md:max-h-none"
           contentContainerClassName="gap-4 p-8 md:p-8 items-stretch"
           keyboardAware={open && !!template && !!parsedTemplate}
+          mode="layout"
           variant="default"
         >
           {template && parsedTemplate ? (

@@ -166,7 +166,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.generateCardResult({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Track sleep',
         records: [
           {
@@ -197,7 +197,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.generateCardResult({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Track sleep',
         records: [
           {
@@ -232,7 +232,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.generateCardResult({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Track sleep',
         records: [
           {
@@ -262,7 +262,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.tweakCardResult({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         previousOutput: {
           metrics: [],
           milestones: [],
@@ -301,7 +301,7 @@ describe('card openrouter', () => {
     await expect(
       openrouter.tweakCardResult({
         analysisMode: 'exact',
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         exactFacts: {
           aggregateValues: {},
           analysisSpec: {
@@ -355,7 +355,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.tweakCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       previousOutput: {
         metrics: [],
         milestones: [],
@@ -428,14 +428,14 @@ describe('card openrouter', () => {
     ];
 
     await openrouter.generateCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       generationTime,
       prompt: 'Track sleep',
       records,
     });
 
     await openrouter.refreshCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       generationTime,
       previousOutput: { metrics: [], milestones: [], summary: 'Old' },
       prompt: 'Track sleep',
@@ -443,7 +443,7 @@ describe('card openrouter', () => {
     });
 
     await openrouter.tweakCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       generationTime,
       previousOutput: { metrics: [], milestones: [], summary: 'Old' },
       prompt: 'Track sleep',
@@ -467,7 +467,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.generateCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       prompt: 'Track detailed progress',
       records: [
         {
@@ -562,7 +562,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.generateCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       prompt: 'Summarize sleep notes.',
       records: [
         {
@@ -611,7 +611,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.generateCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       prompt: 'Compare bedtime with wake time.',
       records: [
         {
@@ -670,7 +670,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Count whining.',
         records: [{ id: 'record-1', text: 'Whined once. '.repeat(200) }],
       })
@@ -719,7 +719,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.planCardAnalysis({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       prompt: 'Compare recent sessions.',
       records: [{ id: 'record-1', text: 'Settled well.' }],
     });
@@ -768,7 +768,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.generateCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       prompt: 'Track sleep.',
       records: [{ id: 'record-1', text: 'Slept well.' }],
     });
@@ -846,7 +846,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         generationTime: '2026-05-23T12:00:00.000Z',
         prompt: 'Average duration over the last 3 months.',
         records: [{ id: 'record-1', text: 'Duration: 10 min.' }],
@@ -921,7 +921,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         generationTime: '2026-05-23T12:00:00.000Z',
         prompt: 'Average duration over the last 3 months.',
         records: [{ id: 'record-1', text: 'Duration: 10 min.' }],
@@ -975,7 +975,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Track the longest distress <=2 streak.',
         records: [
           {
@@ -1011,7 +1011,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         generationTime: '2026-05-23T12:00:00.000Z',
         prompt: 'Count whining over the last 3 months.',
         records: [{ id: 'record-1', text: 'Whined once.' }],
@@ -1036,7 +1036,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt:
           'Make a line chart over time with Alone duration (min) and Peak distress (0-5). Summarize latest duration and max with distress <=2.',
         records: [
@@ -1064,7 +1064,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.planCardAnalysis({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       prompt: 'Count whining by month.',
       records: Array.from({ length: 80 }, (_item, index) => ({
         date: `2026-05-${String((index % 28) + 1).padStart(2, '0')}T00:00:00.000Z`,
@@ -1116,7 +1116,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Compare the mood of recent sessions.',
         records: [{ id: 'record-1', text: 'Settled well.' }],
       })
@@ -1139,7 +1139,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.planCardAnalysis({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Can you chart tag counts.',
         records: [{ id: 'record-1', text: 'Tagged record.' }],
       })
@@ -1166,7 +1166,7 @@ describe('card openrouter', () => {
 
     await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {},
         analysisSpec: {
@@ -1216,7 +1216,7 @@ describe('card openrouter', () => {
 
     await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {
           barking_count: {
@@ -1297,7 +1297,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {},
         analysisSpec: {
@@ -1341,7 +1341,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {},
         analysisSpec: {
@@ -1388,7 +1388,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {},
         analysisSpec: {
@@ -1462,7 +1462,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {
           longest_under_threshold: {
@@ -1516,7 +1516,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {},
         analysisSpec: {
@@ -1552,7 +1552,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.tweakCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: latestDurationExactFacts(),
       previousOutput: {
         metrics: [{ label: 'Latest duration', unit: 'min', value: 80 }],
@@ -1581,7 +1581,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.refreshCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: latestDurationExactFacts(),
       previousOutput: {
         exactMetricLabelOverrides: { latest_duration: 'Session length' },
@@ -1611,7 +1611,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: latestDurationExactFacts(),
       prompt: 'Track latest duration.',
       records: [{ id: 'record-1', text: 'Alone duration (min): 85' }],
@@ -1631,7 +1631,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.refreshCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {},
         analysisSpec: {
@@ -1691,7 +1691,7 @@ describe('card openrouter', () => {
 
     const result = await openrouter.generateCardResult({
       analysisMode: 'exact',
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       exactFacts: {
         aggregateValues: {},
         analysisSpec: {
@@ -1757,7 +1757,7 @@ describe('card openrouter', () => {
     await expect(
       openrouter.generateCardResult({
         analysisMode: 'exact',
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         exactFacts: {
           aggregateValues: {},
           analysisSpec: {
@@ -1845,7 +1845,7 @@ describe('card openrouter', () => {
           ],
           groupings: [],
         },
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         records: [
           { id: 'record-1', text: 'Whined twice.' },
           { id: 'record-2', text: 'Settled.' },
@@ -1914,7 +1914,7 @@ describe('card openrouter', () => {
           extractionFields: [],
           groupings: [],
         },
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         records: [
           { id: 'record-1', text: 'Whined twice.' },
           { id: 'record-2', text: 'Settled.' },
@@ -1980,7 +1980,7 @@ describe('card openrouter', () => {
           extractionFields: [],
           groupings: [],
         },
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         records: [
           { id: 'record-1', text: 'Whined twice.' },
           { id: 'record-2', text: 'Settled.' },
@@ -2012,7 +2012,7 @@ describe('card openrouter', () => {
         chart: { kind: 'data', title: 'Trend', type: 'line' },
         metrics: [{ label: 'Average', unit: 'hrs', value: 7 }],
       },
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       prompt: 'Track sleep',
       records: [
         {
@@ -2056,7 +2056,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.generateCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       existingCards: [
         {
           id: 'card-existing',
@@ -2136,7 +2136,7 @@ describe('card openrouter', () => {
     }) as never;
 
     await openrouter.generateCardPromptSuggestion({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       existingCards: [],
       records: [
         {
@@ -2206,7 +2206,7 @@ describe('card openrouter', () => {
     }) as never;
 
     const result = await openrouter.refreshCardResult({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       previousOutput: {
         metrics: [],
         milestones: [{ title: 'Old source' }],
@@ -2270,7 +2270,7 @@ describe('card openrouter', () => {
 
     await expect(
       openrouter.generateCardResult({
-        env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+        env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
         prompt: 'Track sleep',
         records: [
           {
@@ -2290,7 +2290,7 @@ describe('card openrouter', () => {
     ) as never;
 
     const prompt = await openrouter.generateCardPromptSuggestion({
-      env: { OPENROUTER_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
       existingCards: [],
       records: [],
     });

@@ -107,7 +107,7 @@ export const LogTemplateCopyToSheet = () => {
                     className="border-border-secondary border"
                     fallback="gradient"
                     id={log.team.id}
-                    size={19}
+                    size={20}
                   />
                   <Text className="text-placeholder">/</Text>
                   <View

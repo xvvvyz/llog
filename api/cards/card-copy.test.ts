@@ -156,7 +156,7 @@ describe('card copy', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     const result = await cardCopy.copyCard({
       cardId: 'card-source',
@@ -280,7 +280,7 @@ describe('card copy', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await expect(
       cardCopy.copyCard({

@@ -1,15 +1,19 @@
 import { cn } from '@/lib/cn';
-import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
 import { isTextEntryElement } from '@/ui/sheet-platform-web-text-entry';
 import { Spinner } from '@/ui/spinner';
+import { useNativeScrollOverflow } from '@/ui/use-native-scroll-overflow';
 import * as React from 'react';
-import { Platform, ScrollView, View } from 'react-native';
 import * as sheetScrollStyle from '@/ui/sheet-scroll-style';
+import { Platform, ScrollView, View } from 'react-native';
+import { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
 
 import {
   AndroidSoftInputModes,
   KeyboardAwareScrollView,
   KeyboardController,
+  useKeyboardState,
+  useReanimatedFocusedInput,
+  useWindowDimensions as useKeyboardWindowDimensions,
   type KeyboardAwareScrollViewMode,
 } from 'react-native-keyboard-controller';
 
@@ -18,6 +22,18 @@ type SheetFormScrollViewProps = React.ComponentPropsWithoutRef<
 > &
   sheetScrollStyle.SheetScrollContentVariantProps & {
     bottomOffset?: number;
+    /**
+     * Native only. When true, the focused input is scrolled to the vertical
+     * center of the visible area above the keyboard instead of resting just
+     * above it. Web already centers via `scrollIntoView`.
+     */
+    centerFocusedInput?: boolean;
+    /**
+     * Approximate distance from the top of the window to the top of this scroll
+     * view (sheet top inset + drag handle). Used to center the focused input
+     * within the visible area; precision is not critical.
+     */
+    centerTopInset?: number;
     className?: string;
     contentContainerClassName?: string;
     extraKeyboardSpace?: number;
@@ -33,6 +49,8 @@ export const SheetFormScrollView = React.forwardRef<
   (
     {
       bottomOffset = 96,
+      centerFocusedInput = false,
+      centerTopInset = 96,
       className,
       children,
       contentContainerClassName,
@@ -42,7 +60,10 @@ export const SheetFormScrollView = React.forwardRef<
       keyboardShouldPersistTaps = 'always',
       loading,
       mode = 'insets',
+      onContentSizeChange,
+      onLayout,
       onScroll,
+      scrollEnabled,
       showsVerticalScrollIndicator = false,
       scrollEventThrottle = 16,
       style,
@@ -55,7 +76,18 @@ export const SheetFormScrollView = React.forwardRef<
       typeof ScrollView
     > | null>(null);
 
-    const handleScroll = useSheetScrollHandler(onScroll);
+    const {
+      handleContentSizeChange,
+      handleLayout,
+      handleScroll,
+      scrollEnabled: resolvedScrollEnabled,
+    } = useNativeScrollOverflow({
+      onContentSizeChange,
+      onLayout,
+      onScroll,
+      scrollEnabled,
+    });
+
     const handleRef = useCombinedScrollViewRef(ref, scrollViewRef);
     useAndroidResizeMode(keyboardAware);
     useWebFocusedInputScroll({ enabled: keyboardAware, scrollViewRef });
@@ -63,15 +95,14 @@ export const SheetFormScrollView = React.forwardRef<
     const scrollViewProps = {
       keyboardDismissMode,
       keyboardShouldPersistTaps,
+      onContentSizeChange: handleContentSizeChange,
+      onLayout: handleLayout,
       onScroll: handleScroll,
+      scrollEnabled: resolvedScrollEnabled,
       scrollEventThrottle,
       showsVerticalScrollIndicator,
       style,
-      className: cn(
-        sheetScrollStyle.SHEET_SCROLL_VIEW_CLASS_NAME,
-        'flex-1',
-        className
-      ),
+      className: cn(sheetScrollStyle.SHEET_SCROLL_VIEW_CLASS_NAME, className),
       contentContainerClassName: cn(
         sheetScrollStyle.sheetScrollContentVariants({ variant }),
         contentContainerClassName,
@@ -100,6 +131,22 @@ export const SheetFormScrollView = React.forwardRef<
       );
     }
 
+    if (centerFocusedInput) {
+      return (
+        <CenteringKeyboardAwareScrollView
+          ref={handleRef}
+          bottomOffset={bottomOffset}
+          centerTopInset={centerTopInset}
+          enabled={keyboardAware}
+          extraKeyboardSpace={extraKeyboardSpace}
+          mode={mode}
+          {...scrollViewProps}
+        >
+          {content}
+        </CenteringKeyboardAwareScrollView>
+      );
+    }
+
     return (
       <KeyboardAwareScrollView
         ref={handleRef}
@@ -116,6 +163,71 @@ export const SheetFormScrollView = React.forwardRef<
 );
 
 SheetFormScrollView.displayName = 'SheetFormScrollView';
+// Upper bound so a very large visible area (e.g. tablets) never scrolls the
+// focused input absurdly far above the keyboard.
+const CENTERED_FOCUS_MAX_OFFSET = 320;
+
+type CenteringKeyboardAwareScrollViewProps = React.ComponentPropsWithoutRef<
+  typeof KeyboardAwareScrollView
+> & { centerTopInset: number };
+
+// The library's `KeyboardAwareScrollView` scrolls the focused input so its
+// bottom sits `bottomOffset` above the keyboard. To center the input instead,
+// we feed it a `bottomOffset` equal to half the leftover space in the visible
+// area: gap below = (visibleHeight - inputHeight) / 2 leaves an equal gap above.
+// Changing `bottomOffset` re-runs the library's own scroll, so it stays in sync
+// as the keyboard toggles or focus moves between fields.
+const CenteringKeyboardAwareScrollView = React.forwardRef<
+  React.ComponentRef<typeof KeyboardAwareScrollView>,
+  CenteringKeyboardAwareScrollViewProps
+>(({ bottomOffset = 0, centerTopInset, enabled = true, ...props }, ref) => {
+  const { height: windowHeight } = useKeyboardWindowDimensions();
+  const keyboardHeight = useKeyboardState((state) => state.height);
+  const { input } = useReanimatedFocusedInput();
+  const [focusedInputHeight, setFocusedInputHeight] = React.useState(0);
+
+  // input.value lives on the UI thread; mirror just its height onto the JS
+  // thread so we can fold it into the offset math.
+  useAnimatedReaction(
+    () => Math.round(input.value?.layout.height ?? 0),
+    (current, previous) => {
+      if (current !== previous) runOnJS(setFocusedInputHeight)(current);
+    }
+  );
+
+  const centeredBottomOffset = React.useMemo(() => {
+    if (!enabled || keyboardHeight <= 0) return bottomOffset;
+    const visibleHeight = windowHeight - keyboardHeight - centerTopInset;
+    if (visibleHeight <= 0) return bottomOffset;
+    const centered = Math.round((visibleHeight - focusedInputHeight) / 2);
+
+    // Never go below the resting offset, so short visible areas or tall inputs
+    // fall back to the default (input just above the keyboard).
+    return Math.min(
+      Math.max(centered, bottomOffset),
+      CENTERED_FOCUS_MAX_OFFSET
+    );
+  }, [
+    bottomOffset,
+    centerTopInset,
+    enabled,
+    focusedInputHeight,
+    keyboardHeight,
+    windowHeight,
+  ]);
+
+  return (
+    <KeyboardAwareScrollView
+      ref={ref}
+      bottomOffset={centeredBottomOffset}
+      enabled={enabled}
+      {...props}
+    />
+  );
+});
+
+CenteringKeyboardAwareScrollView.displayName =
+  'CenteringKeyboardAwareScrollView';
 
 const useAndroidResizeMode = (enabled: boolean) => {
   React.useEffect(() => {

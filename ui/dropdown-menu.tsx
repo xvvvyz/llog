@@ -1,8 +1,10 @@
 import { useRippleColor } from '@/hooks/use-ripple-color';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { animation } from '@/lib/animation';
 import { cn } from '@/lib/cn';
 import { type SortDirection } from '@/lib/sort-direction';
 import { Icon } from '@/ui/icon';
+import { useOverlayPortalHostName } from '@/ui/overlay-portal-host';
 import { OVERLAY_LAYERS } from '@/ui/overlay-layers';
 import { TextContext } from '@/ui/text';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
@@ -94,8 +96,30 @@ const stopOverlayEvent = (event: GestureResponderEvent) => {
 const Content = React.forwardRef<
   DropdownMenuPrimitive.ContentRef,
   DropdownMenuPrimitive.ContentProps & { portalHostName?: string }
->(({ children, className, portalHostName, ...props }, ref) => {
+>(({ children, className, insets, portalHostName, ...props }, ref) => {
   const isWeb = Platform.OS === 'web';
+  const safeAreaInsets = useSafeAreaInsets();
+  const contextualPortalHostName = useOverlayPortalHostName();
+  const resolvedPortalHostName = portalHostName ?? contextualPortalHostName;
+
+  const contentInsets = React.useMemo(
+    () => ({
+      top: Math.max(safeAreaInsets.top, insets?.top ?? 0),
+      bottom: Math.max(safeAreaInsets.bottom, insets?.bottom ?? 0),
+      left: Math.max(safeAreaInsets.left, insets?.left ?? 0),
+      right: Math.max(safeAreaInsets.right, insets?.right ?? 0),
+    }),
+    [
+      insets?.bottom,
+      insets?.left,
+      insets?.right,
+      insets?.top,
+      safeAreaInsets.bottom,
+      safeAreaInsets.left,
+      safeAreaInsets.right,
+      safeAreaInsets.top,
+    ]
+  );
 
   const context =
     DropdownMenuPrimitive.useRootContext() as ResettableDropdownRootContext;
@@ -118,7 +142,7 @@ const Content = React.forwardRef<
   );
 
   return (
-    <DropdownMenuPrimitive.Portal hostName={portalHostName}>
+    <DropdownMenuPrimitive.Portal hostName={resolvedPortalHostName}>
       <View
         className={cn('absolute inset-0', isWeb && 'pointer-events-none')}
         style={
@@ -144,6 +168,7 @@ const Content = React.forwardRef<
         <DropdownMenuPrimitive.Content
           ref={ref}
           className="web:pointer-events-auto"
+          insets={contentInsets}
           {...props}
         >
           <Animated.View

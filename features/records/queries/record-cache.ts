@@ -49,6 +49,12 @@ export const cacheRecords = (records: EntryRecord[]) => {
   if (changed) emit();
 };
 
+export const deleteCachedRecord = (id?: string) => {
+  if (!id) return;
+  if (!recordsById.delete(id)) return;
+  emit();
+};
+
 export const useCachedRecord = (id?: string) =>
   React.useSyncExternalStore(
     React.useCallback((listener: () => void) => {

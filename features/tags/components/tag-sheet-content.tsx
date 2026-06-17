@@ -148,7 +148,6 @@ export const TagSheetContent = ({
                   name={tag.name}
                   onCheckedChange={(selected) => {
                     onSelectTag(tag.id, selected);
-                    focusSearchInput();
                   }}
                   onColorChange={
                     onColorChange

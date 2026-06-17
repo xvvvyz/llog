@@ -21,30 +21,58 @@ const SheetDragLockContext =
   React.createContext<SheetDragLockContextValue | null>(null);
 
 export const useSheetScrollHandler = <Event extends SheetScrollableEvent>(
-  onScroll?: (event: Event) => void
+  onScroll?: (event: Event) => void,
+  options?: { scrollable?: boolean }
 ) => {
   const context = React.useContext(SheetScrollContext);
   const scrollableId = React.useId();
   const isAtTopRef = React.useRef(true);
+  const isRegisteredRef = React.useRef(false);
 
-  React.useEffect(
-    () => () => context?.unregisterScrollable(scrollableId),
+  const setScrollableAtTop = React.useCallback(
+    (isAtTop: boolean) => {
+      isAtTopRef.current = isAtTop;
+      isRegisteredRef.current = true;
+      context?.setScrollableAtTop(scrollableId, isAtTop);
+    },
     [context, scrollableId]
   );
 
+  const unregisterScrollable = React.useCallback(() => {
+    if (!isRegisteredRef.current) return;
+    isRegisteredRef.current = false;
+    isAtTopRef.current = true;
+    context?.unregisterScrollable(scrollableId);
+  }, [context, scrollableId]);
+
+  React.useEffect(() => () => unregisterScrollable(), [unregisterScrollable]);
+
+  React.useEffect(() => {
+    if (options?.scrollable === false) {
+      unregisterScrollable();
+      return;
+    }
+
+    setScrollableAtTop(isAtTopRef.current);
+  }, [options?.scrollable, setScrollableAtTop, unregisterScrollable]);
+
   return React.useCallback(
     (event: Event) => {
+      if (options?.scrollable === false) {
+        onScroll?.(event);
+        return;
+      }
+
       const offsetY = event.nativeEvent.contentOffset?.y ?? 0;
       const isAtTop = offsetY <= SHEET_SCROLL_TOP_TOLERANCE;
 
-      if (isAtTopRef.current !== isAtTop) {
-        isAtTopRef.current = isAtTop;
-        context?.setScrollableAtTop(scrollableId, isAtTop);
+      if (isAtTopRef.current !== isAtTop || !isRegisteredRef.current) {
+        setScrollableAtTop(isAtTop);
       }
 
       onScroll?.(event);
     },
-    [context, onScroll, scrollableId]
+    [onScroll, options?.scrollable, setScrollableAtTop]
   );
 };
 

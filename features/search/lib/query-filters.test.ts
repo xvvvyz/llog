@@ -23,6 +23,20 @@ describe('matchesSearchFilters', () => {
     ).toBe(true);
   });
 
+  test('does not match replies for tag filters', () => {
+    expect(
+      queryFilters.matchesSearchFilters(
+        {
+          authorName: 'Mémber',
+          logName: 'Daily Log',
+          tagItems: [{ color: 1, id: 'tag-1', name: 'Ideas', order: 0 }],
+          type: 'reply',
+        },
+        { ...emptyFilters(), tag: ['ideas'] }
+      )
+    ).toBe(false);
+  });
+
   test('matches log filters', () => {
     expect(
       queryFilters.matchesSearchFilters(

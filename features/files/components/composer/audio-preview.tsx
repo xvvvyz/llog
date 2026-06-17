@@ -159,7 +159,7 @@ export const AudioPreview = ({
             return (
               <View
                 key={previewItem.id}
-                className={cn('min-w-0 flex-1', !isActive && 'hidden')}
+                className={cn('min-w-0', !isActive && 'hidden')}
               >
                 {previewItem.kind === 'file' ? (
                   <AudioPlayer

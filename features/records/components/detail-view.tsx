@@ -4,14 +4,26 @@ import { Entry } from '@/features/records/components/entry';
 import * as scroll from '@/features/records/lib/post-submit-scroll';
 import { type UseRecordResult } from '@/features/records/queries/use-record';
 import { useSheetManager } from '@/hooks/use-sheet-manager';
+import { useSafeAreaInsets } from '@/hooks/use-safe-area-insets';
 import { cn } from '@/lib/cn';
+import { BREAKPOINT_VALUES } from '@/theme/tokens';
 import { Button } from '@/ui/button';
-import { Page } from '@/ui/page';
-import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
+import { getSheetAvailableHeight, SHEET_DEFAULT_TOP_INSET } from '@/ui/sheet';
 import { Text } from '@/ui/text';
+import { useNativeScrollOverflow } from '@/ui/use-native-scroll-overflow';
 import * as React from 'react';
-import { Animated, Easing, ScrollView, View } from 'react-native';
 import * as spectrumClassNames from '@/theme/spectrum-class-names';
+
+import {
+  Animated,
+  Easing,
+  ScrollView,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+
+const DETAIL_VIEW_FOOTER_HEIGHT = 72;
+const DETAIL_VIEW_MIN_SCROLL_HEIGHT = 96;
 
 const TargetEntryHighlight = ({
   className,
@@ -80,9 +92,34 @@ export const DetailView = ({
   >({});
 
   const sheetManager = useSheetManager();
-  const handleScroll = useSheetScrollHandler();
   const logColor = useLogColor({ id: record.log?.id });
   const canReply = !localEntry.hasLocalStatus(record);
+  const insets = useSafeAreaInsets();
+  const windowDimensions = useWindowDimensions();
+  const isDesktopSheet = windowDimensions.width >= BREAKPOINT_VALUES.md;
+
+  const maxSheetHeight = Math.max(
+    DETAIL_VIEW_FOOTER_HEIGHT + DETAIL_VIEW_MIN_SCROLL_HEIGHT,
+    getSheetAvailableHeight({
+      insetBottom: insets.bottom,
+      insetTop: insets.top,
+      isDesktopSheet,
+      topInset: SHEET_DEFAULT_TOP_INSET,
+      viewportHeight: windowDimensions.height,
+    })
+  );
+
+  const maxScrollHeight = Math.max(
+    DETAIL_VIEW_MIN_SCROLL_HEIGHT,
+    maxSheetHeight - DETAIL_VIEW_FOOTER_HEIGHT
+  );
+
+  const {
+    handleContentSizeChange,
+    handleLayout: handleScrollLayout,
+    handleScroll,
+    scrollEnabled,
+  } = useNativeScrollOverflow();
 
   const pendingScroll = scroll.usePostSubmitScroll({
     id: recordId,
@@ -151,15 +188,25 @@ export const DetailView = ({
   ]);
 
   return (
-    <Page className={cn('flex-col min-h-0', pageClassName)}>
+    <View
+      style={{ maxHeight: maxSheetHeight }}
+      className={cn(
+        'flex-col min-h-0 overflow-hidden bg-popover',
+        pageClassName
+      )}
+    >
       <ScrollView
         ref={scrollViewRef}
-        className="flex-1 -mx-px min-h-0 border-b border-border-secondary border-continuous border-x rounded-b-4xl"
+        className="-mx-px min-h-0 border-b border-border-secondary border-continuous border-x rounded-b-4xl"
         contentContainerClassName="mx-auto w-full max-w-lg"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="always"
+        onContentSizeChange={handleContentSizeChange}
+        onLayout={handleScrollLayout}
         onScroll={handleScroll}
+        scrollEnabled={scrollEnabled}
         scrollEventThrottle={16}
+        style={{ maxHeight: maxScrollHeight }}
       >
         {data.map((item, index) => {
           const replyId = index > 0 ? item.id : undefined;
@@ -238,6 +285,6 @@ export const DetailView = ({
           </Button>
         </View>
       </View>
-    </Page>
+    </View>
   );
 };

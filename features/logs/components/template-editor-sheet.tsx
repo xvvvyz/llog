@@ -23,7 +23,7 @@ import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
 import { CornersOut } from 'phosphor-react-native';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import * as textareaSelection from '@/features/records/hooks/use-textarea-selection';
 import * as spectrumClassNames from '@/theme/spectrum-class-names';
 
@@ -320,7 +320,8 @@ export const LogTemplateEditorSheet = () => {
                 <Textarea
                   ref={fullscreenTextareaRef}
                   autoFocus
-                  className="flex-1 min-h-full border-0 rounded-2xl bg-transparent"
+                  className="border-0 rounded-2xl bg-transparent"
+                  fill
                   maxLength={limits.TEMPLATE_TEXT_MAX_LENGTH}
                   onChangeText={setText}
                   onKeyDown={fullscreenMarkdownShortcuts.handleKeyDown}
@@ -328,7 +329,6 @@ export const LogTemplateEditorSheet = () => {
                   pasteRichTextAsMarkdown
                   placeholder="Today I worked on..."
                   size="sm"
-                  style={Platform.OS === 'web' ? { height: '100%' } : undefined}
                   value={text}
                   onSelectionChange={
                     fullscreenMarkdownShortcuts.handleSelectionChange

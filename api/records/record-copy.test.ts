@@ -295,7 +295,7 @@ describe('finalize copy', () => {
           };
         },
       } as Queue,
-    } as CloudflareEnv;
+    } as unknown as CloudflareEnv;
 
     await recordCopy.finalizeRecordCopy({
       dbClient: db as never,

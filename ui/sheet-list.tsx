@@ -1,9 +1,9 @@
 import { cn } from '@/lib/cn';
-import { useSheetScrollHandler } from '@/ui/sheet-drag-context';
 import { Spinner } from '@/ui/spinner';
+import { useNativeScrollOverflow } from '@/ui/use-native-scroll-overflow';
 import * as React from 'react';
-import { ScrollView, View } from 'react-native';
 import * as sheetScrollStyle from '@/ui/sheet-scroll-style';
+import { ScrollView, View } from 'react-native';
 
 type SheetListScrollViewProps = React.ComponentPropsWithoutRef<
   typeof ScrollView
@@ -26,7 +26,10 @@ export const SheetListScrollView = React.forwardRef<
       keyboardDismissMode = 'on-drag',
       keyboardShouldPersistTaps = 'always',
       loading,
+      onContentSizeChange,
+      onLayout,
       onScroll,
+      scrollEnabled,
       showsVerticalScrollIndicator = false,
       scrollEventThrottle = 16,
       style,
@@ -35,7 +38,17 @@ export const SheetListScrollView = React.forwardRef<
     },
     ref
   ) => {
-    const handleScroll = useSheetScrollHandler(onScroll);
+    const {
+      handleContentSizeChange,
+      handleLayout,
+      handleScroll,
+      scrollEnabled: resolvedScrollEnabled,
+    } = useNativeScrollOverflow({
+      onContentSizeChange,
+      onLayout,
+      onScroll,
+      scrollEnabled,
+    });
 
     return (
       <ScrollView
@@ -43,7 +56,10 @@ export const SheetListScrollView = React.forwardRef<
         className={cn(sheetScrollStyle.SHEET_SCROLL_VIEW_CLASS_NAME, className)}
         keyboardDismissMode={keyboardDismissMode}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        onContentSizeChange={handleContentSizeChange}
+        onLayout={handleLayout}
         onScroll={handleScroll}
+        scrollEnabled={resolvedScrollEnabled}
         scrollEventThrottle={scrollEventThrottle}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         style={style}
@@ -57,7 +73,7 @@ export const SheetListScrollView = React.forwardRef<
       >
         {children}
         {loading && (
-          <View className="absolute inset-0 z-10 min-h-24 bg-popover/80 items-center justify-center">
+          <View className="absolute inset-0 z-10 min-h-24 bg-popover items-center justify-center">
             <Spinner />
           </View>
         )}

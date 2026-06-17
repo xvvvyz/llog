@@ -24,6 +24,13 @@ export type ParsedSearchQuery = {
   text: string;
 };
 
+// Record tags don't propagate to replies, so any tag filter scopes the search
+// to records only and excludes replies. Shared by the MCP and client search
+// engines so the rule stays consistent across both surfaces.
+export const tagFiltersExcludeReplies = (
+  filters: ParsedSearchQuery['filters']
+) => filters.tag.length > 0;
+
 const SEARCH_FILTER_KEYS = new Set<SearchFilterKey>(['author', 'log', 'tag']);
 
 const tokenizeSearchQuery = (query: string) => {

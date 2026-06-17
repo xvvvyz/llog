@@ -41,6 +41,7 @@ export const LogEditSheet = () => {
                 {row.map((color) => (
                   <Button
                     key={`color-${color}`}
+                    interactiveClassName="web:hover:opacity-90 active:opacity-90"
                     onPress={() => updateLog({ color, id: log.id! })}
                     ripple="default"
                     variant="ghost"

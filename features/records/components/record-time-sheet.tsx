@@ -6,10 +6,10 @@ import { Icon } from '@/ui/icon';
 import * as inputGroup from '@/ui/input-group';
 import { Sheet } from '@/ui/sheet';
 import { Text } from '@/ui/text';
-import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { Clock } from 'phosphor-react-native';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
+import * as recordTimeNativeFields from '@/features/records/components/record-time-native-fields';
 
 const recordTimeInputValues = (date: Date) => ({
   dateText: recordTime.toRecordDateInputValue(date),
@@ -151,6 +151,11 @@ export const RecordTimeSheet = ({
   const [hasResetToNow, setHasResetToNow] = React.useState(false);
   const [initialDate, setInitialDate] = React.useState(() => new Date());
 
+  const [nativePickerMode, setNativePickerMode] =
+    React.useState<recordTimeNativeFields.NativeRecordTimePickerMode | null>(
+      null
+    );
+
   const [initialUsesSubmissionTime, setInitialUsesSubmissionTime] =
     React.useState(false);
 
@@ -182,10 +187,15 @@ export const RecordTimeSheet = ({
   );
 
   React.useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setNativePickerMode(null);
+      return;
+    }
+
     const date = value ? new Date(value) : new Date();
     const nextDate = Number.isNaN(date.getTime()) ? new Date() : date;
     const nextUsesSubmissionTime = canUseSubmissionTime && !value;
+    setNativePickerMode(null);
     setInitialDate(nextDate);
     setInitialUsesSubmissionTime(nextUsesSubmissionTime);
     setHasResetToNow(false);
@@ -212,6 +222,12 @@ export const RecordTimeSheet = ({
   const canSetDraftRecordDate = React.useCallback(
     (date: Date) => !Number.isNaN(date.getTime()) && !isAfterMaxDate(date),
     [isAfterMaxDate]
+  );
+
+  const getClampedRecordDate = React.useCallback(
+    (date: Date) =>
+      maxRecordDate && isAfterMaxDate(date) ? new Date(maxRecordDate) : date,
+    [isAfterMaxDate, maxRecordDate]
   );
 
   const handleSetDraftRecordDate = React.useCallback(
@@ -248,13 +264,35 @@ export const RecordTimeSheet = ({
     [getOffsetDate, handleSetDraftRecordDate]
   );
 
-  const handlePickerChange = React.useCallback(
-    (_event: unknown, date: Date) => {
-      if (isAfterMaxDate(date)) return;
-      setHasResetToNow(false);
-      setDraftRecordDate(date);
+  // Native date/time pickers share the same flow: dismiss the Android dialog,
+  // clone the current draft, apply the picked field(s), then clamp and commit.
+  const applyNativePickerChange = React.useCallback(
+    (mutate: (date: Date) => void) => {
+      if (Platform.OS === 'android') setNativePickerMode(null);
+      const nextDate = new Date(draftDate);
+      mutate(nextDate);
+      handleSetDraftRecordDate(getClampedRecordDate(nextDate));
     },
-    [isAfterMaxDate, setDraftRecordDate]
+    [draftDate, getClampedRecordDate, handleSetDraftRecordDate]
+  );
+
+  const handleNativeDateChange = React.useCallback(
+    (_event: unknown, date: Date) => {
+      const { year, month, day } =
+        recordTimeNativeFields.getPickerDateParts(date);
+
+      applyNativePickerChange((next) => next.setFullYear(year, month, day));
+    },
+    [applyNativePickerChange]
+  );
+
+  const handleNativeTimeChange = React.useCallback(
+    (_event: unknown, date: Date) => {
+      applyNativePickerChange((next) =>
+        next.setHours(date.getHours(), date.getMinutes(), 0, 0)
+      );
+    },
+    [applyNativePickerChange]
   );
 
   const handleDateTextChange = React.useCallback(
@@ -434,29 +472,22 @@ export const RecordTimeSheet = ({
                 )}
               </inputGroup.InputGroup>
             ) : (
-              <View className="gap-2">
-                <DateTimePicker
-                  accentColor={accentColor}
-                  display={Platform.OS === 'ios' ? 'compact' : 'spinner'}
-                  maximumDate={maxRecordDate}
-                  mode="datetime"
-                  onValueChange={handlePickerChange}
-                  presentation="inline"
-                  value={draftDate}
-                />
-                {showResetAction && (
-                  <View className="items-end">
-                    <Button
-                      accessibilityLabel={resetActionAccessibilityLabel}
-                      onPress={handleResetAction}
-                      size="xs"
-                      variant="secondary"
-                    >
-                      <Text>{resetActionLabel}</Text>
-                    </Button>
-                  </View>
-                )}
-              </View>
+              <recordTimeNativeFields.NativeRecordTimeFields
+                accentColor={accentColor}
+                dateText={dateText}
+                draftDate={draftDate}
+                isShowingImplicitRecordTime={isShowingImplicitRecordTime}
+                maxRecordDate={maxRecordDate}
+                nativePickerMode={nativePickerMode}
+                onNativeDateChange={handleNativeDateChange}
+                onNativeTimeChange={handleNativeTimeChange}
+                onPickerModeChange={setNativePickerMode}
+                onResetAction={handleResetAction}
+                resetActionAccessibilityLabel={resetActionAccessibilityLabel}
+                resetActionLabel={resetActionLabel}
+                showResetAction={showResetAction}
+                timeText={timeText}
+              />
             )}
           </View>
           <View className="flex-row px-4 gap-3 items-center shrink-0">

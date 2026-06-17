@@ -95,7 +95,7 @@ describe('scheduled record updates', () => {
 
   test('reschedules future date', async () => {
     const transactions: Transaction[] = [];
-    const env = {} as CloudflareEnv;
+    const env = {} as unknown as CloudflareEnv;
     const db = createDb({ transactions });
     const date = '2999-05-27T12:00:00.000Z';
 
@@ -131,7 +131,7 @@ describe('scheduled record updates', () => {
 
   test('publishes past date', async () => {
     const transactions: Transaction[] = [];
-    const env = {} as CloudflareEnv;
+    const env = {} as unknown as CloudflareEnv;
     const db = createDb({ transactions });
     const date = '2026-05-01T12:00:00.000Z';
 

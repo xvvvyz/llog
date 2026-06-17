@@ -1,5 +1,16 @@
 import { getFileMediaMatches, parseSearchCursor } from '@/api/mcp/search';
+import { getRecordSearchResults } from '@/api/mcp/search-helpers';
+import type * as mcpTypes from '@/api/mcp/types';
+import type { ParsedSearchQuery } from '@/lib/search';
 import { describe, expect, test } from 'bun:test';
+
+const parsedKeywordQuery = (
+  text: string,
+  filters: Partial<ParsedSearchQuery['filters']> = {}
+): ParsedSearchQuery => ({
+  filters: { author: [], log: [], tag: [], ...filters },
+  text,
+});
 
 describe('getFileMediaMatches', () => {
   test('matches media text', () => {
@@ -78,6 +89,51 @@ describe('getFileMediaMatches', () => {
         startSeconds: 0,
       },
     ]);
+  });
+});
+
+describe('getRecordSearchResults', () => {
+  test('does not include replies for record tag searches', () => {
+    const record: mcpTypes.McpRecord = {
+      date: '2026-06-15T12:00:00.000Z',
+      id: 'record-1',
+      log: { id: 'log-1', name: 'Daily' },
+      replies: [
+        {
+          date: '2026-06-15T12:05:00.000Z',
+          id: 'reply-1',
+          text: 'Needle is only in this comment',
+        },
+      ],
+      status: 'published',
+      tags: [{ id: 'tag-1', name: 'Tagged' }],
+      text: 'Record body',
+    };
+
+    expect(
+      getRecordSearchResults({
+        parsedQuery: parsedKeywordQuery('needle'),
+        query: 'needle',
+        record,
+      }).map((result) => result.type)
+    ).toEqual(['reply']);
+
+    expect(
+      getRecordSearchResults({
+        parsedQuery: parsedKeywordQuery('needle'),
+        query: 'needle',
+        record,
+        recordTagIdSet: new Set(['tag-1']),
+      })
+    ).toEqual([]);
+
+    expect(
+      getRecordSearchResults({
+        parsedQuery: parsedKeywordQuery('needle', { tag: ['tagged'] }),
+        query: 'needle',
+        record,
+      })
+    ).toEqual([]);
   });
 });
 

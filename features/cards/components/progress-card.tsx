@@ -62,6 +62,7 @@ const CHART_PADDING = {
 };
 
 const COMPACT_CHART_PADDING = { bottom: 4, left: 0, right: 0, top: 4 };
+const NATIVE_LINE_CHART_MARKER_EDGE_PADDING = 4;
 
 const COMPACT_BAR_CHART_PADDING = {
   bottom: X_AXIS_LABEL_BOTTOM_PADDING,
@@ -102,6 +103,7 @@ const COMPACT_CHART_TOOLTIP_HEIGHT = 40;
 const CHART_TOOLTIP_GAP = 12;
 const BAR_CHART_TOOLTIP_GAP = 6;
 const CHART_TOOLTIP_HORIZONTAL_OVERFLOW = 16;
+const NATIVE_CHART_TOOLTIP_FALLBACK_MS = 900;
 
 const CHART_WEB_NO_SELECT_STYLE =
   Platform.OS === 'web'
@@ -1390,7 +1392,13 @@ const SingleSeriesChart = ({
     number | null
   >(null);
 
+  const nativeTooltipFallbackTimeoutRef = React.useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
   const touchScrollLockRef = React.useRef<ChartTouchScrollLock | null>(null);
+  const hoverTargetRef = React.useRef(hoverTarget);
+  hoverTargetRef.current = hoverTarget;
 
   const isHorizontalBar =
     type === 'bar' && barOrientation === 'horizontal' && data.length > 0;
@@ -1454,22 +1462,59 @@ const SingleSeriesChart = ({
     return data[hoverTarget.index] ? hoverTarget.index : null;
   }, [data, hoverTarget, interactive, localHoveredIndex, sharedLineHover]);
 
+  const clearNativeTooltipFallbackTimeout = React.useCallback(() => {
+    if (!nativeTooltipFallbackTimeoutRef.current) return;
+    clearTimeout(nativeTooltipFallbackTimeoutRef.current);
+    nativeTooltipFallbackTimeoutRef.current = null;
+  }, []);
+
+  React.useEffect(
+    () => clearNativeTooltipFallbackTimeout,
+    [clearNativeTooltipFallbackTimeout]
+  );
+
   const updateHoveredIndex = React.useCallback(
     (index: number | null) => {
       if (!interactive) return;
 
       if (sharedLineHover) {
-        onHoverTargetChange(
-          index == null ? null : { index, label: data[index]?.label ?? '' }
-        );
+        const currentHoverTarget = hoverTargetRef.current;
 
+        if (index == null) {
+          if (!currentHoverTarget) return;
+          onHoverTargetChange(null);
+          return;
+        }
+
+        const label = data[index]?.label ?? '';
+
+        if (
+          currentHoverTarget?.index === index &&
+          currentHoverTarget.label === label
+        ) {
+          return;
+        }
+
+        onHoverTargetChange({ index, label });
         return;
       }
 
-      setLocalHoveredIndex(index);
+      setLocalHoveredIndex((currentIndex) =>
+        currentIndex === index ? currentIndex : index
+      );
     },
     [data, interactive, onHoverTargetChange, sharedLineHover]
   );
+
+  const scheduleNativeTooltipFallback = React.useCallback(() => {
+    if (Platform.OS === 'web') return;
+    clearNativeTooltipFallbackTimeout();
+
+    nativeTooltipFallbackTimeoutRef.current = setTimeout(() => {
+      updateHoveredIndex(null);
+      nativeTooltipFallbackTimeoutRef.current = null;
+    }, NATIVE_CHART_TOOLTIP_FALLBACK_MS);
+  }, [clearNativeTooltipFallbackTimeout, updateHoveredIndex]);
 
   const domain =
     domainOverride ??
@@ -1520,6 +1565,11 @@ const SingleSeriesChart = ({
           : HIDDEN_X_AXIS_BOTTOM_PADDING,
       };
 
+  const lineMarkerEdgePadding =
+    Platform.OS === 'web' || type !== 'line'
+      ? 0
+      : NATIVE_LINE_CHART_MARKER_EDGE_PADDING;
+
   const xAxisLabelY =
     chartHeight - basePadding.bottom + AXIS_TICK_SIZE + X_AXIS_TICK_LABEL_GAP;
 
@@ -1529,7 +1579,8 @@ const SingleSeriesChart = ({
     ...basePadding,
     left: showAxes
       ? yAxisLabelWidth + AXIS_TICK_SIZE + yAxisLabelGap
-      : basePadding.left,
+      : basePadding.left + lineMarkerEdgePadding,
+    right: basePadding.right + lineMarkerEdgePadding,
   };
 
   const innerWidth = Math.max(1, chartWidth - padding.left - padding.right);
@@ -1640,8 +1691,28 @@ const SingleSeriesChart = ({
   }, []);
 
   const clearHoveredIndex = React.useCallback(() => {
+    clearNativeTooltipFallbackTimeout();
     updateHoveredIndex(null);
-  }, [updateHoveredIndex]);
+  }, [clearNativeTooltipFallbackTimeout, updateHoveredIndex]);
+
+  const handleChartTouchCancel = React.useCallback(() => {
+    resetChartTouchScrollLock();
+    if (Platform.OS !== 'web') clearHoveredIndex();
+  }, [clearHoveredIndex, resetChartTouchScrollLock]);
+
+  const makeChartTouchHandlers = (
+    pointerTarget: (event: GestureResponderEvent) => void
+  ) => ({
+    onTouchEnd: handleChartTouchCancel,
+    onTouchMove: (event: GestureResponderEvent) => {
+      handleChartTouchMove(event);
+      if (Platform.OS !== 'web') pointerTarget(event);
+    },
+    onTouchStart: (event: GestureResponderEvent) => {
+      handleChartTouchStart(event);
+      if (Platform.OS !== 'web') pointerTarget(event);
+    },
+  });
 
   const renderTooltip = ({
     gap = CHART_TOOLTIP_GAP,
@@ -1654,7 +1725,7 @@ const SingleSeriesChart = ({
     x: number;
     y: number;
   }) => {
-    if (index == null || Platform.OS !== 'web') return null;
+    if (index == null) return null;
     const item = data[index];
     if (!item) return null;
 
@@ -1696,7 +1767,12 @@ const SingleSeriesChart = ({
     return (
       <View
         className="absolute z-10 px-2 py-1 border-border-secondary rounded-lg bg-popover shadow-sm pointer-events-none border web:-translate-x-1/2"
-        style={{ left, maxWidth: tooltipWidth, top }}
+        pointerEvents="none"
+        style={
+          Platform.OS === 'web'
+            ? { left, maxWidth: tooltipWidth, top }
+            : { left: left - tooltipHalfWidth, top, width: tooltipWidth }
+        }
       >
         <Text
           className={cn('font-medium', compact ? 'text-[11px]' : 'text-xs')}
@@ -1807,8 +1883,8 @@ const SingleSeriesChart = ({
         <View
           className="overflow-visible w-full"
           onLayout={handleLayout}
-          onTouchCancel={interactive ? resetChartTouchScrollLock : undefined}
-          onTouchEnd={interactive ? resetChartTouchScrollLock : undefined}
+          onTouchCancel={interactive ? handleChartTouchCancel : undefined}
+          onTouchEnd={interactive ? handleChartTouchCancel : undefined}
           onTouchMove={interactive ? handleChartTouchMove : undefined}
           onTouchStart={interactive ? handleChartTouchStart : undefined}
           style={chartContainerStyle}
@@ -1926,7 +2002,11 @@ const SingleSeriesChart = ({
           bars.map((bar) => bar.x + bar.width / 2)
         )
       );
+
+      scheduleNativeTooltipFallback();
     };
+
+    const barTouchHandlers = makeChartTouchHandlers(handleBarPointerTarget);
 
     const hoveredBar =
       hoveredIndex == null ? undefined : (bars[hoveredIndex] ?? undefined);
@@ -1935,10 +2015,10 @@ const SingleSeriesChart = ({
       <View
         className="overflow-visible w-full"
         onLayout={handleLayout}
-        onTouchCancel={interactive ? resetChartTouchScrollLock : undefined}
-        onTouchEnd={interactive ? resetChartTouchScrollLock : undefined}
-        onTouchMove={interactive ? handleChartTouchMove : undefined}
-        onTouchStart={interactive ? handleChartTouchStart : undefined}
+        onTouchCancel={interactive ? handleChartTouchCancel : undefined}
+        onTouchEnd={interactive ? barTouchHandlers.onTouchEnd : undefined}
+        onTouchMove={interactive ? barTouchHandlers.onTouchMove : undefined}
+        onTouchStart={interactive ? barTouchHandlers.onTouchStart : undefined}
         style={chartContainerStyle}
         onPointerDown={
           Platform.OS === 'web' && interactive
@@ -2039,8 +2119,11 @@ const SingleSeriesChart = ({
         points.map((point) => point.x)
       )
     );
+
+    scheduleNativeTooltipFallback();
   };
 
+  const lineTouchHandlers = makeChartTouchHandlers(handleLinePointerTarget);
   const baselineY = padding.top + innerHeight;
   const areaPath = buildAreaPath(points, padding, baselineY);
 
@@ -2069,10 +2152,10 @@ const SingleSeriesChart = ({
     <View
       className="overflow-visible w-full"
       onLayout={handleLayout}
-      onTouchCancel={interactive ? resetChartTouchScrollLock : undefined}
-      onTouchEnd={interactive ? resetChartTouchScrollLock : undefined}
-      onTouchMove={interactive ? handleChartTouchMove : undefined}
-      onTouchStart={interactive ? handleChartTouchStart : undefined}
+      onTouchCancel={interactive ? handleChartTouchCancel : undefined}
+      onTouchEnd={interactive ? lineTouchHandlers.onTouchEnd : undefined}
+      onTouchMove={interactive ? lineTouchHandlers.onTouchMove : undefined}
+      onTouchStart={interactive ? lineTouchHandlers.onTouchStart : undefined}
       style={chartContainerStyle}
       onPointerDown={
         Platform.OS === 'web' && interactive

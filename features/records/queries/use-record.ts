@@ -49,6 +49,7 @@ export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
   const records = id && hasCurrentResult ? (data?.records ?? []) : [];
   const record = records.find((item) => item.id === id);
   const cachedRecord = recordCache.useCachedRecord(id);
+  const canUseCachedRecord = !hasCurrentResult || !!record;
 
   const hasStaleResult =
     !!id && hasCurrentResult && records.length > 0 && !record;
@@ -90,7 +91,7 @@ export const useRecord = ({ id }: { id?: string }): UseRecordResult => {
   }, [id, outbox.submissions, record?.replies]);
 
   const baseResolvedRecord = (record ??
-    cachedRecord ??
+    (canUseCachedRecord ? cachedRecord : undefined) ??
     (pendingRecord
       ? pendingEntries.queuedRecordToEntry({
           attachments: outbox.attachments,

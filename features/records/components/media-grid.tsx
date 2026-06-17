@@ -1,4 +1,3 @@
-import { PendingVideoPreview } from '@/features/files/components/composer/pending-video-preview';
 import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
 import * as offlineAvailability from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
@@ -30,13 +29,7 @@ const MediaGridItem = ({
     uri: thumbnailUri,
   });
 
-  const isLocalVideo =
-    item.type === 'video' &&
-    !item.assetKey &&
-    !!item.uri &&
-    offlineAvailability.isLocalFileSourceUri(item.uri);
-
-  const isProcessing = visualMedia.isProcessing(item) && !isLocalVideo;
+  const isProcessing = visualMedia.isProcessing(item);
   const canOpenMedia = !!recordId && !isProcessing;
 
   return (
@@ -47,19 +40,13 @@ const MediaGridItem = ({
         if (canOpenMedia) onPress(item.id);
       }}
     >
-      {isLocalVideo ? (
-        <View className="overflow-hidden h-full w-full border-continuous rounded-2xl">
-          <PendingVideoPreview autoPlay uri={item.uri} />
-        </View>
-      ) : (
-        <Image
-          fill
-          src={cachedThumbnail.src}
-          targetWidth={timelineTargetWidth}
-          uri={thumbnailUri}
-          wrapperClassName="rounded-2xl border-continuous"
-        />
-      )}
+      <Image
+        fill
+        src={cachedThumbnail.src}
+        targetWidth={timelineTargetWidth}
+        uri={thumbnailUri}
+        wrapperClassName="rounded-2xl border-continuous"
+      />
       {item.type === 'video' && (
         <View className="absolute inset-0 pointer-events-none items-center justify-center">
           {isProcessing ? (

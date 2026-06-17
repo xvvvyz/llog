@@ -54,6 +54,10 @@ export const TagChipList = ({
   const visibleTags = displayTags.slice(0, maxVisible);
   const remainingTags = displayTags.slice(maxVisible);
   const remainingTagCount = remainingTags.length;
+
+  const moreHref =
+    remainingTagCount > 0 ? getMoreHref?.(remainingTags) : undefined;
+
   if (!visibleTags.length && !showEmpty) return null;
 
   return (
@@ -62,18 +66,21 @@ export const TagChipList = ({
       style={{ pointerEvents: 'box-none' }}
     >
       {visibleTags.map((tag) => {
+        const href = getTagHref?.(tag);
+        const isInteractive = !!href || !!onTagPress;
+
         const chip = (
           <TagChip
             className={chipClassName}
             color={tag.color}
             name={tag.name}
             onPress={onTagPress ? () => onTagPress(tag) : undefined}
+            pointerEvents={isInteractive ? undefined : 'none'}
             showColorAccent
             textClassName={textClassName}
           />
         );
 
-        const href = getTagHref?.(tag);
         return renderChip({ chip, href, key: tag.id });
       })}
       {remainingTagCount > 0 &&
@@ -82,10 +89,11 @@ export const TagChipList = ({
             <TagChip
               className={chipClassName}
               name={`+${remainingTagCount} more`}
+              pointerEvents={moreHref ? undefined : 'none'}
               textClassName={textClassName}
             />
           ),
-          href: getMoreHref?.(remainingTags),
+          href: moreHref,
           key: 'more',
         })}
     </View>

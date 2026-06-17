@@ -79,7 +79,7 @@ export const useComposerLinkAttachments = ({
       onPress={handleOpenLinkEditor}
     >
       <Icon className="text-placeholder" icon={LinkIcon} />
-      <Text>Add link</Text>
+      <Text>Link</Text>
     </ScrollSheetMenu.Item>
   );
 

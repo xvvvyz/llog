@@ -11,5 +11,6 @@ export type SheetPlatformLayoutOptions = {
 export type SheetPlatformLayout = {
   bottomSpacerStyle: StyleProp<ViewStyle>;
   keyboardAvoidingStyle?: StyleProp<ViewStyle>;
+  keyboardBackdropStyle?: StyleProp<ViewStyle>;
   viewportHeight: number;
 };

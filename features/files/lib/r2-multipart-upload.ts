@@ -2,6 +2,7 @@ import { R2_MULTIPART_PART_SIZE } from '@/domain/files/r2-multipart';
 import { getAudioAssetDuration } from '@/features/files/lib/audio-duration';
 import { PickedFileAsset } from '@/features/files/lib/picked';
 import { apiOrThrow } from '@/lib/api';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 type R2MultipartFileType = 'audio' | 'document';
@@ -39,14 +40,6 @@ type MultipartUploadMetadata = {
   type: R2MultipartFileType;
 };
 
-type LegacyFileSystem = typeof import('expo-file-system/legacy');
-let fileSystemPromise: Promise<LegacyFileSystem> | undefined;
-
-const getFileSystem = () => {
-  fileSystemPromise ??= import('expo-file-system/legacy');
-  return fileSystemPromise;
-};
-
 const isKnownSize = (size?: number | null): size is number =>
   Number.isFinite(size) && size != null && size >= 0;
 
@@ -57,7 +50,6 @@ const getBlob = async (uri: string) => {
 
 const getNativeFileSize = async (uri: string, fallback?: number | null) => {
   if (isKnownSize(fallback)) return fallback;
-  const FileSystem = await getFileSystem();
   const info = await FileSystem.getInfoAsync(uri);
   if (!info.exists || info.isDirectory) throw new Error('Unable to read file');
   return info.size;
@@ -249,7 +241,6 @@ const uploadNativeParts = async ({
   source: UploadSource & { uri: string };
   uploadId: string;
 }) => {
-  const FileSystem = await getFileSystem();
   const parts: UploadedPart[] = [];
   const partCount = Math.max(1, Math.ceil(source.size / partSize));
 

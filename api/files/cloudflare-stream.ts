@@ -69,33 +69,59 @@ const streamFetch = async <T>(
   if (response.status === 404 && options.ignoreNotFound) return null as T;
   if (!response.ok) throw new Error(await readApiError(response));
   if (response.status === 204) return null as T;
-  const body = (await response.json()) as { result: T };
+  // Some endpoints (e.g. DELETE) return an empty body; don't choke on it.
+  const text = await response.text();
+  if (!text) return null as T;
+  const body = JSON.parse(text) as { result: T };
   return body.result;
 };
 
-export const createDirectVideoUpload = async (
+const encodeStreamUploadMetadata = (
+  entries: Record<string, string | undefined>
+) =>
+  Object.entries(entries)
+    .filter((entry): entry is [string, string] => !!entry[1])
+    .map(([key, value]) => `${key} ${btoa(value)}`)
+    .join(',');
+
+// Creates a resumable (tus) direct creator upload. Unlike the basic
+// `direct_upload` flow (capped at 200MB and uploaded in a single request), the
+// returned URL is a tus endpoint the client PATCHes in chunks, so large videos
+// never have to be held in memory in one piece.
+export const createTusDirectVideoUpload = async (
   env: CloudflareEnv,
-  options: { creator?: string; maxDurationSeconds?: number } = {}
+  options: {
+    creator?: string;
+    maxDurationSeconds: number;
+    uploadLength: number;
+  }
 ) => {
-  const result = await streamFetch<{ uid?: string; uploadURL?: string }>(
-    env,
-    '/stream/direct_upload',
+  const { accountId, apiToken } = getConfig(env);
+
+  const metadata = encodeStreamUploadMetadata({
+    creator: options.creator,
+    maxDurationSeconds: String(options.maxDurationSeconds),
+  });
+
+  const response = await fetch(
+    `${API_BASE}/accounts/${accountId}/stream?direct_user=true`,
     {
-      body: JSON.stringify({
-        ...(options.creator ? { creator: options.creator } : {}),
-        ...(options.maxDurationSeconds != null
-          ? { maxDurationSeconds: options.maxDurationSeconds }
-          : {}),
-      }),
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        'Tus-Resumable': '1.0.0',
+        'Upload-Length': String(options.uploadLength),
+        ...(metadata ? { 'Upload-Metadata': metadata } : {}),
+      },
     }
   );
 
-  const uid = result?.uid;
-  const uploadURL = result?.uploadURL;
+  if (!response.ok) throw new Error(await readApiError(response));
+  const uploadURL = response.headers.get('Location');
+  const uid = response.headers.get('stream-media-id');
 
-  if (!uid || !uploadURL) {
-    throw new Error('Cloudflare Stream did not return a direct upload URL');
+  if (!uploadURL || !uid) {
+    throw new Error('Cloudflare Stream did not return a tus upload URL');
   }
 
   return { uid, uploadURL };

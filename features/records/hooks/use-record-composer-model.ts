@@ -947,7 +947,9 @@ export const useRecordComposerModel = () => {
     isOpen,
     files: record?.files ?? [],
     onDeleteFile: handleDeleteFile,
-    deferQueuedUploads: !isEdit || shouldReplayRecordDraftIdentity,
+    deferQueuedUploads:
+      shouldReplayRecordDraftIdentity ||
+      (!isEdit && networkReachability !== true),
     onOpenAudio: () => sheetManager.open('record-audio', recordId, 'record'),
     onRenameFile: handleRenameFile,
     onReorderFiles: handleReorderFiles,

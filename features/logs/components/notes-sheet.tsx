@@ -13,7 +13,7 @@ import { Text } from '@/ui/text';
 import { Textarea } from '@/ui/textarea';
 import { InfoIcon } from 'phosphor-react-native';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 
 export const LogNotesSheet = () => {
   const sheetManager = useSheetManager();
@@ -139,15 +139,15 @@ export const LogNotesSheet = () => {
             <View className="relative flex-1 overflow-hidden min-h-0 border-border-secondary border-continuous rounded-2xl bg-input border">
               <Textarea
                 autoFocus
+                fill
                 maxLength={LOG_NOTE_TEXT_MAX_LENGTH}
                 onChangeText={setNoteText}
                 pasteRichTextAsMarkdown
                 placeholder="Add notes…"
                 readOnly={isTextInputDisabled}
-                style={Platform.OS === 'web' ? { height: '100%' } : undefined}
                 value={draftText}
                 className={cn(
-                  'min-h-full flex-1 border-0 rounded-2xl bg-transparent',
+                  'border-0 rounded-2xl bg-transparent',
                   isTextInputDisabled && 'opacity-50'
                 )}
               />

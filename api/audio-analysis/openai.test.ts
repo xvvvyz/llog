@@ -62,7 +62,7 @@ describe('audio openai', () => {
     }) as never;
 
     const result = await openai.transcribeAudioFile({
-      env: { OPENAI_API_KEY: 'key' } as CloudflareEnv,
+      env: { OPENAI_API_KEY: 'key' } as unknown as CloudflareEnv,
       file: { duration: 2000, id: 'file-1', mimeType: 'audio/wav' },
       object: audioObject(new Uint8Array([1, 2, 3])),
     });

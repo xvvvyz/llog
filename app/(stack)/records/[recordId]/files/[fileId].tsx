@@ -7,7 +7,7 @@ import { Loading } from '@/ui/loading';
 import { NotFound } from '@/ui/not-found';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 const getRouteParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
@@ -17,7 +17,7 @@ export default function MediaLightboxRoute() {
   const routeFileId = getRouteParam(params.fileId);
   const routeRecordId = getRouteParam(params.recordId);
 
-  const { isLoading, media, teamId } = useLightboxMedia({
+  const { isLoading, media, shareableMediaIds, teamId } = useLightboxMedia({
     mediaId: routeFileId,
     recordId: routeRecordId,
   });
@@ -47,25 +47,25 @@ export default function MediaLightboxRoute() {
   const handleActiveMediaChange = React.useCallback(
     (nextMediaId: string) => {
       if (!routeRecordId || nextMediaId === addressMediaIdRef.current) return;
-
-      const nextHref = recordRoutes.getRecordMediaHref(
-        routeRecordId,
-        nextMediaId
-      );
-
+      setVisibleMediaId(nextMediaId);
       addressMediaIdRef.current = nextMediaId;
 
-      if (typeof window !== 'undefined') {
+      if (
+        Platform.OS === 'web' &&
+        typeof window !== 'undefined' &&
+        typeof window.history?.replaceState === 'function'
+      ) {
+        const nextHref = recordRoutes.getRecordMediaHref(
+          routeRecordId,
+          nextMediaId
+        );
+
         window.history.replaceState(
           window.history.state,
           '',
           nextHref as string
         );
-
-        return;
       }
-
-      router.replace(nextHref);
     },
     [routeRecordId]
   );
@@ -104,6 +104,7 @@ export default function MediaLightboxRoute() {
       onCloseAnimationEnd={handleCloseAnimationEnd}
       onRequestClose={handleRequestClose}
       recordId={routeRecordId}
+      shareableMediaIds={shareableMediaIds}
     />
   );
 }

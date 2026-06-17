@@ -4,7 +4,7 @@ import { describe, expect, mock, test } from 'bun:test';
 
 const calls: { input: unknown; type: string }[] = [];
 const db = { tx: {} } as never;
-const env = {} as CloudflareEnv;
+const env = {} as unknown as CloudflareEnv;
 const requestedAt = '2026-05-20T00:00:00.000Z';
 
 const processJob = processor.createJobProcessor({

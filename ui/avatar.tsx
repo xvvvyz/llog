@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { Image } from '@/ui/image';
+import { View } from 'react-native';
 
 const getFallbackAvatarUri = ({
   fallback,
@@ -36,12 +37,18 @@ export const Avatar = ({
   const fallbackUri = getFallbackAvatarUri({ fallback, seed });
 
   return (
-    <Image
-      height={size}
-      targetSize={size * 3}
-      uri={avatar ?? fallbackUri}
-      width={size}
-      wrapperClassName={cn('select-none rounded-full', className)}
-    />
+    <View
+      className={cn('select-none rounded-full shrink-0', className)}
+      style={{ height: size, width: size }}
+    >
+      <Image
+        className="rounded-full"
+        contentFit="cover"
+        fill
+        targetSize={size * 3}
+        uri={avatar ?? fallbackUri}
+        wrapperClassName="overflow-visible rounded-full border-0 bg-transparent"
+      />
+    </View>
   );
 };

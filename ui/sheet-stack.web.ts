@@ -8,6 +8,7 @@ type SheetStackOptions = {
   layer: number;
   onDismiss: () => void;
   open: boolean;
+  usesGlobalBackdrop?: boolean;
 };
 
 type SheetStackState = {
@@ -32,6 +33,7 @@ type WebSheetStackItem = {
   layer: number;
   onDismissRef: React.RefObject<() => void>;
   order: number;
+  usesGlobalBackdrop: boolean;
 };
 
 const WEB_SHEET_LAYER_MULTIPLIER = 1_000;
@@ -49,11 +51,12 @@ const registerWebSheet = (
   id: string,
   layer: number,
   onDismissRef: React.RefObject<() => void>,
-  order: number
+  order: number,
+  usesGlobalBackdrop: boolean
 ) => {
   webSheetStack = [
     ...webSheetStack.filter((item) => item.id !== id),
-    { id, layer, onDismissRef, order },
+    { id, layer, onDismissRef, order, usesGlobalBackdrop },
   ];
 
   emitWebSheetStackChange();
@@ -68,7 +71,10 @@ const updateWebSheet = (
   id: string,
   values: Pick<
     WebSheetStackItem,
-    'backdropFadeDistance' | 'backdropTranslateY' | 'layer'
+    | 'backdropFadeDistance'
+    | 'backdropTranslateY'
+    | 'layer'
+    | 'usesGlobalBackdrop'
   >
 ) => {
   const currentItem = webSheetStack.find((item) => item.id === id);
@@ -77,7 +83,8 @@ const updateWebSheet = (
     !currentItem ||
     (currentItem.layer === values.layer &&
       currentItem.backdropTranslateY === values.backdropTranslateY &&
-      currentItem.backdropFadeDistance === values.backdropFadeDistance)
+      currentItem.backdropFadeDistance === values.backdropFadeDistance &&
+      currentItem.usesGlobalBackdrop === values.usesGlobalBackdrop)
   ) {
     return;
   }
@@ -126,6 +133,7 @@ export const useSheetStack = ({
   layer,
   onDismiss,
   open,
+  usesGlobalBackdrop = true,
 }: SheetStackOptions): SheetStackState => {
   const sheetId = React.useId();
   const onDismissRef = React.useRef(onDismiss);
@@ -150,8 +158,15 @@ export const useSheetStack = ({
     if (!open) return;
     const order = ++nextWebSheetOrder;
     setSheetOrder(order);
-    return registerWebSheet(sheetId, layerRef.current, onDismissRef, order);
-  }, [open, sheetId]);
+
+    return registerWebSheet(
+      sheetId,
+      layerRef.current,
+      onDismissRef,
+      order,
+      usesGlobalBackdrop
+    );
+  }, [open, sheetId, usesGlobalBackdrop]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -160,8 +175,16 @@ export const useSheetStack = ({
       backdropFadeDistance,
       backdropTranslateY,
       layer,
+      usesGlobalBackdrop,
     });
-  }, [backdropFadeDistance, backdropTranslateY, layer, open, sheetId]);
+  }, [
+    backdropFadeDistance,
+    backdropTranslateY,
+    layer,
+    open,
+    sheetId,
+    usesGlobalBackdrop,
+  ]);
 
   useDismissStack({ id: sheetId, layer, onDismiss, open });
 
@@ -181,13 +204,23 @@ export const useSheetStackBackdrop = (): SheetStackBackdropState => {
 
   const topSheet = getTopWebSheet();
   const isLastSheet = webSheetStack.length === 1;
+  const usesGlobalBackdrop = topSheet?.usesGlobalBackdrop ?? false;
 
   return {
-    fadeDistance: isLastSheet ? topSheet?.backdropFadeDistance : undefined,
+    fadeDistance:
+      usesGlobalBackdrop && isLastSheet
+        ? topSheet?.backdropFadeDistance
+        : undefined,
     isLastSheet,
-    layer: topSheet ? Math.max(0, getWebSheetZIndex(topSheet) - 1) : 0,
+    layer:
+      topSheet && usesGlobalBackdrop
+        ? Math.max(0, getWebSheetZIndex(topSheet) - 1)
+        : 0,
     onDismiss: () => topSheet?.onDismissRef.current(),
-    open: !!topSheet,
-    translateY: isLastSheet ? topSheet?.backdropTranslateY : undefined,
+    open: !!topSheet && usesGlobalBackdrop,
+    translateY:
+      usesGlobalBackdrop && isLastSheet
+        ? topSheet?.backdropTranslateY
+        : undefined,
   };
 };

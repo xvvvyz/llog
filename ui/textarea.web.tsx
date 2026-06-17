@@ -20,6 +20,11 @@ export const Textarea = React.forwardRef<
     numberOfLines?: number;
     onChangeText?: (text: string) => void;
     onContentSizeChange?: (event: TextareaContentSizeChangeEvent) => void;
+    onLayout?: (event: {
+      nativeEvent: {
+        layout: { height: number; width: number; x: number; y: number };
+      };
+    }) => void;
     onSelectionChange?: (event: {
       nativeEvent: { selection: { end: number; start: number } };
     }) => void;
@@ -40,6 +45,7 @@ export const Textarea = React.forwardRef<
       onChangeText,
       onContentSizeChange,
       onKeyDown,
+      onLayout,
       onPaste,
       onSelect,
       onSelectionChange,
@@ -86,6 +92,32 @@ export const Textarea = React.forwardRef<
 
       return () => cancelAnimationFrame(frame);
     }, [localValue, onContentSizeChange]);
+
+    // react-textarea-autosize renders a DOM <textarea>, which doesn't understand
+    // RN's onLayout (React warns if it's forwarded). Emit it from a
+    // ResizeObserver instead so consumers still get layout metrics on web.
+    React.useEffect(() => {
+      if (!onLayout) return;
+      const textarea = textareaRef.current;
+      if (!textarea || typeof ResizeObserver === 'undefined') return;
+
+      const emit = () =>
+        onLayout({
+          nativeEvent: {
+            layout: {
+              height: textarea.offsetHeight,
+              width: textarea.offsetWidth,
+              x: textarea.offsetLeft,
+              y: textarea.offsetTop,
+            },
+          },
+        });
+
+      emit();
+      const observer = new ResizeObserver(emit);
+      observer.observe(textarea);
+      return () => observer.disconnect();
+    }, [onLayout]);
 
     React.useEffect(
       () => () => {

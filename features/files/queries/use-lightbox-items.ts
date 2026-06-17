@@ -1,4 +1,5 @@
 import { visibleFileQuery } from '@/domain/files/query';
+import * as recordStatus from '@/domain/records/status';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as pendingEntries from '@/features/offline/pending-entries';
 import { type FileItem } from '@/features/files/types/file';
@@ -26,10 +27,13 @@ export const useLightboxMedia = ({
     recordId
       ? {
           records: {
-            $: { fields: ['id', 'teamId'], where: { id: recordId } },
+            $: { fields: ['id', 'status', 'teamId'], where: { id: recordId } },
             files: visibleFileQuery,
             log: { team: { $: { fields: ['id'] } } },
-            replies: { files: visibleFileQuery },
+            replies: {
+              $: { fields: ['id', 'isDraft'] },
+              files: visibleFileQuery,
+            },
           },
         }
       : null
@@ -86,12 +90,32 @@ export const useLightboxMedia = ({
     return [];
   }, [mediaId, pendingMedia, record]);
 
+  const shareableMediaIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    if (!recordStatus.recordIsPublished(record)) return ids;
+
+    for (const file of getVisualMedia(record?.files ?? [])) {
+      ids.add(file.id);
+    }
+
+    for (const reply of record?.replies ?? []) {
+      if (reply.isDraft !== false) continue;
+
+      for (const file of getVisualMedia(reply.files ?? [])) {
+        ids.add(file.id);
+      }
+    }
+
+    return ids;
+  }, [record]);
+
   return {
     isLoading:
       !!recordId &&
       !pendingMedia.some((item) => item.id === mediaId) &&
       (isLoading || !hasCurrentResult),
     media,
+    shareableMediaIds,
     teamId: record?.log?.team?.id ?? record?.teamId,
   };
 };

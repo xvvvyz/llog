@@ -1,14 +1,14 @@
 import type * as pickedFiles from '@/features/files/lib/picked';
 import * as persistence from '@/features/offline/persistence';
-import { Platform } from 'react-native';
 import type * as types from '@/features/offline/types';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
 
 const OUTBOX_DB_NAME = 'llog-offline-outbox';
 const OUTBOX_DB_VERSION = 1;
 const METADATA_STORE = 'metadata';
 const BLOB_STORE = 'blobs';
 const NATIVE_OUTBOX_DIR = 'llog-outbox';
-type LegacyFileSystem = typeof import('expo-file-system/legacy');
 
 type AsyncStorageModule =
   typeof import('@react-native-async-storage/async-storage').default;
@@ -18,7 +18,6 @@ type BinaryInput =
   | { asset?: never; audioUri: string; duration?: number };
 
 let asyncStoragePromise: Promise<AsyncStorageModule> | undefined;
-let fileSystemPromise: Promise<LegacyFileSystem> | undefined;
 let indexedDbPromise: Promise<IDBDatabase | null> | undefined;
 let memoryPersistedOutbox: types.PersistedOutbox | null = null;
 const runtimeObjectUrls = new Map<string, string>();
@@ -31,11 +30,6 @@ const loadAsyncStorage = async () => {
 const getAsyncStorage = () => {
   asyncStoragePromise ??= loadAsyncStorage();
   return asyncStoragePromise;
-};
-
-const getFileSystem = () => {
-  fileSystemPromise ??= import('expo-file-system/legacy');
-  return fileSystemPromise;
 };
 
 const canUseIndexedDb = () =>
@@ -236,7 +230,6 @@ const saveWebBinary = async (fileId: string, input: BinaryInput) => {
 };
 
 const saveNativeBinary = async (fileId: string, input: BinaryInput) => {
-  const FileSystem = await getFileSystem();
   const baseDirectory = FileSystem.documentDirectory;
   if (!baseDirectory) throw new Error('File storage is unavailable.');
   const directory = `${baseDirectory}${NATIVE_OUTBOX_DIR}/`;
@@ -298,7 +291,6 @@ export const deleteAttachmentBinary = async (
   }
 
   if (!localUri) return;
-  const FileSystem = await getFileSystem();
 
   try {
     await FileSystem.deleteAsync(localUri, { idempotent: true });

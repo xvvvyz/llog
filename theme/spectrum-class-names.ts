@@ -431,59 +431,9 @@ export function getSpectrumAccentTextClassName(color: unknown) {
 
 export function getSpectrumSwatchBackgroundClassName(
   color: unknown,
-  selected: boolean
+  _selected: boolean
 ) {
-  if (!selected) return getSpectrumBackgroundClassName(color);
-
-  switch (resolveColor(color)) {
-    case 0: {
-      return 'bg-spectrum-light-0-lighter dark:bg-spectrum-dark-0-darker';
-    }
-
-    case 1: {
-      return 'bg-spectrum-light-1-lighter dark:bg-spectrum-dark-1-darker';
-    }
-
-    case 2: {
-      return 'bg-spectrum-light-2-lighter dark:bg-spectrum-dark-2-darker';
-    }
-
-    case 3: {
-      return 'bg-spectrum-light-3-lighter dark:bg-spectrum-dark-3-darker';
-    }
-
-    case 4: {
-      return 'bg-spectrum-light-4-lighter dark:bg-spectrum-dark-4-darker';
-    }
-
-    case 5: {
-      return 'bg-spectrum-light-5-lighter dark:bg-spectrum-dark-5-darker';
-    }
-
-    case 6: {
-      return 'bg-spectrum-light-6-lighter dark:bg-spectrum-dark-6-darker';
-    }
-
-    case 7: {
-      return 'bg-spectrum-light-7-lighter dark:bg-spectrum-dark-7-darker';
-    }
-
-    case 8: {
-      return 'bg-spectrum-light-8-lighter dark:bg-spectrum-dark-8-darker';
-    }
-
-    case 9: {
-      return 'bg-spectrum-light-9-lighter dark:bg-spectrum-dark-9-darker';
-    }
-
-    case 10: {
-      return 'bg-spectrum-light-10-lighter dark:bg-spectrum-dark-10-darker';
-    }
-
-    default: {
-      return 'bg-spectrum-light-11-lighter dark:bg-spectrum-dark-11-darker';
-    }
-  }
+  return getSpectrumBackgroundClassName(color);
 }
 
 export function getSpectrumSwatchBorderClassName(

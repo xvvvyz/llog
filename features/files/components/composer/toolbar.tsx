@@ -8,11 +8,10 @@ import { Platform } from 'react-native';
 
 import {
   Camera,
+  Files as FilesIcon,
   ImageSquare,
   Microphone,
-  Paperclip,
   Plus,
-  UploadSimple,
 } from 'phosphor-react-native';
 
 export const Toolbar = ({
@@ -56,25 +55,22 @@ export const Toolbar = ({
         </Button>
       )}
     >
-      <ScrollSheetMenu.Item disabled={disabled} onPress={onPickDocuments}>
-        <Icon
-          className="text-placeholder"
-          icon={Platform.OS === 'web' ? UploadSimple : Paperclip}
-        />
-        <Text>Upload file</Text>
-      </ScrollSheetMenu.Item>
-      {Platform.OS !== 'web' && (
-        <ScrollSheetMenu.Item disabled={disabled} onPress={onBrowseMedia}>
-          <Icon className="text-placeholder" icon={ImageSquare} />
-          <Text>Photo/video</Text>
-        </ScrollSheetMenu.Item>
-      )}
       {Platform.OS === 'ios' && (
         <ScrollSheetMenu.Item disabled={disabled} onPress={onCaptureMedia}>
           <Icon className="text-placeholder" icon={Camera} />
           <Text>Camera</Text>
         </ScrollSheetMenu.Item>
       )}
+      {Platform.OS !== 'web' && (
+        <ScrollSheetMenu.Item disabled={disabled} onPress={onBrowseMedia}>
+          <Icon className="text-placeholder" icon={ImageSquare} />
+          <Text>Photos</Text>
+        </ScrollSheetMenu.Item>
+      )}
+      <ScrollSheetMenu.Item disabled={disabled} onPress={onPickDocuments}>
+        <Icon className="text-placeholder" icon={FilesIcon} />
+        <Text>Files</Text>
+      </ScrollSheetMenu.Item>
       {attachmentMenuItems}
     </ScrollSheetMenu.Root>
   );

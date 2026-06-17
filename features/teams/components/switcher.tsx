@@ -12,7 +12,39 @@ import { Icon } from '@/ui/icon';
 import { Text } from '@/ui/text';
 import { CaretDown, Check, GearSix, Plus } from 'phosphor-react-native';
 import * as React from 'react';
-import { View, type GestureResponderEvent } from 'react-native';
+
+import {
+  Platform,
+  useWindowDimensions,
+  View,
+  type GestureResponderEvent,
+} from 'react-native';
+
+const TEAM_MENU_HORIZONTAL_SCREEN_INSET = 16;
+const TEAM_MENU_ROW_CHROME_WIDTH = 128;
+const TEAM_MENU_TEXT_AVERAGE_WIDTH = 8.5;
+const TEAM_MENU_MIN_WIDTH = 144;
+
+const getEstimatedTeamMenuWidth = ({
+  labels,
+  windowWidth,
+}: {
+  labels: string[];
+  windowWidth: number;
+}) => {
+  const maxLabelLength = Math.max(0, ...labels.map((label) => label.length));
+
+  const estimatedContentWidth =
+    TEAM_MENU_ROW_CHROME_WIDTH + maxLabelLength * TEAM_MENU_TEXT_AVERAGE_WIDTH;
+
+  return Math.min(
+    Math.max(TEAM_MENU_MIN_WIDTH, Math.ceil(estimatedContentWidth)),
+    Math.max(
+      TEAM_MENU_MIN_WIDTH,
+      windowWidth - TEAM_MENU_HORIZONTAL_SCREEN_INSET * 2
+    )
+  );
+};
 
 export const TeamSwitcher = () => {
   return (
@@ -27,6 +59,7 @@ const TeamSwitcherContent = () => {
   const menu = Menu.useContext();
   const sheetManager = useSheetManager();
   const ui = useUi();
+  const windowDimensions = useWindowDimensions();
   const { teams } = useTeams();
 
   const [highlightedTeamId, setHighlightedTeamId] = React.useState<
@@ -62,6 +95,15 @@ const TeamSwitcherContent = () => {
   if (activeTeam?.id) lastIdRef.current = activeTeam.id;
   if (activeTeam?.name) lastNameRef.current = activeTeam.name;
 
+  const nativeMenuWidth = React.useMemo(
+    () =>
+      getEstimatedTeamMenuWidth({
+        labels: [...teams.map((team) => team.name), 'New team'],
+        windowWidth: windowDimensions.width,
+      }),
+    [teams, windowDimensions.width]
+  );
+
   return (
     <>
       <Menu.Trigger asChild>
@@ -79,7 +121,10 @@ const TeamSwitcherContent = () => {
           <Icon className="text-placeholder" icon={CaretDown} />
         </Button>
       </Menu.Trigger>
-      <Menu.Content align={breakpoints.md ? 'start' : 'center'}>
+      <Menu.Content
+        align={breakpoints.md ? 'start' : 'center'}
+        style={Platform.OS === 'web' ? undefined : { width: nativeMenuWidth }}
+      >
         {teams.map((t) => (
           <View
             key={t.id}

@@ -11,6 +11,9 @@ import { db } from '@/lib/db';
 const IN_FLIGHT_UPLOAD_RETRY_COUNT = 20;
 const IN_FLIGHT_UPLOAD_RETRY_DELAY_MS = 750;
 const QUEUED_ATTACHMENT_UPLOAD_TIMEOUT_MS = 2 * 60_000;
+// Videos upload in chunks and can be large/slow, so they need a much longer
+// budget than the small single-request uploads other file types use.
+const QUEUED_VIDEO_UPLOAD_TIMEOUT_MS = 60 * 60_000;
 const UPLOADED_FILE_READY_RETRY_COUNT = 20;
 const UPLOADED_FILE_READY_RETRY_DELAY_MS = 750;
 const PENDING_STREAM_URI_PREFIX = 'stream-pending:';
@@ -181,6 +184,11 @@ export const uploadQueuedAttachment = async (
     width: attachment.width,
   };
 
+  const uploadTimeoutMs =
+    attachment.type === 'video'
+      ? QUEUED_VIDEO_UPLOAD_TIMEOUT_MS
+      : QUEUED_ATTACHMENT_UPLOAD_TIMEOUT_MS;
+
   const upload = async () => {
     outboxStore.setQueuedAttachmentStatus(attachment.id, 'uploading');
 
@@ -194,7 +202,7 @@ export const uploadQueuedAttachment = async (
           order: attachment.order,
           recordId: submission.contentId,
         }),
-        QUEUED_ATTACHMENT_UPLOAD_TIMEOUT_MS,
+        uploadTimeoutMs,
         'Upload timed out'
       );
     } else {
@@ -208,7 +216,7 @@ export const uploadQueuedAttachment = async (
           recordId: submission.recordId,
           replyId: submission.contentId,
         }),
-        QUEUED_ATTACHMENT_UPLOAD_TIMEOUT_MS,
+        uploadTimeoutMs,
         'Upload timed out'
       );
     }

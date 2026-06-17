@@ -20,6 +20,7 @@ import {
 type SheetDragBehaviorOptions = SheetDragMetrics & {
   isTopSheet: boolean;
   isWeb: boolean;
+  onCloseAnimationStart?: () => void;
   onDismiss: () => void;
   open: boolean;
 };
@@ -29,11 +30,18 @@ export const useSheetDragBehavior = ({
   exitTranslation,
   isTopSheet,
   isWeb,
+  onCloseAnimationStart,
   onDismiss,
   open,
   translateY,
 }: SheetDragBehaviorOptions) => {
   const blockedScrollableIdsRef = React.useRef(new Set<string>());
+  const closeCompletionCallbacksRef = React.useRef(new Set<() => void>());
+
+  const closeCompletionTimeoutRef = React.useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
   const dragLockIdsRef = React.useRef(new Set<string>());
 
   const webTouchStateRef = React.useRef<webSheetDrag.WebTouchState | null>(
@@ -51,12 +59,17 @@ export const useSheetDragBehavior = ({
   const touchStartX = useSharedValue(0);
   const touchStartY = useSharedValue(0);
 
+  // The shared values gate the native gesture on the UI thread; the React
+  // state mirrors are only read by the web touch handlers. Setting state on
+  // native would re-render the sheet mid-touch — recreating the dismiss
+  // gesture under an active scroll cancels the text input's own scroll
+  // recognizer, which then degrades the drag into a focusing tap.
   const updateScrollableDragState = React.useCallback(
     (canDrag: boolean) => {
       canDragFromScrollableContentValue.value = canDrag;
-      setCanDragFromScrollableContent(canDrag);
+      if (isWeb) setCanDragFromScrollableContent(canDrag);
     },
-    [canDragFromScrollableContentValue]
+    [canDragFromScrollableContentValue, isWeb]
   );
 
   const setScrollableAtTop = React.useCallback(
@@ -97,9 +110,9 @@ export const useSheetDragBehavior = ({
       if (dragLockIds.has(id)) return;
       dragLockIds.add(id);
       dragLockCount.value = dragLockIds.size;
-      setIsSheetDragLocked(true);
+      if (isWeb) setIsSheetDragLocked(true);
     },
-    [dragLockCount]
+    [dragLockCount, isWeb]
   );
 
   const unlockSheetDrag = React.useCallback(
@@ -107,9 +120,9 @@ export const useSheetDragBehavior = ({
       const dragLockIds = dragLockIdsRef.current;
       if (!dragLockIds.delete(id)) return;
       dragLockCount.value = dragLockIds.size;
-      setIsSheetDragLocked(dragLockIds.size > 0);
+      if (isWeb) setIsSheetDragLocked(dragLockIds.size > 0);
     },
-    [dragLockCount]
+    [dragLockCount, isWeb]
   );
 
   const dragLockContext =
@@ -129,25 +142,63 @@ export const useSheetDragBehavior = ({
     onDismiss();
   }, [onDismiss]);
 
+  const clearCloseCompletionTimeout = React.useCallback(() => {
+    if (!closeCompletionTimeoutRef.current) return;
+    clearTimeout(closeCompletionTimeoutRef.current);
+    closeCompletionTimeoutRef.current = null;
+  }, []);
+
+  const finishCloseAnimation = React.useCallback(() => {
+    clearCloseCompletionTimeout();
+    const callbacks = Array.from(closeCompletionCallbacksRef.current);
+    closeCompletionCallbacksRef.current.clear();
+    for (const callback of callbacks) callback();
+  }, [clearCloseCompletionTimeout]);
+
+  const closeWithAnimation = React.useCallback(
+    (onClosed: () => void) => {
+      closeCompletionCallbacksRef.current.add(onClosed);
+      if (isDragClosing.value) return;
+      isDragClosing.value = true;
+      onCloseAnimationStart?.();
+      clearCloseCompletionTimeout();
+
+      closeCompletionTimeoutRef.current = setTimeout(
+        finishCloseAnimation,
+        sheetDragConstants.SHEET_CLOSE_ANIMATION_DURATION_MS + 50
+      );
+
+      translateY.value = withTiming(
+        exitTranslation,
+        {
+          duration: sheetDragConstants.SHEET_CLOSE_ANIMATION_DURATION_MS,
+          easing: Easing.out(Easing.cubic),
+        },
+        (finished) => {
+          if (!finished) return;
+          runOnJS(finishCloseAnimation)();
+        }
+      );
+    },
+    [
+      clearCloseCompletionTimeout,
+      exitTranslation,
+      finishCloseAnimation,
+      isDragClosing,
+      onCloseAnimationStart,
+      translateY,
+    ]
+  );
+
   const finishSheetDragDismiss = React.useCallback(() => {
     if (isDragClosing.value) return;
-    isDragClosing.value = true;
-
-    translateY.value = withTiming(
-      exitTranslation,
-      {
-        duration: sheetDragConstants.SHEET_CLOSE_ANIMATION_DURATION_MS,
-        easing: Easing.out(Easing.cubic),
-      },
-      (finished) => {
-        if (!finished) return;
-        runOnJS(closeFromSheetDrag)();
-      }
-    );
-  }, [closeFromSheetDrag, exitTranslation, isDragClosing, translateY]);
+    closeWithAnimation(closeFromSheetDrag);
+  }, [closeFromSheetDrag, closeWithAnimation, isDragClosing]);
 
   React.useEffect(() => {
     if (open) {
+      clearCloseCompletionTimeout();
+      closeCompletionCallbacksRef.current.clear();
       isDragClosing.value = false;
       translateY.value = 0;
       return;
@@ -155,6 +206,8 @@ export const useSheetDragBehavior = ({
 
     webTouchStateRef.current = null;
     blockedScrollableIdsRef.current.clear();
+    clearCloseCompletionTimeout();
+    closeCompletionCallbacksRef.current.clear();
     dragLockIdsRef.current.clear();
     canDragFromScrollableContentValue.value = true;
     dragLockCount.value = 0;
@@ -165,6 +218,7 @@ export const useSheetDragBehavior = ({
     translateY.value = 0;
   }, [
     canDragFromScrollableContentValue,
+    clearCloseCompletionTimeout,
     dragLockCount,
     isDragClosing,
     open,
@@ -192,7 +246,10 @@ export const useSheetDragBehavior = ({
   const dismissGesture = React.useMemo(
     () =>
       Gesture.Pan()
-        .enabled(!isWeb && open && isTopSheet && !isSheetDragLocked)
+        // Drag locks are enforced inside the worklets via dragLockCount so
+        // locking/unlocking never rebuilds the gesture while a touch is
+        // active (a rebuild cancels native recognizers under the detector).
+        .enabled(!isWeb && open && isTopSheet)
         .manualActivation(true)
         .activeOffsetY(sheetDragConstants.SHEET_DISMISS_ACTIVE_OFFSET_Y)
         .failOffsetX([
@@ -294,21 +351,7 @@ export const useSheetDragBehavior = ({
               sheetDragConstants.SHEET_DISMISS_VELOCITY_THRESHOLD;
 
           if (shouldDismiss) {
-            if (isDragClosing.value) return;
-            isDragClosing.value = true;
-
-            translateY.value = withTiming(
-              exitTranslation,
-              {
-                duration: sheetDragConstants.SHEET_CLOSE_ANIMATION_DURATION_MS,
-                easing: Easing.out(Easing.cubic),
-              },
-              (finished) => {
-                if (!finished) return;
-                runOnJS(closeFromSheetDrag)();
-              }
-            );
-
+            runOnJS(finishSheetDragDismiss)();
             return;
           }
 
@@ -330,12 +373,10 @@ export const useSheetDragBehavior = ({
         }),
     [
       canDragFromScrollableContentValue,
-      closeFromSheetDrag,
       dismissThreshold,
       dragLockCount,
-      exitTranslation,
+      finishSheetDragDismiss,
       isDragClosing,
-      isSheetDragLocked,
       isTopSheet,
       isWeb,
       open,
@@ -519,6 +560,7 @@ export const useSheetDragBehavior = ({
 
   return {
     backdropStyle,
+    closeWithAnimation,
     dismissGesture,
     dragLockContext,
     scrollContext,
