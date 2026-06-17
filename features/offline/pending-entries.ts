@@ -1,5 +1,6 @@
 import type { FileItem } from '@/instant.entities';
 import type { Profile } from '@/features/account/types/profile';
+import * as visualMedia from '@/features/files/lib/visual-media';
 import type { EntryRecord } from '@/features/records/types/entry';
 import * as recordTime from '@/features/records/lib/record-time';
 import type * as types from '@/features/offline/types';
@@ -8,6 +9,7 @@ const ACTIVE_STATUSES = new Set([
   'pending',
   'syncing',
   'publishing',
+  'processing',
   'complete',
   'error',
 ]);
@@ -53,9 +55,24 @@ const attachmentsForSubmission = (
     );
   });
 
-  const uploadedFiles = (submission.files ?? []).map(
-    (file) => file as FileItem
+  const localUriById = new Map(
+    queuedAttachments
+      .filter((attachment) => attachment.localUri)
+      .map((attachment) => [attachment.id, attachment.localUri as string])
   );
+
+  const uploadedFiles = (submission.files ?? []).map((file) => {
+    const uploadedFile = file as FileItem;
+    const localUri = localUriById.get(uploadedFile.id);
+
+    // A just-uploaded video is still encoding; its server uri is a non-playable
+    // stream-pending placeholder, so keep the local source to preview from.
+    return uploadedFile.type === 'video' &&
+      localUri &&
+      !visualMedia.isLocalPreviewableUri(uploadedFile.uri)
+      ? ({ ...uploadedFile, uri: localUri } as FileItem)
+      : uploadedFile;
+  });
 
   const uploadedFileIds = new Set(uploadedFiles.map((file) => file.id));
 
@@ -162,7 +179,19 @@ const mergeFiles = (files: FileItem[] = [], pendingFiles: FileItem[] = []) => {
   const mergedFiles = files.map((file) => {
     mergedIds.add(file.id);
     const pendingFile = pendingById.get(file.id);
-    if (!pendingFile || hasFileSource(file)) return file;
+    if (!pendingFile) return file;
+
+    // Prefer the local source while a video's server uri is still a
+    // non-playable stream-pending placeholder, so its poster keeps showing.
+    if (
+      file.type === 'video' &&
+      !visualMedia.isLocalPreviewableUri(file.uri) &&
+      visualMedia.isLocalPreviewableUri(pendingFile.uri)
+    ) {
+      return { ...file, uri: pendingFile.uri } as FileItem;
+    }
+
+    if (hasFileSource(file)) return file;
     return { ...file, ...pendingFile } as FileItem;
   });
 

@@ -31,6 +31,16 @@ export const useQueuedAttachments = (parent?: types.QueuedParent) => {
   );
 };
 
+export const useQueuedAttachmentStatus = (fileId: string) => {
+  const outbox = useOutbox();
+
+  return React.useMemo(
+    () =>
+      outbox.attachments.find((attachment) => attachment.id === fileId)?.status,
+    [outbox.attachments, fileId]
+  );
+};
+
 export const useQueuedDraft = (parent?: {
   parentId: string;
   parentType: 'record' | 'reply';

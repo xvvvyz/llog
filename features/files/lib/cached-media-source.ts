@@ -75,7 +75,10 @@ const getStreamThumbnailCacheKey = (url: URL) => {
 
   return {
     key: `${url.origin}${url.pathname}?${params.toString()}`,
-    score: safeWidth && safeHeight ? safeWidth * safeHeight : 0,
+    score:
+      safeWidth && safeHeight
+        ? safeWidth * safeHeight
+        : Math.max(safeWidth, safeHeight),
   };
 };
 

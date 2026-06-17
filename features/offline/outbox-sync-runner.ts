@@ -56,6 +56,7 @@ export type OutboxSyncDependencies = {
   fetchOutboxNetworkReachability: () => Promise<boolean | undefined>;
   isReplyForQueuedRecord: (submission: ReplySubmission) => boolean;
   logError: (...args: unknown[]) => void;
+  mediaProcessed: (fileIds: string[]) => Promise<boolean>;
   outboxStore: OutboxSyncStore;
   publishRecord: (input: { id: string }) => Promise<unknown>;
   publishReply: (input: {
@@ -169,6 +170,15 @@ export const createOutboxSyncRunner = (deps: OutboxSyncDependencies) => {
 
   const isCurrentSubmissionSyncable = (submissionId: string) =>
     !!getCurrentSyncableSubmission(submissionId);
+
+  const getSubmissionVideoFileIds = (submission: types.QueuedSubmission) =>
+    deps.outboxStore
+      .getQueuedAttachmentsForSubmission(
+        deps.outboxStore.getOutboxSnapshot(),
+        submission
+      )
+      .filter((attachment) => attachment.type === 'video')
+      .map((attachment) => attachment.id);
 
   const replayQueuedSubmissionDraftState = async (
     submission: types.QueuedSubmission
@@ -365,6 +375,19 @@ export const createOutboxSyncRunner = (deps: OutboxSyncDependencies) => {
         'complete'
       );
     } else {
+      const videoFileIds = getSubmissionVideoFileIds(currentSubmission);
+
+      // Hold finalize — and the notifications publishing fires — until the
+      // uploaded video has finished processing on the server.
+      if (videoFileIds.length && !(await deps.mediaProcessed(videoFileIds))) {
+        deps.outboxStore.setQueuedSubmissionStatus(
+          currentSubmission.id,
+          'processing'
+        );
+
+        return;
+      }
+
       await publishQueuedSubmission(currentSubmission);
     }
   };

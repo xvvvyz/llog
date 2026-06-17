@@ -156,6 +156,7 @@ const createHarness = ({
     logError: (...args) => {
       events.push(`log:${String(args[0])}`);
     },
+    mediaProcessed: async () => true,
     outboxStore: store,
     publishRecord: async ({ id }) => {
       events.push(`publish-record:${id}`);
@@ -227,6 +228,57 @@ describe('outbox sync runner', () => {
       'publish-record:record-a',
       'status:record:record-a:complete:',
     ]);
+  });
+
+  test('holds publish while a video is still processing', async () => {
+    const snapshot = emptySnapshot();
+    const submission = queuedRecordSubmission();
+    snapshot.submissions = [submission];
+
+    snapshot.attachments = [
+      queuedAttachment({
+        status: 'uploaded',
+        submissionId: submission.id,
+        type: 'video',
+      }),
+    ];
+
+    const {
+      events,
+      runner,
+      snapshot: state,
+    } = createHarness({
+      dependencies: { mediaProcessed: async () => false },
+      snapshot,
+    });
+
+    await runner.syncQueuedSubmission(submission);
+    expect(events).toContain('status:record:record-a:processing:');
+    expect(events).not.toContain('publish-record:record-a');
+    expect(state.submissions[0].status).toBe('processing');
+  });
+
+  test('publishes once the video has finished processing', async () => {
+    const snapshot = emptySnapshot();
+    const submission = queuedRecordSubmission();
+    snapshot.submissions = [submission];
+
+    snapshot.attachments = [
+      queuedAttachment({
+        status: 'uploaded',
+        submissionId: submission.id,
+        type: 'video',
+      }),
+    ];
+
+    const { events, runner } = createHarness({
+      dependencies: { mediaProcessed: async () => true },
+      snapshot,
+    });
+
+    await runner.syncQueuedSubmission(submission);
+    expect(events).toContain('publish-record:record-a');
+    expect(events).not.toContain('status:record:record-a:processing:');
   });
 
   test('replays sync edits', async () => {

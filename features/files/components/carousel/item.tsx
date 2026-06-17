@@ -1,8 +1,12 @@
+import { LocalVideoPreview } from '@/features/files/components/local-video-preview';
+import { UploadProgressOverlay } from '@/features/files/components/upload-progress-overlay';
 import { VideoPlayer } from '@/features/files/components/video-player';
 import { ZoomableMedia } from '@/features/files/components/zoomable';
 import * as carouselHelpers from '@/features/files/lib/carousel';
 import { getFileSourceUri } from '@/features/files/lib/file-uri-to-src';
 import { useCachedFileSource } from '@/features/files/lib/offline-availability';
+import * as visualMedia from '@/features/files/lib/visual-media';
+import { useQueuedAttachmentStatus } from '@/features/offline/outbox-hooks';
 import { FileItem } from '@/features/files/types/file';
 import type { VideoPlayerHandle } from '@/features/files/types/video-player';
 import { Image } from '@/ui/image';
@@ -163,6 +167,13 @@ const CarouselVideoItem = ({
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const hasReportedActiveLoadRef = React.useRef(false);
   const sourceUri = getFileSourceUri(item);
+  const queuedStatus = useQueuedAttachmentStatus(item.id);
+  const isProcessing = visualMedia.isProcessing(item);
+
+  // A still-uploading/encoding video can't stream through HLS yet; show its
+  // local source as a plain video instead so the slide isn't blank.
+  const isPendingUpload =
+    isProcessing || (queuedStatus != null && queuedStatus !== 'error');
 
   const cachedSource = useCachedFileSource({
     enabled: true,
@@ -174,6 +185,15 @@ const CarouselVideoItem = ({
     isActive || (isAdjacent && (shouldRenderInactiveMedia || hasLoaded));
 
   const canTogglePlay = isActive;
+
+  React.useEffect(() => {
+    if (!isPendingUpload || !isActive || hasReportedActiveLoadRef.current) {
+      return;
+    }
+
+    hasReportedActiveLoadRef.current = true;
+    onActiveMediaLoad(item.id, index);
+  }, [index, isActive, isPendingUpload, item.id, onActiveMediaLoad]);
 
   React.useEffect(() => {
     setHasLoaded(false);
@@ -193,6 +213,28 @@ const CarouselVideoItem = ({
   const handleLoaded = React.useCallback(() => {
     setHasLoaded(true);
   }, []);
+
+  if (isPendingUpload) {
+    return (
+      <View className="relative flex-1 w-full items-center justify-center">
+        {visualMedia.isLocalPreviewableUri(item.uri) && (
+          <LocalVideoPreview
+            autoPlay={isActive}
+            contentFit="contain"
+            maxHeight={contentHeight}
+            maxWidth={contentWidth}
+            uri={item.uri}
+          />
+        )}
+        <UploadProgressOverlay
+          barLayout="spinner"
+          fileId={item.id}
+          isProcessing
+          isVideo
+        />
+      </View>
+    );
+  }
 
   return (
     <View className="relative flex-1 w-full items-center justify-center">

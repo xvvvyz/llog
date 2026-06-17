@@ -20,7 +20,11 @@ export const PreviewImage = ({
   const remoteSource = remoteSrc ? { uri: remoteSrc } : null;
   const [isRemoteReady, setIsRemoteReady] = React.useState(false);
   const shouldHoldLocalPreview = item.type === 'image' && !!item.localUri;
-  const showRemoteLoadingIndicator = !isRemoteReady && !shouldHoldLocalPreview;
+
+  // Videos get their upload/processing indicator from UploadProgressOverlay, so
+  // skip this spinner for them to avoid showing two at once.
+  const showRemoteLoadingIndicator =
+    !isRemoteReady && !shouldHoldLocalPreview && item.type !== 'video';
 
   React.useEffect(() => {
     setIsRemoteReady(false);

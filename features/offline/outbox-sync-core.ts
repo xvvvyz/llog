@@ -17,6 +17,7 @@ const defaultDependencies: outboxSyncRunner.OutboxSyncDependencies = {
   fetchOutboxNetworkReachability,
   isReplyForQueuedRecord: outboxSyncDraftReplay.isReplyForQueuedRecord,
   logError: console.error,
+  mediaProcessed: outboxSyncDraftReplay.videoFilesProcessed,
   outboxStore,
   publishRecord,
   publishReply,

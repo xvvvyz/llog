@@ -461,6 +461,10 @@ export const useFileUploadPreviewState = ({
 
     queuedAttachments.forEach((attachment) => {
       if (attachment.submissionId) return;
+      // Only drop an attachment once it has actually uploaded. A still-pending
+      // one can already appear in `visibleFiles` via the local pending entry,
+      // and removing it there would delete it before it ever uploads.
+      if (attachment.status !== 'uploaded') return;
 
       if (fileIds.has(attachment.id)) {
         void outbox.removeQueuedAttachment(attachment.id);

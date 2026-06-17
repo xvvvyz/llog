@@ -52,7 +52,8 @@ export const Entry = ({
 
   const isUploadingLocalSubmission =
     record.localOutboxStatus === 'syncing' ||
-    record.localOutboxStatus === 'publishing';
+    record.localOutboxStatus === 'publishing' ||
+    record.localOutboxStatus === 'processing';
 
   const isPublishingLocalSubmission = record.localOutboxStatus === 'publishing';
 

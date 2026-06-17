@@ -1,12 +1,13 @@
 import { PendingVideoPreview } from '@/features/files/components/composer/pending-video-preview';
 import { PreviewImage } from '@/features/files/components/composer/preview-image';
+import { UploadProgressOverlay } from '@/features/files/components/upload-progress-overlay';
+import * as visualMedia from '@/features/files/lib/visual-media';
 import type * as fileComposer from '@/features/files/types/composer';
 import { cn } from '@/lib/cn';
 import { getReorderedItems, type ReorderedItem } from '@/lib/reorder-items';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
 import * as Sortable from '@/ui/sortable';
-import { Spinner } from '@/ui/spinner';
 import { X } from 'phosphor-react-native';
 import * as React from 'react';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
@@ -157,14 +158,41 @@ export const VisualPreview = ({
             wrapperClassName="bg-card"
           />
         )}
-        {item.status === 'uploading' && (
-          <View className="absolute inset-0 z-[4] pointer-events-none items-center justify-center">
-            <Spinner size="xs" />
-          </View>
-        )}
+        <UploadProgressOverlay
+          fileId={item.id}
+          isVideo={item.type === 'video'}
+          spinnerSize="xs"
+          status={item.status}
+        />
+      </View>
+    ) : item.type === 'video' &&
+      visualMedia.isProcessing(item) &&
+      visualMedia.isLocalPreviewableUri(item.localUri ?? item.uri) ? (
+      <View className="flex-1 bg-card">
+        <PendingVideoPreview
+          height={item.height}
+          uri={item.localUri ?? item.uri}
+          width={item.width}
+        />
+        <UploadProgressOverlay
+          fileId={item.id}
+          isProcessing
+          isVideo
+          spinnerSize="xs"
+        />
       </View>
     ) : (
-      <PreviewImage item={item} onRemoteReady={onRemoteReady} />
+      <View className="flex-1">
+        <PreviewImage item={item} onRemoteReady={onRemoteReady} />
+        {item.type === 'video' && (
+          <UploadProgressOverlay
+            fileId={item.id}
+            isProcessing={visualMedia.isProcessing(item)}
+            isVideo
+            spinnerSize="xs"
+          />
+        )}
+      </View>
     );
 
     const thumbnail = canDragItem ? (

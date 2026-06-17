@@ -12,6 +12,9 @@ const ACTIVE_SYNC_SUBMISSION_STATUSES = new Set<types.OutboxStatus>([
   'pending',
   'syncing',
   'publishing',
+  // In-flight work (waiting on media processing), but deliberately not
+  // auto-syncable/startable so it doesn't busy-loop the runner.
+  'processing',
 ]);
 
 const ACTIVE_ATTACHMENT_STATUSES = new Set<types.QueuedAttachmentStatus>([

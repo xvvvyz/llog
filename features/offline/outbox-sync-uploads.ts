@@ -95,11 +95,24 @@ const getUploadedExistingFile = async (
   return file.assetKey || file.uri ? file : undefined;
 };
 
+// Wait long enough to cover the in-flight upload's own timeout. A large video
+// streams for many minutes, so giving up after a few seconds just re-uploads it
+// from scratch (resetting the progress bar). The loop still exits early as soon
+// as the upload finishes or stops.
+const getInFlightUploadRetryCount = (attachment: types.QueuedAttachment) =>
+  attachment.type === 'video'
+    ? Math.ceil(
+        QUEUED_VIDEO_UPLOAD_TIMEOUT_MS / IN_FLIGHT_UPLOAD_RETRY_DELAY_MS
+      )
+    : IN_FLIGHT_UPLOAD_RETRY_COUNT;
+
 const waitForInFlightUpload = async (
   attachment: types.QueuedAttachment,
   submission: types.QueuedSubmission
 ) => {
-  for (let attempt = 0; attempt < IN_FLIGHT_UPLOAD_RETRY_COUNT; attempt += 1) {
+  const retryCount = getInFlightUploadRetryCount(attachment);
+
+  for (let attempt = 0; attempt < retryCount; attempt += 1) {
     const current = outboxStore
       .getOutboxSnapshot()
       .attachments.find((item) => item.id === attachment.id);
@@ -118,7 +131,16 @@ const waitForInFlightUpload = async (
       return false;
     }
 
-    const file = await getUploadedExistingFile(attachment, submission);
+    // The in-flight upload is no longer running (it failed or was reset), so
+    // stop waiting and let the caller take over.
+    if (current && current.status !== 'uploading') return false;
+
+    // Adopt an already-available file (e.g. uploaded from another device), but
+    // never delete the pending video we're actively waiting on — deleting it
+    // orphans the finishing upload and forces a full re-upload.
+    const file = await getUploadedExistingFile(attachment, submission, {
+      deletePendingVideo: false,
+    });
 
     if (file) {
       outboxStore.markQueuedAttachmentUploaded(attachment.id, file);

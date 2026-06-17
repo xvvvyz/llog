@@ -5,6 +5,10 @@ export type OutboxStatus =
   | 'pending'
   | 'syncing'
   | 'publishing'
+  // Bytes uploaded; waiting on server-side media (video) processing before the
+  // post is finalized. Active work, but not auto-startable — a watcher promotes
+  // it back to 'pending' once processing finishes.
+  | 'processing'
   | 'complete'
   | 'error'
   | 'discarded';

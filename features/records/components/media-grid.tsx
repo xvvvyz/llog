@@ -1,10 +1,12 @@
+import { LocalVideoPreview } from '@/features/files/components/local-video-preview';
+import { UploadProgressOverlay } from '@/features/files/components/upload-progress-overlay';
 import { useMediaLightbox } from '@/features/files/hooks/use-lightbox';
 import * as offlineAvailability from '@/features/files/lib/offline-availability';
 import * as visualMedia from '@/features/files/lib/visual-media';
+import { useQueuedAttachmentStatus } from '@/features/offline/outbox-hooks';
 import { FileItem } from '@/features/files/types/file';
 import { Icon } from '@/ui/icon';
 import { Image } from '@/ui/image';
-import { Spinner } from '@/ui/spinner';
 import { Play } from 'phosphor-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
@@ -29,29 +31,54 @@ const MediaGridItem = ({
     uri: thumbnailUri,
   });
 
+  const queuedStatus = useQueuedAttachmentStatus(item.id);
   const isProcessing = visualMedia.isProcessing(item);
-  const canOpenMedia = !!recordId && !isProcessing;
+
+  // A pending video keeps its local uri as the thumbnail, which an <Image>
+  // can't paint; show the local source and the upload indicator instead.
+  const isUploadPending =
+    isProcessing || (queuedStatus != null && queuedStatus !== 'error');
+
+  const showLocalPreview =
+    item.type === 'video' &&
+    isUploadPending &&
+    visualMedia.isLocalPreviewableUri(item.uri);
+
+  // Openable even while uploading/processing — the carousel shows the local
+  // preview and progress for pending media.
+  const canOpenMedia = !!recordId;
 
   return (
     <Pressable
-      className="flex-1"
+      className="flex-1 overflow-hidden rounded-2xl"
       disabled={!canOpenMedia}
       onPress={() => {
         if (canOpenMedia) onPress(item.id);
       }}
     >
-      <Image
-        fill
-        src={cachedThumbnail.src}
-        targetWidth={timelineTargetWidth}
-        uri={thumbnailUri}
-        wrapperClassName="rounded-2xl border-continuous"
-      />
-      {item.type === 'video' && (
-        <View className="absolute inset-0 pointer-events-none items-center justify-center">
-          {isProcessing ? (
-            <Spinner />
-          ) : (
+      {showLocalPreview ? (
+        <View className="absolute inset-0 overflow-hidden border-continuous rounded-2xl bg-border">
+          <LocalVideoPreview contentFit="cover" uri={item.uri} />
+        </View>
+      ) : (
+        <Image
+          fill
+          src={cachedThumbnail.src}
+          targetWidth={timelineTargetWidth}
+          uri={thumbnailUri}
+          wrapperClassName="rounded-2xl border-continuous"
+        />
+      )}
+      {item.type === 'video' ? (
+        isUploadPending ? (
+          <UploadProgressOverlay
+            barLayout="spinner"
+            fileId={item.id}
+            isProcessing
+            isVideo
+          />
+        ) : (
+          <View className="absolute inset-0 pointer-events-none items-center justify-center">
             <View className="size-10 border-continuous rounded-full bg-background/50 items-center justify-center">
               <Icon
                 className="text-foreground"
@@ -60,8 +87,16 @@ const MediaGridItem = ({
                 weight="fill"
               />
             </View>
-          )}
-        </View>
+          </View>
+        )
+      ) : (
+        isUploadPending && (
+          <UploadProgressOverlay
+            barLayout="spinner"
+            fileId={item.id}
+            isVideo={false}
+          />
+        )
       )}
     </Pressable>
   );

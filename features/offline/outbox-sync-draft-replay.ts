@@ -297,6 +297,31 @@ export const queuedReplyNeedsDraftReplay = async (
   return !reply || reply.isDraft !== false;
 };
 
+// True once every given video file has finished server-side processing. Stream
+// finalization stamps a `thumbnailUri` (and swaps the `stream-pending:` uri for
+// the real playback url) when encoding completes, so a video without one is
+// still processing.
+export const videoFilesProcessed = async (fileIds: string[]) => {
+  if (!fileIds.length) return true;
+
+  const result = await db.queryOnce({
+    files: {
+      $: {
+        fields: ['id', 'thumbnailUri', 'type'],
+        where: { id: { $in: fileIds } },
+      },
+    },
+  });
+
+  const files = result?.data?.files ?? [];
+
+  return fileIds.every((fileId) => {
+    const file = files.find((item) => item.id === fileId);
+    if (!file) return false;
+    return file.type !== 'video' || !!file.thumbnailUri;
+  });
+};
+
 export const queuedSubmissionIsPublished = async (
   submission: types.QueuedSubmission
 ) => {

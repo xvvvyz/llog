@@ -18,9 +18,9 @@
     "generate:assets": "bun scripts/assets.ts",
     "generate:vapid": "bunx @pushforge/builder vapid",
     "lint": "bun scripts/generate-wrangler-config.ts --check && oxfmt --check . && oxlint --deny-warnings . && tsc --noEmit --noUnusedLocals --noUnusedParameters",
-    "metro:start": "NODE_OPTIONS=--disable-warning=DEP0205 expo start",
-    "metro:android": "NODE_OPTIONS=--disable-warning=DEP0205 expo start --dev-client --android",
-    "metro:ios": "NODE_OPTIONS=--disable-warning=DEP0205 expo start --dev-client --ios",
+    "metro:start": "expo start",
+    "metro:android": "expo start --dev-client --android",
+    "metro:ios": "expo start --dev-client --ios",
     "prebuild:android": "expo prebuild --clean -p android && bun run generate:assets --android",
     "prebuild:ios": "expo prebuild --clean -p ios && bun run generate:assets --ios",
     "prebuild:web": "bun run generate:assets --web",
@@ -109,7 +109,9 @@
     "zod": "^4.4.3"
   },
   "overrides": {
-    "lightningcss": "1.30.1"
+    "lightningcss": "1.30.1",
+    "@tailwindcss/node": "4.3.1",
+    "@tailwindcss/oxide": "4.3.1"
   },
   "expo": {
     "doctor": {

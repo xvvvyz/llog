@@ -31,6 +31,36 @@ describe('cached image sources', () => {
     );
   });
 
+  test('ranks width-only stream thumbnails', () => {
+    const requested =
+      'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&width=512';
+
+    expect(
+      cachedMediaSource.findLargestCachedImageSource(requested, [
+        'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&width=128',
+        'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&width=1024',
+        'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&width=512',
+      ])
+    ).toBe(
+      'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&width=1024'
+    );
+  });
+
+  test('ranks height-only stream thumbnails', () => {
+    const requested =
+      'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&height=288';
+
+    expect(
+      cachedMediaSource.findLargestCachedImageSource(requested, [
+        'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&height=144',
+        'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&height=720',
+        'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&height=288',
+      ])
+    ).toBe(
+      'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&height=720'
+    );
+  });
+
   test('uses exact fallback', () => {
     expect(
       cachedMediaSource.findLargestCachedImageSource(

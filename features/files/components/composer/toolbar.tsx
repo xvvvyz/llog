@@ -12,7 +12,10 @@ import {
   ImageSquare,
   Microphone,
   Plus,
+  UploadSimple,
 } from 'phosphor-react-native';
+
+const isWeb = Platform.OS === 'web';
 
 export const Toolbar = ({
   attachmentMenuItems,
@@ -68,8 +71,11 @@ export const Toolbar = ({
         </ScrollSheetMenu.Item>
       )}
       <ScrollSheetMenu.Item disabled={disabled} onPress={onPickDocuments}>
-        <Icon className="text-placeholder" icon={FilesIcon} />
-        <Text>Files</Text>
+        <Icon
+          className="text-placeholder"
+          icon={isWeb ? UploadSimple : FilesIcon}
+        />
+        <Text>{isWeb ? 'Upload' : 'Files'}</Text>
       </ScrollSheetMenu.Item>
       {attachmentMenuItems}
     </ScrollSheetMenu.Root>

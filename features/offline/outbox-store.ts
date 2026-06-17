@@ -234,6 +234,14 @@ export const getQueuedAttachmentsForParent =
 export const getQueuedAttachmentsForSubmission =
   outboxSelectors.getQueuedAttachmentsForSubmission;
 
+// A submission in one of these states has stopped syncing, so a newly added
+// attachment won't be picked up until we move it back to 'pending'.
+const REACTIVATABLE_SUBMISSION_STATUSES = new Set<types.OutboxStatus>([
+  'processing',
+  'complete',
+  'error',
+]);
+
 export const queueAttachment = (input: types.QueueAttachmentInput) => {
   const attachment: types.QueuedAttachment = {
     ...input,
@@ -250,6 +258,19 @@ export const queueAttachment = (input: types.QueueAttachmentInput) => {
       ...current.attachments.filter((item) => item.id !== attachment.id),
       attachment,
     ],
+    // Re-activate the owning submission if it had already finished syncing, so
+    // media added after posting still uploads and re-finalizes.
+    submissions: current.submissions.map((submission) =>
+      REACTIVATABLE_SUBMISSION_STATUSES.has(submission.status) &&
+      submissionOwnsAttachment(submission, attachment)
+        ? ({
+            ...submission,
+            error: undefined,
+            nextRetryAt: undefined,
+            status: 'pending',
+          } as types.QueuedSubmission)
+        : submission
+    ),
   }));
 
   return attachment;

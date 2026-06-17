@@ -68,5 +68,74 @@ export const OutboxSyncRunner = () => {
     }
   }, [auth.user?.id, networkReachability, outbox]);
 
+  // Submissions held in 'processing' wait on server-side video encoding. Watch
+  // those files reactively and, once Stream stamps a thumbnail, promote the
+  // submission back to 'pending' so it finalizes (and fires notifications).
+  const processingVideoFileIds = React.useMemo(() => {
+    const ids: string[] = [];
+
+    for (const submission of outbox.submissions) {
+      if (submission.status !== 'processing') continue;
+
+      for (const attachment of outbox.attachments) {
+        if (
+          attachment.type === 'video' &&
+          outboxStore.submissionOwnsAttachment(submission, attachment)
+        ) {
+          ids.push(attachment.id);
+        }
+      }
+    }
+
+    return ids;
+  }, [outbox.attachments, outbox.submissions]);
+
+  const processingFiles = db.useQuery(
+    processingVideoFileIds.length
+      ? {
+          files: {
+            $: {
+              fields: ['id', 'thumbnailUri'],
+              where: { id: { $in: processingVideoFileIds } },
+            },
+          },
+        }
+      : null
+  );
+
+  React.useEffect(() => {
+    if (!processingVideoFileIds.length) return;
+    const files = processingFiles.data?.files ?? [];
+
+    const isProcessed = (fileId: string) =>
+      !!files.find((file) => file.id === fileId)?.thumbnailUri;
+
+    let didPromote = false;
+
+    for (const submission of outbox.submissions) {
+      if (submission.status !== 'processing') continue;
+
+      const videoFileIds = outbox.attachments
+        .filter(
+          (attachment) =>
+            attachment.type === 'video' &&
+            outboxStore.submissionOwnsAttachment(submission, attachment)
+        )
+        .map((attachment) => attachment.id);
+
+      if (videoFileIds.every(isProcessed)) {
+        outboxStore.setQueuedSubmissionStatus(submission.id, 'pending');
+        didPromote = true;
+      }
+    }
+
+    if (didPromote) void runOutboxSync();
+  }, [
+    outbox.attachments,
+    outbox.submissions,
+    processingFiles.data,
+    processingVideoFileIds,
+  ]);
+
   return null;
 };

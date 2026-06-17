@@ -4,6 +4,7 @@ import { PickedFileAsset } from '@/features/files/lib/picked';
 import { uploadR2MultipartFile } from '@/features/files/lib/r2-multipart-upload';
 import { apiOrThrow } from '@/lib/api';
 import { apiUpload } from '@/lib/api-upload';
+import * as uploadProgressStore from '@/features/files/lib/upload-progress-store';
 
 type UploadFileArgs = {
   asset?: PickedFileAsset;
@@ -23,7 +24,21 @@ export const uploadFile = async ({
   path,
 }: UploadFileArgs) => {
   if (asset?.type === 'video') {
-    await directVideoUpload({ asset, fileId, order, path });
+    try {
+      await directVideoUpload({
+        asset,
+        fileId,
+        onProgress: fileId
+          ? (fraction) =>
+              uploadProgressStore.setUploadProgress(fileId, fraction)
+          : undefined,
+        order,
+        path,
+      });
+    } finally {
+      if (fileId) uploadProgressStore.clearUploadProgress(fileId);
+    }
+
     return;
   }
 

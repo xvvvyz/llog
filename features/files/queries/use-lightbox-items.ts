@@ -2,6 +2,7 @@ import { visibleFileQuery } from '@/domain/files/query';
 import * as recordStatus from '@/domain/records/status';
 import { useOutbox } from '@/features/offline/outbox-hooks';
 import * as pendingEntries from '@/features/offline/pending-entries';
+import * as visualMedia from '@/features/files/lib/visual-media';
 import { type FileItem } from '@/features/files/types/file';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
@@ -78,11 +79,31 @@ export const useLightboxMedia = ({
 
   const media = React.useMemo(() => {
     if (!mediaId) return [];
-    const recordMedia = getVisualMedia(record?.files ?? []);
+
+    const localUriById = new Map(
+      pendingMedia
+        .filter((item) => !!item.uri)
+        .map((item) => [item.id, item.uri as string])
+    );
+
+    // Swap a still-encoding video's stream-pending uri for its local source so
+    // the carousel can preview it while it uploads/processes.
+    const withLocalPreview = (files: FileItem[]) =>
+      files.map((file) => {
+        const localUri = localUriById.get(file.id);
+
+        return file.type === 'video' &&
+          localUri &&
+          !visualMedia.isLocalPreviewableUri(file.uri)
+          ? ({ ...file, uri: localUri } as FileItem)
+          : file;
+      });
+
+    const recordMedia = withLocalPreview(getVisualMedia(record?.files ?? []));
     if (recordMedia.some((item) => item.id === mediaId)) return recordMedia;
 
     for (const reply of record?.replies ?? []) {
-      const replyMedia = getVisualMedia(reply.files ?? []);
+      const replyMedia = withLocalPreview(getVisualMedia(reply.files ?? []));
       if (replyMedia.some((item) => item.id === mediaId)) return replyMedia;
     }
 
