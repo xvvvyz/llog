@@ -61,6 +61,54 @@ describe('cached image sources', () => {
     );
   });
 
+  test('ignores smaller variants', () => {
+    const requested =
+      'https://imagedelivery.net/account/image-id/format=webp,q=75,w=1024,h=1024';
+
+    expect(
+      cachedMediaSource.findLargestCachedImageSource(requested, [
+        'https://imagedelivery.net/account/image-id/format=webp,q=75,w=256,h=256',
+        'https://imagedelivery.net/account/image-id/format=webp,q=75,w=512,h=512',
+      ])
+    ).toBeNull();
+  });
+
+  test('keeps exact over smaller variants', () => {
+    const requested =
+      'https://imagedelivery.net/account/image-id/format=webp,q=75,w=512,h=512';
+
+    expect(
+      cachedMediaSource.findLargestCachedImageSource(requested, [
+        'https://imagedelivery.net/account/image-id/format=webp,q=75,w=256,h=256',
+        'https://imagedelivery.net/account/image-id/format=webp,q=75,w=512,h=512',
+      ])
+    ).toBe(
+      'https://imagedelivery.net/account/image-id/format=webp,q=75,w=512,h=512'
+    );
+  });
+
+  test('ignores smaller square variants for wider requests', () => {
+    const requested =
+      'https://imagedelivery.net/account/image-id/format=webp,q=75,w=512';
+
+    expect(
+      cachedMediaSource.findLargestCachedImageSource(requested, [
+        'https://imagedelivery.net/account/image-id/format=webp,q=75,w=128,h=128',
+      ])
+    ).toBeNull();
+  });
+
+  test('ignores smaller square stream thumbnails', () => {
+    const requested =
+      'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&width=512';
+
+    expect(
+      cachedMediaSource.findLargestCachedImageSource(requested, [
+        'https://customer.cloudflarestream.com/video/thumbnails/thumbnail.jpg?time=1s&width=128&height=128',
+      ])
+    ).toBeNull();
+  });
+
   test('uses exact fallback', () => {
     expect(
       cachedMediaSource.findLargestCachedImageSource(

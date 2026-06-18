@@ -32,7 +32,9 @@ const imageVariantScore = (variant: string) => {
   const height = Number(params.get('h'));
   const safeWidth = Number.isFinite(width) && width > 0 ? width : 0;
   const safeHeight = Number.isFinite(height) && height > 0 ? height : 0;
-  if (safeWidth && safeHeight) return safeWidth * safeHeight;
+  // Score by max linear dimension, not area, so single-dimension requests
+  // (e.g. w=512) stay comparable to two-dimension ones (e.g. w=128,h=128).
+  // Otherwise a tiny 128×128 thumbnail (area 16384) outranks a 512-wide one.
   return Math.max(safeWidth, safeHeight);
 };
 
@@ -75,10 +77,9 @@ const getStreamThumbnailCacheKey = (url: URL) => {
 
   return {
     key: `${url.origin}${url.pathname}?${params.toString()}`,
-    score:
-      safeWidth && safeHeight
-        ? safeWidth * safeHeight
-        : Math.max(safeWidth, safeHeight),
+    // Max linear dimension keeps width-only and width+height variants
+    // comparable; see imageVariantScore.
+    score: Math.max(safeWidth, safeHeight),
   };
 };
 
@@ -102,12 +103,16 @@ export const findLargestCachedImageSource = (
     const normalizedCachedSource = normalizeSourceUrl(cachedSource);
 
     if (normalizedCachedSource === normalizedSrc) {
-      best ??= { score: 0, src: cachedSource };
+      best ??= { score: requested?.score ?? 0, src: cachedSource };
     }
 
     if (!requested) continue;
     const candidate = getImageCacheKey(cachedSource);
     if (!candidate || candidate.key !== requested.key) continue;
+    // Only reuse a cached variant that's at least as large as what we asked
+    // for. Falling back to a smaller cached variant swaps the freshly rendered
+    // sharp image for a blurry, upscaled one.
+    if (candidate.score < requested.score) continue;
     if (best && candidate.score <= best.score) continue;
     best = { score: candidate.score, src: cachedSource };
   }

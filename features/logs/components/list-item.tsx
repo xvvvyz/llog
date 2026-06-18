@@ -84,7 +84,7 @@ export const ListItem = ({
             style={nativePointerEvents.none}
           >
             <Text
-              className="flex-1 -mb-1 min-w-0 leading-tight text-balance text-white web:whitespace-normal"
+              className="flex-1 -mb-1 min-w-0 leading-tight text-balance text-white web:-mb-1.5 web:pb-0.5 web:whitespace-normal"
               numberOfLines={titleLineCount}
             >
               {name}
