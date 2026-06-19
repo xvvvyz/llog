@@ -17,8 +17,13 @@
     background-color: hsl(var(--background));
   }
 
+  html {
+    color-scheme: light dark;
+  }
+
   body {
     overflow: hidden;
+    overscroll-behavior: none;
   }
 
   #root {

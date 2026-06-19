@@ -83,7 +83,7 @@ export async function generateHtml(platforms: AssetPlatformSelection) {
     `<meta name="theme-color" content="${dark}" media="(prefers-color-scheme: dark)"/>`,
     `<meta name="theme-color" content="${light}" media="(prefers-color-scheme: light)"/>`,
     `<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,interactive-widget=resizes-content,user-scalable=no,viewport-fit=auto"/>`,
-    `<style id="background-color">html,body,#root{background-color:${light}}@media(prefers-color-scheme:dark){html,body,#root{background-color:${dark}}}</style>`,
+    `<style id="background-color">html{color-scheme:light dark}html,body,#root{background-color:${light}}@media(prefers-color-scheme:dark){html,body,#root{background-color:${dark}}}</style>`,
     `<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>`,
     `<link rel="manifest" href="/manifest.webmanifest"/>`,
     `<link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152.png"/>`,
