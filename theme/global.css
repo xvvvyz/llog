@@ -9,6 +9,42 @@
 @source "../hooks";
 @source "../domain";
 
+/*
+ * Windows web descender clipping fix.
+ *
+ * On Windows, Segoe UI's content area (ascent + descent ≈ 1.33em) is taller
+ * than macOS SF Pro (~1.19em). With a tight `line-height` (leading-tight /
+ * leading-5 = 1.25) the line box is shorter than the glyph ink, so descenders
+ * overflow and get sliced wherever the box clips — e.g. `numberOfLines` text
+ * (react-native-web gives it `overflow: hidden` at line-box height). Windows
+ * only.
+ *
+ * react-native-web hard-codes `font-family: …,"Segoe UI",…` on every top-level
+ * <Text> (its SYSTEM_FONT_STACK), so a separate aliased family never reaches
+ * that text. Instead we shadow "Segoe UI" itself: this @font-face re-defines
+ * the family, pointing back at the installed font via local() but with
+ * normalized metrics that pull the baseline up and leave room for descenders.
+ * It only bites on Windows — Mac/iOS resolve -apple-system first, Android has
+ * no Segoe UI to match, so everywhere else falls through untouched.
+ * `font-weight: 100 900` is required so it also covers font-medium/bold text.
+ *
+ * Tuning (single dial): with an explicit line-height, only the baseline moves,
+ * and its position is governed by (ascent − descent). A BIGGER gap drops the
+ * text lower; a SMALLER gap raises it and leaves more descender clearance.
+ * Segoe UI's descender is deep, so there's a floor: push the gap too wide and
+ * descenders clip again. Adjust ascent/descent together (keep the sum ~1.26)
+ * and tune against a real Windows browser.
+ */
+@font-face {
+  font-family: 'Segoe UI';
+  src: local('Segoe UI Variable Text'), local('Segoe UI');
+  font-weight: 100 900;
+  font-style: normal;
+  ascent-override: 94%;
+  descent-override: 32%;
+  line-gap-override: 0%;
+}
+
 @layer base {
   html,
   body,
