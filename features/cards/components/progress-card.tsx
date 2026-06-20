@@ -45,6 +45,13 @@ const AXIS_LABEL_FONT_FAMILY =
 const AXIS_LABEL_SVG_FONT_FAMILY =
   Platform.OS === 'web' ? AXIS_LABEL_FONT_FAMILY : undefined;
 
+// Browsers ignore `alignment-baseline` on <text>, so on web the "hanging"
+// x-axis labels fall back to the alphabetic baseline and ride up onto the axis
+// line. Shift them down by ~one ascent so they hang below the axis as they do
+// on native (which honors alignmentBaseline). Tune against a Windows browser.
+const X_AXIS_LABEL_WEB_BASELINE_DY =
+  Platform.OS === 'web' ? AXIS_LABEL_FONT_SIZE * 0.8 : 0;
+
 const AXIS_TICK_SIZE = 4;
 const X_AXIS_TICK_LABEL_GAP = 5;
 
@@ -2074,6 +2081,7 @@ const SingleSeriesChart = ({
                     />
                     <SvgText
                       alignmentBaseline="hanging"
+                      dy={X_AXIS_LABEL_WEB_BASELINE_DY}
                       fill={colors.text}
                       fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                       fontSize={axisLabelFontSize}
@@ -2218,6 +2226,7 @@ const SingleSeriesChart = ({
                   />
                   <SvgText
                     alignmentBaseline="hanging"
+                    dy={X_AXIS_LABEL_WEB_BASELINE_DY}
                     fill={colors.text}
                     fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                     fontSize={axisLabelFontSize}
