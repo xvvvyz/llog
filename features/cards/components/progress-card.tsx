@@ -18,6 +18,7 @@ import Svg, {
   Path,
   Rect,
   Text as SvgText,
+  type TextProps,
 } from 'react-native-svg';
 
 import {
@@ -45,13 +46,13 @@ const AXIS_LABEL_FONT_FAMILY =
 const AXIS_LABEL_SVG_FONT_FAMILY =
   Platform.OS === 'web' ? AXIS_LABEL_FONT_FAMILY : undefined;
 
-// Browsers ignore `alignment-baseline` on <text>, so on web the "hanging"
-// x-axis labels fall back to the alphabetic baseline and ride up onto the axis
-// line. Shift them down by ~one ascent so they hang below the axis as they do
-// on native (which honors alignmentBaseline). Tune against a Windows browser.
-const X_AXIS_LABEL_WEB_BASELINE_DY =
-  Platform.OS === 'web' ? AXIS_LABEL_FONT_SIZE * 0.8 : 0;
-
+// `alignment-baseline` is honored on <text> only inconsistently across browsers
+// (some position the "hanging" label correctly, others ignore it and let it ride
+// up onto the axis). `dominant-baseline` is the reliable one everywhere. rn-svg
+// forwards it to the DOM on web but doesn't type it; native ignores it and
+// positions via the typed alignmentBaseline prop instead — so spread it on as
+// extra props alongside alignmentBaseline.
+const SVG_TEXT_HANGING_BASELINE = { dominantBaseline: 'hanging' } as TextProps;
 const AXIS_TICK_SIZE = 4;
 const X_AXIS_TICK_LABEL_GAP = 5;
 
@@ -2080,8 +2081,8 @@ const SingleSeriesChart = ({
                       y2={padding.top + innerHeight + AXIS_TICK_SIZE}
                     />
                     <SvgText
+                      {...SVG_TEXT_HANGING_BASELINE}
                       alignmentBaseline="hanging"
-                      dy={X_AXIS_LABEL_WEB_BASELINE_DY}
                       fill={colors.text}
                       fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                       fontSize={axisLabelFontSize}
@@ -2225,8 +2226,8 @@ const SingleSeriesChart = ({
                     y2={padding.top + innerHeight + AXIS_TICK_SIZE}
                   />
                   <SvgText
+                    {...SVG_TEXT_HANGING_BASELINE}
                     alignmentBaseline="hanging"
-                    dy={X_AXIS_LABEL_WEB_BASELINE_DY}
                     fill={colors.text}
                     fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
                     fontSize={axisLabelFontSize}

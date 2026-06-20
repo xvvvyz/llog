@@ -32,11 +32,11 @@ export const MemberRemoveSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       loading={team.isLoading}
       onDismiss={() => sheetManager.close('member-remove')}
       open={open}
       portalName="member-remove"
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Remove member?</Text>

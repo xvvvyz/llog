@@ -12,11 +12,11 @@ export const TagDeleteSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       loading={tag.isLoading}
       onDismiss={() => sheetManager.close('tag-delete')}
       open={sheetManager.isOpen('tag-delete')}
       portalName="tag-delete"
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Delete tag?</Text>

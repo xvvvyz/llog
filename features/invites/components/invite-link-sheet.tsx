@@ -105,10 +105,10 @@ export const InviteLinkSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={handleDismiss}
       open={sheetManager.isOpen('invite-link')}
       portalName="invite-link"
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 gap-3 items-center md:p-8">
         {url && (

@@ -808,11 +808,11 @@ const TemplateLinkSheet = ({
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={onClose}
       open={open && !!field}
       portalName="record-template-link"
       topInset={64}
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <View>
@@ -969,10 +969,10 @@ const TemplateRecordingSheet = ({
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={handleCancel}
       open={open && !!field}
       portalName="record-template-recording"
+      width="narrow"
     >
       <AudioSheetContent
         activeMicBackgroundClassName="bg-primary"

@@ -329,12 +329,12 @@ export const LinkEditorSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       loading={isLinkLoading}
       onDismiss={close}
       open={isOpen}
       portalName={sheetPayloads.RECORD_LINK_EDITOR_SHEET}
       topInset={64}
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <View>

@@ -17,11 +17,11 @@ export const TeamLeaveSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       loading={teamsLoading || ui.isLoading}
       onDismiss={() => sheetManager.close('team-leave')}
       open={sheetManager.isOpen('team-leave')}
       portalName="team-leave"
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Leave team?</Text>

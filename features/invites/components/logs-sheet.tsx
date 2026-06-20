@@ -109,11 +109,11 @@ export const InviteLogsSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={handleDismiss}
       open={open}
       portalName="invite-logs"
       variant="list"
+      width="narrow"
     >
       <LogsSheetContent
         isLoading={isLoading}

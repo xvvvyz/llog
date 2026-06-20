@@ -88,6 +88,7 @@ export const MemberLogsSheet = () => {
       open={open}
       portalName="member-logs"
       variant="list"
+      width="narrow"
     >
       {(sheetIsLoading || !!visibleLogs.length) && (
         <SheetListScrollView loading={sheetIsLoading} variant="rows">

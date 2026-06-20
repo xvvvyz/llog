@@ -77,7 +77,11 @@ const sheetVariants = cva(
     defaultVariants: { variant: 'default', width: 'default' },
     variants: {
       variant: { default: '', list: 'md:rounded-3xl' },
-      width: { default: 'md:max-w-sheet', editor: 'md:max-w-4xl' },
+      width: {
+        default: 'md:max-w-sheet',
+        narrow: 'md:max-w-sm',
+        editor: 'md:max-w-4xl',
+      },
     },
   }
 );

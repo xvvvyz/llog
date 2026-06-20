@@ -368,10 +368,10 @@ export const RecordAudioSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={handleCancel}
       open={isOpen}
       portalName="record-audio"
+      width="narrow"
     >
       <AudioSheetContent
         activeMicBackgroundClassName={logBackgroundClassName}

@@ -165,6 +165,7 @@ export const TeamSheet = () => {
       open={open}
       portalName="team"
       variant="list"
+      width="narrow"
     >
       <SheetListScrollView
         className="max-h-96"
@@ -391,6 +392,7 @@ export const TeamMembersSheet = () => {
       open={open}
       portalName="team-members"
       variant="list"
+      width="narrow"
     >
       <SheetListScrollView loading={isLoading} variant="rows">
         {members.map((member) => {

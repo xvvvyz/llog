@@ -427,10 +427,10 @@ export const RecordTimeSheet = ({
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={onClose}
       open={open}
       portalName="record-time"
+      width="narrow"
     >
       <View className="mx-auto max-h-full max-w-md min-h-0 w-full">
         <View className="max-h-full min-h-0 p-4 pb-4 gap-3 md:p-4">

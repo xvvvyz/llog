@@ -77,11 +77,11 @@ export const LogMembersSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={() => sheetManager.close('log-members')}
       open={open}
       portalName="log-members"
       variant="list"
+      width="narrow"
     >
       {(isLoading || !!visibleMemberRows.length) && (
         <SheetListScrollView

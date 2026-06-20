@@ -39,10 +39,10 @@ export const InviteLinkDeleteSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       onDismiss={() => sheetManager.close('invite-link-delete')}
       open={open}
       portalName="invite-link-delete"
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Invalidate invite link?</Text>

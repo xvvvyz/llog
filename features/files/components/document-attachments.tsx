@@ -574,11 +574,11 @@ export const DocumentAttachments = ({
       )}
       {canRenameDocuments && (
         <Sheet
-          className="md:max-w-sm"
           onDismiss={handleCloseNameEditor}
           open={!!editingDocumentId}
           portalName={nameEditorPortalName}
           topInset={64}
+          width="narrow"
         >
           <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
             <View>

@@ -46,12 +46,13 @@ const Root = ({
     <>
       {trigger({ isOpen, open })}
       <Sheet
-        className={cn('md:max-w-sm', className)}
+        className={className}
         onDismiss={close}
         open={isOpen}
         portalName={portalName}
         topInset={topInset}
         variant="list"
+        width="narrow"
       >
         <ScrollSheetMenuContext.Provider value={context}>
           <SheetListScrollView

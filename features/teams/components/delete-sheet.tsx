@@ -40,11 +40,11 @@ export const TeamDeleteSheet = () => {
 
   return (
     <Sheet
-      className="md:max-w-sm"
       loading={team.isLoading || teamsLoading || ui.isLoading}
       onDismiss={() => sheetManager.close('team-delete')}
       open={open}
       portalName="team-delete"
+      width="narrow"
     >
       <View className="mx-auto max-w-md w-full pb-4 pt-8 px-8 md:p-8">
         <Text className="text-2xl text-center">Delete team?</Text>
