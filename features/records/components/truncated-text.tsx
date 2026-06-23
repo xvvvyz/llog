@@ -7,12 +7,14 @@ import * as React from 'react';
 import { Platform, Pressable, View } from 'react-native';
 
 export const TruncatedText = ({
+  actionClassName = 'px-4',
   className,
   expandable = true,
   linkClassName,
   numberOfLines,
   text,
 }: {
+  actionClassName?: string;
   className?: string;
   expandable?: boolean;
   linkClassName?: string;
@@ -94,7 +96,10 @@ export const TruncatedText = ({
         {renderedText}
       </Text>
       {expandable && truncated && !expanded && (
-        <Pressable className="px-4" onPress={() => setExpanded(true)}>
+        <Pressable
+          className={actionClassName}
+          onPress={() => setExpanded(true)}
+        >
           <Text
             className={cn('hover:underline', linkClassName ?? 'text-primary')}
           >

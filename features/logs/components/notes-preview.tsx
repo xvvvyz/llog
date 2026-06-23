@@ -6,8 +6,10 @@ import * as Menu from '@/ui/dropdown-menu';
 import { Icon } from '@/ui/icon';
 import { PressPropagationBoundary } from '@/ui/press-propagation-boundary';
 import { Text, TextContext } from '@/ui/text';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import * as notes from '@/features/logs/lib/notes';
+import { useLogColor } from '@/features/logs/hooks/use-color';
+import { getSpectrumAccentTextClassName } from '@/theme/spectrum-class-names';
 
 import {
   DotsThreeVertical,
@@ -73,16 +75,18 @@ export const LogNotesPreview = ({
   logId?: string;
   note?: { id?: string; teamId?: string | null; text?: string | null };
 }) => {
-  const sheetManager = useSheetManager();
+  const logColor = useLogColor({ id: logId });
+
+  const accentTextClassName = getSpectrumAccentTextClassName(
+    logColor.colorIndex
+  );
+
   const text = notes.getLogNoteDisplayText(note?.text);
   if (!logId || !notes.canShowLogNotesPreview({ canManage, text })) return null;
 
   return (
     <Card className="relative overflow-hidden mb-4">
-      <Pressable
-        className="flex-col h-auto w-full pb-3.5 pt-4 px-4 gap-2 items-start active:opacity-60 web:transition-opacity web:hover:opacity-80"
-        onPress={() => sheetManager.open('log-notes', logId)}
-      >
+      <View className="flex-col w-full pb-3.5 pt-4 px-4 gap-2 items-start">
         <TextContext.Provider value={undefined}>
           <View className="relative flex-row pl-[21px] pr-10 items-baseline">
             <Text className="leading-snug text-muted-foreground text-sm">
@@ -97,13 +101,14 @@ export const LogNotesPreview = ({
             </View>
           </View>
           <TruncatedText
+            actionClassName="px-0"
             className="select-text web:text-pretty"
-            expandable={false}
+            linkClassName={accentTextClassName}
             numberOfLines={3}
             text={text}
           />
         </TextContext.Provider>
-      </Pressable>
+      </View>
       <View className="absolute right-4 top-4 z-10">
         <View className="max-w-52 items-end shrink">
           <View className="flex-row -mr-1.5 -mt-1.5 gap-1 items-center justify-end">
