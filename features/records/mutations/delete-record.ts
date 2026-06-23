@@ -1,5 +1,6 @@
 import { apiOrThrow } from '@/lib/api';
 import * as outboxStore from '@/features/offline/outbox-store';
+import * as recordDeletions from '@/features/records/queries/record-deletions';
 import * as recordCache from '@/features/records/queries/record-cache';
 
 const clearDeletedRecordLocalState = async (id: string) => {
@@ -10,12 +11,27 @@ const clearDeletedRecordLocalState = async (id: string) => {
   recordCache.deleteCachedRecord(id);
 };
 
-export const deleteRecord = async ({ id }: { id: string }) => {
-  const result = await apiOrThrow(
-    `/records/${id}`,
-    { method: 'DELETE' },
-    'Failed to delete record'
-  );
+export const deleteRecord = async ({
+  id,
+  logId,
+}: {
+  id: string;
+  logId?: string;
+}) => {
+  recordCache.deleteCachedRecord(id);
+  if (logId) recordDeletions.hideLocallyDeletedRecord({ id, logId });
+  let result: Response;
+
+  try {
+    result = await apiOrThrow(
+      `/records/${id}`,
+      { method: 'DELETE' },
+      'Failed to delete record'
+    );
+  } catch (error) {
+    if (logId) recordDeletions.restoreLocallyDeletedRecord(id);
+    throw error;
+  }
 
   await clearDeletedRecordLocalState(id);
   return result;

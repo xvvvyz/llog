@@ -10,6 +10,7 @@ import { useLoadNextPage } from '@/hooks/use-load-next-page';
 import { db } from '@/lib/db';
 import * as React from 'react';
 import * as recordCache from './record-cache';
+import * as recordDeletions from './record-deletions';
 
 const RECORDS_PAGE_SIZE = 25;
 const EMPTY_STATE_DELAY_MS = 400;
@@ -26,6 +27,15 @@ const compareByDateDesc = (
 export const useRecords = ({ logId }: { logId?: string }) => {
   const outbox = useOutbox();
   const profile = useProfile();
+
+  const locallyDeletedRecordIds = recordDeletions.useLocallyDeletedRecordIds({
+    logId,
+  });
+
+  const locallyDeletedRecordIdSet = React.useMemo(
+    () => new Set(locallyDeletedRecordIds),
+    [locallyDeletedRecordIds]
+  );
 
   const { data: pinnedData, isLoading: pinnedLoading } = db.useQuery(
     logId
@@ -166,14 +176,17 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     const merged = new Map<string, (typeof pinnedRecords)[number]>();
 
     for (const record of pinnedRecords) {
+      if (locallyDeletedRecordIdSet.has(record.id)) continue;
       merged.set(record.id, record);
     }
 
     for (const record of pagedRecords) {
+      if (locallyDeletedRecordIdSet.has(record.id)) continue;
       merged.set(record.id, record);
     }
 
     for (const record of scheduledRecords) {
+      if (locallyDeletedRecordIdSet.has(record.id)) continue;
       merged.set(record.id, record);
     }
 
@@ -201,6 +214,7 @@ export const useRecords = ({ logId }: { logId?: string }) => {
         > =>
           submission.type === 'record' &&
           submission.logId === logId &&
+          !locallyDeletedRecordIdSet.has(submission.contentId) &&
           pendingEntries.isActiveQueuedSubmission(submission)
       )
       .map((submission) =>
@@ -268,12 +282,41 @@ export const useRecords = ({ logId }: { logId?: string }) => {
     ];
   }, [
     logId,
+    locallyDeletedRecordIdSet,
     outbox.attachments,
     outbox.submissions,
     pagedRecords,
     pinnedRecords,
     profile,
     queuedRecordPins,
+    scheduledRecords,
+  ]);
+
+  React.useEffect(() => {
+    if (
+      !logId ||
+      !hasCurrentPinnedResult ||
+      !hasCurrentPagedResult ||
+      !hasScheduledResult
+    ) {
+      return;
+    }
+
+    recordDeletions.clearObservedLocallyDeletedRecords({
+      logId,
+      recordIds: new Set(
+        [...pinnedRecords, ...pagedRecords, ...scheduledRecords].map(
+          (record) => record.id
+        )
+      ),
+    });
+  }, [
+    hasCurrentPagedResult,
+    hasCurrentPinnedResult,
+    hasScheduledResult,
+    logId,
+    pagedRecords,
+    pinnedRecords,
     scheduledRecords,
   ]);
 

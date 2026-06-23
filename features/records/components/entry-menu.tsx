@@ -340,7 +340,8 @@ const EntryMenuDropdownContent = ({
                           ? detailContext
                             ? `local:${detailContext}`
                             : 'local'
-                          : detailContext
+                          : detailContext,
+                        { logId }
                       );
                     }
                   }}

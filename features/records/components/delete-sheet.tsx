@@ -10,6 +10,7 @@ export const RecordDeleteSheet = () => {
   const sheetManager = useSheetManager();
   const open = sheetManager.isOpen('record-delete');
   const context = sheetManager.getContext('record-delete');
+  const payload = sheetManager.getPayload('record-delete');
 
   const { isSubmitting: isPending, runSubmit } = useSheetSubmitState({
     isOpen: open,
@@ -38,7 +39,7 @@ export const RecordDeleteSheet = () => {
           if (isLocalPending) {
             await outboxStore.discardQueuedSubmission(`record:${recordId}`);
           } else {
-            await deleteRecord({ id: recordId });
+            await deleteRecord({ id: recordId, logId: payload?.logId });
           }
 
           sheetManager.close('record-delete');

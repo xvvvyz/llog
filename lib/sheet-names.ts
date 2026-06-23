@@ -97,6 +97,7 @@ export type SheetPayloadMap = {
   'log-template-copy-to': { hasTemplateTags?: boolean };
   'member-logs': TeamScopedPayload;
   'record-create': { logIds?: string[]; teamId?: string };
+  'record-delete': { logId?: string };
   'record-link-attachments': { parent: RecordSheetParent };
   'record-link-editor':
     | { mode: 'create'; parent: RecordSheetParent }
