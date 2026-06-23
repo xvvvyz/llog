@@ -29,6 +29,7 @@ export const Textarea = React.forwardRef<
       nativeEvent: { selection: { end: number; start: number } };
     }) => void;
     onSubmitEditing?: () => void;
+    fill?: boolean;
     pasteRichTextAsMarkdown?: boolean;
     size?: 'default' | 'sm';
   }
@@ -38,6 +39,7 @@ export const Textarea = React.forwardRef<
       autoFocus,
       className,
       defaultValue,
+      fill,
       maxLength,
       maxRows,
       minRows,
@@ -392,6 +394,7 @@ export const Textarea = React.forwardRef<
         className={cn(
           'native:placeholder:text-placeholder border-border-secondary bg-input text-foreground web:placeholder:text-placeholder w-full resize-none overflow-y-auto rounded-xl border focus-visible:outline-hidden border-continuous',
           size === 'sm' ? 'px-3 py-2' : 'px-4 py-2.5',
+          fill && 'min-h-full max-h-full flex-1',
           readOnly && 'opacity-50 web:cursor-not-allowed',
           className
         )}
