@@ -21,24 +21,55 @@
  *
  * react-native-web hard-codes `font-family: …,"Segoe UI",…` on every top-level
  * <Text> (its SYSTEM_FONT_STACK), so a separate aliased family never reaches
- * that text. Instead we shadow "Segoe UI" itself: this @font-face re-defines
- * the family, pointing back at the installed font via local() but with
- * normalized metrics that pull the baseline up and leave room for descenders.
- * It only bites on Windows — Mac/iOS resolve -apple-system first, Android has
- * no Segoe UI to match, so everywhere else falls through untouched.
- * `font-weight: 100 900` is required so it also covers font-medium/bold text.
+ * that text. Instead we shadow "Segoe UI" itself: these @font-face rules
+ * re-define the family, pointing back at the installed font via local() but
+ * with normalized metrics that pull the baseline up and leave room for
+ * descenders. It only bites on Windows — Mac/iOS resolve -apple-system first,
+ * Android has no Segoe UI to match, so everywhere else falls through untouched.
+ *
+ * One face per weight band (NOT a single `font-weight: 100 900` face). A single
+ * face whose src resolves to a *static* file collapses every weight onto that
+ * one file: `local('Segoe UI Variable Text')` is a fixed-weight named instance
+ * (≈Regular), and `local('Segoe UI')` is the static Regular — so font-medium,
+ * font-semibold and font-bold all rendered at Regular and looked identical.
+ * Mapping each band to its real static face (Regular / Semibold / Bold) — both
+ * are installed on Windows 10 and 11 — restores visible weight differences.
+ * font-medium (500) has no static Segoe UI face; it's pulled UP into the
+ * Semibold band (which starts at 451) rather than down to Regular, so
+ * emphasized text — author names, labels, ~25 usages — stays visibly heavier
+ * than body the way SF Pro's real 500 does on macOS. The alternative (down to
+ * Regular) is the browser's native fallback but leaves the UI looking flat.
  *
  * Tuning (single dial): with an explicit line-height, only the baseline moves,
  * and its position is governed by (ascent − descent). A BIGGER gap drops the
  * text lower; a SMALLER gap raises it and leaves more descender clearance.
  * Segoe UI's descender is deep, so there's a floor: push the gap too wide and
  * descenders clip again. Adjust ascent/descent together (keep the sum ~1.26)
- * and tune against a real Windows browser.
+ * and tune against a real Windows browser. Keep the overrides identical across
+ * the three faces.
  */
 @font-face {
   font-family: 'Segoe UI';
-  src: local('Segoe UI Variable Text'), local('Segoe UI');
-  font-weight: 100 900;
+  src: local('Segoe UI');
+  font-weight: 100 450;
+  font-style: normal;
+  ascent-override: 96%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Segoe UI';
+  src: local('Segoe UI Semibold');
+  font-weight: 451 650;
+  font-style: normal;
+  ascent-override: 96%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Segoe UI';
+  src: local('Segoe UI Bold');
+  font-weight: 651 900;
   font-style: normal;
   ascent-override: 96%;
   descent-override: 30%;

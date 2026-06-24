@@ -1,7 +1,7 @@
 import { renderRecordMarkdownText } from '@/features/records/components/record-markdown-text';
 import * as trimDisplayText from '@/features/records/lib/trim-display-text';
 import { cn } from '@/lib/cn';
-import { Text } from '@/ui/text';
+import { Text, TextContext } from '@/ui/text';
 import { type TextRef } from '@rn-primitives/types';
 import * as React from 'react';
 import { Platform, Pressable, View } from 'react-native';
@@ -93,7 +93,15 @@ export const TruncatedText = ({
         className={cn('web:whitespace-pre-wrap web:text-pretty', className)}
         numberOfLines={collapsedNumberOfLines}
       >
-        {renderedText}
+        {/*
+         * renderRecordMarkdownText wraps text in nested <Text> per block/inline,
+         * each defaulting to `select-none`, which would override a `select-text`
+         * on this wrapper for the actual glyphs. `select-auto` makes them inherit
+         * this wrapper's user-select instead, so callers control selectability.
+         */}
+        <TextContext.Provider value="select-auto">
+          {renderedText}
+        </TextContext.Provider>
       </Text>
       {expandable && truncated && !expanded && (
         <Pressable
