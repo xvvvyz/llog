@@ -35,12 +35,20 @@ const searchLogFields = (
   log?: {
     id: string;
     name: string;
+    note?: { text?: string | null } | null;
     tags?: { name: string; order?: number | null }[];
   } | null
-) =>
-  log
-    ? { id: log.id, name: log.name, tags: log.tags?.map(searchTagFields) }
-    : undefined;
+) => {
+  if (!log) return undefined;
+  const note = mcpFields.textPreview(log.note?.text);
+
+  return {
+    id: log.id,
+    name: log.name,
+    ...(note ? { note } : {}),
+    tags: log.tags?.map(searchTagFields),
+  };
+};
 
 const searchMediaMatchFields = ({
   fileId: _fileId,
@@ -245,7 +253,9 @@ export const getFileMediaMatches = (
   getFileMediaMatchesFromItems(getFileMediaSearchItems(files), query);
 
 const resultText = (result: SearchResult) => {
-  if (result.type === 'log') return result.log.name;
+  if (result.type === 'log') {
+    return [result.log.name, result.log.note?.text].filter(Boolean).join(' — ');
+  }
 
   const text =
     result.type === 'record' ? result.record.text : result.reply.text;
@@ -262,7 +272,7 @@ export const searchResultsTable = (results: SearchResult[]) =>
         return [
           'log',
           '',
-          result.log.name,
+          mcpFields.textPreview(resultText(result)),
           result.log.tags?.map((tag) => tag.name).join(', '),
           result.log.id,
         ];
@@ -299,6 +309,7 @@ export const getLogSearchResult = ({
 }): SearchResult | undefined => {
   const haystack = searchHaystack([
     log.name,
+    log.note?.text,
     ...(log.tags ?? []).map((tag) => tag.name),
   ]);
 

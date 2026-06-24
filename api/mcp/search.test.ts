@@ -1,8 +1,8 @@
 import { getFileMediaMatches, parseSearchCursor } from '@/api/mcp/search';
-import { getRecordSearchResults } from '@/api/mcp/search-helpers';
 import type * as mcpTypes from '@/api/mcp/types';
 import type { ParsedSearchQuery } from '@/lib/search';
 import { describe, expect, test } from 'bun:test';
+import * as searchHelpers from '@/api/mcp/search-helpers';
 
 const parsedKeywordQuery = (
   text: string,
@@ -111,15 +111,17 @@ describe('getRecordSearchResults', () => {
     };
 
     expect(
-      getRecordSearchResults({
-        parsedQuery: parsedKeywordQuery('needle'),
-        query: 'needle',
-        record,
-      }).map((result) => result.type)
+      searchHelpers
+        .getRecordSearchResults({
+          parsedQuery: parsedKeywordQuery('needle'),
+          query: 'needle',
+          record,
+        })
+        .map((result) => result.type)
     ).toEqual(['reply']);
 
     expect(
-      getRecordSearchResults({
+      searchHelpers.getRecordSearchResults({
         parsedQuery: parsedKeywordQuery('needle'),
         query: 'needle',
         record,
@@ -128,12 +130,51 @@ describe('getRecordSearchResults', () => {
     ).toEqual([]);
 
     expect(
-      getRecordSearchResults({
+      searchHelpers.getRecordSearchResults({
         parsedQuery: parsedKeywordQuery('needle', { tag: ['tagged'] }),
         query: 'needle',
         record,
       })
     ).toEqual([]);
+  });
+});
+
+describe('getLogSearchResult', () => {
+  const log: mcpTypes.McpLog = {
+    id: 'log-1',
+    name: 'Health',
+    note: { text: 'Call dentist on Friday' },
+    tags: [{ id: 'tag-1', name: 'Personal', order: 0 }],
+  };
+
+  test('matches note text', () => {
+    expect(
+      searchHelpers.getLogSearchResult({
+        log,
+        parsedQuery: parsedKeywordQuery('dentist'),
+        query: 'dentist',
+      })
+    ).toEqual({ log, type: 'log' });
+
+    expect(
+      searchHelpers.getLogSearchResult({
+        log,
+        parsedQuery: parsedKeywordQuery('missing'),
+        query: 'missing',
+      })
+    ).toBeUndefined();
+  });
+
+  test('surfaces note in fields', () => {
+    expect(searchHelpers.searchResultFields({ log, type: 'log' })).toEqual({
+      log: {
+        id: 'log-1',
+        name: 'Health',
+        note: 'Call dentist on Friday',
+        tags: [{ name: 'Personal', order: 0 }],
+      },
+      type: 'log',
+    });
   });
 });
 

@@ -14,6 +14,7 @@ type SearchDocument = {
   id: string;
   type: searchTypes.SearchResultType;
   text: string;
+  noteText: string;
   attachmentNames: string[];
   attachmentUrls: string[];
   attachmentText: string;
@@ -45,6 +46,7 @@ const isSearchDocument = (
     result.type === 'reply' ||
     result.type === 'log') &&
   typeof result.text === 'string' &&
+  typeof result.noteText === 'string' &&
   Array.isArray(result.attachmentNames) &&
   Array.isArray(result.attachmentUrls) &&
   typeof result.attachmentText === 'string' &&
@@ -203,7 +205,11 @@ export const useSearch = ({ query }: { query: string }) => {
               },
               ...recordQueries.replySearchDocumentQuery,
             },
-            logs: { profiles: { image: {} }, tags: logTagsQuery },
+            logs: {
+              note: { $: { fields: ['text' as const] } },
+              profiles: { image: {} },
+              tags: logTagsQuery,
+            },
           }
         : null,
     [shouldLoadSearchData]
@@ -223,6 +229,7 @@ export const useSearch = ({ query }: { query: string }) => {
         id: `log:${log.id}`,
         type: 'log',
         text: '',
+        noteText: getSearchableRecordText(log.note?.text),
         attachmentNames: [],
         attachmentUrls: [],
         attachmentText: '',
@@ -267,6 +274,7 @@ export const useSearch = ({ query }: { query: string }) => {
         id: `record:${record.id}`,
         type: 'record',
         text,
+        noteText: '',
         attachmentNames,
         attachmentUrls,
         attachmentText,
@@ -311,6 +319,7 @@ export const useSearch = ({ query }: { query: string }) => {
         id: `reply:${reply.id}`,
         type: 'reply',
         text,
+        noteText: '',
         attachmentNames,
         attachmentUrls,
         attachmentText,
@@ -342,6 +351,7 @@ export const useSearch = ({ query }: { query: string }) => {
       documents,
       fields: [
         'text',
+        'noteText',
         'attachmentText',
         'mediaText',
         'tagText',
@@ -350,6 +360,7 @@ export const useSearch = ({ query }: { query: string }) => {
       ],
       storeFields: [
         'text',
+        'noteText',
         'attachmentNames',
         'attachmentUrls',
         'attachmentText',
@@ -399,6 +410,11 @@ export const useSearch = ({ query }: { query: string }) => {
         result.type === 'log'
           ? result.terms
           : getMatchedTermsForField(result.match, 'text');
+
+      const noteTerms =
+        result.type === 'log'
+          ? getMatchedTermsForField(result.match, 'noteText')
+          : [];
 
       const attachmentTerms = getMatchedTermsForField(
         result.match,
@@ -457,6 +473,8 @@ export const useSearch = ({ query }: { query: string }) => {
             : textTerms.length || !hasMatchedContent
               ? (result.text ?? '')
               : '',
+        noteText: noteTerms.length ? (result.noteText ?? '') : '',
+        noteTerms,
         attachmentNames,
         attachmentUrls,
         mediaSnippets: uniqueStrings(mediaSnippets),

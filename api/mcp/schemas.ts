@@ -237,6 +237,7 @@ const searchTagOutputSchema = z.object({
 const searchLogOutputSchema = z.object({
   id: z.string(),
   name: z.string(),
+  note: z.string().optional(),
   tags: z.array(searchTagOutputSchema).optional(),
 });
 

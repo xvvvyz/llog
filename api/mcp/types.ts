@@ -18,6 +18,7 @@ export type McpContext = {
 type FileEntity = InstaQLEntity<typeof schema, 'files'>;
 type LinkEntity = InstaQLEntity<typeof schema, 'links'>;
 type LogEntity = InstaQLEntity<typeof schema, 'logs'>;
+type NoteEntity = InstaQLEntity<typeof schema, 'notes'>;
 type ProfileEntity = InstaQLEntity<typeof schema, 'profiles'>;
 type ReactionEntity = InstaQLEntity<typeof schema, 'reactions'>;
 type RecordEntity = InstaQLEntity<typeof schema, 'records'>;
@@ -95,6 +96,7 @@ export type McpTeam = Pick<TeamEntity, 'id' | 'name'> & {
 };
 
 export type McpLog = Pick<LogEntity, 'id' | 'name'> & {
+  note?: Pick<NoteEntity, 'text'> | null;
   profiles?: McpProfile[];
   tags?: McpTag[];
   team?: McpTeam | null;

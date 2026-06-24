@@ -35,7 +35,9 @@ export type SearchResult = {
   attachmentTerms?: string[];
   tagTerms?: string[];
   textTerms?: string[];
+  noteTerms?: string[];
   text: string;
+  noteText?: string;
   attachmentNames?: string[];
   attachmentUrls?: string[];
   mediaSnippets?: string[];

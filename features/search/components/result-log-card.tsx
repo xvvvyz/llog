@@ -1,4 +1,5 @@
 import { trimDisplayText } from '@/features/records/lib/trim-display-text';
+import { ResultHighlightedText } from '@/features/search/components/result-highlighted-text';
 import { SearchResult } from '@/features/search/types/search';
 import { TagChipList } from '@/features/tags/components/tag-chip-list';
 import { cn } from '@/lib/cn';
@@ -20,6 +21,8 @@ export const ResultLogCard = ({
     trimDisplayText(tag.name)
   );
 
+  const noteText = trimDisplayText(result.noteText ?? '');
+
   return (
     <Pressable className={className} onPress={onPress}>
       <View
@@ -40,10 +43,21 @@ export const ResultLogCard = ({
             />
           )}
         </View>
-        <View className="flex-row mt-4 w-full gap-3 items-end justify-between">
-          <Text className="flex-1 -mb-1 min-w-0 leading-tight text-balance text-white web:whitespace-normal">
-            {result.text}
-          </Text>
+        <View className="flex-row mt-2.5 w-full gap-3 items-end justify-between">
+          <View className="flex-1 -mb-1 min-w-0 gap-1.5">
+            <Text className="min-w-0 leading-tight text-balance text-white web:whitespace-normal">
+              {result.text}
+            </Text>
+            {!!noteText && (
+              <ResultHighlightedText
+                className="-mb-0.5 min-w-0 leading-snug text-sm text-white/80 web:text-pretty"
+                highlightClassName="font-semibold text-sm text-white"
+                numberOfLines={2}
+                terms={result.noteTerms ?? result.terms}
+                text={noteText}
+              />
+            )}
+          </View>
           {!!result.profiles?.length && (
             <View className="flex-row -mb-1.5 -mr-1.5">
               {result.profiles.map((profile, index) => (

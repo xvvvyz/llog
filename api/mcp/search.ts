@@ -49,7 +49,7 @@ export const registerSearchTool = (
 
     if (!recordTagIdSet && searchCursor.offset === 0) {
       const { logs } = (await ctx.db.query({
-        logs: { tags: logTagsQuery },
+        logs: { note: { $: { fields: ['text'] } }, tags: logTagsQuery },
       })) as { logs?: mcpTypes.McpLog[] };
 
       for (const log of logs ?? []) {
@@ -136,7 +136,7 @@ export const registerSearchTool = (
     'search',
     {
       description:
-        'Batch search logs, records, replies, links, files, and media text with items. Supports filters like log:"Daily", tag:"Work", and author:"Person".',
+        'Batch search logs, log notes, records, replies, links, files, and media text with items. Supports filters like log:"Daily", tag:"Work", and author:"Person".',
       inputSchema: { items: z.array(searchItemSchema).min(1).max(10) },
       outputSchema: mcpSchemas.searchOutputSchema,
     },
