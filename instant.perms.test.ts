@@ -122,8 +122,12 @@ describe('permissions', () => {
     expect(noteBindings).not.toContain("'member_'");
   });
 
-  test('denies analyses', () => {
+  test('locks analyses but allows manager cascade delete', () => {
     expect(rules.analyses.allow.$default).toBe('false');
     expect(rules.facts.allow.$default).toBe('false');
+    expect(rules.analyses.allow.delete).toContain("data.ref('card.team.id')");
+    expect(rules.analyses.allow.delete).toContain('$user.roles.key');
+    expect(rules.facts.allow.delete).toContain("data.ref('card.team.id')");
+    expect(rules.facts.allow.delete).toContain('$user.roles.key');
   });
 });

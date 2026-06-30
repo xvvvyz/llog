@@ -246,8 +246,18 @@ const rules = {
       },
     },
   },
-  analyses: { allow: { $default: 'false' } },
-  facts: { allow: { $default: 'false' } },
+  analyses: {
+    allow: {
+      $default: 'false',
+      delete: ruleStrings.canManageFor('card.team.id'),
+    },
+  },
+  facts: {
+    allow: {
+      $default: 'false',
+      delete: ruleStrings.canManageFor('card.team.id'),
+    },
+  },
   $users: {
     bind: [
       'isTeammate',
