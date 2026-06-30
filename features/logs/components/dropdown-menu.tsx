@@ -100,7 +100,13 @@ export const DropdownMenu = ({
         {canManage && (
           <>
             <Menu.Separator />
-            <Menu.Item onPress={() => sheetManager.open('log-delete', id)}>
+            <Menu.Item
+              onPress={() =>
+                sheetManager.open('log-delete', id, undefined, {
+                  teamId: log.teamId,
+                })
+              }
+            >
               <Icon className="text-destructive" icon={Trash} />
               <Text className="text-destructive">Delete</Text>
             </Menu.Item>

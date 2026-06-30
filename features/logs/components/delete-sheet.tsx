@@ -22,7 +22,8 @@ export const LogDeleteSheet = () => {
       onConfirm={async () => {
         await runSubmit(async ({ keepPendingUntilClose }) => {
           const logId = sheetManager.getId('log-delete')!;
-          await deleteLog({ id: logId });
+          const teamId = sheetManager.getPayload('log-delete')?.teamId;
+          await deleteLog({ id: logId, teamId });
           sheetManager.close('log-delete');
           router.dismissTo('/');
           keepPendingUntilClose();

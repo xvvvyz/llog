@@ -90,6 +90,7 @@ export type SheetPayloadMap = {
   'invite-link': InviteLinkPayload;
   'invite-link-delete': InviteLinkPayload;
   'invite-logs': TeamScopedPayload;
+  'log-delete': TeamScopedPayload;
   'log-notes-delete': LogNotesDeletePayload;
   'log-template-copy-editor': {
     createMissingTags?: boolean;
