@@ -22,6 +22,7 @@ export type SheetName =
   | 'log-template-editor'
   | 'log-templates'
   | 'log-tags'
+  | 'logs-filter'
   | 'member-logs'
   | 'mcp'
   | 'record-audio'

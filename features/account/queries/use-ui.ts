@@ -1,16 +1,22 @@
 import { normalizeReactionEmoji } from '@/domain/records/reactions';
 import * as audioPlaybackRateUtils from '@/features/files/lib/media-playback-rate';
-import { isSortBy, type SortBy } from '@/features/logs/lib/sort';
 import { useCurrentQueryResult } from '@/hooks/use-current-query-result';
 import { db } from '@/lib/db';
 import { isSortDirection, type SortDirection } from '@/lib/sort-direction';
+import * as sort from '@/features/logs/lib/sort';
 
 export const useUi = () => {
   const auth = db.useAuth();
 
   const { data, isLoading } = db.useQuery(
     auth.user
-      ? { ui: { $: { where: { user: auth.user.id } }, team: {} } }
+      ? {
+          ui: {
+            $: { where: { user: auth.user.id } },
+            tags: { $: { fields: ['id'] } },
+            team: {},
+          },
+        }
       : null
   );
 
@@ -24,15 +30,15 @@ export const useUi = () => {
     ? ui.audioPlaybackRate
     : audioPlaybackRateUtils.DEFAULT_AUDIO_PLAYBACK_RATE;
 
-  const logsSortBy: SortBy = isSortBy(ui?.logsSortBy)
+  const logsSortBy: sort.SortBy = sort.isSortBy(ui?.logsSortBy)
     ? ui.logsSortBy
-    : 'serverCreatedAt';
+    : sort.DEFAULT_SORT_BY;
 
   const logsSortDirection: SortDirection = isSortDirection(
     ui?.logsSortDirection
   )
     ? ui.logsSortDirection
-    : 'desc';
+    : sort.DEFAULT_SORT_DIRECTION;
 
   return {
     activityLastReadDate: ui?.activityLastReadDate,
@@ -41,6 +47,7 @@ export const useUi = () => {
     doubleTapEmoji,
     id: ui?.id,
     isLoading: !!auth.user && (isLoading || !hasCurrentResult),
+    logsFilterTagIds: (ui?.tags ?? []).map((tag) => tag.id),
     logsSortBy,
     logsSortDirection,
     videoMuted: ui?.videoMuted ?? true,

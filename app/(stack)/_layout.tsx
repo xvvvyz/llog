@@ -12,6 +12,7 @@ import { InviteLinkDeleteSheet } from '@/features/invites/components/link-delete
 import { InviteLogsSheet } from '@/features/invites/components/logs-sheet';
 import { LogDeleteSheet } from '@/features/logs/components/delete-sheet';
 import { LogEditSheet } from '@/features/logs/components/edit-sheet';
+import { LogsFilterSheet } from '@/features/logs/components/filter-sheet';
 import { LogMembersSheet } from '@/features/logs/components/members-sheet';
 import { LogNotesDeleteSheet } from '@/features/logs/components/notes-delete-sheet';
 import { LogNotesSheet } from '@/features/logs/components/notes-sheet';
@@ -75,6 +76,7 @@ export default function Layout() {
       <LogCardEditorSheet />
       <LogCardTweakSheet />
       <LogMembersSheet />
+      <LogsFilterSheet />
       <LogNotesSheet />
       <LogNotesDeleteSheet />
       <LogTemplatesSheet />
