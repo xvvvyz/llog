@@ -4,6 +4,7 @@ import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext, McpRecord } from '@/api/mcp/types';
 import { getViewer } from '@/api/mcp/viewer';
+import { DEFAULT_LOG_COLOR } from '@/domain/logs/color';
 import * as recordQueries from '@/domain/records/query';
 import { recordTagsQuery } from '@/domain/tags/query';
 import * as permissions from '@/domain/teams/permissions';
@@ -157,7 +158,11 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
 
     await ctx.db.transact(
       ctx.db.tx.logs[logId]
-        .update({ name: trimmedName, teamId: resolvedTeamId })
+        .update({
+          color: DEFAULT_LOG_COLOR,
+          name: trimmedName,
+          teamId: resolvedTeamId,
+        })
         .link({ team: resolvedTeamId })
     );
 

@@ -1,3 +1,4 @@
+import { DEFAULT_LOG_COLOR } from '@/domain/logs/color';
 import { useUi } from '@/features/account/queries/use-ui';
 import { ListActions } from '@/features/logs/components/list-actions';
 import { ListEmptyState } from '@/features/logs/components/list-empty-state';
@@ -49,7 +50,7 @@ export default function Index() {
 
     const createBlankLog = async () => {
       try {
-        await createLog({ color: 7, id: logId, name: 'Log' });
+        await createLog({ color: DEFAULT_LOG_COLOR, id: logId, name: 'Log' });
       } catch (error) {
         console.error('Failed to create log', error);
       }
