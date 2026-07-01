@@ -153,18 +153,33 @@ export const registerLogTools = (server: McpServer, ctx: McpContext) => {
       throw new Error('Only team owners and admins can create logs');
     }
 
+    const { roles: teamRoles } = await ctx.db.query({
+      roles: {
+        $: { fields: ['role'], where: { team: resolvedTeamId } },
+        user: { profile: { $: { fields: ['id'] } } },
+      },
+    });
+
+    const memberProfileIds = teamRoles
+      .filter((role) => permissions.isManagedRole(role.role))
+      .map((role) => role.user?.profile?.id)
+      .filter((profileId): profileId is string => !!profileId);
+
     const logId = id();
     const trimmedName = name.trim();
 
-    await ctx.db.transact(
+    await ctx.db.transact([
       ctx.db.tx.logs[logId]
         .update({
           color: DEFAULT_LOG_COLOR,
           name: trimmedName,
           teamId: resolvedTeamId,
         })
-        .link({ team: resolvedTeamId })
-    );
+        .link({ team: resolvedTeamId }),
+      ...memberProfileIds.map((profileId) =>
+        ctx.db.tx.logs[logId].link({ profiles: profileId })
+      ),
+    ]);
 
     const log = mcpFields.logFields({
       id: logId,
