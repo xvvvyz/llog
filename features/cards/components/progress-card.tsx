@@ -14,6 +14,8 @@ import * as metricDisplay from '@/features/cards/lib/metric-display';
 
 import Svg, {
   Circle,
+  ClipPath,
+  Defs,
   Line,
   Path,
   Rect,
@@ -94,6 +96,13 @@ const BAR_DIMMED_OPACITY = 0.62;
 
 export const PROGRESS_CARD_PREVIEW_HEIGHT = 208;
 
+// Card body padding (p-4): the horizontal bleed uses a matching -mx-4 margin,
+// and the fill bleeds this far below its box to reach the bottom edge. Keep in
+// sync with the -mx-4 class.
+const PROGRESS_CARD_CONTENT_PADDING = 16;
+// Card corner radius (rounded-2xl). A full-bleed fill is clipped to this so it
+// hugs the rounded bottom corners instead of poking past them.
+const PROGRESS_CARD_CORNER_RADIUS = 16;
 const HORIZONTAL_BAR_COMPACT_MIN_HEIGHT = 64;
 const HORIZONTAL_BAR_ROW_HEIGHT = 20;
 const HORIZONTAL_BAR_HEIGHT = 8;
@@ -1070,6 +1079,26 @@ const buildAreaPath = (
   ].join(' ');
 };
 
+// Rect spanning (0,0)-(width,height) with only the bottom corners rounded.
+const buildBottomRoundedRectPath = (
+  width: number,
+  height: number,
+  radius: number
+) => {
+  const r = Math.max(0, radius);
+  if (r <= 0) return `M 0 0 H ${width} V ${height} H 0 Z`;
+
+  return [
+    `M 0 0`,
+    `H ${width}`,
+    `V ${height - r}`,
+    `A ${r} ${r} 0 0 1 ${width - r} ${height}`,
+    `H ${r}`,
+    `A ${r} ${r} 0 0 1 0 ${height - r}`,
+    'Z',
+  ].join(' ');
+};
+
 const buildBarPath = ({
   height,
   radius,
@@ -1353,6 +1382,7 @@ const ChartLegend = ({
 const SingleSeriesChart = ({
   barFills,
   barOrientation = 'vertical',
+  bleedBottomFill,
   color,
   colors,
   compact,
@@ -1373,6 +1403,7 @@ const SingleSeriesChart = ({
 }: {
   barFills?: (string | undefined)[];
   barOrientation?: BarChartOrientation;
+  bleedBottomFill?: boolean;
   color: string;
   colors: ChartPalette;
   compact?: boolean;
@@ -1391,6 +1422,8 @@ const SingleSeriesChart = ({
   yAxis?: CardChart['yAxis'];
   yAxisLabelWidth?: number;
 }) => {
+  const areaClipId = `chart-area-clip-${React.useId()}`;
+
   const [containerSize, setContainerSize] = React.useState({
     height: 0,
     width: 0,
@@ -1441,6 +1474,17 @@ const SingleSeriesChart = ({
         : type === 'line'
           ? DETAIL_LINE_CHART_HEIGHT
           : 128;
+
+  // A bottom-bleeding preview line chart fills its card box vertically: the peak
+  // pins to the top edge and the fill bleeds past the bottom edge. Both are
+  // painted past the box via the SVG's overflow: visible (the same way edge dots
+  // overflow), so the box keeps its measured size and nothing else reflows.
+  const isBleedingPreviewLine = bleedBottomFill && type === 'line';
+
+  // Distance the fill overflows below the box to reach the card's bottom edge.
+  const fillBleedHeight = isBleedingPreviewLine
+    ? PROGRESS_CARD_CONTENT_PADDING
+    : 0;
 
   const chartHeight =
     fillHeight && containerSize.height
@@ -1585,6 +1629,8 @@ const SingleSeriesChart = ({
 
   const padding: ChartPadding = {
     ...basePadding,
+    // Drop the top padding so the pinned peak reaches the box's top edge.
+    top: isBleedingPreviewLine ? 0 : basePadding.top,
     left: showAxes
       ? yAxisLabelWidth + AXIS_TICK_SIZE + yAxisLabelGap
       : basePadding.left + lineMarkerEdgePadding,
@@ -2109,9 +2155,15 @@ const SingleSeriesChart = ({
     );
   }
 
+  // Pin the peak to the box top: map the line against the raw data max, not the
+  // nice-rounded axis max (which adds headroom the hidden compact axis ignores).
+  const lineDomain = isBleedingPreviewLine
+    ? { ...yAxisScale.domain, max: Math.max(...values) }
+    : yAxisScale.domain;
+
   const points = cardChart.getLineChartPoints({
     chart: { data, ...(unit && { unit }) },
-    domain: yAxisScale.domain,
+    domain: lineDomain,
     height: innerHeight,
     width: innerWidth,
   });
@@ -2133,8 +2185,21 @@ const SingleSeriesChart = ({
   };
 
   const lineTouchHandlers = makeChartTouchHandlers(handleLinePointerTarget);
-  const baselineY = padding.top + innerHeight;
+  // Fill drops to the card's bottom edge (a bleed past the box bottom), while
+  // the line keeps its normal baseline.
+  const fillBottomY = chartHeight + fillBleedHeight;
+  const baselineY = fillBleedHeight ? fillBottomY : padding.top + innerHeight;
   const areaPath = buildAreaPath(points, padding, baselineY);
+
+  // Clip only the fill to the card's rounded bottom corners so it doesn't poke
+  // past them. The line and its dots stay unclipped and can overflow the edge.
+  const areaClipPath = fillBleedHeight
+    ? buildBottomRoundedRectPath(
+        chartWidth,
+        fillBottomY,
+        Math.min(PROGRESS_CARD_CORNER_RADIUS, chartWidth / 2, fillBottomY)
+      )
+    : undefined;
 
   const hoveredPoint =
     hoveredIndex == null ? undefined : (points[hoveredIndex] ?? undefined);
@@ -2186,8 +2251,20 @@ const SingleSeriesChart = ({
         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
         width="100%"
       >
+        {!!areaClipPath && (
+          <Defs>
+            <ClipPath id={areaClipId}>
+              <Path d={areaClipPath} />
+            </ClipPath>
+          </Defs>
+        )}
         {!!areaPath && (
-          <Path d={areaPath} fill={color} opacity={compact ? 0.08 : 0.1} />
+          <Path
+            clipPath={areaClipPath ? `url(#${areaClipId})` : undefined}
+            d={areaPath}
+            fill={color}
+            opacity={compact ? 0.08 : 0.1}
+          />
         )}
         {showAxes && axes}
         {!!hoveredPoint && !compact && (
@@ -2290,12 +2367,14 @@ const SingleSeriesChart = ({
 
 const Chart = ({
   chart,
+  bleedBottomFill,
   compact,
   compactRows,
   logColorIndex,
   tags,
 }: {
   chart: CardChart;
+  bleedBottomFill?: boolean;
   compact?: boolean;
   compactRows?: number;
   logColorIndex?: Color;
@@ -2402,6 +2481,7 @@ const Chart = ({
           key={`${item.label}-${index}`}
           barFills={index === 0 ? barFills : undefined}
           barOrientation={barOrientation}
+          bleedBottomFill={bleedBottomFill && !stacked}
           color={getSeriesColor(colors, index)}
           colors={colors}
           compact={compact}
@@ -2585,6 +2665,12 @@ export const ProgressCard = ({
       cardChart.getRenderableChartSeries(resolvedOutput.chart)[0]?.data ?? []
     ) === 'horizontal';
 
+  // Only single-series line charts bleed their fill to the bottom edge; stacked
+  // series each have their own baseline and can't share the card's bottom.
+  const isSingleSeriesLineChart =
+    resolvedOutput?.chart?.type === 'line' &&
+    cardChart.getRenderableChartSeries(resolvedOutput.chart).length === 1;
+
   const milestoneDotColor =
     SPECTRUM[colorScheme][
       resolveSpectrumColor(logColorIndex, DEFAULT_CHART_COLOR)
@@ -2726,16 +2812,34 @@ export const ProgressCard = ({
     if (!resolvedOutput) return null;
     const alignment = getPreviewSectionAlignment(previewSections, sectionIndex);
 
+    const isFullBleedChart =
+      section.type === 'chart' &&
+      hasRenderableChart &&
+      resolvedOutput.chart?.type === 'line';
+
+    // When the chart is the last section it reaches the card's bottom edge, so
+    // let its fill bleed there too. The chart overflows its box downward rather
+    // than growing the section, which would reflow the sections above it.
+    const bleedBottomFill =
+      isFullBleedChart &&
+      isSingleSeriesLineChart &&
+      sectionIndex === previewSections.length - 1;
+
     return (
       <View
         key={section.key}
-        className="min-h-0 w-full self-stretch"
         style={{ flex: section.rows }}
+        className={cn(
+          'min-h-0 self-stretch',
+          // Bleed line charts to the card edges by cancelling the p-4 padding.
+          isFullBleedChart ? '-mx-4' : 'w-full'
+        )}
       >
         {section.type === 'spacer' ? null : section.type === 'chart' &&
           hasRenderableChart &&
           resolvedOutput.chart ? (
           <Chart
+            bleedBottomFill={bleedBottomFill}
             chart={resolvedOutput.chart}
             compact
             compactRows={section.rows}
