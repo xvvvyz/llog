@@ -108,7 +108,7 @@ describe('parseStructuredTemplate', () => {
 
     expect(
       structuredTemplate.formatStructuredTemplatePreview(template.text)
-    ).toBe('Visible [text:Done]');
+    ).toBe('Visible Hidden lines Done');
   });
 
   test('supports hidden guidance', () => {
@@ -138,7 +138,20 @@ describe('parseStructuredTemplate', () => {
     expect(
       structuredTemplate.formatStructuredTemplatePreview(template.text)
     ).toBe(
-      'Alone duration (min): [number:0] Peak distress (0-5): [number:5] [paragraph]'
+      [
+        'Alone duration (min): 0',
+        'Longest planned absence completed before return.',
+        '---',
+        'Peak distress (0-5): 5',
+        '0. Asleep/fully relaxed',
+        '1. Relaxed alert',
+        '2. Mild checking/brief whine',
+        '3. Pacing/repeated whine',
+        '4. Barking/scratching/panting',
+        '5. Panic or unsafe behavior',
+        '---',
+        'Notes: Paragraph',
+      ].join(' ')
     );
   });
 
@@ -172,7 +185,18 @@ describe('parseStructuredTemplate', () => {
     expect(
       structuredTemplate.formatStructuredTemplatePreview(template.text)
     ).toBe(
-      'Alone duration (min): [number:0] Peak distress (0-5): [number:0] [paragraph] [file:Video of the session]'
+      [
+        'Alone duration (min): 0',
+        'Peak distress (0-5): 0',
+        '0. Asleep/fully relaxed',
+        '1. Relaxed alert',
+        '2. Mild checking/brief whine',
+        '3. Pacing/repeated whine',
+        '4. Barking/scratching/panting',
+        '5. Panic or unsafe behavior',
+        'Notes: Paragraph',
+        'Video of the session',
+      ].join(' ')
     );
   });
 
@@ -200,7 +224,7 @@ describe('parseStructuredTemplate', () => {
 
     expect(
       structuredTemplate.formatStructuredTemplatePreview('{{Hidden}}')
-    ).toBe('');
+    ).toBe('Hidden');
 
     expect(structuredTemplate.structuredTemplateHasFields('{{Hidden}}')).toBe(
       true
@@ -402,12 +426,28 @@ describe('renderStructuredTemplate', () => {
 });
 
 describe('formatStructuredTemplatePreview', () => {
-  test('shows placeholders', () => {
+  test('shows field labels', () => {
     expect(
       structuredTemplate.formatStructuredTemplatePreview(
         ['Title [text:Title]', '[file]', '[datetime:When]'].join('\n')
       )
-    ).toBe('Title [text:Title] [file] [datetime:When]');
+    ).toBe('Title Title File [datetime:When]');
+  });
+
+  test('shows hidden text', () => {
+    expect(
+      structuredTemplate.formatStructuredTemplatePreview(
+        'Mood [text]\n{{Rate 1-5 before bed}}'
+      )
+    ).toBe('Mood Text Rate 1-5 before bed');
+  });
+
+  test('drops markdown formatting', () => {
+    expect(
+      structuredTemplate.formatStructuredTemplatePreview(
+        '**Mood:** [text:Good]'
+      )
+    ).toBe('Mood: Good');
   });
 
   test('keeps plain text', () => {

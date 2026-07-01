@@ -1,13 +1,19 @@
+import { recordMarkdownToPlainText } from '@/domain/records/markdown';
+
 export const STRUCTURED_TEMPLATE_TEXT_MAX_LENGTH = 10240;
 
+export const STRUCTURED_TEMPLATE_FIELD_TYPES = [
+  'checkbox',
+  'file',
+  'link',
+  'number',
+  'paragraph',
+  'recording',
+  'text',
+] as const;
+
 export type StructuredTemplateFieldType =
-  | 'checkbox'
-  | 'file'
-  | 'link'
-  | 'number'
-  | 'paragraph'
-  | 'recording'
-  | 'text';
+  (typeof STRUCTURED_TEMPLATE_FIELD_TYPES)[number];
 
 export type StructuredTemplateInlineFieldType = Exclude<
   StructuredTemplateFieldType,
@@ -51,15 +57,9 @@ export type StructuredTemplateRenderResult = {
   textError?: string;
 };
 
-const SUPPORTED_FIELD_TYPES = new Set<StructuredTemplateFieldType>([
-  'checkbox',
-  'file',
-  'link',
-  'number',
-  'paragraph',
-  'recording',
-  'text',
-]);
+const SUPPORTED_FIELD_TYPES = new Set<StructuredTemplateFieldType>(
+  STRUCTURED_TEMPLATE_FIELD_TYPES
+);
 
 const GENERIC_LABEL_BY_TYPE: Record<StructuredTemplateFieldType, string> = {
   checkbox: 'Checkbox',
@@ -174,15 +174,22 @@ export const parseStructuredTemplate = (text: string): StructuredTemplate => {
 export const formatStructuredTemplatePreview = (text: string) => {
   const template = parseStructuredTemplate(text);
   if (!hasStructuredTemplateSyntax(template)) return formatPreviewText(text);
+  const fieldsById = getFieldsById(template.fields);
 
+  // Mirror what the record form shows: hidden guidance and helper text are
+  // visible there, and fields render as their value or type label rather than
+  // the raw [type:value] syntax.
   return formatPreviewText(
     template.segments
       .map((segment) => {
-        if (segment.type === 'text') return segment.text;
-        if (segment.type === 'hidden' || segment.type === 'helper') return '';
-        return segment.source;
+        if (segment.type !== 'field') return segment.text;
+        const field = fieldsById.get(segment.fieldId);
+
+        return field
+          ? getStructuredTemplateFieldDisplayLabel(field)
+          : segment.source;
       })
-      .join('')
+      .join(' ')
   );
 };
 
@@ -257,7 +264,10 @@ export const isAttachmentField = (
 const getFieldsById = (fields: StructuredTemplateField[]) =>
   new Map(fields.map((field) => [field.id, field]));
 
-const formatPreviewText = (text: string) => text.replace(/\s+/g, ' ').trim();
+// Collapse to a single line and drop inline markdown so the preview reads as
+// the plain text a reader sees in the record form, without formatting syntax.
+const formatPreviewText = (text: string) =>
+  recordMarkdownToPlainText(text.replace(/\s+/g, ' '));
 
 const extractHelperSegments = (
   segments: StructuredTemplateSegment[],
