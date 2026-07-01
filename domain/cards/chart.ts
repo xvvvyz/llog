@@ -358,6 +358,31 @@ export const parseChartLabelDate = parseIsoDateTime;
 export const hasChartLabelTime = (label: string) =>
   !!parseChartLabelDate(label);
 
+const DATE_ONLY_LABEL_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const YEAR_MONTH_LABEL_PATTERN = /^(\d{4})-(\d{2})$/;
+
+// Day/week/month groupings label their buckets as date-only (`2026-06-29`) or
+// year-month (`2026-06`) keys, which are not full ISO timestamps. Parse them as
+// local calendar dates so the axis can format them instead of printing the raw
+// key. Local (not UTC) construction keeps the formatted day matching the key.
+const parseChartLabelBucketDate = (label: string) => {
+  const day = label.match(DATE_ONLY_LABEL_PATTERN);
+
+  if (day) {
+    const [, year, month, date] = day.map(Number);
+    if (month < 1 || month > 12 || date < 1 || date > 31) return;
+    return { date: new Date(year, month - 1, date), precision: 'day' as const };
+  }
+
+  const yearMonth = label.match(YEAR_MONTH_LABEL_PATTERN);
+
+  if (yearMonth) {
+    const [, year, month] = yearMonth.map(Number);
+    if (month < 1 || month > 12) return;
+    return { date: new Date(year, month - 1, 1), precision: 'month' as const };
+  }
+};
+
 export const formatChartTickLabel = (
   label: string,
   { maxLength = 10 }: { maxLength?: number } = {}
@@ -365,6 +390,16 @@ export const formatChartTickLabel = (
   const date = parseChartLabelDate(label);
   if (date) return format(date, isThisYear(date) ? 'M/d' : 'M/d/yy');
   const trimmed = label.trim();
+  const bucket = parseChartLabelBucketDate(trimmed);
+
+  if (bucket) {
+    if (bucket.precision === 'month') {
+      return format(bucket.date, isThisYear(bucket.date) ? 'MMM' : 'MMM yy');
+    }
+
+    return format(bucket.date, isThisYear(bucket.date) ? 'M/d' : 'M/d/yy');
+  }
+
   if (trimmed.length <= maxLength) return trimmed;
   return `${trimmed.slice(0, Math.max(1, maxLength - 3))}...`;
 };

@@ -100,9 +100,16 @@ export const PROGRESS_CARD_PREVIEW_HEIGHT = 208;
 // and the fill bleeds this far below its box to reach the bottom edge. Keep in
 // sync with the -mx-4 class.
 const PROGRESS_CARD_CONTENT_PADDING = 16;
-// Card corner radius (rounded-2xl). A full-bleed fill is clipped to this so it
-// hugs the rounded bottom corners instead of poking past them.
+// Card corner radius (rounded-2xl) and its 1px border. A full-bleed fill sits
+// just inside the border, so it's clipped to the border's inner corner radius
+// (outer radius minus the border width) to hug the rounded bottom corners
+// instead of poking past them.
 const PROGRESS_CARD_CORNER_RADIUS = 16;
+const PROGRESS_CARD_BORDER_WIDTH = 1;
+
+const PROGRESS_CARD_INNER_CORNER_RADIUS =
+  PROGRESS_CARD_CORNER_RADIUS - PROGRESS_CARD_BORDER_WIDTH;
+
 const HORIZONTAL_BAR_COMPACT_MIN_HEIGHT = 64;
 const HORIZONTAL_BAR_ROW_HEIGHT = 20;
 const HORIZONTAL_BAR_HEIGHT = 8;
@@ -1506,12 +1513,14 @@ const SingleSeriesChart = ({
     if (!sharedLineHover) return localHoveredIndex;
     if (!hoverTarget) return null;
 
+    // Mirror the hover onto another series only when it has a point on the
+    // exact same date; otherwise leave it untouched so we never show a tooltip
+    // for a date the series doesn't have.
     const matchingLabelIndex = data.findIndex(
       (item) => item.label === hoverTarget.label
     );
 
-    if (matchingLabelIndex >= 0) return matchingLabelIndex;
-    return data[hoverTarget.index] ? hoverTarget.index : null;
+    return matchingLabelIndex >= 0 ? matchingLabelIndex : null;
   }, [data, hoverTarget, interactive, localHoveredIndex, sharedLineHover]);
 
   const clearNativeTooltipFallbackTimeout = React.useCallback(() => {
@@ -2197,7 +2206,7 @@ const SingleSeriesChart = ({
     ? buildBottomRoundedRectPath(
         chartWidth,
         fillBottomY,
-        Math.min(PROGRESS_CARD_CORNER_RADIUS, chartWidth / 2, fillBottomY)
+        Math.min(PROGRESS_CARD_INNER_CORNER_RADIUS, chartWidth / 2, fillBottomY)
       )
     : undefined;
 
@@ -2381,7 +2390,14 @@ const Chart = ({
   tags?: ChartLabelTag[];
 }) => {
   const colorScheme = useColorScheme();
-  const series = cardChart.getRenderableChartSeries(chart);
+  const allSeries = cardChart.getRenderableChartSeries(chart);
+
+  // The compact preview only has room for one glanceable line, so drop extra
+  // series and show the primary one. The detail view still renders every series.
+  const series =
+    compact && chart.type === 'line' && allSeries.length > 1
+      ? allSeries.slice(0, 1)
+      : allSeries;
 
   const colors = getChartPalette({
     colorCount:
@@ -2665,12 +2681,6 @@ export const ProgressCard = ({
       cardChart.getRenderableChartSeries(resolvedOutput.chart)[0]?.data ?? []
     ) === 'horizontal';
 
-  // Only single-series line charts bleed their fill to the bottom edge; stacked
-  // series each have their own baseline and can't share the card's bottom.
-  const isSingleSeriesLineChart =
-    resolvedOutput?.chart?.type === 'line' &&
-    cardChart.getRenderableChartSeries(resolvedOutput.chart).length === 1;
-
   const milestoneDotColor =
     SPECTRUM[colorScheme][
       resolveSpectrumColor(logColorIndex, DEFAULT_CHART_COLOR)
@@ -2819,11 +2829,11 @@ export const ProgressCard = ({
 
     // When the chart is the last section it reaches the card's bottom edge, so
     // let its fill bleed there too. The chart overflows its box downward rather
-    // than growing the section, which would reflow the sections above it.
+    // than growing the section, which would reflow the sections above it. The
+    // compact preview collapses line charts to a single series, so any line
+    // chart here has one baseline that can share the card's bottom.
     const bleedBottomFill =
-      isFullBleedChart &&
-      isSingleSeriesLineChart &&
-      sectionIndex === previewSections.length - 1;
+      isFullBleedChart && sectionIndex === previewSections.length - 1;
 
     return (
       <View

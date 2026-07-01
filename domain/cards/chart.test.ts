@@ -296,9 +296,19 @@ describe('card charts', () => {
       chart.formatChartTickLabel(`${previousYear}-12-31T15:30:00.000Z`)
     ).toBe(`12/31/${String(previousYear).slice(-2)}`);
 
-    expect(chart.formatChartTickLabel(`${currentYear}-05-19`)).toBe(
-      `${currentYear}-05-19`
+    expect(chart.formatChartTickLabel(`${currentYear}-05-19`)).toBe('5/19');
+
+    expect(chart.formatChartTickLabel(`${previousYear}-05-19`)).toBe(
+      `5/19/${String(previousYear).slice(-2)}`
     );
+
+    expect(chart.formatChartTickLabel(`${currentYear}-06`)).toBe('Jun');
+
+    expect(chart.formatChartTickLabel(`${previousYear}-06`)).toBe(
+      `Jun ${String(previousYear).slice(-2)}`
+    );
+
+    expect(chart.formatChartTickLabel('2026-13-01')).toBe('2026-13-01');
   });
 
   test('keeps text ticks', () => {
