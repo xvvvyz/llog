@@ -18,6 +18,31 @@ describe('card charts', () => {
     ]);
   });
 
+  test('resolves annotations', () => {
+    const data = [
+      { label: '2026-05-01', value: 1 },
+      { label: '2026-05-02', value: 3 },
+      { label: '2026-05-03', value: 2 },
+    ];
+
+    expect(
+      chart.resolveChartAnnotations({
+        annotations: [
+          { label: 'Last', x: '2026-05-03' },
+          { label: 'Peak', x: '2026-05-02' },
+          { label: 'Missing', x: '2026-05-09' },
+          { label: 'Dup', x: '2026-05-02' },
+        ],
+        data,
+      })
+    ).toEqual([
+      { index: 1, label: 'Peak' },
+      { index: 2, label: 'Last' },
+    ]);
+
+    expect(chart.resolveChartAnnotations({ data })).toEqual([]);
+  });
+
   test('resolves chart series', () => {
     expect(
       chart.getChartSeries({

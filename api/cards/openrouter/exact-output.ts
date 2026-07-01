@@ -2,7 +2,19 @@ import * as cardAnalysis from '@/domain/cards/analysis';
 import * as cardOutput from '@/domain/cards/output';
 
 type CardMetric = cardOutput.CardOutput['metrics'][number];
+type CardChart = cardOutput.CardChart;
 type ExactMetricEntry = { id: string; metric: CardMetric };
+
+const withCarriedAnnotations = (
+  exactChart: CardChart,
+  outputChart?: CardChart
+): CardChart => {
+  const annotations = outputChart?.annotations;
+  if (exactChart.type !== 'line' || !annotations?.length) return exactChart;
+  const labels = cardOutput.getChartPointLabels(exactChart);
+  const carried = annotations.filter((annotation) => labels.has(annotation.x));
+  return carried.length ? { ...exactChart, annotations: carried } : exactChart;
+};
 
 const METRIC_IDENTITY_FILLER_WORDS = new Set([
   'count',
@@ -234,6 +246,14 @@ export const mergeExactCardOutput = ({
     !exactChart || !outputChart || exactChart.type === outputChart.type;
 
   const shouldMergeChart = !!exactChart && (!outputChart || chartKindsMatch);
+
+  // The exact chart replaces the model's chart, so re-attach any annotations the
+  // model authored that still line up with a locked point on the exact chart.
+  const mergedExactChart =
+    shouldMergeChart && exactChart
+      ? withCarriedAnnotations(exactChart, outputChart)
+      : undefined;
+
   const matchedExactMetrics = new Set<ExactMetricEntry>();
 
   const overrides = {
@@ -284,7 +304,7 @@ export const mergeExactCardOutput = ({
 
   return removeUnsupportedStreakSummary({
     ...outputContent,
-    ...(shouldMergeChart && { chart: exactChart }),
+    ...(mergedExactChart && { chart: mergedExactChart }),
     ...(Object.keys(visibleOverrides).length > 0 && {
       exactMetricLabelOverrides: visibleOverrides,
     }),

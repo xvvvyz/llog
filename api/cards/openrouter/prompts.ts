@@ -25,6 +25,8 @@ const exactStreakRules =
 const chartSelectionRules =
   'Use charts only when clearer than metrics or prose: line for chronological or ordered numeric series, bar for category totals or direct comparisons.';
 
+const chartAnnotationRules = `Add chart.annotations only to call out a few pivotal points on a line chart, at most ${cardOutput.MAX_CARD_CHART_ANNOTATIONS}. Set annotation.x to the exact matching data point label (source record.date ISO timestamp for time series) and keep annotation.label a 1-3 word note. Omit annotations for bar charts and when no point needs a callout.`;
+
 const groundingRules =
   'Do not invent causes, advice, diagnoses, goals, records, missing values, or units. State sparse or mixed evidence plainly.';
 
@@ -249,6 +251,7 @@ const buildOutputRules = (options: OutputRulesOptions) => {
     labelSpecificityRules,
     sections.metrics ? metricTrendRules : '',
     sections.chart ? chartOutputRules : '',
+    sections.chart ? chartAnnotationRules : '',
     sections.metrics ? metricOutputRules : '',
     sections.milestones ? milestoneOutputRules : '',
     summaryOutputRules,

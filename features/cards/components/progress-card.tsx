@@ -83,6 +83,10 @@ const COMPACT_BAR_CHART_PADDING = {
 
 const HIDDEN_X_AXIS_BOTTOM_PADDING = 8;
 const LINE_DOMAIN_PADDING = 0.08;
+const ANNOTATION_GUIDE_OPACITY = 0.5;
+const ANNOTATION_MARKER_RADIUS = 7;
+const ANNOTATION_MARKER_BAND = ANNOTATION_MARKER_RADIUS * 2 + 4;
+const ANNOTATION_MARKER_FONT_SIZE = 10;
 const CHART_GRID_OPACITY = 0.35;
 const COMPACT_CHART_GRID_OPACITY = 0.24;
 const DETAIL_LINE_CHART_HEIGHT = 144;
@@ -124,8 +128,8 @@ const CHART_TOOLTIP_WIDTH = 128;
 const CHART_TOOLTIP_HEIGHT = 46;
 const COMPACT_CHART_TOOLTIP_WIDTH = 112;
 const COMPACT_CHART_TOOLTIP_HEIGHT = 40;
-const CHART_TOOLTIP_GAP = 12;
-const BAR_CHART_TOOLTIP_GAP = 6;
+const TOOLTIP_TOP_INSET = 0;
+const TOOLTIP_BOTTOM_INSET = 0;
 const CHART_TOOLTIP_HORIZONTAL_OVERFLOW = 16;
 const NATIVE_CHART_TOOLTIP_FALLBACK_MS = 900;
 
@@ -1349,44 +1353,80 @@ const ChartLegend = ({
     chart.type === 'bar' &&
     !!getBarFills({ colorScheme, colors, data: series[0]?.data ?? [], tags });
 
+  // Annotations render as numbered guide lines on single-series line charts; the
+  // key resolves each number to its note. Match that render gate exactly.
+  const annotationList =
+    chart.type === 'line' && series.length === 1
+      ? cardChart.resolveChartAnnotations({
+          annotations: chart.annotations,
+          data: series[0]?.data ?? [],
+        })
+      : [];
+
   return (
-    <View className="flex-row flex-wrap gap-x-3 gap-y-1">
-      {series.map((item, index) => {
-        const label = cardChart.formatChartLegendLabel({
-          label: item.label,
-          unit: item.unit ?? chart.unit,
-        });
+    <View className="gap-y-2">
+      <View className="flex-row flex-wrap gap-x-3 gap-y-1">
+        {series.map((item, index) => {
+          const label = cardChart.formatChartLegendLabel({
+            label: item.label,
+            unit: item.unit ?? chart.unit,
+          });
 
-        const formattedLabel = cardDisplay.formatCardText(label);
+          const formattedLabel = cardDisplay.formatCardText(label);
 
-        return (
-          <View
-            key={`${label}-${index}`}
-            className="flex-row min-w-0 gap-1.5 items-center"
-          >
-            {!usesPerBarFills && (
-              <View
-                className="size-1.5 rounded-full"
-                style={{ backgroundColor: getSeriesColor(colors, index) }}
-              />
-            )}
-            <Text
-              numberOfLines={1}
-              className={cn(
-                'text-muted-foreground',
-                compact ? 'text-[11px]' : 'text-xs'
-              )}
+          return (
+            <View
+              key={`${label}-${index}`}
+              className="flex-row min-w-0 gap-1.5 items-start shrink"
             >
-              {formattedLabel}
-            </Text>
-          </View>
-        );
-      })}
+              {!usesPerBarFills && (
+                <View
+                  className="mt-1 size-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: getSeriesColor(colors, index) }}
+                />
+              )}
+              <Text
+                className={cn(
+                  'shrink text-muted-foreground web:text-balance',
+                  compact ? 'text-[11px]' : 'text-xs'
+                )}
+              >
+                {formattedLabel}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+      {annotationList.length > 0 && (
+        <View className="flex-row flex-wrap gap-x-3 gap-y-1">
+          {annotationList.map((annotation, index) => (
+            <View
+              key={`annotation-${annotation.index}`}
+              className="flex-row min-w-0 gap-1.5 items-start shrink"
+            >
+              <View className="mt-px size-3.5 border-muted-foreground rounded-full border items-center justify-center shrink-0">
+                <Text className="leading-none text-[9px] text-muted-foreground">
+                  {index + 1}
+                </Text>
+              </View>
+              <Text
+                className={cn(
+                  'shrink text-muted-foreground web:text-balance',
+                  compact ? 'text-[11px]' : 'text-xs'
+                )}
+              >
+                {cardDisplay.formatCardText(annotation.label)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 };
 
 const SingleSeriesChart = ({
+  annotations,
   barFills,
   barOrientation = 'vertical',
   bleedBottomFill,
@@ -1408,6 +1448,7 @@ const SingleSeriesChart = ({
   yAxis,
   yAxisLabelWidth: sharedYAxisLabelWidth,
 }: {
+  annotations?: CardChart['annotations'];
   barFills?: (string | undefined)[];
   barOrientation?: BarChartOrientation;
   bleedBottomFill?: boolean;
@@ -1504,6 +1545,17 @@ const SingleSeriesChart = ({
   const axisLabelFontSize = AXIS_LABEL_FONT_SIZE;
   const values = data.map((item) => item.value);
   const interactive = !compact;
+
+  // Mark annotated points on the detail chart with a numbered guide line; the
+  // key spells out each number. Skip the compact preview (too cramped) and
+  // stacked multi-series charts, whose shared x positions would repeat the same
+  // line across every panel.
+  const lineAnnotations =
+    type === 'line' && !compact && !stacked
+      ? cardChart.resolveChartAnnotations({ annotations, data })
+      : [];
+
+  const hasAnnotations = lineAnnotations.length > 0;
 
   const sharedLineHover =
     interactive && type === 'line' && !!onHoverTargetChange;
@@ -1638,8 +1690,11 @@ const SingleSeriesChart = ({
 
   const padding: ChartPadding = {
     ...basePadding,
-    // Drop the top padding so the pinned peak reaches the box's top edge.
-    top: isBleedingPreviewLine ? 0 : basePadding.top,
+    // Drop the top padding so the pinned peak reaches the box's top edge, or add
+    // a band above the plot to seat the annotation number badges.
+    top: isBleedingPreviewLine
+      ? 0
+      : basePadding.top + (hasAnnotations ? ANNOTATION_MARKER_BAND : 0),
     left: showAxes
       ? yAxisLabelWidth + AXIS_TICK_SIZE + yAxisLabelGap
       : basePadding.left + lineMarkerEdgePadding,
@@ -1778,13 +1833,13 @@ const SingleSeriesChart = ({
   });
 
   const renderTooltip = ({
-    gap = CHART_TOOLTIP_GAP,
     index,
+    tint,
     x,
     y,
   }: {
-    gap?: number;
     index: number | null;
+    tint?: string;
     x: number;
     y: number;
   }) => {
@@ -1822,10 +1877,14 @@ const SingleSeriesChart = ({
         ? chartWidth / 2
         : Math.max(minLeft, Math.min(maxLeft, x));
 
-    const top = Math.max(
-      -tooltipHeight - 8,
-      Math.min(chartHeight + 8, y - tooltipHeight - gap)
-    );
+    // Keep the tooltip vertically steady rather than tracking the point: it
+    // parks in one of two fixed slots and flips to the other when the point
+    // crosses the midline between them.
+    const plotBottom = padding.top + innerHeight;
+    const topSlotTop = TOOLTIP_TOP_INSET;
+    const bottomSlotTop = plotBottom - tooltipHeight - TOOLTIP_BOTTOM_INSET;
+    const swapThreshold = (topSlotTop + bottomSlotTop) / 2 + tooltipHeight / 2;
+    const top = y < swapThreshold ? bottomSlotTop : topSlotTop;
 
     return (
       <View
@@ -1840,6 +1899,7 @@ const SingleSeriesChart = ({
         <Text
           className={cn('font-medium', compact ? 'text-[11px]' : 'text-xs')}
           numberOfLines={1}
+          style={tint ? { color: tint } : undefined}
         >
           {value}
         </Text>
@@ -2074,6 +2134,9 @@ const SingleSeriesChart = ({
     const hoveredBar =
       hoveredIndex == null ? undefined : (bars[hoveredIndex] ?? undefined);
 
+    const hoveredBarTint =
+      hoveredIndex == null ? undefined : (barFills?.[hoveredIndex] ?? color);
+
     return (
       <View
         className="overflow-visible w-full"
@@ -2155,8 +2218,8 @@ const SingleSeriesChart = ({
         </Svg>
         {hoveredBar &&
           renderTooltip({
-            gap: BAR_CHART_TOOLTIP_GAP,
             index: hoveredIndex,
+            tint: hoveredBarTint,
             x: padding.left + hoveredBar.x + hoveredBar.width / 2,
             y: padding.top + hoveredBar.y,
           })}
@@ -2216,7 +2279,7 @@ const SingleSeriesChart = ({
   const lastPoint = points.at(-1);
   const lastItem = data.at(-1);
 
-  const lastValueLabel =
+  const candidateLastValueLabel =
     !compact && lastItem
       ? cardChart.formatChartAxisValue({
           decimals: yAxis?.decimals,
@@ -2224,12 +2287,29 @@ const SingleSeriesChart = ({
         })
       : undefined;
 
-  const lastValueTextWidth = lastValueLabel
+  const lastValueTextWidth = candidateLastValueLabel
     ? Math.max(
         32,
-        estimateAxisLabelWidth(lastValueLabel, axisLabelFontSize) + 8
+        estimateAxisLabelWidth(candidateLastValueLabel, axisLabelFontSize) + 8
       )
     : 0;
+
+  // The floating last-value label is centered on the last point but can be wide
+  // enough to reach back over a neighbor's annotation guide line. Drop it when
+  // its box would sit over any annotation line (its value is still on hover).
+  const lastValueOverlapsAnnotation =
+    !!lastPoint &&
+    lineAnnotations.some((annotation) => {
+      const point = points[annotation.index];
+
+      return (
+        !!point && Math.abs(point.x - lastPoint.x) <= lastValueTextWidth / 2
+      );
+    });
+
+  const lastValueLabel = lastValueOverlapsAnnotation
+    ? undefined
+    : candidateLastValueLabel;
 
   return (
     <View
@@ -2276,6 +2356,45 @@ const SingleSeriesChart = ({
           />
         )}
         {showAxes && axes}
+        {lineAnnotations.map((annotation, order) => {
+          const point = points[annotation.index];
+          if (!point) return null;
+          const markerX = padding.left + point.x;
+          const markerY = padding.top - ANNOTATION_MARKER_RADIUS - 2;
+
+          return (
+            <React.Fragment key={`annotation-${annotation.index}`}>
+              <Line
+                stroke={colors.text}
+                strokeDasharray="3 3"
+                strokeOpacity={ANNOTATION_GUIDE_OPACITY}
+                strokeWidth={1}
+                x1={markerX}
+                x2={markerX}
+                y1={padding.top}
+                y2={padding.top + innerHeight}
+              />
+              <Circle
+                cx={markerX}
+                cy={markerY}
+                fill="none"
+                r={ANNOTATION_MARKER_RADIUS}
+                stroke={colors.text}
+                strokeWidth={1}
+              />
+              <SvgText
+                fill={colors.text}
+                fontFamily={AXIS_LABEL_SVG_FONT_FAMILY}
+                fontSize={ANNOTATION_MARKER_FONT_SIZE}
+                textAnchor="middle"
+                x={markerX}
+                y={markerY + ANNOTATION_MARKER_FONT_SIZE / 3}
+              >
+                {order + 1}
+              </SvgText>
+            </React.Fragment>
+          );
+        })}
         {!!hoveredPoint && !compact && (
           <Line
             stroke={color}
@@ -2495,6 +2614,7 @@ const Chart = ({
       {series.map((item, index) => (
         <SingleSeriesChart
           key={`${item.label}-${index}`}
+          annotations={chart.annotations}
           barFills={index === 0 ? barFills : undefined}
           barOrientation={barOrientation}
           bleedBottomFill={bleedBottomFill && !stacked}

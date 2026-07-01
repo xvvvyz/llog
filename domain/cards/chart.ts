@@ -13,6 +13,8 @@ export type BarChartItem = ChartPoint & {
 
 export type ResolvedChartSeries = output.CardChartSeries;
 
+export type ResolvedChartAnnotation = { index: number; label: string };
+
 export type ChartDomain = { max: number; min: number };
 
 const finiteData = (data?: output.CardChartDatum[]) =>
@@ -254,6 +256,30 @@ export const getLineChartPoints = ({
     x: data.length > 1 ? index * step : width / 2,
     y: scaleChartValue({ height, max, min, value: item.value }),
   }));
+};
+
+// Match each annotation to the point it labels by its x value, keeping the
+// first annotation per point in chronological (data) order and dropping any
+// that don't line up with a rendered point.
+export const resolveChartAnnotations = ({
+  annotations,
+  data,
+}: {
+  annotations?: output.CardChartAnnotation[];
+  data: Pick<output.CardChartDatum, 'label'>[];
+}): ResolvedChartAnnotation[] => {
+  if (!annotations?.length) return [];
+  const seen = new Set<number>();
+  const resolved: ResolvedChartAnnotation[] = [];
+
+  for (const annotation of annotations) {
+    const index = data.findIndex((datum) => datum.label === annotation.x);
+    if (index < 0 || seen.has(index)) continue;
+    seen.add(index);
+    resolved.push({ index, label: annotation.label });
+  }
+
+  return resolved.sort((left, right) => left.index - right.index);
 };
 
 export const getBarChartItems = ({

@@ -35,6 +35,10 @@ export const MAX_CARD_CHART_SERIES_LABEL_LENGTH = 40;
 
 export const MAX_CARD_CHART_TITLE_LENGTH = 80;
 
+export const MAX_CARD_CHART_ANNOTATIONS = 4;
+
+export const MAX_CARD_CHART_ANNOTATION_LABEL_LENGTH = 32;
+
 export const CARD_METRIC_VALUE_FORMATS = [
   'date',
   'datetime',
@@ -85,6 +89,13 @@ export const cardChartSeriesSchema = z
   })
   .strict();
 
+export const cardChartAnnotationSchema = z
+  .object({
+    label: z.string().min(1).max(MAX_CARD_CHART_ANNOTATION_LABEL_LENGTH),
+    x: z.string().min(1).max(MAX_CARD_CHART_DATUM_LABEL_LENGTH),
+  })
+  .strict();
+
 export const cardChartXAxisSchema = z
   .object({ labelMode: z.enum(['all', 'auto', 'sparse']).optional() })
   .strict();
@@ -98,6 +109,17 @@ export const cardChartYAxisSchema = z
   })
   .strict();
 
+export const getChartPointLabels = (chart: {
+  data?: z.infer<typeof cardChartDatumSchema>[];
+  series?: z.infer<typeof cardChartSeriesSchema>[];
+}) =>
+  new Set(
+    [
+      ...(chart.data ?? []),
+      ...(chart.series ?? []).flatMap((series) => series.data),
+    ].map((datum) => datum.label)
+  );
+
 export const cardChartSchema = z
   .object({
     data: z
@@ -109,6 +131,11 @@ export const cardChartSchema = z
       .array(cardChartSeriesSchema)
       .min(1)
       .max(MAX_CARD_CHART_SERIES)
+      .optional(),
+    annotations: z
+      .array(cardChartAnnotationSchema)
+      .min(1)
+      .max(MAX_CARD_CHART_ANNOTATIONS)
       .optional(),
     title: z.string().max(MAX_CARD_CHART_TITLE_LENGTH).optional(),
     type: z.enum(['bar', 'line']),
@@ -122,7 +149,18 @@ export const cardChartSchema = z
   })
   .refine((chart) => chart.type !== 'bar' || !chart.series?.length, {
     message: 'Bar charts use data, not series',
-  });
+  })
+  .refine((chart) => chart.type === 'line' || !chart.annotations?.length, {
+    message: 'Annotations require a line chart',
+  })
+  .refine(
+    (chart) => {
+      if (!chart.annotations?.length) return true;
+      const labels = getChartPointLabels(chart);
+      return chart.annotations.every((annotation) => labels.has(annotation.x));
+    },
+    { message: 'Annotation x must match a chart point' }
+  );
 
 export const cardOutputSchema = z
   .object({
@@ -157,6 +195,8 @@ export type CardChart = z.infer<typeof cardChartSchema>;
 export type CardChartDatum = z.infer<typeof cardChartDatumSchema>;
 
 export type CardChartSeries = z.infer<typeof cardChartSeriesSchema>;
+
+export type CardChartAnnotation = z.infer<typeof cardChartAnnotationSchema>;
 
 type CardMetricTrend = NonNullable<CardOutput['metrics'][number]['trend']>;
 
@@ -499,6 +539,33 @@ const normalizeChartSeries = (value: unknown) => {
   return { data, label, ...(unit && { unit }) };
 };
 
+const normalizeChartAnnotation = (value: unknown, labels: Set<string>) => {
+  const annotation = asRecord(value);
+  const x = readString(annotation.x, MAX_CARD_CHART_DATUM_LABEL_LENGTH);
+  if (!x || !labels.has(x)) return undefined;
+
+  const label = normalizeCardDisplayLabel({
+    maxLength: MAX_CARD_CHART_ANNOTATION_LABEL_LENGTH,
+    maxWords: 5,
+    value: annotation.label,
+  });
+
+  return label ? { label, x } : undefined;
+};
+
+const normalizeChartAnnotations = (value: unknown, labels: Set<string>) => {
+  const seen = new Set<string>();
+
+  return asArray(value)
+    .map((item) => normalizeChartAnnotation(item, labels))
+    .filter((annotation): annotation is CardChartAnnotation => {
+      if (!annotation || seen.has(annotation.x)) return false;
+      seen.add(annotation.x);
+      return true;
+    })
+    .slice(0, MAX_CARD_CHART_ANNOTATIONS);
+};
+
 const normalizeChartXAxis = (value: unknown) => {
   const axis = asRecord(value);
   const labelMode = readXAxisLabelMode(axis.labelMode);
@@ -543,9 +610,18 @@ const normalizeChart = (value: unknown) => {
   const xAxis = normalizeChartXAxis(chart.xAxis);
   const yAxis = normalizeChartYAxis(chart.yAxis);
 
+  const annotations =
+    type === 'line'
+      ? normalizeChartAnnotations(
+          chart.annotations,
+          getChartPointLabels({ data, series })
+        )
+      : [];
+
   return {
     ...(data.length && { data }),
     ...(series.length && { series }),
+    ...(annotations.length && { annotations }),
     ...(title && { title }),
     type,
     ...(unit && { unit }),

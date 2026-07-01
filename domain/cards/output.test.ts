@@ -94,6 +94,61 @@ describe('card output', () => {
         },
       }).success
     ).toBe(false);
+
+    expect(
+      cardOutput.validateCardOutput({
+        chart: {
+          annotations: [{ label: 'Note', x: 'Jan' }],
+          data: [{ label: 'Jan', value: 1 }],
+          type: 'bar',
+        },
+      }).success
+    ).toBe(false);
+
+    expect(
+      cardOutput.validateCardOutput({
+        chart: {
+          annotations: [{ label: 'Note', x: 'Feb' }],
+          data: [{ label: 'Jan', value: 1 }],
+          type: 'line',
+        },
+      }).success
+    ).toBe(false);
+  });
+
+  test('normalizes chart annotations', () => {
+    const normalized = cardOutput.normalizeRawCardOutput({
+      chart: {
+        annotations: [
+          { label: 'Started new routine', x: '2026-05-08T00:00:00.000Z' },
+          { label: 'Off calendar', x: '2026-06-01T00:00:00.000Z' },
+          { label: '', x: '2026-05-01T00:00:00.000Z' },
+        ],
+        data: [
+          { label: '2026-05-01T00:00:00.000Z', value: 1 },
+          { label: '2026-05-08T00:00:00.000Z', value: 4 },
+        ],
+        type: 'line',
+      },
+    });
+
+    expect(cardOutput.validateCardOutput(normalized).success).toBe(true);
+
+    expect((normalized as CardOutput).chart?.annotations).toEqual([
+      { label: 'Started new routine', x: '2026-05-08T00:00:00.000Z' },
+    ]);
+  });
+
+  test('drops bar annotations', () => {
+    const normalized = cardOutput.normalizeRawCardOutput({
+      chart: {
+        annotations: [{ label: 'Note', x: 'Mon' }],
+        data: [{ label: 'Mon', value: 2 }],
+        type: 'bar',
+      },
+    });
+
+    expect((normalized as CardOutput).chart).not.toHaveProperty('annotations');
   });
 
   test('normalizes raw output', () => {

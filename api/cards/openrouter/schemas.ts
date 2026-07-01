@@ -205,9 +205,24 @@ const chartSeriesSchema = {
   type: 'object',
 } satisfies JsonSchema;
 
+const chartAnnotationSchema = {
+  additionalProperties: false,
+  properties: {
+    label: stringSchema(cardOutput.MAX_CARD_CHART_ANNOTATION_LABEL_LENGTH),
+    x: stringSchema(cardOutput.MAX_CARD_CHART_DATUM_LABEL_LENGTH),
+  },
+  required: ['label', 'x'],
+  type: 'object',
+} satisfies JsonSchema;
+
 const chartSchema = {
   additionalProperties: false,
   properties: {
+    annotations: {
+      items: chartAnnotationSchema,
+      maxItems: cardOutput.MAX_CARD_CHART_ANNOTATIONS,
+      type: 'array',
+    },
     data: {
       items: datumSchema,
       maxItems: cardOutput.MAX_CARD_CHART_POINTS,

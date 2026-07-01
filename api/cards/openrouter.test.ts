@@ -1327,6 +1327,66 @@ describe('card openrouter', () => {
     expect(result.output.metrics).toEqual([{ label: 'Records', value: 485 }]);
   });
 
+  test('carries annotations onto exact charts', async () => {
+    globalThis.fetch = mock(async () =>
+      jsonResponse({
+        output: {
+          chart: {
+            annotations: [
+              { label: 'Started routine', x: '2026-03-10T17:00:00.000Z' },
+              { label: 'Off chart', x: '2026-03-20T17:00:00.000Z' },
+            ],
+            data: [
+              { label: '2026-03-09T17:00:00.000Z', value: 70 },
+              { label: '2026-03-10T17:00:00.000Z', value: 80 },
+            ],
+            title: 'Duration',
+            type: 'line',
+            unit: 'min',
+          },
+        },
+        title: 'Duration',
+      })
+    ) as never;
+
+    const result = await openrouter.generateCardResult({
+      analysisMode: 'exact',
+      env: { OPENROUTER_API_KEY: 'key' } as unknown as CloudflareEnv,
+      exactFacts: {
+        aggregateValues: {},
+        analysisSpec: {
+          aggregations: [],
+          charts: [],
+          extractionFields: [],
+          groupings: [],
+        },
+        chart: {
+          data: [
+            { label: '2026-03-09T17:00:00.000Z', value: 75 },
+            { label: '2026-03-10T17:00:00.000Z', value: 85 },
+          ],
+          title: 'Duration',
+          type: 'line',
+          unit: 'min',
+        },
+        metrics: [],
+        selectedTagCounts: {},
+        totalMatchingRecordCount: 47,
+      },
+      prompt: 'Chart duration over time and flag when I started the routine.',
+      records: [{ id: 'record-1', text: 'Alone duration (min): 85' }],
+    });
+
+    expect(result.output.chart?.data).toEqual([
+      { label: '2026-03-09T17:00:00.000Z', value: 75 },
+      { label: '2026-03-10T17:00:00.000Z', value: 85 },
+    ]);
+
+    expect(result.output.chart?.annotations).toEqual([
+      { label: 'Started routine', x: '2026-03-10T17:00:00.000Z' },
+    ]);
+  });
+
   test('keeps exact metric trends', async () => {
     globalThis.fetch = mock(async () =>
       jsonResponse({
