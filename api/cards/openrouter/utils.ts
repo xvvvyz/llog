@@ -1,4 +1,5 @@
 import * as cardOutput from '@/domain/cards/output';
+import * as cardTitle from '@/domain/cards/title';
 
 export const getString = (value: unknown) =>
   typeof value === 'string' ? value : undefined;
@@ -31,21 +32,18 @@ export const cleanNullableObject = (value: unknown): unknown => {
 };
 
 export const cleanTitle = (value: unknown, defaultValue: string) =>
-  cardOutput.normalizeCardDisplayLabel({
-    defaultValue,
-    maxLength: cardOutput.MAX_CARD_GENERATED_TITLE_LENGTH,
-    maxWords: 5,
+  cardTitle.normalizeCardTitle(
     value,
-  }) ?? 'Progress card';
+    cardOutput.MAX_CARD_GENERATED_TITLE_LENGTH
+  ) ??
+  defaultValue ??
+  'Progress card';
 
-export const defaultTitleFromPrompt = (prompt: string) => {
-  const firstLine = prompt
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find(Boolean);
-
-  return cleanTitle(firstLine ?? prompt, 'Progress card');
-};
+export const defaultTitleFromPrompt = (prompt: string) =>
+  cardTitle.fallbackCardTitle(
+    prompt,
+    cardOutput.MAX_CARD_GENERATED_TITLE_LENGTH
+  );
 
 export const compactText = (value?: string | null, maxLength = Infinity) => {
   const text = value?.replace(/\s+/g, ' ').trim() ?? '';
