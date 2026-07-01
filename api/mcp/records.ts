@@ -3,12 +3,14 @@ import * as cardActions from '@/api/cards/card-actions';
 import * as content from '@/api/mcp/content';
 import * as contentQueries from '@/api/mcp/content-queries';
 import * as mcpFields from '@/api/mcp/fields';
+import { RECORD_TEXT_DESCRIPTION } from '@/api/mcp/formatting';
 import { replaceLinkTransactions } from '@/api/mcp/links';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext, McpRecord } from '@/api/mcp/types';
 import { getVisibleLog, requireVisibleLog } from '@/api/mcp/viewer';
 import * as push from '@/api/push/web-push';
+import * as recordScheduler from '@/api/records/record-scheduler';
 import * as recordIdentity from '@/domain/records/identity-fields';
 import * as recordPublish from '@/domain/records/publish';
 import { scheduledRecordWhere } from '@/domain/records/query';
@@ -20,6 +22,7 @@ import { z } from 'zod/v4';
 const recordsActionSchema = z.enum(['list', 'get', 'save', 'update']);
 
 const recordItemSchema = z.object({
+  date: z.string().datetime().optional(),
   include: z.array(mcpSchemas.recordIncludeSchema).max(4).optional(),
   links: z.array(mcpSchemas.linkInputSchema).max(20).optional(),
   limit: z.number().int().min(1).max(100).optional(),
@@ -29,13 +32,16 @@ const recordItemSchema = z.object({
   recordUrl: z.string().url().optional(),
   replyLimit: z.number().int().min(1).max(100).optional(),
   status: mcpSchemas.contentStatusSchema,
-  text: z.string().max(10240).optional(),
+  text: z.string().max(10240).optional().describe(RECORD_TEXT_DESCRIPTION),
 });
 
 const draftRecordError = () =>
   new Error(
     'Draft record not found. For published records, use action: update.'
   );
+
+const isFutureDate = (date: string, now: string) =>
+  new Date(date).getTime() > new Date(now).getTime();
 
 export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   const fieldOptions = { appUrl: ctx.env.APP_URL };
@@ -214,12 +220,14 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
   };
 
   const saveRecord = async ({
+    date,
     links,
     logId,
     mode = 'publish',
     recordId,
     text,
   }: {
+    date?: string;
     links?: z.infer<typeof mcpSchemas.linkInputSchema>[];
     logId?: string;
     mode?: 'draft' | 'publish';
@@ -236,9 +244,14 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
 
         if (!record.teamId) throw new Error('Invalid record draft');
 
+        const recordUpdate = {
+          ...(text != null ? { text } : {}),
+          ...(date ? { date } : {}),
+        };
+
         const transactions = [
-          ...(text != null
-            ? [ctx.db.tx.records[recordId].update({ text })]
+          ...(Object.keys(recordUpdate).length
+            ? [ctx.db.tx.records[recordId].update(recordUpdate)]
             : []),
           ...(links
             ? replaceLinkTransactions({
@@ -289,7 +302,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
               authorId: profile.id,
               logId,
             }),
-            date: records?.[0]?.date ?? now,
+            date: date ?? records?.[0]?.date ?? now,
             ...recordIdentity.getStatusFields('draft'),
             teamId,
             text: text ?? records?.[0]?.text ?? '',
@@ -342,18 +355,49 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
         throw new Error('Invalid record draft');
       }
 
+      const now = new Date().toISOString();
+
+      if (date && isFutureDate(date, now)) {
+        await ctx.db.transact([
+          ctx.db.tx.records[recordId].update({
+            date,
+            ...recordIdentity.getStatusFields('scheduled'),
+            text: nextText,
+          }),
+          ...(links
+            ? replaceLinkTransactions({
+                db: ctx.db,
+                existingLinks: record.links,
+                links,
+                target: 'record',
+                targetId: recordId,
+                teamId: record.teamId,
+              })
+            : []),
+        ]);
+
+        await recordScheduler.scheduleRecordPublish(ctx.env, {
+          publishAt: date,
+          recordId,
+        });
+
+        return mcpFields.textResult(
+          { recordId, status: 'scheduled' },
+          `Scheduled record: ${recordId} for ${date}`
+        );
+      }
+
       const notificationLog = await content.getNotificationLog(
         ctx,
         record.log.id
       );
-
-      const now = new Date().toISOString();
 
       await ctx.db.transact([
         ...recordPublish.buildPublishDraftRecordTransactions({
           activityDate: now,
           activityId: id(),
           actorId: record.author.id,
+          contentDate: date,
           db: ctx.db,
           logId: record.log.id,
           recordId,
@@ -413,10 +457,45 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     const newRecordId = id();
     const now = new Date().toISOString();
 
+    if (date && isFutureDate(date, now)) {
+      await ctx.db.transact([
+        ctx.db.tx.records[newRecordId]
+          .update({
+            ...recordIdentity.getRecordIdentityFields({
+              authorId: profile.id,
+              logId,
+            }),
+            date,
+            ...recordIdentity.getStatusFields('scheduled'),
+            teamId,
+            ...(trimmedText ? { text: trimmedText } : {}),
+          })
+          .link({ author: profile.id, log: logId }),
+        ...replaceLinkTransactions({
+          db: ctx.db,
+          links: nextLinks,
+          target: 'record',
+          targetId: newRecordId,
+          teamId,
+        }),
+      ]);
+
+      await recordScheduler.scheduleRecordPublish(ctx.env, {
+        publishAt: date,
+        recordId: newRecordId,
+      });
+
+      return mcpFields.textResult(
+        { recordId: newRecordId, status: 'scheduled' },
+        `Scheduled record: ${newRecordId} for ${date}`
+      );
+    }
+
     await ctx.db.transact([
       ...recordPublish.buildCreatePublishedRecordTransactions({
         activityId: id(),
         authorId: profile.id,
+        contentDate: date,
         db: ctx.db,
         logId,
         now,
@@ -526,7 +605,7 @@ export const registerRecordTools = (server: McpServer, ctx: McpContext) => {
     'records',
     {
       description:
-        'Batch list, read, draft, publish, and update records with items.',
+        'Batch list, read, draft, publish, and update records with items. Set date (ISO 8601) to backdate a record, or a future date to schedule it.',
       inputSchema: {
         action: recordsActionSchema,
         items: z.array(recordItemSchema).min(1).max(25),

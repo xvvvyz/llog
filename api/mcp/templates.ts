@@ -1,5 +1,6 @@
 import { runBulkItems } from '@/api/mcp/bulk';
 import * as mcpFields from '@/api/mcp/fields';
+import { TEMPLATE_TEXT_DESCRIPTION } from '@/api/mcp/formatting';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
 import type { McpContext, McpTag, McpTemplate } from '@/api/mcp/types';
@@ -17,7 +18,7 @@ const templateItemSchema = z.object({
   query: z.string().trim().min(1).optional(),
   tagIds: z.array(z.string().min(1)).max(50).optional(),
   templateId: z.string().min(1).optional(),
-  text: z.string().max(10240).optional(),
+  text: z.string().max(10240).optional().describe(TEMPLATE_TEXT_DESCRIPTION),
 });
 
 const requireManageTemplates = ({

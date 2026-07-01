@@ -3,6 +3,7 @@ import * as cardActions from '@/api/cards/card-actions';
 import * as content from '@/api/mcp/content';
 import * as contentQueries from '@/api/mcp/content-queries';
 import * as mcpFields from '@/api/mcp/fields';
+import { REPLY_TEXT_DESCRIPTION } from '@/api/mcp/formatting';
 import { replaceLinkTransactions } from '@/api/mcp/links';
 import { registerMcpTool } from '@/api/mcp/register-tool';
 import * as mcpSchemas from '@/api/mcp/schemas';
@@ -21,7 +22,7 @@ const repliesItemSchema = z.object({
   mode: mcpSchemas.saveModeSchema,
   recordId: z.string().min(1).optional(),
   replyId: z.string().min(1).optional(),
-  text: z.string().max(10240).optional(),
+  text: z.string().max(10240).optional().describe(REPLY_TEXT_DESCRIPTION),
 });
 
 export const registerReplyTools = (server: McpServer, ctx: McpContext) => {
